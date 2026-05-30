@@ -48,6 +48,11 @@ public class XiaoNaoHandler {
                     if (gameWorldComponent.isRole(victim, ModRoles.VOODOO)) {
                         return;
                     }
+
+                    //检查是否是黑警击杀，黑警击杀不算误杀
+                    if (gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP)) {
+                        return;
+                    }
                     // 小脑(误杀)惩罚写这里
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (deathReason.getPath().equals("revolver_shot")

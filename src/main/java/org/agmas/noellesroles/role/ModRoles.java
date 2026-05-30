@@ -131,7 +131,7 @@ public class ModRoles {
     // 建议格式：MOD_ID:role_name
 
     // 乘客阵营角色 ID
-
+    public static ResourceLocation CHILD_ID = Noellesroles.id("child");
     public static final ResourceLocation MA_CHEN_XU_ID = Noellesroles.id("ma_chen_xu");
     public static ResourceLocation JESTER_ID = Noellesroles.id("jester");
     public static ResourceLocation CONDUCTOR_ID = Noellesroles.id("conductor");
@@ -239,6 +239,7 @@ public class ModRoles {
 
 
     // 中立阵营
+    public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
     public static final ResourceLocation STALKER_ID = Noellesroles.id("stalker");
     public static final ResourceLocation ADMIRER_ID = Noellesroles.id("admirer");
     public static final ResourceLocation PUPPETEER_ID = Noellesroles.id("puppeteer");
@@ -266,6 +267,48 @@ public class ModRoles {
     public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
+
+    /**
+     *  黑警察 - 中立阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
+                    CORRUPT_COP_ID,
+                    new Color(0, 0, 0).getRGB(),
+                    false, // isInnocent：不是平民
+                    false, // canUseKiller：不能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setNeutrals(true) // 中立阵营（如果你项目里用这个开关）
+            .setCanSeeCoin(true)
+            .setComponentKey(ModComponents.CORRUPT_COP);
+
+    /**
+     *  熊孩子角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+
+    public static SRERole CHILD = TMMRoles.registerRole(new NormalRole(
+            CHILD_ID,
+            new Color(139, 69, 19).getRGB(), // 颜色棕色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  //真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
 
     /**
      * 飞行员角色 - 平民阵营

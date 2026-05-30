@@ -1,0 +1,10 @@
+{
+  "noellesroles.child_laugh": {
+    "sounds": [
+      {
+        "name": "noellesroles:child_laugh",
+        "stream": false
+      }
+    ]
+  }
+}

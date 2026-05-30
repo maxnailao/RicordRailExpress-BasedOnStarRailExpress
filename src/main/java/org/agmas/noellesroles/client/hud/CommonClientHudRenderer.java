@@ -714,6 +714,57 @@ public class CommonClientHudRenderer {
           Color.WHITE.getRGB());
       return;
     });
+
+
+
+    RoleHudRenderCallback.EVENT.register(ModRoles.CORRUPT_COP_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null || client.player == null) return;
+      if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+
+      var corruptComp = ModComponents.CORRUPT_COP.maybeGet(client.player).orElse(null);
+      if (corruptComp == null) return;
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int xOffset = screenWidth - 10; // 右下角基准X
+      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角基准Y
+
+      Component text = Component.translatable("hud.noellesroles.corrupt_cop.kills", corruptComp.getKillCount())
+              .withStyle(ChatFormatting.RED);
+      guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset, Color.WHITE.getRGB());
+    });
+
+
+    RoleHudRenderCallback.EVENT.register(ModRoles.CHILD_ID, (guiGraphics, deltaTracker) -> {
+      // 渲染熊孩子技能提示
+      var client = Minecraft.getInstance();
+      if (client.player == null) return;
+
+      if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+
+      var ability = SREAbilityPlayerComponent.KEY.get(client.player);
+      if (ability == null) return;
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int xOffset = screenWidth - 10;
+      int yOffset = screenHeight - 10 - font.lineHeight;
+
+      Component text;
+      if (ability.cooldown > 0) {
+        int secondsLeft = (ability.cooldown + 19) / 20;
+        text = Component.translatable("message.child.ability.cooldown",secondsLeft)
+                .withStyle(ChatFormatting.BLUE);
+      } else {
+        text = Component.translatable("message.child.ability.ready")
+                .withStyle(ChatFormatting.GREEN);
+      }
+
+      guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset, Color.WHITE.getRGB());
+    });
     RoleHudRenderCallback.EVENT.register(ModRoles.CLEANER_ID, (guiGraphics, deltaTracker) -> {
       // 渲染清道夫的提示
       var client = Minecraft.getInstance();

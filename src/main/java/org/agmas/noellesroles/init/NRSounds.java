@@ -5,6 +5,7 @@ import net.minecraft.sounds.SoundEvent;
 import org.agmas.noellesroles.Noellesroles;
 
 public class NRSounds {
+
     public static final SoundEventRegistrar registrar = new SoundEventRegistrar(Noellesroles.MOD_ID);
     public static final SoundEvent GAMBER_DEATH = registrar.create("noellesroles.gamber_died");
     public static final SoundEvent MUSIC_CLOCK = registrar.create("noellesroles.clock");
@@ -31,7 +32,11 @@ public class NRSounds {
     public static final SoundEvent BEEP = registrar.create("noellesroles.role_mine_beep");
     public static final SoundEvent SYRINGE_STAB = registrar.create("noellesroles.syringe_stab");
 
+    //熊孩子私人音效
+    public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
+
     public static void initialize() {
         registrar.registerEntries();
     }
+
 }

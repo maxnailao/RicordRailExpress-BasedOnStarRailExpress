@@ -28,7 +28,6 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
     public final List<RoundEndData> players = new ArrayList<>();
     private GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
     public ArrayList<UUID> CustomWinnerPlayers = new ArrayList<>();
-
     public Component CustomWinnerTitle = null;
     public Component CustomWinnerSubtitle = null;
     public String CustomWinnerID = "";

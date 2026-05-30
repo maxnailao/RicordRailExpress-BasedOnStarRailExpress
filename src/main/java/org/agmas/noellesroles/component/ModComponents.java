@@ -56,6 +56,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
@@ -375,6 +376,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
       org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent.class);
 
+  // 黑警组件 - 独立胜利中立阵营
+  public static final ComponentKey<CorruptCopPlayerComponent> CORRUPT_COP = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "corrupt_cop"),
+          CorruptCopPlayerComponent.class
+  );
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -750,6 +756,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, MORTICIAN_BODYMAKER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent::new);
+
+    // 注册黑警组件
+    registry.beginRegistration(Player.class, CORRUPT_COP)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(CorruptCopPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //
