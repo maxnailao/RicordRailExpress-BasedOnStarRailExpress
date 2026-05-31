@@ -34,6 +34,7 @@ public class OtherRolesRegister {
         PsychologistHud.register();
         PuppeteerHud.register();
         RecallerHud.register();
+        RecallKillerHud.register();
         SeaKingHud.register();
         SingerHud.register();
         SuperStarHud.register();

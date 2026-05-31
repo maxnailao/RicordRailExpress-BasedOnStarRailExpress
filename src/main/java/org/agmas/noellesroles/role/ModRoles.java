@@ -205,6 +205,7 @@ public class ModRoles {
     public static final ResourceLocation REPAIR_COLLECTOR_ID = Noellesroles.id("repair_collector");
 
     // 杀手阵营角色 ID
+    public static ResourceLocation RECALL_KILLER_ID = Noellesroles.id("recall_killer");
     public static ResourceLocation MORPHLING_ID = Noellesroles.id("morphling");
     public static ResourceLocation PARTY_KILLER_ID = Noellesroles.id("party_killer");
     public static ResourceLocation PHANTOM_ID = Noellesroles.id("phantom");
@@ -236,7 +237,6 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
-    public static final ResourceLocation RECALL_KILLER_ID = Noellesroles.id("imitator");
 
 
     // 中立阵营
@@ -268,7 +268,15 @@ public class ModRoles {
     public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
-
+    /**
+     *  黑警 - 中立阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
     public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
                     CORRUPT_COP_ID,
                     new Color(0, 0, 0).getRGB(),
@@ -283,26 +291,25 @@ public class ModRoles {
             .setComponentKey(ModComponents.CORRUPT_COP);
 
     /**
-     *  黑警 - 中立阵营
-     * - 属于平民阵营 (isInnocent = true)
-     * - 不能使用杀手能力 (canUseKiller = false)
-     * - 真实心情系统
-     * - 标准冲刺时间
+     *  召回杀手 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false)
+     * - 可以使用杀手能力 (canUseKiller = false)
+     * - 虚假心情系统
+     * - 无限冲刺时间
      * - 在计分板上显示
-     * - 无技能
+     * - 类似recaller的技能
      */
-    public static SRERole RECALLER_KILLER = TMMRoles.registerRole(new NormalRole(
+    public static SRERole RECALL_KILLER = TMMRoles.registerRole(new NormalRole(
                     RECALL_KILLER_ID,
-                    new Color(0, 0, 0).getRGB(),
+                    new Color(128, 0, 128).getRGB(),
                     false, // isInnocent：不是平民
-                    false, // canUseKiller：不能使用杀手技能
+                    true, // canUseKiller：能使用杀手技能
                     SRERole.MoodType.FAKE, // 假心情条
                     Integer.MAX_VALUE, // 无限冲刺时间
                     false // 是否隐藏计分板（按你需求改）
             ))
-            .setNeutrals(true) // 中立阵营（如果你项目里用这个开关）
             .setCanSeeCoin(true)
-            .setComponentKey(ModComponents.CORRUPT_COP);
+            .setComponentKey(ModComponents.RECALL_KILLER);
 
     /**
      *  熊孩子角色 - 平民阵营
