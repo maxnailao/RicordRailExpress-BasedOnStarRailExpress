@@ -2689,5 +2689,18 @@
   "message.noellesroles.silencer.help_phase": "Your voice silence has been lifted, find another player to right-click you to remove the aftereffect",
   "message.noellesroles.silencer.help_success": "You have successfully lifted their silence curse",
   "game.tip.meatball_role": "Meatball - You can only be killed when alone",
-  "game.tip.meatball_cannot_attack_in_crowd": "Cannot attack him in a crowd!"
+  "game.tip.meatball_cannot_attack_in_crowd": "Cannot attack him in a crowd!",
+  
+  "==================== Better Killer Ghost ====================": "",
+  "announcement.star.role.betterkillerghost": "Better Killer Ghost",
+  "role.noellesroles.betterkillerghost": "Better Killer Ghost",
+  "announcement.star.goals.betterkillerghost": "Eliminate all passengers with your shadow abilities.",
+  "message.noellesroles.betterkillerghost.phantom_destroyed": "Phantom destroyed! You have died",
+  "message.noellesroles.betterkillerghost.phantom_destroyed_by_player": "You destroyed %s's phantom!",
+  "message.noellesroles.betterkillerghost.too_far": "Too far from phantom! Forced to exit Shadow Mode",
+  "message.noellesroles.betterkillerghost.shadow_mode_enter": "Entered Shadow Mode",
+  "message.noellesroles.betterkillerghost.shadow_mode_exit": "Exited Shadow Mode",
+  "message.noellesroles.betterkillerghost.teleport_exhausted": "Teleport charges exhausted",
+  "message.noellesroles.betterkillerghost.actionbar": "Distance: %dblocks | Teleports: %d/3",
+  "message.noellesroles.betterkillerghost.cooldown": "Cooldown: %ds"
 }

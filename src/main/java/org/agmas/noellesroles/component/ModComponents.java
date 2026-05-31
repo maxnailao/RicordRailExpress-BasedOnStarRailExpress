@@ -35,6 +35,7 @@ import org.agmas.noellesroles.game.roles.Innocent.super_star.SuperStarPlayerComp
 import org.agmas.noellesroles.game.roles.Innocent.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bandit.BanditPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
@@ -184,6 +185,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<PuppeteerPlayerComponent> PUPPETEER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "puppeteer"),
       PuppeteerPlayerComponent.class);
+
+  // 鬼魅组件 - 杀手阵营，幽影模式技能
+  public static final ComponentKey<BetterKillerGhostComponent> BETTER_KILLER_GHOST = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "betterkillerghost"),
+      BetterKillerGhostComponent.class);
 
   public static final ComponentKey<ManipulatorPlayerComponent> MANIPULATOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "manipulator"),

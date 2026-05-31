@@ -69,6 +69,9 @@ public class ServerPlayerEntityMixin {
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                 puppeteerBodyEntity.playerHurt(self, GameConstants.DeathReasons.BAT);
             }
+            if (target instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity ghostPhantomEntity) {
+                ghostPhantomEntity.playerHurt(self, GameConstants.DeathReasons.BAT);
+            }
             CrosshairaddonsCompat.onAttack(target);
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
             ci.cancel();
@@ -80,6 +83,9 @@ public class ServerPlayerEntityMixin {
             }
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                 puppeteerBodyEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            }
+            if (target instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity ghostPhantomEntity) {
+                ghostPhantomEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }
             CrosshairaddonsCompat.onAttack(target);
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);

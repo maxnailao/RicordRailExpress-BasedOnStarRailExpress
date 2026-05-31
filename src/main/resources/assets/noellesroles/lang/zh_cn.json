@@ -2710,5 +2710,18 @@
   "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！你存活时，杀手和乘客都无法获胜。",
   "announcement.star.win.corrupt_cop": "黑警胜利！",
   "game.win.star.corrupt_cop": "正义已经得到伸张……以我的方式。",
-  "hud.noellesroles.corrupt_cop.kills": "击杀: %s"
+  "hud.noellesroles.corrupt_cop.kills": "击杀: %s",
+  
+  "==================== 鬼魅 ====================": "",
+  "announcement.star.role.betterkillerghost": "鬼魅",
+  "role.noellesroles.betterkillerghost": "鬼魅",
+  "announcement.star.goals.betterkillerghost": "消灭所有乘客，用你的幽影能力迷惑敌人。",
+  "message.noellesroles.betterkillerghost.phantom_destroyed": "幻影被摧毁！你已死亡",
+  "message.noellesroles.betterkillerghost.phantom_destroyed_by_player": "你摧毁了 %s 的幻影！",
+  "message.noellesroles.betterkillerghost.too_far": "距离幻影过远！强制退出幽影模式",
+  "message.noellesroles.betterkillerghost.shadow_mode_enter": "进入幽影模式",
+  "message.noellesroles.betterkillerghost.shadow_mode_exit": "退出幽影模式",
+  "message.noellesroles.betterkillerghost.teleport_exhausted": "传送次数已用完",
+  "message.noellesroles.betterkillerghost.actionbar": "距离: %d格 | 传送: %d/3",
+  "message.noellesroles.betterkillerghost.cooldown": "冷却中: %d秒"
 }

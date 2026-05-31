@@ -136,6 +136,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         TMMRoles.addRoleComponents(SREPlayerPoisonComponent.KEY);
         TMMRoles.addRoleComponents(SREPlayerShopComponent.KEY);
         TMMRoles.addRoleComponents(ExtraSlotComponent.KEY);
+        // 注册鬼魅角色组件
+        TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.BETTER_KILLER_GHOST);
     }
 
     private void initConfig() {

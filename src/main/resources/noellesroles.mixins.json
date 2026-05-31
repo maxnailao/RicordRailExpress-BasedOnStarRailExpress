@@ -52,6 +52,8 @@
     "roles.poisoner.PoisonerNoPoisonMixin",
     "roles.puppeteer.PuppeteerBodyGunPayloadMixin",
     "roles.puppeteer.PuppeteerBodyKnifePayloadMixin",
+    "roles.betterkillerghost.GhostPhantomGunPayloadMixin",
+    "roles.betterkillerghost.GhostPhantomKnifePayloadMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",

@@ -146,6 +146,19 @@ public class ModEntities {
                     .build());
 
     /**
+     * 鬼魅幻影实体 - 鬼魅使用幽影技能时生成的幻影
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<GhostPhantomEntity> GHOST_PHANTOM = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghost_phantom"),
+            FabricEntityTypeBuilder.<GhostPhantomEntity>create(MobCategory.MISC, GhostPhantomEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 操纵师本体实体 - 操纵师使用操控技能时生成的本体
      */
     // @SuppressWarnings("deprecation")
@@ -286,5 +299,7 @@ public class ModEntities {
         // 注册傀儡本体实体属性（LivingEntity 必须注册属性才能生成）
         FabricDefaultAttributeRegistry.register(PUPPETEER_BODY, LivingEntity.createLivingAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
+        // 注册鬼魅幻影实体属性
+        FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
     }
 }

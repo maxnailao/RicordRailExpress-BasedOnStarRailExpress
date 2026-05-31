@@ -33,6 +33,7 @@ import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerCo
 import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
@@ -307,6 +308,15 @@ public class AbilityHandler {
             CandleBearerPlayerComponent candleBearerPlayerComponent = CandleBearerPlayerComponent.KEY
                     .get(player);
             candleBearerPlayerComponent.useAbility();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.BETTER_KILLER_GHOST)) {
+            player.displayClientMessage(
+                Component.literal("[DEBUG] 鬼魅技能被调用!").withStyle(ChatFormatting.GREEN),
+                true
+            );
+            BetterKillerGhostComponent ghostComponent = BetterKillerGhostComponent.KEY.get(player);
+            ghostComponent.useAbility();
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.BLOOD_FEUDIST)) {

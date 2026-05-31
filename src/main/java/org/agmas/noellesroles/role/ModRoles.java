@@ -227,6 +227,8 @@ public class ModRoles {
     public static final ResourceLocation TRAPPER_ID = Noellesroles.id("trapper");
     public static final ResourceLocation BOMBER_ID = Noellesroles.id("bomber");
     public static final ResourceLocation LOST_KILLER_ID = Noellesroles.id("lost_killer");
+    // 鬼魅角色 ID - 杀手阵营
+    public static final ResourceLocation BETTER_KILLER_GHOST_ID = Noellesroles.id("betterkillerghost");
     public static final ResourceLocation MANIPULATOR_ID = Noellesroles.id("manipulator");
     public static final ResourceLocation BANDIT_ID = Noellesroles.id("bandit");
     public static final ResourceLocation BLOOD_FEUDIST_ID = Noellesroles.id("blood_feudist");
@@ -1562,6 +1564,32 @@ public class ModRoles {
             .setCanUseInstinct(false)         // 没有杀手透视
             .setCanSeeTeammateKiller(false) // 杀手本能看不到队友，对杀手的框显示如平民
             .setMax(1);
+
+    /**
+     * 鬼魅角色 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)
+     * - 假心情系统
+     * - 标准冲刺时间
+     * - 在计分板上隐藏
+     * - 技能：幽影模式
+     *   - 按下技能键进入幽影模式，在脚下生成幻影并隐身
+     *   - 幽影模式下无法进行除移动和开门外的任何操作
+     *   - 其他玩家攻击鬼魅无法造成伤害（无敌状态）
+     *   - 幻影被摧毁时，鬼魅直接死亡（参照傀儡师机制）
+     *   - 距离幻影超过20格时，强制退出幽影模式
+     *   - 幽影模式下可以按技能键传送幻影到身边（3次）
+     *   - Shift+技能键传送到幻影位置并退出幽影模式
+     *   - 退出后技能冷却120秒
+     */
+    public static SRERole BETTER_KILLER_GHOST = TMMRoles.registerRole(new NormalRole(
+            BETTER_KILLER_GHOST_ID, // 角色 ID
+            new Color(75, 0, 130).getRGB(), // 深紫色 - 代表神秘与幽影
+            false, // isInnocent = 非乘客阵营（杀手）
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            true // 隐藏计分板
+    ).setComponentKey(ModComponents.BETTER_KILLER_GHOST));
 
     /**
      * 判断角色是否应该在技能页面（Widget）中显示为可见的杀手同伙。
