@@ -37,6 +37,7 @@ import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
@@ -331,7 +332,7 @@ public class AbilityHandler {
             }
             return;
         }
-
+        //召回技能
         if (gameWorldComponent.isRole(player, ModRoles.RECALLER)
                 && abilityPlayerComponent.cooldown <= 0) {
             RecallerPlayerComponent recallerPlayerComponent = RecallerPlayerComponent.KEY.get(player);
@@ -349,6 +350,37 @@ public class AbilityHandler {
             }
 
         }
+        //召回杀手技能
+        // 召回杀手：技能同召回者，但不花钱；冷却独立（方式A）
+        if (gameWorldComponent.isRole(player, ModRoles.RECALL_KILLER)) {
+
+            // 召回杀手独立冷却（只影响该角色）
+            final int markCdTicks = 8 * 20;       // 放置标记冷却：8秒（自行改）
+            final int teleportCdTicks = 60 * 20;  // 召回冷却：18秒（自行改）
+
+            // 冷却中提示
+            if (abilityPlayerComponent.cooldown > 0) {
+                player.displayClientMessage(
+                        Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+
+            RecallKillerPlayerComponent comp = ModComponents.RECALL_KILLER.get(player);
+
+            if (!comp.placed) {
+                abilityPlayerComponent.cooldown = markCdTicks;
+                abilityPlayerComponent.sync();
+                comp.setPosition();
+            } else {
+                abilityPlayerComponent.cooldown = teleportCdTicks;
+                abilityPlayerComponent.sync();
+                comp.teleport();
+            }
+            return;
+        }
+        //老人技能
         if (gameWorldComponent.isRole(player, ModRoles.OLDMAN)) {
             if (player.getVehicle() != null && player.getVehicle() instanceof WheelchairEntity we) {
                 if (player.getCooldowns().isOnCooldown(ModItems.WHEELCHAIR)) {

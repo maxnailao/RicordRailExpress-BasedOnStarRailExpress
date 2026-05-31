@@ -25,7 +25,7 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.init.NRSounds;
+import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent;
@@ -354,6 +354,13 @@ public class ModRolesInitialEventRegister {
                 var childComp = org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent.KEY.get(player);
                 childComp.init();
                 childComp.sync();
+                return;
+            }
+            // 召回杀手角色初始化
+            if (role.identifier().equals(ModRoles.RECALL_KILLER.identifier())) {
+                var comp = ModComponents.RECALL_KILLER.get(player);
+                comp.init();
+                comp.sync();
                 return;
             }
         });

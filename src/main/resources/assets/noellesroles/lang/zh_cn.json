@@ -2710,5 +2710,13 @@
   "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！你存活时，杀手和乘客都无法获胜。",
   "announcement.star.win.corrupt_cop": "黑警胜利！",
   "game.win.star.corrupt_cop": "正义已经得到伸张……以我的方式。",
-  "hud.noellesroles.corrupt_cop.kills": "击杀: %s"
+  "hud.noellesroles.corrupt_cop.kills": "击杀: %s",
+
+  "==================== 召回杀手 ====================": "",
+  "announcement.star.role.recall_killer": "召回杀手",
+  "announcement.star.goals.recall_killer": "使用你的召回技能来击杀乘客！",
+  "info.screen.roleid.recall_killer": "杀手阵营\n你拥有与召回者类似的召回技能\n使用技能可标记一个地点，再次使用可回到标记地点\n标记地点后有8s冷却时间，回溯后有60s冷却时间\n注:你的标记地点会被别人看见！！！",
+  "tip.recall_killer.place":"按下 %s 键标记一个地点",
+  "tip.recall_killer.teleport":"再次按下 %s 键回到标记地点",
+  "tip.noellesroles.cooldown": "技能冷却中，剩余 %s 秒"
 }

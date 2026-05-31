@@ -49,6 +49,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
@@ -83,6 +84,8 @@ import org.ladysnake.cca.api.v3.entity.EntityComponentInitializer;
 import org.ladysnake.cca.api.v3.entity.RespawnCopyStrategy;
 import org.ladysnake.cca.api.v3.world.WorldComponentFactoryRegistry;
 import org.ladysnake.cca.api.v3.world.WorldComponentInitializer;
+
+
 
 /**
  * Cardinal Components API 组件注册
@@ -387,6 +390,13 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "child"),
           org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent.class
   );
+
+  // 召回杀手组件
+  public static final ComponentKey<RecallKillerPlayerComponent> RECALL_KILLER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "recall_killer"),
+          RecallKillerPlayerComponent.class
+  );
+
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -707,7 +717,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.Innocent.fool.FoolPlayerComponent::new);
 
-    // 注册黑白组件 - 存储阶段、狂暴前奏计时器、光环状态
+    // 注册黑白组件 - 存储阶段、狂暴前奏计时器、光
     registry.beginRegistration(Player.class, MONOKUMA)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent::new);
@@ -768,7 +778,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CORRUPT_COP)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(CorruptCopPlayerComponent::new);
-    
+
+    // 注册召回杀手组件
+    registry.beginRegistration(Player.class, RECALL_KILLER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(RecallKillerPlayerComponent::new);
+
     // 注册熊孩子组件
     registry.beginRegistration(Player.class, CHILD)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)

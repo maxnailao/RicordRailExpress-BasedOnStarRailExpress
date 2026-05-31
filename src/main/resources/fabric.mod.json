@@ -207,7 +207,8 @@
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
       "noellesroles:silencer",
-      "noellesroles:child"
+      "noellesroles:child",
+      "noellesroles:recall_killer"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
