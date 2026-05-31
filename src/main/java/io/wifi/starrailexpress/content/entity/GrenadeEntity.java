@@ -30,7 +30,7 @@ import java.util.List;
 public class GrenadeEntity extends ThrowableItemProjectile {
     private static final float EXPLOSION_RADIUS = 4f;
     private static final int MAX_KILL_PLAYER_COUNT = 8;
-    private static final boolean DEBUG_SHOW_EXPLOSION_SPHERE = true; // 爆炸范围可视化
+    private static final boolean DEBUG_SHOW_EXPLOSION_SPHERE = false; // 爆炸范围可视化
     public GrenadeEntity(EntityType<?> ignored, Level world) {
         super(TMMEntities.GRENADE, world);
     }
