@@ -381,6 +381,13 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "corrupt_cop"),
           CorruptCopPlayerComponent.class
   );
+
+  // 熊孩子组件
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent> CHILD = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "child"),
+          org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent.class
+  );
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -761,6 +768,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CORRUPT_COP)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(CorruptCopPlayerComponent::new);
+    
+    // 注册熊孩子组件
+    registry.beginRegistration(Player.class, CHILD)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

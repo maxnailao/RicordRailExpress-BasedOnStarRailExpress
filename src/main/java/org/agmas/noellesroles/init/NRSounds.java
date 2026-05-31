@@ -32,9 +32,9 @@ public class NRSounds {
     public static final SoundEvent BEEP = registrar.create("noellesroles.role_mine_beep");
     public static final SoundEvent SYRINGE_STAB = registrar.create("noellesroles.syringe_stab");
 
-    //熊孩子私人音效
+    //熊孩子
     public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
-
+    public static final SoundEvent FART = registrar.create("noellesroles.FART");
     public static void initialize() {
         registrar.registerEntries();
     }

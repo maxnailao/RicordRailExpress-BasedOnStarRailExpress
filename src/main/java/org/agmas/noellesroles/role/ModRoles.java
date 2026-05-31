@@ -219,9 +219,8 @@ public class ModRoles {
     public static ResourceLocation EXAMPLER_ID = Noellesroles.id("exampler");
     public static final ResourceLocation NINJA_ID = Noellesroles.id("ninja");
 
-    public static ResourceLocation INSANE_KILLER_ID = Noellesroles
-            .id("the_insane_damned_paranoid_killer");
-        public static ResourceLocation DELAYER_ID = Noellesroles.id("delayer");
+    public static ResourceLocation INSANE_KILLER_ID = Noellesroles.id("the_insane_damned_paranoid_killer");
+    public static ResourceLocation DELAYER_ID = Noellesroles.id("delayer");
     
     public static final ResourceLocation CONSPIRATOR_ID = Noellesroles.id("conspirator");
     public static final ResourceLocation CLEANER_ID = Noellesroles.id("cleaner");
@@ -235,7 +234,7 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
-
+    public static final ResourceLocation RECALL_KILLER_ID = Noellesroles.id("imitator");
 
 
     // 中立阵营
@@ -268,6 +267,19 @@ public class ModRoles {
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
+    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
+                    CORRUPT_COP_ID,
+                    new Color(0, 0, 0).getRGB(),
+                    false, // isInnocent：不是平民
+                    false, // canUseKiller：不能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setNeutrals(true) // 中立阵营（如果你项目里用这个开关）
+            .setCanSeeCoin(true)
+            .setComponentKey(ModComponents.CORRUPT_COP);
+
     /**
      *  黑警 - 中立阵营
      * - 属于平民阵营 (isInnocent = true)
@@ -277,8 +289,8 @@ public class ModRoles {
      * - 在计分板上显示
      * - 无技能
      */
-    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
-                    CORRUPT_COP_ID,
+    public static SRERole RECALLER_KILLER = TMMRoles.registerRole(new NormalRole(
+                    RECALL_KILLER_ID,
                     new Color(0, 0, 0).getRGB(),
                     false, // isInnocent：不是平民
                     false, // canUseKiller：不能使用杀手技能

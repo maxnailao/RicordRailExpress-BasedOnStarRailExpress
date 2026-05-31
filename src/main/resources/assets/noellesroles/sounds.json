@@ -6,5 +6,13 @@
         "stream": false
       }
     ]
+  },
+  "noellesroles.FART": {
+    "sounds": [
+      {
+        "name": "noellesroles:FART",
+        "stream": false
+      }
+    ]
   }
 }

@@ -53,6 +53,7 @@ import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerCompon
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
@@ -740,11 +741,12 @@ public class CommonClientHudRenderer {
     RoleHudRenderCallback.EVENT.register(ModRoles.CHILD_ID, (guiGraphics, deltaTracker) -> {
       // 渲染熊孩子技能提示
       var client = Minecraft.getInstance();
+
       if (client.player == null) return;
 
       if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
 
-      var ability = SREAbilityPlayerComponent.KEY.get(client.player);
+      var ability = ChildPlayerComponent.KEY.get(client.player);
       if (ability == null) return;
 
       int screenWidth = guiGraphics.guiWidth();
@@ -753,18 +755,43 @@ public class CommonClientHudRenderer {
       int xOffset = screenWidth - 10;
       int yOffset = screenHeight - 10 - font.lineHeight;
 
-      Component text;
+      // 当前选择的音效
+      Component soundName = switch (ability.childSoundIdx) {
+        case 0 -> Component.literal("笑声");
+        case 1 -> Component.literal("屁声");
+        case 2 -> Component.literal("炸弹传递声");
+        case 3 -> Component.literal("炸弹爆炸声");
+        case 4 -> Component.literal("咳嗽声");
+        case 5 -> Component.literal("喷嚏声");
+        default -> Component.literal("未知音效");
+      };
+
+      Component soundText = Component.translatable("message.child.sound.current", soundName)
+              .withStyle(ChatFormatting.AQUA);
+
+      // 冷却或就绪
+      Component cooldownText;
       if (ability.cooldown > 0) {
         int secondsLeft = (ability.cooldown + 19) / 20;
-        text = Component.translatable("message.child.ability.cooldown",secondsLeft)
+        cooldownText = Component.translatable("message.child.ability.cooldown", secondsLeft)
                 .withStyle(ChatFormatting.BLUE);
       } else {
-        text = Component.translatable("message.child.ability.ready")
+        cooldownText = Component.translatable("message.child.ability.ready")
                 .withStyle(ChatFormatting.GREEN);
       }
 
-      guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset, Color.WHITE.getRGB());
+      // 第一行：当前音效
+      guiGraphics.drawString(font, soundText,
+              xOffset - font.width(soundText), yOffset - font.lineHeight - 4,
+              0xA52A2A);
+
+      // 第二行：冷却/就绪
+      int cooldownColor = ability.cooldown > 0 ? 0xDC143C : 0x7FFF00;
+      guiGraphics.drawString(font, cooldownText,
+              xOffset - font.width(cooldownText), yOffset,
+              cooldownColor);
     });
+
     RoleHudRenderCallback.EVENT.register(ModRoles.CLEANER_ID, (guiGraphics, deltaTracker) -> {
       // 渲染清道夫的提示
       var client = Minecraft.getInstance();

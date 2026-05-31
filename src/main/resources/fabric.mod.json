@@ -206,7 +206,8 @@
       "noellesroles:mortician_bodymaker",
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
-      "noellesroles:silencer"
+      "noellesroles:silencer",
+      "noellesroles:child"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
