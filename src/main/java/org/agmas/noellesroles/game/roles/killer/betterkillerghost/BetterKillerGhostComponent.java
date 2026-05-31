@@ -203,13 +203,33 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
      */
     public void useAbility() {
         if (!(player instanceof ServerPlayer serverPlayer)) {
+            player.displayClientMessage(
+                Component.literal("[DEBUG] 玩家不是ServerPlayer").withStyle(net.minecraft.ChatFormatting.RED),
+                true
+            );
             return;
         }
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         
+        // 调试：打印当前状态
+        var currentRole = gameWorld.getRole(player);
+        player.displayClientMessage(
+            Component.literal(String.format("[鬼魅useAbility] 角色=%s | 游戏运行=%b | 存活=%b | 幽影=%b | 冷却=%d",
+                currentRole != null ? currentRole.identifier().toString() : "null",
+                gameWorld.isRunning(),
+                GameUtils.isPlayerAliveAndSurvival(player),
+                isInShadowMode,
+                cooldown)),
+            true
+        );
+        
         // 检查是否在幽影模式中
         if (isInShadowMode) {
+            player.displayClientMessage(
+                Component.literal("[DEBUG] 已在幽影模式中，执行传送").withStyle(net.minecraft.ChatFormatting.YELLOW),
+                true
+            );
             // 已在幽影模式中，执行传送或其他操作
             handleInShadowMode(serverPlayer);
             return;
@@ -226,11 +246,27 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         }
 
         // 检查游戏状态
-        if (!gameWorld.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+        if (!gameWorld.isRunning()) {
+            player.displayClientMessage(
+                Component.literal("[DEBUG] 游戏未运行").withStyle(net.minecraft.ChatFormatting.RED),
+                true
+            );
+            return;
+        }
+        
+        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+            player.displayClientMessage(
+                Component.literal("[DEBUG] 玩家未存活").withStyle(net.minecraft.ChatFormatting.RED),
+                true
+            );
             return;
         }
 
         // 进入幽影模式
+        player.displayClientMessage(
+            Component.literal("[DEBUG] 准备进入幽影模式...").withStyle(net.minecraft.ChatFormatting.GREEN),
+            true
+        );
         enterShadowMode(serverPlayer);
     }
 
