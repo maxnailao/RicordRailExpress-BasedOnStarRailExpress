@@ -312,10 +312,6 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.BETTER_KILLER_GHOST)) {
-            player.displayClientMessage(
-                Component.literal("[DEBUG] 鬼魅技能被调用!").withStyle(ChatFormatting.GREEN),
-                true
-            );
             BetterKillerGhostComponent ghostComponent = BetterKillerGhostComponent.KEY.get(player);
             ghostComponent.useAbility();
             return;

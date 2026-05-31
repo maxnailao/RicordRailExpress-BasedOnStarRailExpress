@@ -2718,5 +2718,20 @@
   "info.screen.roleid.recall_killer": "杀手阵营\n你拥有与召回者类似的召回技能\n使用技能可标记一个地点，再次使用可回到标记地点\n标记地点后有8s冷却时间，回溯后有60s冷却时间\n注:你的标记地点会被别人看见！！！",
   "tip.recall_killer.place":"按下 %s 键标记一个地点",
   "tip.recall_killer.teleport":"再次按下 %s 键回到标记地点",
-  "tip.noellesroles.cooldown": "技能冷却中，剩余 %s 秒"
+  "tip.noellesroles.cooldown": "技能冷却中，剩余 %s 秒",
+
+  "==================== 鬼魅 ====================": "",
+  "announcement.star.role.betterkillerghost": "鬼魅",
+  "role.noellesroles.betterkillerghost": "鬼魅",
+  "announcement.star.goals.betterkillerghost": "利用你的幽影能力消灭所有乘客。",
+  "info.screen.roleid.betterkillerghost": "杀手阵营\n按G键进入幽影模式，生成一个幻影\n在幽影模式下：\n- 你处于隐身状态且无敌\n- 背包内所有物品强制0.3秒冷却\n- 无法左键攻击\n- 按G键可传送幻影(2次)\n- Shift+G传送到幻影位置并退出\n- 距离幻影超过20格强制退出\n幻影被摧毁时你会直接死亡！",
+  "message.noellesroles.betterkillerghost.phantom_destroyed": "幻影被摧毁！你已死亡",
+  "message.noellesroles.betterkillerghost.phantom_destroyed_by_player": "你摧毁了%s的幻影！",
+  "message.noellesroles.betterkillerghost.too_far": "距离幻影过远！强制退出幽影模式",
+  "message.noellesroles.betterkillerghost.shadow_mode_enter": "已进入幽影模式",
+  "message.noellesroles.betterkillerghost.shadow_mode_exit": "已退出幽影模式",
+  "message.noellesroles.betterkillerghost.teleport_exhausted": "传送次数已用完",
+  "message.noellesroles.betterkillerghost.actionbar": "距离：%d格 | 传送：%d/2",
+  "message.noellesroles.betterkillerghost.cooldown": "冷却：%d秒",
+  "message.noellesroles.betterkillerghost.cannot_attack": "幽影模式下无法攻击其他玩家"
 }

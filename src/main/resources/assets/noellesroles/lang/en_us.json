@@ -2701,6 +2701,7 @@
   "message.noellesroles.betterkillerghost.shadow_mode_enter": "Entered Shadow Mode",
   "message.noellesroles.betterkillerghost.shadow_mode_exit": "Exited Shadow Mode",
   "message.noellesroles.betterkillerghost.teleport_exhausted": "Teleport charges exhausted",
-  "message.noellesroles.betterkillerghost.actionbar": "Distance: %dblocks | Teleports: %d/3",
-  "message.noellesroles.betterkillerghost.cooldown": "Cooldown: %ds"
+  "message.noellesroles.betterkillerghost.actionbar": "Distance: %dblocks | Teleports: %d/2",
+  "message.noellesroles.betterkillerghost.cooldown": "Cooldown: %ds",
+  "message.noellesroles.betterkillerghost.cannot_attack": "Cannot attack other players in Shadow Mode"
 }

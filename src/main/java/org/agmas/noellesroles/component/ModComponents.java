@@ -567,6 +567,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(NoiseMakerPlayerComponent::new);
     registry.beginRegistration(Player.class, GhostPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(GhostPlayerComponent::new);
+    // 注册鬼魅组件 - 杀手阵营，幽影模式技能
+    registry.beginRegistration(Player.class, BETTER_KILLER_GHOST)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(BetterKillerGhostComponent::new);
     registry.beginRegistration(Player.class, VulturePlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(VulturePlayerComponent::new);
     registry.beginRegistration(Player.class, ThiefPlayerComponent.KEY)

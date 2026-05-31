@@ -4,6 +4,10 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMItems;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -11,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -18,7 +23,6 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.role.ModRoles;
-import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -70,6 +74,46 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             }
             return true;
         });
+        
+        // 注册左键攻击拦截事件 - 幽影模式下禁止左键攻击
+        AttackEntityCallback.EVENT.register((attacker, level, hand, entity, hitResult) -> {
+            if (!(attacker instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
+            }
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (!gameWorld.isRole(serverPlayer, ModRoles.BETTER_KILLER_GHOST)) {
+                return InteractionResult.PASS;
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(serverPlayer);
+            if (comp != null && comp.isInShadowMode) {
+                // 幽影模式下禁止左键攻击任何实体(不显示提示)
+                return InteractionResult.FAIL;
+            }
+            
+            return InteractionResult.PASS;
+        });
+        
+        // 注册右键使用物品拦截事件 - 幽影模式下禁止右键使用手雷、左轮等
+        UseItemCallback.EVENT.register((player, level, hand) -> {
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));
+            }
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (!gameWorld.isRole(serverPlayer, ModRoles.BETTER_KILLER_GHOST)) {
+                return net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(serverPlayer);
+            if (comp != null && comp.isInShadowMode) {
+                // 幽影模式下禁止右键使用任何物品
+                return net.minecraft.world.InteractionResultHolder.fail(player.getItemInHand(hand));
+            }
+            
+            return net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));
+        });
     }
 
     public BetterKillerGhostComponent(Player player) {
@@ -85,7 +129,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     public void init() {
         this.isInShadowMode = false;
         this.phantomUuid = null;
-        this.teleportCount = 3;
+        this.teleportCount = 2; // 修改为2次
         this.cooldown = 0;
         this.sync();
     }
@@ -114,19 +158,6 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         }
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        
-        // 调试：每100tick打印一次状态
-        if (serverPlayer.tickCount % 100 == 0) {
-            var currentRole = gameWorld.getRole(player);
-            serverPlayer.displayClientMessage(
-                Component.literal(String.format("[鬼魅调试] 角色=%s | 游戏运行=%b | 存活=%b | 幽影=%b",
-                    currentRole != null ? currentRole.identifier().toString() : "null",
-                    gameWorld.isRunning(),
-                    GameUtils.isPlayerAliveAndSurvival(player),
-                    isInShadowMode)),
-                true
-            );
-        }
         
         // 检查是否是鬼魅角色
         if (!gameWorld.isRole(player, ModRoles.BETTER_KILLER_GHOST)) {
@@ -159,6 +190,9 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         // 如果在幽影模式中，检查各种条件
         if (isInShadowMode) {
             handleShadowMode(serverPlayer, gameWorld);
+            
+            // 幽影模式下，强制手持物品进入1秒冷却
+            applyCooldownToHeldItem(serverPlayer);
         }
 
         // 发送ActionBar显示信息
@@ -203,33 +237,13 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
      */
     public void useAbility() {
         if (!(player instanceof ServerPlayer serverPlayer)) {
-            player.displayClientMessage(
-                Component.literal("[DEBUG] 玩家不是ServerPlayer").withStyle(net.minecraft.ChatFormatting.RED),
-                true
-            );
             return;
         }
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         
-        // 调试：打印当前状态
-        var currentRole = gameWorld.getRole(player);
-        player.displayClientMessage(
-            Component.literal(String.format("[鬼魅useAbility] 角色=%s | 游戏运行=%b | 存活=%b | 幽影=%b | 冷却=%d",
-                currentRole != null ? currentRole.identifier().toString() : "null",
-                gameWorld.isRunning(),
-                GameUtils.isPlayerAliveAndSurvival(player),
-                isInShadowMode,
-                cooldown)),
-            true
-        );
-        
         // 检查是否在幽影模式中
         if (isInShadowMode) {
-            player.displayClientMessage(
-                Component.literal("[DEBUG] 已在幽影模式中，执行传送").withStyle(net.minecraft.ChatFormatting.YELLOW),
-                true
-            );
             // 已在幽影模式中，执行传送或其他操作
             handleInShadowMode(serverPlayer);
             return;
@@ -246,27 +260,11 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         }
 
         // 检查游戏状态
-        if (!gameWorld.isRunning()) {
-            player.displayClientMessage(
-                Component.literal("[DEBUG] 游戏未运行").withStyle(net.minecraft.ChatFormatting.RED),
-                true
-            );
-            return;
-        }
-        
-        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-            player.displayClientMessage(
-                Component.literal("[DEBUG] 玩家未存活").withStyle(net.minecraft.ChatFormatting.RED),
-                true
-            );
+        if (!gameWorld.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
             return;
         }
 
         // 进入幽影模式
-        player.displayClientMessage(
-            Component.literal("[DEBUG] 准备进入幽影模式...").withStyle(net.minecraft.ChatFormatting.GREEN),
-            true
-        );
         enterShadowMode(serverPlayer);
     }
 
@@ -282,7 +280,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         
         this.phantomUuid = phantom.getUUID();
         this.isInShadowMode = true;
-        this.teleportCount = 3;
+        this.teleportCount = 2; // 修改为2次
         
         // 玩家隐身
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, true));
@@ -328,9 +326,8 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             player.level().playSound(null, player.blockPosition(),
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.5F, 1.0F);
             
+            // 如果传送次数用完，显示提示但不退出，等待再次按G键
             if (teleportCount == 0) {
-                // 传送次数用完，退出幽影模式
-                exitShadowMode(true);
                 serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.betterkillerghost.teleport_exhausted")
                         .withStyle(net.minecraft.ChatFormatting.YELLOW),
@@ -338,7 +335,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
                 );
             }
         } else {
-            // 没有传送次数了，退出幽影模式
+            // 传送次数已为0，再次按G键强制退出幽影模式
             exitShadowMode(true);
         }
     }
@@ -433,7 +430,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         this.cooldown = COOLDOWN_TIME;
         this.isInShadowMode = false;
         this.phantomUuid = null;
-        this.teleportCount = 3;
+        this.teleportCount = 2; // 修改为2次
 
         // 发送消息
         if (player instanceof ServerPlayer serverPlayer) {
@@ -499,7 +496,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     }
 
     @Override
-    public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+    public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("isInShadowMode", this.isInShadowMode);
         if (this.phantomUuid != null) {
             tag.putUUID("phantomUuid", this.phantomUuid);
@@ -509,7 +506,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     }
 
     @Override
-    public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+    public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.isInShadowMode = tag.getBoolean("isInShadowMode");
         if (tag.contains("phantomUuid")) {
             this.phantomUuid = tag.getUUID("phantomUuid");
@@ -528,5 +525,37 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     @Override
     public void readFromNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         // 不需要持久化
+    }
+
+    /**
+     * 幽影模式下，给背包内所有物品强制添加0.3秒(6tick)冷却（不论是否手持）
+     * @param player 玩家
+     */
+    private void applyCooldownToHeldItem(Player player) {
+        var cooldowns = player.getCooldowns();
+        
+        // 遍历玩家物品栏，给所有物品添加冷却
+        for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
+            if (!stack.isEmpty()) {
+                cooldowns.addCooldown(stack.getItem(), 6); // 0.3秒冷却(20tick = 1秒)
+            }
+        }
+        
+        // 也检查盔甲槽
+        for (net.minecraft.world.item.ItemStack stack : player.getInventory().armor) {
+            if (!stack.isEmpty()) {
+                cooldowns.addCooldown(stack.getItem(), 6);
+            }
+        }
+    }
+    
+    /**
+     * 给单个物品添加冷却
+     */
+    private void applyCooldownToItem(Player player, net.minecraft.world.item.ItemStack stack, 
+                                     net.minecraft.world.item.ItemCooldowns cooldowns, int cooldownTicks) {
+        if (!stack.isEmpty()) {
+            cooldowns.addCooldown(stack.getItem(), cooldownTicks);
+        }
     }
 }

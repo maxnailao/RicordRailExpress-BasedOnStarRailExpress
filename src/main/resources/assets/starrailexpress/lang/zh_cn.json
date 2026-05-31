@@ -201,7 +201,7 @@
   "announcement.star.win.lovers": "恋人获胜！",
   "announcement.star.win.thief": "小偷获胜！",
   "hud.sre.betterghost.cooldown": "冷却: %ds",
-  "hud.sre.betterghost.status": "距离: %d | 传送: %d/3",
+  "hud.sre.betterghost.status": "距离: %d | 传送: %d/2",
   "announcement.star.win.killer": "杀手获胜！",
   "announcement.star.win.killers": "杀手获胜！",
   "announcement.star.win.loose_ends": "亡命徒获胜！",
