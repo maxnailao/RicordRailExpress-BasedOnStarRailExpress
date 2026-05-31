@@ -30,7 +30,7 @@ import java.util.List;
 public class GrenadeEntity extends ThrowableItemProjectile {
     private static final float EXPLOSION_RADIUS = 4f;
     private static final int MAX_KILL_PLAYER_COUNT = 8;
-
+    private static final boolean DEBUG_SHOW_EXPLOSION_SPHERE = true; // 爆炸范围可视化
     public GrenadeEntity(EntityType<?> ignored, Level world) {
         super(TMMEntities.GRENADE, world);
     }
@@ -53,6 +53,9 @@ public class GrenadeEntity extends ThrowableItemProjectile {
                     this.getX(), this.getY() + .1f, this.getZ(), 100, 0, 0, 0, 1f);
 
             Vec3 explosionPos = this.position();
+            if (DEBUG_SHOW_EXPLOSION_SPHERE) {
+                renderExplosionSphereDebug(world, explosionPos, EXPLOSION_RADIUS);
+            }
             var hitted_players = new HashSet<>();
             hitted_players.addAll(getPlayersAffectedByExplosion(world, explosionPos.x, explosionPos.y, explosionPos.z,
                     EXPLOSION_RADIUS));
@@ -80,6 +83,42 @@ public class GrenadeEntity extends ThrowableItemProjectile {
             this.discard();
         }
     }
+    //debug method
+
+    private static void renderExplosionSphereDebug(ServerLevel world, Vec3 center, float radius) {
+        // 经度/纬度采样，画“球壳”
+        int latSteps = 14;  // 纬线数量
+        int lonSteps = 28;  // 经线数量
+
+        for (int i = 0; i <= latSteps; i++) {
+            double v = (double) i / latSteps;      // 0..1
+            double phi = Math.PI * v;              // 0..PI
+            double y = Math.cos(phi) * radius;
+            double ringR = Math.sin(phi) * radius; // 当前纬线圆半径
+
+            for (int j = 0; j < lonSteps; j++) {
+                double u = (double) j / lonSteps;  // 0..1
+                double theta = 2.0 * Math.PI * u;  // 0..2PI
+
+                double x = Math.cos(theta) * ringR;
+                double z = Math.sin(theta) * ringR;
+
+                world.sendParticles(
+                        ParticleTypes.END_ROD, // 你也可改成 FLAME / CRIT / ELECTRIC_SPARK
+                        center.x + x,
+                        center.y + y,
+                        center.z + z,
+                        1,   // count
+                        0, 0, 0,
+                        0.0  // speed
+                );
+            }
+        }
+
+        // 画一个中心点，方便定位爆心
+        world.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 8, 0.05, 0.05, 0.05, 0.0);
+    }
+
 
     public static ArrayList<Entity> getPlayersAffectedByExplosion(Level level, double x, double y, double z,
             float radius) {

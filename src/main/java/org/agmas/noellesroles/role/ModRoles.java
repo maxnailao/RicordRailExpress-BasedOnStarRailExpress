@@ -269,7 +269,7 @@ public class ModRoles {
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
     /**
-     *  黑警察 - 中立阵营
+     *  黑警 - 中立阵营
      * - 属于平民阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
      * - 真实心情系统
