@@ -13,6 +13,7 @@ import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerC
 import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.driver.DiverPlayerComponent;
@@ -318,6 +319,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<ImitatorPlayerComponent> IMITATOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "imitator"),
       ImitatorPlayerComponent.class);
+  public static final ComponentKey<ChildPlayerComponent> CHILD = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "child"),
+      ChildPlayerComponent.class);
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.party.PartyPlayerComponent> PARTY = ComponentRegistry
       .getOrCreate(
@@ -647,6 +651,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, IMITATOR)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ImitatorPlayerComponent::new);
+
+    // 注册熊孩子组件 - 存储当前音效槽位
+    registry.beginRegistration(Player.class, CHILD)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(ChildPlayerComponent::new);
 
     registry.beginRegistration(Player.class, PARTY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)

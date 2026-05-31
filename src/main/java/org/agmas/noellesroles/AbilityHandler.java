@@ -27,6 +27,7 @@ import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.attendant.AttendantHandler;
+import org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
@@ -501,6 +502,15 @@ public class AbilityHandler {
                 comp.switchSlot();
             } else {
                 comp.useActiveAbility(player, null);
+            }
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.CHILD)) {
+            ChildPlayerComponent comp = ModComponents.CHILD.get(player);
+            if (player.isShiftKeyDown()) {
+                comp.switchSlot();
+            } else {
+                comp.useActiveSound();
             }
             return;
         }

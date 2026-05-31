@@ -103,6 +103,17 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new AbilityC2SPacket());
             return true;
         });
+        register(ModRoles.CHILD, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                return true;
+            }
+            if (client.player.isShiftKeyDown()) {
+                ClientPlayNetworking.send(new AbilityC2SPacket());
+                return true;
+            }
+            ClientPlayNetworking.send(new AbilityC2SPacket());
+            return true;
+        });
         register(ModRoles.CREEPER, true, (client, gameWorld) -> {
             ClientPlayNetworking.send(new org.agmas.noellesroles.packet.CreeperAbilityC2SPacket());
             return true;

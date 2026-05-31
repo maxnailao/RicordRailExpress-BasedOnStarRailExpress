@@ -353,40 +353,6 @@ public class ModRolesInitialEventRegister {
     }
 
     static {//技能注册
-        // 熊孩子技能注册:按技能键播放私人音效
-        RoleSkill.register(ModRoles.CHILD, context -> {
-            ServerPlayer player = context.player();
-
-            // 检查技能冷却（SREAbilityPlayerComponent 管理冷却）
-            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-            if (ability == null) return;
-
-            if (ability.cooldown > 0) {
-                // 仍在冷却，直接返回
-                return;
-            }
-
-            // 使用技能：设置 20 秒冷却（20s * 20 tick = 400 ticks）
-            ability.cooldown = GameConstants.getInTicks(0, 20); // 20 秒
-            ability.sync(); // 同步到客户端
-
-            // 播放音效（在玩家当前位置播放，附近玩家可听到）
-            player.serverLevel().playSound(
-                    null,
-                    player.getX(), player.getY(), player.getZ(),
-                    NRSounds.CHILD_LAUGH,
-                    net.minecraft.sounds.SoundSource.PLAYERS,
-                    1.0f, // 音量
-                    1.0f  // 音调
-            );
-
-            // （可选）给自己一个即时反馈，比如 action bar
-            player.displayClientMessage(
-                    net.minecraft.network.chat.Component.translatable("message.child.ability.used"),
-                    true
-            );
-        });
-
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, context -> {
             ServerPlayer player = context.player();

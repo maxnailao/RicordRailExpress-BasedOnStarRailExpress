@@ -308,7 +308,7 @@ public class ModRoles {
             SRERole.MoodType.REAL,  //真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
             false   // 显示计分板
-    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1).setComponentKey(ModComponents.CHILD);
 
     /**
      * 飞行员角色 - 平民阵营

@@ -158,6 +158,16 @@ public class NoellesRolesConfig implements ConfigData {
     public int infectedCooldown = 80;
 
     /**
+     * 熊孩子音效槽位（SoundEvent ResourceLocation 字符串列表）
+     */
+    public ArrayList<String> childSounds = new ArrayList<>(List.of("noellesroles:noellesroles.child_laugh"));
+
+    /**
+     * 熊孩子技能冷却时间（秒）
+     */
+    public int childSoundCooldownSeconds = 20;
+
+    /**
      * 彩蛋角色刷新最小玩家数
      */
     public int minPlayerForEggRoles = 12;
