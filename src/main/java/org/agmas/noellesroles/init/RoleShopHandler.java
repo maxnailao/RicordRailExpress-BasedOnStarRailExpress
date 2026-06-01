@@ -1546,10 +1546,13 @@ public class RoleShopHandler {
     INFECTED_SHOP.clear();
     MORTICIAN_BODYMAKER_SHOP.clear();
 
+    //刽子手商店
     柜子区的商店.add(new ShopEntry(
         ModItems.BANDIT_REVOLVER.getDefaultInstance(),
         130,
         ShopEntry.Type.TOOL));
+    //柜子区的商店.add(new ShopEntry(TMMItems.SNIPER_RIFLE.getDefaultInstance(), 250, ShopEntry.Type.TOOL));
+    //柜子区的商店.add(new ShopEntry(TMMItems.MAGNUM_BULLET.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
     柜子区的商店.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), SREConfig.instance().firecrackerPrice,
         ShopEntry.Type.TOOL));
     柜子区的商店.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));

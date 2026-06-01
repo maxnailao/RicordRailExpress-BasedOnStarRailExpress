@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -113,18 +114,23 @@ public record SniperShootPayload(Action action, int targetOrShooterId) implement
                             }
                         }
 
-                        // 击杀逻辑 - 类似左轮手枪
+                        // 击杀逻辑 - 狙击枪对刽子手：不掉落
                         if (game.isInnocent(target) && !player.isCreative()) {
-                            if (game.isInnocent(player) && player.getRandom().nextFloat() <= game.getBackfireChance()) {
+                            // 刽子手使用狙击枪射击时，不触发掉落
+                            if (game.isRole(player, ModRoles.EXECUTIONER)) {
+                                // 这里什么都不做，直接继续执行击杀
+                            } else if (game.isInnocent(player) && player.getRandom().nextFloat() <= game.getBackfireChance()) {
                                 // 反向击发
                                 GameUtils.killPlayer(player, true, player, GameConstants.DeathReasons.SNIPER_RIFLE_BACKFIRE);
                                 return;
                             } else {
-                                // 掉落左轮手枪
+                                // 普通玩家才掉落左轮手枪
                                 player.getInventory().clearOrCountMatchingItems((s) -> s.is(TMMItems.SNIPER_RIFLE), 1, player.getInventory());
                                 player.drop(TMMItems.REVOLVER.getDefaultInstance(), false, false);
                             }
                         }
+
+                        GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
 
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
                     }
