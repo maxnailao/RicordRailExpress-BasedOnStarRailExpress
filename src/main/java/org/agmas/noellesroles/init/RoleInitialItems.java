@@ -116,6 +116,15 @@ public class RoleInitialItems {
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
 
+        // 盗猎者初始物品 - 弓
+        List<Supplier<ItemStack>> poacherItems = new ArrayList<>();
+        poacherItems.add(() -> {
+            var item = Items.BOW.getDefaultInstance();
+            item.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            return item;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.POACHER, poacherItems);
+
 //        //黑白
 //        List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();
 //        elfItems.add(TMMItems.REVOLVER::getDefaultInstance);

@@ -210,6 +210,7 @@
       "noellesroles:silencer",
       "noellesroles:child",
       "noellesroles:recall_killer",
+      "noellesroles:poacher",
       "noellesroles:betterkillerghost"
     ],
     "loom:injected_interfaces": {

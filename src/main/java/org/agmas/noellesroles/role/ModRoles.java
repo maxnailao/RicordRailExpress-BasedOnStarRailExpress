@@ -237,6 +237,8 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
+    // 盗猎者角色 ID - 杀手阵营
+    public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
 
 
     // 中立阵营
@@ -1966,6 +1968,27 @@ public class ModRoles {
             return InteractionResult.PASS;
         }
     }).setComponentKey(ModComponents.IMITATOR).setCanSeeCoin(true);
+
+    /**
+     * 盗猎者角色 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false)
+     * - 可以使用杀手能力 (canUseKiller = true)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 隐藏计分板
+     * - 无技能
+     * - 初始道具：弓
+     * - 商店：刀(130g)、开锁器(80g)、撬棍(35g)、毒箭(120g)、缓慢箭(75g)、毒弩
+     */
+    public static SRERole POACHER = TMMRoles.registerRole(new NormalRole(
+            POACHER_ID, // 角色 ID
+            new Color(139, 69, 19).getRGB(), // 棕色 - 代表盗猎者/野外
+            false, // isInnocent = 非平民阵营（杀手）
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺时间
+            true // 隐藏计分板
+    )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true);
 
     
 

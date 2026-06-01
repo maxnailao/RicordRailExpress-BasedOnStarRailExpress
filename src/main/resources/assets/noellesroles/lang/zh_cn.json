@@ -2733,5 +2733,17 @@
   "message.noellesroles.betterkillerghost.teleport_exhausted": "传送次数已用完",
   "message.noellesroles.betterkillerghost.actionbar": "距离：%d格 | 传送：%d/2",
   "message.noellesroles.betterkillerghost.cooldown": "冷却：%d秒",
-  "message.noellesroles.betterkillerghost.cannot_attack": "幽影模式下无法攻击其他玩家"
+  "message.noellesroles.betterkillerghost.cannot_attack": "幽影模式下无法攻击其他玩家",
+
+  "==================== 盗猎者 ====================": "",
+  "announcement.star.role.poacher": "盗猎者",
+  "role.noellesroles.poacher": "盗猎者",
+  "announcement.star.goals.poacher": "利用你的狩猎技巧消灭所有乘客。",
+  "info.screen.roleid.poacher": "杀手阵营\n初始道具：弓\n商店可购买：刀(130g)、开锁器(80g)、撬棍(35g)、毒箭(120g)、缓慢箭(75g)、弩(100g)\n毒箭：最多持有2个，命中即死\n缓慢箭：落地生成缓慢区域，命中玩家立即生效\n弩：耐久度为1，射击后损毁，背包最多1个",
+  "item.poacher_poison_arrow.name": "毒箭",
+  "item.poacher_slow_arrow.name": "缓慢箭",
+  "message.noellesroles.poacher.poison_arrow_limit": "你已持有2个毒箭，无法购买更多",
+  "message.noellesroles.poacher.slow_arrow_limit": "你已持有2个缓慢箭，无法购买更多",
+  "message.noellesroles.poacher.crossbow_limit": "你已持有弩，无法购买第二个",
+  "message.noellesroles.poacher.bow_cooldown": "弓正在冷却中，剩余 %d 秒"
 }

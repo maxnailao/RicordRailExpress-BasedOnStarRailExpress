@@ -36,9 +36,11 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.Innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
@@ -826,6 +828,102 @@ public class RoleShopHandler {
 
     ShopContent.customEntries.put(
         ModRoles.SWAPPER_ID, ShopContent.defaultKnifeEntries);
+
+    // 盗猎者商店
+    {
+      var shopEntries = new ArrayList<ShopEntry>();
+      
+      // 刀 - 130金币
+      shopEntries.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
+      
+      // 开锁器 - 80金币
+      shopEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+      
+      // 撬棍 - 35金币
+      shopEntries.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
+      
+      // 毒箭 - 120金币 (最多持有2个)
+      final var PoisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
+      PoisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_poison_arrow.name"));
+      PoisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
+      shopEntries.add(new ShopEntry(PoisonArrow, 120, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          if (!(player instanceof ServerPlayer sp)) return false;
+          
+          // 检查是否是盗猎者
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isRole(player, ModRoles.POACHER)) return false;
+          
+          // 检查背包内毒箭数量（最多2个，只统计带POISON药水的TIPPED_ARROW）
+          int itemCount = 0;
+          for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(Items.TIPPED_ARROW)) {
+              var potionContents = stack.get(DataComponents.POTION_CONTENTS);
+              if (potionContents != null && potionContents.potion().isPresent()) {
+                var potion = potionContents.potion().get();
+                if (potion.value().getEffects().stream()
+                        .anyMatch(effect -> effect.getEffect().value() == MobEffects.POISON)) {
+                  itemCount++;
+                }
+              }
+            }
+          }
+          if (itemCount >= 2) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.poison_arrow_limit")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+          
+          return RoleUtils.insertStackInFreeSlot(player, PoisonArrow.copy());
+        }
+      });
+      
+      // 缓慢箭 - 75金币 (使用SPECTRAL_ARROW光灵箭)
+      final var SlowArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
+      SlowArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_slow_arrow.name"));
+      shopEntries.add(new ShopEntry(SlowArrow, 75, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 检查背包内缓慢箭数量(最多2个)
+          if (!(player instanceof ServerPlayer sp)) return false;
+          int itemCount = SREItemUtils.countItem(player, Items.SPECTRAL_ARROW);
+          if (itemCount >= 2) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.slow_arrow_limit")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+          return RoleUtils.insertStackInFreeSlot(player, SlowArrow.copy());
+        }
+      });
+      
+      // 弩 - 100金币，耐久度为1，背包内最多1个弩
+      shopEntries.add(new ShopEntry(Items.CROSSBOW.getDefaultInstance(), 100, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          if (!(player instanceof ServerPlayer sp)) return false;
+          
+          // 检查背包内是否已有弩
+          int crossbowCount = SREItemUtils.countItem(player, Items.CROSSBOW);
+          if (crossbowCount >= 1) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.crossbow_limit")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+          
+          ItemStack crossbow = Items.CROSSBOW.getDefaultInstance();
+          // 设置弩的耐久度为1(剩余1点耐久)
+          int maxDamage = crossbow.getMaxDamage(); // 获取弩的最大耐久度
+          crossbow.set(DataComponents.DAMAGE, maxDamage - 1); // 剩余1点耐久
+          // 确保不是不可破坏的
+          crossbow.remove(DataComponents.UNBREAKABLE);
+          
+          return RoleUtils.insertStackInFreeSlot(player, crossbow);
+        }
+      });
+      
+      ShopContent.customEntries.put(ModRoles.POACHER_ID, shopEntries);
+    }
 
     // 仇杀客商店
     ShopContent.customEntries.put(

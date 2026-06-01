@@ -2703,5 +2703,17 @@
   "message.noellesroles.betterkillerghost.teleport_exhausted": "Teleport charges exhausted",
   "message.noellesroles.betterkillerghost.actionbar": "Distance: %dblocks | Teleports: %d/2",
   "message.noellesroles.betterkillerghost.cooldown": "Cooldown: %ds",
-  "message.noellesroles.betterkillerghost.cannot_attack": "Cannot attack other players in Shadow Mode"
+  "message.noellesroles.betterkillerghost.cannot_attack": "Cannot attack other players in Shadow Mode",
+
+  "==================== Poacher ====================": "",
+  "announcement.star.role.poacher": "Poacher",
+  "role.noellesroles.poacher": "Poacher",
+  "announcement.star.goals.poacher": "Eliminate all passengers with your hunting skills.",
+  "info.screen.roleid.poacher": "Killer Team\nInitial Item: Bow\nShop: Knife(130g), Lockpick(80g), Crowbar(35g), Poison Arrow(120g), Slow Arrow(75g), Crossbow(100g)\nPoison Arrow: Can hold up to 2, instant kill on hit\nSlow Arrow: Creates slow area on ground, instant effect on hit\nCrossbow: 1 durability, destroyed after shooting, max 1 in inventory",
+  "item.poacher_poison_arrow.name": "Poison Arrow",
+  "item.poacher_slow_arrow.name": "Slow Arrow",
+  "message.noellesroles.poacher.poison_arrow_limit": "You already have 2 poison arrows, cannot buy more",
+  "message.noellesroles.poacher.slow_arrow_limit": "You already have 2 slow arrows, cannot buy more",
+  "message.noellesroles.poacher.crossbow_limit": "You already have a crossbow, cannot buy another",
+  "message.noellesroles.poacher.bow_cooldown": "Bow is on cooldown, %d seconds remaining"
 }

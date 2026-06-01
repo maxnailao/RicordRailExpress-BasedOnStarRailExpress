@@ -29,6 +29,7 @@
     "roles.awesome_binglus.NoteMixin",
     "roles.elf.ArrowMixin",
     "roles.elf.BowMixin",
+    "roles.poacher.BowItemCooldownMixin",
     "roles.builder.ProjectileWallBlockMixin",
     "roles.engineer.EngineerCrowbarMixin",
     "roles.engineer.LockMixin",

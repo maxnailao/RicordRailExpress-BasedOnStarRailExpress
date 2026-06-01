@@ -50,6 +50,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
@@ -327,6 +328,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<ImitatorPlayerComponent> IMITATOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "imitator"),
       ImitatorPlayerComponent.class);
+
+  // 盗猎者组件 - 杀手阵营，毒箭购买限制
+  public static final ComponentKey<PoacherPlayerComponent> POACHER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "poacher"),
+      PoacherPlayerComponent.class);
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.party.PartyPlayerComponent> PARTY = ComponentRegistry
       .getOrCreate(
@@ -673,6 +679,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, IMITATOR)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ImitatorPlayerComponent::new);
+
+    // 注册盗猎者组件 - 存储毒箭购买冷却
+    registry.beginRegistration(Player.class, POACHER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PoacherPlayerComponent::new);
 
     registry.beginRegistration(Player.class, PARTY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
