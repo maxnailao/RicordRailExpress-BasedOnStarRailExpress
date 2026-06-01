@@ -80,7 +80,7 @@ public class ShortShotgunItem extends Item {
         if (llen > 0) {
             Vec3 nlook = l2.scale(1.0 / llen);
             double cosHalfAngle = Math.cos(Math.toRadians(35.0)); // 70度扇形
-            double maxRange = 2.0; // 2格范围，可以改大，比如改成4.0或5.0
+            double maxRange = 3.0; // 3格范围，可以改大，比如改成4.0或5.0
 
             //可视化
             // 可视化开关
@@ -107,13 +107,13 @@ public class ShortShotgunItem extends Item {
                     ((ServerLevel)world).sendParticles(ParticleTypes.END_ROD, rx, player.getY() + 1.0, rz, 1, 0, 0.1, 0, 0);
 
                     // 画填充：角度步长 3 度
-                    for (double angleDeg = -halfAngleDeg; angleDeg <= halfAngleDeg; angleDeg += 3) {
+                    /*for (double angleDeg = -halfAngleDeg; angleDeg <= halfAngleDeg; angleDeg += 3) {
                         double angleRad = Math.toRadians(angleDeg) + yawRad;
                         double px = player.getX() + Math.cos(angleRad) * r;
                         double pz = player.getZ() + Math.sin(angleRad) * r;
                         // 使用红色粒子更明显
                         ((ServerLevel)world).sendParticles(ParticleTypes.GLOW, px, player.getY() + 0.8, pz, 1, 0, 0, 0, 0.05);
-                    }
+                    }*/
                 }
 
                 // 额外：画出最外缘的弧线
