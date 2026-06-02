@@ -35,6 +35,8 @@ public class NRSounds {
     //熊孩子
     public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
     public static final SoundEvent FART = registrar.create("noellesroles.fart");
+    public static final SoundEvent FEI = registrar.create("noellesroles.fei");
+    public static final SoundEvent SQUEAKY_TOY = registrar.create("noellesroles.squeaky_toy");
     public static void initialize() {
         registrar.registerEntries();
     }

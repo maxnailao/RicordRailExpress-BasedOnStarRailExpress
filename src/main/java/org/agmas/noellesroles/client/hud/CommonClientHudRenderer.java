@@ -762,7 +762,8 @@ public class CommonClientHudRenderer {
         case 2 -> Component.literal("炸弹传递声");
         case 3 -> Component.literal("炸弹爆炸声");
         case 4 -> Component.literal("咳嗽声");
-        case 5 -> Component.literal("喷嚏声");
+        case 5 -> Component.literal("飞起来");
+        case 6 -> Component.literal("怪声");
         default -> Component.literal("未知音效");
       };
 
