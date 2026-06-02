@@ -844,10 +844,7 @@ public class RoleShopHandler {
       shopEntries.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
       
       // 毒箭 - 120金币 (最多持有2个)
-      final var PoisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
-      PoisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_poison_arrow.name"));
-      PoisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
-      shopEntries.add(new ShopEntry(PoisonArrow, 120, ShopEntry.Type.WEAPON) {
+      shopEntries.add(new ShopEntry(Items.TIPPED_ARROW.getDefaultInstance(), 120, ShopEntry.Type.WEAPON) {
         @Override
         public boolean onBuy(@NotNull Player player) {
           if (!(player instanceof ServerPlayer sp)) return false;
@@ -876,14 +873,18 @@ public class RoleShopHandler {
             return false;
           }
           
-          return RoleUtils.insertStackInFreeSlot(player, PoisonArrow.copy());
+          // 每次购买时创建新的毒箭物品
+          ItemStack poisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
+          poisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_poison_arrow.name"));
+          poisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
+          poisonArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+          
+          return RoleUtils.insertStackInFreeSlot(player, poisonArrow);
         }
       });
       
       // 缓慢箭 - 75金币 (使用SPECTRAL_ARROW光灵箭)
-      final var SlowArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
-      SlowArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_slow_arrow.name"));
-      shopEntries.add(new ShopEntry(SlowArrow, 75, ShopEntry.Type.WEAPON) {
+      shopEntries.add(new ShopEntry(Items.SPECTRAL_ARROW.getDefaultInstance(), 75, ShopEntry.Type.WEAPON) {
         @Override
         public boolean onBuy(@NotNull Player player) {
           // 检查背包内缓慢箭数量(最多2个)
@@ -894,7 +895,13 @@ public class RoleShopHandler {
                 .withStyle(ChatFormatting.RED), true);
             return false;
           }
-          return RoleUtils.insertStackInFreeSlot(player, SlowArrow.copy());
+          
+          // 每次购买时创建新的缓慢箭物品
+          ItemStack slowArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
+          slowArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_slow_arrow.name"));
+          slowArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+          
+          return RoleUtils.insertStackInFreeSlot(player, slowArrow);
         }
       });
       

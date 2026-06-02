@@ -21,6 +21,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 
 import java.util.ArrayList;
@@ -75,6 +77,10 @@ public class GrenadeEntity extends ThrowableItemProjectile {
                 if (entity instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                     puppeteerBodyEntity.playerHurt(this.getOwner() instanceof Player playerEntity ? playerEntity : null,
                             GameConstants.DeathReasons.GRENADE);
+                }
+                if (entity instanceof GhostPhantomEntity ghostPhantomEntity) {
+                    ghostPhantomEntity.playerHurt(this.getOwner() instanceof Player playerEntity ? playerEntity : null,
+                            Noellesroles.id("grenade_ghost_phantom"));
                 }
                 count++;
                 if (count >= MAX_KILL_PLAYER_COUNT)
@@ -167,6 +173,21 @@ public class GrenadeEntity extends ThrowableItemProjectile {
                     if (seenPercent == 0.0)
                         continue;
                     affected.add(puppeteerBodyEntity);
+                }
+            }
+            if (entity instanceof GhostPhantomEntity ghostPhantomEntity) {
+                var owner = ghostPhantomEntity.getOwner();
+                if (owner instanceof Player player) {
+                    if (!GameUtils.isPlayerAliveAndSurvival(player))
+                        continue;
+                    double distance = Math.sqrt(ghostPhantomEntity.distanceToSqr(center));
+                    double v = distance / diameter;
+                    if (v > 1.0)
+                        continue;
+                    double seenPercent = Explosion.getSeenPercent(center, ghostPhantomEntity);
+                    if (seenPercent == 0.0)
+                        continue;
+                    affected.add(ghostPhantomEntity);
                 }
             }
         }

@@ -188,8 +188,11 @@ public class GhostPhantomEntity extends LivingEntity {
             if (gameWorld.isRole(owner, ModRoles.BETTER_KILLER_GHOST)) {
                 BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(owner);
                 if (ghostComp != null && ghostComp.isInShadowMode) {
-                    // 参照傀儡师机制：幻影被摧毁时，鬼魅玩家直接死亡
+                    // 参照傀儡师机制：使用pierceDeath标志绕过幽影模式的死亡免疫
+                    owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
+                    ModEffects.pierceDeath = true;
                     GameUtils.killPlayer(owner, true, player instanceof ServerPlayer ? (ServerPlayer) player : null, deathReason);
+                    ModEffects.pierceDeath = false;
                     
                     // 强制退出幽影模式（在死亡之后清理状态）
                     ghostComp.exitShadowModeForced();
