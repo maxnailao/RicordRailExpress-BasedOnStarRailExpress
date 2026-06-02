@@ -14,5 +14,21 @@
         "stream": false
       }
     ]
+  },
+  "noellesroles.fei": {
+    "sounds": [
+      {
+        "name": "noellesroles:fei",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.squeaky_toy": {
+    "sounds": [
+      {
+        "name": "noellesroles:squeaky_toy",
+        "stream": false
+      }
+    ]
   }
 }
