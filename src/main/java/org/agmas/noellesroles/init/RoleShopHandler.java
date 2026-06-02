@@ -851,7 +851,11 @@ public class RoleShopHandler {
           
           // 检查是否是盗猎者
           SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-          if (!gameWorld.isRole(player, ModRoles.POACHER)) return false;
+          if (!gameWorld.isRole(player, ModRoles.POACHER)) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.role_required")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
           
           // 检查背包内毒箭数量（最多2个，只统计带POISON药水的TIPPED_ARROW）
           int itemCount = 0;
@@ -867,19 +871,27 @@ public class RoleShopHandler {
               }
             }
           }
+          
+          // 严格限制：达到或超过2个时禁止购买
           if (itemCount >= 2) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.poison_arrow_limit")
                 .withStyle(ChatFormatting.RED), true);
             return false;
           }
           
-          // 每次购买时创建新的毒箭物品
+          // 每次购买时创建新的毒箭物品（避免共享引用）
           ItemStack poisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
           poisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_poison_arrow.name"));
           poisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
           poisonArrow.set(DataComponents.MAX_STACK_SIZE, 1);
           
-          return RoleUtils.insertStackInFreeSlot(player, poisonArrow);
+          // 尝试放入背包，失败则返回false
+          boolean success = RoleUtils.insertStackInFreeSlot(player, poisonArrow);
+          if (!success) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.inventory_full")
+                .withStyle(ChatFormatting.RED), true);
+          }
+          return success;
         }
       });
       
@@ -887,21 +899,43 @@ public class RoleShopHandler {
       shopEntries.add(new ShopEntry(Items.SPECTRAL_ARROW.getDefaultInstance(), 75, ShopEntry.Type.WEAPON) {
         @Override
         public boolean onBuy(@NotNull Player player) {
-          // 检查背包内缓慢箭数量(最多2个)
           if (!(player instanceof ServerPlayer sp)) return false;
-          int itemCount = SREItemUtils.countItem(player, Items.SPECTRAL_ARROW);
+          
+          // 检查是否是盗猎者
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isRole(player, ModRoles.POACHER)) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.role_required")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+          
+          // 严格检查背包内缓慢箭数量（最多2个）
+          int itemCount = 0;
+          for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(Items.SPECTRAL_ARROW)) {
+              itemCount++;
+            }
+          }
+          
+          // 严格限制：达到或超过2个时禁止购买
           if (itemCount >= 2) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.slow_arrow_limit")
                 .withStyle(ChatFormatting.RED), true);
             return false;
           }
           
-          // 每次购买时创建新的缓慢箭物品
+          // 每次购买时创建新的缓慢箭物品（避免共享引用）
           ItemStack slowArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
           slowArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.poacher_slow_arrow.name"));
           slowArrow.set(DataComponents.MAX_STACK_SIZE, 1);
           
-          return RoleUtils.insertStackInFreeSlot(player, slowArrow);
+          // 尝试放入背包，失败则返回false
+          boolean success = RoleUtils.insertStackInFreeSlot(player, slowArrow);
+          if (!success) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.inventory_full")
+                .withStyle(ChatFormatting.RED), true);
+          }
+          return success;
         }
       });
       
@@ -911,8 +945,23 @@ public class RoleShopHandler {
         public boolean onBuy(@NotNull Player player) {
           if (!(player instanceof ServerPlayer sp)) return false;
           
-          // 检查背包内是否已有弩
-          int crossbowCount = SREItemUtils.countItem(player, Items.CROSSBOW);
+          // 检查是否是盗猎者
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isRole(player, ModRoles.POACHER)) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.role_required")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+          
+          // 严格检查背包内是否已有弩（包括所有类型的弩）
+          int crossbowCount = 0;
+          for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(Items.CROSSBOW)) {
+              crossbowCount++;
+            }
+          }
+          
+          // 严格限制：已有弩时禁止购买
           if (crossbowCount >= 1) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.poacher.crossbow_limit")
                 .withStyle(ChatFormatting.RED), true);
@@ -926,7 +975,13 @@ public class RoleShopHandler {
           // 确保不是不可破坏的
           crossbow.remove(DataComponents.UNBREAKABLE);
           
-          return RoleUtils.insertStackInFreeSlot(player, crossbow);
+          // 尝试放入背包，失败则返回false
+          boolean success = RoleUtils.insertStackInFreeSlot(player, crossbow);
+          if (!success) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.inventory_full")
+                .withStyle(ChatFormatting.RED), true);
+          }
+          return success;
         }
       });
       

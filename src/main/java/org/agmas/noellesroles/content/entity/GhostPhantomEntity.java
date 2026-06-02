@@ -19,7 +19,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
-import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
@@ -188,14 +187,7 @@ public class GhostPhantomEntity extends LivingEntity {
             if (gameWorld.isRole(owner, ModRoles.BETTER_KILLER_GHOST)) {
                 BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(owner);
                 if (ghostComp != null && ghostComp.isInShadowMode) {
-                    // 参照傀儡师机制：使用pierceDeath标志绕过幽影模式的死亡免疫
-                    owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
-                    ModEffects.pierceDeath = true;
-                    GameUtils.killPlayer(owner, true, player instanceof ServerPlayer ? (ServerPlayer) player : null, deathReason);
-                    ModEffects.pierceDeath = false;
-                    
-                    // 强制退出幽影模式（在死亡之后清理状态）
-                    ghostComp.exitShadowModeForced();
+                    ghostComp.onPhantomDeath(player, deathReason);
                 }
             }
         }
@@ -207,39 +199,29 @@ public class GhostPhantomEntity extends LivingEntity {
         if (level().isClientSide())
             return false;
 
-        // 忽略虚空伤害和卡墙伤害
-        if (source.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL))
+        // 只免疫虚空和挤压伤害
+        if (source.is(DamageTypes.IN_WALL))
             return false;
         
-        // 忽略原版玩家攻击(拳头)
-        if (source.is(net.minecraft.world.damagesource.DamageTypes.PLAYER_ATTACK))
-            return false;
+        // 调用父类处理伤害（允许所有攻击）
+        boolean result = super.hurt(source, amount);
 
-        // 获取攻击者
-        Player attacker = source.getEntity() instanceof Player ? (Player) source.getEntity() : null;
-        
-        // 如果是玩家攻击，调用playerHurt处理逻辑
-        if (attacker != null) {
-            this.playerHurt(attacker, GameConstants.DeathReasons.PHANTOM_DESTROYED);
-        } else {
-            // 非玩家因素摧毁（如距离过远），也导致鬼魅死亡
-            ServerPlayer owner = this.getOwner();
+        // 如果死亡，通知鬼魅组件
+        if (this.isDeadOrDying()) {
+            Player owner = getOwner();
             if (owner != null) {
                 BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(owner);
                 if (ghostComp != null && ghostComp.isInShadowMode) {
-                    GameUtils.killPlayer(owner, true, null, GameConstants.DeathReasons.PHANTOM_DESTROYED);
-                    ghostComp.exitShadowModeForced();
+                    // 调用onPhantomDeath让鬼魅玩家死亡
+                    ghostComp.onPhantomDeath(
+                        source.getEntity() instanceof Player ? (Player) source.getEntity() : null,
+                        GameConstants.DeathReasons.GENERIC
+                    );
                 }
             }
         }
-        
-        // 先调用父类处理伤害，再销毁实体
-        boolean result = super.hurt(source, amount);
-        
-        // 销毁实体
-        this.discard();
-        
-        return result || true; // 确保返回true
+
+        return result;
     }
 
     @Override

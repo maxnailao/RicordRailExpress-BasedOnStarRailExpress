@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.killer.betterkillerghost;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -21,6 +22,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -60,21 +62,6 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     public static final double MAX_DISTANCE = 20.0;
 
     static {
-        // 注册死亡免疫事件 - 幽影模式下无法被击杀
-        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
-            // 检查玩家是否有该组件(假人玩家可能没有)
-            if (!KEY.maybeGet(player).isPresent()) {
-                return true; // 没有组件的玩家正常死亡
-            }
-            
-            BetterKillerGhostComponent comp = KEY.get(player);
-            if (comp != null && comp.isInShadowMode) {
-                // 幽影模式下免疫所有伤害，无法被击杀
-                return false;
-            }
-            return true;
-        });
-        
         // 注册左键攻击拦截事件 - 幽影模式下禁止左键攻击
         AttackEntityCallback.EVENT.register((attacker, level, hand, entity, hitResult) -> {
             if (!(attacker instanceof ServerPlayer serverPlayer)) {
@@ -113,6 +100,46 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             }
             
             return net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));
+        });
+        
+        // 注册实体受伤事件 - 幽影模式下鬼魅本体无敌（不能被其他玩家攻击）
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (!(entity instanceof ServerPlayer player)) {
+                return true; // 非玩家实体，允许伤害
+            }
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            if (!gameWorld.isRole(player, ModRoles.BETTER_KILLER_GHOST)) {
+                return true; // 非鬼魅角色，允许伤害
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(player);
+            if (comp != null && comp.isInShadowMode) {
+                // 幽影模式下鬼魅本体无敌，拒绝所有伤害
+                return false;
+            }
+            
+            return true; // 非幽影模式，允许伤害
+        });
+        
+        // 注册死亡事件 - 幽影模式下免疫死亡，但pierceDeath可以绕过
+        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            // 先检查pierceDeath标志（由ModEffects设置，用于幻影摧毁时绕过免疫）
+            if (ModEffects.pierceDeath) {
+                return true; // pierceDeath=true时允许死亡
+            }
+            
+            // 检查玩家是否有该组件(假人玩家可能没有)
+            if (!KEY.maybeGet(player).isPresent()) {
+                return true; // 没有组件的玩家正常死亡
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(player);
+            if (comp != null && comp.isInShadowMode) {
+                // 幽影模式下免疫死亡
+                return false;
+            }
+            return true;
         });
     }
 
@@ -404,6 +431,50 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         this.teleportCount = 3;
 
         sync();
+    }
+
+    /**
+     * 幻影被摧毁时调用（由GhostPhantomEntity.hurt()调用）
+     * 完全参照傀儡师onBodyDeath()实现
+     */
+    public void onPhantomDeath(Player killer, ResourceLocation deathReason) {
+        if (!isInShadowMode)
+            return;
+        if (!(player instanceof ServerPlayer serverPlayer))
+            return;
+
+        // 移除幻影实体
+        GhostPhantomEntity phantom = getPhantomEntity();
+        if (phantom != null) {
+            phantom.discard();
+        }
+
+        // ⚠️ 关键：先退出幽影模式，再调用killPlayer
+        // 这样ALLOW_DAMAGE就不会返回false阻止死亡
+        this.isInShadowMode = false;
+        this.phantomUuid = null;
+        this.teleportCount = 3;
+        
+        // 移除隐身效果
+        player.removeEffect(MobEffects.INVISIBILITY);
+        
+        // 现在可以安全地杀死玩家了（因为已经不在幽影模式）
+        GameUtils.killPlayer(serverPlayer, true, killer, deathReason);
+
+        // 发送消息
+        serverPlayer.displayClientMessage(
+                Component.translatable("message.noellesroles.betterkillerghost.phantom_destroyed")
+                        .withStyle(net.minecraft.ChatFormatting.DARK_RED, net.minecraft.ChatFormatting.BOLD),
+                false);
+
+        this.sync();
+    }
+
+    /**
+     * 幻影被摧毁时调用（无攻击者情况）
+     */
+    public void onPhantomDeath() {
+        this.onPhantomDeath(null, GameConstants.DeathReasons.GENERIC);
     }
 
     /**

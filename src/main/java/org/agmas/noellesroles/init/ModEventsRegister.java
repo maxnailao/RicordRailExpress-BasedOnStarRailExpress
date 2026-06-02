@@ -92,6 +92,7 @@ import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinFistPunc
 import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooDeathHandler;
+import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
 import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopWinChecker;
 import org.agmas.noellesroles.game.roles.vigilante.guard.GuardPlayerHandler;
@@ -284,6 +285,36 @@ public class ModEventsRegister {
         puppeteerComp.onPuppetDeath();
 
         return true; // 阻止真正死亡
+    }
+
+    /**
+     * 处理鬼魅幻影死亡 - 完全参照傀儡师机制
+     */
+    private static boolean handleGhostPhantomDeath(Player victim, ResourceLocation deathReason) {
+        if (victim == null || victim.level().isClientSide())
+            return false;
+
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+        
+        // 检查是否是鬼魅角色
+        if (!gameWorld.isRole(victim, ModRoles.BETTER_KILLER_GHOST))
+            return false;
+
+        BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(victim);
+        
+        // 检查是否处于幽影模式
+        if (ghostComp == null || !ghostComp.isInShadowMode)
+            return false;
+
+        // 检查死亡原因是否为幻影被摧毁
+        // 如果是因为幻影被摧毁导致的死亡，允许死亡发生并清理状态
+        if (deathReason != null && deathReason.toString().contains("phantom")) {
+            // 强制退出幽影模式（清理状态）
+            ghostComp.exitShadowModeForced();
+            return true; // 允许继续死亡流程
+        }
+
+        return false;
     }
 
     private static boolean handleDefibrillator(Player victim) {
@@ -1867,6 +1898,11 @@ public class ModEventsRegister {
             return true; // 允许死亡
         });
         AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
+
+            // 检查鬼魅幻影状态 - 完全参照傀儡师机制
+            if (handleGhostPhantomDeath(victim, deathReason)) {
+                return true; // 允许死亡（幻影被摧毁，鬼魅应该死亡）
+            }
 
             // 检查傀儡师假人状态
             if (handlePuppeteerDeath(victim, deathReason)) {
