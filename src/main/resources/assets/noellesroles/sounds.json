@@ -7,10 +7,10 @@
       }
     ]
   },
-  "noellesroles.FART": {
+  "noellesroles.fart": {
     "sounds": [
       {
-        "name": "noellesroles:FART",
+        "name": "noellesroles:fart",
         "stream": false
       }
     ]
