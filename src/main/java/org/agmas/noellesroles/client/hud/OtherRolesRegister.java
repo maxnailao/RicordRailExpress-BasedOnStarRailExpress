@@ -41,6 +41,7 @@ public class OtherRolesRegister {
         TrapperHud.register();
         VultureHud.register();
         WaterGhostHud.register();
+        IntelligenceHud.register();
         RefugeeHud.register();
         LoversHud.register();
         BroadcasterHud.register();

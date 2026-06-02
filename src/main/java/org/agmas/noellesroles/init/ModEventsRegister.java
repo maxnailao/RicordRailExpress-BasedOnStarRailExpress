@@ -89,6 +89,7 @@ import org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinFistPunchHandler;
+import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
@@ -1592,6 +1593,7 @@ public class ModEventsRegister {
             return false;
         });
         AwesomePlayerComponent.registerEvents();
+        IntelligencePlayerComponent.registerEvents();
         TrueKillerFinder.registerEvents();
         ModdedRoleRemoved.EVENT.register((player, role) -> {
             if (role != null) {

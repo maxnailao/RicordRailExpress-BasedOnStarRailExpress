@@ -363,6 +363,13 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
+            // 情报官角色初始化
+            if (role.identifier().equals(ModRoles.INTELLIGENCE.identifier())) {
+                var comp = ModComponents.INTELLIGENCE.get(player);
+                comp.init();
+                comp.sync();
+                return;
+            }
         });
     }
 

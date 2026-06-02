@@ -1827,6 +1827,8 @@
   "hud.noellesroles.water_ghost.skill_ready": "Skill ready!",
   "hud.noellesroles.sea_king.skill_cooldown": "Sea Prison cooldown: %s seconds",
   "hud.noellesroles.sea_king.skill_ready": "Sea Prison ready!",
+  "hud.noellesroles.intelligence.cooldown": "Monitor cooldown: %ss, Remaining: %s",
+  "hud.noellesroles.intelligence.ready": "Monitor ready, Remaining: %s",
   "hud.noellesroles.water_ghost.skill_duration": "Dolphin's Grace: %s seconds",
   "hud.noellesroles.water_ghost.dry_death": "Dehydration countdown: %s seconds",
   "hud.accountant.toggle_mode": "Sneak + %s to switch mode",
@@ -2715,5 +2717,14 @@
   "message.noellesroles.poacher.poison_arrow_limit": "You already have 2 poison arrows, cannot buy more",
   "message.noellesroles.poacher.slow_arrow_limit": "You already have 2 slow arrows, cannot buy more",
   "message.noellesroles.poacher.crossbow_limit": "You already have a crossbow, cannot buy another",
-  "message.noellesroles.poacher.bow_cooldown": "Bow is on cooldown, %d seconds remaining"
+  "message.noellesroles.poacher.bow_cooldown": "Bow is on cooldown, %d seconds remaining",
+  "message.noellesroles.intelligence.monitor_triggered": "§c§lMonitor triggered! Player death detected!",
+  "message.noellesroles.intelligence.monitor_placed": "§aMonitor deployed",
+  "message.noellesroles.intelligence.max_monitors": "§cMaximum number of monitors reached (2)",
+  "message.noellesroles.intelligence.already_purchased": "§cAlready purchased intel this game",
+  "item.noellesroles.intelligence_report": "Intel Report",
+  "item.noellesroles.intelligence_report.lore": "Currently alive killer roles:",
+  "item.noellesroles.intelligence_report.no_killer": "No killers alive",
+  "announcement.star.goals.intelligence": "Gather intelligence to help the Civilian faction win",
+  "info.screen.roleid.intelligence": "Friend, I have some interesting intel here\nCivilian Faction\nSpend 150 coins to deploy a monitor (max 2 per game).\nWhen a player dies within 5 blocks of a monitor, it triggers and alerts you.\nTriggered monitors highlight nearby players for 2 seconds.\nShop can purchase Intel (300 coins) to see alive killer roles."
 }

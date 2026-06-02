@@ -38,6 +38,7 @@ import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.Innocent.singer.SingerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent;
@@ -2359,5 +2360,58 @@ public class RoleShopHandler {
         ModItems.BLOOD_BOTTLE.getDefaultInstance(),
         75,
         ShopEntry.Type.TOOL));
+
+    // 情报官商店
+    {
+      var SHOP = new ArrayList<ShopEntry>();
+      ItemStack intelPaper = Items.PAPER.getDefaultInstance();
+      intelPaper.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.intelligence_report").withStyle(ChatFormatting.GOLD));
+      SHOP.add(new ShopEntry(intelPaper, 300, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          IntelligencePlayerComponent comp = ModComponents.INTELLIGENCE.get(player);
+          if (comp.intelPurchased) {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.intelligence.already_purchased")
+                    .withStyle(ChatFormatting.RED),
+                true);
+            return false;
+          }
+          // 生成情报纸
+          ItemStack report = Items.PAPER.getDefaultInstance();
+          report.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.intelligence_report").withStyle(ChatFormatting.GOLD));
+
+          java.util.List<Component> lore = new java.util.ArrayList<>();
+          lore.add(Component.translatable("item.noellesroles.intelligence_report.lore")
+              .withStyle(ChatFormatting.GRAY));
+
+          boolean foundKiller = false;
+          for (Player p : player.level().players()) {
+            if (p.isSpectator()) continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
+            SRERole role = SREGameWorldComponent.KEY.get(player.level()).getRole(p);
+            if (role != null && role.canUseKiller()) {
+              foundKiller = true;
+              lore.add(Component.translatable(
+                  "announcement.star.role." + role.identifier().getPath())
+                  .withStyle(ChatFormatting.DARK_RED));
+            }
+          }
+          if (!foundKiller) {
+            lore.add(Component.translatable("item.noellesroles.intelligence_report.no_killer")
+                .withStyle(ChatFormatting.GREEN));
+          }
+
+          report.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+
+          comp.intelPurchased = true;
+          comp.sync();
+          return RoleUtils.insertStackInFreeSlot(player, report);
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.INTELLIGENCE_ID, SHOP);
+    }
   }
 }

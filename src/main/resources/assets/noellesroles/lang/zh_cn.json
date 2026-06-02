@@ -2745,5 +2745,16 @@
   "message.noellesroles.poacher.poison_arrow_limit": "你已持有2个毒箭，无法购买更多",
   "message.noellesroles.poacher.slow_arrow_limit": "你已持有2个缓慢箭，无法购买更多",
   "message.noellesroles.poacher.crossbow_limit": "你已持有弩，无法购买第二个",
-  "message.noellesroles.poacher.bow_cooldown": "弓正在冷却中，剩余 %d 秒"
+  "message.noellesroles.poacher.bow_cooldown": "弓正在冷却中，剩余 %d 秒",
+  "message.noellesroles.intelligence.monitor_triggered": "§c§l监视器触发！检测到玩家死亡！",
+  "message.noellesroles.intelligence.monitor_placed": "§a监视器已部署",
+  "message.noellesroles.intelligence.max_monitors": "§c已达到最大监视器数量 (2个)",
+  "message.noellesroles.intelligence.already_purchased": "§c本局游戏已购买过情报",
+  "item.noellesroles.intelligence_report": "情报",
+  "item.noellesroles.intelligence_report.lore": "当前场上剩余杀手阵营身份:",
+  "item.noellesroles.intelligence_report.no_killer": "无杀手存活",
+  "hud.noellesroles.intelligence.cooldown": "放置冷却中:%s秒 还可放置:%s个",
+  "hud.noellesroles.intelligence.ready": "可放置监视器:%s个",
+  "announcement.star.goals.intelligence": "收集情报，帮助平民阵营获胜",
+  "info.screen.roleid.intelligence": "朋友，我这里有些有趣的情报\n平民阵营\n花费150金币部署监视器（每局最多2个）。\n当玩家在监视器5格内死亡时触发并提醒你。\n触发后高亮附近玩家2秒。\n商店可购买情报（300金币）获知存活杀手职业。"
 }

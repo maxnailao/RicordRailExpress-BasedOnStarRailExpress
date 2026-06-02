@@ -20,6 +20,7 @@ import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPla
 import org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.Innocent.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerComponent;
@@ -390,6 +391,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent> MORTICIAN_BODYMAKER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
       org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent.class);
+
+  // 情报官组件 - 平民阵营，监视器+情报购买
+  public static final ComponentKey<IntelligencePlayerComponent> INTELLIGENCE = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "intelligence"),
+      IntelligencePlayerComponent.class);
 
   // 黑警组件 - 独立胜利中立阵营
   public static final ComponentKey<CorruptCopPlayerComponent> CORRUPT_COP = ComponentRegistry.getOrCreate(
@@ -808,6 +814,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CHILD)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent::new);
+
+    // 注册情报官组件 - 平民阵营，监视器+情报购买
+    registry.beginRegistration(Player.class, INTELLIGENCE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(IntelligencePlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

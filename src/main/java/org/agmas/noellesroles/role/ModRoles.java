@@ -44,6 +44,7 @@ import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent
 import org.agmas.noellesroles.game.roles.Innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.super_star.SuperStarPlayerComponent;
@@ -140,6 +141,7 @@ public class ModRoles {
     public static ResourceLocation AWESOME_BINGLUS_ID = Noellesroles.id("awesome_binglus");
     public static ResourceLocation VOODOO_ID = Noellesroles.id("voodoo");
     public static ResourceLocation RECALLER_ID = Noellesroles.id("recaller");
+    public static final ResourceLocation INTELLIGENCE_ID = Noellesroles.id("intelligence");
     public static final ResourceLocation BETTER_VIGILANTE_ID = Noellesroles.id("better_vigilante");
     public static final ResourceLocation BEST_VIGILANTE_ID = Noellesroles.id("best_vigilante");
     public static final ResourceLocation BASEBALL_PLAYER_ID = Noellesroles.id("baseball_player");
@@ -704,6 +706,22 @@ public class ModRoles {
             .registerRole(new NormalRole(RECALLER_ID, new Color(135, 206, 235).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setComponentKey(RecallerPlayerComponent.KEY));
+
+    /**
+     * 情报官角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 技能：花费150金币在脚下部署监视器（最多2个），监视器5格内有玩家死亡时提醒并高亮玩家2秒
+     * - 商店：情报(300金币)，购买后获得一张纸显示当前场上剩余杀手职业
+     */
+    public static SRERole INTELLIGENCE = TMMRoles
+            .registerRole(new NormalRole(INTELLIGENCE_ID, new Color(0, 150, 136).getRGB(), true,
+                    false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
+                    .setComponentKey(ModComponents.INTELLIGENCE))
+            .setCanSeeCoin(true);
     public static SRERole BETTER_VIGILANTE = TMMRoles
             .registerRole(new NormalRole(BETTER_VIGILANTE_ID, new Color(0, 255, 255).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)

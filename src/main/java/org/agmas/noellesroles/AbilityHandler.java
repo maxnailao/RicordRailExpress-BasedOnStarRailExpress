@@ -31,6 +31,7 @@ import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerCo
 import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
@@ -592,6 +593,34 @@ public class AbilityHandler {
             }
             return;
         }
+        // 情报官技能 - 部署监视器
+        if (gameWorldComponent.isRole(player, ModRoles.INTELLIGENCE)) {
+            SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
+            if (abilityPlayerComponent.cooldown > 0) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED), true);
+                return;
+            }
+            IntelligencePlayerComponent intelComp = ModComponents.INTELLIGENCE.get(player);
+            if (!intelComp.canPlaceMonitor()) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.intelligence.max_monitors").withStyle(ChatFormatting.RED), true);
+                return;
+            }
+            if (playerShopComponent.balance < 150) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.insufficient_funds").withStyle(ChatFormatting.RED), true);
+                return;
+            }
+            playerShopComponent.addToBalance(-150);
+            playerShopComponent.sync();
+            intelComp.addMonitor(player.getX(), player.getY(), player.getZ(), player.level().dimension().location());
+            abilityPlayerComponent.setCooldown(20 * 5);
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.intelligence.monitor_placed").withStyle(ChatFormatting.GREEN), true);
+            return;
+        }
+
         // 处理超级亡命徒技能
         if (gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
             SuperLooseEndPlayerComponent comp = SuperLooseEndPlayerComponent.KEY.get(player);
@@ -666,6 +695,36 @@ public class AbilityHandler {
                     return;
                 }
             }
+            return;
+        }
+        // 情报官技能 - 部署监视器
+        if (gameWorldComponent.isRole(player, ModRoles.INTELLIGENCE)) {
+            if (abilityPlayerComponent.cooldown > 0) {
+                player.displayClientMessage(
+                    Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED),
+                    true);
+                return;
+            }
+            IntelligencePlayerComponent intelComp = ModComponents.INTELLIGENCE.get(player);
+            if (!intelComp.canPlaceMonitor()) {
+                player.displayClientMessage(
+                    Component.translatable("message.noellesroles.intelligence.max_monitors").withStyle(ChatFormatting.RED),
+                    true);
+                return;
+            }
+            if (playerShopComponent.balance < 150) {
+                player.displayClientMessage(
+                    Component.translatable("message.noellesroles.insufficient_funds").withStyle(ChatFormatting.RED),
+                    true);
+                return;
+            }
+            playerShopComponent.addToBalance(-150);
+            playerShopComponent.sync();
+            intelComp.addMonitor(player.getX(), player.getY(), player.getZ(), player.level().dimension().location());
+            abilityPlayerComponent.setCooldown(20 * 5);
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.intelligence.monitor_placed").withStyle(ChatFormatting.GREEN),
+                true);
             return;
         }
 
