@@ -34,12 +34,14 @@ public class OtherRolesRegister {
         PsychologistHud.register();
         PuppeteerHud.register();
         RecallerHud.register();
+        RecallKillerHud.register();
         SeaKingHud.register();
         SingerHud.register();
         SuperStarHud.register();
         TrapperHud.register();
         VultureHud.register();
         WaterGhostHud.register();
+        IntelligenceHud.register();
         RefugeeHud.register();
         LoversHud.register();
         BroadcasterHud.register();

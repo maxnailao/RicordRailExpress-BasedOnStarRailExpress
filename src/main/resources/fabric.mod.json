@@ -13,8 +13,7 @@
   "environment": "*",
   "entrypoints": {
     "mixinsquared": [
-      "io.wifi.WatheMixinBlocker",
-      "io.wifi.SodiumExtraLightOptionMixinBlocker"
+      "io.wifi.WatheMixinBlocker"
     ],
     "preLaunch": [
       "io.wifi.WatheBlocker"
@@ -40,7 +39,6 @@
     ],
     "cardinal-components": [
       "org.agmas.noellesroles.component.ModComponents",
-      "org.agmas.noellesroles.cca.NRComponents",
       "pro.fazeclan.river.stupid_express.constants.SEComponents",
       "org.agmas.harpymodloader.component.HarpyModLoaderComponents",
       "io.wifi.starrailexpress.cca.SREComponents"
@@ -48,7 +46,6 @@
     "voicechat": [
       "org.agmas.noellesroles.voice.NoellesrolesVoiceChatPlugin",
       "org.agmas.noellesroles.voice.HeliumBuzzVoicechatPlugin",
-      "org.agmas.noellesroles.voice.EmbalmerPitchPlugin",
       "pro.fazeclan.river.stupid_express.StupidExpressVoiceChatPlugin",
       "io.wifi.starrailexpress.compat.TrainVoicePlugin"
     ],
@@ -74,8 +71,6 @@
       "noellesroles:dio",
       "noellesroles:recaller",
       "noellesroles:vulture",
-      "noellesroles:pelican",
-      "noellesroles:godfather",
       "noellesroles:broadcaster",
       "noellesroles:ghost",
       "noellesroles:thief",
@@ -153,6 +148,7 @@
       "noellesroles:embalmer",
       "noellesroles:skincrawler",
 
+      "noellesroles:corrupt_cop",
       "stupid_express:doused",
       "stupid_express:custom_winner",
       "stupid_express:cooldown",
@@ -243,14 +239,9 @@
     "sre_resource": "*"
   },
   "recommends": {
-    "sodium": "*",
-    "sodium-extra": "*"
+    "sodium": "*"
   },
   "conflicts": {
     "customskinloader": "*"
-  },
-  "breaks": {
-    "sodiumoptionsapi": "*",
-    "sodiumextras": "*"
   }
 }

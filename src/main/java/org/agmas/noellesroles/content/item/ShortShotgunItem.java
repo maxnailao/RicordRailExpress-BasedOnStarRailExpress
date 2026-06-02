@@ -73,14 +73,57 @@ public class ShortShotgunItem extends Item {
         // 生成烈焰弹粒子效果
         spawnFlameParticles(serverLevel, player);
 
-        // 2格扇形范围检测：基于方块判定，扇形内不完整的方块也算一格
+        // 扇形范围检测：基于方块判定，扇形内不完整的方块也算一格
         Vec3 look = player.getLookAngle();
         Vec3 l2 = new Vec3(look.x, 0, look.z);
         double llen = Math.sqrt(l2.x * l2.x + l2.z * l2.z);
         if (llen > 0) {
             Vec3 nlook = l2.scale(1.0 / llen);
             double cosHalfAngle = Math.cos(Math.toRadians(35.0)); // 70度扇形
-            double maxRange = 2.0; // 2格范围
+            double maxRange = 3.0; // 3格范围，可以改大，比如改成4.0或5.0
+
+            //可视化
+            // 可视化开关
+            //可视化
+            boolean visualize = true;
+
+            if (visualize) {
+                double halfAngleDeg = 35.0;
+
+                // 使用与判定完全相同的方向向量
+                double yawRad = Math.atan2(nlook.z, nlook.x);
+
+                // 画得密一些，r 步长 0.2，角度步长更密
+                for (double r = 0.5; r <= maxRange; r += 0.2) {
+                    // 画边缘线 - 左边缘和右边缘用高亮粒子
+                    double leftAngle = -Math.toRadians(halfAngleDeg) + yawRad;
+                    double lx = player.getX() + Math.cos(leftAngle) * r;
+                    double lz = player.getZ() + Math.sin(leftAngle) * r;
+                    ((ServerLevel)world).sendParticles(ParticleTypes.END_ROD, lx, player.getY() + 1.0, lz, 1, 0, 0.1, 0, 0);
+
+                    double rightAngle = Math.toRadians(halfAngleDeg) + yawRad;
+                    double rx = player.getX() + Math.cos(rightAngle) * r;
+                    double rz = player.getZ() + Math.sin(rightAngle) * r;
+                    ((ServerLevel)world).sendParticles(ParticleTypes.END_ROD, rx, player.getY() + 1.0, rz, 1, 0, 0.1, 0, 0);
+
+                    // 画填充：角度步长 3 度
+                    /*for (double angleDeg = -halfAngleDeg; angleDeg <= halfAngleDeg; angleDeg += 3) {
+                        double angleRad = Math.toRadians(angleDeg) + yawRad;
+                        double px = player.getX() + Math.cos(angleRad) * r;
+                        double pz = player.getZ() + Math.sin(angleRad) * r;
+                        // 使用红色粒子更明显
+                        ((ServerLevel)world).sendParticles(ParticleTypes.GLOW, px, player.getY() + 0.8, pz, 1, 0, 0, 0, 0.05);
+                    }*/
+                }
+
+                // 额外：画出最外缘的弧线
+                for (double angleDeg = -halfAngleDeg; angleDeg <= halfAngleDeg; angleDeg += 2) {
+                    double angleRad = Math.toRadians(angleDeg) + yawRad;
+                    double px = player.getX() + Math.cos(angleRad) * maxRange;
+                    double pz = player.getZ() + Math.sin(angleRad) * maxRange;
+                    ((ServerLevel)world).sendParticles(ParticleTypes.FLAME, px, player.getY() + 1.0, pz, 1, 0, 0.1, 0, 0);
+                }
+            }
 
             int pBlockX = player.blockPosition().getX();
             int pBlockZ = player.blockPosition().getZ();
@@ -88,11 +131,21 @@ public class ShortShotgunItem extends Item {
 
             java.util.Set<Integer> processed = new java.util.HashSet<>();
 
-            // 遍历玩家前方2格范围内的所有方块
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
+            // 动态遍历范围：根据maxRange计算需要遍历的方块范围
+            int rangeInt = (int) Math.ceil(maxRange) + 2; // 向上取整后+1确保覆盖边界
+            for (int dx = -rangeInt; dx <= rangeInt; dx++) {
+                for (int dz = -rangeInt; dz <= rangeInt; dz++) {
                     int bx = pBlockX + dx;
                     int bz = pBlockZ + dz;
+
+                    // 快速排除：计算方块中心到玩家的水平距离，超出maxRange+0.7的直接跳过（0.7是方块半对角线长度）
+                    double dxPos = bx + 0.5 - player.getX();
+                    double dzPos = bz + 0.5 - player.getZ();
+                    double distSq = dxPos * dxPos + dzPos * dzPos;
+                    double maxDist = maxRange + 1.0; // 方块最大可能距离
+                    if (distSq > maxDist * maxDist) {
+                        continue;
+                    }
 
                     // 只检查前方（点积大于0的方块，排除身后和自己站立的方块）
                     if (dx * nlook.x + dz * nlook.z <= 0.1)
@@ -117,6 +170,7 @@ public class ShortShotgunItem extends Item {
                 }
             }
         }
+
 
         if (!player.isCreative()) {
             InteractionHand usedHand = player.getUsedItemHand();

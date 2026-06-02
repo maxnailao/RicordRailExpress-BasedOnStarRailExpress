@@ -16,6 +16,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
+import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.jetbrains.annotations.NotNull;
 
 public record KnifeStabPayload(int target) implements CustomPacketPayload {
@@ -32,7 +36,38 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
-            if (!(player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target))
+            Entity targetEntity = player.serverLevel().getEntity(payload.target());
+            
+            // 检查是否是鬼魅幻影实体
+            if (targetEntity instanceof GhostPhantomEntity phantomEntity) {
+                if (phantomEntity.distanceTo(player) > 4.0)
+                    return;
+                phantomEntity.playerHurt(player, Noellesroles.id("knife_ghost_phantom"));
+                phantomEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+                player.swing(InteractionHand.MAIN_HAND);
+                var cooldowns = player.getCooldowns();
+                if (!player.isCreative()) {
+                    cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
+                }
+                return;
+            }
+            
+            // 检查是否是傀儡师假人
+            if (targetEntity instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
+                if (puppeteerBodyEntity.distanceTo(player) > 4.0)
+                    return;
+                puppeteerBodyEntity.playerHurt(player, Noellesroles.id("knife_puppeteer_body"));
+                puppeteerBodyEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+                player.swing(InteractionHand.MAIN_HAND);
+                var cooldowns = player.getCooldowns();
+                if (!player.isCreative()) {
+                    cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
+                }
+                return;
+            }
+            
+            // 检查是否是玩家
+            if (!(targetEntity instanceof ServerPlayer target))
                 return;
             if (target.distanceTo(player) > 3.0)
                 return;

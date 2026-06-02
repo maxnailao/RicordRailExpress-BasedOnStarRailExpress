@@ -17,8 +17,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
+import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.jetbrains.annotations.NotNull;
 
 public record NunchuckHitPayload(int targetId, int direction) implements CustomPacketPayload {
@@ -166,9 +170,38 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
     public static class Receiver implements ServerPlayNetworking.PlayPayloadHandler<NunchuckHitPayload> {
         @Override
         public void receive(@NotNull NunchuckHitPayload payload, ServerPlayNetworking.@NotNull Context context) {
-            var target = context.player().serverLevel().getEntity(payload.targetId());
-            if (target instanceof Player targetP) {
-                onHurt(context.player(), targetP, payload.direction);
+            ServerPlayer attacker = context.player();
+            Entity targetEntity = attacker.serverLevel().getEntity(payload.targetId());
+            
+            // 检查是否是鬼魅幻影实体
+            if (targetEntity instanceof GhostPhantomEntity phantomEntity) {
+                if (phantomEntity.distanceTo(attacker) > 5.0)
+                    return;
+                phantomEntity.playerHurt(attacker, Noellesroles.id("nunchuck_ghost_phantom"));
+                attacker.level().playSound(null, attacker.getX(), attacker.getEyeY(), attacker.getZ(),
+                        TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 1.0f, 1.0f);
+                if (!attacker.isCreative()) {
+                    attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 5 * 20);
+                }
+                return;
+            }
+            
+            // 检查是否是傀儡师假人
+            if (targetEntity instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
+                if (puppeteerBodyEntity.distanceTo(attacker) > 5.0)
+                    return;
+                puppeteerBodyEntity.playerHurt(attacker, Noellesroles.id("nunchuck_puppeteer_body"));
+                attacker.level().playSound(null, attacker.getX(), attacker.getEyeY(), attacker.getZ(),
+                        TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 1.0f, 1.0f);
+                if (!attacker.isCreative()) {
+                    attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 5 * 20);
+                }
+                return;
+            }
+            
+            // 检查是否是玩家
+            if (targetEntity instanceof Player targetP) {
+                onHurt(attacker, targetP, payload.direction);
             }
         }
     }

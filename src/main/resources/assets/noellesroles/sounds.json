@@ -1,0 +1,34 @@
+{
+  "noellesroles.child_laugh": {
+    "sounds": [
+      {
+        "name": "noellesroles:child_laugh",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.fart": {
+    "sounds": [
+      {
+        "name": "noellesroles:fart",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.fei": {
+    "sounds": [
+      {
+        "name": "noellesroles:fei",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.squeaky_toy": {
+    "sounds": [
+      {
+        "name": "noellesroles:squeaky_toy",
+        "stream": false
+      }
+    ]
+  }
+}

@@ -5,6 +5,7 @@ import net.minecraft.sounds.SoundEvent;
 import org.agmas.noellesroles.Noellesroles;
 
 public class NRSounds {
+
     public static final SoundEventRegistrar registrar = new SoundEventRegistrar(Noellesroles.MOD_ID);
     public static final SoundEvent GAMBER_DEATH = registrar.create("noellesroles.gamber_died");
     public static final SoundEvent MUSIC_CLOCK = registrar.create("noellesroles.clock");
@@ -34,7 +35,13 @@ public class NRSounds {
     public static final SoundEvent MAFIA = registrar.create("noellesroles.mafia");
     public static final SoundEvent BAKA_BAKA = registrar.create("plush.baka");
 
+    //熊孩子
+    public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
+    public static final SoundEvent FART = registrar.create("noellesroles.fart");
+    public static final SoundEvent FEI = registrar.create("noellesroles.fei");
+    public static final SoundEvent SQUEAKY_TOY = registrar.create("noellesroles.squeaky_toy");
     public static void initialize() {
         registrar.registerEntries();
     }
+
 }

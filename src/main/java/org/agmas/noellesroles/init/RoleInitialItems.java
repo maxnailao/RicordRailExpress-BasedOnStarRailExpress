@@ -90,6 +90,15 @@ public class RoleInitialItems {
             items.add(() -> FunnyItems.BOWEN_BADGE.getDefaultInstance());
             INITIAL_ITEMS_MAP.put(ModRoles.JOJO, items);
         }
+
+        {
+            // 黑警初始物品(左轮手枪和撬棍)
+            List<Supplier<ItemStack>> items = new ArrayList<>();
+            items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+            items.add(() -> TMMItems.CROWBAR.getDefaultInstance());
+            INITIAL_ITEMS_MAP.put(ModRoles.CORRUPT_COP, items);
+        }
+
         // 故障机器人初始物品（无开局物品）
         INITIAL_ITEMS_MAP.put(ModRoles.GLITCH_ROBOT, new ArrayList<>());
 
@@ -106,6 +115,15 @@ public class RoleInitialItems {
             return item;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
+
+        // 盗猎者初始物品 - 弓
+        List<Supplier<ItemStack>> poacherItems = new ArrayList<>();
+        poacherItems.add(() -> {
+            var item = Items.BOW.getDefaultInstance();
+            item.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            return item;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.POACHER, poacherItems);
 
 //        //黑白
 //        List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();

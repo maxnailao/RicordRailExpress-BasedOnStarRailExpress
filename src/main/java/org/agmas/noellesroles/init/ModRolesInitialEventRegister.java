@@ -26,6 +26,7 @@ import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
@@ -60,6 +61,8 @@ public class ModRolesInitialEventRegister {
 
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
+        // 初始化熊孩子音频事件
+        org.agmas.noellesroles.game.roles.Innocent.child.ChildPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
@@ -218,16 +221,6 @@ public class ModRolesInitialEventRegister {
                     vulturePlayerComponent.sync();
                 }
             }
-            if (role.equals(ModRoles.PELICAN)) {
-                if (PelicanPlayerComponent.KEY.isProvidedBy(player)) {
-                    var pelicanComponent = PelicanPlayerComponent.KEY.get(player);
-                    pelicanComponent.init();
-                    int totalPlayers = SREGameWorldComponent.KEY.get(player.level()).getPlayerCount();
-                    double percent = NoellesRolesConfig.HANDLER.instance().pelicanEatPercentage;
-                    pelicanComponent.requiredEaten = Math.max(1, (int) Math.ceil(totalPlayers * (percent / 100.0D)) - 1);
-                    pelicanComponent.sync();
-                }
-            }
             if (role.equals(ModRoles.INSANE_KILLER)) {
                 final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
                 insaneKillerPlayerComponent.init();
@@ -365,10 +358,34 @@ public class ModRolesInitialEventRegister {
                     }
                 }
             }
+            // 熊孩子角色初始化
+            if (role.identifier().equals(ModRoles.CHILD.identifier())) {
+                var childComp = org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent.KEY.get(player);
+                childComp.init();
+                childComp.sync();
+                return;
+            }
+            // 召回杀手角色初始化
+            if (role.identifier().equals(ModRoles.RECALL_KILLER.identifier())) {
+                var comp = ModComponents.RECALL_KILLER.get(player);
+                comp.init();
+                comp.sync();
+                return;
+            }
+            // 情报官角色初始化
+            if (role.identifier().equals(ModRoles.INTELLIGENCE.identifier())) {
+                var comp = ModComponents.INTELLIGENCE.get(player);
+                comp.init();
+                comp.sync();
+                return;
+            }
         });
     }
 
-    static {
+    static {//技能注册
+        //调用熊孩子技能注册
+        org.agmas.noellesroles.game.roles.Innocent.child.ChildSkillRegistry.register();
+
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, context -> {
             ServerPlayer player = context.player();

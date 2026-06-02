@@ -25,9 +25,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
+import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,6 +57,55 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
                     1f + player.getRandom().nextFloat() * .1f - .05f);
 
+            // 检查是否是鬼魅幻影实体
+            Entity targetEntity = player.serverLevel().getEntity(payload.target());
+            if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof GhostPhantomEntity phantomEntity
+                    && phantomEntity.distanceToSqr(player) < 65 * 65) {
+                phantomEntity.playerHurt(player, Noellesroles.id("gun_ghost_phantom"));
+                
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+
+                for (ServerPlayer tracking : PlayerLookup.tracking(player))
+                    PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
+                PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
+                
+                if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
+                    var cooldowns = player.getCooldowns();
+                    if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
+                        cooldowns.addCooldown(mainHandStack.getItem(),
+                                GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
+                                        GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
+                    }
+                }
+                return;
+            }
+            
+            // 检查是否是傀儡师假人
+            if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof PuppeteerBodyEntity puppeteerBodyEntity
+                    && puppeteerBodyEntity.distanceToSqr(player) < 30 * 30) {
+                puppeteerBodyEntity.playerHurt(player, Noellesroles.id("gun_puppeteer_body"));
+                
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+
+                for (ServerPlayer tracking : PlayerLookup.tracking(player))
+                    PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
+                PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
+                
+                if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
+                    var cooldowns = player.getCooldowns();
+                    if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
+                        cooldowns.addCooldown(mainHandStack.getItem(),
+                                GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
+                                        GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
+                    }
+                }
+                return;
+            }
+            
             // cancel if derringer has been shot
             Boolean isUsed = mainHandStack.getOrDefault(SREDataComponentTypes.USED, false);
             if (mainHandStack.is(TMMItems.DERRINGER)) {

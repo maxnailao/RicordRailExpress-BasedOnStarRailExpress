@@ -191,6 +191,9 @@
   "announcement.star.role.killer": "Killer",
   "announcement.star.role.loose_end": "Outlaw",
   "announcement.star.role.vigilante": "Vigilante",
+  "announcement.star.role.ghost": "Ghost",
+  "role.sre.betterghost": "Ghost",
+  "announcement.star.role.intelligence": "Intelligence Officer",
   "announcement.star.role.unknown": "Unknown",
   "announcement.star.title.civilian": "Civilian",
   "announcement.star.title.killer": "Killer",
@@ -208,6 +211,8 @@
   "announcement.star.win.nianshou": "Nian Shou wins!",
   "announcement.star.win.lovers": "Lovers win!",
   "announcement.star.win.thief": "Thief wins!",
+  "hud.sre.betterghost.cooldown": "Cooldown: %ds",
+  "hud.sre.betterghost.status": "Distance: %d | Teleport: %d/3",
   "announcement.star.win.killer": "Killers win!",
   "announcement.star.win.killers": "Killers win!",
   "announcement.star.win.loose_ends": "Outlaw wins!",
@@ -2095,5 +2100,6 @@
   "hud.noellesroles.repair.skill_state.runner_vault": "Vault Sprint",
   "hud.noellesroles.repair.skill_state.archivist_notes": "Risk Record",
   "hud.noellesroles.repair.skill_state.saboteur_signal": "False Signal",
-  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply"
+  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
+  "death_reason.starrailexpress.phantom_destroyed": "Phantom Destroyed"
 }
