@@ -2945,6 +2945,6 @@
   "hud.noellesroles.intelligence.cooldown": "放置冷却中:%s秒 还可放置:%s个",
   "hud.noellesroles.intelligence.ready": "可放置监视器:%s个",
   "announcement.star.goals.intelligence": "收集情报，帮助平民阵营获胜",
-  "info.screen.roleid.intelligence": "朋友，我这里有些有趣的情报\n平民阵营\n花费150金币部署监视器（每局最多2个）。\n当玩家在监视器5格内死亡时触发并提醒你。\n触发后高亮附近玩家2秒。\n商店可购买情报（300金币）获知存活杀手职业。"
+  "info.screen.roleid.intelligence": "朋友，我这里有些有趣的情报\n平民阵营\n花费150金币部署监视器（每局最多2个）。\n当玩家在监视器5格内死亡时触发并提醒你。\n触发后高亮附近玩家2秒。\n商店可购买情报（300金币）获知存活杀手职业。",
   "announcement.star.goals.skincrawler": "从尸体上偷取皮肤，伪装成乘客！"
 }
