@@ -1,7 +1,8 @@
 package org.agmas.noellesroles.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.wifi.starrailexpress.client.SREClient;
+// import io.wifi.starrailexpress.client.SREClient;   // 删除此行
+import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 /**
  * 鬼魅幻影实体渲染器
- * 
+ *
  * 使用玩家皮肤渲染幻影，完全参照PuppeteerBodyEntityRenderer实现
  */
 public class GhostPhantomEntityRenderer extends LivingEntityRenderer<GhostPhantomEntity, PlayerModel<GhostPhantomEntity>> {
@@ -47,8 +48,8 @@ public class GhostPhantomEntityRenderer extends LivingEntityRenderer<GhostPhanto
         UUID ownerUuid = entity.getOwnerUuid().orElse(null);
 
         if (ownerUuid != null) {
-            // 通过 UUID 从玩家列表获取皮肤
-            PlayerInfo entry = SREClient.PLAYER_ENTRIES_CACHE.get(ownerUuid);
+            // 使用统一的 ClientSkinCache 来获取 PlayerInfo（和 PuppeteerBodyEntityRenderer 保持一致）
+            PlayerInfo entry = ClientSkinCache.getCachedPlayerInfo(ownerUuid);
             if (entry != null) {
                 if (entry.getSkin().model().equals(PlayerSkin.Model.WIDE)) {
                     model = modelNormal;

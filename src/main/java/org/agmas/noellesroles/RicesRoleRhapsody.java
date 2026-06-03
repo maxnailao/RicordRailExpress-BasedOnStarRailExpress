@@ -38,7 +38,6 @@ import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.pilot.PilotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
@@ -48,7 +47,6 @@ import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;

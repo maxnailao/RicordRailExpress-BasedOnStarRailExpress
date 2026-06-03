@@ -26,7 +26,6 @@ import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
@@ -62,7 +61,7 @@ public class ModRolesInitialEventRegister {
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
         // 初始化熊孩子音频事件
-        org.agmas.noellesroles.game.roles.Innocent.child.ChildPunchHandler.register();
+        org.agmas.noellesroles.game.roles.innocent.child.ChildPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
@@ -384,7 +383,7 @@ public class ModRolesInitialEventRegister {
 
     static {//技能注册
         //调用熊孩子技能注册
-        org.agmas.noellesroles.game.roles.Innocent.child.ChildSkillRegistry.register();
+        org.agmas.noellesroles.game.roles.innocent.child.ChildSkillRegistry.register();
 
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, context -> {

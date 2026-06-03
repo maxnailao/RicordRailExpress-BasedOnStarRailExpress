@@ -33,12 +33,10 @@ import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerCo
 import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;

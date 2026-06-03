@@ -2850,8 +2850,8 @@
   "hud.noellesroles.warden.target": "目标：%s",
   "hud.noellesroles.warden.target_dead": "目标已死亡",
   "hud.noellesroles.warden.no_gun": "§6正义即将到来",
-  "hud.noellesroles.warden.ready": "§a戒律已就绪"
-  "announcement.star.goals.skincrawler": "从尸体上偷取皮肤，伪装成乘客！"
+  "hud.noellesroles.warden.ready": "§a戒律已就绪",
+  "announcement.star.goals.skincrawler": "从尸体上偷取皮肤，伪装成乘客！",
   "game.tip.meatball_cannot_attack_in_crowd": "你无法在人群中攻击他！",
   "==================== 熊孩子 ====================":"",
   "announcement.star.role.child": "熊孩子",

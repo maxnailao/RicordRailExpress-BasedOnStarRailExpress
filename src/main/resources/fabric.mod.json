@@ -149,7 +149,12 @@
       "noellesroles:warden",
       "noellesroles:skincrawler",
 
+      "noellesroles:better_killer_ghost",
+      "noellesroles:poacher",
+      "noellesroles:recall_killer",
       "noellesroles:corrupt_cop",
+      "noellesroles:child",
+      "noellesroles:intelligence",
       "stupid_express:doused",
       "stupid_express:custom_winner",
       "stupid_express:cooldown",
@@ -212,8 +217,10 @@
       "noellesroles:mortician_bodymaker",
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
-      "noellesroles:silencer"
-
+      "noellesroles:silencer",
+      "noellesroles:pelican",
+      "noellesroles:godfather",
+      "noellesroles:embalmer"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

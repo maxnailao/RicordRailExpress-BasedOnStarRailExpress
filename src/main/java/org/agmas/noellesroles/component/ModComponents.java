@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.component;
 
-import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -68,7 +67,6 @@ import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponen
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.pilot.PilotPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;

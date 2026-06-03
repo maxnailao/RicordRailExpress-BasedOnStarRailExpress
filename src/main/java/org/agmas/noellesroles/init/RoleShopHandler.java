@@ -43,7 +43,6 @@ import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;

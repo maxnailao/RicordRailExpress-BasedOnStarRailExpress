@@ -74,6 +74,7 @@ import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 import org.agmas.noellesroles.client.hud.RepairEscapeHud;
+import org.agmas.noellesroles.client.renderer.GhostPhantomEntityRenderer;
 import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;

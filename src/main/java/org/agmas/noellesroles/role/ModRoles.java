@@ -341,7 +341,7 @@ public class ModRoles {
      * - 在计分板上显示
      * -
      */
-    /*public static SRERole BETTER_KILLER_GHOST = TMMRoles.registerRole(new NormalRole(
+    public static SRERole BETTER_KILLER_GHOST = TMMRoles.registerRole(new NormalRole(
                     BETTER_KILLER_GHOST_ID,
                     new Color(255, 0, 0).getRGB(),
                     false, // isInnocent：不是平民
@@ -351,7 +351,7 @@ public class ModRoles {
                     false // 是否隐藏计分板（按你需求改）
             ))
             .setCanSeeCoin(true)
-            .setComponentKey(ModComponents.BETTER_KILLER_GHOST);*/
+            .setComponentKey(ModComponents.BETTER_KILLER_GHOST);
 
     /**
      *  黑警 - 中立阵营
