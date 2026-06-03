@@ -70,12 +70,19 @@ public class KnifeItem extends SkinableItem {
     public static HitResult getKnifeTarget(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user,
                 entity ->{
-//            if (entity instanceof PuppeteerBodyEntity puppeteerBodyEntity){
-//                var owner = puppeteerBodyEntity.getOwner();
-//                return owner != null && GameUtils.isPlayerAliveAndSurvival(owner);
-//            }
-           return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player);
-
+            // 允许选中玩家
+            if (entity instanceof Player player) {
+                return GameUtils.isPlayerAliveAndSurvival(player);
+            }
+            // 允许选中傀儡师本体实体
+            if (entity instanceof org.agmas.noellesroles.content.entity.PuppeteerBodyEntity) {
+                return true;
+            }
+            // 允许选中鬼魅幻影实体
+            if (entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) {
+                return true;
+            }
+            return false;
                 }, 4f);
     }
 

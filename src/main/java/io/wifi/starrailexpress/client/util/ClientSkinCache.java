@@ -23,7 +23,7 @@ public class ClientSkinCache {
             // 加入游戏清空信息
             ClientSkinCache.PLAYER_ENTRIES_CACHE.clear();
         });
-        // 监听所有接收到的数据包
+        
         ClientPlayerInfoUpdatePacketEvents.UPDATE.register((action, playerinfo) -> {
             if (action.contains(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER)) {
                 if (playerinfo.getProfile() != null && playerinfo.getSkin() != null) {

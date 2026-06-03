@@ -307,7 +307,8 @@ public class ModRoles {
             SRERole.MoodType.REAL,  //真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
             false   // 显示计分板
-    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1)
+            .setComponentKey(ModComponents.INTELLIGENCE);
 
     /**
      * 盗猎者角色 - 杀手阵营
