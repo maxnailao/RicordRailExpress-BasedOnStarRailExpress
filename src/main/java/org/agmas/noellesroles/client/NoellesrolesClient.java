@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.client.StaminaRenderer;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
+import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
@@ -35,6 +36,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
@@ -72,8 +74,9 @@ import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 import org.agmas.noellesroles.client.hud.RepairEscapeHud;
-import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.GhostPhantomEntityRenderer;
+import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
+import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
@@ -86,8 +89,7 @@ import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.MercenaryContractItem;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
-import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotHandler;
-import org.agmas.noellesroles.game.roles.Innocent.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
@@ -163,7 +165,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             return;
         }
 
-        List<UUID> candidates = new ArrayList<>(SREClient.PLAYER_ENTRIES_CACHE.keySet());
+        List<UUID> candidates = new ArrayList<>(ClientSkinCache.PLAYER_ENTRIES_CACHE.keySet());
         if (candidates.isEmpty()) {
             JEB_SHUFFLED_PLAYER_ENTRIES_CACHE.clear();
             return;
@@ -216,7 +218,19 @@ public class NoellesrolesClient implements ClientModInitializer {
                 ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
                 HunterCageBlockEntityRenderer::new);
 
+        BlockEntityRenderers.register(ModBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
+
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
+
+        // 注册C4背部渲染
+        LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
+            (entityType, entityRenderer, registrationHelper, context) -> {
+                if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
+                    registrationHelper.register(new C4BackFeatureRenderer(pr));
+                }
+            }
+        );
+
         MercenaryContractItem.openGuiRunner = () -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
@@ -261,6 +275,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return true;
         });
+        ClientEmbalmerState.register();
+        ClientSkincrawlerState.register();
         CommonClientHudRenderer.registerRenderersEvent();
         MenuScreens.register(ModMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
@@ -273,7 +289,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID, (payload, context) -> {
-            ClientWallManager.createWall(payload.wallId(), payload.positions(), payload.durationTicks());
+            ClientWallManager.createWall(payload.wallId(), payload.brickPositions(), payload.cobwebPositions(), payload.durationTicks());
         });
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket.ID, (payload, context) -> {
             ClientWallManager.removeWall(payload.wallId());
@@ -321,7 +337,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.game.roles.Innocent.fool.FoolOpenTarotVoteS2CPacket.ID,
+                org.agmas.noellesroles.game.roles.innocent.fool.FoolOpenTarotVoteS2CPacket.ID,
                 (payload, context) -> {
                     final var client = context.client();
                     client.execute(() -> {
@@ -856,7 +872,6 @@ public class NoellesrolesClient implements ClientModInitializer {
             // 加入游戏清空信息
             currentBroadcastMessage.clear();
             ClientVoteCache.clear();
-            SREClient.PLAYER_ENTRIES_CACHE.clear();
         });
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -959,7 +974,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (client.player.isCreative()) {
                 if (foolPrayerBind.consumeClick()) {
                     ClientPlayNetworking
-                            .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolPrayerC2SPacket());
+                            .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolPrayerC2SPacket());
                 }
                 if (abilityPressed) {
                     if (SREClient.gameComponent.isRole(client.player, ModRoles.ATTENDANT)) {
@@ -977,7 +992,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             // }
 
             if (foolPrayerBind.consumeClick()) {
-                ClientPlayNetworking.send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolPrayerC2SPacket());
+                ClientPlayNetworking.send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolPrayerC2SPacket());
             }
 
             if (abilityPressed) {
@@ -987,7 +1002,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (inTarotAssembly) {
                 if (client.options.keyUse.consumeClick()) {
                     ClientPlayNetworking
-                            .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolLeaveMeetingC2SPacket());
+                            .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolLeaveMeetingC2SPacket());
                 }
 
                 boolean pauseOpen = client.screen instanceof net.minecraft.client.gui.screens.PauseScreen;
@@ -996,7 +1011,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                         foolMeetingPauseHandled = true;
                     } else {
                         ClientPlayNetworking
-                                .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolLeaveMeetingC2SPacket());
+                                .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolLeaveMeetingC2SPacket());
                         client.setScreen(null);
                     }
                 }
@@ -1012,8 +1027,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             insanityTime++;
             if (insanityTime >= 20 * 6) {
                 insanityTime = 0;
-                List<UUID> keys = new ArrayList<UUID>(SREClient.PLAYER_ENTRIES_CACHE.keySet());
-                List<UUID> originalkeys = new ArrayList<UUID>(SREClient.PLAYER_ENTRIES_CACHE.keySet());
+                List<UUID> keys = new ArrayList<UUID>(ClientSkinCache.PLAYER_ENTRIES_CACHE.keySet());
+                List<UUID> originalkeys = new ArrayList<UUID>(ClientSkinCache.PLAYER_ENTRIES_CACHE.keySet());
                 Collections.shuffle(keys);
                 int i = 0;
                 for (UUID o : originalkeys) {

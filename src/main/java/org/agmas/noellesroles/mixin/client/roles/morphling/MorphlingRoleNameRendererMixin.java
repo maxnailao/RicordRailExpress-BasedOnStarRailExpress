@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -14,6 +15,7 @@ import net.minecraft.world.scores.PlayerTeam;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.ConfigWorldComponent;
+import org.agmas.noellesroles.client.ClientEmbalmerState;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -59,9 +61,17 @@ public abstract class MorphlingRoleNameRendererMixin {
         if (instance.isInvisible()) {
             return Component.literal("");
         }
+        // 嬉命人变装 - 鼠标朝向的玩家名字显示皮肤对应的名称
+        UUID embalmerTarget = ClientEmbalmerState.replacement(instance.getUUID());
+        if (embalmerTarget != null && ClientEmbalmerState.isActive()) {
+            PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(embalmerTarget);
+            if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
+                return getDisplayName$PlayerInfo(targetInfo);
+            }
+        }
         var mocca = MorphlingPlayerComponent.KEY.get(instance);
         if ((mocca).getMorphTicks() > 0) {
-            PlayerInfo targetInfo = SREClient.PLAYER_ENTRIES_CACHE.getOrDefault(mocca.disguise, null);
+            PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(mocca.disguise);
             if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
                 return getDisplayName$PlayerInfo(targetInfo);
             } else {

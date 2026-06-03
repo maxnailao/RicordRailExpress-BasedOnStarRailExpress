@@ -24,22 +24,19 @@ import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.attendant.AttendantHandler;
-import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
+import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
@@ -301,7 +298,7 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.GHOST)) {
-            org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent ghostPlayerComponent = org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent.KEY
+            org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent ghostPlayerComponent = org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent.KEY
                     .get(player);
             ghostPlayerComponent.useAbility();
             return;
@@ -310,11 +307,6 @@ public class AbilityHandler {
             CandleBearerPlayerComponent candleBearerPlayerComponent = CandleBearerPlayerComponent.KEY
                     .get(player);
             candleBearerPlayerComponent.useAbility();
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.BETTER_KILLER_GHOST)) {
-            BetterKillerGhostComponent ghostComponent = BetterKillerGhostComponent.KEY.get(player);
-            ghostComponent.useAbility();
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.BLOOD_FEUDIST)) {
@@ -339,7 +331,7 @@ public class AbilityHandler {
             }
             return;
         }
-        //召回技能
+
         if (gameWorldComponent.isRole(player, ModRoles.RECALLER)
                 && abilityPlayerComponent.cooldown <= 0) {
             RecallerPlayerComponent recallerPlayerComponent = RecallerPlayerComponent.KEY.get(player);
@@ -357,37 +349,6 @@ public class AbilityHandler {
             }
 
         }
-        //召回杀手技能
-        // 召回杀手：技能同召回者，但不花钱；冷却独立（方式A）
-        if (gameWorldComponent.isRole(player, ModRoles.RECALL_KILLER)) {
-
-            // 召回杀手独立冷却（只影响该角色）
-            final int markCdTicks = 8 * 20;       // 放置标记冷却：8秒（自行改）
-            final int teleportCdTicks = 60 * 20;  // 召回冷却：18秒（自行改）
-
-            // 冷却中提示
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(
-                        Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                                .withStyle(ChatFormatting.RED),
-                        true);
-                return;
-            }
-
-            RecallKillerPlayerComponent comp = ModComponents.RECALL_KILLER.get(player);
-
-            if (!comp.placed) {
-                abilityPlayerComponent.cooldown = markCdTicks;
-                abilityPlayerComponent.sync();
-                comp.setPosition();
-            } else {
-                abilityPlayerComponent.cooldown = teleportCdTicks;
-                abilityPlayerComponent.sync();
-                comp.teleport();
-            }
-            return;
-        }
-        //老人技能
         if (gameWorldComponent.isRole(player, ModRoles.OLDMAN)) {
             if (player.getVehicle() != null && player.getVehicle() instanceof WheelchairEntity we) {
                 if (player.getCooldowns().isOnCooldown(ModItems.WHEELCHAIR)) {
@@ -593,34 +554,6 @@ public class AbilityHandler {
             }
             return;
         }
-        // 情报官技能 - 部署监视器
-        if (gameWorldComponent.isRole(player, ModRoles.INTELLIGENCE)) {
-            SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED), true);
-                return;
-            }
-            IntelligencePlayerComponent intelComp = ModComponents.INTELLIGENCE.get(player);
-            if (!intelComp.canPlaceMonitor()) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.intelligence.max_monitors").withStyle(ChatFormatting.RED), true);
-                return;
-            }
-            if (playerShopComponent.balance < 150) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.insufficient_funds").withStyle(ChatFormatting.RED), true);
-                return;
-            }
-            playerShopComponent.addToBalance(-150);
-            playerShopComponent.sync();
-            intelComp.addMonitor(player.getX(), player.getY(), player.getZ(), player.level().dimension().location());
-            abilityPlayerComponent.setCooldown(20 * 5);
-            player.displayClientMessage(
-                    Component.translatable("message.noellesroles.intelligence.monitor_placed").withStyle(ChatFormatting.GREEN), true);
-            return;
-        }
-
         // 处理超级亡命徒技能
         if (gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
             SuperLooseEndPlayerComponent comp = SuperLooseEndPlayerComponent.KEY.get(player);
@@ -695,36 +628,6 @@ public class AbilityHandler {
                     return;
                 }
             }
-            return;
-        }
-        // 情报官技能 - 部署监视器
-        if (gameWorldComponent.isRole(player, ModRoles.INTELLIGENCE)) {
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED),
-                    true);
-                return;
-            }
-            IntelligencePlayerComponent intelComp = ModComponents.INTELLIGENCE.get(player);
-            if (!intelComp.canPlaceMonitor()) {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.intelligence.max_monitors").withStyle(ChatFormatting.RED),
-                    true);
-                return;
-            }
-            if (playerShopComponent.balance < 150) {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.insufficient_funds").withStyle(ChatFormatting.RED),
-                    true);
-                return;
-            }
-            playerShopComponent.addToBalance(-150);
-            playerShopComponent.sync();
-            intelComp.addMonitor(player.getX(), player.getY(), player.getZ(), player.level().dimension().location());
-            abilityPlayerComponent.setCooldown(20 * 5);
-            player.displayClientMessage(
-                Component.translatable("message.noellesroles.intelligence.monitor_placed").withStyle(ChatFormatting.GREEN),
-                true);
             return;
         }
 

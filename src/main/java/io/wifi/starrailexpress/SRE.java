@@ -123,6 +123,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initSkinsNetworkSync();
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
+        io.wifi.starrailexpress.game.roles.WardenRole.init();
 
     }
 
@@ -136,6 +137,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         TMMRoles.addRoleComponents(SREPlayerPoisonComponent.KEY);
         TMMRoles.addRoleComponents(SREPlayerShopComponent.KEY);
         TMMRoles.addRoleComponents(ExtraSlotComponent.KEY);
+        TMMRoles.addRoleComponents(WardenPlayerComponent.KEY);
         // 注册鬼魅角色组件
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.BETTER_KILLER_GHOST);
     }
@@ -164,7 +166,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerServerLifecycleEvents() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            LOGGER.info("[CONFIG] Sync configs to {}", handler.getPlayer().getName());
+            LOGGER.info("[CONFIG] Sync configs to {}", handler.getPlayer().getName().getString());
             SREConfig.HANDLER.syncToClient(handler.getPlayer());
             StupidExpressConfig.HANDLER.syncToClient(handler.getPlayer());
         });
@@ -274,7 +276,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             SkinsCommand.register(dispatcher);
             PlayerInventoryCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
-            RestoreDNFInventoryCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             // io.wifi.starrailexpress.contents.command.UnlockAllRolesCommand.register(dispatcher);

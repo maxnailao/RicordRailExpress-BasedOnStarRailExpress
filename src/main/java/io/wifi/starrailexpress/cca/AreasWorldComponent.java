@@ -26,8 +26,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class AreasWorldComponent implements AutoSyncedComponent {
@@ -158,6 +160,28 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public double sceneOffsetX = 0;
     public double sceneOffsetY = 125; // 默认向上偏移125格（场景放置在游玩区域下方100-150格）
     public double sceneOffsetZ = 0;
+    
+    // 雪花效果配置（默认关闭）
+    public boolean snowEnabled = false;
+    
+    // 天气配置（默认晴天）
+    public String weather = "clear"; // clear, rain, thunder
+    
+    // 重力配置（默认0.08）
+    public double gravity = 0.08;
+    
+    // 药水效果配置（格式：["namespace:effect_id,level", ...]，为空数组则无效果）
+    public List<String> effect = new ArrayList<>();
+    
+    // 时间配置（默认午夜 18000）
+    public long time = 18000;
+    
+    // 昼夜循环配置（默认关闭）
+    public boolean daylightCycle = false;
+    
+    // 天气循环配置（默认关闭）
+    public boolean weatherCycle = false;
+    
     public boolean mustCopy = false;
 
     // 支持的游戏模式列表，为空表示支持所有模式
@@ -357,10 +381,23 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
+        this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
         this.sceneOffsetEnabled = tag.contains("sceneOffsetEnabled") ? tag.getBoolean("sceneOffsetEnabled") : false;
         this.sceneOffsetX = tag.contains("sceneOffsetX") ? tag.getDouble("sceneOffsetX") : 0;
         this.sceneOffsetY = tag.contains("sceneOffsetY") ? tag.getDouble("sceneOffsetY") : 125;
         this.sceneOffsetZ = tag.contains("sceneOffsetZ") ? tag.getDouble("sceneOffsetZ") : 0;
+        this.weather = tag.contains("weather") ? tag.getString("weather") : "clear";
+        this.gravity = tag.contains("gravity") ? tag.getDouble("gravity") : 0.08;
+        this.effect = new ArrayList<>();
+        if (tag.contains("effect")) {
+            var list = tag.getList("effect", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < list.size(); i++) {
+                this.effect.add(list.getString(i));
+            }
+        }
+        this.time = tag.contains("time") ? tag.getLong("time") : 18000;
+        this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
+        this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
         // this.playAreaOffset = getVec3dFromNbt(tag, "playAreaOffset");
         // this.playArea = getBoxFromNbt(tag, "playArea");
         //
@@ -415,10 +452,21 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("canJump", this.canJump);
         tag.putBoolean("canSwim", this.canSwim);
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
+        tag.putBoolean("snowEnabled", this.snowEnabled);
         tag.putBoolean("sceneOffsetEnabled", this.sceneOffsetEnabled);
         tag.putDouble("sceneOffsetX", this.sceneOffsetX);
         tag.putDouble("sceneOffsetY", this.sceneOffsetY);
         tag.putDouble("sceneOffsetZ", this.sceneOffsetZ);
+        tag.putString("weather", this.weather);
+        tag.putDouble("gravity", this.gravity);
+        var effectList = new net.minecraft.nbt.ListTag();
+        for (String e : this.effect) {
+            effectList.add(net.minecraft.nbt.StringTag.valueOf(e));
+        }
+        tag.put("effect", effectList);
+        tag.putLong("time", this.time);
+        tag.putBoolean("daylightCycle", this.daylightCycle);
+        tag.putBoolean("weatherCycle", this.weatherCycle);
 
         // 房间位置需要写入NBT（如果实现此功能）
         // 这里暂时不实现，因为NBT格式可能需要专门处理Map类型

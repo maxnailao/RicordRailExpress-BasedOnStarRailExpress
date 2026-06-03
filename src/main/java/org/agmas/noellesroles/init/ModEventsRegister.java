@@ -81,20 +81,17 @@ import org.agmas.noellesroles.events.OnShopPurchase;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
-import org.agmas.noellesroles.game.roles.Innocent.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager;
-import org.agmas.noellesroles.game.roles.Innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinFistPunchHandler;
-import org.agmas.noellesroles.game.roles.Innocent.intelligence.IntelligencePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.veteran.VeteranKnifeHandler;
-import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooDeathHandler;
-import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
+import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.glitch_robot.GlitchRobotPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinFistPunchHandler;
+import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
+import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
-import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopWinChecker;
 import org.agmas.noellesroles.game.roles.vigilante.guard.GuardPlayerHandler;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
@@ -285,36 +282,6 @@ public class ModEventsRegister {
         puppeteerComp.onPuppetDeath();
 
         return true; // 阻止真正死亡
-    }
-
-    /**
-     * 处理鬼魅幻影死亡 - 完全参照傀儡师机制
-     */
-    private static boolean handleGhostPhantomDeath(Player victim, ResourceLocation deathReason) {
-        if (victim == null || victim.level().isClientSide())
-            return false;
-
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
-        
-        // 检查是否是鬼魅角色
-        if (!gameWorld.isRole(victim, ModRoles.BETTER_KILLER_GHOST))
-            return false;
-
-        BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(victim);
-        
-        // 检查是否处于幽影模式
-        if (ghostComp == null || !ghostComp.isInShadowMode)
-            return false;
-
-        // 检查死亡原因是否为幻影被摧毁
-        // 如果是因为幻影被摧毁导致的死亡，允许死亡发生并清理状态
-        if (deathReason != null && deathReason.toString().contains("phantom")) {
-            // 强制退出幽影模式（清理状态）
-            ghostComp.exitShadowModeForced();
-            return true; // 允许继续死亡流程
-        }
-
-        return false;
     }
 
     private static boolean handleDefibrillator(Player victim) {
@@ -862,24 +829,6 @@ public class ModEventsRegister {
             }
             return ShouldDropResult.PASS;
         });
-        // 黑警：自己的枪不掉
-        AllowShootRevolverDrop.EVENT.register((player, target) -> {
-            var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent != null && gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                return ShouldDropResult.FALSE;
-            }
-            return ShouldDropResult.PASS;
-        });
-        // 刽子手：使用狙击枪命中目标时，100% 不掉落
-        AllowShootRevolverDrop.EVENT.register((player, target) -> {
-            var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent != null
-                    && gameWorldComponent.isRole(player, ModRoles.EXECUTIONER)
-                    && player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
-                return ShouldDropResult.FALSE;
-            }
-            return ShouldDropResult.PASS;
-        });
         // 所有枪械公用冷却
         OnRevolverUsed.EVENT.register((player, target) -> {
             if (!player.isCreative()) {
@@ -953,14 +902,14 @@ public class ModEventsRegister {
         });
         AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
             if (victim.level() instanceof ServerLevel serverLevel) {
-                org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
+                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
                         victim.getUUID());
             }
             return true;
         });
         AfterShieldAllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             if (victim.level() instanceof ServerLevel serverLevel) {
-                org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
+                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
                         victim.getUUID());
             }
             return true;
@@ -1000,12 +949,12 @@ public class ModEventsRegister {
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
             // 清除所有建筑师的客户端墙
             for (ServerPlayer player : world.players()) {
-                org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent builderComp = org.agmas.noellesroles.component.ModComponents.BUILDER
+                org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent builderComp = org.agmas.noellesroles.component.ModComponents.BUILDER
                         .get(player);
                 builderComp.clearAllWalls();
             }
             // 清除全局墙位置注册表
-            org.agmas.noellesroles.game.roles.Innocent.builder.BuilderWallPositions.clearAll();
+            org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions.clearAll();
             // 清除所有肉汁的悬赏
             for (ServerPlayer player : world.players()) {
                 org.agmas.noellesroles.component.ModComponents.MEATBALL.get(player).init();
@@ -1146,8 +1095,6 @@ public class ModEventsRegister {
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();
         ConspiratorKilledPlayer.registerEvents();
-        // 注册黑警胜利检测
-        CorruptCopWinChecker.registerEvent();
         // 注册疫使胜利检测和加速检测
         InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
@@ -1376,13 +1323,6 @@ public class ModEventsRegister {
                         .get(killer);
                 if (thiefComponent != null) {
                     thiefComponent.handleKilledVictim(victim);
-                }
-            }
-            //黑警击杀逻辑
-            if (killer != null && gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP)) {
-                var corruptComp = ModComponents.CORRUPT_COP.maybeGet(killer).orElse(null);
-                if (corruptComp != null) {
-                    corruptComp.incrementKillCount();
                 }
             }
 
@@ -1624,7 +1564,6 @@ public class ModEventsRegister {
             return false;
         });
         AwesomePlayerComponent.registerEvents();
-        IntelligencePlayerComponent.registerEvents();
         TrueKillerFinder.registerEvents();
         ModdedRoleRemoved.EVENT.register((player, role) -> {
             if (role != null) {
@@ -1643,7 +1582,7 @@ public class ModEventsRegister {
             HallucinationAreaManager.tick();
             ServerLevel level = server.overworld();
             {
-                org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager.serverLevelTick(level);
+                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.serverLevelTick(level);
             }
             {
                 if (server.getTickCount() % 10 == 0) {
@@ -1732,15 +1671,6 @@ public class ModEventsRegister {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
-            // 重置黑警击杀数
-            for (var player : serverLevel.players()) {
-                if (SREGameWorldComponent.KEY.get(serverLevel).isRole(player, ModRoles.CORRUPT_COP)) {
-                    var comp = ModComponents.CORRUPT_COP.maybeGet(player).orElse(null);
-                    if (comp != null) {
-                        comp.reset();
-                    }
-                }
-            }
             // 清除所有玩家的感染状态
             for (ServerPlayer player : serverLevel.players()) {
                 InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED
@@ -1898,11 +1828,6 @@ public class ModEventsRegister {
             return true; // 允许死亡
         });
         AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
-
-            // 检查鬼魅幻影状态 - 完全参照傀儡师机制
-            if (handleGhostPhantomDeath(victim, deathReason)) {
-                return true; // 允许死亡（幻影被摧毁，鬼魅应该死亡）
-            }
 
             // 检查傀儡师假人状态
             if (handlePuppeteerDeath(victim, deathReason)) {

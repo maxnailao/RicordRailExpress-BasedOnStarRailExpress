@@ -64,13 +64,6 @@ public class SREMurderGameMode extends GameMode {
 
         // 将玩家从队伍中移除
         removePlayersFromTeam(serverWorld.getServer().createCommandSourceStack(), "harpymodloader_game");
-        Harpymodloader.FORCED_MODDED_ROLE.clear();
-        Harpymodloader.FORCED_MODDED_MODIFIER.clear();
-        Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
-        WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverWorld);
-        worldModifierComponent.modifiers.clear();
-        worldModifierComponent.sync();
-
         super.finalizeGame(serverWorld, gameWorldComponent);
     }
 
@@ -83,8 +76,6 @@ public class SREMurderGameMode extends GameMode {
 
         Harpymodloader.refreshRoles();
 
-        ((SRETrainWorldComponent) SRETrainWorldComponent.KEY.get(serverWorld))
-                .setTimeOfDay(SRETrainWorldComponent.TimeOfDay.MIDNIGHT);
         gameWorldComponent.clearRoleMap();
 
         // 将所有玩家添加到队伍中

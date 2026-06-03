@@ -25,12 +25,12 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -40,13 +40,13 @@ import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -61,7 +61,7 @@ public class ModRolesInitialEventRegister {
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
         // 初始化熊孩子音频事件
-        org.agmas.noellesroles.game.roles.Innocent.child.ChildPunchHandler.register();
+        org.agmas.noellesroles.game.roles.innocent.child.ChildPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
@@ -205,7 +205,6 @@ public class ModRolesInitialEventRegister {
             if (role.equals(ModRoles.EXECUTIONER)) {
                 ExecutionerPlayerComponent executionerPlayerComponent = (ExecutionerPlayerComponent) ExecutionerPlayerComponent.KEY
                         .get(player);
-                executionerPlayerComponent.won = false;
                 SREPlayerShopComponent playerShopComponent = (SREPlayerShopComponent) SREPlayerShopComponent.KEY
                         .get(player);
                 executionerPlayerComponent.init();
@@ -253,13 +252,13 @@ public class ModRolesInitialEventRegister {
             }
 
             if (role.equals(ModRoles.NOISEMAKER)) {
-                org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent noiseMakerPlayerComponent = org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent.KEY
+                org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent noiseMakerPlayerComponent = org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent.KEY
                         .get(player);
                 noiseMakerPlayerComponent.init();
                 noiseMakerPlayerComponent.sync();
             }
             if (role.equals(ModRoles.GHOST)) {
-                org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent ghostPlayerComponent = org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent.KEY
+                org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent ghostPlayerComponent = org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent.KEY
                         .get(player);
                 ghostPlayerComponent.init();
                 ghostPlayerComponent.sync();
@@ -345,13 +344,22 @@ public class ModRolesInitialEventRegister {
             }
             // 葬仪角色初始化
             if (role.equals(ModRoles.MORTICIAN_BODYMAKER)) {
-                var morticianComponent = MorticianPlayerComponent.KEY.get(player);
+                var morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
                 morticianComponent.init();
                 morticianComponent.sync();
             }
+            if (role.equals(ModRoles.GODFATHER)) {
+                if (player instanceof ServerPlayer sp) {
+                    for (var p : sp.serverLevel().players()) {
+                        if (p != null) {
+                            p.playNotifySound(NRSounds.MAFIA, SoundSource.MASTER, 1.0F, 1.0F);
+                        }
+                    }
+                }
+            }
             // 熊孩子角色初始化
             if (role.identifier().equals(ModRoles.CHILD.identifier())) {
-                var childComp = org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent.KEY.get(player);
+                var childComp = org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent.KEY.get(player);
                 childComp.init();
                 childComp.sync();
                 return;
@@ -375,7 +383,7 @@ public class ModRolesInitialEventRegister {
 
     static {//技能注册
         //调用熊孩子技能注册
-        org.agmas.noellesroles.game.roles.Innocent.child.ChildSkillRegistry.register();
+        org.agmas.noellesroles.game.roles.innocent.child.ChildSkillRegistry.register();
 
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, context -> {
@@ -423,12 +431,65 @@ public class ModRolesInitialEventRegister {
             }
         });
 
+        // 鹈鹕技能注册：按技能键吞噬鼠标准星对准的玩家，蹲下按技能键释放最后吞噬的玩家
+        RoleSkill.register(ModRoles.PELICAN, context -> {
+            ServerPlayer player = context.player();
+            PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(player);
+            if (comp == null) return;
+
+            if (player.isShiftKeyDown()) {
+                comp.releaseLast();
+                return;
+            }
+
+            // 获取鼠标准星目标
+            ServerPlayer target = null;
+            UUID targetUuid = context.target();
+            if (targetUuid != null) {
+                Player p = player.level().getPlayerByUUID(targetUuid);
+                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)
+                        && player.distanceToSqr(sp) <= 3.15D * 3.15D
+                        && player.hasLineOfSight(sp)) {
+                    target = sp;
+                }
+            }
+
+            if (target != null) {
+                comp.tryEat(target);
+            } else {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.pelican.no_target")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+            }
+        });
+
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
             ServerPlayer player = context.player();
-            MorticianPlayerComponent morticianComponent = MorticianPlayerComponent.KEY.get(player);
+            MorticianBodyMakerPlayerComponent morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
             if (morticianComponent != null) {
                 morticianComponent.useAbility();
+            }
+        });
+
+        // 咒法师技能注册：标记目标玩家
+        RoleSkill.register(ModRoles.WARLOCK, context -> {
+            ServerPlayer player = context.player();
+            var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+            if (comp == null) return;
+            UUID targetUuid = context.target();
+            ServerPlayer target = null;
+            if (targetUuid != null) {
+                Player p = player.level().getPlayerByUUID(targetUuid);
+                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp) && player.distanceToSqr(sp) <= 4.0D * 4.0D) {
+                    target = sp;
+                }
+            }
+            if (target != null && comp.tryMark(target)) {
+                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.marked", target.getName().getString()).withStyle(ChatFormatting.LIGHT_PURPLE), true);
+            } else {
+                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED), true);
             }
         });
     }

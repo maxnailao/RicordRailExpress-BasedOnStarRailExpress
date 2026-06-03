@@ -15,7 +15,6 @@ import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
-import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent;
 
 public class CustomWinnerClass {
 
@@ -33,9 +32,10 @@ public class CustomWinnerClass {
             // 检查是否有小偷存活
             boolean hasFurandoru = false;
             boolean hasThiefAlive = false;
+            boolean hasPelicanAlive = false;
+            // int thiefCount = 0;
             boolean hasCorruptCopAlive = false;
             int alivePlayerCount = 0;
-
             for (var player : serverLevel.players()) {
                 if (GameUtils.isPlayerAliveAndSurvival(player)) {
                     alivePlayerCount++;
@@ -51,19 +51,18 @@ public class CustomWinnerClass {
                             }
                         }
                     }
-
-                    if (gameComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                        hasCorruptCopAlive = true;
-                    }
                     if (gameComponent.isRole(player, ModRoles.THIEF)) {
                         hasThiefAlive = true;
+                        // thiefCount++;
                     }
                     if (gameComponent.isRole(player, RedHouseRoles.FURANDORU)) {
                         hasFurandoru = true;
                     }
+                    if (gameComponent.isRole(player, ModRoles.PELICAN)) {
+                        hasPelicanAlive = true;
+                    }
                 }
             }
-
             if (hasFurandoru) {
                 if (alivePlayerCount <= 1 || winStatus.equals(WinStatus.TIME)) {
                     RoleUtils.customWinnerWin(serverLevel, "furandoru", RedHouseRoles.FURANDORU.color());

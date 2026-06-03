@@ -26,11 +26,11 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
-import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.fool.FoolPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.magician.MagicianPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -39,6 +39,7 @@ import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
+import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
@@ -741,6 +742,42 @@ public class InstinctRenderer {
                         }
                     }
                 }
+                // 典狱长：目标常驻深蓝色无限距离，其他人需要按直觉键灰色10格内
+                if (SREClient.gameComponent.isRole(self, org.agmas.noellesroles.role.ModRoles.WARDEN)) {
+                    if (GameUtils.isPlayerSpectatingOrCreative(self))
+                        return -1;
+                    var wardenComp = io.wifi.starrailexpress.cca.WardenPlayerComponent.KEY.get(self);
+                    if (wardenComp != null && target instanceof Player targetPlayer) {
+                        // 目标：深蓝色，无限距离，常驻（仅非审判阶段且目标存活时）
+                        if (!wardenComp.isInJudgment() && !wardenComp.isTargetDead()
+                                && wardenComp.getTargetUuid() != null && targetPlayer.getUUID().equals(wardenComp.getTargetUuid())) {
+                            return 0x0044CC; // 深蓝色
+                        }
+                        // 其他人：需要按直觉键，灰色，10格内
+                        if (!hasInstinct)
+                            return -1;
+                        if (targetPlayer.distanceToSqr(self) > 10 * 10)
+                            return -2;
+                        return java.awt.Color.GRAY.getRGB(); // 灰色
+                    }
+                }
+                // 鹈鹕：透视所有玩家，被吞噬过的显示橙色，其他显示鹈鹕颜色
+                if (SREClient.gameComponent.isRole(self, ModRoles.PELICAN)) {
+                    if (!hasInstinct)
+                        return -1;
+                    if (GameUtils.isPlayerSpectatingOrCreative(self))
+                        return -1;
+                    double distSq = target_player.distanceToSqr(self);
+                    int range = PelicanPlayerComponent.INSTINCT_RANGE;
+                    if (distSq > range * range) {
+                        return -2;
+                    }
+                    PelicanPlayerComponent pelicanComp = PelicanPlayerComponent.KEY.get(self);
+                    if (pelicanComp != null && pelicanComp.uniqueEaten.contains(target_player.getUUID())) {
+                        return Color.ORANGE.getRGB();
+                    }
+                    return ModRoles.PELICAN.color();
+                }
                 // 需要开启直觉
                 if (!hasInstinct)
                     return -1;
@@ -850,6 +887,22 @@ public class InstinctRenderer {
                 // && SREClient.isPlayerAliveAndInSurvival()) {
                 // return (ModRoles.EXECUTIONER.color());
                 // }
+
+                // 家族本能透视（仅20格范围内）
+                if (self_role != null && self_role.isMafiaTeam() && SREClient.isPlayerAliveAndInSurvival()) {
+                    if (target_role != null && target_role.isMafiaTeam()) {
+                        // 距离检查：只透视20格范围内的家族成员
+                        if (self.distanceTo(target_player) > 20.0D) {
+                            return -2;
+                        }
+                        // 教父显示天蓝色
+                        if (SREClient.gameComponent.isRole(target_player, ModRoles.GODFATHER)) {
+                            return new Color(135, 206, 235).getRGB(); // 天蓝色
+                        }
+                        // 其他家族成员显示棕色
+                        return new Color(139, 69, 19).getRGB(); // 棕色
+                    }
+                }
 
                 // 杀手直觉
                 if (isKillerTeam(self_role) && SREClient.isPlayerAliveAndInSurvival()) {
@@ -976,6 +1029,7 @@ public class InstinctRenderer {
                     }
                 }
             }
+
             // 布谷鸟：只透视自己下的蛋（BlockDisplay）
             if (SREClient.gameComponent.isRole(self, ModRoles.CUCKOO)) {
                 if (target instanceof Display.BlockDisplay blockDisplay) {
