@@ -135,16 +135,6 @@ public class ModRoles {
     public static ResourceLocation INTELLIGENCE_ID = Noellesroles.id("intelligence");
     public static ResourceLocation CHILD_ID = Noellesroles.id("child");
 
-    //4.2版本角色
-    public static ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
-    public static ResourceLocation FITTER_ID = Noellesroles.id("fitter");
-    public static ResourceLocation PELICAN_ID = Noellesroles.id("pelican");
-    public static ResourceLocation GODFATHER_ID = Noellesroles.id("godfather");
-    public static ResourceLocation MAFIOSO_ID = Noellesroles.id("mafioso");
-    public static ResourceLocation JANITOR_ID = Noellesroles.id("janitor");
-    public static ResourceLocation WARLOCK_ID = Noellesroles.id("warlock");
-    public static ResourceLocation EMBALMER_ID = Noellesroles.id("embalmer");
-
     public static final ResourceLocation MA_CHEN_XU_ID = Noellesroles.id("ma_chen_xu");
     public static ResourceLocation JESTER_ID = Noellesroles.id("jester");
     public static ResourceLocation CONDUCTOR_ID = Noellesroles.id("conductor");

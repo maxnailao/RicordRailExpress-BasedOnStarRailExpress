@@ -392,23 +392,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
       org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent.class);
 
-  // 咒法师组件
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent> WARLOCK = ComponentRegistry
-          .getOrCreate(
-                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "warlock"),
-                  org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.class);
-
-  // 嬉命人组件
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent> EMBALMER = ComponentRegistry
-          .getOrCreate(
-                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "embalmer"),
-                  org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.class);
-
-  // 窃皮者组件
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent> SKINCRAWLER = ComponentRegistry
-          .getOrCreate(
-                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "skincrawler"),
-                  org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.class);
 
   // 黑警组件
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent> CORRUPT_COP = ComponentRegistry
@@ -441,10 +424,8 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "better_killer_ghost"),
                   org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent.class);
-    public ModComponents() {
   // 典狱长组件 - 独立胜利中立角色，正义戒律/正义审判
   public static final ComponentKey<io.wifi.starrailexpress.cca.WardenPlayerComponent> WARDEN = io.wifi.starrailexpress.cca.WardenPlayerComponent.KEY;
-
   public ModComponents() {
     // CCA 需要无参构造函数
   }
