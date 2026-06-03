@@ -29,12 +29,13 @@ public class CustomWinnerClass {
             }
             var gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
 
-            // 检查是否有小偷存活
             boolean hasFurandoru = false;
+            // 检查是否有小偷存活
             boolean hasThiefAlive = false;
             boolean hasPelicanAlive = false;
             // int thiefCount = 0;
             boolean hasCorruptCopAlive = false;
+
             int alivePlayerCount = 0;
             for (var player : serverLevel.players()) {
                 if (GameUtils.isPlayerAliveAndSurvival(player)) {
@@ -63,6 +64,7 @@ public class CustomWinnerClass {
                     }
                 }
             }
+
             if (hasFurandoru) {
                 if (alivePlayerCount <= 1 || winStatus.equals(WinStatus.TIME)) {
                     RoleUtils.customWinnerWin(serverLevel, "furandoru", RedHouseRoles.FURANDORU.color());

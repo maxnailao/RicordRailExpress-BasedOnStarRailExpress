@@ -92,6 +92,7 @@ import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinFistPunc
 import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
+import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopWinChecker;
 import org.agmas.noellesroles.game.roles.vigilante.guard.GuardPlayerHandler;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
@@ -829,6 +830,24 @@ public class ModEventsRegister {
             }
             return ShouldDropResult.PASS;
         });
+        // 黑警：自己的枪不掉
+        AllowShootRevolverDrop.EVENT.register((player, target) -> {
+            var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorldComponent != null && gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
+                return ShouldDropResult.FALSE;
+            }
+            return ShouldDropResult.PASS;
+        });
+        // 刽子手：使用狙击枪命中目标时，100% 不掉落
+        AllowShootRevolverDrop.EVENT.register((player, target) -> {
+            var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorldComponent != null
+                    && gameWorldComponent.isRole(player, ModRoles.EXECUTIONER)
+                    && player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
+                return ShouldDropResult.FALSE;
+            }
+            return ShouldDropResult.PASS;
+        });
         // 所有枪械公用冷却
         OnRevolverUsed.EVENT.register((player, target) -> {
             if (!player.isCreative()) {
@@ -1095,6 +1114,8 @@ public class ModEventsRegister {
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();
         ConspiratorKilledPlayer.registerEvents();
+        // 注册黑警胜利条件
+        CorruptCopWinChecker.registerEvent();
         // 注册疫使胜利检测和加速检测
         InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
@@ -1323,6 +1344,13 @@ public class ModEventsRegister {
                         .get(killer);
                 if (thiefComponent != null) {
                     thiefComponent.handleKilledVictim(victim);
+                }
+            }
+            //黑警击杀逻辑
+            if (killer != null && gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP)) {
+                var corruptComp = ModComponents.CORRUPT_COP.maybeGet(killer).orElse(null);
+                if (corruptComp != null) {
+                    corruptComp.incrementKillCount();
                 }
             }
 
