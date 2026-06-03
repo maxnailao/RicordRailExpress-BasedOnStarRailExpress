@@ -2119,4 +2119,5 @@
   "message.warden.target_died": "§6Your verdict target has died, verdict voided.",
   "hud.noellesroles.warden.no_gun": "§6Justice is coming",
   "hud.noellesroles.warden.ready": "§aVerdict Ready"
+  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply"
 }
