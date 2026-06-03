@@ -131,6 +131,18 @@ public class ModRoles {
     // 建议格式：MOD_ID:role_name
 
     // 乘客阵营角色 ID
+    public static ResourceLocation INTELLIGENCE_ID = Noellesroles.id("intelligence");
+    public static ResourceLocation CHILD_ID = Noellesroles.id("child");
+
+    //4.2版本角色
+    public static ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
+    public static ResourceLocation FITTER_ID = Noellesroles.id("fitter");
+    public static ResourceLocation PELICAN_ID = Noellesroles.id("pelican");
+    public static ResourceLocation GODFATHER_ID = Noellesroles.id("godfather");
+    public static ResourceLocation MAFIOSO_ID = Noellesroles.id("mafioso");
+    public static ResourceLocation JANITOR_ID = Noellesroles.id("janitor");
+    public static ResourceLocation WARLOCK_ID = Noellesroles.id("warlock");
+    public static ResourceLocation EMBALMER_ID = Noellesroles.id("embalmer");
 
     public static final ResourceLocation MA_CHEN_XU_ID = Noellesroles.id("ma_chen_xu");
     public static ResourceLocation JESTER_ID = Noellesroles.id("jester");
@@ -240,9 +252,12 @@ public class ModRoles {
 
     // 盗猎者角色 ID - 杀手阵营
     public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
+    // 召回杀手角色 ID
+    public static ResourceLocation RECALL_KILLER_ID = Noellesroles.id("recall_killer");
 
 
     // 中立阵营
+    public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
     public static final ResourceLocation STALKER_ID = Noellesroles.id("stalker");
     public static final ResourceLocation ADMIRER_ID = Noellesroles.id("admirer");
     public static final ResourceLocation PUPPETEER_ID = Noellesroles.id("puppeteer");
@@ -270,6 +285,131 @@ public class ModRoles {
     public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
+
+    /**
+     *  情报官 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+
+    public static SRERole INTELLIGENCE = TMMRoles.registerRole(new NormalRole(
+            INTELLIGENCE_ID,
+            new Color(139, 69, 19).getRGB(), // 颜色棕色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  //真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
+
+    /**
+     * 盗猎者角色 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false)
+     * - 可以使用杀手能力 (canUseKiller = true)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 隐藏计分板
+     * - 无技能
+     * - 初始道具：弓
+     * - 商店：刀(130g)、开锁器(80g)、撬棍(35g)、毒箭(120g)、缓慢箭(75g)、毒弩
+     */
+    public static SRERole POACHER = TMMRoles.registerRole(new NormalRole(
+            POACHER_ID, // 角色 ID
+            new Color(139, 69, 19).getRGB(), // 棕色 - 代表盗猎者/野外
+            false, // isInnocent = 非平民阵营（杀手）
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺时间
+            true // 隐藏计分板
+    )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true);
+
+    /**
+     *  鬼魅 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false)
+     * - 可以使用杀手能力 (canUseKiller = false)
+     * - 虚假心情系统
+     * - 无限冲刺时间
+     * - 在计分板上显示
+     * -
+     */
+    /*public static SRERole BETTER_KILLER_GHOST = TMMRoles.registerRole(new NormalRole(
+                    BETTER_KILLER_GHOST_ID,
+                    new Color(255, 0, 0).getRGB(),
+                    false, // isInnocent：不是平民
+                    true, // canUseKiller：能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setCanSeeCoin(true)
+            .setComponentKey(ModComponents.BETTER_KILLER_GHOST);*/
+
+    /**
+     *  黑警 - 中立阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
+                    CORRUPT_COP_ID,
+                    new Color(0, 0, 0).getRGB(),
+                    false, // isInnocent：不是平民
+                    false, // canUseKiller：不能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setNeutrals(true) // 中立阵营（如果你项目里用这个开关）
+            .setCanSeeCoin(true)
+            .setComponentKey(ModComponents.CORRUPT_COP);
+
+    /**
+     *  召回杀手 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false)
+     * - 可以使用杀手能力 (canUseKiller = false)
+     * - 虚假心情系统
+     * - 无限冲刺时间
+     * - 在计分板上显示
+     * - 类似recaller的技能
+     */
+    public static SRERole RECALL_KILLER = TMMRoles.registerRole(new NormalRole(
+                    RECALL_KILLER_ID,
+                    new Color(128, 0, 128).getRGB(),
+                    false, // isInnocent：不是平民
+                    true, // canUseKiller：能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setCanSeeCoin(true)
+            .setComponentKey(ModComponents.RECALL_KILLER);
+
+    /**
+     *  熊孩子角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+
+    public static SRERole CHILD = TMMRoles.registerRole(new NormalRole(
+            CHILD_ID,
+            new Color(139, 69, 19).getRGB(), // 颜色棕色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  //真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
 
     /**
      * 飞行员角色 - 平民阵营
@@ -340,7 +480,7 @@ public class ModRoles {
      *   - 杀手击杀你会获得所有悬赏
      *   - 提示：请尽量通过非任务的方式回复san值
      */
-    public static SRERole MEATBALL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballRole(
+    public static SRERole MEATBALL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.innocent.meatball.MeatballRole(
             MEATBALL_ID, // 角色 ID
             new Color(205, 133, 63).getRGB(), // 棕色 - 代表肉汁
             true, // isInnocent = 乘客阵营
@@ -868,7 +1008,7 @@ public class ModRoles {
      * - 无限体力 (Integer.MAX_VALUE)
      * - 自带水下呼吸效果
      * - 可以购买潜水头盔(125金币)和潜水靴(225金币)
-     * - 潜水头盔：提供水下呼吸和海豚恩惠1，可以丢出给其他人，渲染为钻石头盔
+     * - 潜水头盔：提供水下呼吸和海豚恩惠1，可以丢出给其他人，渲染为钻石头盔F
      * - 潜水靴：自带深海探索者3，渲染为金靴子
      * - 技能：按技能键脱掉身上的装备
      */
@@ -1881,31 +2021,6 @@ public class ModRoles {
         }
     }).setComponentKey(ModComponents.IMITATOR).setCanSeeCoin(true);
 
-    /**
-    /**
-     * 盗猎者角色 - 杀手阵营
-     * - 属于杀手阵营 (isInnocent = false)
-     * - 可以使用杀手能力 (canUseKiller = true)
-     * - 假心情系统
-     * - 无限冲刺时间
-     * - 隐藏计分板
-     * - 无技能
-     * - 初始道具：弓
-     * - 商店：刀(130g)、开锁器(80g)、撬棍(35g)、毒箭(120g)、缓慢箭(75g)、毒弩
-     */
-    public static SRERole POACHER = TMMRoles.registerRole(new NormalRole(
-            POACHER_ID, // 角色 ID
-            new Color(139, 69, 19).getRGB(), // 棕色 - 代表盗猎者/野外
-            false, // isInnocent = 非平民阵营（杀手）
-            true, // canUseKiller = 有杀手能力
-            SRERole.MoodType.FAKE, // 假心情
-            Integer.MAX_VALUE, // 无限冲刺时间
-            true // 隐藏计分板
-    )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true);
-
-
-
-
 /**
      * 愚者角色 - 好人阵营
      * - 属于乘客阵营 (isInnocent = true)
@@ -1916,7 +2031,7 @@ public class ModRoles {
      * - 核心机制：尊名纸条、塔罗会、处刑者手枪
      * - 商店：尊名纸条(50金币)、灵性斗篷(200金币)
      */
-    public static SRERole THE_FOOL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolRole(
+    public static SRERole THE_FOOL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.innocent.fool.FoolRole(
             THE_FOOL_ID, // 角色 ID
             new Color(180, 160, 220).getRGB(), // 淡紫色 - 代表神秘与命运
             true, // isInnocent = 好人阵营

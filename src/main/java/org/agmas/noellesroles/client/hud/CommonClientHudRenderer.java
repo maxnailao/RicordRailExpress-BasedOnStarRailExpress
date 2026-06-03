@@ -53,7 +53,7 @@ import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPla
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.child.ChildPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;

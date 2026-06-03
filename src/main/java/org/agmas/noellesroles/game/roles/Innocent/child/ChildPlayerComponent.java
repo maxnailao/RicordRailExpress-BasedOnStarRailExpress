@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.child;
+package org.agmas.noellesroles.game.roles.innocent.child;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import net.minecraft.core.HolderLookup;
