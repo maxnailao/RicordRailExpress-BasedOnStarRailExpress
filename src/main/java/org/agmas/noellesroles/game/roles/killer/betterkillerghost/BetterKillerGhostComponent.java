@@ -20,13 +20,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
@@ -37,9 +36,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  */
 public class BetterKillerGhostComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     
-    public static final ComponentKey<BetterKillerGhostComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "betterkillerghost"),
-            BetterKillerGhostComponent.class);
+    public static final ComponentKey<BetterKillerGhostComponent> KEY = ModComponents.BETTER_KILLER_GHOST;
 
     private final Player player;
     
