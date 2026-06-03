@@ -2879,7 +2879,6 @@
   "message.noellesroles.poacher.slow_arrow_limit": "You already have 2 slow arrows, cannot buy more",
   "message.noellesroles.poacher.crossbow_limit": "You already have a crossbow, cannot buy another",
   "message.noellesroles.poacher.bow_cooldown": "Bow is on cooldown, %d seconds remaining",
-  "message.noellesroles.poacher.bow_ready": "Bow is ready!",
   "message.noellesroles.intelligence.monitor_triggered": "§c§lMonitor triggered! Player death detected!",
   "message.noellesroles.intelligence.monitor_placed": "§aMonitor deployed",
   "message.noellesroles.intelligence.max_monitors": "§cMaximum number of monitors reached (2)",

@@ -384,8 +384,6 @@ public class ModRolesInitialEventRegister {
     static {//技能注册
         //调用熊孩子技能注册
         org.agmas.noellesroles.game.roles.innocent.child.ChildSkillRegistry.register();
-        // 注册情报官事件监听（监视器触发死亡检测）
-        org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent.registerEvents();
 
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, context -> {
@@ -493,72 +491,6 @@ public class ModRolesInitialEventRegister {
             } else {
                 player.displayClientMessage(Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED), true);
             }
-        });
-
-        // 鬼魅技能注册：进入/操作幽影模式
-        RoleSkill.register(ModRoles.BETTER_KILLER_GHOST, context -> {
-            ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.component.ModComponents.BETTER_KILLER_GHOST.get(player);
-            if (comp == null) return;
-            comp.useAbility();
-        });
-
-        // 盗猎者技能注册：显示弓射击冷却状态
-        RoleSkill.register(ModRoles.POACHER, context -> {
-            ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.component.ModComponents.POACHER.get(player);
-            if (comp == null) return;
-            if (comp.bowShootCooldown > 0) {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.poacher.bow_cooldown",
-                        (comp.bowShootCooldown + 19) / 20)
-                        .withStyle(net.minecraft.ChatFormatting.RED),
-                    true
-                );
-            } else {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.poacher.bow_ready")
-                        .withStyle(net.minecraft.ChatFormatting.GREEN),
-                    true
-                );
-            }
-        });
-
-        // 情报官技能注册：放置监视器
-        RoleSkill.register(ModRoles.INTELLIGENCE, context -> {
-            ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.component.ModComponents.INTELLIGENCE.get(player);
-            if (comp == null) return;
-            // 检查冷却
-            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-            if (ability.cooldown > 0) {
-                player.displayClientMessage(
-                    Component.translatable("hud.noellesroles.intelligence.cooldown",
-                        (ability.cooldown + 19) / 20, 2 - comp.monitors.size())
-                        .withStyle(ChatFormatting.RED),
-                    true
-                );
-                return;
-            }
-            // 检查是否还能放置
-            if (!comp.canPlaceMonitor()) {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.intelligence.max_monitors")
-                        .withStyle(ChatFormatting.RED),
-                    true
-                );
-                return;
-            }
-            // 放置监视器
-            comp.addMonitor(player.getX(), player.getY(), player.getZ(),
-                player.level().dimension().location());
-            ability.cooldown = 60 * 20; // 60秒冷却
-            ability.sync();
-            player.displayClientMessage(
-                Component.translatable("message.noellesroles.intelligence.monitor_placed")
-                    .withStyle(ChatFormatting.GREEN),
-                true
-            );
         });
     }
 
