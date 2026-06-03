@@ -102,10 +102,11 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             return net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));
         });
         
-        // 注册实体受伤事件 - 幽影模式下鬼魅本体无敌（不能被其他玩家攻击）
+        // 注册实体受伤事件 - 幽影模式下鬼魅本体无敌（但不能影响幻影实体）
         net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            // ⚠️ 关键：只检查ServerPlayer，不要检查GhostPhantomEntity
             if (!(entity instanceof ServerPlayer player)) {
-                return true; // 非玩家实体，允许伤害
+                return true; // 非玩家实体（包括幻影），允许伤害
             }
             
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
@@ -115,31 +116,11 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             
             BetterKillerGhostComponent comp = KEY.get(player);
             if (comp != null && comp.isInShadowMode) {
-                // 幽影模式下鬼魅本体无敌，拒绝所有伤害
+                // 幽影模式下鬼魅本体（玩家）无敌，拒绝所有伤害
                 return false;
             }
             
             return true; // 非幽影模式，允许伤害
-        });
-        
-        // 注册死亡事件 - 幽影模式下免疫死亡，但pierceDeath可以绕过
-        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
-            // 先检查pierceDeath标志（由ModEffects设置，用于幻影摧毁时绕过免疫）
-            if (ModEffects.pierceDeath) {
-                return true; // pierceDeath=true时允许死亡
-            }
-            
-            // 检查玩家是否有该组件(假人玩家可能没有)
-            if (!KEY.maybeGet(player).isPresent()) {
-                return true; // 没有组件的玩家正常死亡
-            }
-            
-            BetterKillerGhostComponent comp = KEY.get(player);
-            if (comp != null && comp.isInShadowMode) {
-                // 幽影模式下免疫死亡
-                return false;
-            }
-            return true;
         });
     }
 
@@ -434,7 +415,7 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     }
 
     /**
-     * 幻影被摧毁时调用（由GhostPhantomEntity.hurt()调用）
+     * 幻影被摧毁时调用（由GhostPhantomEntity.hurt()或playerHurt()调用）
      * 完全参照傀儡师onBodyDeath()实现
      */
     public void onPhantomDeath(Player killer, ResourceLocation deathReason) {
@@ -443,31 +424,31 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         if (!(player instanceof ServerPlayer serverPlayer))
             return;
 
-        // 移除幻影实体
+        // ⚠️ 关键步骤1：先移除幻影实体
         GhostPhantomEntity phantom = getPhantomEntity();
         if (phantom != null) {
             phantom.discard();
         }
 
-        // ⚠️ 关键：先退出幽影模式，再调用killPlayer
-        // 这样ALLOW_DAMAGE就不会返回false阻止死亡
+        // ⚠️ 关键步骤2：清除幽影状态（必须在杀死玩家之前）
+        // 这样ALLOW_DAMAGE事件就不会拦截后续的死亡
         this.isInShadowMode = false;
         this.phantomUuid = null;
         this.teleportCount = 3;
         
-        // 移除隐身效果
-        player.removeEffect(MobEffects.INVISIBILITY);
+        // ⚠️ 关键步骤3：同步状态到客户端（确保其他系统看到最新状态）
+        this.sync();
         
-        // 现在可以安全地杀死玩家了（因为已经不在幽影模式）
+        // ⚠️ 关键步骤4：使用pierceDeath标志确保死亡不被任何事件拦截
+        ModEffects.pierceDeath = true;
         GameUtils.killPlayer(serverPlayer, true, killer, deathReason);
+        ModEffects.pierceDeath = false;
 
         // 发送消息
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.betterkillerghost.phantom_destroyed")
                         .withStyle(net.minecraft.ChatFormatting.DARK_RED, net.minecraft.ChatFormatting.BOLD),
                 false);
-
-        this.sync();
     }
 
     /**

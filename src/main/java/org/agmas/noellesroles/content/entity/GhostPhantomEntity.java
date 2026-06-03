@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
@@ -189,6 +190,12 @@ public class GhostPhantomEntity extends LivingEntity {
                 if (ghostComp != null && ghostComp.isInShadowMode) {
                     ghostComp.onPhantomDeath(player, deathReason);
                 }
+            } else {
+                owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
+                ModEffects.pierceDeath = true;
+                GameUtils.killPlayer(owner, true, player, deathReason);
+                ModEffects.pierceDeath = false;
+                discard();
             }
         }
         return true;
@@ -199,24 +206,20 @@ public class GhostPhantomEntity extends LivingEntity {
         if (level().isClientSide())
             return false;
 
-        // 只免疫虚空和挤压伤害
         if (source.is(DamageTypes.IN_WALL))
             return false;
-        
-        // 调用父类处理伤害（允许所有攻击）
+        // ⚠️ 完全参照傀儡师：不拦截PLAYER_ATTACK，让所有伤害都能通过
+        // 调用父类处理伤害
         boolean result = super.hurt(source, amount);
 
-        // 如果死亡，通知鬼魅组件
+        // 如果死亡，通知鬼魅
         if (this.isDeadOrDying()) {
             Player owner = getOwner();
             if (owner != null) {
+                // 通知鬼魅组件幻影死亡
                 BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(owner);
                 if (ghostComp != null && ghostComp.isInShadowMode) {
-                    // 调用onPhantomDeath让鬼魅玩家死亡
-                    ghostComp.onPhantomDeath(
-                        source.getEntity() instanceof Player ? (Player) source.getEntity() : null,
-                        GameConstants.DeathReasons.GENERIC
-                    );
+                    ghostComp.onPhantomDeath();
                 }
             }
         }
@@ -284,6 +287,16 @@ public class GhostPhantomEntity extends LivingEntity {
     @Override
     public boolean canBeHitByProjectile() {
         return true; // 可以被弹射物击中
+    }
+
+    @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        // 完全参照傀儡师：只对虚空伤害不免疫
+        if (source.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD)) {
+            return false; // 不免疫虚空伤害，让实体正常死亡
+        }
+        // 对其他所有伤害都不免疫
+        return false;
     }
 
     @Override
