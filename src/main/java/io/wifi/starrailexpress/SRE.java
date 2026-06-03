@@ -123,6 +123,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initSkinsNetworkSync();
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
+        io.wifi.starrailexpress.game.roles.WardenRole.init();
 
     }
 
@@ -136,6 +137,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         TMMRoles.addRoleComponents(SREPlayerPoisonComponent.KEY);
         TMMRoles.addRoleComponents(SREPlayerShopComponent.KEY);
         TMMRoles.addRoleComponents(ExtraSlotComponent.KEY);
+        TMMRoles.addRoleComponents(WardenPlayerComponent.KEY);
         // 注册鬼魅角色组件
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.BETTER_KILLER_GHOST);
     }

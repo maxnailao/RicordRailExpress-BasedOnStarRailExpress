@@ -351,7 +351,6 @@
   "text.autoconfig.noellesroles.option.chanceOfAmnesiac": "失忆患者刷新概率（%）",
   "text.autoconfig.noellesroles.option.chanceOfInfected": "疫使刷新概率（%）",
   "text.autoconfig.noellesroles.option.minPlayerForInfected": "疫使最小玩家数",
-  "text.autoconfig.noellesroles.option.infectedKillTime": "疫使：感染后到死亡的时间（单位：秒）",
   "text.autoconfig.noellesroles.option.infectedSpreadInterval": "疫使：感染传播间隔（单位：秒）",
   "text.autoconfig.noellesroles.option.infectedCooldown": "疫使：技能冷却时长（单位：秒）",
   "text.autoconfig.noellesroles.option.chanceOfBlackWhite": "黑白修饰符刷新概率（%）",

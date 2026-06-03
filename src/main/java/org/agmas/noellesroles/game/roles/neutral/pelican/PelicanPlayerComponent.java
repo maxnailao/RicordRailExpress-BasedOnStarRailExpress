@@ -131,6 +131,11 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         if (bellyPlayerIds.contains(target.getUUID())) return false;
         if (PelicanManager.isStashed(target)) return false;
 
+        // 不能吞噬鹈鹕和黑白角色
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld.isRole(target, ModRoles.PELICAN)) return false;
+        if (gameWorld.isRole(target, ModRoles.MONOKUMA)) return false;
+
         // 吞噬玩家
         PelicanManager.stashPlayer(sp, target);
 
@@ -143,7 +148,7 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         eatenCount = uniqueEaten.size();
 
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 0.9F, 0.65F);
+                SoundEvents.PLAYER_BURP, SoundSource.MASTER, 0.9F, 0.65F);
 
         sp.displayClientMessage(
                 Component.translatable("message.noellesroles.pelican.swallowed",

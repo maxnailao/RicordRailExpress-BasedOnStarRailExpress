@@ -179,7 +179,8 @@ public class NoellesRolesConfig implements ConfigData {
      * 疫使感染致死时间（秒）
      * 玩家被感染后多久会死亡
      */
-    public int infectedKillTime = 180;
+
+
 
     /**
      * 疫使病毒传播间隔（秒）
