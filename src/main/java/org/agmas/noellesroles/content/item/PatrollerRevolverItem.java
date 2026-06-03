@@ -77,16 +77,19 @@ public class PatrollerRevolverItem extends SkinableItem {
 
     public static HitResult getGunTarget(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user, (entity) -> {
-            boolean var10000;
+            // 允许选中玩家
             if (entity instanceof Player player) {
-                if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                    var10000 = true;
-                    return var10000;
-                }
+                return GameUtils.isPlayerAliveAndSurvival(player);
             }
-
-            var10000 = false;
-            return var10000;
+            // 允许选中傀儡师本体实体
+            if (entity instanceof org.agmas.noellesroles.content.entity.PuppeteerBodyEntity) {
+                return true;
+            }
+            // 允许选中鬼魅幻影实体
+            if (entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) {
+                return true;
+            }
+            return false;
         }, 15.0);
     }
 

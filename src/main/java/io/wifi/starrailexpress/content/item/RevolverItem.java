@@ -90,8 +90,19 @@ public class RevolverItem extends SkinableItem {
     public static HitResult getGunTarget(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user,
                 entity -> {
-                    return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
-                            || entity instanceof PuppeteerBodyEntity;
+                    // 允许选中玩家
+                    if (entity instanceof Player player) {
+                        return GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
+                    }
+                    // 允许选中傀儡师本体实体
+                    if (entity instanceof PuppeteerBodyEntity) {
+                        return true;
+                    }
+                    // 允许选中鬼魅幻影实体
+                    if (entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) {
+                        return true;
+                    }
+                    return false;
                 }, 20f);
     }
 
