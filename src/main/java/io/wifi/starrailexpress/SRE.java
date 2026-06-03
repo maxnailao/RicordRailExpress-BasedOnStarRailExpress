@@ -123,7 +123,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initSkinsNetworkSync();
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
-        io.wifi.starrailexpress.game.roles.WardenRole.init();
 
     }
 
