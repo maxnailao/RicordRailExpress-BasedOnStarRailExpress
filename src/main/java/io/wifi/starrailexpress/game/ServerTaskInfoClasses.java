@@ -320,6 +320,7 @@ public class ServerTaskInfoClasses {
                             }
                             entity.setKeyName(keyName);
                             blockState = blockState.setValue(SmallDoorBlock.OPEN, false);
+                            blockState = blockState.setValue(SmallDoorBlock.POWERED, false);
                             BlockEntityInfo blockEntityInfo = new BlockEntityInfo(
                                     entity.saveCustomOnly(serverWorld.registryAccess()),
                                     entity.components());

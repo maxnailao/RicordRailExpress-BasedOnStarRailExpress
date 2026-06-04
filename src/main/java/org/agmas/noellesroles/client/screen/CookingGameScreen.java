@@ -302,7 +302,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
         TickTimer gameTimer = new TickTimer(
                 20,
                 false,
-                () -> {
+                tickTimer -> {
                     --curTime;
                     if (curTime >= 0)
                         timeLineStringWidget.setMessage(Component.literal(curTime + ""));
@@ -311,7 +311,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
         tickTimers.add(new TickTimer(
                 DURATION,
                 true,
-                () -> {
+                tickTimer -> {
                     isTimeout = true;
                     timeLineStringWidget.setMessage(Component.literal("Time Out"));
                     timeLineStringWidget.setPosition(originalX,
@@ -329,7 +329,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                     buffTimers.add(new TickTimer(
                             10,
                             true,
-                            () -> {
+                            tickTimer2 -> {
                                 int textHeight = 20;
                                 int scoreCardSize = BASE_FOOD_SIZE * pixelSize * 2;
                                 int rowNum = (infoCards.size() + ROW_BUFF_NUM - 1) / ROW_BUFF_NUM;
@@ -352,7 +352,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                                 buffTimers.add(new TickTimer(
                                         aniTick,
                                         true,
-                                        () -> {
+                                        tickTimer3 -> {
                                             // 添加信息卡
                                             int curX = INFO_BOUND + centerX - scoreBarWidth / 2;
                                             int curY = INFO_BOUND + centerY - maxScoreBarHeight / 2;
