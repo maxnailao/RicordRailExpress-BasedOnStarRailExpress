@@ -14,6 +14,8 @@ import java.util.UUID;
 public class GodfatherRecruitScreen extends Screen {
     private static final int COLOR_MAFIOSO = 0xFFDA70D6;
     private static final int COLOR_JANITOR = 0xFFFF69B4;
+    private static final int COLOR_NUTRITIONIST = 0xFF32CD32;
+    private static final int COLOR_PARASOL = 0xFF008B8B;
 
     public GodfatherRecruitScreen() {
         super(Component.translatable("screen.noellesroles.godfather.recruit"));
@@ -23,25 +25,36 @@ public class GodfatherRecruitScreen extends Screen {
     protected void init() {
         super.init();
         int cx = width / 2;
-        int midY = height / 2 - 40;
+        int midY = height / 2 - 50;
+        int bw = 100, bh = 50, gap = 10;
 
-        // Mafioso button
+        // 上排: 家族教徒 (左) | 家族侍卫 (右)
         addRenderableWidget(Button.builder(
             Component.translatable("role.noellesroles.mafioso"),
             btn -> sendRecruit(MafiaActionC2SPacket.RECRUIT_MAFIOSO))
-            .pos(cx - 110, midY).size(100, 60).build());
+            .pos(cx - bw - gap / 2, midY).size(bw, bh).build());
 
-        // Janitor button
         addRenderableWidget(Button.builder(
             Component.translatable("role.noellesroles.janitor"),
             btn -> sendRecruit(MafiaActionC2SPacket.RECRUIT_JANITOR))
-            .pos(cx + 10, midY).size(100, 60).build());
+            .pos(cx + gap / 2, midY).size(bw, bh).build());
+
+        // 下排: 家族调理师 (左) | 家族保护伞 (右)
+        addRenderableWidget(Button.builder(
+            Component.translatable("role.noellesroles.nutritionist"),
+            btn -> sendRecruit(MafiaActionC2SPacket.RECRUIT_NUTRITIONIST))
+            .pos(cx - bw - gap / 2, midY + bh + gap).size(bw, bh).build());
+
+        addRenderableWidget(Button.builder(
+            Component.translatable("role.noellesroles.parasol"),
+            btn -> sendRecruit(MafiaActionC2SPacket.RECRUIT_PARASOL))
+            .pos(cx + gap / 2, midY + bh + gap).size(bw, bh).build());
 
         // Close button
         addRenderableWidget(Button.builder(
             Component.translatable("gui.cancel"),
             btn -> onClose())
-            .pos(cx - 50, midY + 80).size(100, 20).build());
+            .pos(cx - 50, midY + bh * 2 + gap * 2 + 10).size(100, 20).build());
     }
 
     private void sendRecruit(int action) {

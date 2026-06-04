@@ -126,6 +126,7 @@ dependencies {
     }
     modImplementation "maven.modrinth:modmenu:11.0.3"
     modRuntimeOnly("org.anarres:jcpp:${jcpp_version}")
+    modRuntimeOnly fileTree(dir: 'runtime_mods', include: '*.jar')
     modRuntimeOnly files("libs/ForgeConfigAPIPort-v21.1.6-1.21.1-Fabric.jar")
     modImplementation("io.github.douira:glsl-transformer:${glslTransformer_version}")
 }

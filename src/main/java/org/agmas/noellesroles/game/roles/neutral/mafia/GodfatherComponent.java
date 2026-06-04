@@ -30,7 +30,7 @@ public class GodfatherComponent implements RoleComponent {
     public int maxLoadedBullets = 3;
     public int recruitLimit = 4;
     public long recruitCooldownUntil = 0;
-    public int recruitCooldownSeconds = 55;
+    public int recruitCooldownSeconds = 110;
 
     public GodfatherComponent(Player player) { this.player = player; }
 

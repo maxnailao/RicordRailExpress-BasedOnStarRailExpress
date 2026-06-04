@@ -8,7 +8,8 @@ bin/*
 .apt_generated/*
 tools/other/*
 /tools/other/
-
+runtime_mods/*
+/runtime_mods/
 /.kilocode/
 /run/
 /.idea/

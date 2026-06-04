@@ -267,6 +267,8 @@ public class ModRoles {
     public static ResourceLocation GODFATHER_ID = Noellesroles.id("godfather");
     public static ResourceLocation MAFIOSO_ID = Noellesroles.id("mafioso");
     public static ResourceLocation JANITOR_ID = Noellesroles.id("janitor");
+    public static ResourceLocation NUTRITIONIST_ID = Noellesroles.id("nutritionist");
+    public static ResourceLocation PARASOL_ID = Noellesroles.id("parasol");
     public static final ResourceLocation NIAN_SHOU_ID = Noellesroles.id("nianshou");
     public static final ResourceLocation OLDMAN_ID = Noellesroles.id("oldman");
     public static final ResourceLocation THIEF_ID = Noellesroles.id("thief");
@@ -281,6 +283,9 @@ public class ModRoles {
 
     // 葬仪 ID - 杀手方中立
     public static final ResourceLocation MORTICIAN_BODYMAKER_ID = Noellesroles.id("mortician_bodymaker");
+
+    // 幻音师 ID - 杀手方中立
+    public static final ResourceLocation PHANTOM_MUSICIAN_ID = Noellesroles.id("phantom_musician");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
@@ -1289,7 +1294,7 @@ public class ModRoles {
      * 鹈鹕角色 (Pelican)
      * - 独立胜利中立阵营 (isInnocent = false, canUseKiller = false, setNeutrals(true))
      * - 不帮助杀手阵营 (setNeutralForKiller(false))
-     * - 技能：吞噬面前3.15格内的存活玩家进肚子里
+     * - 技能：吞噬面前2.15格内的存活玩家进肚子里
      * - 蹲下+技能：释放最后吞噬的玩家
      * - 胜利条件：吞噬开局玩家数80%的玩家
      * - 本能透视范围：25格
@@ -1316,6 +1321,16 @@ public class ModRoles {
             .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
     public static SRERole JANITOR = TMMRoles
             .registerRole(new NormalRole(JANITOR_ID, new Color(255, 105, 180).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+            .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
+            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+    public static SRERole NUTRITIONIST = TMMRoles
+            .registerRole(new NormalRole(NUTRITIONIST_ID, new Color(50, 205, 50).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+            .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
+            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+    public static SRERole PARASOL = TMMRoles
+            .registerRole(new NormalRole(PARASOL_ID, new Color(0, 139, 139).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
@@ -2340,5 +2355,34 @@ public class ModRoles {
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY))
             .setCanUseKiller(true).setCanSeeTeammateKiller(true)
             .setCanUseInstinct(true).setCanSeeCoin(true);
+
+    /**
+     * 幻音师角色 (Phantom Musician)
+     * - 杀手方中立阵营 (isInnocent = false, canUseKiller = false)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 在计分板上隐藏
+     *
+     * 被动：每30秒获得50金币
+     *
+     * 商店音效（图标为音符盒，购买时播放音效）：
+     * - 出刀的声音 (50金币, 冷却30秒)
+     * - 左轮手枪开火的声音 (75金币, 冷却30秒)
+     * - 潜行者觉醒的声音 (100金币, 冷却120秒, MASTER类型全场播放)
+     * - 疯狂模式的声音 (450金币, 冷却5分钟)
+     * - 撬棍撬门的声音 (75金币, 冷却1分钟)
+     * - 随机播放音效 (100金币, 冷却40秒, 图标为音乐唱片)
+     *
+     * 技能：花费100金币传送到30格外随机一人的身边，冷却120秒
+     */
+    public static SRERole PHANTOM_MUSICIAN = TMMRoles
+            .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
+                    .setComponentKey(org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY))
+            .setNeutralForKiller(true)
+            .setNeutrals(true)
+            .setCanUseInstinct(true)
+            .setCanSeeCoin(true)
+            .setMax(1);
 
 }

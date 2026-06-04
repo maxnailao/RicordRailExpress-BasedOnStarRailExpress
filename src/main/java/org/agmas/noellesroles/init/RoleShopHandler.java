@@ -48,6 +48,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -262,10 +263,13 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> GODFATHER_SHOP = new ArrayList<>();
   public static ArrayList<ShopEntry> MAFIOSO_SHOP = new ArrayList<>();
   public static ArrayList<ShopEntry> JANITOR_SHOP = new ArrayList<>();
+  public static ArrayList<ShopEntry> NUTRITIONIST_SHOP = new ArrayList<>();
+  public static ArrayList<ShopEntry> PARASOL_SHOP = new ArrayList<>();
   // ==================== 咒法师商店 ====================
   public static ArrayList<ShopEntry> WARLOCK_SHOP = new ArrayList<>();
   // ==================== 嬉命人商店 ====================
   public static ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
+  public static ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -1314,6 +1318,16 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(
           ModRoles.JANITOR_ID, JANITOR_SHOP);
     }
+    // 家族保姆商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.NUTRITIONIST_ID, NUTRITIONIST_SHOP);
+    }
+    // 家族保护伞商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.PARASOL_ID, PARASOL_SHOP);
+    }
     // 咒法师商店
     {
       ShopContent.customEntries.put(
@@ -1323,6 +1337,11 @@ public class RoleShopHandler {
     {
       ShopContent.customEntries.put(
           ModRoles.EMBALMER_ID, EMBALMER_SHOP);
+    }
+    // 幻音师商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.PHANTOM_MUSICIAN_ID, PHANTOM_MUSICIAN_SHOP);
     }
     // 小偷商店
     {
@@ -2544,10 +2563,12 @@ public class RoleShopHandler {
         ShopEntry.Type.TOOL));
 
     // ==================== 教父商店 ====================
-    // 子弹 - 200金币（右键装填或购买时自动装填）
+    // 开锁器 - 150金币
+    GODFATHER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+    // 子弹 - 250金币（右键装填或购买时自动装填）
     GODFATHER_SHOP.add(new ShopEntry(
         ModItems.BULLET.getDefaultInstance(),
-        200,
+        250,
         ShopEntry.Type.WEAPON) {
       @Override
       public boolean onBuy(@NotNull Player player) {
@@ -2562,10 +2583,90 @@ public class RoleShopHandler {
     MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
 
     // ==================== 家族侍卫商店 ====================
-    // 飞刀 - 130金币
-    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
+    // 飞刀 - 180金币
+    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 180, ShopEntry.Type.WEAPON));
+    // 关灯 - 200金币
+    JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
     // 短管霰弹枪 - 250金币
     JANITOR_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
+
+    // ==================== 家族保姆商店 ====================
+    // 护盾试剂 - 325金币
+    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.DEFENSE_VIAL.getDefaultInstance(), 325, ShopEntry.Type.WEAPON));
+    // 毒药试剂 - 150金币
+    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 150, ShopEntry.Type.WEAPON));
+    // 喷溅型速度3 - 275金币 (持续5秒)
+    {
+      var SPEED_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var speedList = List.of(new MobEffectInstance(
+          MobEffects.MOVEMENT_SPEED,
+          5 * 20,
+          2,
+          false,
+          true,
+          true
+      ));
+      var speedContent = new PotionContents(Optional.empty(), Optional.of(53503),
+          speedList);
+      SPEED_SPLASH.set(DataComponents.POTION_CONTENTS, speedContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(SPEED_SPLASH, 275, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型禁止移动药水 - 275金币 (持续2.5秒)
+    {
+      var IMMOBILE_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var immobileList = List.of(new MobEffectInstance(
+          ModEffects.MOVE_BANED,
+          50, // 2.5秒 = 50 ticks
+          0,
+          false,
+          true,
+          true
+      ));
+      var immobileContent = new PotionContents(Optional.empty(), Optional.of(0x8B0000),
+          immobileList);
+      IMMOBILE_SPLASH.set(DataComponents.POTION_CONTENTS, immobileContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(IMMOBILE_SPLASH, 275, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型无碰撞药水 - 175金币 (持续20秒)
+    {
+      var NOCLIP_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var noclipList = List.of(new MobEffectInstance(
+          ModEffects.NO_COLLIDE,
+          20 * 20, // 20秒
+          0,
+          false,
+          true,
+          true
+      ));
+      var noclipContent = new PotionContents(Optional.empty(), Optional.of(0x00FF7F),
+          noclipList);
+      NOCLIP_SPLASH.set(DataComponents.POTION_CONTENTS, noclipContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(NOCLIP_SPLASH, 175, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型无限体力药水 - 200金币 (持续15秒)
+    {
+      var STAMINA_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var staminaList = List.of(new MobEffectInstance(
+          ModEffects.INFINITE_STAMINA,
+          15 * 20, // 15秒
+          0,
+          false,
+          true,
+          true
+      ));
+      var staminaContent = new PotionContents(Optional.empty(), Optional.of(0x00CED1),
+          staminaList);
+      STAMINA_SPLASH.set(DataComponents.POTION_CONTENTS, staminaContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(STAMINA_SPLASH, 200, ShopEntry.Type.WEAPON));
+    }
+
+    // ==================== 家族保护伞商店 ====================
+    // 手榴弹 - 425金币
+    PARASOL_SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 425, ShopEntry.Type.WEAPON));
+    // 烟雾弹 - 175金币
+    PARASOL_SHOP.add(new ShopEntry(ModItems.SMOKE_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.WEAPON));
+    // 闪光弹 - 125金币
+    PARASOL_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
 
     // ==================== 咒法师商店 ====================
     // 刀 - 130金币
@@ -2589,6 +2690,160 @@ public class RoleShopHandler {
     // ==================== 嬉命人商店 ====================
     // 开锁器 - 100金币
       EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+    // ==================== 幻音师商店 ====================
+    // 出刀的声音 - 50金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.knife_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.knifeSoundCooldown > 0) return false;
+          c.knifeSoundCooldown = c.KNIFE_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_KNIFE_STAB, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 左轮手枪开火的声音 - 75金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.revolver_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.revolverSoundCooldown > 0) return false;
+          c.revolverSoundCooldown = c.REVOLVER_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 潜行者觉醒的声音 - 100金币, 冷却120秒, MASTER全场
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.stalker_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.stalkerSoundCooldown > 0) return false;
+          c.stalkerSoundCooldown = c.STALKER_SOUND_COOLDOWN; c.sync();
+          if (p instanceof ServerPlayer sp) for (var pp : sp.serverLevel().players())
+            if (pp != null) pp.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1F, 1.5F);
+          return true;
+        }
+      });
+    }
+    // 疯狂模式的声音 - 450金币, 冷却5分钟
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.psycho_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 450, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.psychoSoundCooldown > 0) return false;
+          c.psychoSoundCooldown = c.PSYCHO_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.AMBIENT_PSYCHO_DRONE, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 撬棍撬门的声音 - 75金币, 冷却1分钟
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.crowbar_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.crowbarSoundCooldown > 0) return false;
+          c.crowbarSoundCooldown = c.CROWBAR_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_CROWBAR_PRY, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 随机播放音效 - 100金币, 冷却40秒, 图标为音乐唱片
+    {
+      ItemStack s = new ItemStack(Items.MUSIC_DISC_RELIC);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.random_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
+        private final java.util.List<Object> allSounds = java.util.List.of(
+            // === TMMSounds (starrailexpress) ===
+            TMMSounds.ITEM_KNIFE_STAB, TMMSounds.ITEM_KNIFE_PREPARE,
+            TMMSounds.ITEM_REVOLVER_SHOOT, TMMSounds.ITEM_REVOLVER_CLICK,
+            TMMSounds.ITEM_CROWBAR_PRY, TMMSounds.ITEM_SNIPER_RIFLE_SHOOT,
+            TMMSounds.ITEM_SNIPER_RIFLE_RELOAD, TMMSounds.ITEM_DERRINGER_RELOAD,
+            TMMSounds.ITEM_GRENADE_THROW, TMMSounds.ITEM_GRENADE_EXPLODE,
+            TMMSounds.ITEM_BAT_HIT, TMMSounds.ITEM_PSYCHO_ARMOUR,
+            TMMSounds.ITEM_SCOPE_ATTACH, TMMSounds.ITEM_SCOPE_DETACH,
+            TMMSounds.ITEM_LOCKPICK_DOOR, TMMSounds.ITEM_KEY_DOOR,
+            TMMSounds.BLOCK_DOOR_LOCKED, TMMSounds.BLOCK_DOOR_TOGGLE,
+            TMMSounds.BLOCK_CARGO_BOX_OPEN, TMMSounds.BLOCK_CARGO_BOX_CLOSE,
+            TMMSounds.BLOCK_LIGHT_TOGGLE, TMMSounds.BLOCK_SPRINKLER_RUN,
+            TMMSounds.BLOCK_PRIVACY_PANEL_TOGGLE, TMMSounds.BLOCK_SPACE_BUTTON_TOGGLE,
+            TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER,
+            TMMSounds.UI_SHOP_BUY, TMMSounds.UI_SHOP_BUY_FAIL,
+            TMMSounds.UI_PIANO, TMMSounds.UI_PIANO_WIN,
+            TMMSounds.UI_PIANO_LOSE, TMMSounds.UI_PIANO_STINGER,
+            TMMSounds.UI_RISER,
+            TMMSounds.AMBIENT_TRAIN_HORN, TMMSounds.AMBIENT_TRAIN_INSIDE,
+            TMMSounds.AMBIENT_TRAIN_OUTSIDE, TMMSounds.AMBIENT_PSYCHO_DRONE,
+            TMMSounds.AMBIENT_BLACKOUT,
+            // === NRSounds (noellesroles) ===
+            NRSounds.SHOTGUN_FIRE, NRSounds.SHOTGUNU_COCK,
+            NRSounds.SHORT_CIRCUIT, NRSounds.BEEP, NRSounds.C4_BEEP,
+            NRSounds.SYRINGE_STAB, NRSounds.INFECTED_COUGH, NRSounds.INFECTED_INFECT,
+            NRSounds.MAFIA, NRSounds.PARTY_SKILL,
+            NRSounds.TIME_STOP, NRSounds.TIME_START, NRSounds.DIO_SPAWN,
+            NRSounds.WIND, NRSounds.GAMBER_DEATH, NRSounds.MUSIC_CLOCK,
+            NRSounds.GONGXI_FACAI, NRSounds.TO_BE_CONTINUED,
+            NRSounds.HARPY_WELCOME, NRSounds.JESTER_AMBIENT,
+            NRSounds.NYAN_CAT, NRSounds.THMUSIC_UN_OWEN, NRSounds.BAKA_BAKA,
+            // === Vanilla SoundEvents ===
+            SoundEvents.WITHER_SPAWN, SoundEvents.WITHER_DEATH,
+            SoundEvents.LIGHTNING_BOLT_THUNDER, SoundEvents.ENDER_DRAGON_GROWL,
+            SoundEvents.ENDER_DRAGON_DEATH, SoundEvents.EVOKER_PREPARE_SUMMON,
+            SoundEvents.EVOKER_CAST_SPELL, SoundEvents.GENERIC_EXPLODE,
+            SoundEvents.FIREWORK_ROCKET_LARGE_BLAST,
+            SoundEvents.WARDEN_ROAR, SoundEvents.WARDEN_HEARTBEAT,
+            SoundEvents.WARDEN_AGITATED, SoundEvents.GHAST_SCREAM,
+            SoundEvents.RAVAGER_ROAR, SoundEvents.ANVIL_DESTROY,
+            SoundEvents.ANVIL_PLACE, SoundEvents.ANVIL_USE,
+            SoundEvents.BEACON_POWER_SELECT, SoundEvents.CONDUIT_ATTACK_TARGET,
+            SoundEvents.TRIDENT_THROW, SoundEvents.TRIDENT_RETURN,
+            SoundEvents.SHIELD_BLOCK, SoundEvents.CHAIN_HIT,
+            SoundEvents.END_PORTAL_SPAWN, SoundEvents.IRON_GOLEM_REPAIR,
+            SoundEvents.SMITHING_TABLE_USE, SoundEvents.BELL_BLOCK,
+            SoundEvents.TOTEM_USE, SoundEvents.EXPERIENCE_ORB_PICKUP,
+            SoundEvents.PLAYER_BURP, SoundEvents.ITEM_BREAK,
+            SoundEvents.FLINTANDSTEEL_USE, SoundEvents.EGG_THROW,
+            SoundEvents.VILLAGER_YES, SoundEvents.TOTEM_USE,
+            SoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_LOOM_TAKE_RESULT,
+            SoundEvents.NOTE_BLOCK_BELL, SoundEvents.NOTE_BLOCK_HARP,
+            SoundEvents.NOTE_BLOCK_BASEDRUM, SoundEvents.NOTE_BLOCK_PLING,
+            SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundEvents.GENERIC_DRINK,
+            SoundEvents.IRON_DOOR_OPEN, SoundEvents.PANDA_SNEEZE
+        );
+
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.randomSoundCooldown > 0) return false;
+          c.randomSoundCooldown = c.RANDOM_SOUND_COOLDOWN; c.sync();
+          Object obj = allSounds.get(new java.util.Random().nextInt(allSounds.size()));
+          net.minecraft.sounds.SoundEvent sound;
+          if (obj instanceof net.minecraft.sounds.SoundEvent se) {
+            sound = se;
+          } else if (obj instanceof net.minecraft.core.Holder<?> h && h.value() instanceof net.minecraft.sounds.SoundEvent se2) {
+            sound = se2;
+          } else {
+            return false;
+          }
+          p.level().playSound(null, p.blockPosition(), sound, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
 
     // 情报官商店
     {

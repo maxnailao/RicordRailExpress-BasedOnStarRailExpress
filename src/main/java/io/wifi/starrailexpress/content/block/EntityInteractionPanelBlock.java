@@ -1,6 +1,5 @@
 package io.wifi.starrailexpress.content.block;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.MapCodec;
 import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;

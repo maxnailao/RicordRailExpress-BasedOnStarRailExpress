@@ -11,7 +11,7 @@ public class TickTimer {
      * @param isOneShoot 是否单次
      * @param onCompleteCallback 倒计时完成回调R
      */
-    public TickTimer(int endTime, boolean isOneShoot, Runnable onCompleteCallback) {
+    public TickTimer(int endTime, boolean isOneShoot, Consumer<TickTimer> onCompleteCallback) {
         this.delayTime = 0;
         this.endTime = endTime;
         this.isOneShot = isOneShoot;
@@ -26,7 +26,7 @@ public class TickTimer {
         ++delayTime;
         if (delayTime >= endTime) {
             if(onCompleteCallback != null)
-                onCompleteCallback.run();
+                onCompleteCallback.accept(this);
             if (!isShot)
                 isShot = true;
             delayTime -= endTime;
@@ -37,7 +37,7 @@ public class TickTimer {
         delayTime = 0;
         isShot = false;
     }
-    public void setOnCompleteCallback(Runnable onCompleteCallback) {
+    public void setOnCompleteCallback(Consumer<TickTimer> onCompleteCallback) {
         this.onCompleteCallback = onCompleteCallback;
     }
     public boolean isShot() {
@@ -66,5 +66,5 @@ public class TickTimer {
     /** 是否运行中 */
     protected boolean isRunning;
     /** 倒计时完成回调 */
-    protected Runnable onCompleteCallback;
+    protected Consumer<TickTimer> onCompleteCallback;
 }
