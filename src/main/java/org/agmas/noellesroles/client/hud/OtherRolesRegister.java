@@ -57,5 +57,6 @@ public class OtherRolesRegister {
         WarlockHud.register();
         EmbalmerHud.register();
         SkincrawlerHud.register();
+        PhantomMusicianHud.register();
     }
 }

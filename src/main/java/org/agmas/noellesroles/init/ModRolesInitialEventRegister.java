@@ -220,6 +220,16 @@ public class ModRolesInitialEventRegister {
                     vulturePlayerComponent.sync();
                 }
             }
+            if (role.equals(ModRoles.PELICAN)) {
+                if (PelicanPlayerComponent.KEY.isProvidedBy(player)) {
+                    var pelicanComponent = PelicanPlayerComponent.KEY.get(player);
+                    pelicanComponent.init();
+                    int totalPlayers = SREGameWorldComponent.KEY.get(player.level()).getPlayerCount();
+                    double percent = NoellesRolesConfig.HANDLER.instance().pelicanEatPercentage;
+                    pelicanComponent.requiredEaten = Math.max(1, (int) Math.ceil(totalPlayers * (percent / 100.0D)) - 1);
+                    pelicanComponent.sync();
+                }
+            }
             if (role.equals(ModRoles.INSANE_KILLER)) {
                 final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
                 insaneKillerPlayerComponent.init();
@@ -348,6 +358,12 @@ public class ModRolesInitialEventRegister {
                 morticianComponent.init();
                 morticianComponent.sync();
             }
+            // 幻音师角色初始化
+            if (role.equals(ModRoles.PHANTOM_MUSICIAN)) {
+                var pmComponent = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(player);
+                pmComponent.init();
+                pmComponent.sync();
+            }
             if (role.equals(ModRoles.GODFATHER)) {
                 if (player instanceof ServerPlayer sp) {
                     for (var p : sp.serverLevel().players()) {
@@ -450,7 +466,7 @@ public class ModRolesInitialEventRegister {
             if (targetUuid != null) {
                 Player p = player.level().getPlayerByUUID(targetUuid);
                 if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)
-                        && player.distanceToSqr(sp) <= 3.15D * 3.15D
+                        && player.distanceToSqr(sp) <= 2.15D * 2.15D
                         && player.hasLineOfSight(sp)) {
                     target = sp;
                 }
@@ -493,6 +509,14 @@ public class ModRolesInitialEventRegister {
             } else {
                 player.displayClientMessage(Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED), true);
             }
+        });
+
+        // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
+        RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
+            ServerPlayer player = context.player();
+            var comp = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(player);
+            if (comp == null) return;
+            comp.useTeleport();
         });
 
         // 鬼魅技能注册：进入/操作幽影模式

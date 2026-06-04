@@ -442,6 +442,26 @@ public class InstinctRenderer {
             return -1;
         });
         // 初学者
+        // 幻音师：本能看所有玩家显示与自身一致的颜色（无法透视不可透职业）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!hasInstinct)
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.PHANTOM_MUSICIAN))
+                return -1;
+            if (isTargetInvisibleToInstinct(targetPlayer))
+                return -1;
+            return ModRoles.PHANTOM_MUSICIAN.color();
+        });
+
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (SREClient.gameComponent == null) {
                 return -1;
@@ -869,19 +889,19 @@ public class InstinctRenderer {
                 // return (ModRoles.EXECUTIONER.color());
                 // }
 
-                // 家族本能透视（仅20格范围内）
+                // 家族本能透视
                 if (self_role != null && self_role.isMafiaTeam() && SREClient.isPlayerAliveAndInSurvival()) {
                     if (target_role != null && target_role.isMafiaTeam()) {
-                        // 距离检查：只透视20格范围内的家族成员
-                        if (self.distanceTo(target_player) > 20.0D) {
-                            return -2;
-                        }
-                        // 教父显示天蓝色
+                        // 家族成员透视家族成员 - 无距离限制
                         if (SREClient.gameComponent.isRole(target_player, ModRoles.GODFATHER)) {
                             return new Color(135, 206, 235).getRGB(); // 天蓝色
                         }
                         // 其他家族成员显示棕色
                         return new Color(139, 69, 19).getRGB(); // 棕色
+                    }
+                    // 家族成员透视非家族成员 - 20格距离限制
+                    if (self.distanceTo(target_player) > 20.0D) {
+                        return -2;
                     }
                 }
 
@@ -1027,6 +1047,7 @@ public class InstinctRenderer {
             }
             return -1;
         });
+
     }
 
     private static int getRoleColor(SRERole target_role) {
