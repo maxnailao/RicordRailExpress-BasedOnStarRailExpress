@@ -378,6 +378,13 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
+            // 鬼魅角色初始化
+            if (role.identifier().equals(ModRoles.BETTER_KILLER_GHOST.identifier())) {
+                var comp = ModComponents.BETTER_KILLER_GHOST.get(player);
+                comp.init();
+                comp.sync();
+                return;
+            }
         });
     }
 
@@ -491,6 +498,41 @@ public class ModRolesInitialEventRegister {
             } else {
                 player.displayClientMessage(Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED), true);
             }
+        });
+
+        // 鬼魅技能注册：进入/操作幽影模式
+        RoleSkill.register(ModRoles.BETTER_KILLER_GHOST, context -> {
+            ServerPlayer player = context.player();
+            var comp = ModComponents.BETTER_KILLER_GHOST.get(player);
+            if (comp == null) return;
+            comp.useAbility();
+        });
+
+        // 情报官技能注册：放置监视器
+        RoleSkill.register(ModRoles.INTELLIGENCE, context -> {
+            ServerPlayer player = context.player();
+            var comp = ModComponents.INTELLIGENCE.get(player);
+            if (comp == null) return;
+            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
+            if (ability.cooldown > 0) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.cooldown", ability.cooldown / 20)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            if (!comp.canPlaceMonitor()) {
+                player.displayClientMessage(
+                        Component.literal("监视器已用完").withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            comp.addMonitor(player.getX(), player.getY(), player.getZ(), player.level().dimension().location());
+            ability.cooldown = 60 * 20;
+            ability.sync();
+            player.displayClientMessage(
+                    Component.literal("监视器已放置").withStyle(ChatFormatting.GREEN),
+                    true);
         });
     }
 

@@ -40,6 +40,7 @@ import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerCompo
 import org.agmas.noellesroles.game.roles.innocent.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
+import org.agmas.noellesroles.game.roles.innocent.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
@@ -258,6 +259,7 @@ public class ModRoles {
     public static final ResourceLocation ADMIRER_ID = Noellesroles.id("admirer");
     public static final ResourceLocation PUPPETEER_ID = Noellesroles.id("puppeteer");
     public static final ResourceLocation MONITOR_ID = Noellesroles.id("monitor");
+    public static final ResourceLocation COWARD_ID = Noellesroles.id("coward");
     public static final ResourceLocation COMMANDER_ID = Noellesroles.id("commander");
     public static final ResourceLocation RECORDER_ID = Noellesroles.id("recorder");
     public static ResourceLocation VULTURE_ID = Noellesroles.id("vulture");
@@ -301,13 +303,14 @@ public class ModRoles {
 
     public static SRERole INTELLIGENCE = TMMRoles.registerRole(new NormalRole(
             INTELLIGENCE_ID,
-            new Color(139, 69, 19).getRGB(), // 颜色棕色
+            new Color(32, 201, 151).getRGB(), // 蓝绿色（与监察员一致）
             true,   // 平民阵营
             false,  // 无杀手能力
             SRERole.MoodType.REAL,  //真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
             false   // 显示计分板
-    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
+    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1)
+            .setComponentKey(ModComponents.INTELLIGENCE);
 
     /**
      * 盗猎者角色 - 杀手阵营
@@ -341,7 +344,7 @@ public class ModRoles {
      */
     public static SRERole BETTER_KILLER_GHOST = TMMRoles.registerRole(new NormalRole(
                     BETTER_KILLER_GHOST_ID,
-                    new Color(255, 0, 0).getRGB(),
+                    new Color(128, 0, 128).getRGB(), // 深紫色
                     false, // isInnocent：不是平民
                     true, // canUseKiller：能使用杀手技能
                     SRERole.MoodType.FAKE, // 假心情条
@@ -1830,6 +1833,26 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
     ).setComponentKey(MonitorPlayerComponent.KEY).setCanSeeCoin(true));
+
+    /**
+     * 胆小鬼角色
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 被动：当自身半徎5格内没有其他玩家时，获得速度I效果（无粒子显示），但理智值每秒额外消耗1点
+     * - 不会获得内向修饰符
+     */
+    public static SRERole COWARD = TMMRoles.registerRole(new NormalRole(
+            COWARD_ID, // 角色 ID
+            new Color(240, 230, 140).getRGB(), // 浅卡其色 - 代表胆小、不安
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不显示计分板
+    ).setComponentKey(CowardPlayerComponent.KEY).setCanSeeCoin(true));
 
     /**
      * 记录员角色

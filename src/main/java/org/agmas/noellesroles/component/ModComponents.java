@@ -24,6 +24,7 @@ import org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlaye
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.meatball.MeatballPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
@@ -237,6 +238,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<MonitorPlayerComponent> MONITOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "monitor"),
       MonitorPlayerComponent.class);
+  // 胆小鬼组件 - 平民阵营，独处时获得速度I但额外消耗理智值
+  public static final ComponentKey<CowardPlayerComponent> COWARD = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "coward"),
+      CowardPlayerComponent.class);
   public static final ComponentKey<TelegrapherPlayerComponent> TELEGRAPHER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "telegrapher"),
       TelegrapherPlayerComponent.class);
@@ -628,6 +633,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(MonitorPlayerComponent::new);
 
+    // 注册胆小鬼组件 - 平民阵营，独处时获得速度I但额外消耗理智值
+    registry.beginRegistration(Player.class, COWARD)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(CowardPlayerComponent::new);
+
     // 注册电报员组件 - 存储匿名消息发送次数
     registry.beginRegistration(Player.class, TELEGRAPHER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -842,6 +852,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, POACHER)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent::new);
+
+    // 注册鬼魅组件 - 杀手阵营，幽影模式技能
+    registry.beginRegistration(Player.class, BETTER_KILLER_GHOST)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent::new);
     // ==================== 示例：注册更多组件 ====================
     //
     // 如果你的角色需要存储特定数据，可以在这里注册更多组件：

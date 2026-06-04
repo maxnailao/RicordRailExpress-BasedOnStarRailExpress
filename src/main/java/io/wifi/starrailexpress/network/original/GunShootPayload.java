@@ -61,7 +61,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
             if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof GhostPhantomEntity phantomEntity
                     && phantomEntity.distanceToSqr(player) < 65 * 65) {
-                phantomEntity.playerHurt(player, Noellesroles.id("gun_ghost_phantom"));
+                phantomEntity.playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);
                 
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,

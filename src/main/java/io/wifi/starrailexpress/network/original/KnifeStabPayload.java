@@ -42,7 +42,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (targetEntity instanceof GhostPhantomEntity phantomEntity) {
                 if (phantomEntity.distanceTo(player) > 4.0)
                     return;
-                phantomEntity.playerHurt(player, Noellesroles.id("knife_ghost_phantom"));
+                phantomEntity.playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);
                 phantomEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
                 player.swing(InteractionHand.MAIN_HAND);
                 var cooldowns = player.getCooldowns();

@@ -20,13 +20,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
@@ -37,9 +36,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  */
 public class BetterKillerGhostComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     
-    public static final ComponentKey<BetterKillerGhostComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "betterkillerghost"),
-            BetterKillerGhostComponent.class);
+    public static final ComponentKey<BetterKillerGhostComponent> KEY = ModComponents.BETTER_KILLER_GHOST;
 
     private final Player player;
     
@@ -121,6 +118,46 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
             }
             
             return true; // 非幽影模式，允许伤害
+        });
+        
+        // 注册AllowPlayerDeathWithKiller事件 - 幽影模式下拦截killPlayer直接调用
+        // ALLOW_DAMAGE只拦截原版伤害系统，此处额外拦截GameUtils.killPlayer()等直接死亡调用
+        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return true;
+            }
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (!gameWorld.isRole(serverPlayer, ModRoles.BETTER_KILLER_GHOST)) {
+                return true;
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(serverPlayer);
+            if (comp != null && comp.isInShadowMode) {
+                // 幽影模式下鬼魅本体无敌，拒绝所有死亡（只能通过摧毁幻影来击杀）
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // 注册AllowPlayerDeath事件 - 无击杀者的死亡也要拦截
+        io.wifi.starrailexpress.event.AllowPlayerDeath.EVENT.register((player, deathReason) -> {
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return true;
+            }
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (!gameWorld.isRole(serverPlayer, ModRoles.BETTER_KILLER_GHOST)) {
+                return true;
+            }
+            
+            BetterKillerGhostComponent comp = KEY.get(serverPlayer);
+            if (comp != null && comp.isInShadowMode) {
+                return false;
+            }
+            
+            return true;
         });
     }
 

@@ -7,6 +7,7 @@ import org.agmas.harpymodloader.events.ModifierAssigned;
 import org.agmas.harpymodloader.events.ModifierRemoved;
 import org.agmas.harpymodloader.events.ResetPlayerEvent;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
@@ -57,6 +58,7 @@ public class NRModifiers {
         EXPEDITION.civilianOnly = true;
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;
+        INTROVERTED.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.COWARD));
         assignModifierComponents();
         TaxedModifier.init();
     }
@@ -116,6 +118,24 @@ public class NRModifiers {
                 }
             } catch (Exception e) {
                 // 玩家可能没有 expedition 组件，忽略错误
+            }
+        });
+
+        // 胆小鬼不会获得内向修饰符，若被分配则直接去除
+        ModifierAssigned.EVENT.register((player, modifier) -> {
+            if (!modifier.equals(INTROVERTED)) {
+                return;
+            }
+            if (!(player instanceof ServerPlayer serverPlayer)) {
+                return;
+            }
+            var level = serverPlayer.serverLevel();
+            var gameWorld = SREGameWorldComponent.KEY.get(level);
+            if (gameWorld.isRole(player, ModRoles.COWARD)) {
+                var worldModifierComponent = WorldModifierComponent.KEY.get(level);
+                worldModifierComponent.removeModifier(player.getUUID(), INTROVERTED);
+                worldModifierComponent.sync();
+                Noellesroles.LOGGER.info("Removed INTROVERTED modifier from coward player: " + player.getName().getString());
             }
         });
     }

@@ -107,7 +107,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
                 }
                 if (entity instanceof GhostPhantomEntity ghostPhantomEntity) {
                     ghostPhantomEntity.playerHurt(this.getOwner() instanceof Player playerEntity ? playerEntity : null,
-                            Noellesroles.id("grenade_ghost_phantom"));
+                            GameConstants.DeathReasons.PHANTOM_DESTROYED);
                 }
                 count++;
                 if (count >= MAX_KILL_PLAYER_COUNT)

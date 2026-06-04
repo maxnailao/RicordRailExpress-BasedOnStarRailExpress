@@ -206,25 +206,30 @@ public class GhostPhantomEntity extends LivingEntity {
         if (level().isClientSide())
             return false;
 
+        // ⚠️ 关键修复：拦截所有伤害，永远不调用super.hurt()
+        // 原版LivingEntity.hurt()会触发完整死亡流程（动画、掉落物、事件），
+        // 与组件状态修改冲突导致崩溃。所有伤害都通过playerHurt()路由处理。
+        
+        // 忽略墙体伤害（防止卡墙时异常）
         if (source.is(DamageTypes.IN_WALL))
             return false;
-        // ⚠️ 完全参照傀儡师：不拦截PLAYER_ATTACK，让所有伤害都能通过
-        // 调用父类处理伤害
-        boolean result = super.hurt(source, amount);
 
-        // 如果死亡，通知鬼魅
-        if (this.isDeadOrDying()) {
+        net.minecraft.world.entity.Entity attacker = source.getEntity();
+        if (attacker instanceof Player player) {
+            // 玩家攻击（左键、弹射物等所有来源）- 使用PHANTOM_DESTROYED死亡原因
+            return playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);
+        } else {
+            // 非玩家伤害（环境伤害、爆炸、摔落等）：安全销毁幻影并强制退出幽影模式
             Player owner = getOwner();
             if (owner != null) {
-                // 通知鬼魅组件幻影死亡
                 BetterKillerGhostComponent ghostComp = ModComponents.BETTER_KILLER_GHOST.get(owner);
                 if (ghostComp != null && ghostComp.isInShadowMode) {
-                    ghostComp.onPhantomDeath();
+                    ghostComp.exitShadowModeForced();
                 }
             }
+            this.discard();
+            return true;
         }
-
-        return result;
     }
 
     @Override
