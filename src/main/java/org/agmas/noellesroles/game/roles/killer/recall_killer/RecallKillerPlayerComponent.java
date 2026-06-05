@@ -116,7 +116,7 @@ public class RecallKillerPlayerComponent implements RoleComponent, ServerTicking
         double fromY = player.getY();
         double fromZ = player.getZ();
 
-        // 召回前：让锚点位置“消散”一下（可选）
+        // 让锚点位置“消散”一下
         if (ENABLE_ANCHOR_PARTICLE && player.level() instanceof ServerLevel serverLevel) {
             spawnAnchorDisappear(serverLevel, x, y, z);
         }
@@ -135,6 +135,32 @@ public class RecallKillerPlayerComponent implements RoleComponent, ServerTicking
         this.placed = false;
         this.anchorParticleTick = 0;
         this.sync();
+    }
+
+    //清除锚点
+    public void clearAnchor() {
+        if (!placed) return;
+
+        // 清除前播放消失效果
+        if (ENABLE_ANCHOR_PARTICLE && player.level() instanceof ServerLevel serverLevel) {
+            spawnAnchorDisappear(serverLevel, x, y, z);
+        }
+
+        this.placed = false;
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.anchorParticleTick = 0;
+        this.sync();
+
+        // 可选：给玩家一个提示
+        if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal("已清除传送点")
+                            .withStyle(net.minecraft.ChatFormatting.GRAY),
+                    true
+            );
+        }
     }
 
     /** 一键：未放点则放点；已放点则传送 */
@@ -186,16 +212,15 @@ public class RecallKillerPlayerComponent implements RoleComponent, ServerTicking
         );*/
     }
 
-    /** 放点瞬间爆发提示（可选） */
+    /*放点瞬间爆发提示*/
     private void spawnAnchorBurst(ServerLevel level, double px, double py, double pz) {
         double cx = Math.floor(px) + 0.5D;
         double cz = Math.floor(pz) + 0.5D;
         double baseY = py + 0.2D;
         level.sendParticles(ParticleTypes.END_ROD, cx, baseY, cz, 12, 0.35D, 0.2D, 0.35D, 0.01D);
-        level.playSound(null, cx, py, cz, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.7F, 1.2F);
     }
 
-    /** 锚点消失提示（可选） */
+    /*锚点消失提示 */
     private void spawnAnchorDisappear(ServerLevel level, double px, double py, double pz) {
         double cx = Math.floor(px) + 0.5D;
         double cz = Math.floor(pz) + 0.5D;

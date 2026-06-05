@@ -32,6 +32,17 @@ public class RecallKillerHud {
 
             int drawY = context.guiHeight();
 
+            // Shift + 技能键清除提示
+            if (comp.placed && abilityPlayerComponent.cooldown <= 0)
+            {
+                Component shiftHint = Component.translatable("tip.recall_killer.clean");
+                drawY -= client.font.wordWrapHeight(shiftHint, 999999);
+                context.drawString(client.font, shiftHint,
+                        context.guiWidth() - client.font.width(shiftHint),
+                        drawY,
+                        0xAAAAAA);
+            }
+
             Component line;
             if (!comp.placed) {
                 line = Component.translatable(

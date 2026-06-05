@@ -351,6 +351,71 @@ public class AbilityHandler {
 
         }
 
+        //回溯杀手技能
+        if (gameWorldComponent.isRole(player, ModRoles.RECALL_KILLER)) {
+
+            // 回溯杀手独立冷却
+            final int markCdTicks = 8 * 20;       // 放置标记冷却：8秒
+            final int teleportCdTicks = 60 * 20;  // 召回冷却：60秒
+            final int clearCdTicks = 5 * 20;      // 清除锚点冷却：5秒
+
+            RecallKillerPlayerComponent comp = ModComponents.RECALL_KILLER.get(player);
+
+            // 检查是否按下 Shift
+            boolean isSneaking = player.isCrouching();
+
+            // Shift + 技能键：清除锚点
+            if (isSneaking) {
+                if (!comp.placed) {
+                    // 没有锚点可清除
+                    player.displayClientMessage(
+                            Component.translatable("tip.noellesroles.no_anchor_to_clear")
+                                    .withStyle(ChatFormatting.RED),
+                            true);
+                    return;
+                }
+
+                if (abilityPlayerComponent.cooldown > 0) {
+                    player.displayClientMessage(
+                            Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
+                                    .withStyle(ChatFormatting.RED),
+                            true);
+                    return;
+                }
+
+                // 清除锚点，设置冷却
+                abilityPlayerComponent.cooldown = clearCdTicks;
+                abilityPlayerComponent.sync();
+                comp.clearAnchor();
+                return;
+            }
+
+            // 非 Shift：正常使用技能（放置/召回）
+            if (abilityPlayerComponent.cooldown > 0) {
+                player.displayClientMessage(
+                        Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+
+            if (!comp.placed) {
+                abilityPlayerComponent.cooldown = markCdTicks;
+                abilityPlayerComponent.sync();
+                comp.setPosition();
+                player.displayClientMessage(
+                        Component.translatable("feedback.noellesroles.recaller_killer.place")
+                                .withStyle(net.minecraft.ChatFormatting.GREEN),
+                        true);
+            } else {
+                abilityPlayerComponent.cooldown = teleportCdTicks;
+                abilityPlayerComponent.sync();
+                comp.teleport();
+            }
+            return;
+        }
+
+        /*
         // 回溯杀手/召回杀手：技能同召回者，但不花钱；冷却独立（方式A）
         if (gameWorldComponent.isRole(player, ModRoles.RECALL_KILLER)) {
 
@@ -380,7 +445,7 @@ public class AbilityHandler {
             }
             return;
         }
-
+        */
         if (gameWorldComponent.isRole(player, ModRoles.OLDMAN)) {
             if (player.getVehicle() != null && player.getVehicle() instanceof WheelchairEntity we) {
                 if (player.getCooldowns().isOnCooldown(ModItems.WHEELCHAIR)) {
