@@ -32,6 +32,7 @@ import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayer
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
@@ -166,6 +167,10 @@ public abstract class PlayerResetMixin {
         // 清除设陷者组件状态
         TrapperPlayerComponent trapperComp = ModComponents.TRAPPER.get(player);
         trapperComp.clearAll();
+
+        // 清除窃皮者组件状态（重置抵挡次数等）
+        SkincrawlerPlayerComponent skincrawlerComp = ModComponents.SKINCRAWLER.get(player);
+        skincrawlerComp.clear();
 
         // 清除傀儡师组件状态
         PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(player);

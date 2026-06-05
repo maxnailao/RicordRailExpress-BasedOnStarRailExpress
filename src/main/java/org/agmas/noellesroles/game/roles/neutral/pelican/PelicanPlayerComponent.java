@@ -1,9 +1,9 @@
 package org.agmas.noellesroles.game.roles.neutral.pelican;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -18,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameType;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.util.*;
 
@@ -131,10 +133,13 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         if (bellyPlayerIds.contains(target.getUUID())) return false;
         if (PelicanManager.isStashed(target)) return false;
 
-        // 不能吞噬鹈鹕和黑白角色
+        // 不能吞噬鹈鹕、亡命徒、黑白角色和双重人格
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorld.isRole(target, ModRoles.PELICAN)) return false;
         if (gameWorld.isRole(target, ModRoles.MONOKUMA)) return false;
+        if (gameWorld.isRole(target, TMMRoles.LOOSE_END)) return false;
+        WorldModifierComponent worldModifier = WorldModifierComponent.KEY.get(target.level());
+        if (worldModifier.isModifier(target, SEModifiers.SPLIT_PERSONALITY)) return false;
 
         // 吞噬玩家
         PelicanManager.stashPlayer(sp, target);

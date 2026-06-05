@@ -36,6 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.ModDataComponentTypes;
@@ -71,6 +72,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.util.*;
 
@@ -908,6 +910,7 @@ public class ModPacketsReciever {
     ServerPlayNetworking.registerGlobalReceiver(PelicanEatC2SPacket.ID,
         (payload, context) -> {
             ServerPlayer player = context.player();
+            if (player.isSpectator()) return;
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (!gameWorldComponent.isSkillAvailable) {
                 player.displayClientMessage(
@@ -1127,8 +1130,9 @@ public class ModPacketsReciever {
         player.displayClientMessage(Component.translatable("message.noellesroles.embalmer.cooldown", (comp.masqueradeCooldown + 19) / 20).withStyle(ChatFormatting.RED), true);
         return;
       }
-      // Trigger masquerade
-      java.util.List<ServerPlayer> players = player.serverLevel().getPlayers(p2 -> !p2.isSpectator());
+      // Trigger masquerade - 排除拥有 jeb 修饰符的玩家
+      java.util.List<ServerPlayer> players = player.serverLevel().getPlayers(p2 ->
+          !p2.isSpectator() && !WorldModifierComponent.KEY.get(p2.level()).isModifier(p2, SEModifiers.JEB_));
       if (players.size() < 2) { player.displayClientMessage(Component.literal("Need at least 2 players."), true); return; }
       java.util.Map<UUID, UUID> swaps = new java.util.LinkedHashMap<>();
       java.util.Map<UUID, Float> pitches = new java.util.HashMap<>();

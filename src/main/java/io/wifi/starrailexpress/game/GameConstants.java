@@ -203,6 +203,10 @@ public class GameConstants {
     }
 
     public static int getMonitorBrokenCooldownGlobal() {
-        return  SREConfig.instance().monitorBrokenCooldownGlobal * 20;
+        return SREConfig.instance().monitorBrokenCooldownGlobal * 20;
+    }
+
+    public static int getRevolverDefaultTicks() {
+        return SREConfig.instance().revolverCooldown * 20;
     }
 }

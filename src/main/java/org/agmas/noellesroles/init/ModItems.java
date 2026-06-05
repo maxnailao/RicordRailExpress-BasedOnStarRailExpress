@@ -1006,7 +1006,7 @@ public class ModItems {
             });
         };
         ITEM_COOLDOWNS.put(ModItems.ANTIDOTE, getInTicks(1, 0)); // 60秒冷却
-        ITEM_COOLDOWNS.put(ModItems.TOXIN, getInTicks(0, 50));
+        ITEM_COOLDOWNS.put(ModItems.TOXIN, getInTicks(0, 10));
         ITEM_COOLDOWNS.put(ModItems.BANDIT_REVOLVER, getInTicks(0, 40));
         ITEM_COOLDOWNS.put(ModItems.SHORT_SHOTGUN, getInTicks(30, 0));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));

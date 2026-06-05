@@ -11,6 +11,7 @@ import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -21,6 +22,8 @@ public class CustomWinnerClass {
     public static void registerCustomWinners() {
         AllowGameEnd.EVENT.register((serverLevel, winStatus, isLooseEnd) -> {
             if (isLooseEnd) {
+                // 亡命时刻：释放鹈鹕肚子里的所有玩家
+                org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.onLastStand(serverLevel);
                 return WinStatus.NOT_MODIFY;
             }
             var refugeeCCA = RefugeeComponent.KEY.get(serverLevel);
@@ -29,10 +32,12 @@ public class CustomWinnerClass {
             }
             var gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
 
+            // 检查是否有小偷存活
             boolean hasFurandoru = false;
             // 检查是否有小偷存活
             boolean hasThiefAlive = false;
             boolean hasPelicanAlive = false;
+            boolean hasMonokumaAlive = false;
             // int thiefCount = 0;
             boolean hasCorruptCopAlive = false;
 
@@ -54,13 +59,15 @@ public class CustomWinnerClass {
                     }
                     if (gameComponent.isRole(player, ModRoles.THIEF)) {
                         hasThiefAlive = true;
-                        // thiefCount++;
                     }
                     if (gameComponent.isRole(player, RedHouseRoles.FURANDORU)) {
                         hasFurandoru = true;
                     }
                     if (gameComponent.isRole(player, ModRoles.PELICAN)) {
                         hasPelicanAlive = true;
+                    }
+                    if (gameComponent.isRole(player, ModRoles.MONOKUMA)) {
+                        hasMonokumaAlive = true;
                     }
                 }
             }
@@ -97,6 +104,32 @@ public class CustomWinnerClass {
 
             if (CandleBearerPlayerComponent.checkCandleBearerVictory(serverLevel)) {
                 return WinStatus.CUSTOM;
+            }
+
+            // 鹈鹕存活时检查独立胜利
+            if (PelicanPlayerComponent.checkPelicanVictory(serverLevel)) {
+                return WinStatus.CUSTOM;
+            }
+
+            // 教父家族独立胜利
+            if (org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.checkMafiaVictory(serverLevel)) {
+                return WinStatus.CUSTOM;
+            }
+            // 教父存活时阻止游戏结束
+            if (org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.shouldPreventGameEnd(serverLevel)
+                    && (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS)) {
+                return WinStatus.NONE;
+            }
+            // 鹈鹕是唯一存活玩家时独立胜利（仅鹈鹕存活，或仅鹈鹕+黑白存活）
+            if (hasPelicanAlive && (alivePlayerCount == 1 || (alivePlayerCount == 2 && hasMonokumaAlive))) {
+                RoleUtils.customWinnerWin(serverLevel,
+                        ModRoles.PELICAN_ID.getPath(),
+                        ModRoles.PELICAN.color());
+                return WinStatus.CUSTOM;
+            }
+            // 鹈鹕存活时阻止乘客/杀手胜利导致游戏结束（参考纵火犯）
+            if (hasPelicanAlive && (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS)) {
+                return WinStatus.NONE;
             }
 
             // 布谷鸟胜利：在常规结局和年兽/纵火犯胜利时判定，优先级大于纵火犯和年兽

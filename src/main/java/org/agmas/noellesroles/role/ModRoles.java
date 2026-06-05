@@ -2323,10 +2323,17 @@ public class ModRoles {
         ModRoles.PELICAN.addTwoWayOpposingJobs(SERoles.ARSONIST);
         // 设置鹈鹕与秉烛人互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.CANDLE_BEARER);
+        ModRoles.PELICAN.addTwoWayOpposingJobs(SERoles.INITIATE);
         
         // 设置教父与初学者互斥
         ModRoles.GODFATHER.addTwoWayOpposingJobs(SERoles.INITIATE);
-        
+        // 设置鹈鹕与教父互斥
+        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.GODFATHER);
+        // 设置鹈鹕与刽子手互斥
+        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
+        // 设置鹈鹕与傀儡师互斥
+        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
+
         // 初始化叛徒职业和新修饰符
         TraitorAndModifiers.init();
         ModifierEffects.init();
@@ -2337,7 +2344,7 @@ public class ModRoles {
             WARLOCK_ID, new java.awt.Color(139, 0, 139).getRGB(), false,
             true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY))
-            .setCanUseKiller(true).setCanSeeTeammateKiller(true)
+            .setCanUseKiller(true).setCanSeeTeammateKiller(true).setCanBeRandomedByOtherRoles(false).setMax(0)
             .setCanUseInstinct(true).setCanSeeCoin(true);
 
     // ==================== 嬉命人（Embalmer）====================

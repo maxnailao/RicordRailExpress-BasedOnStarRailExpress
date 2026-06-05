@@ -131,6 +131,7 @@
     "roles.photographer.BlindnessEffectMixin",
     "client.C4ItemEntityRendererMixin",
     "client.SkincrawlerSkinMixin",
+    "client.SkincrawlerRoleNameRendererMixin",
     "game.PelicanAliveCheckMixin"
   ],
   "overwrites": {

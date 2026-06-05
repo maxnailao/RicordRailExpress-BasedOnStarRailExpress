@@ -394,6 +394,13 @@ public class RoleShopHandler {
           ShopEntry.Type.WEAPON));
       SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
       SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 130, ShopEntry.Type.TOOL));
+      // 关灯 - 100金币
+      SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return SREPlayerShopComponent.useBlackout(player);
+        }
+      });
       ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
     }
     {
@@ -2480,6 +2487,12 @@ public class RoleShopHandler {
         ShopEntry.Type.TOOL));
 
     // ==================== 悍匪商店 ====================
+    // 刀 - 160金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        TMMItems.KNIFE.getDefaultInstance(),
+        160,
+        ShopEntry.Type.WEAPON));
+
     // 短管霰弹枪 - 185金币
     GANGSTERS_SHOP.add(new ShopEntry(
         ModItems.SHORT_SHOTGUN.getDefaultInstance(),
@@ -2565,10 +2578,10 @@ public class RoleShopHandler {
     // ==================== 教父商店 ====================
     // 开锁器 - 150金币
     GODFATHER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
-    // 子弹 - 250金币（右键装填或购买时自动装填）
+    // 子弹 - 275金币（右键装填或购买时自动装填）
     GODFATHER_SHOP.add(new ShopEntry(
         ModItems.BULLET.getDefaultInstance(),
-        250,
+        275,
         ShopEntry.Type.WEAPON) {
       @Override
       public boolean onBuy(@NotNull Player player) {
@@ -2577,14 +2590,14 @@ public class RoleShopHandler {
     });
 
     // ==================== 家族教徒商店 ====================
-    // 刀 - 130金币
-    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
-    // 左轮手枪 - 225金币
-    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
+    // 刀 - 200金币
+    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
+    // 左轮手枪 - 300金币
+    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
 
     // ==================== 家族侍卫商店 ====================
-    // 飞刀 - 180金币
-    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 180, ShopEntry.Type.WEAPON));
+    // 飞刀 - 225金币
+    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
     // 关灯 - 200金币
     JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
     // 短管霰弹枪 - 250金币
@@ -2593,8 +2606,8 @@ public class RoleShopHandler {
     // ==================== 家族保姆商店 ====================
     // 护盾试剂 - 325金币
     NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.DEFENSE_VIAL.getDefaultInstance(), 325, ShopEntry.Type.WEAPON));
-    // 毒药试剂 - 150金币
-    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 150, ShopEntry.Type.WEAPON));
+    // 毒药试剂 - 200金币
+    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
     // 喷溅型速度3 - 275金币 (持续5秒)
     {
       var SPEED_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
@@ -2661,8 +2674,8 @@ public class RoleShopHandler {
     }
 
     // ==================== 家族保护伞商店 ====================
-    // 手榴弹 - 425金币
-    PARASOL_SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 425, ShopEntry.Type.WEAPON));
+    // 手榴弹 - 450金币
+    PARASOL_SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 450, ShopEntry.Type.WEAPON));
     // 烟雾弹 - 175金币
     PARASOL_SHOP.add(new ShopEntry(ModItems.SMOKE_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.WEAPON));
     // 闪光弹 - 125金币

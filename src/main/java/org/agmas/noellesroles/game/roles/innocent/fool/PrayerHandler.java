@@ -35,6 +35,15 @@ public class PrayerHandler {
         ServerPlayer fool = TarotAssemblyManager.findFoolPlayer(serverLevel, gameComponent);
         FoolPlayerComponent foolComp = fool != null ? FoolPlayerComponent.KEY.get(fool) : null;
 
+        // 鹈鹕无法通过尊名纸条加入塔罗会
+        if (gameComponent.isRole(player, ModRoles.PELICAN)) {
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.fool.pelican_cannot_join")
+                            .withStyle(ChatFormatting.RED),
+                    true);
+            return;
+        }
+
         // 愚者自己不需要祷告
         if (gameComponent.isRole(player, ModRoles.THE_FOOL)) {
             FoolPlayerComponent selfFoolComp = FoolPlayerComponent.KEY.get(player);

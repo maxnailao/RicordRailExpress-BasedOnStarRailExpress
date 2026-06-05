@@ -528,9 +528,22 @@ public class DrawingBoardRecognizer {
 
     // ==================== 物品图案生成方法 ====================
 
+    /**
+     * 创建一个16x16的空画布，所有像素初始化为背景白色(16)
+     */
+    private byte[][] createEmptyCanvas() {
+        byte[][] canvas = new byte[16][16];
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                canvas[y][x] = (byte) COLOR_BACKGROUND_WHITE;
+            }
+        }
+        return canvas;
+    }
+
     // 刀 - 左下至右上对角线，柄在左下
             private byte[][] createKnifePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][11] = 10;
         p[2][12] = 10;
         p[3][9] = 10;
@@ -583,7 +596,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createKnifePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][4] = 10;
         p[2][3] = 10;
         p[3][6] = 10;
@@ -637,7 +650,7 @@ public class DrawingBoardRecognizer {
 
     // 撬棍 - J顺时针旋转180度 (即反J，├形状，柄在下)
             private byte[][] createCrowbarPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][8] = 10;
         p[0][9] = 10;
         p[1][7] = 10;
@@ -668,7 +681,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createCrowbarPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][7] = 10;
         p[0][6] = 10;
         p[1][8] = 10;
@@ -699,7 +712,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFirecrackerPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][9] = 10;
         p[2][10] = 10;
         p[2][11] = 10;
@@ -772,7 +785,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFirecrackerPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][5] = 10;
         p[2][4] = 10;
@@ -846,7 +859,7 @@ public class DrawingBoardRecognizer {
 
     // 左轮手枪 - 右下至左上，柄在右下
             private byte[][] createRevolverPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][5] = 10;
         p[1][6] = 10;
         p[2][4] = 10;
@@ -890,7 +903,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createRevolverPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][10] = 10;
         p[1][9] = 10;
         p[2][11] = 10;
@@ -934,7 +947,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createNotePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][6] = 10;
         p[2][6] = 10;
         p[2][7] = 10;
@@ -1044,7 +1057,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createNotePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][9] = 10;
         p[2][9] = 10;
         p[2][8] = 10;
@@ -1154,7 +1167,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBodyBagPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][8] = 12;
         p[1][9] = 12;
         p[1][10] = 12;
@@ -1300,7 +1313,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBodyBagPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][7] = 12;
         p[1][6] = 12;
         p[1][5] = 12;
@@ -1446,7 +1459,7 @@ public class DrawingBoardRecognizer {
     }
 
     private byte[][] createDefenseVialPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][7] = 10;
         p[2][8] = 10;
@@ -1502,7 +1515,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createAntidotePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][3] = 1;
         p[0][4] = 1;
         p[1][2] = 1;
@@ -1564,7 +1577,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createAntidotePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][12] = 1;
         p[0][11] = 1;
         p[1][13] = 1;
@@ -1626,7 +1639,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createToxinPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][3] = 1;
         p[0][4] = 1;
         p[1][2] = 1;
@@ -1688,7 +1701,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createToxinPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][12] = 1;
         p[0][11] = 1;
         p[1][13] = 1;
@@ -1750,7 +1763,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createCatalystPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][7] = 10;
         p[2][8] = 10;
@@ -1806,7 +1819,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createCatalystPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][9] = 10;
         p[2][8] = 10;
         p[2][7] = 10;
@@ -1862,7 +1875,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBottlePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][4] = 11;
         p[2][5] = 1;
         p[2][6] = 11;
@@ -1981,7 +1994,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBottlePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][11] = 11;
         p[2][10] = 1;
         p[2][9] = 11;
@@ -2100,7 +2113,7 @@ public class DrawingBoardRecognizer {
     }
 
                 private byte[][] createLingshiPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][3] = 13;
         p[2][4] = 13;
         p[2][5] = 13;
@@ -2217,7 +2230,7 @@ public class DrawingBoardRecognizer {
     }
 
                 private byte[][] createLingshiPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][12] = 13;
         p[2][11] = 13;
         p[2][10] = 13;
@@ -2334,7 +2347,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createKunaiPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][14] = 10;
         p[1][13] = 10;
         p[1][14] = 10;
@@ -2384,7 +2397,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createKunaiPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][1] = 10;
         p[1][2] = 10;
         p[1][1] = 10;
@@ -2434,7 +2447,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createShurikenPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][11] = 1;
         p[3][2] = 1;
         p[3][11] = 11;
@@ -2477,7 +2490,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createShurikenPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][4] = 1;
         p[3][13] = 1;
         p[3][4] = 11;
@@ -2520,7 +2533,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createHandcuffsPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][8] = 10;
         p[2][6] = 12;
         p[2][7] = 10;
@@ -2601,7 +2614,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createHandcuffsPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][7] = 10;
         p[2][9] = 12;
         p[2][8] = 10;
@@ -2682,7 +2695,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createNightVisionPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 眼镜框 - 黑色
         p[3][1] = 0;
         p[3][2] = 0;
@@ -2767,7 +2780,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createNightVisionPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 眼镜框 - 黑色
         p[4][13] = 0;
         p[4][14] = 0;
@@ -2852,7 +2865,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDivingHelmetPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 头盔顶部 - 深绿色（用户要求偏向13号深绿色）
         p[3][5] = 13;
         p[3][6] = 13;
@@ -2956,7 +2969,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDivingHelmetPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 头盔顶部 - 深绿色（用户要求偏向13号深绿色）
         p[3][10] = 13;
         p[3][9] = 13;
@@ -3054,7 +3067,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDivingBootsPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][2] = 12;
         p[3][3] = 12;
         p[3][4] = 12;
@@ -3128,7 +3141,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDivingBootsPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][13] = 12;
         p[3][12] = 12;
         p[3][11] = 12;
@@ -3202,7 +3215,7 @@ public class DrawingBoardRecognizer {
     }
 
                 private byte[][] createMasterKeyPPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][7] = 12;
         p[1][8] = 12;
         p[2][6] = 12;
@@ -3277,7 +3290,7 @@ public class DrawingBoardRecognizer {
     }
 
                 private byte[][] createMasterKeyPPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][8] = 12;
         p[1][7] = 12;
         p[2][9] = 12;
@@ -3352,7 +3365,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDefibrillatorPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 心脏起搏器主体 - 整体偏灰（用户要求整体偏灰）
         // 顶部轮廓
         p[1][3] = 0;
@@ -3443,7 +3456,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDefibrillatorPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 心脏起搏器主体 - 整体偏灰
         p[1][11] = 10;
         p[1][5] = 10;
@@ -3505,7 +3518,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBoxingGlovePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][5] = 8;
         p[2][6] = 8;
         p[2][7] = 12;
@@ -3613,7 +3626,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBoxingGlovePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][10] = 8;
         p[2][9] = 8;
         p[2][8] = 12;
@@ -3721,7 +3734,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createAntidoteReagentPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][7] = 10;
         p[2][8] = 10;
@@ -3777,7 +3790,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createAntidoteReagentPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][9] = 10;
         p[2][8] = 10;
         p[2][7] = 10;
@@ -3828,7 +3841,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createPoisonVialPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][7] = 10;
         p[2][8] = 10;
@@ -3884,7 +3897,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createSmokeGrenadePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][8] = 12;
         p[0][9] = 12;
         p[1][7] = 10;
@@ -3979,7 +3992,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createSmokeGrenadePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][7] = 12;
         p[0][6] = 12;
         p[1][8] = 10;
@@ -4074,7 +4087,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFlashGrenadePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][11] = 12;
         p[4][9] = 10;
         p[4][10] = 12;
@@ -4117,7 +4130,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFlashGrenadePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][4] = 12;
         p[4][6] = 10;
         p[4][5] = 12;
@@ -4160,7 +4173,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createRepairToolPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][10] = 10;
         p[2][11] = 10;
         p[3][9] = 10;
@@ -4195,7 +4208,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createRepairToolPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][5] = 10;
         p[2][4] = 10;
         p[3][6] = 10;
@@ -4230,7 +4243,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createScrewdriverPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][13] = 11;
         p[1][14] = 11;
         p[2][12] = 11;
@@ -4288,7 +4301,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createScrewdriverPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][2] = 11;
         p[1][1] = 11;
         p[2][3] = 11;
@@ -4346,7 +4359,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createAlarmTrapPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 警报陷阱 - 上半圆形的部分应该是2号红色
         // 顶部红色圆形
         p[9][5] = 2;
@@ -4396,7 +4409,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createAlarmTrapPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 警报陷阱 - 上半圆形的部分应该是2号红色
         p[9][10] = 2;
         p[9][9] = 2;
@@ -4442,7 +4455,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDeliveryBoxPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][1] = 12;
         p[2][2] = 12;
         p[2][3] = 12;
@@ -4637,7 +4650,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createDeliveryBoxPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][14] = 12;
         p[2][13] = 12;
         p[2][12] = 12;
@@ -4832,7 +4845,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createHallucinationPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][11] = 11;
         p[2][12] = 10;
         p[2][13] = 10;
@@ -4934,7 +4947,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createHallucinationPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][4] = 11;
         p[2][3] = 10;
         p[2][2] = 10;
@@ -5037,7 +5050,7 @@ public class DrawingBoardRecognizer {
 
     // 薄荷糖 - 白色部分不变，其余为3号绿色
             private byte[][] createMintCandiesPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 边缘灰色 - 改为绿色
         p[0][5] = 3; p[0][6] = 3; p[0][7] = 3; p[0][8] = 3; p[0][9] = 3; p[0][10] = 3;
         p[1][4] = 3; p[1][11] = 3;
@@ -5059,7 +5072,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createMintCandiesPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 薄荷糖 - 白色部分不变，其余为3号绿色
         p[2][9] = 3; p[2][6] = 3;
         p[3][10] = 3; p[3][9] = 3; p[3][8] = 3; p[3][7] = 3; p[3][6] = 3; p[3][5] = 3;
@@ -5079,7 +5092,7 @@ public class DrawingBoardRecognizer {
     
 
             private byte[][] createWheelchairPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][6] = 10;
         p[0][7] = 10;
         p[1][6] = 10;
@@ -5132,7 +5145,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createWheelchairPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][9] = 10;
         p[0][8] = 10;
         p[1][9] = 10;
@@ -5185,7 +5198,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createShortShotgunPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][3] = 10;
         p[2][4] = 10;
         p[3][3] = 12;
@@ -5228,7 +5241,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createShortShotgunPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][12] = 10;
         p[2][11] = 10;
         p[3][12] = 12;
@@ -5271,7 +5284,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBatonPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][13] = 12;
         p[1][14] = 12;
         p[2][12] = 12;
@@ -5299,7 +5312,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createBatonPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][2] = 12;
         p[1][1] = 12;
         p[2][3] = 12;
@@ -5327,7 +5340,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createRadioPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][10] = 12;
         p[2][7] = 12;
         p[2][10] = 12;
@@ -5366,7 +5379,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createRadioPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][5] = 12;
         p[2][8] = 12;
         p[2][5] = 12;
@@ -5405,7 +5418,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createMonitoringTerminalPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][5] = 10;
         p[3][7] = 1;
         p[3][10] = 1;
@@ -5482,7 +5495,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createMonitoringTerminalPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[3][10] = 10;
         p[3][8] = 1;
         p[3][5] = 1;
@@ -5559,7 +5572,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createLockPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][5] = 11;
         p[1][6] = 10;
         p[1][7] = 10;
@@ -5686,7 +5699,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createLockPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][10] = 11;
         p[1][9] = 10;
         p[1][8] = 10;
@@ -5813,7 +5826,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createPocketWatchPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 怀表 - 外壳橙色(8号)和黄色(5号)，内心圆形表盘蓝色(4号)
         // 顶部环
         p[1][4] = 8;
@@ -5929,7 +5942,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createPocketWatchPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 怀表 - 外壳橙色(8号)和黄色(5号)，内心圆形表盘蓝色(4号)
         p[1][11] = 8;
         p[1][9] = 5;
@@ -6016,7 +6029,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createVitaminPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][4] = 12;
         p[1][5] = 10;
         p[1][6] = 11;
@@ -6146,7 +6159,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createVitaminPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][11] = 12;
         p[1][10] = 10;
         p[1][9] = 11;
@@ -6276,7 +6289,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFireAxePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][9] = 12;
         p[1][10] = 12;
         p[2][8] = 10;
@@ -6325,7 +6338,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createFireAxePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][6] = 12;
         p[1][5] = 12;
         p[2][7] = 10;
@@ -6374,7 +6387,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createThrowingKnifePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][13] = 12;
         p[1][14] = 12;
         p[2][12] = 10;
@@ -6431,7 +6444,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createThrowingKnifePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][2] = 12;
         p[1][1] = 12;
         p[2][3] = 10;
@@ -6488,7 +6501,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createRopePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][11] = 12;
         p[0][12] = 12;
         p[1][9] = 12;
@@ -6620,7 +6633,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createRopePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[0][4] = 12;
         p[0][3] = 12;
         p[1][6] = 12;
@@ -6752,7 +6765,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createExtinguisherPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][8] = 10;
         p[1][9] = 11;
         p[1][10] = 11;
@@ -6840,7 +6853,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createExtinguisherPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][7] = 10;
         p[1][6] = 11;
         p[1][5] = 11;
@@ -6928,7 +6941,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createPassbookPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][7] = 11;
         p[1][8] = 11;
         p[2][6] = 11;
@@ -7067,7 +7080,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createPassbookPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[1][8] = 11;
         p[1][7] = 11;
         p[2][9] = 11;
@@ -7206,7 +7219,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createTimeStopClockPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][6] = 10;
         p[2][10] = 10;
         p[3][7] = 10;
@@ -7284,7 +7297,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createTimeStopClockPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][9] = 10;
         p[2][5] = 10;
         p[3][8] = 10;
@@ -7362,7 +7375,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createShisiyePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 十四夜 - 碗的颜色是4号蓝色，内容物椭圆形的部分是白色(1号)和5号黄色
         // 碗顶部
         p[6][4] = 4;
@@ -7449,7 +7462,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createShisiyePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 十四夜 - 碗的颜色是4号蓝色，内容物椭圆形的部分是白色(1号)和5号黄色
         p[6][11] = 4;
         p[6][10] = 4;
@@ -7533,7 +7546,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createProblemSetPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 习题集 - 整体应该是13号深绿色和3号绿色
         // 顶部边框
         p[2][1] = 13;
@@ -7665,7 +7678,7 @@ public class DrawingBoardRecognizer {
     }
 
         private byte[][] createProblemSetPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 习题集 - 整体应该是13号深绿色和3号绿色
         p[2][14] = 13;
         p[2][13] = 13;
@@ -7795,7 +7808,7 @@ public class DrawingBoardRecognizer {
     // ==================== 回形针图案 ====================
     // 回形针 - U形弯曲的金属线
             private byte[][] createPaperclipPattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][7] = 10;
         p[2][8] = 10;
         p[2][9] = 10;
@@ -7844,7 +7857,7 @@ public class DrawingBoardRecognizer {
     }
 
             private byte[][] createPaperclipPattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         p[2][8] = 10;
         p[2][7] = 10;
         p[2][6] = 10;
@@ -7893,7 +7906,7 @@ public class DrawingBoardRecognizer {
     }
 
     private byte[][] createPaperclipPattern3() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 回形针的简化U形结构
         // 右侧垂直部分
         for (int y = 5; y < 10; y++) p[y][10] = 10;
@@ -7909,7 +7922,7 @@ public class DrawingBoardRecognizer {
     // ==================== 诱饵弹图案 ====================
     // 诱饵弹 - 蛋形手雷形状（整体偏灰色）
     private byte[][] createDecoyGrenadePattern() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 蛋形主体 - 整体偏灰色
         p[2][11] = 10;
         p[3][10] = 10;
@@ -7969,7 +7982,7 @@ public class DrawingBoardRecognizer {
     }
 
     private byte[][] createDecoyGrenadePattern2() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 诱饵弹 - 整体偏灰色
         p[4][4] = 10;
         p[4][5] = 10;
@@ -8033,7 +8046,7 @@ public class DrawingBoardRecognizer {
     }
 
     private byte[][] createDecoyGrenadePattern3() {
-        byte[][] p = new byte[16][16];
+        byte[][] p = createEmptyCanvas();
         // 诱饵弹 - 整体偏灰色（紧凑型）
         p[5][6] = 10;
         p[5][7] = 10;
@@ -8599,7 +8612,7 @@ public class DrawingBoardRecognizer {
      * - 调色盘白色保持不变
      */
     private byte[][] normalizeColors(byte[][] pixels) {
-        byte[][] result = new byte[16][16];
+        byte[][] result = createEmptyCanvas();
         
         for (int y = 0; y < 16; y++) {
             for (int x = 0; x < 16; x++) {
@@ -8653,6 +8666,30 @@ public class DrawingBoardRecognizer {
 
     public static int getCategoryCount() {
         return CATEGORY_COUNT;
+    }
+
+    /**
+     * 获取指定类别的代表图案（16x16字节数组）
+     * 返回深拷贝
+     * @param category 类别ID
+     * @return 图案字节数组，若不存在则返回null
+     */
+    public byte[][] getPatternForCategory(int category) {
+        byte[][] original = categoryPatterns.get(category);
+        if (original == null) return null;
+        byte[][] copy = createEmptyCanvas();
+        for (int y = 0; y < 16; y++) {
+            System.arraycopy(original[y], 0, copy[y], 0, 16);
+        }
+        return copy;
+    }
+
+    /**
+     * 获取所有已定义pattern的类别ID列表
+     * @return 类别ID数组
+     */
+    public int[] getAvailableCategories() {
+        return categoryPatterns.keySet().stream().mapToInt(Integer::intValue).toArray();
     }
 
     /**
