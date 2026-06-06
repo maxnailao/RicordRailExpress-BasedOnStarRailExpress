@@ -184,6 +184,8 @@ public class ModRoles {
     public static final ResourceLocation MARTIAL_ARTS_INSTRUCTOR_ID = Noellesroles.id("martial_arts_instructor");
     public static final ResourceLocation SEA_KING_ID = Noellesroles.id("sea_king");
     public static final ResourceLocation WATER_GHOST_ID = Noellesroles.id("water_ghost");
+    // 敛财者角色 ID
+    public static final ResourceLocation ILIKEMONEY_ID = Noellesroles.id("ilikemoney");
 
     // 飞行员角色 ID
     public static final ResourceLocation PILOT_ID = Noellesroles.id("pilot");
@@ -293,6 +295,8 @@ public class ModRoles {
 
     // 愚者 (好人阵营)
     public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
+    // 休假警员 (平民阵营)
+    public static final ResourceLocation RESTING_POLICE_ID = Noellesroles.id("resting_police");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
@@ -998,6 +1002,32 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setComponentKey(AccountantPlayerComponent.KEY);
+
+    /**
+     * 敛财者角色
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 被动技能：开局仅有 40% 理智值
+     * - 理智不会通过任务来恢复
+     * - 花费 1 金币恢复 1 点理智（每 10 tick / 0.5 秒判定一次）
+     * - 若金币 >= 1，扣除 1 金币恢复 1 点理智值
+     * - 理智值满则不进行置换
+     */
+    public static SRERole ILIKEMONEY = TMMRoles.registerRole(new NormalRole(
+            ILIKEMONEY_ID, // 角色 ID
+            new Color(0, 100, 0).getRGB(), // 深绿色 - 代表敛财者对金钱的渴望
+            true, // isInnocent = 乘客阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true)
+            .setServerGameTickEvent((player, gameComponent) -> {
+                org.agmas.noellesroles.game.roles.innocent.money_lover.MoneyLoverTickHandler.serverTick(player, gameComponent);
+            });
 
     /**
      * 药剂师角色
@@ -2382,6 +2412,29 @@ public class ModRoles {
      *
      * 技能：花费100金币传送到30格外随机一人的身边，冷却120秒
      */
+    /**
+     * 休假警员 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 显示计分板
+     * - 无技能
+     * - 初始道具：一次性手枪
+     * - 商店：一次性手枪(325g)
+     * - 介绍：一名正在休假中的警员
+     * - 登车标语：协助警长，找出杀手！
+     */
+    public static SRERole RESTING_POLICE = TMMRoles.registerRole(new NormalRole(
+            RESTING_POLICE_ID,
+            new Color(135, 206, 250).getRGB(), // 浅蓝色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false);
+
     public static SRERole PHANTOM_MUSICIAN = TMMRoles
             .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(), false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)

@@ -195,6 +195,9 @@
   "announcement.star.role.ghost": "Ghost",
   "role.sre.betterghost": "Ghost",
   "announcement.star.role.intelligence": "Intelligence Officer",
+  "announcement.star.role.resting_police": "Resting Police Officer",
+  "announcement.star.title.resting_police": "Assist the Sheriff, find the killer!",
+  "announcement.star.goals.resting_police": "Assist the Sheriff, find the killer!",
   "announcement.star.role.unknown": "Unknown",
   "announcement.star.title.civilian": "Civilian",
   "announcement.star.title.killer": "Killer",
@@ -2111,7 +2114,7 @@
   "hud.noellesroles.repair.skill_state.archivist_notes": "Risk Record",
   "hud.noellesroles.repair.skill_state.saboteur_signal": "False Signal",
   "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
-  "death_reason.starrailexpress.phantom_destroyed": "Phantom Destroyed"
+  "death_reason.starrailexpress.phantom_destroyed": "Phantom Destroyed",
   "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
   "announcement.star.role.wifi:warden": "Warden",
   "announcement.star.goals.wifi:warden": "Judge the killer, uphold justice",
@@ -2128,6 +2131,6 @@
   "message.warden.no_gun": "§6Justice is coming",
   "message.warden.target_died": "§6Your verdict target has died, verdict voided.",
   "hud.noellesroles.warden.no_gun": "§6Justice is coming",
-  "hud.noellesroles.warden.ready": "§aVerdict Ready"
+  "hud.noellesroles.warden.ready": "§aVerdict Ready",
   "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply"
 }

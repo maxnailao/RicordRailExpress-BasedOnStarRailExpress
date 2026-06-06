@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -399,6 +400,13 @@ public class ModRolesInitialEventRegister {
                 var comp = ModComponents.BETTER_KILLER_GHOST.get(player);
                 comp.init();
                 comp.sync();
+                return;
+            }
+            // 敛财者角色初始化 - 设置初始理智值为 40%
+            if (role.identifier().equals(ModRoles.ILIKEMONEY.identifier())) {
+                var moodComp = SREPlayerMoodComponent.KEY.get(player);
+                moodComp.setMood(0.4f);
+                moodComp.sync();
                 return;
             }
         });
