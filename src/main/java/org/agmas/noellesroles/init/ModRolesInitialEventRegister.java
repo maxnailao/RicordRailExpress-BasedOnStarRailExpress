@@ -7,6 +7,9 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameTrueStarted;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -20,6 +23,7 @@ import net.minecraft.world.item.Items;
 import java.util.UUID;
 
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.RicesRoleRhapsody;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
@@ -57,6 +61,26 @@ import pro.fazeclan.river.stupid_express.constants.SERoles;
 public class ModRolesInitialEventRegister {
 
     public static void register() {
+
+        // ========== 添加：游戏结束时强制重置黑警组件 ==========
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
+            for (var player : serverLevel.players()) {
+                var comp = ModComponents.CORRUPT_COP.maybeGet(player).orElse(null);
+                if (comp != null) {
+                    comp.reset();  // 使用Reset 方法
+                }
+            }
+        });
+
+        // 游戏真正开始时也重置一次
+        OnGameTrueStarted.EVENT.register((serverLevel) -> {
+            for (var player : serverLevel.players()) {
+                var comp = ModComponents.CORRUPT_COP.maybeGet(player).orElse(null);
+                if (comp != null) {
+                    comp.reset();
+                }
+            }
+        });
 
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
@@ -402,6 +426,9 @@ public class ModRolesInitialEventRegister {
                 return;
             }
         });
+
+
+
     }
 
     static {//技能注册

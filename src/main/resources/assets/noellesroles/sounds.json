@@ -30,5 +30,13 @@
         "stream": false
       }
     ]
+  },
+  "noellesroles.corruptcoptime": {
+    "sounds": [
+      {
+        "name": "noellesroles:corruptcoptime",
+        "stream": false
+      }
+    ]
   }
 }

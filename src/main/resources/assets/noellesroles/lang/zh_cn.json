@@ -2920,10 +2920,16 @@
   "==================== 黑警 ====================": "",
   "announcement.star.role.corrupt_cop": "黑警",
   "announcement.star.goals.corrupt_cop": "杀光所有人，让属于你的正义得到伸张！",
-  "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！你存活时，杀手和乘客都无法获胜。",
+  "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！你存活时，杀手和乘客都无法获胜。\n若场上无杀手阵营，则触发黑警察时刻，你获得一把巡警手枪和手雷，除了你以外的全场玩家高亮",
   "announcement.star.win.corrupt_cop": "黑警胜利！",
   "game.win.star.corrupt_cop": "正义已经得到伸张……以我的方式。",
   "hud.noellesroles.corrupt_cop.kills": "击杀: %s",
+  "message.noellesroles.corrupt_cop.blackout_activated":"你的正义之心已经完全扭曲!",
+  "message.noellesroles.corrupt_cop.blackout_activated.tip": "场上杀手阵营全灭，黑警时刻触发!",
+  "message.noellesroles.corrupt_cop.blackout_ended": "黑警时刻结束",
+  "message.noellesroles.corrupt_cop.blackout_victory": "黑警伸张了属于自己的正义",
+  "message.noellesroles.corrupt_cop.blackout_failed": "黑警时刻结束，正义仍然属于乘客",
+
 
   "==================== 回溯杀手 ====================": "",
   "announcement.star.role.recall_killer": "回溯杀手",

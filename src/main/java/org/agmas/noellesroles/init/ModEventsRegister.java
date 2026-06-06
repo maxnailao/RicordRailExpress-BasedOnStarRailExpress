@@ -1492,6 +1492,7 @@ public class ModEventsRegister {
                 }
             }
 
+
             if (deathReason.getPath().equals(GameConstants.DeathReasons.KNIFE.getPath())) {
                 killer.addEffect(new MobEffectInstance(
                         MobEffects.MOVEMENT_SPEED, // ID
@@ -1837,6 +1838,16 @@ public class ModEventsRegister {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
+
+            // 黑警击杀数和黑警时刻状态重置
+            for (var player : serverLevel.players()) {
+                if (SREGameWorldComponent.KEY.get(serverLevel).isRole(player, ModRoles.CORRUPT_COP)) {
+                    var comp = ModComponents.CORRUPT_COP.maybeGet(player).orElse(null);
+                    if (comp != null) {
+                        comp.reset();  // 这个方法应该同时重置击杀数和黑警时刻
+                    }
+                }
+            }
             // 清除所有玩家的感染状态
             for (ServerPlayer player : serverLevel.players()) {
                 InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED

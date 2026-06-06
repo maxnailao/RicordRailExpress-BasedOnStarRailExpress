@@ -40,6 +40,9 @@ public class NRSounds {
     public static final SoundEvent FART = registrar.create("noellesroles.fart");
     public static final SoundEvent FEI = registrar.create("noellesroles.fei");
     public static final SoundEvent SQUEAKY_TOY = registrar.create("noellesroles.squeaky_toy");
+    //黑警
+    public static final SoundEvent CORRUPT_COP_TIME = registrar.create("noellesroles.corruptcoptime");
+
     public static void initialize() {
         registrar.registerEntries();
     }

@@ -26,6 +26,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent;
+import org.agmas.noellesroles.init.NRSounds;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.client.keybinds.SplitPersonalityKeybinds;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
@@ -48,6 +50,8 @@ public class StupidExpressClient implements ClientModInitializer {
     private static final Random WEAVING_RANDOM = new Random();
     private static final Map<BlockPos, BlockState> WEAVING_ORIGINAL_BLOCKS = new LinkedHashMap<>();
     private static final List<Map.Entry<BlockPos, BlockState>> WEAVING_RESTORE_QUEUE = new ArrayList<>();
+
+    private static final ArrayList<StatusBar> CORRUPT_COP_BARS = new ArrayList<>();
 
     private static final int WEAVING_NORMAL_XZ_RADIUS = 10;
     private static final int WEAVING_START_XZ_RADIUS = 22;
@@ -85,13 +89,29 @@ public class StupidExpressClient implements ClientModInitializer {
                             return false;
                         },
                         1));
+        // 黑警时刻音乐 - 全场播放
+        AmbienceUtil.registerBackgroundAmbience(
+                new BackgroundAmbience(NRSounds.CORRUPT_COP_TIME,
+                        player -> {
+                            if (SREClient.gameComponent == null)
+                                return false;
 
-        ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipFlag, list) -> {
-            if (itemStack.is(SEItems.JERRY_CAN))
-                list.addAll(TextUtils.getTooltipForItem(itemStack.getItem(), Style.EMPTY.withColor(8421504)));
-            if (itemStack.is(SEItems.LIGHTER))
-                list.addAll(TextUtils.getTooltipForItem(itemStack.getItem(), Style.EMPTY.withColor(8421504)));
-        });
+                            // 游戏必须正在运行
+                            if (!SREClient.gameComponent.isRunning()) {
+                                return false;
+                            }
+
+                            // 遍历所有玩家，检查是否有黑警且黑警时刻激活
+                            for (var p : player.level().players()) {
+                                var corruptCopComp = CorruptCopPlayerComponent.KEY.get(p);
+                                if (corruptCopComp != null && corruptCopComp.isBlackoutActive()) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        },
+                        1));
 
         // 初始化按键绑定
         SplitPersonalityKeybinds.registerKeyPressCallbacks();
@@ -261,6 +281,31 @@ public class StupidExpressClient implements ClientModInitializer {
                                 })));
             }
 
+            // 检查是否是黑警且黑警时刻激活中
+            var corruptCopComp = CorruptCopPlayerComponent.KEY.get(player);
+            if (corruptCopComp != null && corruptCopComp.isBlackoutActive()) {
+                if (CORRUPT_COP_BARS.size() == 0) {
+                    String barName = Component.translatable("gui.noellesroles.corrupt_cop.blackout_time").getString();
+                    CORRUPT_COP_BARS.add(StatusInit.statusBars.put(
+                            "corrupt_cop_blackout",
+                            new StatusInit.StatusBar(
+                                    "corrupt_cop_blackout",
+                                    barName,
+                                    () -> {
+                                        var c = CorruptCopPlayerComponent.KEY.get(Minecraft.getInstance().player);
+                                        if (c != null) {
+                                            return c.getProgress();
+                                        }
+                                        return 0f;
+                                    }
+                            )));
+                }
+            } else {
+                if (CORRUPT_COP_BARS.size() > 0) {
+                    StatusInit.statusBars.remove("corrupt_cop_blackout");
+                    CORRUPT_COP_BARS.clear();
+                }
+            }
             // 处理人格切换按键
             if (SplitPersonalityKeybinds.SWITCH_PERSONALITY_KEY.consumeClick()) {
                 SplitPersonalityKeybinds.handleSwitchPersonalityKey(player);
