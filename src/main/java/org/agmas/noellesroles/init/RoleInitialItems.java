@@ -300,6 +300,11 @@ public class RoleInitialItems {
             return pliers;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.FITTER, fitterItems);
+
+        // 休假警员初始物品 - 一次性手枪
+        List<Supplier<ItemStack>> restingPoliceItems = new ArrayList<>();
+        restingPoliceItems.add(() -> ModItems.ONCE_REVOLVER.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.RESTING_POLICE, restingPoliceItems);
     }
 
 }

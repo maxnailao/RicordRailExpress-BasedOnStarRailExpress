@@ -2910,5 +2910,15 @@ public class RoleShopHandler {
       });
       ShopContent.customEntries.put(ModRoles.INTELLIGENCE_ID, SHOP);
     }
+    // 休假警员商店
+    {
+      var SHOP = new ArrayList<ShopEntry>();
+      // 一次性手枪 - 325金币
+      SHOP.add(new ShopEntry(
+          org.agmas.noellesroles.init.ModItems.ONCE_REVOLVER.getDefaultInstance(),
+          325,
+          ShopEntry.Type.WEAPON));
+      ShopContent.customEntries.put(ModRoles.RESTING_POLICE_ID, SHOP);
+    }
   }
 }
