@@ -89,29 +89,20 @@ public class StupidExpressClient implements ClientModInitializer {
                             return false;
                         },
                         1));
-        // 黑警时刻音乐 - 全场播放
+        // 黑警时刻音乐
         AmbienceUtil.registerBackgroundAmbience(
-                new BackgroundAmbience(NRSounds.CORRUPT_COP_TIME,
+                new io.wifi.starrailexpress.client.util.MyBackgroundAmbience(NRSounds.CORRUPT_COP_TIME,
+                        net.minecraft.sounds.SoundSource.MASTER,
                         player -> {
                             if (SREClient.gameComponent == null)
                                 return false;
 
-                            // 游戏必须正在运行
-                            if (!SREClient.gameComponent.isRunning()) {
+                            if (!SREClient.gameComponent.isRunning())
                                 return false;
-                            }
 
-                            // 遍历所有玩家，检查是否有黑警且黑警时刻激活
-                            for (var p : player.level().players()) {
-                                var corruptCopComp = CorruptCopPlayerComponent.KEY.get(p);
-                                if (corruptCopComp != null && corruptCopComp.isBlackoutActive()) {
-                                    return true;
-                                }
-                            }
-
-                            return false;
+                            return SREClient.gameComponent.isCorruptCopBlackoutActive();
                         },
-                        1));
+                        1.0f, 10, 10));
 
         // 初始化按键绑定
         SplitPersonalityKeybinds.registerKeyPressCallbacks();

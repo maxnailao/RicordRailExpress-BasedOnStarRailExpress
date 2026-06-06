@@ -197,7 +197,7 @@ public class CorruptCopPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public boolean shouldSyncWith(ServerPlayer player) {
-        return player == this.player;
+        return true;/*player == this.player*/
     }
 
     @Override

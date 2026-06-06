@@ -9,6 +9,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.ConfigWorldComponent;
@@ -67,7 +69,11 @@ public class CorruptCopTime {
         effectRefreshTimer = 0;
         hasBeenTriggered = true;
 
-        ConfigWorldComponent.onPlayerUsedSkill(serverPlayer);
+        // 设置全局黑警时刻状态
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld != null) {
+            gameWorld.setCorruptCopBlackoutActive(true);
+        }
 
         // 给予巡警手枪
         giveEquitment();
@@ -81,17 +87,20 @@ public class CorruptCopTime {
         // 发送激活消息
         sendActivationMessage();
 
+
         return true;
     }
 
     /**
-     * 给予巡警手枪和一颗手榴弹
+     * 给予巡警手枪、德林加和一颗手榴弹
      */
     private void giveEquitment() {
         ItemStack patrollerRevolver = new ItemStack(ModItems.PATROLLER_REVOLVER);
         player.getInventory().add(patrollerRevolver);
+        player.getInventory().add(new ItemStack(TMMItems.DERRINGER));
         ItemStack grenade = new ItemStack(TMMItems.GRENADE);
         player.getInventory().add(grenade);
+
     }
 
     /**
@@ -173,12 +182,25 @@ public class CorruptCopTime {
     }
 
     /**
-     * 播放激活效果（音效）
+     * 播放激活效果（音效 + 闪电）
      */
     private void playActivationEffects() {
-        player.level().playSound(null, player.blockPosition(),
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+
+        ServerLevel serverWorld = (ServerLevel) player.level();
+
+        // 播放激活音效
+        serverWorld.playSound(null, player.blockPosition(),
                 SoundEvents.WARDEN_NEARBY_CLOSE,
                 SoundSource.MASTER, 2.0F, 0.6F);
+
+        // 生成闪电特效
+        LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(serverWorld);
+        if (lightning != null) {
+            lightning.setPos(player.getX(), player.getY(), player.getZ());
+            lightning.setVisualOnly(true);  // 仅视觉效果，不伤害
+            serverWorld.addFreshEntity(lightning);
+        }
     }
 
     /**
@@ -207,6 +229,12 @@ public class CorruptCopTime {
         if (!active) return;
 
         active = false;
+
+        // 清除全局黑警时刻状态
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld != null) {
+            gameWorld.setCorruptCopBlackoutActive(false);
+        }
 
         // 移除透视效果
         removeWallHackEffects();

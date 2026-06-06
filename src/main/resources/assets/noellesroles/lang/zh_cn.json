@@ -2926,7 +2926,7 @@
   "announcement.star.win.corrupt_cop": "黑警胜利！",
   "game.win.star.corrupt_cop": "正义已经得到伸张……以我的方式。",
   "hud.noellesroles.corrupt_cop.kills": "击杀: %s",
-  "message.noellesroles.corrupt_cop.blackout_activated":"你的正义之心已经完全扭曲!",
+  "message.noellesroles.corrupt_cop.blackout_activated":"你的正义之心已经完全扭曲!请在音乐结束前击杀所有人",
   "message.noellesroles.corrupt_cop.blackout_activated.tip": "场上杀手阵营全灭，黑警时刻触发!",
   "message.noellesroles.corrupt_cop.blackout_ended": "黑警时刻结束",
   "message.noellesroles.corrupt_cop.blackout_victory": "黑警伸张了属于自己的正义",

@@ -49,7 +49,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     private boolean haveOutsideSounds = false;
     private boolean lockedToSupporters = false;
     private boolean enableWeights = false;
-
+    private int playerCount = 0;
     // 本局击杀数统计（按玩家UUID存储）
     private HashMap<UUID, Integer> perPlayerKills = new HashMap<>();
 
@@ -124,8 +124,6 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         this.playerCount = playerCount;
     }
 
-    private int playerCount = 0;
-
     public boolean isOutsideSoundsAvailable() {
         return haveOutsideSounds;
     }
@@ -133,6 +131,20 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     public void setOutsideSoundsAvailable(boolean bl) {
         haveOutsideSounds = bl;
     }
+
+    /**黑警时刻 */
+    // 黑警时刻是否激活（全场通用）
+    private boolean corruptCopBlackoutActive = false;
+
+    public boolean isCorruptCopBlackoutActive() {
+        return corruptCopBlackoutActive;
+    }
+
+    public void setCorruptCopBlackoutActive(boolean active) {
+        this.corruptCopBlackoutActive = active;
+        this.sync();
+    }
+
 
     /**
      * 这里的技能指的部分职业（难民词条）
@@ -384,10 +396,25 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         }
         roleWorldComponent.clearRoleMap(sync);
         setPsychosActive(0, sync);
+        resetCorruptCopBlackout(sync);
     }
 
     public void clearRoleMap() {
         this.clearRoleMap(true);
+    }
+
+    /**
+     * 重置黑警时刻状态（新游戏开始时调用）
+     */
+    public void resetCorruptCopBlackout() {
+        resetCorruptCopBlackout(true);
+    }
+
+    public void resetCorruptCopBlackout(boolean sync) {
+        if (corruptCopBlackoutActive) {
+            corruptCopBlackoutActive = false;
+            if (sync) sync();
+        }
     }
 
     public int getPsychosActive() {
@@ -462,13 +489,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     @Override
     public void readFromNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
-        // this.lockedToSupporters = nbtCompound.getBoolean("LockedToSupporters");
-        // this.enableWeights = nbtCompound.getBoolean("EnableWeights");
         this.canJump = nbtCompound.contains("canJump") ? nbtCompound.getBoolean("canJump") : false;
         this.haveOutsideSounds = nbtCompound.contains("haveOutsideSounds") ? nbtCompound.getBoolean("haveOutsideSounds")
                 : false;
-        // this.syncRole = nbtCompound.getBoolean("SyncRole");
-        // if (!syncRole) {
         if (nbtCompound.contains("StartingPlayerCount")) {
             this.startingPlayerCount = nbtCompound.getInt("StartingPlayerCount");
         } else {
@@ -491,13 +514,13 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             this.psychosActive = 0;
         this.isSkillAvailable = nbtCompound.contains("isSkillAvailable") ? nbtCompound.getBoolean("isSkillAvailable")
                 : false;
-        // this.backfireChance = nbtCompound.getFloat("BackfireChance");
         if (nbtCompound.contains("LooseEndWinner")) {
             this.looseEndWinner = nbtCompound.getUUID("LooseEndWinner");
         } else {
             this.looseEndWinner = null;
         }
-        // 读取画板已画出物品类别
+        this.corruptCopBlackoutActive = nbtCompound.contains("CorruptCopBlackoutActive") 
+                && nbtCompound.getBoolean("CorruptCopBlackoutActive");
         this.drawnCategories.clear();
         if (nbtCompound.contains("DrawnCategories", Tag.TAG_LIST)) {
             ListTag drawnList = nbtCompound.getList("DrawnCategories", Tag.TAG_INT);
@@ -505,7 +528,6 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 this.drawnCategories.add(((net.minecraft.nbt.IntTag) tag).getAsInt());
             }
         }
-        // }else {
     }
 
     public ArrayList<UUID> uuidListFromNbt(CompoundTag nbtCompound, String listName) {
@@ -531,21 +553,17 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (gameStatus == GameStatus.INACTIVE) {
             return;
         }
-        // nbtCompound.putBoolean("LockedToSupporters", lockedToSupporters);
-        // nbtCompound.putBoolean("EnableWeights", enableWeights);
-        // nbtCompound.putBoolean("SyncRole", syncRole);
         if (haveOutsideSounds)
             nbtCompound.putBoolean("haveOutsideSounds", haveOutsideSounds);
         if (canJump)
             nbtCompound.putBoolean("canJump", canJump);
         if (isSkillAvailable)
             nbtCompound.putBoolean("isSkillAvailable", isSkillAvailable);
-        // if (!this.syncRole) {
+        if (corruptCopBlackoutActive)
+            nbtCompound.putBoolean("CorruptCopBlackoutActive", corruptCopBlackoutActive);
         nbtCompound.putString("GameStatus", this.gameStatus.name());
         nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
-        // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
-        // 保存画板已画出物品类别
         if (!drawnCategories.isEmpty()) {
             ListTag drawnList = new ListTag();
             for (Integer category : drawnCategories) {

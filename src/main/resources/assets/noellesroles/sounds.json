@@ -35,7 +35,7 @@
     "sounds": [
       {
         "name": "noellesroles:corruptcoptime",
-        "stream": false
+        "stream": true
       }
     ]
   }
