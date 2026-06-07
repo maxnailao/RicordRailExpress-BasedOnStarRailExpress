@@ -73,6 +73,9 @@ public class CorruptCopTime {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorld != null) {
             gameWorld.setCorruptCopBlackoutActive(true);
+            // 立即同步初始剩余时间
+            int initialRemainingSeconds = DURATION_TICKS / 20;
+            gameWorld.setCorruptCopBlackoutRemainingSeconds(initialRemainingSeconds);
         }
 
         // 给予巡警手枪
@@ -242,7 +245,7 @@ public class CorruptCopTime {
                     false);
         } else {
             // 还有平民存活，黑警死亡
-            GameUtils.killPlayer(serverPlayer, true, null, GameConstants.DeathReasons.GENERIC);
+            GameUtils.killPlayer(serverPlayer, true, null, GameConstants.DeathReasons.BLACKOUT_TIMEOUT);
             serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.corrupt_cop.blackout_failed")
                             .withStyle(style -> style.withColor(0x72D67E).withBold(true)),
@@ -305,8 +308,19 @@ public class CorruptCopTime {
             refreshWallHackEffects();
         }
 
+        // 每秒同步剩余时间到全局组件（20 ticks = 1 秒）
+        if (effectRefreshTimer % 20 == 0) {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorld != null) {
+                int remainingSeconds = getRemainingSeconds(currentTime);
+                gameWorld.setCorruptCopBlackoutRemainingSeconds(remainingSeconds);
+            }
+        }
+
         return true;
     }
+
+
 
     /**
      * 检查黑警时刻是否已结束

@@ -188,7 +188,24 @@ public class CommonClientHudRenderer {
           c.accept(guiGraphics, deltaTracker);
         });
       }
-      
+
+      /** 黑警时刻专属hud */
+      if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.gameComponent.isCorruptCopBlackoutActive()) {
+        if (player != null && GameUtils.isPlayerAliveAndSurvival(player)) {
+          int remainingSeconds = SREClient.gameComponent.getCorruptCopBlackoutRemainingSeconds();
+          int minutes = remainingSeconds / 60;
+          int seconds = remainingSeconds % 60;
+          String timeStr = String.format("%d:%02d", minutes, seconds);
+
+          Component blackoutGlobalText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_global", timeStr)
+                  .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_GRAY);
+
+          int centerX = guiGraphics.guiWidth() / 2;
+          guiGraphics.drawCenteredString(font, blackoutGlobalText, centerX, 60, Color.WHITE.getRGB());
+        }
+      }
+
+
       SRERole role = SREClient.getCachedPlayerRole();
       if (role == null)
         return;
@@ -715,7 +732,6 @@ public class CommonClientHudRenderer {
     });
 
 
-    // 渲染黑警hud
     RoleHudRenderCallback.EVENT.register(ModRoles.CORRUPT_COP_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null) return;
@@ -744,6 +760,13 @@ public class CommonClientHudRenderer {
 
       int leftX = 10;
       int leftY = screenHeight - 10 - font.lineHeight;
+
+      if (SREClient.gameComponent != null && !SREClient.gameComponent.isSkillAvailable) {
+        Component looseEndText = Component.translatable("hud.noellesroles.corrupt_cop.loose_end_wandering")
+                .withStyle(ChatFormatting.DARK_RED);
+        guiGraphics.drawString(font, looseEndText, leftX, leftY, Color.WHITE.getRGB());
+        return;
+      }
 
       Component blackoutStatusText;
       if (corruptComp.isBlackoutActive()) {

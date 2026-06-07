@@ -136,12 +136,27 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     // 黑警时刻是否激活（全场通用）
     private boolean corruptCopBlackoutActive = false;
 
+    // 黑警时刻剩余时间（秒），用于客户端显示
+    private int corruptCopBlackoutRemainingSeconds = 0;
+
     public boolean isCorruptCopBlackoutActive() {
         return corruptCopBlackoutActive;
     }
 
     public void setCorruptCopBlackoutActive(boolean active) {
         this.corruptCopBlackoutActive = active;
+        if (!active) {
+            this.corruptCopBlackoutRemainingSeconds = 0;
+        }
+        this.sync();
+    }
+
+    public int getCorruptCopBlackoutRemainingSeconds() {
+        return corruptCopBlackoutRemainingSeconds;
+    }
+
+    public void setCorruptCopBlackoutRemainingSeconds(int seconds) {
+        this.corruptCopBlackoutRemainingSeconds = Math.max(0, seconds);
         this.sync();
     }
 
@@ -519,9 +534,16 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         } else {
             this.looseEndWinner = null;
         }
-        this.corruptCopBlackoutActive = nbtCompound.contains("CorruptCopBlackoutActive") 
+        // 黑警时刻NBT同步
+        this.corruptCopBlackoutActive = nbtCompound.contains("CorruptCopBlackoutActive")
                 && nbtCompound.getBoolean("CorruptCopBlackoutActive");
+        if (nbtCompound.contains("CorruptCopBlackoutRemainingSeconds")) {
+            this.corruptCopBlackoutRemainingSeconds = nbtCompound.getInt("CorruptCopBlackoutRemainingSeconds");
+        } else {
+            this.corruptCopBlackoutRemainingSeconds = 0;
+        }
         this.drawnCategories.clear();
+
         if (nbtCompound.contains("DrawnCategories", Tag.TAG_LIST)) {
             ListTag drawnList = nbtCompound.getList("DrawnCategories", Tag.TAG_INT);
             for (Tag tag : drawnList) {
@@ -561,6 +583,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             nbtCompound.putBoolean("isSkillAvailable", isSkillAvailable);
         if (corruptCopBlackoutActive)
             nbtCompound.putBoolean("CorruptCopBlackoutActive", corruptCopBlackoutActive);
+        if (corruptCopBlackoutActive && corruptCopBlackoutRemainingSeconds > 0)
+            nbtCompound.putInt("CorruptCopBlackoutRemainingSeconds", corruptCopBlackoutRemainingSeconds);
         nbtCompound.putString("GameStatus", this.gameStatus.name());
         nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
         nbtCompound.putInt("PsychosActive", psychosActive);

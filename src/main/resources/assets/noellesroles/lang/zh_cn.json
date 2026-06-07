@@ -2933,12 +2933,15 @@
   "hud.noellesroles.corrupt_cop.kills": "击杀: %s",
   "hud.noellesroles.corrupt_cop.killers_alive": "存活杀手: %s",
   "hud.noellesroles.corrupt_cop.blackout_active": "黑警时刻: %s",
+  "hud.noellesroles.corrupt_cop.blackout_global": "⚠ 黑警时刻: %s ⚠",
+  "hud.noellesroles.corrupt_cop.loose_end_wandering": "亡命徒在游荡，你的正义之心受到限制",
   "hud.noellesroles.corrupt_cop.blackout_inactive": "黑警时刻: 未激活",
   "message.noellesroles.corrupt_cop.blackout_activated":"你的正义之心已经完全扭曲!请在音乐结束前击杀所有人",
   "message.noellesroles.corrupt_cop.blackout_activated.tip": "场上杀手阵营全灭，黑警时刻触发!",
   "message.noellesroles.corrupt_cop.blackout_ended": "黑警时刻结束",
   "message.noellesroles.corrupt_cop.blackout_victory": "黑警伸张了属于自己的正义",
   "message.noellesroles.corrupt_cop.blackout_failed": "黑警时刻结束，正义仍然属于乘客",
+
 
 
   "==================== 回溯杀手 ====================": "",
