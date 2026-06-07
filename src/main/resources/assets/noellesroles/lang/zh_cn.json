@@ -2900,11 +2900,16 @@
   "hud.noellesroles.phantom_musician.teleport_no_coin": "金币不足，需要100金币",
   "hud.noellesroles.phantom_musician.passive_income": "声波共振：50金币/30秒",
 
-  "item.noellesroles.phantom_musician.knife_sound": "出刀的声音",
+  "item.noellesroles.phantom_musician.knife_sound": "刀命中玩家的声音",
   "item.noellesroles.phantom_musician.revolver_sound": "左轮手枪开火的声音",
   "item.noellesroles.phantom_musician.stalker_sound": "潜行者觉醒的声音",
   "item.noellesroles.phantom_musician.psycho_sound": "疯狂模式的声音",
   "item.noellesroles.phantom_musician.crowbar_sound": "撬棍撬门的声音",
+  "item.noellesroles.phantom_musician.random_sound": "随机播放音效",
+  "block.noellesroles.kill_block": "击杀方块",
+  "block.noellesroles.kill_block_panel": "击杀镶板",
+  "tooltip.noellesroles.kill_block": "杀死站在方块上的玩家",
+  "tooltip.noellesroles.kill_block_panel": "杀死接触到镶板所在方块的玩家"
   "item.noellesroles.phantom_musician.random_sound": "随机播放音效",
 
   "==================== 熊孩子 ====================":"",

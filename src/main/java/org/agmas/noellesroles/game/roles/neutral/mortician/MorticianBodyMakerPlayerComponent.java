@@ -204,6 +204,10 @@ public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent
     private boolean useDragAbility(ServerPlayer serverPlayer) {
         // 如果正在拖动尸体，放下它
         if (this.draggedBody != null && this.draggedBody.isAlive()) {
+            // 将尸体放在玩家前方一格
+            Vec3 lookVec = serverPlayer.getLookAngle();
+            Vec3 dropPos = serverPlayer.position().add(lookVec.x, 0, lookVec.z);
+            this.draggedBody.setPos(dropPos.x, dropPos.y, dropPos.z);
             // 恢复尸体重力
             this.draggedBody.setNoGravity(false);
             // 放下尸体

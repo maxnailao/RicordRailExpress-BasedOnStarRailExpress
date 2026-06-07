@@ -1152,9 +1152,10 @@ public class ModPacketsReciever {
       comp.masqueradeTicksLeft = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION;
       comp.masqueradeCooldown = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_COOLDOWN;
       comp.sync();
-      // 全场播放音效
-      player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
-          SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.MASTER, 1.0F, 1.0F);
+      // 全场播放音效（遍历所有玩家，绕过距离衰减）
+      for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+        p.playNotifySound(SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.MASTER, 1.0F, 1.0F);
+      }
       // 广播皮肤交换数据给所有玩家
       EmbalmerSkinSwapS2CPacket swapPacket =
           new EmbalmerSkinSwapS2CPacket(swaps, pitches,

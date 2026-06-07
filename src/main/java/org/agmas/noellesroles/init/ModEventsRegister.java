@@ -1429,8 +1429,7 @@ public class ModEventsRegister {
             if (victimRole == null || !gameWorldComponent.isKillerTeamRole(victimRole))
                 return;
             // 获取死亡玩家的翻译职业名
-            String rolePath = victimRole.identifier().getPath();
-            Component roleName = Component.translatable("announcement.star.role." + rolePath);
+            Component roleName = RoleUtils.getRoleName(victimRole.identifier());
             Component deathMessage = Component
                     .translatable("message.noellesroles.mortician_bodymaker.passive_death", roleName)
                     .withStyle(ChatFormatting.GOLD);

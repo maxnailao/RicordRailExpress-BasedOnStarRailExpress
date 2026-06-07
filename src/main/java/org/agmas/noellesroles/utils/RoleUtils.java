@@ -280,6 +280,13 @@ public class RoleUtils extends MCItemsUtils {
     public static MutableComponent getRoleName(ResourceLocation roleIdentifier) {
         if (roleIdentifier == null)
             return null;
+        // 检查自定义职业的显示名称
+        if (roleIdentifier.getNamespace().equals("customrole")) {
+            var customData = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(roleIdentifier.getPath());
+            if (customData != null && !customData.displayName.isEmpty()) {
+                return Component.literal(customData.displayName);
+            }
+        }
         String translationKey = "announcement.star.role." + roleIdentifier.getPath();
         return Component.translatable(translationKey);
     }
@@ -329,10 +336,22 @@ public class RoleUtils extends MCItemsUtils {
         return Component.translatable("info.screen.roleid." + res.getPath());
     }
 
+    private static String fixNewlines(String text) {
+        return text.replace("\\n", "\n");
+    }
+
     public static MutableComponent getRoleDescription(String roleName) {
         var res = ResourceLocation.tryParse(roleName);
         if (res == null) {
+            if (roleName.startsWith("customrole:")) {
+                var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(roleName.substring("customrole:".length()));
+                if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
+            }
             return Component.translatable("info.screen.roleid." + roleName);
+        }
+        if ("customrole".equals(res.getNamespace())) {
+            var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(res.getPath());
+            if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
         }
         return Component.translatable("info.screen.roleid." + res.getPath());
     }
@@ -340,6 +359,13 @@ public class RoleUtils extends MCItemsUtils {
     public static MutableComponent getRoleDescription(SRERole selectedRole) {
         if (selectedRole == null)
             return null;
+        var id = selectedRole.getIdentifier();
+        if ("customrole".equals(id.getNamespace())) {
+            var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(id.getPath());
+            if (cd != null && !cd.description.isEmpty()) {
+                return Component.literal(fixNewlines(cd.description));
+            }
+        }
         return Component.translatable("info.screen.roleid." + selectedRole.getIdentifier().getPath());
     }
 

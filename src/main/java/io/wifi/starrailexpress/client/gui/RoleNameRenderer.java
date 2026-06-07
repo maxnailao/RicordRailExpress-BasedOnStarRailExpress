@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.client.gui;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.SREClient;
@@ -125,9 +126,7 @@ public class RoleNameRenderer {
                             if (component.canSeeKillerTeammate(player)) {
                                 context.pose().translate(0, 20 + renderer.lineHeight, 0);
                                 if (target != null) {
-                                    roleText1 = Component
-                                            .translatable(
-                                                    "announcement.star.role." + targetRole2.identifier().getPath());
+                                    roleText1 = RoleUtils.getRoleName(targetRole2.identifier());
                                     MutableComponent roleText2 = OnKillerCohortDisplay.EVENT.invoker()
                                             .onCohortRender(target);
                                     if (roleText2 != null) {

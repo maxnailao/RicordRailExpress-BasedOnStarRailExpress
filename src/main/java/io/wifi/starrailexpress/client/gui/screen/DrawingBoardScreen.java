@@ -175,6 +175,22 @@ public class DrawingBoardScreen extends Screen {
     }
 
     protected void generateItem() {
+        // 检查上色格子数量，至少需要7格
+        int coloredCount = 0;
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                if ((canvas[y][x] & 0xFF) != BACKGROUND_WHITE) {
+                    coloredCount++;
+                }
+            }
+        }
+        if (coloredCount < 7) {
+            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.too_few").getString();
+            lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
+            lastHint = "";
+            return;
+        }
+
         // 识别（带保底机制）
         DrawingBoardRecognizer.RecognizeResult result = DrawingBoardRecognizer.getInstance().recognizeWithHint(canvas);
         int recognizedCategory = result.category;

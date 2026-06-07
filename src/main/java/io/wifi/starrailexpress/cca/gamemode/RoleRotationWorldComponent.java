@@ -728,7 +728,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     // ==================== 特殊平民职业检查 ====================
 
     /**
-     * 特殊平民职业列表：潜水员、医生、飞行员、锁匠、琪露诺（BAKA）、帕秋莉
+     * 特殊平民职业列表：潜水员、医生、飞行员、锁匠、琪露诺（BAKA）、帕秋莉、钳工
      * 这些职业在最后阶段和职业调整阶段需要被优先选取
      */
     private static final Set<SRERole> SPECIAL_CIVILIAN_ROLES = Set.of(
@@ -737,7 +737,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             ModRoles.PILOT,
             ModRoles.LOCKSMITH,
             RedHouseRoles.BAKA,
-            RedHouseRoles.PACHURI
+            RedHouseRoles.PACHURI,
+            ModRoles.FITTER
     );
 
     /**

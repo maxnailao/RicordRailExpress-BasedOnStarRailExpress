@@ -383,6 +383,9 @@ public class EntityInteractionBlockScreen extends Screen {
                     (int) condition.value).getString();
             case PLAYER_DAMAGED_BY_NON_PLAYER -> Component.translatable("condition.player_damaged_by_non_player",
                     (int) condition.value).getString();
+            case REDSTONE_SIGNAL -> Component.translatable("condition.redstone_signal").getString();
+            case HAS_MODIFIER -> Component.translatable("condition.has_modifier",
+                    condition.stringValue != null ? condition.stringValue : "?").getString();
         };
 
         return logicPrefix + conditionText;
@@ -481,6 +484,11 @@ public class EntityInteractionBlockScreen extends Screen {
                             "gui.entity_interaction_block.narrator_interrupt" :
                             "gui.entity_interaction_block.narrator_queue")).getString();
             case INFECT -> Component.translatable("action.infect", (int) action.value).getString();
+            case OUTPUT_REDSTONE -> Component.translatable("action.output_redstone", (int) action.value).getString();
+            case ADD_MODIFIER -> Component.translatable("action.add_modifier",
+                    action.stringValue != null ? action.stringValue : "?").getString();
+            case REMOVE_MODIFIER -> Component.translatable("action.remove_modifier",
+                    action.stringValue != null ? action.stringValue : "?").getString();
         };
 
         return baseText + teleportSuffix + teamSuffix;
@@ -890,8 +898,18 @@ public class EntityInteractionBlockScreen extends Screen {
                                     Component.translatable("gui.entity_interaction_block.comparison"),
                                     (b, comp) -> selectedComparison = comp));
                 }
-                case IS_SNEAKING, IS_SPRINTING, HAS_KILLED -> {
+                case IS_SNEAKING, IS_SPRINTING, HAS_KILLED, REDSTONE_SIGNAL -> {
                     // 不需要输入
+                }
+                case HAS_MODIFIER -> {
+                    // 修饰符ID
+                    addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
+                            Component.translatable("gui.entity_interaction_block.modifier_id")));
+                    stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.modifier_id"));
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.has_modifier_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
                 }
                 case HAS_EFFECT -> {
                     // 效果ID
@@ -1715,6 +1733,39 @@ public class EntityInteractionBlockScreen extends Screen {
                             Component.translatable("gui.entity_interaction_block.infect_desc"), b -> {})
                             .bounds(centerX - 100, y, 200, 15).build());
                 }
+                case OUTPUT_REDSTONE -> {
+                    // 输出红石信号强度 (0-15)
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.redstone_signal_hint"), b -> {})
+                            .bounds(centerX - 100, y, 200, 20).build());
+                    y += 25;
+                    addRenderableWidget(new EditBox(this.font, centerX - 50, y, 100, 20,
+                            Component.translatable("gui.entity_interaction_block.redstone_signal_strength")));
+                    valueInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.redstone_signal_strength"));
+                    if (valueInput != null) {
+                        valueInput.setFilter(s -> s.matches("[0-9]*"));
+                        valueInput.setValue("15");
+                    }
+                    addRenderableWidget(Button.builder(Component.literal("(0~15)"), b -> {})
+                            .bounds(centerX + 55, y, 45, 20).build());
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.redstone_signal_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+                }
+                case ADD_MODIFIER, REMOVE_MODIFIER -> {
+                    // 修饰符ID
+                    String labelKey = selectedType == EntityInteractionBlockEntity.ActionType.ADD_MODIFIER
+                            ? "gui.entity_interaction_block.add_modifier_id"
+                            : "gui.entity_interaction_block.remove_modifier_id";
+                    addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
+                            Component.translatable(labelKey)));
+                    stringInput = findAndAttachInput(Component.translatable(labelKey));
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.modifier_id_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+                }
                 // 其他类型不需要输入
             }
 
@@ -1730,7 +1781,8 @@ public class EntityInteractionBlockScreen extends Screen {
                     EntityInteractionBlockEntity.ActionType.GAME_WIN,
                     EntityInteractionBlockEntity.ActionType.BLOCK_COOLDOWN,
                     EntityInteractionBlockEntity.ActionType.END_BLACKOUT,
-                    EntityInteractionBlockEntity.ActionType.FIX_MONITOR
+                    EntityInteractionBlockEntity.ActionType.FIX_MONITOR,
+                    EntityInteractionBlockEntity.ActionType.OUTPUT_REDSTONE
             );
 
             if (!noTeamTypes.contains(selectedType)) {
@@ -1873,6 +1925,11 @@ public class EntityInteractionBlockScreen extends Screen {
 
             // 保存传送目标参数
             action.teleportTarget = teleportTarget;
+
+            // 限制红石信号强度 0-15
+            if (selectedType == EntityInteractionBlockEntity.ActionType.OUTPUT_REDSTONE) {
+                action.value = Math.max(0, Math.min(15, (int) action.value));
+            }
 
             parent.addAction(action);
             this.minecraft.setScreen(parent);

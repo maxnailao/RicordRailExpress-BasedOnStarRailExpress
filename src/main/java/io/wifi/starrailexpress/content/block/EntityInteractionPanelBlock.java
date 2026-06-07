@@ -19,13 +19,17 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -39,8 +43,10 @@ import java.util.Map;
  * 全透明，无碰撞箱，创造模式玩家右键可打开UI
  * 参考屏障镶板的设计
  */
-public class EntityInteractionPanelBlock extends BaseEntityBlock {
+public class EntityInteractionPanelBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     private static final VoxelShape UP_SHAPE = box(0.0, 15.9, 0.0, 16.0, 16.0, 16.0);
     private static final VoxelShape DOWN_SHAPE = box(0.0, 0.0, 0.0, 16.0, 0.1, 16.0);
@@ -60,19 +66,28 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
 
     public EntityInteractionPanelBlock(Properties settings) {
         super(settings.noOcclusion().noCollission());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH).setValue(POWERED, false).setValue(WATERLOGGED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, POWERED, WATERLOGGED);
+    }
+
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         Direction facing = ctx.getClickedFace();
-        return this.defaultBlockState().setValue(FACING, facing);
+        FluidState fluidState = ctx.getLevel().getFluidState(ctx.getClickedPos());
+        return this.defaultBlockState()
+                .setValue(FACING, facing)
+                .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
     }
 
     @Override
@@ -151,10 +166,47 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world,
             BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(WATERLOGGED)) {
+            world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
+        }
         Direction facing = state.getValue(FACING);
         if (direction == facing.getOpposite() && !state.canSurvive(world, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
         return state;
+    }
+
+    // ===== 红石信号输入（类似 TrainLightBlock） =====
+    @Override
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos,
+            boolean notify) {
+        if (!world.isClientSide) {
+            boolean isPowered = world.hasNeighborSignal(pos);
+            if (isPowered != state.getValue(POWERED)) {
+                world.setBlock(pos, state.setValue(POWERED, isPowered), 2);
+                // 同步到 BlockEntity
+                BlockEntity blockEntity = world.getBlockEntity(pos);
+                if (blockEntity instanceof EntityInteractionBlockEntity entity) {
+                    entity.setReceivedRedstoneSignal(isPowered);
+                }
+            }
+        }
+    }
+
+    // ===== 红石信号输出（类似 RemoteRedstoneBlock 的 getSignal） =====
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof EntityInteractionBlockEntity entity) {
+            if (entity.isOutputtingRedstone()) {
+                return entity.getRedstoneOutputStrength();
+            }
+        }
+        return 0;
     }
 }
