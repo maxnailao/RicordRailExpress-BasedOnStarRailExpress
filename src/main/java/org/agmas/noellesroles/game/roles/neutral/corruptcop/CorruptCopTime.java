@@ -160,6 +160,10 @@ public class CorruptCopTime {
                 SoundEvents.WARDEN_NEARBY_CLOSE,
                 SoundSource.MASTER, 2.0F, 0.6F);
 
+        serverWorld.playSound(null, serverPlayer.blockPosition(),
+                SoundEvents.WITHER_SPAWN,
+                SoundSource.PLAYERS, 1.0F, 1.0F);
+
         // 生成闪电特效
         LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(serverWorld);
         if (lightning != null) {
