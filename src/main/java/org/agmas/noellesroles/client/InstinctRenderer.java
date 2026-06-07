@@ -462,6 +462,45 @@ public class InstinctRenderer {
             return ModRoles.PHANTOM_MUSICIAN.color();
         });
 
+        // 黑警时刻：透视所有存活玩家（黑色边框）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.CORRUPT_COP))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+
+            var corruptComp = ModComponents.CORRUPT_COP.maybeGet(self).orElse(null);
+            if (corruptComp == null)
+                return -1;
+
+            if (!corruptComp.isBlackoutActive())
+                return -1;
+
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (targetPlayer.isSpectator())
+                    return -1;
+                if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                    return -1;
+
+                if (isTargetInvisibleToInstinct(targetPlayer))
+                    return -2;
+
+                return java.awt.Color.BLACK.getRGB();
+            }
+
+            return -1;
+        });
+
+
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (SREClient.gameComponent == null) {
                 return -1;

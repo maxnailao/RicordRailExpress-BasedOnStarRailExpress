@@ -104,12 +104,12 @@ public class CorruptCopTime {
     }
 
     /**
-     * 给予透视效果（夜视 + 让其他玩家发光）
+     * 给予透视效果（夜视）
      */
     private void giveWallHackEffects() {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
 
-        // 夜视效果 - 看清黑暗（给自己）
+        // 只给自己夜视效果，不再给其他人发光效果
         serverPlayer.addEffect(new MobEffectInstance(
                 MobEffects.NIGHT_VISION,
                 DURATION_TICKS,
@@ -117,26 +117,6 @@ public class CorruptCopTime {
                 false,
                 false
         ));
-
-        // 给除了自己以外的存活玩家施加发光效果
-        ServerLevel serverWorld = (ServerLevel) player.level();
-
-        for (Player p : serverWorld.players()) {
-            // 跳过自己
-            if (p == player) continue;
-            // 跳过旁观者/观察者模式
-            if (p.isSpectator()) continue;
-            // 跳过死亡玩家
-            if (!p.isAlive()) continue;
-
-            ((ServerPlayer)p).addEffect(new MobEffectInstance(
-                    MobEffects.GLOWING,
-                    DURATION_TICKS,
-                    0,
-                    false,
-                    false
-            ));
-        }
     }
 
     /**
@@ -150,7 +130,7 @@ public class CorruptCopTime {
         int remainingTicks = DURATION_TICKS - (int)(serverPlayer.level().getGameTime() - startTime);
         if (remainingTicks <= 0) return;
 
-        // 刷新自己的夜视效果
+        // 只刷新自己的夜视效果
         MobEffectInstance nightVision = serverPlayer.getEffect(MobEffects.NIGHT_VISION);
         if (nightVision == null || nightVision.getDuration() < 100) {
             serverPlayer.addEffect(new MobEffectInstance(
@@ -161,25 +141,8 @@ public class CorruptCopTime {
                     false
             ));
         }
-
-        // 刷新其他存活玩家的发光效果
-        for (Player p : serverWorld.players()) {
-            if (p == player) continue;
-            if (p.isSpectator()) continue;
-            if (!p.isAlive()) continue;
-
-            MobEffectInstance glowing = p.getEffect(MobEffects.GLOWING);
-            if (glowing == null || glowing.getDuration() < 100) {
-                ((ServerPlayer)p).addEffect(new MobEffectInstance(
-                        MobEffects.GLOWING,
-                        remainingTicks,
-                        0,
-                        false,
-                        false
-                ));
-            }
-        }
     }
+
 
     /**
      * 播放激活效果（音效 + 闪电）
@@ -303,18 +266,10 @@ public class CorruptCopTime {
     private void removeWallHackEffects() {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
 
-        // 移除自己的夜视效果
+        // 只移除自己的夜视效果
         serverPlayer.removeEffect(MobEffects.NIGHT_VISION);
-
-        // 移除其他玩家身上的发光效果
-        ServerLevel serverWorld = (ServerLevel) player.level();
-        for (Player p : serverWorld.players()) {
-            if (p == player) continue;
-            if (p instanceof ServerPlayer sp) {
-                sp.removeEffect(MobEffects.GLOWING);
-            }
-        }
     }
+
 
     /**
      * 发送结束消息
