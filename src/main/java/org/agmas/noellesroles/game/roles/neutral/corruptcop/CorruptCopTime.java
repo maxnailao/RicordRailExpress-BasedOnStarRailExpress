@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.roles.neutral.corruptcop;
 
+import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -78,6 +79,9 @@ public class CorruptCopTime {
             gameWorld.setCorruptCopBlackoutRemainingSeconds(initialRemainingSeconds);
         }
 
+        // 触发真正的熄灯事件（5秒 = 100 ticks）
+        triggerBlackoutEvent();
+
         // 给予巡警手枪
         giveEquitment();
 
@@ -93,6 +97,7 @@ public class CorruptCopTime {
 
         return true;
     }
+
 
     /**
      * 给予巡警手枪、德林加和一颗手榴弹
@@ -171,6 +176,19 @@ public class CorruptCopTime {
             lightning.setVisualOnly(true);  // 仅视觉效果，不伤害
             serverWorld.addFreshEntity(lightning);
         }
+    }
+
+    /**
+     * 触发真正的熄灯事件（关闭列车灯光）
+     */
+    private void triggerBlackoutEvent() {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+
+        ServerLevel serverWorld = (ServerLevel) player.level();
+        SREWorldBlackoutComponent blackoutComponent = SREWorldBlackoutComponent.KEY.get(serverWorld);
+
+        // 触发熄灯事件，持续 100 ticks（5秒）
+        blackoutComponent.triggerBlackout(true, 100);
     }
 
     /**

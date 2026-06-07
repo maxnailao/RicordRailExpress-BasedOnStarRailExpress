@@ -191,17 +191,21 @@ public class CommonClientHudRenderer {
 
       /** 黑警时刻专属hud */
       if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.gameComponent.isCorruptCopBlackoutActive()) {
-        if (player != null && GameUtils.isPlayerAliveAndSurvival(player)) {
-          int remainingSeconds = SREClient.gameComponent.getCorruptCopBlackoutRemainingSeconds();
-          int minutes = remainingSeconds / 60;
-          int seconds = remainingSeconds % 60;
-          String timeStr = String.format("%d:%02d", minutes, seconds);
+        if (player != null) {
+          // 存活玩家和旁观者都能看到
+          boolean canSee = GameUtils.isPlayerAliveAndSurvival(player) || player.isSpectator();
+          if (canSee) {
+            int remainingSeconds = SREClient.gameComponent.getCorruptCopBlackoutRemainingSeconds();
+            int minutes = remainingSeconds / 60;
+            int seconds = remainingSeconds % 60;
+            String timeStr = String.format("%d:%02d", minutes, seconds);
 
-          Component blackoutGlobalText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_global", timeStr)
-                  .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_GRAY);
+            Component blackoutGlobalText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_global", timeStr)
+                    .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_GRAY);
 
-          int centerX = guiGraphics.guiWidth() / 2;
-          guiGraphics.drawCenteredString(font, blackoutGlobalText, centerX, 60, Color.WHITE.getRGB());
+            int centerX = guiGraphics.guiWidth() / 2;
+            guiGraphics.drawCenteredString(font, blackoutGlobalText, centerX, 60, Color.WHITE.getRGB());
+          }
         }
       }
 
