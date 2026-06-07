@@ -715,7 +715,7 @@ public class CommonClientHudRenderer {
     });
 
 
-
+    // 渲染黑警hud
     RoleHudRenderCallback.EVENT.register(ModRoles.CORRUPT_COP_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null) return;
@@ -727,14 +727,40 @@ public class CommonClientHudRenderer {
       int screenWidth = guiGraphics.guiWidth();
       int screenHeight = guiGraphics.guiHeight();
       var font = client.font;
-      int xOffset = screenWidth - 10; // 右下角基准X
-      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角基准Y
+      int xOffset = screenWidth - 10;
+      int yOffset = screenHeight - 10 - font.lineHeight;
 
       Component text = Component.translatable("hud.noellesroles.corrupt_cop.kills", corruptComp.getKillCount())
               .withStyle(ChatFormatting.RED);
       guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset, Color.WHITE.getRGB());
-    });
 
+      if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
+        var teamInfo = SREClient.gameComponent.getAlivePlayerRoleTeamInfo();
+        int killerCount = teamInfo.killer;
+        Component killerText = Component.translatable("hud.noellesroles.corrupt_cop.killers_alive", killerCount)
+                .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, killerText, xOffset - font.width(killerText), yOffset - font.lineHeight - 4, Color.WHITE.getRGB());
+      }
+
+      int leftX = 10;
+      int leftY = screenHeight - 10 - font.lineHeight;
+
+      Component blackoutStatusText;
+      if (corruptComp.isBlackoutActive()) {
+        long currentTime = client.player.level().getGameTime();
+        long remainingTicks = corruptComp.getCorruptCopTime().getRemainingTicks(currentTime);
+        int remainingSeconds = (int) (remainingTicks / 20);
+        int minutes = remainingSeconds / 60;
+        int seconds = remainingSeconds % 60;
+        String timeStr = String.format("%d:%02d", minutes, seconds);
+        blackoutStatusText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_active", timeStr)
+                .withStyle(ChatFormatting.GRAY);
+      } else {
+        blackoutStatusText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_inactive")
+                .withStyle(ChatFormatting.GRAY);
+      }
+      guiGraphics.drawString(font, blackoutStatusText, leftX, leftY, Color.GRAY.getRGB());
+    });
 
     RoleHudRenderCallback.EVENT.register(ModRoles.CHILD_ID, (guiGraphics, deltaTracker) -> {
       // 渲染熊孩子技能提示

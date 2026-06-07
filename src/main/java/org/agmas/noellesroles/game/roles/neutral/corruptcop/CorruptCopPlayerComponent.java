@@ -171,6 +171,11 @@ public class CorruptCopPlayerComponent implements RoleComponent, ServerTickingCo
             return;
         if (!GameUtils.isPlayerAliveAndSurvival(player))
             return;
+        // 亡命徒时刻不触发黑警时刻
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (!gameWorld.isSkillAvailable) {
+            return;
+        }
 
         long currentTime = player.level().getGameTime();
 
