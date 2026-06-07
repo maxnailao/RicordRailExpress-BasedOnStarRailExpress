@@ -2941,7 +2941,7 @@
   "message.noellesroles.corrupt_cop.blackout_ended": "黑警时刻结束",
   "message.noellesroles.corrupt_cop.blackout_victory": "黑警伸张了属于自己的正义",
   "message.noellesroles.corrupt_cop.blackout_failed": "黑警时刻结束，正义仍然属于乘客",
-
+  "death_reason.starrailexpress.blackout_timeout": "未能执行属于自己的正义",
 
 
   "==================== 回溯杀手 ====================": "",
