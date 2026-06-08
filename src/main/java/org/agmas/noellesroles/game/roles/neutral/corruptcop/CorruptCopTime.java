@@ -82,7 +82,7 @@ public class CorruptCopTime {
         // 触发真正的熄灯事件（5秒 = 100 ticks）
         triggerBlackoutEvent();
 
-        // 给予巡警手枪
+        // 给予装备
         giveEquitment();
 
         // 给予透视效果
@@ -100,12 +100,11 @@ public class CorruptCopTime {
 
 
     /**
-     * 给予巡警手枪、德林加和一颗手榴弹
+     * 给予巡警手枪和一颗手榴弹
      */
     private void giveEquitment() {
         ItemStack patrollerRevolver = new ItemStack(ModItems.PATROLLER_REVOLVER);
         player.getInventory().add(patrollerRevolver);
-        player.getInventory().add(new ItemStack(TMMItems.DERRINGER));
         ItemStack grenade = new ItemStack(TMMItems.GRENADE);
         player.getInventory().add(grenade);
 

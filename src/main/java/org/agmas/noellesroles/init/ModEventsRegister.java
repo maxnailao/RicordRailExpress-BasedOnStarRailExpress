@@ -92,6 +92,7 @@ import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinFistPunc
 import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
+import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopWinChecker;
 import org.agmas.noellesroles.game.roles.vigilante.guard.GuardPlayerHandler;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -1116,6 +1117,16 @@ public class ModEventsRegister {
             for (ServerPlayer player : world.players()) {
                 org.agmas.noellesroles.component.ModComponents.MEATBALL.get(player).init();
             }
+
+            // 清除所有召回杀手的传送点和粒子效果
+            for (ServerPlayer player : world.players()) {
+                RecallKillerPlayerComponent recallComp = ModComponents.RECALL_KILLER.get(player);
+                if (recallComp != null && recallComp.placed) {
+                    recallComp.clearAnchor();
+                }
+            }
+
+
             // 已经在resetPlayer清除部分cca
             // 重置所有玩家的锁匠灵感
             SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);

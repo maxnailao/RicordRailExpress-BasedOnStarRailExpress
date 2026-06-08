@@ -19,7 +19,8 @@ public class ChildSkillRegistry {
             SoundEvents.GENERIC_EXPLODE.value(),
             NRSounds.INFECTED_COUGH,
             NRSounds.FEI,
-            NRSounds.SQUEAKY_TOY
+            NRSounds.SQUEAKY_TOY,
+            NRSounds.A
     };
 
     public static void register() {
