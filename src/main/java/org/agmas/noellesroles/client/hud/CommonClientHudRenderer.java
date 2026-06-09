@@ -735,7 +735,7 @@ public class CommonClientHudRenderer {
       return;
     });
 
-
+    // 黑警hud
     RoleHudRenderCallback.EVENT.register(ModRoles.CORRUPT_COP_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null) return;
@@ -754,6 +754,7 @@ public class CommonClientHudRenderer {
               .withStyle(ChatFormatting.RED);
       guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset, Color.WHITE.getRGB());
 
+      /*
       if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
         var teamInfo = SREClient.gameComponent.getAlivePlayerRoleTeamInfo();
         int killerCount = teamInfo.killer;
@@ -761,6 +762,7 @@ public class CommonClientHudRenderer {
                 .withStyle(ChatFormatting.RED);
         guiGraphics.drawString(font, killerText, xOffset - font.width(killerText), yOffset - font.lineHeight - 4, Color.WHITE.getRGB());
       }
+       */
 
       int leftX = 10;
       int leftY = screenHeight - 10 - font.lineHeight;

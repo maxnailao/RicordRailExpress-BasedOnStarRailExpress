@@ -245,27 +245,22 @@ public class CorruptCopTime {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         ServerLevel serverWorld = (ServerLevel) player.level();
 
-        // 统计存活平民数量（平民阵营，且不是黑警自己）
-        int aliveCivilianCount = 0;
+        // 统计存活的除黑警以外的所有玩家数量
+        int aliveOthersCount = 0;
         for (Player p : serverWorld.players()) {
             if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
             if (p == player) continue; // 跳过黑警自己
-
-            io.wifi.starrailexpress.api.SRERole role = gameWorld.getRole(p);
-            if (role != null && role.isInnocent()) {
-                aliveCivilianCount++;
-            }
+            aliveOthersCount++;
         }
 
-        if (aliveCivilianCount == 0) {
-            // 击杀所有人（平民全灭），黑警胜利
-
+        if (aliveOthersCount == 0) {
+            // 击杀了所有其他玩家，黑警胜利
             serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.corrupt_cop.blackout_victory")
                             .withStyle(style -> style.withColor(0x2D2D2D).withBold(true)),
                     false);
         } else {
-            // 还有平民存活，黑警死亡
+            // 还有其他玩家存活，黑警死亡
             GameUtils.killPlayer(serverPlayer, true, null, GameConstants.DeathReasons.BLACKOUT_TIMEOUT);
             serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.corrupt_cop.blackout_failed")
@@ -273,6 +268,7 @@ public class CorruptCopTime {
                     false);
         }
     }
+
 
     /**
      * 强制结束（不清除效果，用于重置）

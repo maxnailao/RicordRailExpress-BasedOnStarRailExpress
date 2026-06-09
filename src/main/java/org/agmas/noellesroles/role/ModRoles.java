@@ -381,8 +381,9 @@ public class ModRoles {
                     Integer.MAX_VALUE, // 无限冲刺时间
                     false // 是否隐藏计分板（按你需求改）
             ))
-            .setNeutrals(true) // 中立阵营（如果你项目里用这个开关）
+            .setNeutrals(true) // 中立阵营
             .setCanSeeCoin(true)
+            .setCanSeeTime(true)
             .setComponentKey(ModComponents.CORRUPT_COP);
 
     /**
