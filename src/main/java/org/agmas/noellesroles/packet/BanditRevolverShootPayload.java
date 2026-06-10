@@ -68,8 +68,11 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                         if (game.isInnocent(target) && !player.isCreative()) {
                             // \
                             boolean shouldDrop = false;
+                            boolean shouldDisappear = false;
                             if (game.isRole(player, ModRoles.BANDIT)) {
                                 shouldDrop = player.getRandom().nextInt(0, 100) <= 80;
+                            } else if (game.isRole(player, ModRoles.EXECUTIONER)) {
+                                shouldDisappear = player.getRandom().nextFloat() <= 0.2F;//刽子手有几率枪消失
                             } else {
                                 if (ShootingFrenzyPlayerComponent.isInFrenzy(player)) {
                                     shouldDrop = false;
@@ -77,7 +80,12 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                                     shouldDrop = player.getRandom().nextFloat() <= 0.2F;
                                 }
                             }
-                            if (shouldDrop) {
+                            if (shouldDisappear) {
+                                if (player.getMainHandItem().is(TMMItemTags.GUNS)) {
+                                    player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                                    ServerPlayNetworking.send(player, new GunDropPayload());
+                                }
+                            } else if (shouldDrop) {
                                 {
                                     if (player.getMainHandItem().is(TMMItemTags.GUNS)) {
                                         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
