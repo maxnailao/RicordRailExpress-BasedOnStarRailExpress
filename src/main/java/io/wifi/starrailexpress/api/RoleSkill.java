@@ -25,7 +25,7 @@ public class RoleSkill {
         if (role == null) {
             return false;
         }
-        if (REGISTERED_ROLE_SKILLS.containsKey(role)) {
+        if (!REGISTERED_ROLE_SKILLS.containsKey(role)) {
             return false;
         }
         REGISTERED_ROLE_SKILLS.remove(role);

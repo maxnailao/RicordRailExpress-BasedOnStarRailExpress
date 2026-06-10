@@ -558,10 +558,15 @@ public class SREClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
+            // 清理自定义职业客户端缓存
+            io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
         });
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
+
+        // 注册自定义职业同步接收器（客户端）
+        io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.register();
         ClientPlayNetworking.registerGlobalReceiver(ShootMuzzleS2CPayload.ID, (payload, context) -> {
             Minecraft client = context.client();
             client.execute(() -> {

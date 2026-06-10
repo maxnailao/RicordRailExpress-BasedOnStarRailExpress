@@ -489,6 +489,9 @@ public class EntityInteractionBlockScreen extends Screen {
                     action.stringValue != null ? action.stringValue : "?").getString();
             case REMOVE_MODIFIER -> Component.translatable("action.remove_modifier",
                     action.stringValue != null ? action.stringValue : "?").getString();
+            case ROLE_CUSTOM_WIN -> Component.translatable("action.role_custom_win",
+                    action.roleWinId != null && !action.roleWinId.isEmpty() ? action.roleWinId : "?",
+                    action.roleWinDescription != null && !action.roleWinDescription.isEmpty() ? action.roleWinDescription : "?").getString();
         };
 
         return baseText + teleportSuffix + teamSuffix;
@@ -1234,6 +1237,8 @@ public class EntityInteractionBlockScreen extends Screen {
         private EditBox stringInput;
         private EditBox minutesInput;
         private EditBox secondsInput;
+        private EditBox roleWinDescriptionInput;
+        private EditBox roleWinSubtitleInput;
         private String selectedTaskType = "random";
         private boolean addTimeMode = true; // true=增加，false=减少
         private boolean setMoodIsSet = true; // true=直接设置，false=增减
@@ -1470,6 +1475,36 @@ public class EntityInteractionBlockScreen extends Screen {
                     addRenderableWidget(Button.builder(
                             Component.translatable("gui.entity_interaction_block.game_win_desc"), b -> {})
                             .bounds(centerX - 100, y, 200, 15).build());
+                }
+                case ROLE_CUSTOM_WIN -> {
+                    // 职业ID输入
+                    addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_id")));
+                    stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.role_custom_win_id"));
+                    y += 25;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_id_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+
+                    y += 25;
+                    // 获胜描述输入
+                    addRenderableWidget(new EditBox(this.font, centerX - 150, y, 300, 20,
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_description")));
+                    roleWinDescriptionInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.role_custom_win_description"));
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_description_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 15).build());
+
+                    y += 25;
+                    // 获胜子标题输入
+                    addRenderableWidget(new EditBox(this.font, centerX - 150, y, 300, 20,
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_subtitle")));
+                    roleWinSubtitleInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.role_custom_win_subtitle"));
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.role_custom_win_subtitle_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 15).build());
                 }
                 case COIN_CHANGE -> {
                     // 金币变化
@@ -1779,6 +1814,7 @@ public class EntityInteractionBlockScreen extends Screen {
                     EntityInteractionBlockEntity.ActionType.ADD_TIME,
                     EntityInteractionBlockEntity.ActionType.SET_TIME,
                     EntityInteractionBlockEntity.ActionType.GAME_WIN,
+                    EntityInteractionBlockEntity.ActionType.ROLE_CUSTOM_WIN,
                     EntityInteractionBlockEntity.ActionType.BLOCK_COOLDOWN,
                     EntityInteractionBlockEntity.ActionType.END_BLACKOUT,
                     EntityInteractionBlockEntity.ActionType.FIX_MONITOR,
@@ -1918,6 +1954,19 @@ public class EntityInteractionBlockScreen extends Screen {
                     action.narratorText = stringInput.getValue();
                 }
                 action.narratorInterrupt = narratorInterrupt;
+            }
+
+            // 保存带绑定职业的自定义获胜参数
+            if (selectedType == EntityInteractionBlockEntity.ActionType.ROLE_CUSTOM_WIN) {
+                if (stringInput != null) {
+                    action.roleWinId = stringInput.getValue();
+                }
+                if (roleWinDescriptionInput != null) {
+                    action.roleWinDescription = roleWinDescriptionInput.getValue();
+                }
+                if (roleWinSubtitleInput != null) {
+                    action.roleWinSubtitle = roleWinSubtitleInput.getValue();
+                }
             }
 
             // 保存阵营过滤参数

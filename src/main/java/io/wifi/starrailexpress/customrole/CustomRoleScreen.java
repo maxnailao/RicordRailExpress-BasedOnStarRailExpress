@@ -8,17 +8,37 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSide;
+
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
-import net.minecraft.world.level.storage.LevelResource;
-import java.nio.file.Path;
+import java.util.Map;
 
 @Environment(EnvType.CLIENT)
 public class CustomRoleScreen extends Screen {
-    private static final int PANEL_WIDTH = 380, PANEL_HEIGHT = 460;
+    // 面板尺寸 - 自适应屏幕（参考 RoleIntroduceScreen）
+    private static final float USABLE_RATIO = 0.85f;
+    private static final int MAX_PANEL_WIDTH = 520;
+    private static final int MAX_PANEL_HEIGHT = 520;
+    private static final int MIN_PANEL_HEIGHT = 320;
+
+    private int panelWidth, panelHeight;
     private int panelLeftX, panelTopY, activeTab = 0;
+
+    // 滚动常量
+    private static final int SCROLL_W = 7;
+    private static final int SCROLL_MIN_THUMB = 20;
+
+    // 滚动状态
+    private int scrollOffset = 0;
+    private int maxScroll = 0;
+    private boolean isDraggingScroll = false;
+    private double dragScrollStartY = 0;
+    private int dragScrollStartOffset = 0;
+
     private static final String[] TAB_NAMES = {"basic","advanced","ability","generation","shop"};
     private static final int FIELD_LEFT = 140, FIELD_W = 200;
     private CustomRoleData data = new CustomRoleData();
@@ -36,8 +56,15 @@ public class CustomRoleScreen extends Screen {
     private final List<LabelEntry> tabLabels3 = new ArrayList<>();
     private final List<LabelEntry> tabLabels4 = new ArrayList<>();
 
-    // Toggles - directly correspond to data fields
-    private int moodIndex; // 0=REAL, 1=FAKE
+    // 滚动支持：记录每个内容 widget 的基础 Y 坐标
+    private final Map<AbstractWidget, Integer> widgetBaseY = new IdentityHashMap<>();
+
+    // 固定 widget 分组（不被滚动影响）
+    private final List<AbstractWidget> tabBarButtons = new ArrayList<>();
+    private final List<AbstractWidget> bottomButtons = new ArrayList<>();
+
+    // Toggles
+    private int moodIndex;
 
     public CustomRoleScreen() { super(Component.translatable("sre.custom_role.title")); syncToggles(); }
     public CustomRoleScreen(CustomRoleData d) { super(Component.translatable("sre.custom_role.title")); this.data = d; this.originalEnglishId = d.englishId == null ? "" : d.englishId; syncToggles(); }
@@ -46,14 +73,50 @@ public class CustomRoleScreen extends Screen {
         moodIndex = "FAKE".equalsIgnoreCase(data.moodType) ? 1 : 0;
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // 布局计算
+    // ══════════════════════════════════════════════════════════════════
+    private void computeLayout() {
+        panelWidth = Math.min((int) (width * USABLE_RATIO), MAX_PANEL_WIDTH);
+        int rawH = Math.min((int) (height * USABLE_RATIO), MAX_PANEL_HEIGHT);
+        panelHeight = Math.max(rawH, MIN_PANEL_HEIGHT);
+        panelLeftX = (width - panelWidth) / 2;
+        panelTopY = (height - panelHeight) / 2;
+    }
+
+    /** 内容区域顶部 Y */
+    private int contentTop() { return panelTopY + 34; }
+
+    /** 内容区域底部 Y */
+    private int contentBottom() { return panelTopY + panelHeight - 30; }
+
+    /** 内容区域可用高度 */
+    private int contentHeight() { return contentBottom() - contentTop(); }
+
+    /** 基础行 Y（scrollOffset=0） */
+    private int baseRowY(int i) { return panelTopY + 34 + i * 22; }
+
+    /** 实际行 Y */
+    private int rowY(int i) { return baseRowY(i) - scrollOffset; }
+
+    private int fieldX() { return panelLeftX + FIELD_LEFT; }
+    private int labelX() { return panelLeftX + 4; }
+
+    // ══════════════════════════════════════════════════════════════════
+    // init
+    // ══════════════════════════════════════════════════════════════════
     @Override
     protected void init() {
         clearTabs();
+        widgetBaseY.clear();
+        tabBarButtons.clear();
+        bottomButtons.clear();
         tabLabels0.clear(); tabLabels1.clear(); tabLabels2.clear();
         tabLabels3.clear(); tabLabels4.clear();
-        panelLeftX = (width - PANEL_WIDTH) / 2;
-        panelTopY = (height - PANEL_HEIGHT) / 2;
+
+        computeLayout();
         buildTabBar();
+
         switch (activeTab) {
             case 0: buildBasicTab(); break;
             case 1: buildAdvancedTab(); break;
@@ -63,44 +126,115 @@ public class CustomRoleScreen extends Screen {
         }
         flushTabWidgets();
         buildBottomButtons();
-        syncTabVisibility();
+
+        computeMaxScroll();
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+        applyScrollOffsets();
     }
 
-    private void clearTabs() { tabWidgets0.clear(); tabWidgets1.clear(); tabWidgets2.clear(); tabWidgets3.clear(); tabWidgets4.clear(); }
-    private int fieldX() { return panelLeftX + FIELD_LEFT; }
-    private int labelX() { return panelLeftX + 4; }
-    private int rowY(int i) { return panelTopY + 34 + i * 22; }
+    private void clearTabs() {
+        tabWidgets0.clear(); tabWidgets1.clear(); tabWidgets2.clear();
+        tabWidgets3.clear(); tabWidgets4.clear();
+    }
 
-    private void addLabel(List<LabelEntry> l, String key, int r) { l.add(new LabelEntry(key, labelX(), rowY(r))); }
+    private void computeMaxScroll() {
+        int maxY = contentTop();
+        for (AbstractWidget w : getActiveTabWidgets()) {
+            Integer baseY = widgetBaseY.get(w);
+            if (baseY != null) {
+                maxY = Math.max(maxY, baseY + w.getHeight());
+            }
+        }
+        var labels = getActiveLabels();
+        for (LabelEntry e : labels) {
+            maxY = Math.max(maxY, e.y() + 10);
+        }
+        maxScroll = Math.max(0, maxY - contentBottom());
+    }
+
+    private void applyScrollOffsets() {
+        for (AbstractWidget w : getActiveTabWidgets()) {
+            Integer baseY = widgetBaseY.get(w);
+            if (baseY != null) {
+                w.setY(baseY - scrollOffset);
+            }
+        }
+    }
+
+    private List<AbstractWidget> getActiveTabWidgets() {
+        return switch (activeTab) {
+            case 0 -> tabWidgets0;
+            case 1 -> tabWidgets1;
+            case 2 -> tabWidgets2;
+            case 3 -> tabWidgets3;
+            case 4 -> tabWidgets4;
+            default -> List.of();
+        };
+    }
+
+    private List<LabelEntry> getActiveLabels() {
+        return switch (activeTab) {
+            case 0 -> tabLabels0;
+            case 1 -> tabLabels1;
+            case 2 -> tabLabels2;
+            case 3 -> tabLabels3;
+            case 4 -> tabLabels4;
+            default -> List.of();
+        };
+    }
+
+    private void addLabel(List<LabelEntry> l, String key, int r) {
+        l.add(new LabelEntry(key, labelX(), baseRowY(r)));
+    }
+
     private EditBox makeLabeledBox(List<AbstractWidget> wl, List<LabelEntry> ll, int r, int w, String key, String val, java.util.function.Consumer<String> cb) {
-        addLabel(ll, key, r); EditBox b = makeBox(fieldX(), rowY(r), w, 18, val, cb); wl.add(b); return b;
+        addLabel(ll, key, r);
+        EditBox b = makeBox(fieldX(), rowY(r), w, 18, val, cb);
+        recordWidgetBase(b, baseRowY(r));
+        wl.add(b);
+        return b;
     }
     private EditBox makeLabeledHintBox(List<AbstractWidget> wl, List<LabelEntry> ll, int r, int w, String key, String val, String hint, java.util.function.Consumer<String> cb) {
-        EditBox b = makeLabeledBox(wl, ll, r, w, key, val, cb); b.setHint(Component.literal(hint)); return b;
+        EditBox b = makeLabeledBox(wl, ll, r, w, key, val, cb);
+        b.setHint(Component.literal(hint));
+        return b;
+    }
+
+    private void recordWidgetBase(AbstractWidget w, int baseY) {
+        widgetBaseY.put(w, baseY);
+    }
+
+    private AbstractWidget makeModernButton(int x, int baseY, int w, int h, Component text, Runnable onClick, AccentSide accent) {
+        var btn = ModernButton.builder(text, b -> { onClick.run(); })
+                .bounds(x, baseY, w, h).accentBar(accent).build();
+        recordWidgetBase(btn, baseY);
+        return btn;
     }
 
     private void buildTabBar() {
         int tw = 68, th = 20, tg = 4;
-        int sx = panelLeftX + (PANEL_WIDTH - (tw * 5 + tg * 4)) / 2;
+        int sx = panelLeftX + (panelWidth - (tw * 5 + tg * 4)) / 2;
+        tabBarButtons.clear();
         for (int i = 0; i < 5; i++) {
             final int idx = i;
             var b = ModernButton.builder(Component.translatable("sre.custom_role.tab." + TAB_NAMES[i]),
                 btn -> { activeTab = idx; init(minecraft, width, height); })
                 .bounds(sx + i * (tw + tg), panelTopY + 8, tw, th);
             if (activeTab == i) b.accentBar(AccentSide.BOTTOM); else b.accentBar();
-            addRenderableWidget(b.build());
+            var btn = b.build();
+            addRenderableWidget(btn);
+            tabBarButtons.add(btn);
         }
     }
 
     // ---- TAB 0: Basic ----
     private void buildBasicTab() {
         int r = 0;
-        makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.english_id", data.englishId, "my_custom_role", v -> data.englishId = v).setMaxLength(64);
+        makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.english_id", data.englishId, "my_custom_role", v -> data.englishId = v.toLowerCase()).setMaxLength(64);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.display_name", data.displayName, "职业显示的名字", v -> data.displayName = v);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.goals", data.goals, "职业的胜利目标", v -> data.goals = v);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.description", data.description, "职业描述", v -> data.description = v);
 
-        // 药水效果 - 重要: responder 直接更新 data.initialEffects
         StringBuilder efSb = new StringBuilder();
         for (EffectEntry e : data.initialEffects) {
             if (!efSb.isEmpty()) efSb.append(";");
@@ -120,24 +254,31 @@ public class CustomRoleScreen extends Screen {
             }
         });
         effectsBox.setHint(Component.literal("minecraft:conduit_power,1; minecraft:speed,2"));
+        recordWidgetBase(effectsBox, baseRowY(r));
         tabWidgets0.add(effectsBox);
         r++;
 
-        // RGB
         addLabel(tabLabels0, "sre.custom_role.label.color_rgb", r++);
-        EditBox rBox = makeBox(fieldX(), rowY(r-1), 40, 18, String.valueOf(data.colorR), v -> { try { data.colorR=clamp(v,255); } catch(Exception e){} });
-        EditBox gBox = makeBox(fieldX()+48, rowY(r-1), 40, 18, String.valueOf(data.colorG), v -> { try { data.colorG=clamp(v,255); } catch(Exception e){} });
-        EditBox bBox = makeBox(fieldX()+96, rowY(r-1), 40, 18, String.valueOf(data.colorB), v -> { try { data.colorB=clamp(v,255); } catch(Exception e){} });
+        int colorRow = r - 1;
+        EditBox rBox = makeBox(fieldX(), rowY(colorRow), 40, 18, String.valueOf(data.colorR), v -> { try { data.colorR=clamp(v,255); } catch(Exception e){} });
+        EditBox gBox = makeBox(fieldX()+48, rowY(colorRow), 40, 18, String.valueOf(data.colorG), v -> { try { data.colorG=clamp(v,255); } catch(Exception e){} });
+        EditBox bBox = makeBox(fieldX()+96, rowY(colorRow), 40, 18, String.valueOf(data.colorB), v -> { try { data.colorB=clamp(v,255); } catch(Exception e){} });
+        recordWidgetBase(rBox, baseRowY(colorRow));
+        recordWidgetBase(gBox, baseRowY(colorRow));
+        recordWidgetBase(bBox, baseRowY(colorRow));
         tabWidgets0.addAll(List.of(rBox, gBox, bBox));
 
         addBoolBtn(tabWidgets0, r++, "sre.custom_role.is_innocent", data.isInnocent, v -> data.isInnocent = v, true);
         addBoolBtn(tabWidgets0, r++, "sre.custom_role.can_use_killer", data.canUseKiller, v -> data.canUseKiller = v, true);
 
         Component ml = Component.translatable("sre.custom_role.mood." + (moodIndex == 0 ? "real" : "fake"));
-        tabWidgets0.add(ModernButton.builder(Component.translatable("sre.custom_role.mood.current").append(": ").append(ml),
-            b -> { moodIndex = (moodIndex + 1) % 2; data.moodType = moodIndex == 0 ? "REAL" : "FAKE"; init(minecraft, width, height); })
-            .bounds(fieldX(), rowY(r), FIELD_W, 18).accentBar(AccentSide.LEFT).build());
-        addLabel(tabLabels0, "sre.custom_role.label.mood", r++);
+        int moodRow = r++;
+        addLabel(tabLabels0, "sre.custom_role.label.mood", moodRow);
+        var moodBtn = makeModernButton(fieldX(), baseRowY(moodRow), FIELD_W, 18,
+                Component.translatable("sre.custom_role.mood.current").append(": ").append(ml),
+                () -> { moodIndex = (moodIndex + 1) % 2; data.moodType = moodIndex == 0 ? "REAL" : "FAKE"; init(minecraft, width, height); },
+                AccentSide.LEFT);
+        tabWidgets0.add(moodBtn);
 
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, 80, "sre.custom_role.label.sprint_mult", String.valueOf(data.sprintMultiplier), "默认1",
             v -> { try { data.sprintMultiplier = Double.parseDouble(v); } catch(Exception ignored){} });
@@ -177,9 +318,19 @@ public class CustomRoleScreen extends Screen {
             addLabel(tabLabels2, "sre.custom_role.label.initial_items", r);
             EditBox ib = makeBox(fieldX(), y, 130, 18, en.itemId, v -> en.itemId = v); ib.setHint(Component.literal("物品id"));
             EditBox cb = makeBox(fieldX() + 138, y, 50, 18, String.valueOf(en.count), v -> { try { en.count = Integer.parseInt(v); } catch(Exception ignored){} }); cb.setHint(Component.literal("数量"));
+            recordWidgetBase(ib, baseRowY(r));
+            recordWidgetBase(cb, baseRowY(r));
             tabWidgets2.addAll(List.of(ib, cb));
-            tabWidgets2.add(ModernButton.builder(Component.literal("+"), b3 -> { data.initialItems.add(new InitialItemEntry()); init(minecraft, width, height); }).bounds(fieldX()+196, y, 20, 18).accentBar().build());
-            if (data.initialItems.size() > 1) tabWidgets2.add(ModernButton.builder(Component.literal("-"), b3 -> { data.initialItems.remove(idx); init(minecraft, width, height); }).bounds(fieldX()+220, y, 20, 18).accentBar().build());
+            var plusBtn = makeModernButton(fieldX()+196, baseRowY(r), 20, 18, Component.literal("+"),
+                    () -> { data.initialItems.add(new InitialItemEntry()); init(minecraft, width, height); },
+                    AccentSide.TOP);
+            tabWidgets2.add(plusBtn);
+            if (data.initialItems.size() > 1) {
+                var minusBtn = makeModernButton(fieldX()+220, baseRowY(r), 20, 18, Component.literal("-"),
+                        () -> { data.initialItems.remove(idx); init(minecraft, width, height); },
+                        AccentSide.TOP);
+                tabWidgets2.add(minusBtn);
+            }
             r++;
         }
         r++;
@@ -193,13 +344,24 @@ public class CustomRoleScreen extends Screen {
                 addLabel(tabLabels2, "sre.custom_role.label.ability_commands", r);
                 EditBox cmdBox = makeBox(fieldX(), y, 250, 18, data.abilitySkillCommands.get(i), v -> data.abilitySkillCommands.set(idx, v));
                 cmdBox.setHint(Component.literal("不需/ 例: say <player>"));
+                recordWidgetBase(cmdBox, baseRowY(r));
                 tabWidgets2.add(cmdBox);
-                tabWidgets2.add(ModernButton.builder(Component.literal("+"), b3 -> { data.abilitySkillCommands.add(""); init(minecraft, width, height); }).bounds(fieldX()+258, y, 20, 18).accentBar().build());
-                if (data.abilitySkillCommands.size() > 1) tabWidgets2.add(ModernButton.builder(Component.literal("-"), b3 -> { data.abilitySkillCommands.remove(idx); init(minecraft, width, height); }).bounds(fieldX()+282, y, 20, 18).accentBar().build());
+                var plusBtn2 = makeModernButton(fieldX()+258, baseRowY(r), 20, 18, Component.literal("+"),
+                        () -> { data.abilitySkillCommands.add(""); init(minecraft, width, height); },
+                        AccentSide.TOP);
+                tabWidgets2.add(plusBtn2);
+                if (data.abilitySkillCommands.size() > 1) {
+                    var minusBtn2 = makeModernButton(fieldX()+282, baseRowY(r), 20, 18, Component.literal("-"),
+                            () -> { data.abilitySkillCommands.remove(idx); init(minecraft, width, height); },
+                            AccentSide.TOP);
+                    tabWidgets2.add(minusBtn2);
+                }
                 r++;
             }
             makeLabeledHintBox(tabWidgets2, tabLabels2, r++, 80, "sre.custom_role.label.ability_cooldown", String.valueOf(data.abilityCooldownSeconds), "冷却秒数",
                 v -> { try { data.abilityCooldownSeconds = Integer.parseInt(v); } catch(Exception ignored){} });
+            makeLabeledHintBox(tabWidgets2, tabLabels2, r++, 80, "sre.custom_role.label.ability_initial_cooldown", String.valueOf(data.abilityInitialCooldownSeconds), "初始冷却秒数",
+                v -> { try { data.abilityInitialCooldownSeconds = Integer.parseInt(v); } catch(Exception ignored){} });
         }
     }
 
@@ -231,73 +393,118 @@ public class CustomRoleScreen extends Screen {
         String[] types = {"item", "psycho", "blackout", "monitor_fail", "custom"};
         for (int i = 0; i < data.shopEntries.size(); i++) {
             final int idx = i; ShopEntryData en = data.shopEntries.get(i);
-            int yr = rowY(r);
-            // 类型
-            tabWidgets4.add(ModernButton.builder(Component.literal("[" + en.type + "]"), b -> {
-                int next = (java.util.Arrays.asList(types).indexOf(en.type) + 1) % types.length;
-                if (next < 0) next = 0; en.type = types[next]; init(minecraft, width, height);
-            }).bounds(lx, yr, 75, bh).accentBar(AccentSide.LEFT).build());
+            // 类型按钮
+            var typeBtn = makeModernButton(lx, baseRowY(r), 75, bh, Component.literal("[" + en.type + "]"),
+                    () -> {
+                        int next = (java.util.Arrays.asList(types).indexOf(en.type) + 1) % types.length;
+                        if (next < 0) next = 0; en.type = types[next]; init(minecraft, width, height);
+                    },
+                    AccentSide.LEFT);
+            tabWidgets4.add(typeBtn);
             // 价格
-            EditBox pb = makeBox(lx + 83, yr, 55, bh, String.valueOf(en.price), v -> { try { en.price = Math.max(0, Integer.parseInt(v)); } catch(Exception ignored){} });
-            pb.setHint(Component.literal("价格")); tabWidgets4.add(pb);
+            EditBox pb = makeBox(lx + 83, rowY(r), 55, bh, String.valueOf(en.price), v -> { try { en.price = Math.max(0, Integer.parseInt(v)); } catch(Exception ignored){} });
+            pb.setHint(Component.literal("价格"));
+            recordWidgetBase(pb, baseRowY(r));
+            tabWidgets4.add(pb);
             // 冷却(仅 item 和 custom)
             if ("item".equals(en.type) || "custom".equals(en.type)) {
-                EditBox cd = makeBox(lx + 146, yr, 45, bh, String.valueOf(en.cooldownSeconds), v -> { try { en.cooldownSeconds = Math.max(0, Integer.parseInt(v)); } catch(Exception ignored){} });
-                cd.setHint(Component.literal("CD秒")); tabWidgets4.add(cd);
+                EditBox cd = makeBox(lx + 146, rowY(r), 45, bh, String.valueOf(en.cooldownSeconds), v -> { try { en.cooldownSeconds = Math.max(0, Integer.parseInt(v)); } catch(Exception ignored){} });
+                cd.setHint(Component.literal("CD秒"));
+                recordWidgetBase(cd, baseRowY(r));
+                tabWidgets4.add(cd);
             }
             // 禁止重复(item)
             if ("item".equals(en.type)) {
                 boolean nd = !en.allowDuplicate;
-                tabWidgets4.add(ModernButton.builder(Component.literal(nd ? "禁重复" : "允重复"), b -> { en.allowDuplicate = !en.allowDuplicate; init(minecraft, width, height); })
-                    .bounds(lx + 199, yr, 55, bh).accentBar(nd ? AccentSide.RIGHT : AccentSide.LEFT).build());
-                tabWidgets4.add(ModernButton.builder(Component.literal("X"), b -> { data.shopEntries.remove(idx); init(minecraft, width, height); })
-                    .bounds(lx + 260, yr, 20, bh).accentBar(AccentSide.RIGHT).build());
+                var dupBtn = makeModernButton(lx + 199, baseRowY(r), 55, bh,
+                        Component.literal(nd ? "禁重复" : "允重复"),
+                        () -> { en.allowDuplicate = !en.allowDuplicate; init(minecraft, width, height); },
+                        nd ? AccentSide.RIGHT : AccentSide.LEFT);
+                tabWidgets4.add(dupBtn);
+                var delBtn = makeModernButton(lx + 260, baseRowY(r), 20, bh, Component.literal("X"),
+                        () -> { data.shopEntries.remove(idx); init(minecraft, width, height); },
+                        AccentSide.RIGHT);
+                tabWidgets4.add(delBtn);
             } else {
-                tabWidgets4.add(ModernButton.builder(Component.literal("X"), b -> { data.shopEntries.remove(idx); init(minecraft, width, height); })
-                    .bounds(lx + 199, yr, 20, bh).accentBar(AccentSide.RIGHT).build());
+                var delBtn = makeModernButton(lx + 199, baseRowY(r), 20, bh, Component.literal("X"),
+                        () -> { data.shopEntries.remove(idx); init(minecraft, width, height); },
+                        AccentSide.RIGHT);
+                tabWidgets4.add(delBtn);
             }
             r++;
             if ("item".equals(en.type)) {
                 addLabel(tabLabels4, "sre.custom_role.label.shop_item_id", r);
-                EditBox ib2 = makeBox(lx, rowY(r), 160, bh, en.itemId, v -> en.itemId = v); ib2.setHint(Component.literal("物品id")); tabWidgets4.add(ib2); r++;
+                EditBox ib2 = makeBox(lx, rowY(r), 160, bh, en.itemId, v -> en.itemId = v);
+                ib2.setHint(Component.literal("物品id"));
+                recordWidgetBase(ib2, baseRowY(r));
+                tabWidgets4.add(ib2);
+                r++;
             }
             if ("custom".equals(en.type)) {
                 addLabel(tabLabels4, "sre.custom_role.label.shop_custom_name", r);
-                EditBox nb = makeBox(lx, rowY(r), 130, bh, en.displayName, v -> en.displayName = v); nb.setHint(Component.literal("商品显示名称")); tabWidgets4.add(nb); r++;
+                EditBox nb = makeBox(lx, rowY(r), 130, bh, en.displayName, v -> en.displayName = v);
+                nb.setHint(Component.literal("商品显示名称"));
+                recordWidgetBase(nb, baseRowY(r));
+                tabWidgets4.add(nb);
+                r++;
                 addLabel(tabLabels4, "sre.custom_role.label.shop_custom_icon", r);
-                EditBox ib3 = makeBox(lx, rowY(r), 130, bh, en.itemId, v -> en.itemId = v); ib3.setHint(Component.literal("物品图标id")); tabWidgets4.add(ib3); r++;
+                EditBox ib3 = makeBox(lx, rowY(r), 130, bh, en.itemId, v -> en.itemId = v);
+                ib3.setHint(Component.literal("物品图标id"));
+                recordWidgetBase(ib3, baseRowY(r));
+                tabWidgets4.add(ib3);
+                r++;
                 if (en.commands.isEmpty()) en.commands.add("");
                 for (int c = 0; c < en.commands.size(); c++) {
                     final int cdx = c; int y = rowY(r);
                     addLabel(tabLabels4, "sre.custom_role.label.shop_custom_cmd", r);
-                    EditBox cm = makeBox(lx, y, 230, bh, en.commands.get(c), v -> en.commands.set(cdx, v)); cm.setHint(Component.literal("不需/ 例: say <player>")); tabWidgets4.add(cm);
-                    tabWidgets4.add(ModernButton.builder(Component.literal("+"), b2 -> { en.commands.add(""); init(minecraft, width, height); }).bounds(lx+238, y, 20, bh).accentBar().build());
-                    if (en.commands.size() > 1) tabWidgets4.add(ModernButton.builder(Component.literal("-"), b2 -> { en.commands.remove(cdx); init(minecraft, width, height); }).bounds(lx+262, y, 20, bh).accentBar().build());
+                    EditBox cm = makeBox(lx, y, 230, bh, en.commands.get(c), v -> en.commands.set(cdx, v));
+                    cm.setHint(Component.literal("不需/ 例: say <player>"));
+                    recordWidgetBase(cm, baseRowY(r));
+                    tabWidgets4.add(cm);
+                    var plusBtn = makeModernButton(lx+238, baseRowY(r), 20, bh, Component.literal("+"),
+                            () -> { en.commands.add(""); init(minecraft, width, height); },
+                            AccentSide.TOP);
+                    tabWidgets4.add(plusBtn);
+                    if (en.commands.size() > 1) {
+                        var minusBtn = makeModernButton(lx+262, baseRowY(r), 20, bh, Component.literal("-"),
+                                () -> { en.commands.remove(cdx); init(minecraft, width, height); },
+                                AccentSide.TOP);
+                        tabWidgets4.add(minusBtn);
+                    }
                     r++;
                 }
             }
         }
-        tabWidgets4.add(ModernButton.builder(Component.translatable("sre.custom_role.add_shop_entry"), b -> { data.shopEntries.add(new ShopEntryData()); init(minecraft, width, height); })
-            .bounds(lx, rowY(r), 140, bh).accentBar(AccentSide.BOTTOM).build());
+        var addEntryBtn = makeModernButton(lx, baseRowY(r), 140, bh,
+                Component.translatable("sre.custom_role.add_shop_entry"),
+                () -> { data.shopEntries.add(new ShopEntryData()); init(minecraft, width, height); },
+                AccentSide.BOTTOM);
+        tabWidgets4.add(addEntryBtn);
     }
 
     // ---- Bottom ----
     private void buildBottomButtons() {
-        int by = panelTopY + PANEL_HEIGHT - 26, bw = 100, gap = 8;
-        int sx = panelLeftX + (PANEL_WIDTH - (bw * 3 + gap * 2)) / 2;
-        addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.save"), b -> saveRole()).bounds(sx, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
-        addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.manage"), b -> {
+        int by = panelTopY + panelHeight - 26, bw = 100, gap = 8;
+        int sx = panelLeftX + (panelWidth - (bw * 3 + gap * 2)) / 2;
+        var btn1 = ModernButton.builder(Component.translatable("sre.custom_role.save"), b -> saveRole())
+                .bounds(sx, by, bw, 20).accentBar(AccentSide.BOTTOM).build();
+        var btn2 = ModernButton.builder(Component.translatable("sre.custom_role.manage"), b -> {
             CustomRoleConfig config = CustomRoleConfig.getInstance();
             config.savePreferWorldPath(minecraft.getSingleplayerServer());
             minecraft.setScreen(new CustomRoleManageScreen(new CustomRoleScreen()));
-        }).bounds(sx + bw + gap, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
-        addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.cancel"), b -> onClose()).bounds(sx + (bw + gap) * 2, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
+        }).bounds(sx + bw + gap, by, bw, 20).accentBar(AccentSide.BOTTOM).build();
+        var btn3 = ModernButton.builder(Component.translatable("sre.custom_role.cancel"), b -> onClose())
+                .bounds(sx + (bw + gap) * 2, by, bw, 20).accentBar(AccentSide.BOTTOM).build();
+        addRenderableWidget(btn1);
+        addRenderableWidget(btn2);
+        addRenderableWidget(btn3);
+        bottomButtons.add(btn1);
+        bottomButtons.add(btn2);
+        bottomButtons.add(btn3);
     }
 
     private void saveRole() {
-        // Already saved via responders. Just persist to file.
         CustomRoleConfig config = CustomRoleConfig.getInstance();
-        // remove previous entry if editing englishId
         if (originalEnglishId != null && !originalEnglishId.isBlank()) config.removeRole(originalEnglishId);
         config.removeRole(data.englishId);
         config.addRole(data);
@@ -312,18 +519,24 @@ public class CustomRoleScreen extends Screen {
         onClose();
     }
 
-    // ---- Toggle Helpers (直接更新 data, 只在需要时 rebuild) ----
+    // ══════════════════════════════════════════════════════════════════
+    // Toggle Helpers
+    // ══════════════════════════════════════════════════════════════════
     private void addBoolBtn(List<AbstractWidget> l, int r, String key, boolean cur, java.util.function.Consumer<Boolean> toggle, boolean rebuild) {
         Component st = cur ? Component.literal(" [✓]").withStyle(s -> s.withColor(0x55FF55)) : Component.literal(" [✗]").withStyle(s -> s.withColor(0xFF5555));
-        l.add(ModernButton.builder(Component.translatable(key).copy().append(st), b -> {
+        var btn = ModernButton.builder(Component.translatable(key).copy().append(st), b -> {
             toggle.accept(!cur); if (rebuild) init(minecraft, width, height);
-        }).bounds(fieldX(), rowY(r), FIELD_W, 18).accentBar(cur ? AccentSide.LEFT : AccentSide.RIGHT).build());
+        }).bounds(fieldX(), baseRowY(r), FIELD_W, 18).accentBar(cur ? AccentSide.LEFT : AccentSide.RIGHT).build();
+        recordWidgetBase(btn, baseRowY(r));
+        l.add(btn);
     }
     private void addBoolBtnX(List<AbstractWidget> l, int r, String key, boolean cur, java.util.function.Consumer<Boolean> toggle, boolean rebuild) {
         Component st = cur ? Component.literal(" [✓]").withStyle(s -> s.withColor(0x55FF55)) : Component.literal(" [✗]").withStyle(s -> s.withColor(0xFF5555));
-        l.add(ModernButton.builder(Component.translatable(key).copy().append(st), b -> {
+        var btn = ModernButton.builder(Component.translatable(key).copy().append(st), b -> {
             toggle.accept(!cur); if (rebuild) init(minecraft, width, height);
-        }).bounds(fieldX()+170, rowY(r), 150, 18).accentBar(cur ? AccentSide.LEFT : AccentSide.RIGHT).build());
+        }).bounds(fieldX()+170, baseRowY(r), 150, 18).accentBar(cur ? AccentSide.LEFT : AccentSide.RIGHT).build();
+        recordWidgetBase(btn, baseRowY(r));
+        l.add(btn);
     }
     private static int safeColor(Boolean b) {
         if (b == null) return 0x778899;
@@ -338,40 +551,186 @@ public class CustomRoleScreen extends Screen {
         String ss; AccentSide as;
         if (cur == null) { ss = " (--)"; as = AccentSide.TOP; } else if (cur.booleanValue()) { ss = " [✓]"; as = AccentSide.LEFT; } else { ss = " [✗]"; as = AccentSide.RIGHT; }
         final Boolean captured = cur;
-        l.add(ModernButton.builder(Component.translatable(key).append(Component.literal(ss).withStyle(s -> s.withColor(safeColor(captured)))), b -> {
+        var btn = ModernButton.builder(Component.translatable(key).append(Component.literal(ss).withStyle(s -> s.withColor(safeColor(captured)))), b -> {
             toggle.accept(safeNext(captured)); if (rebuild) init(minecraft, width, height);
-        }).bounds(fieldX(), rowY(r), 150, 18).accentBar(as).build());
+        }).bounds(fieldX(), baseRowY(r), 150, 18).accentBar(as).build();
+        recordWidgetBase(btn, baseRowY(r));
+        l.add(btn);
     }
     private void addTriBtnX(List<AbstractWidget> l, int r, String key, Boolean cur, java.util.function.Consumer<Boolean> toggle, boolean rebuild) {
         String ss; AccentSide as;
         if (cur == null) { ss = " (--)"; as = AccentSide.TOP; } else if (cur.booleanValue()) { ss = " [✓]"; as = AccentSide.LEFT; } else { ss = " [✗]"; as = AccentSide.RIGHT; }
         final Boolean captured = cur;
-        l.add(ModernButton.builder(Component.translatable(key).append(Component.literal(ss).withStyle(s -> s.withColor(safeColor(captured)))), b -> {
+        var btn = ModernButton.builder(Component.translatable(key).append(Component.literal(ss).withStyle(s -> s.withColor(safeColor(captured)))), b -> {
             toggle.accept(safeNext(captured)); if (rebuild) init(minecraft, width, height);
-        }).bounds(fieldX()+170, rowY(r), 150, 18).accentBar(as).build());
+        }).bounds(fieldX()+170, baseRowY(r), 150, 18).accentBar(as).build();
+        recordWidgetBase(btn, baseRowY(r));
+        l.add(btn);
     }
 
     // ---- Misc ----
-    private void flushTabWidgets() { tabWidgets0.forEach(this::addRenderableWidget); tabWidgets1.forEach(this::addRenderableWidget); tabWidgets2.forEach(this::addRenderableWidget); tabWidgets3.forEach(this::addRenderableWidget); tabWidgets4.forEach(this::addRenderableWidget); }
-    private void syncTabVisibility() {
-        tabWidgets0.forEach(w -> w.visible = (activeTab == 0)); tabWidgets1.forEach(w -> w.visible = (activeTab == 1));
-        tabWidgets2.forEach(w -> w.visible = (activeTab == 2)); tabWidgets3.forEach(w -> w.visible = (activeTab == 3));
-        tabWidgets4.forEach(w -> w.visible = (activeTab == 4));
+    private void flushTabWidgets() {
+        // 通过 addRenderableWidget 注册到事件系统，但不用于渲染
+        // 渲染由 render() 手动遍历 getActiveTabWidgets() 完成
+        tabWidgets0.forEach(w -> addRenderableWidget(w));
+        tabWidgets1.forEach(w -> addRenderableWidget(w));
+        tabWidgets2.forEach(w -> addRenderableWidget(w));
+        tabWidgets3.forEach(w -> addRenderableWidget(w));
+        tabWidgets4.forEach(w -> addRenderableWidget(w));
     }
+
     private EditBox makeBox(int x, int y, int w, int h, String text, java.util.function.Consumer<String> cb) {
         EditBox box = new EditBox(font, x, y, w, h, Component.empty()); box.setValue(text); box.setMaxLength(256); box.setResponder(cb); return box;
     }
     private int clamp(String v, int max) { return Math.min(max, Math.max(0, Integer.parseInt(v))); }
 
-    @Override public void renderBackground(GuiGraphics g, int i, int j, float f) {
-        g.fill(panelLeftX-6, panelTopY-3, panelLeftX+PANEL_WIDTH+6, panelTopY+PANEL_HEIGHT+3, 0xCC080C18);
-        g.fill(panelLeftX-6, panelTopY-3, panelLeftX+PANEL_WIDTH+6, panelTopY-2, 0xFF5577CC);
+    // ══════════════════════════════════════════════════════════════════
+    // 渲染（参考 RoleIntroduceScreen：scissor 裁剪 + 滚动条）
+    // ══════════════════════════════════════════════════════════════════
+    @Override
+    public void renderBackground(GuiGraphics g, int i, int j, float f) {
+        // 面板背景
+        g.fill(panelLeftX-6, panelTopY-3, panelLeftX+panelWidth+6, panelTopY+panelHeight+3, 0xCC080C18);
+        // 面板顶部高亮边框
+        g.fill(panelLeftX-6, panelTopY-3, panelLeftX+panelWidth+6, panelTopY-2, 0xFF5577CC);
+        // 内容区域下方填充（覆盖超出内容的 widget 绘制）
+        g.fill(panelLeftX-6, contentBottom(), panelLeftX+panelWidth+6, panelTopY+panelHeight+3, 0xCC080C18);
     }
-    @Override public void render(GuiGraphics g, int mx, int my, float pt) {
-        super.render(g, mx, my, pt);
-        g.drawCenteredString(font, Component.translatable("sre.custom_role.title").withStyle(s -> s.withColor(0x55BBFF).withBold(true)), panelLeftX+PANEL_WIDTH/2, panelTopY+18, 0xFFFFFF);
-        List<LabelEntry> al = switch(activeTab) { case 0->tabLabels0; case 1->tabLabels1; case 2->tabLabels2; case 3->tabLabels3; case 4->tabLabels4; default->List.of(); };
-        for (LabelEntry e : al) g.drawString(font, Component.translatable(e.key), e.x, e.y+4, 0xAABBCC, false);
+
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float pt) {
+        // 1. 面板背景
+        renderBackground(g, mx, my, pt);
+
+        // 2. 固定 widget：标签栏按钮（不裁剪）
+        for (var w : tabBarButtons) {
+            w.render(g, mx, my, pt);
+        }
+
+        // 3. 启用 scissor 裁剪内容区域
+        g.enableScissor(panelLeftX, contentTop(), panelLeftX + panelWidth, contentBottom());
+
+        // 4. 内容 widget
+        for (var w : getActiveTabWidgets()) {
+            w.render(g, mx, my, pt);
+        }
+
+        // 5. 内容标签（受 scrollOffset 影响）
+        List<LabelEntry> al = getActiveLabels();
+        for (LabelEntry e : al) {
+            int labelY = e.y() - scrollOffset;
+            g.drawString(font, Component.translatable(e.key), e.x(), labelY + 4, 0xAABBCC, false);
+        }
+
+        g.disableScissor();
+
+        // 6. 滚动条（覆盖在面板右侧）
+        if (maxScroll > 0) {
+            renderVScrollbar(g, mx, my);
+        }
+
+        // 7. 底部按钮（不裁剪）
+        for (var w : bottomButtons) {
+            w.render(g, mx, my, pt);
+        }
+
+        // 8. 标题
+        g.drawCenteredString(font,
+                Component.translatable("sre.custom_role.title").withStyle(s -> s.withColor(0x55BBFF).withBold(true)),
+                panelLeftX + panelWidth / 2, panelTopY + 18, 0xFFFFFF);
     }
-    @Override public boolean isPauseScreen() { return false; }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 滚动条渲染
+    // ══════════════════════════════════════════════════════════════════
+    private void renderVScrollbar(GuiGraphics g, int mouseX, int mouseY) {
+        int sbX = panelLeftX + panelWidth - 6 - SCROLL_W;
+        int sbY = contentTop();
+        int sbH = contentHeight();
+
+        // 轨道
+        g.fill(sbX, sbY, sbX + SCROLL_W, sbY + sbH, 0xFF111828);
+        g.fill(sbX + 1, sbY + 1, sbX + SCROLL_W - 1, sbY + sbH - 1, 0x55334466);
+
+        // 滑块
+        int totalContentH = sbH + maxScroll;
+        float ratio = Math.min(1f, (float) sbH / Math.max(1, totalContentH));
+        int thumbH = Math.max(SCROLL_MIN_THUMB, (int) (sbH * ratio));
+        int thumbY = sbY + (int) ((sbH - thumbH) * ((float) scrollOffset / maxScroll));
+
+        boolean hl = isDraggingScroll || isInRect(mouseX, mouseY, sbX, thumbY, SCROLL_W, thumbH);
+        g.fill(sbX, thumbY, sbX + SCROLL_W, thumbY + thumbH,
+                hl ? 0xFF8899CC : 0xFF556699);
+        g.fill(sbX + 1, thumbY + 1, sbX + SCROLL_W - 1, thumbY + thumbH - 1,
+                hl ? 0xFFAABBEE : 0xFF7788BB);
+        g.fill(sbX + 1, thumbY + 1, sbX + SCROLL_W - 1, thumbY + 3, 0x44FFFFFF);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 鼠标事件
+    // ══════════════════════════════════════════════════════════════════
+    @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        if (mx >= panelLeftX && mx < panelLeftX + panelWidth
+                && my >= contentTop() && my < contentBottom()
+                && maxScroll > 0) {
+            scrollOffset = Mth.clamp(
+                    (int) (scrollOffset - scrollY * 22),
+                    0, maxScroll);
+            applyScrollOffsets();
+            return true;
+        }
+        return super.mouseScrolled(mx, my, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (button == 0) {
+            int sbX = panelLeftX + panelWidth - 6 - SCROLL_W;
+            int sbY = contentTop();
+            int sbH = contentHeight();
+            if (isInRect((int) mx, (int) my, sbX, sbY, SCROLL_W, sbH) && maxScroll > 0) {
+                isDraggingScroll = true;
+                dragScrollStartY = my;
+                dragScrollStartOffset = scrollOffset;
+                return true;
+            }
+        }
+        return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (isDraggingScroll && maxScroll > 0) {
+            int sbH = contentHeight();
+            int totalContentH = sbH + maxScroll;
+            float ratio = Math.min(1f, (float) sbH / Math.max(1, totalContentH));
+            int thumbH = Math.max(SCROLL_MIN_THUMB, (int) (sbH * ratio));
+            double trackH = sbH - thumbH;
+            if (trackH > 0) {
+                scrollOffset = Mth.clamp(
+                        (int) (dragScrollStartOffset + (my - dragScrollStartY) / trackH * maxScroll),
+                        0, maxScroll);
+                applyScrollOffsets();
+            }
+            return true;
+        }
+        return super.mouseDragged(mx, my, button, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        isDraggingScroll = false;
+        return super.mouseReleased(mx, my, button);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 工具
+    // ══════════════════════════════════════════════════════════════════
+    private static boolean isInRect(int px, int py, int x, int y, int w, int h) {
+        return px >= x && px < x + w && py >= y && py < y + h;
+    }
+
+    @Override
+    public boolean isPauseScreen() { return false; }
 }

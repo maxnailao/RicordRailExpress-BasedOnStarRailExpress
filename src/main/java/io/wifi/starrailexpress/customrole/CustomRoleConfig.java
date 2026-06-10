@@ -98,8 +98,9 @@ public class CustomRoleConfig {
         return loadFromPath(configPath);
     }
 
-    /** 优先从 world 存档路径加载配置，失败则从默认 config 加载 */
+    /** 一律从存档文件读取配置 */
     public static CustomRoleConfig loadPreferWorldPath(MinecraftServer server) {
+        // 优先使用 server 直接获取当前 world 存档路径
         if (server != null) {
             try {
                 java.nio.file.Path worldPath = server.getWorldPath(LevelResource.ROOT);
@@ -107,7 +108,21 @@ public class CustomRoleConfig {
                 if (cfg != null && cfg.roles != null && !cfg.roles.isEmpty()) return cfg;
             } catch (Exception ignored) {}
         }
-        return loadFromDefaultPath();
+        // server 为 null 或 world 路径无配置时，遍历 saves 目录查找
+        try {
+            java.nio.file.Path savesDir = FabricLoader.getInstance().getGameDir().resolve("saves");
+            if (java.nio.file.Files.exists(savesDir) && java.nio.file.Files.isDirectory(savesDir)) {
+                try (var stream = java.nio.file.Files.list(savesDir)) {
+                    for (java.nio.file.Path worldDir : stream.toList()) {
+                        if (!java.nio.file.Files.isDirectory(worldDir)) continue;
+                        CustomRoleConfig cfg = loadFromFile(worldDir);
+                        if (cfg != null && cfg.roles != null && !cfg.roles.isEmpty()) return cfg;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        // 存档中找不到任何配置，返回空实例（不回退到 config 目录）
+        return getInstance();
     }
 
     public void addRole(CustomRoleData role) {
@@ -123,16 +138,16 @@ public class CustomRoleConfig {
     }
 
     /**
-     * 优先尝试将配置保存到指定世界存档目录；若 server 为 null 或保存失败则回退到默认 config 目录
+     * 将配置保存到 world 存档目录（不从 config 目录回退）
      */
     public void savePreferWorldPath(MinecraftServer server) {
-        try {
-            if (server != null) {
+        if (server != null) {
+            try {
                 java.nio.file.Path worldPath = server.getWorldPath(LevelResource.ROOT);
                 saveToFile(worldPath);
                 return;
-            }
-        } catch (Exception ignored) {}
-        saveToDefaultPath();
+            } catch (Exception ignored) {}
+        }
+        // server 为 null 时不保存
     }
 }

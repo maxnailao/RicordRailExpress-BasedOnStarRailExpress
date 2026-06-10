@@ -1,30 +1,32 @@
 package io.wifi.starrailexpress.customrole;
 
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 
 /**
  * 通用自定义职业 HUD
+ * 和其他职业 HUD 一样，通过 CommonHudRenderCallback 注册，渲染时自行判断角色
  */
 @Environment(EnvType.CLIENT)
 public class CustomRoleHud {
 
-    public static void registerForRole(CustomRoleData data, net.minecraft.resources.ResourceLocation roleId) {
-        final boolean hasAbility = data.enableAbility;
-        final String englishId = data.englishId;
-        if (!hasAbility) return;
-
-        RoleHudRenderCallback.EVENT.register(roleId, (guiGraphics, deltaTracker) -> {
+    public static void register() {
+        CommonHudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null) return;
             if (SREClient.gameComponent == null) return;
             if (!SREClient.isPlayerAliveAndInSurvival()) return;
+
+            // 判断当前玩家是否为启用了技能的自定义职业
+            var role = SREClient.getCachedPlayerRole();
+            if (role == null || !"customrole".equals(role.identifier().getNamespace())) return;
+            if (!RoleSkill.isRegistered(role)) return; // enableAbility=false 的角色不会注册技能
 
             SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(client.player);
             int cooldownTicks = ability.cooldown;
@@ -46,20 +48,5 @@ public class CustomRoleHud {
                 guiGraphics.drawString(font, cooldownText, x - font.width(cooldownText), y, 0xFF5555);
             }
         });
-    }
-
-    /** 从配置中注册所有自定义角色的HUD */
-    public static void registerAllFromConfig() {
-        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        net.minecraft.server.MinecraftServer server = client.getSingleplayerServer();
-        CustomRoleConfig config = CustomRoleConfig.loadPreferWorldPath(server);
-        for (CustomRoleData data : config.roles) {
-            if (data.enableAbility) {
-                net.minecraft.resources.ResourceLocation roleId =
-                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("customrole", data.englishId);
-                // 直接传入 data 对象，避免每帧读文件
-                registerForRole(data, roleId);
-            }
-        }
     }
 }

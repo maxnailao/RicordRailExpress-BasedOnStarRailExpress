@@ -38,17 +38,24 @@ public class CustomRoleLoader {
     // 自定义职业的本能透视配置
     private static final Map<String, Integer> instinctMaxRanges = new HashMap<>(); // englishId -> maxBlocksSquared
     private static final Map<String, Boolean> instinctSameColor = new HashMap<>(); // englishId -> sameColorFrame
+    // 技能初始冷却配置：roleIdentifier -> initialCooldownTicks
+    private static final Map<ResourceLocation, Integer> initialCooldownMap = new HashMap<>();
     private static boolean mapRestrictionHandlerRegistered = false;
+    private static boolean initialCooldownHandlerRegistered = false;
 
     /**
      * 重新加载所有自定义职业
      */
     public static void reload(MinecraftServer server) {
+        // 清除旧数据
+        initialCooldownMap.clear();
         // 先清除旧的自定义职业
         List<String> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if (entry.getKey().getPath().startsWith("customrole:")) {
+            if ("customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
+                // 同时清除已注册的技能，避免 re-register 时报 "already registered"
+                RoleSkill.unregister(entry.getKey());
             }
         }
         for (String key : toRemove) {
@@ -64,14 +71,10 @@ public class CustomRoleLoader {
         var worldPath = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
         CustomRoleConfig config = CustomRoleConfig.loadFromFile(worldPath);
 
-        // 如果 world 存档目录没有配置，则尝试回退读取默认的 config 目录（方便服务端/单机保存位置不一致时使用）
+        // world 存档目录没有配置时，使用空配置（不从 config 目录回退）
         if (config == null || config.roles == null || config.roles.isEmpty()) {
-            try {
-                CustomRoleConfig defaultConfig = CustomRoleConfig.loadFromDefaultPath();
-                if (defaultConfig != null && defaultConfig.roles != null && !defaultConfig.roles.isEmpty()) {
-                    config = defaultConfig;
-                }
-            } catch (Exception ignored) {}
+            config = new CustomRoleConfig();
+            config.roles = new java.util.ArrayList<>();
         }
 
         for (CustomRoleData data : config.roles) {
@@ -112,18 +115,26 @@ public class CustomRoleLoader {
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
         if (result != null) return result;
-        // 回退：尝试从 world 存档或默认 config 加载
+        // 回退：尝试从 world 存档加载（服务端）
         try {
             if (io.wifi.starrailexpress.SRE.SERVER != null) {
                 var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
-                return cfg.findRole(englishId);
-            } else {
-                var cfg = CustomRoleConfig.loadFromDefaultPath();
-                return cfg.findRole(englishId);
+                var found = cfg.findRole(englishId);
+                if (found != null) return found;
             }
-        } catch (Exception e) {
-            return null;
-        }
+        } catch (Exception ignored) {}
+        // 客户端回退：尝试从本地 config 目录（网络同步写入的）
+        try {
+            var cfg = CustomRoleConfig.loadFromDefaultPath();
+            var found = cfg.findRole(englishId);
+            if (found != null) return found;
+        } catch (Exception ignored) {}
+        // 最终回退：尝试从客户端内存中的网络同步数据
+        try {
+            var cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(englishId);
+            if (cd != null) return cd;
+        } catch (Throwable ignored) {}
+        return null;
     }
 
     public static SRERole getRegisteredRole(String englishId) {
@@ -134,6 +145,7 @@ public class CustomRoleLoader {
      * 根据配置创建 SRERole 实例
      */
     private static SRERole createRole(CustomRoleData data) {
+        data.englishId = data.englishId.toLowerCase(); // 兜底：确保英文id全小写
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("customrole", data.englishId);
 
         // 解析颜色
@@ -249,6 +261,11 @@ public class CustomRoleLoader {
                 ability.setCooldown(cooldownSeconds * 20);
                 ability.sync();
             });
+
+            // 存储技能初始冷却（游戏开始后首次分配角色时应用）
+            if (data.abilityInitialCooldownSeconds > 0) {
+                initialCooldownMap.put(role.identifier(), data.abilityInitialCooldownSeconds * 20);
+            }
         }
 
         return role;
@@ -294,6 +311,12 @@ public class CustomRoleLoader {
             registerMapRestrictionHandler();
             mapRestrictionHandlerRegistered = true;
         }
+
+        // 注册技能初始冷却事件处理（仅首次）
+        if (!initialCooldownHandlerRegistered) {
+            registerInitialCooldownHandler();
+            initialCooldownHandlerRegistered = true;
+        }
     }
 
     /**
@@ -326,6 +349,22 @@ public class CustomRoleLoader {
                     SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
                             data.englishId, mapName);
                 }
+            }
+        });
+    }
+
+    /**
+     * 注册技能初始冷却事件处理器
+     * 在角色分配给玩家后，检查是否需要设置初始冷却
+     */
+    private static void registerInitialCooldownHandler() {
+        org.agmas.harpymodloader.events.ModdedRoleAssigned.EVENT.register((player, role) -> {
+            if (!(player instanceof ServerPlayer serverPlayer)) return;
+            Integer cooldownTicks = initialCooldownMap.get(role.identifier());
+            if (cooldownTicks != null && cooldownTicks > 0) {
+                SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(serverPlayer);
+                ability.setCooldown(cooldownTicks);
+                ability.sync();
             }
         });
     }

@@ -32,6 +32,7 @@ public interface WatheBridgerItems {
     Item THROWN_GRENADE = registrar.create("thrown_grenade", new GrenadeItem(new Item.Properties().stacksTo(1)));
     Item FIRECRACKER = registrar.create("firecracker", new FirecrackerItem(new Item.Properties().stacksTo(1)));
     Item REVOLVER = registrar.create("revolver", new RevolverItem(new Item.Properties().stacksTo(1)));
+    Item STANDARD_REVOLVER = registrar.create("standard_revolver", new StandardRevolverItem(new Item.Properties().stacksTo(1)));
     Item DERRINGER = registrar.create("derringer", new DerringerItem(new Item.Properties().stacksTo(1)));
     Item BODY_BAG = registrar.create("body_bag", new BodyBagItem(new Item.Properties().stacksTo(1)));
     Item LETTER = registrar.create("letter", new Item(new Item.Properties().stacksTo(1)));

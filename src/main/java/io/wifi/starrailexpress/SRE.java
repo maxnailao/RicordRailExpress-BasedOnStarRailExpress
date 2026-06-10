@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.content.vote.command.SREVoteCommand;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import io.wifi.starrailexpress.event.AFKEventHandler;
+import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -175,6 +176,14 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PlayerInteractionHandler.register();
         EntityInteractionHandler.register();
         AFKEventHandler.register();
+
+        // 制式左轮永不掉落：无论谁持有，命中玩家后枪都不会掉落
+        AllowShootRevolverDrop.EVENT.register((player, target) -> {
+            if (player.getMainHandItem().is(TMMItems.STANDARD_REVOLVER)) {
+                return AllowShootRevolverDrop.ShouldDropResult.FALSE;
+            }
+            return AllowShootRevolverDrop.ShouldDropResult.PASS;
+        });
     }
 
     private void registerServerLifecycleEvents() {
@@ -202,6 +211,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             // 加载自定义职业
             try {
                 io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server);
+                // 同步自定义职业配置到所有客户端
+                CustomRoleServerNetwork.clearCache();
+                CustomRoleServerNetwork.syncToAllPlayers(server);
             } catch (Throwable e) {
                 LOGGER.error("[CustomRole] Failed to load custom roles on server start", e);
             }
@@ -294,6 +306,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             ReloadMapConfigCommand.register(dispatcher);
             SkinsCommand.register(dispatcher);
             PlayerInventoryCommand.register(dispatcher);
+            ShieldCommand.register(dispatcher);
+            StaminaCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
             io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
@@ -312,9 +326,12 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                             handler.player.getScoreboardName());
                 }
             }
+            // 同步自定义职业配置给新加入的玩家
+            CustomRoleServerNetwork.syncToPlayer(server, handler.player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             SREPlayerStatsComponent.KEY.get(handler.player).flushDatabaseAsync();
+            CustomRoleServerNetwork.onPlayerDisconnect(handler.player.getUUID());
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(handler.player.level());
             var psychocca = SREPlayerPsychoComponent.KEY.get(handler.player);
             if (psychocca.psychoTicks > 0) {
@@ -449,6 +466,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.OpenUI.TYPE, EntityInteractionBlockPayload.OpenUI.CODEC);
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.SyncBlockEntity.TYPE, EntityInteractionBlockPayload.SyncBlockEntity.CODEC);
         PayloadTypeRegistry.playC2S().register(EntityInteractionBlockPayload.SaveConfig.TYPE, EntityInteractionBlockPayload.SaveConfig.CODEC);
+
+        // 自定义职业同步数据包（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(CustomRoleSyncPayload.TYPE, CustomRoleSyncPayload.CODEC);
 
         // 职业轮选数据包
         PayloadTypeRegistry.playC2S().register(RoleRotationSelectC2SPacket.TYPE, RoleRotationSelectC2SPacket.CODEC);

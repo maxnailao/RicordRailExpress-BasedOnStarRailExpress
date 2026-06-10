@@ -58,6 +58,8 @@ public interface TMMItems {
             EQUIPMENT_GROUP);
     Item REVOLVER = registrar.create("revolver", new RevolverItem(new Item.Properties().stacksTo(1)),
             EQUIPMENT_GROUP);
+    Item STANDARD_REVOLVER = registrar.create("standard_revolver", new StandardRevolverItem(new Item.Properties().stacksTo(1)),
+            EQUIPMENT_GROUP);
     Item DERRINGER = registrar.create("derringer", new DerringerItem(new Item.Properties().stacksTo(1)),
             EQUIPMENT_GROUP);
     Item SNIPER_RIFLE = registrar.create("sniper_rifle", new SniperRifleItem(new Item.Properties().stacksTo(1)),

@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.customrole;
 
 import com.mojang.brigadier.CommandDispatcher;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.network.CustomRoleServerNetwork;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -18,6 +19,9 @@ public class CustomRoleReloadCommand {
                 CommandSourceStack source = context.getSource();
                 try {
                     CustomRoleLoader.reload(source.getServer());
+                    // 清除缓存并同步到所有客户端
+                    CustomRoleServerNetwork.clearCache();
+                    CustomRoleServerNetwork.syncToAllPlayers(source.getServer());
                     source.sendSuccess(
                         () -> Component.literal("[CustomRole] 自定义职业配置已重新加载")
                             .withStyle(s -> s.withColor(0x55FF55)),

@@ -50,6 +50,7 @@ public class GameConstants {
         ITEM_COOLDOWNS.put(TMMItems.KNIFE, SREConfig.instance().knifeCooldown * 20);
         ITEM_COOLDOWNS.put(Items.TRIDENT, 5 * 20);
         ITEM_COOLDOWNS.put(TMMItems.REVOLVER, SREConfig.instance().revolverCooldown * 20);
+        ITEM_COOLDOWNS.put(TMMItems.STANDARD_REVOLVER, SREConfig.instance().revolverCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.DERRINGER, SREConfig.instance().derringerCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.GRENADE, SREConfig.instance().grenadeCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.LOCKPICK, SREConfig.instance().lockpickCooldown * 20);
