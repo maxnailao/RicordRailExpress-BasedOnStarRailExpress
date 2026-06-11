@@ -70,9 +70,9 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                             boolean shouldDrop = false;
                             boolean shouldDisappear = false;
                             if (game.isRole(player, ModRoles.BANDIT)) {
-                                shouldDrop = player.getRandom().nextInt(0, 100) <= 80;
+                                shouldDrop = player.getRandom().nextInt(0, 100) <= 50;// 强盗掉枪概率
                             } else if (game.isRole(player, ModRoles.EXECUTIONER)) {
-                                shouldDisappear = player.getRandom().nextFloat() <= 0.2F;//刽子手有几率枪消失
+                                shouldDisappear = player.getRandom().nextFloat() <= 0.2F;// 刽子手有几率枪消失
                             } else {
                                 if (ShootingFrenzyPlayerComponent.isInFrenzy(player)) {
                                     shouldDrop = false;

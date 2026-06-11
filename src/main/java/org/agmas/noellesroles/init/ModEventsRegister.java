@@ -949,8 +949,13 @@ public class ModEventsRegister {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             ItemStack mainHandStack = player.getMainHandItem();
             if (!mainHandStack.is(TMMItems.DERRINGER) && gameWorldComponent.isRole(target, ModRoles.WATCHER)) {
-                if (WatcherPlayerComponent.KEY.get(target).isInCalmStance())
+                if (WatcherPlayerComponent.KEY.get(target).isInCalmStance()) {
+                    // 如果射击者是黑警，不强制掉落
+                    if (gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
+                        return ShouldDropResult.PASS;
+                    }
                     return ShouldDropResult.TRUE;
+                }
             }
             return ShouldDropResult.PASS;
         });

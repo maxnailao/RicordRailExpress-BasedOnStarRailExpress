@@ -121,6 +121,9 @@ public class InitModRolesMax {
         // 鹈鹕每局最多 1 个（具体是否出现由动态概率控制）
         Harpymodloader.setRoleMaximum(ModRoles.PELICAN_ID, 1);
 
+        // 黑警每局最多 1 个（具体是否出现由动态概率控制）
+        Harpymodloader.setRoleMaximum(ModRoles.CORRUPT_COP_ID, 1);
+
         // 邮差每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.POSTMAN_ID, 1);
 
@@ -787,6 +790,10 @@ public class InitModRolesMax {
         // 鹈鹕 - 从配置读取概率和最小玩家数
         ModRoles.PELICAN.setEnableChance(config.chanceOfPelican)
                 .setEnableNeededPlayerCount(config.minPlayerForPelican);
+
+        // 黑警 - 从配置读取概率和最小玩家数
+        ModRoles.CORRUPT_COP.setEnableChance(config.chanceOfCorruptCop)
+                .setEnableNeededPlayerCount(config.minPlayerForCorruptCop);
 
         // 教父 - 从配置读取概率和最小玩家数
         ModRoles.GODFATHER.setEnableChance(config.chanceOfGodfather)

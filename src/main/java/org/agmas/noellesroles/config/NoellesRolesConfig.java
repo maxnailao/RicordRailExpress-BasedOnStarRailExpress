@@ -933,6 +933,18 @@ public class NoellesRolesConfig implements ConfigData {
     public double pelicanEatPercentage = 70.0D;
 
     /**
+     * 黑警刷新最小玩家数
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int minPlayerForCorruptCop = 12;
+
+    /**
+     * 黑警刷新概率（%）
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int chanceOfCorruptCop = 30;
+
+    /**
      * 悍匪最小玩家数
      */
     public int minPlayerForGangsters = 12;
