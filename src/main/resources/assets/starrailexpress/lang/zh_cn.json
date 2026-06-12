@@ -2251,5 +2251,7 @@
   "hud.noellesroles.repair.skill_state.runner_vault": "翻越冲刺",
   "hud.noellesroles.repair.skill_state.archivist_notes": "风险记录",
   "hud.noellesroles.repair.skill_state.saboteur_signal": "假信号",
-  "hud.noellesroles.repair.skill_state.collector_supply": "应急调配"
+  "hud.noellesroles.repair.skill_state.collector_supply": "应急调配",
+  "block.starrailexpress.justacheese_plush": "奶酪fumo"
+
 }
