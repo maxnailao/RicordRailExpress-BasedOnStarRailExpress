@@ -48,7 +48,9 @@ public abstract class WorldRendererMixin {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
             return;
         }
-        if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()) {
+        if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()
+                && SREClient.areaComponent != null && SREClient.areaComponent.fogEnabled
+                && SREClient.isTrainMoving()) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player.hasEffect(ModEffects.OTHERWORLD_AURA)){
                 if (SREClient.gameComponent== null|| !SREClient.gameComponent.canUseKillerFeatures(player)){
@@ -64,23 +66,31 @@ public abstract class WorldRendererMixin {
                 tmm$doFog(0, 7);
                 return;
             }
-            if (SREClient.isTrainMoving()) {
-
-                tmm$doFog(0, 100);
-            } else {
-                tmm$doFog(0, 200);
-            }
+            // 如果地图未自定义 fogEnd（仍是默认200），则使用原默认值100
+            tmm$doFog(0, SREClient.areaComponent.fogEnd != 200.0f ? SREClient.areaComponent.fogEnd : 100,
+                    SREClient.areaComponent.fogShape);
+        } else {
+            original.call(camera, fogType, viewDistance, thickFog, tickDelta);
         }
     }
 
     @Unique
     private static void tmm$doFog(float fogStart, float fogEnd) {
+        tmm$doFog(fogStart, fogEnd, "SPHERE");
+    }
+
+    @Unique
+    private static void tmm$doFog(float fogStart, float fogEnd, String fogShapeStr) {
         FogRenderer.FogData fogData = new FogRenderer.FogData(FogRenderer.FogMode.FOG_SKY);
 
         fogData.start = fogStart;
         fogData.end = fogEnd;
 
-        fogData.shape = FogShape.SPHERE;
+        FogShape shape = FogShape.SPHERE;
+        if ("CYLINDER".equalsIgnoreCase(fogShapeStr)) {
+            shape = FogShape.CYLINDER;
+        }
+        fogData.shape = shape;
 
         RenderSystem.setShaderFogStart(fogData.start);
         RenderSystem.setShaderFogEnd(fogData.end);

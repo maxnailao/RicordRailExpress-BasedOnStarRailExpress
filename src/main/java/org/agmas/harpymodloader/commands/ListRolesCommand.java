@@ -141,7 +141,7 @@ public class ListRolesCommand {
     private static final int PAGE_SIZE = 10;
 
     private static int showRole(CommandContext<CommandSourceStack> context, int page) {
-        if (!Harpymodloader.isMojangVerify) {
+        if (!Harpymodloader.officialVerify) {
             return 1;
         }
 
@@ -275,7 +275,7 @@ public class ListRolesCommand {
                             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                     Component.translatable("commands.listroles.button.hover", maxTotalPages)))));
             if (source.hasPermission(2)) {
-                buttons.append(Component.literal("[")
+                buttons.append(Component.literal(" [")
                         .append(Component.translatable("commands.listroles.button.manage_all")
                                 .withStyle(ChatFormatting.AQUA))
                         .append(Component.literal("]"))

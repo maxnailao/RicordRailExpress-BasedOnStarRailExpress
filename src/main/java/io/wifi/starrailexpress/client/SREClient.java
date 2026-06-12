@@ -560,6 +560,8 @@ public class SREClient implements ClientModInitializer {
             FourthRoomCameraDirector.clear();
             // 清理自定义职业客户端缓存
             io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
+            // 清理 OpenAL 语音特效资源
+            org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
         });
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();

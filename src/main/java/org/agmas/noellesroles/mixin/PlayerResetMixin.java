@@ -43,6 +43,7 @@ import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPla
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.packet.PlayerResetS2CPacket;
+import org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -168,8 +169,13 @@ public abstract class PlayerResetMixin {
         TrapperPlayerComponent trapperComp = ModComponents.TRAPPER.get(player);
         trapperComp.clearAll();
 
-        // 清除窃皮者组件状态（重置抵挡次数等）
+        // 清除窃皮者组件状态（重置抵挡次数等）并通知客户端还原皮肤
         SkincrawlerPlayerComponent skincrawlerComp = ModComponents.SKINCRAWLER.get(player);
+        if (skincrawlerComp.stolenSkin != null) {
+            for (ServerPlayer sp : player.getServer().getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(sp, new SkincrawlerSkinS2CPacket(player.getUUID(), null));
+            }
+        }
         skincrawlerComp.clear();
 
         // 清除傀儡师组件状态

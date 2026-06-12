@@ -102,6 +102,9 @@ public class JetpackItem extends ArmorItem {
         if (player == null) {
             return;
         }
+        if (player.isSpectator()) {
+            return;
+        }
         
         // 获取胸甲槽位的物品
         ItemStack chestplate = player.getInventory().getArmor(2);

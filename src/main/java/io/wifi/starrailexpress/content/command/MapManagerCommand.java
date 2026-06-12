@@ -132,6 +132,9 @@ public class MapManagerCommand {
                   areas.noReset = false;
                   areas.sceneOffsetEnabled = false;
                   areas.snowEnabled = false;
+                  areas.fogEnabled = true;
+                  areas.fogEnd = 200.0f;
+                  areas.fogShape = "SPHERE";
                   areas.sceneOffsetX = 0;
                   areas.sceneOffsetY = 0;
                   areas.sceneOffsetZ = 0;
@@ -165,6 +168,9 @@ public class MapManagerCommand {
                 .then(setHaveOutsideSound())
                 .then(setSceneOffsetEnabled())
                 .then(setSnowEnabled())
+                .then(setFogEnabled())
+                .then(setFogEnd())
+                .then(setFogShape())
                 .then(setSceneOffsetX())
                 .then(setSceneOffsetY())
                 .then(setSceneOffsetZ())
@@ -195,6 +201,9 @@ public class MapManagerCommand {
                 .then(buildGetSimple("haveOutsideSound", a -> String.valueOf(a.haveOutsideSound)))
                 .then(buildGetSimple("sceneOffsetEnabled", a -> String.valueOf(a.sceneOffsetEnabled)))
                 .then(buildGetSimple("snowEnabled", a -> String.valueOf(a.snowEnabled)))
+                .then(buildGetSimple("fogEnabled", a -> String.valueOf(a.fogEnabled)))
+                .then(buildGetSimple("fogEnd", a -> String.valueOf(a.fogEnd)))
+                .then(buildGetSimple("fogShape", a -> "\"" + a.fogShape + "\""))
                 .then(buildGetSimple("sceneOffsetX", a -> String.valueOf(a.sceneOffsetX)))
                 .then(buildGetSimple("sceneOffsetY", a -> String.valueOf(a.sceneOffsetY)))
                 .then(buildGetSimple("sceneOffsetZ", a -> String.valueOf(a.sceneOffsetZ)))
@@ -428,6 +437,27 @@ public class MapManagerCommand {
     sendSetFeedback(source, "snowEnabled", String.valueOf(value));
   }
 
+  private static void setFogEnabled(CommandSourceStack source, boolean value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.fogEnabled = value;
+    areas.sync();
+    sendSetFeedback(source, "fogEnabled", String.valueOf(value));
+  }
+
+  private static void setFogEnd(CommandSourceStack source, float value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.fogEnd = value;
+    areas.sync();
+    sendSetFeedback(source, "fogEnd", String.valueOf(value));
+  }
+
+  private static void setFogShape(CommandSourceStack source, String value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.fogShape = value;
+    areas.sync();
+    sendSetFeedback(source, "fogShape", "\"" + value + "\"");
+  }
+
   private static void setMustCopy(CommandSourceStack source, boolean value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
     areas.mustCopy = value;
@@ -560,6 +590,9 @@ public class MapManagerCommand {
     sb.append("haveOutsideSound: ").append(areas.haveOutsideSound).append("\n");
     sb.append("sceneOffsetEnabled: ").append(areas.sceneOffsetEnabled).append("\n");
     sb.append("snowEnabled: ").append(areas.snowEnabled).append("\n");
+    sb.append("fogEnabled: ").append(areas.fogEnabled).append("\n");
+    sb.append("fogEnd: ").append(areas.fogEnd).append("\n");
+    sb.append("fogShape: \"").append(areas.fogShape).append("\"\n");
     sb.append("sceneOffsetX: ").append(areas.sceneOffsetX).append("\n");
     sb.append("sceneOffsetY: ").append(areas.sceneOffsetY).append("\n");
     sb.append("sceneOffsetZ: ").append(areas.sceneOffsetZ).append("\n");
@@ -870,6 +903,38 @@ public class MapManagerCommand {
         .then(Commands.argument("value", BoolArgumentType.bool())
             .executes(ctx -> {
               setSnowEnabled(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setFogEnabled() {
+    return Commands.literal("fogEnabled")
+        .then(Commands.argument("value", BoolArgumentType.bool())
+            .executes(ctx -> {
+              setFogEnabled(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setFogEnd() {
+    return Commands.literal("fogEnd")
+        .then(Commands.argument("value", FloatArgumentType.floatArg(1, 10000))
+            .executes(ctx -> {
+              setFogEnd(ctx.getSource(), FloatArgumentType.getFloat(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setFogShape() {
+    return Commands.literal("fogShape")
+        .then(Commands.argument("value", StringArgumentType.string())
+            .suggests((ctx, builder) -> {
+              builder.suggest("SPHERE");
+              builder.suggest("CYLINDER");
+              return builder.buildFuture();
+            })
+            .executes(ctx -> {
+              setFogShape(ctx.getSource(), StringArgumentType.getString(ctx, "value"));
               return 1;
             }));
   }

@@ -8,6 +8,8 @@ import net.minecraft.world.item.Item;
 public interface TMMItemTags {
 
     TagKey<Item> GUNS = create("guns");
+    TagKey<Item> HELD_LIKE_GUNS_ITEMS = create("held_like_guns");
+    TagKey<Item> HELD_LIKE_BAT_ITEMS = create("held_like_bat");
     TagKey<Item> COOLDOWN_GUNS = create("cooldown_guns");
     TagKey<Item> PSYCHOSIS_ITEMS = create("psychosis_items");
 
