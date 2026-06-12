@@ -48,9 +48,11 @@ import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MapScannerManager;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +69,7 @@ public class GameUtilsCommand {
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
           dispatcher.register(Commands.literal("cooldown")
-              .requires(source -> Harpymodloader.isMojangVerify && source.hasPermission(2))
+              .requires(source -> Harpymodloader.officialVerify && source.hasPermission(2))
               .then(Commands.argument("player", EntityArgument.player())
                   .then(Commands.argument("item", ItemArgument.item(registryAccess))
                       .then(Commands.argument("time", IntegerArgumentType.integer(0))
@@ -85,7 +87,7 @@ public class GameUtilsCommand {
                             return 1;
                           })))));
           dispatcher.register(
-              Commands.literal("tmm:game").requires(source -> Harpymodloader.isMojangVerify && source.hasPermission(2))
+              Commands.literal("tmm:game").requires(source -> Harpymodloader.officialVerify && source.hasPermission(2))
                   .then(Commands.literal("role")
                       .then(Commands.literal("silent_change")
                           .then(Commands.argument("role", RoleArgumentType.create(false)).executes((ctx) -> {
@@ -127,7 +129,12 @@ public class GameUtilsCommand {
                           throw ConfigCommand
                               .createSimpleSyntaxException(new Exception("Player doesn't have any roles!"));
                         }
-                        RoleUtils.sendWelcomeAnnouncement(player, role.identifier(), killerCount);
+                        // -1 时根据游戏中实际的杀手数量报幕
+                        if (killerCount == -1) {
+                          RoleUtils.sendWelcomeAnnouncement(player);
+                        } else {
+                          RoleUtils.sendWelcomeAnnouncement(player, role.identifier(), killerCount);
+                        }
 
                         ctx.getSource().sendSuccess(
                             () -> Component.translatable("Successfully send welcome payload to %s",
@@ -138,7 +145,12 @@ public class GameUtilsCommand {
                         int killerCount = IntegerArgumentType.getInteger(ctx, "killer_count");
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
                         SRERole role = RoleArgumentType.getRole(ctx, "role");
-                        RoleUtils.sendWelcomeAnnouncement(player, role.identifier(), killerCount);
+                        // -1 时根据游戏中实际的杀手数量报幕
+                        if (killerCount == -1) {
+                          RoleUtils.sendWelcomeAnnouncement(player, role);
+                        } else {
+                          RoleUtils.sendWelcomeAnnouncement(player, role.identifier(), killerCount);
+                        }
                         ctx.getSource().sendSuccess(
                             () -> Component.translatable("Successfully send [%s] welcome payload to %s",
                                 RoleUtils.getRoleOrModifierNameWithColor(role), player.getName()),
@@ -216,6 +228,18 @@ public class GameUtilsCommand {
                         org.agmas.noellesroles.game.roles.innocent.fool.PrayerHandler
                             .startPrayer(ctx.getSource().getPlayerOrException());
                         ctx.getSource().sendSuccess(() -> Component.literal("Successfully prayer."), false);
+                        return 1;
+                      }))
+                      .then(Commands.literal("gambler_draw").executes((ctx) -> {
+                        var player = ctx.getSource().getPlayerOrException();
+                        if (!RoleUtils.isPlayerTheJob(player, ModRoles.GAMBLER)) {
+
+                          ctx.getSource().sendFailure(Component.literal("Not a gambler."));
+                          return 0;
+                        }
+                        GamblerPlayerComponent.KEY.get(player).drawNewRole();
+                        ctx.getSource()
+                            .sendSuccess(() -> Component.literal("Successfully draw a new role to gambler."), false);
                         return 1;
                       }))
                       .then(Commands.literal("math").executes((context) -> {

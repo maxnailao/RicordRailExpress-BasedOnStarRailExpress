@@ -11,6 +11,7 @@ import net.minecraft.world.item.component.Unbreakable;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +44,9 @@ public class RoleInitialItems {
 
     /**
      * 为玩家添加指定角色的初始物品
-     * 
+     * 优先从 INITIAL_ITEMS_MAP 获取，若没有则回退到 role.getDefaultItems()
+     * （自定义职业的初始物品通过 getDefaultItems() 返回）
+     *
      * @param player 玩家
      * @param role   角色
      */
@@ -53,7 +56,17 @@ public class RoleInitialItems {
             for (Supplier<ItemStack> itemSupplier : itemSuppliers) {
                 ItemStack itemStack = itemSupplier.get();
                 if (itemStack != null && !itemStack.isEmpty()) {
-                    player.addItem(itemStack.copy());
+                    MCItemsUtils.insertStackInFreeSlot(player, itemStack.copy());
+                }
+            }
+        } else {
+            // 静态 Map 中没有此角色 → 回退到 getDefaultItems()（自定义职业走这条路）
+            List<ItemStack> defaultItems = role.getDefaultItems();
+            if (defaultItems != null) {
+                for (ItemStack stack : defaultItems) {
+                    if (stack != null && !stack.isEmpty()) {
+                        MCItemsUtils.insertStackInFreeSlot(player, stack.copy());
+                    }
                 }
             }
         }
@@ -250,7 +263,7 @@ public class RoleInitialItems {
         guardItems.add(() -> ModItems.RIOT_SHIELD.getDefaultInstance());
         guardItems.add(() -> ModItems.BATON.getDefaultInstance());
         INITIAL_ITEMS_MAP.put(ModRoles.GUARD, guardItems);
-        
+
         // 广播员初始物品 - 对讲机
         List<Supplier<ItemStack>> broadcasterItems = new ArrayList<>();
         broadcasterItems.add(() -> ModItems.RADIO.getDefaultInstance());

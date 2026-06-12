@@ -40,7 +40,7 @@ public class ChangeRoleCommand {
   private static int execute(CommandContext<CommandSourceStack> context, boolean record, boolean addStats)
       throws CommandSyntaxException {
     try {
-      if (!Harpymodloader.isMojangVerify) {
+      if (!Harpymodloader.officialVerify) {
         return 1;
       }
       ServerPlayer targetPlayer = EntityArgument.getPlayer(context, "player");
@@ -68,7 +68,10 @@ public class ChangeRoleCommand {
                 }
         );
       }
-      newRole.getDefaultItems().forEach(itemStack -> targetPlayer.getInventory().add(itemStack.copy()));
+      // 自定义职业的初始物品已通过 INITIAL_ITEMS_MAP 在 changeRole → ModdedRoleAssigned 事件中发放，此处跳过避免重复
+      if (!"customrole".equals(newRole.identifier().getNamespace())) {
+        newRole.getDefaultItems().forEach(itemStack -> targetPlayer.getInventory().add(itemStack.copy()));
+      }
       RoleUtils.changeRole(targetPlayer, newRole, record, addStats);
 
       // 发送反馈消息
@@ -101,7 +104,7 @@ public class ChangeRoleCommand {
 
   private static int executeReset(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
     try {
-      if (!Harpymodloader.isMojangVerify) {
+      if (!Harpymodloader.officialVerify) {
         return 1;
       }
       ServerPlayer targetPlayer = EntityArgument.getPlayer(context, "player");

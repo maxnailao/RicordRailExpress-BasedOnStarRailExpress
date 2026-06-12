@@ -45,6 +45,9 @@ public class SREGameModes {
     // Role Rotation Mode (haiman)
     public static final ResourceLocation ROLE_ROTATION_MODE_ID = SRE.haimanId("role_rotation");
 
+    // Class Change Mode (haiman)
+    public static final ResourceLocation CLASS_CHANGE_MODE_ID = SRE.haimanId("class_change");
+
     // Tradition Mode (sre)
     public static final ResourceLocation TRADITION_MODE_ID = SRE.shortId("tradition");
 
@@ -84,6 +87,9 @@ public class SREGameModes {
 
     // Role Rotation Mode
     public static final GameMode ROLE_ROTATION_MODE = registerGameMode(new SRERoleRotationGameMode(ROLE_ROTATION_MODE_ID));
+
+    // Class Change Mode (haiman)
+    public static final GameMode CLASS_CHANGE_MODE = registerGameMode(new SREClassChangeGameMode(CLASS_CHANGE_MODE_ID));
 
     // Tradition Mode (sre)
     public static final GameMode TRADITION_MODE = registerGameMode(new SRETraditionGameMode(TRADITION_MODE_ID));

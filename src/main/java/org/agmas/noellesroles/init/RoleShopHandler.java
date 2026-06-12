@@ -283,7 +283,7 @@ public class RoleShopHandler {
     FRAMING_ROLES_SHOP
         .add(new ShopEntry(ModItems.DELUSION_VIAL.getDefaultInstance(), 30,
             ShopEntry.Type.POISON));
-    FRAMING_ROLES_SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 5,
+    FRAMING_ROLES_SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 50,
         ShopEntry.Type.TOOL));
     FRAMING_ROLES_SHOP
         .add(new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 5, ShopEntry.Type.TOOL));

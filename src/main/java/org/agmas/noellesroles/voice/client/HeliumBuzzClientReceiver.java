@@ -7,7 +7,6 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.agmas.noellesroles.voice.HeliumPitchShifter;
 
@@ -17,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Client-side receiver for processing voice chat audio with helium effect.
- * This modifies the pitch of voices from players who have the helium effect active.
+ * Applies WSOLA pitch shifting for helium voice only.
+ * (Heavy metal pitch and voice echo are now handled by VoiceEffectsOpenALPlugin via native OpenAL.)
  */
 @Environment(EnvType.CLIENT)
 public class HeliumBuzzClientReceiver {
@@ -29,7 +29,6 @@ public class HeliumBuzzClientReceiver {
      * Base pitch ratio for helium effect (1.75 = 75% higher pitch)
      */
     private static final float BASE_HELIUM_RATIO = 1.75F;
-    private static final int ECHO_DELAY_SAMPLES = 2_400; // ~50ms @48kHz
 
     /**
      * Register the client-side audio processing event.
@@ -66,20 +65,14 @@ public class HeliumBuzzClientReceiver {
 
         HeliumBuzzPlayerComponent comp = ModComponents.HELIUM_BUZZ.get(player);
         boolean hasHelium = comp != null && comp.isActive();
-        boolean hasHeavyMetal = player.hasEffect(ModEffects.HEAVY_METAL_VOICE);
-        int echoCount = ModEffects.getVoiceEchoCount(player);
-        if (!hasHelium && !hasHeavyMetal && echoCount <= 0) {
+        if (!hasHelium) {
             SHIFTERS.remove(speaker);
             return;
         }
 
-        float ratio = hasHelium ? pitchRatioFor(comp) : 1.0F;
-        if (hasHeavyMetal) {
-            ratio *= ModEffects.getHeavyMetalPitchRatio(player);
-        }
+        float ratio = pitchRatioFor(comp);
         HeliumPitchShifter shifter = SHIFTERS.computeIfAbsent(speaker, k -> new HeliumPitchShifter());
-        short[] shifted = shifter.process(pcm, ratio);
-        event.setRawAudio(applyEcho(shifted, echoCount));
+        event.setRawAudio(shifter.process(pcm, ratio));
     }
 
     /**
@@ -93,21 +86,5 @@ public class HeliumBuzzClientReceiver {
         }
         float ramp = Math.max(0.0F, remaining / RAMP_OUT_TICKS);
         return 1.0F + (BASE_HELIUM_RATIO - 1.0F) * ramp;
-    }
-
-    private static short[] applyEcho(short[] pcm, int echoCount) {
-        if (echoCount <= 0 || pcm.length == 0) {
-            return pcm;
-        }
-        short[] output = pcm.clone();
-        for (int echoIndex = 1; echoIndex <= Math.min(echoCount, 5); echoIndex++) {
-            int delay = ECHO_DELAY_SAMPLES * echoIndex;
-            float decay = 0.45F / echoIndex;
-            for (int i = delay; i < output.length; i++) {
-                int mixed = output[i] + (int) (pcm[i - delay] * decay);
-                output[i] = (short) Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, mixed));
-            }
-        }
-        return output;
     }
 }

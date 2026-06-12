@@ -34,6 +34,8 @@ public class NRSounds {
     public static final SoundEvent C4_BEEP = registrar.create("noellesroles.c4_beep");
     public static final SoundEvent MAFIA = registrar.create("noellesroles.mafia");
     public static final SoundEvent BAKA_BAKA = registrar.create("plush.baka");
+    public static final SoundEvent WO_SHI_NAI_LONG = registrar.create("plush.nai_long");
+    public static final SoundEvent LEVEL = registrar.create("noellesroles.level");
 
     //熊孩子
     public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");

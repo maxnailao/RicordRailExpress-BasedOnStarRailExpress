@@ -33,6 +33,8 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 public record GunShootPayload(int target) implements CustomPacketPayload {
@@ -210,6 +212,6 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
     private static boolean isGodfather(ServerPlayer player) {
         var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
-        return role != null && role.getIdentifier().toString().equals("noellesroles:godfather");
+        return role != null && RoleUtils.compareRole(role, ModRoles.GODFATHER);
     }
 }

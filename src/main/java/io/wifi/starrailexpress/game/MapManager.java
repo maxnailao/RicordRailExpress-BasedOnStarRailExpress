@@ -203,6 +203,9 @@ public class MapManager {
 
         // 保存雪花效果配置
         jsonObject.addProperty("snowEnabled", areas.snowEnabled);
+        jsonObject.addProperty("fogEnabled", areas.fogEnabled);
+        jsonObject.addProperty("fogEnd", areas.fogEnd);
+        jsonObject.addProperty("fogShape", areas.fogShape);
 
         // 保存天气配置
         jsonObject.addProperty("weather", areas.weather);
@@ -303,6 +306,21 @@ public class MapManager {
                 areas.snowEnabled = jsonObject.get("snowEnabled").getAsBoolean();
             } else {
                 areas.snowEnabled = false;
+            }
+            if (jsonObject.has("fogEnabled")) {
+                areas.fogEnabled = jsonObject.get("fogEnabled").getAsBoolean();
+            } else {
+                areas.fogEnabled = true;
+            }
+            if (jsonObject.has("fogEnd")) {
+                areas.fogEnd = jsonObject.get("fogEnd").getAsFloat();
+            } else {
+                areas.fogEnd = 200.0f;
+            }
+            if (jsonObject.has("fogShape")) {
+                areas.fogShape = jsonObject.get("fogShape").getAsString();
+            } else {
+                areas.fogShape = "SPHERE";
             }
 
             // 加载场景偏移配置（默认关闭）
@@ -638,7 +656,7 @@ public class MapManager {
      * 获取所有可用的地图列表
      * 
      * @param serverWorld 服务器世界
-     * @param childFolder 是否枚举子文件夹（若为 true，则返回“子文件夹名/文件”格式）
+     * @param childFolder 是否枚举子文件夹（若为 true，则返回"子文件夹名/文件"格式）
      * @return 可用地图名称列表
      */
     public static List<String> getAvailableMaps(ServerLevel serverWorld, boolean childFolder) {

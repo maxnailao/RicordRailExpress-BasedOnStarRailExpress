@@ -45,7 +45,7 @@ public class Noellesroles implements ModInitializer {
     public static final String fuckMojang = Decode("4075a514cc856d7e4bdf11132a9178b9337997a6955635e5c56e07ff089b3a7a");
 
     public static boolean checkMJVerify() {
-        if (Noellesroles.isOnlineMode == null || !Harpymodloader.isMojangVerify) {
+        if (Noellesroles.isOnlineMode == null || !Harpymodloader.officialVerify) {
             Noellesroles.isOnlineMode = ServerManager.onlineCheck(NoellesRolesConfig.HANDLER.instance().credit);
         }
         if (!Noellesroles.isOnlineMode
@@ -255,6 +255,7 @@ public class Noellesroles implements ModInitializer {
 
         // 注册方块
         ModBlocks.initialize();
+        SREFumoBlocks.initialize();
 
         // 注册血液粒子工厂
         Registry.register(BuiltInRegistries.PARTICLE_TYPE, Noellesroles.id("deathblood"),

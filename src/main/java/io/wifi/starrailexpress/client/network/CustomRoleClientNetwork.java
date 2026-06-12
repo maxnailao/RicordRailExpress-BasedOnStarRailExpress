@@ -60,8 +60,9 @@ public class CustomRoleClientNetwork {
                                 }
                             }
                         }
-                        // 写入客户端本地 config 目录，确保 CustomRoleLoader.getCustomRoleData() 可读取
+                        // 写入客户端本地 config 目录，并触发客户端重载角色到 TMMRoles.ROLES
                         writeToLocalConfig(json);
+                        io.wifi.starrailexpress.customrole.CustomRoleLoader.reloadClient();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -113,11 +114,44 @@ public class CustomRoleClientNetwork {
         return hasSyncedData;
     }
 
-    /** 清理缓存（离开服务器时） */
+    /** 清理缓存（离开服务器时），同时从 TMMRoles.ROLES 和 INITIAL_ITEMS_MAP 移除旧角色并删除本地文件 */
     public static void clearCache() {
         lastReceivedHash = 0;
         syncedJson = null;
         syncedRoles.clear();
         hasSyncedData = false;
+
+        // 从 TMMRoles.ROLES 中移除所有旧的自定义角色（防止换服后残留）
+        var roles = io.wifi.starrailexpress.api.TMMRoles.ROLES;
+        var toRemove = new ArrayList<net.minecraft.resources.ResourceLocation>();
+        for (var entry : roles.entrySet()) {
+            if ("customrole".equals(entry.getKey().getNamespace())) {
+                toRemove.add(entry.getKey());
+            }
+        }
+        toRemove.forEach(roles::remove);
+
+        // 从 INITIAL_ITEMS_MAP 中移除旧的自定义角色条目
+        var itemsMap = org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP;
+        var toRemoveItems = new ArrayList<io.wifi.starrailexpress.api.SRERole>();
+        for (var entry : itemsMap.entrySet()) {
+            if ("customrole".equals(entry.getKey().identifier().getNamespace())) {
+                toRemoveItems.add(entry.getKey());
+            }
+        }
+        toRemoveItems.forEach(itemsMap::remove);
+
+        // 删除本地缓存文件，确保换服后不会读到旧数据
+        deleteLocalConfig();
+    }
+
+    /** 删除本地 config 目录中的 sre_custom_roles.json */
+    private static void deleteLocalConfig() {
+        try {
+            Path configPath = FabricLoader.getInstance().getConfigDir().resolve("sre_custom_roles.json");
+            Files.deleteIfExists(configPath);
+        } catch (Exception e) {
+            // 删除失败也不影响功能，下次收到包会覆盖写入
+        }
     }
 }
