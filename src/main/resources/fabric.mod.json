@@ -259,9 +259,5 @@
   },
   "conflicts": {
     "customskinloader": "*"
-  },
-  "breaks": {
-    "sodiumoptionsapi": "*",
-    "sodiumextras": "*"
   }
 }
