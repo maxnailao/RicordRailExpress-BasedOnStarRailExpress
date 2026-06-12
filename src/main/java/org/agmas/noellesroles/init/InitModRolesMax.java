@@ -112,6 +112,9 @@ public class InitModRolesMax {
         // 拳击手每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.BOXER_ID, 1);
 
+        // 工人每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.WORKER_ID, 1);
+
         // 小偷每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.THIEF_ID, 1);
 
@@ -290,6 +293,9 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.WIND_YAOSE_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.RESCUER_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.FIREFIGHTER_ID, 1);
+
+        // 哑女每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.DUMB_WOMAN_ID, 1);
 
         Harpymodloader.setRoleMaximum(ModRoles.DIVER_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);

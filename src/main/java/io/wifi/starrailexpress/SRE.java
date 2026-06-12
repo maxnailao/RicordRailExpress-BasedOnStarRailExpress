@@ -154,6 +154,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.POACHER);
         // 注册情报官角色组件
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.INTELLIGENCE);
+        // 注册哑女角色组件
+        TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.DUMB_WOMAN);
     }
 
     private void initConfig() {

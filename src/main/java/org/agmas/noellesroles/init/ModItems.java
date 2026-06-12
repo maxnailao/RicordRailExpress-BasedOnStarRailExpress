@@ -311,6 +311,10 @@ public class ModItems {
             new BoxingGloveItem(new Item.Properties().stacksTo(1)),
             "boxing_glove");
 
+    public static final Item HAMMER = register(
+            new HammerItem(new Item.Properties().stacksTo(1)),
+            "hammer");
+
     public static final Item ANTIDOTE_REAGENT = register(
             new AntidoteReagentItem(new Item.Properties().stacksTo(16).durability(5)),
             "antidote_reagent");

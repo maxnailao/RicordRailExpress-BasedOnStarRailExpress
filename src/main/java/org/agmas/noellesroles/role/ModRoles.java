@@ -81,6 +81,9 @@ import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilant
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.utils.RandomColorUtil;
 import org.jetbrains.annotations.Nullable;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import io.wifi.starrailexpress.event.OnGameStarted;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.awt.*;
@@ -159,6 +162,7 @@ public class ModRoles {
     public static final ResourceLocation SLIPPERY_GHOST_ID = Noellesroles.id("slippery_ghost");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
     public static final ResourceLocation BOXER_ID = Noellesroles.id("boxer");
+    public static final ResourceLocation WORKER_ID = Noellesroles.id("worker");
     public static final ResourceLocation POSTMAN_ID = Noellesroles.id("postman");
     public static final ResourceLocation DETECTIVE_ID = Noellesroles.id("detective");
     public static final ResourceLocation ATHLETE_ID = Noellesroles.id("athlete");
@@ -297,6 +301,8 @@ public class ModRoles {
     public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
     // 休假警员 (平民阵营)
     public static final ResourceLocation RESTING_POLICE_ID = Noellesroles.id("resting_police");
+    // 哑女 (平民阵营)
+    public static final ResourceLocation DUMB_WOMAN_ID = Noellesroles.id("dumb_woman");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
@@ -1459,6 +1465,44 @@ public class ModRoles {
     ).setComponentKey(BoxerPlayerComponent.KEY));;
 
     /**
+     * 工人角色
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 强制赋予矫健修饰符
+     * - 可透视工程师和建筑师
+     * - 商店：锤子 (200金币)
+     */
+    public static SRERole WORKER = TMMRoles.registerRole(new NormalRole(
+            WORKER_ID, // 角色 ID
+            new Color(255, 215, 0).getRGB(), // 黄色 - 代表劳动/光荣
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true)
+      .setCanUseInstinct(true)
+      .setMax(1);
+
+    // 工人强制赋予矫健修饰符（在游戏开始、角色和修饰符分配完成后直接添加）
+    static {
+        OnGameStarted.EVENT.register((serverLevel) -> {
+            SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
+            WorldModifierComponent wmc = WorldModifierComponent.KEY.get(serverLevel);
+            for (ServerPlayer player : serverLevel.players()) {
+                if (gameComponent.isRole(player, WORKER)) {
+                    if (!wmc.isModifier(player, SEModifiers.VIGOROUS)) {
+                        wmc.addModifier(player.getUUID(), SEModifiers.VIGOROUS);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * 邮差角色
      * - 属于乘客阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
@@ -2435,6 +2479,29 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
             false   // 显示计分板
     )).setCanSeeCoin(true).setCanSeeTime(false);
+
+    /**
+     * 哑女角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 显示计分板
+     * - 被动技能：永久禁言（无法说话和打字）+ 永久夜视 + 强制夜猫子修饰符
+     * - 商店：便签(20g)
+     * - 介绍：你拥有语言障碍
+     * - 登车标语：小心杀手，活下去
+     */
+    public static SRERole DUMB_WOMAN = TMMRoles.registerRole(new NormalRole(
+            DUMB_WOMAN_ID,
+            new Color(192, 192, 192).getRGB(), // 浅灰色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setComponentKey(ModComponents.DUMB_WOMAN);
 
     public static SRERole PHANTOM_MUSICIAN = TMMRoles
             .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(), false,

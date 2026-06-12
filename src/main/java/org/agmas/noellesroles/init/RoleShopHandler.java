@@ -195,6 +195,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
   // ==================== 拳击手商店 ====================
   public static ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
+  // ==================== 工人商店 ====================
+  public static ArrayList<ShopEntry> WORKER_SHOP = new ArrayList<>();
   // ==================== 邮差商店 ====================
   public static ArrayList<ShopEntry> POSTMAN_SHOP = new ArrayList<>();
   // ==================== 心理学家商店 ====================
@@ -1074,6 +1076,13 @@ public class RoleShopHandler {
               new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 75, ShopEntry.Type.TOOL)));
     }
     {
+      // 哑女商店 - 便签(20金币)
+      ShopContent.customEntries.put(
+          ModRoles.DUMB_WOMAN_ID,
+          List.of(
+              new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 20, ShopEntry.Type.TOOL)));
+    }
+    {
       ShopContent.customEntries.put(
           ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
     }
@@ -1176,6 +1185,10 @@ public class RoleShopHandler {
     {
       ShopContent.customEntries.put(
           ModRoles.BOXER_ID, BOXER_SHOP);
+    }
+    {
+      ShopContent.customEntries.put(
+          ModRoles.WORKER_ID, WORKER_SHOP);
     }
     {
       var shopEntries = new ArrayList<ShopEntry>();
@@ -1709,6 +1722,7 @@ public class RoleShopHandler {
     SLIPPERY_GHOST_SHOP.clear();
     ENGINEER_SHOP.clear();
     BOXER_SHOP.clear();
+    WORKER_SHOP.clear();
     POSTMAN_SHOP.clear();
     PSYCHOLOGIST_SHOP.clear();
     BOMBER_SHOP.clear();
@@ -1924,6 +1938,13 @@ public class RoleShopHandler {
     BOXER_SHOP.add(new ShopEntry(
         ModItems.BOXING_GLOVE.getDefaultInstance(),
         150,
+        ShopEntry.Type.WEAPON));
+
+    // 工人商店
+    // 锤子 - 200金币
+    WORKER_SHOP.add(new ShopEntry(
+        ModItems.HAMMER.getDefaultInstance(),
+        200,
         ShopEntry.Type.WEAPON));
 
     // 邮差商店

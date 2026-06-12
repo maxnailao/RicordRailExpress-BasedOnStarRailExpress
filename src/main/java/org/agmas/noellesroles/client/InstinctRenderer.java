@@ -1087,6 +1087,29 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 工人：透视工程师和建筑师（开局即可透视，无需购买物品）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            if (Minecraft.getInstance().player == null)
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(Minecraft.getInstance().player))
+                return -1;
+            if (!SREClient.gameComponent.isRole(Minecraft.getInstance().player, ModRoles.WORKER))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.ENGINEER)
+                        || SREClient.gameComponent.isRole(targetPlayer, ModRoles.BUILDER)) {
+                    return ModRoles.WORKER.color();
+                }
+                // 工人只能透视工程师和建筑师，其他玩家禁用透视
+                return -2;
+            }
+            return -1;
+        });
+
     }
 
     private static int getRoleColor(SRERole target_role) {

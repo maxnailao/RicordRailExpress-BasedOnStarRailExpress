@@ -581,6 +581,8 @@
   "mob_effect.noellesroles.monokuma_frenzy": "黑白狂暴",
   "item.noellesroles.boxing_glove": "拳套",
   "item.noellesroles.boxing_glove.tooltip": "蓄力0.4秒後攻擊，命中使目標眩暈並封印物品1.5秒",
+  "item.noellesroles.hammer": "鎚子",
+  "item.noellesroles.hammer.tooltip": "蓄力0.8秒後攻擊，命中使目標減速和失明3秒並擊退，使用後消失",
   "item.noellesroles.master_key_p": "乘務員鑰匙",
   "item.noellesroles.noell_artisan_key": "巧匠鑰匙",
   "item.noellesroles.noell_artisan_key.tooltip": "無視門上道具和反鎖直接開門\n不會破壞門上加固道具",
@@ -963,6 +965,8 @@
   "message.noellesroles.boxer.blocked_death": "鋼筋鐵骨反彈了 %s！",
   "message.noellesroles.boxing_glove.hit": "你用拳套擊中了 %s！",
   "message.noellesroles.boxing_glove.hit_by": "你被拳套擊中了！",
+  "message.noellesroles.hammer.hit": "你用鎚子擊中了 %s！",
+  "message.noellesroles.hammer.hit_by": "你被鎚子擊中了！",
   "hud.noellesroles.boxer.cooldown": "鋼筋鐵骨冷卻：%s秒",
   "hud.noellesroles.boxer.ready": "鋼筋鐵骨就緒 - 按G啟動",
   "hud.noellesroles.boxer.active": "鋼筋鐵骨啟動中！%s秒",
@@ -2904,5 +2908,10 @@
   "block.noellesroles.kill_block": "擊殺方塊",
   "block.noellesroles.kill_block_panel": "擊殺鑲板",
   "tooltip.noellesroles.kill_block": "殺死站在方塊上的玩家",
-  "tooltip.noellesroles.kill_block_panel": "殺死接觸到鑲板所在方塊的玩家"
+  "tooltip.noellesroles.kill_block_panel": "殺死接觸到鑲板所在方塊的玩家",
+  "==================== 工人角色 ====================": "",
+  "announcement.star.role.worker": "工人",
+  "announcement.star.goals.worker": "勞動最光榮",
+  "announcement.star.win.worker": "乘客勝利！",
+  "info.screen.roleid.worker": "平民陣營\n強制賦予矯健修飾符（更多體力上限，非衝刺時體力恢復更快）\n使用本能可透視工程師和建築師\n商店可購買錘子（200金幣）"
 }
