@@ -2,10 +2,12 @@ package io.wifi.starrailexpress.mixin.client.restrictions;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.RoleMethodDispatcher;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.InteractionResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -31,6 +33,13 @@ public abstract class KeyBindingMixin {
             return false;
         }
         if (!SREClient.isPlayerCreative() && this.same(options.keyDrop)) {
+            InteractionResult result = RoleMethodDispatcher.callOnDropItem(player, player.getMainHandItem());
+            if (result == InteractionResult.CONSUME || result == InteractionResult.FAIL
+                    || result == InteractionResult.CONSUME_PARTIAL) {
+                return true;
+            } else if (result == InteractionResult.SUCCESS || result == InteractionResult.SUCCESS_NO_ITEM_USED) {
+                return false;
+            }
             if (SRE.canDropItem
                     .contains(BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem()).toString())
                     || SRE.canDrop.stream().anyMatch((p) -> {

@@ -44,7 +44,8 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
             if (entity.getCloseCountdown() >= 0) {
                 entity.setCloseCountdown(entity.getCloseCountdown() - 1);
                 if (entity.getCloseCountdown() <= 0) {
-                    SmallDoorBlock.toggleDoor(state, world, (SmallDoorBlockEntity) entity, pos);
+                    if (state.getBlock() instanceof SmallDoorBlock sb)
+                        sb.toggleDoor(state, world, (SmallDoorBlockEntity) entity, pos);
                 }
             }
         } else {

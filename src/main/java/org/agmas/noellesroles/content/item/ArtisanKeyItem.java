@@ -32,7 +32,8 @@ public class ArtisanKeyItem extends Item implements AdventureUsable {
         BlockState clickedState = world.getBlockState(clickedPos);
         BlockPos lowerPos = clickedPos;
         if (clickedState.getBlock() instanceof SmallDoorBlock) {
-            lowerPos = clickedState.getValue(SmallDoorBlock.HALF) == DoubleBlockHalf.LOWER ? clickedPos : clickedPos.below();
+            lowerPos = clickedState.getValue(SmallDoorBlock.HALF) == DoubleBlockHalf.LOWER ? clickedPos
+                    : clickedPos.below();
         }
 
         if (!(world.getBlockEntity(lowerPos) instanceof DoorBlockEntity doorEntity)) {
@@ -54,7 +55,8 @@ public class ArtisanKeyItem extends Item implements AdventureUsable {
 
         world.playSound(null, lowerPos.getX() + 0.5, lowerPos.getY() + 1, lowerPos.getZ() + 0.5,
                 TMMSounds.ITEM_KEY_DOOR, SoundSource.BLOCKS, 1f, 1f);
-        SmallDoorBlock.toggleDoor(lowerState, world, smallDoorEntity, lowerPos);
+        if (lowerState.getBlock() instanceof SmallDoorBlock sb)
+            sb.toggleDoor(lowerState, world, smallDoorEntity, lowerPos);
         return InteractionResult.sidedSuccess(world.isClientSide);
     }
 }

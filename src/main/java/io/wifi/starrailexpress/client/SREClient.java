@@ -103,6 +103,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.client.ClientSkincrawlerState;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
@@ -310,6 +311,18 @@ public class SREClient implements ClientModInitializer {
                 TMMBlockEntities.BEVERAGE_PLATE,
                 PlateBlockEntityRenderer::new);
 
+        // UP DOORS
+        // Block Entity Renderers
+        BlockEntityRenderers.register(
+                TMMBlockEntities.UP_GLASS_DOOR,
+                ctx -> new UpSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/small_glass_door.png"), ctx));
+        BlockEntityRenderers.register(
+                TMMBlockEntities.UP_WOOD_DOOR,
+                ctx -> new UpSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/small_wood_door.png"), ctx));
+        BlockEntityRenderers.register(
+                TMMBlockEntities.UP_STEEL_DOOR,
+                ctx -> new UpSmallDoorBlockEntityRenderer(SRE.id("textures/item/doors/up_steel_door.png"), ctx));
+        // OTHERS
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
 
@@ -558,6 +571,7 @@ public class SREClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
+            ClientSkincrawlerState.clearAll();
             // 清理自定义职业客户端缓存
             io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
             // 清理 OpenAL 语音特效资源

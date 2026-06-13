@@ -62,13 +62,13 @@ public class PaperclipItem extends Item implements AdventureUsable {
         }
 
         BlockState lowerState = world.getBlockState(lowerPos);
-        if (!(lowerState.getBlock() instanceof SmallDoorBlock)) {
+        if (!(lowerState.getBlock() instanceof SmallDoorBlock sb)) {
             return InteractionResult.PASS;
         }
 
         world.playSound(null, lowerPos.getX() + 0.5, lowerPos.getY() + 1, lowerPos.getZ() + 0.5,
                 TMMSounds.ITEM_LOCKPICK_DOOR, SoundSource.BLOCKS, 1f, 1f);
-        SmallDoorBlock.toggleDoor(lowerState, world, smallDoorEntity, lowerPos);
+        sb.toggleDoor(lowerState, world, smallDoorEntity, lowerPos);
 
         if (!player.isCreative()) {
             context.getItemInHand().shrink(1);
