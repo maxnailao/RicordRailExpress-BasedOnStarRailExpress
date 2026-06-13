@@ -252,11 +252,16 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(RedHouseRoles.BAKA, ModRoles.EXAMPLER);
         RoleAssignmentManager.addOccupationRole(ModRoles.DIO, ModRoles.JOJO);
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
+        // 智力障碍患者与监护人绑定生成
+        RoleAssignmentManager.addOccupationRole(ModRoles.ZHIZHANG, ModRoles.GUARDIAN);
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, NoellesRolesConfig.HANDLER.instance().conductorMax);
         Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
         Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
         Harpymodloader.setRoleMaximum(ModRoles.BETTER_VIGILANTE, 0);
+        // 智力障碍患者与监护人默认为0
+        Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 0);
+        Harpymodloader.setRoleMaximum(ModRoles.GUARDIAN_ID, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.BAKA, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 0);
@@ -300,6 +305,10 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.DIVER_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
+        // 钓鱼佬默认为0，仅在水图动态启用
+        Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 0);
+        // 水手默认为0，仅在水图动态启用
+        Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 0);
 
         // 叛徒设置为0
         Harpymodloader.setRoleMaximum(TraitorAndModifiers.TRAITOR_ID, 0);
@@ -647,7 +656,7 @@ public class InitModRolesMax {
                 }
             }
 
-            // 水下角色（海王、潜水员、水鬼）- 仅在水下地图必定生成
+            // 水下角色（海王、潜水员、水鬼、钓鱼佬、水手）- 仅在水下地图必定生成
             {
                 boolean isUnderwaterMap = false;
                 var underwaterMaps = new ArrayList<>(NoellesRolesConfig.HANDLER.instance().underwaterRolesMaps);
@@ -657,9 +666,13 @@ public class InitModRolesMax {
                 if (isUnderwaterMap) {
                     Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 1);
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 1);
+                    Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 1);
+                    Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 1);
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);
+                    Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 0);
+                    Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 0);
                 }
             }
 

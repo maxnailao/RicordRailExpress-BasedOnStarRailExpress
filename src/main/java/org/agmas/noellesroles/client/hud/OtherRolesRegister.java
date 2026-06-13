@@ -59,6 +59,8 @@ public class OtherRolesRegister {
         EmbalmerHud.register();
         SkincrawlerHud.register();
         PhantomMusicianHud.register();
+        ZhizhangHud.register();
+        GuardianHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

@@ -26,6 +26,7 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
+import org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent;
@@ -702,6 +703,23 @@ public class InstinctRenderer {
                                 }
                                 return ModRoles.DIO.color();
                             }
+                        }
+                    }
+                }
+                // 监护人：智力障碍患者在监护人视角中白色高亮（无距离限制）
+                if (SREClient.gameComponent.isRole(self, ModRoles.GUARDIAN)) {
+                    if (SREClient.gameComponent.isRole(target_player, ModRoles.ZHIZHANG)) {
+                        if (GameUtils.isPlayerAliveAndSurvival(target_player)) {
+                            return Color.WHITE.getRGB();
+                        }
+                    }
+                }
+                // 智力障碍患者：技能探查到的有刀玩家红色高亮
+                if (SREClient.gameComponent.isRole(self, ModRoles.ZHIZHANG)) {
+                    ZhizhangPlayerComponent zComp = ZhizhangPlayerComponent.KEY.get(self);
+                    if (zComp.highlightTicks > 0 && zComp.highlightedPlayers.contains(target_player.getUUID())) {
+                        if (GameUtils.isPlayerAliveAndSurvival(target_player)) {
+                            return Color.RED.getRGB();
                         }
                     }
                 }
