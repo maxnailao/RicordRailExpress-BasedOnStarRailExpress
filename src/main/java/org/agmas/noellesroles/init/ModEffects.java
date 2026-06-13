@@ -265,6 +265,11 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> CHAT_BAN = register("chat_ban",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x666666));
+    /**
+     * 聊天混乱：拥有此效果的玩家发送的聊天消息内容会被随机替换为特殊字符
+     */
+    public static final Holder<MobEffect> CHAT_MUDDLEDNESS = register("chat_muddledness",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B4513));
 public static final Holder<MobEffect> MONOKUMA_FRENZY = register("monokuma_frenzy",
             new org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaFrenzyEffect());
 

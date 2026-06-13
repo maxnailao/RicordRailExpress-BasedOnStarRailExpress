@@ -82,6 +82,8 @@ import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.content.entity.CustomFishingHookEntity;
+import org.agmas.noellesroles.content.entity.DurabilityBoatRenderer;
 import org.agmas.noellesroles.content.entity.LockEntity;
 import org.agmas.noellesroles.content.entity.WheelchairEntityModel;
 import org.agmas.noellesroles.content.entity.WheelchairEntityRenderer;
@@ -253,7 +255,19 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             client.setScreen(new ChefStartGameScreen());
         };
+        // 注册钓鱼佬钓竿抛竿模型谓词
+        net.minecraft.client.renderer.item.ItemProperties.register(
+                ModItems.FISHER_ROD,
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("cast"),
+                (stack, level, entity, seed) -> {
+                    if (entity == null) return 0.0F;
+                    boolean isCasting = entity instanceof net.minecraft.world.entity.player.Player p
+                            && p.fishing instanceof CustomFishingHookEntity;
+                    return isCasting ? 1.0F : 0.0F;
+                });
+
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);

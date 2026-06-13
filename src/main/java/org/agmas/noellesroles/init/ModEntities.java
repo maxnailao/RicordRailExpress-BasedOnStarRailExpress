@@ -26,6 +26,13 @@ public class ModEntities {
                                                                                              // 高度
                     .build("wheelchair"));
 
+    public static final EntityType<DurabilityBoatEntity> DURABILITY_BOAT = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("thenewboat"),
+            EntityType.Builder.of(DurabilityBoatEntity::new, MobCategory.MISC)
+                    .sized(1.375f, 0.5625f)
+                    .build("thenewboat"));
+
     public static final EntityType<WheelchairFieldItemEntity> WHEELCHAIR_FIELD_ITEM = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             Noellesroles.id("wheelchair_field_item"),

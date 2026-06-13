@@ -1847,6 +1847,33 @@ public class ModEventsRegister {
             }
             return true;
         });
+        // 聊天混乱药水效果：拥有CHAT_MUDDLEDNESS效果的玩家发送的消息内容被随机替换为特殊字符
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, serverPlayer, bound) -> {
+            if (!serverPlayer.hasEffect(ModEffects.CHAT_MUDDLEDNESS)) {
+                return true;
+            }
+            // 将消息每个字符随机替换为特殊字符
+            String original = message.signedContent();
+            String muddledChars = "!@#$%&)";
+            Random muddledRandom = new Random();
+            StringBuilder scrambled = new StringBuilder();
+            for (int i = 0; i < original.length(); i++) {
+                char c = original.charAt(i);
+                if (c == ' ') {
+                    scrambled.append(' ');
+                } else {
+                    scrambled.append(muddledChars.charAt(muddledRandom.nextInt(muddledChars.length())));
+                }
+            }
+            // 构造并广播混乱后的消息给所有玩家
+            var muddledMsg = Component.translatable("chat.type.text",
+                    serverPlayer.getDisplayName(),
+                    Component.literal(scrambled.toString()))
+                    .withStyle(ChatFormatting.GRAY);
+            serverPlayer.getServer().getPlayerList().getPlayers()
+                    .forEach(p -> p.displayClientMessage(muddledMsg, false));
+            return false;
+        });
 
         // 游戏开始，安全时间刚开始计时
         OnGameStarted.EVENT.register((serverLevel) -> {
