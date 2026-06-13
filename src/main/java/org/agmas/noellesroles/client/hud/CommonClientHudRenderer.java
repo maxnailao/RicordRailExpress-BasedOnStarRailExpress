@@ -32,6 +32,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
 import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
@@ -1578,6 +1579,55 @@ public class CommonClientHudRenderer {
               NoellesrolesClient.abilityBind.getTranslatedKeyMessage())
           .withStyle(ChatFormatting.GRAY);
       guiGraphics.drawString(font, toggleText, xOffset - font.width(toggleText), dy, Color.WHITE.getRGB());
+    });
+
+    // 术士HUD
+    RoleHudRenderCallback.EVENT.register(ModRoles.SHUSHI_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null)
+        return;
+      if (client.player == null)
+        return;
+      if (SREClient.gameComponent == null
+          || !SREClient.gameComponent.isRole(client.player, ModRoles.SHUSHI)) {
+        return;
+      }
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
+      int xOffset = screenWidth - 10; // 距离右边缘
+
+      var shushiComponent = ShuShiPlayerComponent.KEY
+          .maybeGet(client.player).orElse(null);
+      if (shushiComponent == null)
+        return;
+
+      int dy = yOffset;
+
+      // 显示当前选择的术语
+      int currentTermIndex = shushiComponent.getCurrentTermIndex();
+      Component termName = Component.translatable("term.noellesroles.shushi."
+          + ShuShiPlayerComponent.getTermKey(currentTermIndex));
+      Component termLabel = Component.translatable("hud.shushi.current_term")
+          .withStyle(ChatFormatting.WHITE);
+      guiGraphics.drawString(font, termLabel, xOffset - font.width(termLabel) - font.width(termName), dy,
+          Color.WHITE.getRGB());
+      guiGraphics.drawString(font, termName, xOffset - font.width(termName), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      // 显示施法花费
+      Component costText = Component.translatable("hud.shushi.spell_cost", ShuShiPlayerComponent.SPELL_COST)
+          .withStyle(ChatFormatting.GOLD);
+      guiGraphics.drawString(font, costText, xOffset - font.width(costText), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      // 显示切换术语提示
+      var switchText = Component
+          .translatable("hud.shushi.switch_term")
+          .withStyle(ChatFormatting.GRAY);
+      guiGraphics.drawString(font, switchText, xOffset - font.width(switchText), dy, Color.WHITE.getRGB());
     });
 
     // 潜水员HUD

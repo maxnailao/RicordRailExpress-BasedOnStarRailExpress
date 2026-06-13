@@ -441,6 +441,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dumb_woman"),
                   DumbWomanPlayerComponent.class);
 
+  // 术士组件 - 平民阵营，术语施放技能
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent> SHUSHI =
+          org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent.KEY;
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -880,6 +884,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, DUMB_WOMAN)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(DumbWomanPlayerComponent::new);
+
+    // 注册术士组件 - 平民阵营，术语施放技能
+    registry.beginRegistration(Player.class, SHUSHI)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent::new);
+
     // ==================== 示例：注册更多组件 ====================
     //
     // 如果你的角色需要存储特定数据，可以在这里注册更多组件：

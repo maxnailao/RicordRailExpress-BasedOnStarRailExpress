@@ -36,6 +36,7 @@ import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -188,6 +189,12 @@ public class ModRolesInitialEventRegister {
                 // 药剂师角色初始化
                 var alchemistComponent = AlchemistPlayerComponent.KEY.get(player);
                 alchemistComponent.init();
+                return;
+            }
+            if (role.identifier().equals(ModRoles.SHUSHI.identifier())) {
+                // 术士角色初始化
+                var shushiComponent = ShuShiPlayerComponent.KEY.get(player);
+                shushiComponent.init();
                 return;
             }
             // 派对狂角色初始化 - 基于开局玩家数设置threshold

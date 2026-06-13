@@ -1,0 +1,70 @@
+{
+  "type": "minecraft:fishing",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:salmon",
+          "weight": 65
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:once_revolver",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:master_key_p",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:hammer",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:decoy_grenade",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:adrenaline",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:rope",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:boxing_glove",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "trainmurdermystery:crowbar",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "noellesroles:short_shotgun",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "trainmurdermystery:revolver",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "trainmurdermystery:knife",
+          "weight": 2
+        }
+      ]
+    }
+  ]
+}

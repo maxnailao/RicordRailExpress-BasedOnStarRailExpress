@@ -7,6 +7,8 @@
   "mixins": [
     "AbstractContainerMenuMixin",
     "DecServerJoinPlayer",
+    "FishingHookShouldStopMixin",
+    "FishingHookAccessor",
     "EntityMixinForInvisible",
     "MagicianKillerCountMixin",
     "MagicianPlayerEntityMixin",
@@ -132,7 +134,8 @@
     "client.C4ItemEntityRendererMixin",
     "client.SkincrawlerSkinMixin",
     "client.SkincrawlerRoleNameRendererMixin",
-    "game.PelicanAliveCheckMixin"
+    "game.PelicanAliveCheckMixin",
+    "client.FishingBobberRendererMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

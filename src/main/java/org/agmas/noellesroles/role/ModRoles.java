@@ -183,6 +183,7 @@ public class ModRoles {
     public static final ResourceLocation FIREFIGHTER_ID = Noellesroles.id("firefighter");
     public static final ResourceLocation ACCOUNTANT_ID = Noellesroles.id("accountant");
     public static final ResourceLocation ALCHEMIST_ID = Noellesroles.id("alchemist");
+    public static final ResourceLocation SHUSHI_ID = Noellesroles.id("shushi");
     public static final ResourceLocation DIVER_ID = Noellesroles.id("diver");
     public static final ResourceLocation SWAST_ID = Noellesroles.id("swast");
     public static final ResourceLocation MARTIAL_ARTS_INSTRUCTOR_ID = Noellesroles.id("martial_arts_instructor");
@@ -1058,6 +1059,28 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setComponentKey(AlchemistPlayerComponent.KEY);
+
+    /**
+     * 术士角色
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 技能：按下技能键花费125金币为前方最近玩家施加术语（射线距离6格）
+     * - Shift+技能键切换当前术语
+     * - 术语：速(15秒速度1) / 疾(减20s技能冷却+3s道具cd) / 缓(5秒缓慢2) / 聪(恢复15%理智)
+     */
+    // 术士角色 - 乘客阵营
+    public static SRERole SHUSHI = TMMRoles.registerRole(new NormalRole(
+            SHUSHI_ID, // 角色 ID
+            new Color(180, 40, 120).getRGB(), // R180 G40 B120 - 深紫红色
+            true, // isInnocent = 乘客阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.SHUSHI);
 
     /**
      * 潜水员角色

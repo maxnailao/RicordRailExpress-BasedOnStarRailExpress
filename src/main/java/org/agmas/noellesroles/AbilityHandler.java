@@ -32,6 +32,7 @@ import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPla
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
@@ -588,6 +589,20 @@ public class AbilityHandler {
             } else {
                 // 普通按技能键：调制药剂
                 alchemistComponent.craftPotion();
+            }
+            return;
+        }
+
+        if (gameWorldComponent.isRole(player, ModRoles.SHUSHI)) {
+            ShuShiPlayerComponent shushiComponent = ShuShiPlayerComponent.KEY.get(player);
+
+            // 检查玩家是否在蹲下
+            if (player.isShiftKeyDown()) {
+                // 蹲下按技能键：切换术语
+                shushiComponent.switchTerm();
+            } else {
+                // 普通按技能键：施放术语
+                shushiComponent.castSpell();
             }
             return;
         }

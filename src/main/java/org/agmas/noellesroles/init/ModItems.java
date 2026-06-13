@@ -49,6 +49,10 @@ public class ModItems {
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
 
+    public static final Item FISHER_ROD = register(
+            new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
+            "fisher_rod");
+
     public static final Item REPAIR_TOOLBOX = register(
             new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip", new Item.Properties().stacksTo(4)),
             "repair_toolbox");
@@ -517,6 +521,9 @@ public class ModItems {
     public static final Item WHEELCHAIR = register(
             new WheelchairItem(),
             "wheelchair");
+    public static final Item DURABILITY_BOAT = register(
+            new DurabilityBoatItem(),
+            "thenewboat");
     // 新增物品：短管霰弹枪 / 防暴盾 / 警棍 / 对讲机
     public static final Item SHORT_SHOTGUN = register(
             new org.agmas.noellesroles.content.item.ShortShotgunItem(new Item.Properties().stacksTo(1).durability(1)),
