@@ -1,0 +1,6 @@
+{
+  "parent": "noellesroles:item/fisher_rod",
+  "textures": {
+    "layer0": "noellesroles:item/fisher_rod_cast"
+  }
+}

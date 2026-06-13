@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/fishing_rod",
+  "textures": {
+    "layer0": "noellesroles:item/fisher_rod"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "cast": 1
+      },
+      "model": "noellesroles:item/fisher_rod_cast"
+    }
+  ]
+}
