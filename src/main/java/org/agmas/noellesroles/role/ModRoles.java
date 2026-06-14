@@ -356,7 +356,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
-    )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true);
+    )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true).setCanSeeTime(true);
 
     /**
      *  鬼魅 - 杀手阵营
@@ -377,7 +377,8 @@ public class ModRoles {
                     false // 是否隐藏计分板（按你需求改）
             ))
             .setCanSeeCoin(true)
-            .setComponentKey(ModComponents.BETTER_KILLER_GHOST);
+            .setComponentKey(ModComponents.BETTER_KILLER_GHOST)
+            .setCanSeeTime(true);
 
     /**
      *  黑警 - 中立阵营
@@ -421,6 +422,7 @@ public class ModRoles {
                     false // 是否隐藏计分板（按你需求改）
             ))
             .setCanSeeCoin(true)
+            .setCanSeeTime(true)
             .setComponentKey(ModComponents.RECALL_KILLER);
 
     /**
