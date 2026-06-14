@@ -346,6 +346,8 @@
   "text.autoconfig.noellesroles.option.chanceOfAmnesiac": "Amnesiac spawn chance (%)",
   "text.autoconfig.noellesroles.option.chanceOfInfected": "Infected spawn chance (%)",
   "text.autoconfig.noellesroles.option.minPlayerForInfected": "Minimum players for Infected",
+  "text.autoconfig.noellesroles.option.chanceOfZhizhang": "Intellectually Disabled & Guardian spawn chance (%)",
+  "text.autoconfig.noellesroles.option.minPlayerForZhizhang": "Minimum players for Intellectually Disabled & Guardian",
   "text.autoconfig.noellesroles.option.infectedSpreadInterval": "Infected: Infection spread interval (seconds)",
   "text.autoconfig.noellesroles.option.infectedCooldown": "Infected: Skill cooldown (seconds)",
   "text.autoconfig.noellesroles.option.chanceOfBlackWhite": "Black-White modifier spawn chance (%)",

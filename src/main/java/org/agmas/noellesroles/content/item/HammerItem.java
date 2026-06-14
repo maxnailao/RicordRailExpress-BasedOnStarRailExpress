@@ -80,6 +80,8 @@ public class HammerItem extends Item {
                     float dx = (float) Math.sin(yawRad);
                     float dz = (float) -Math.cos(yawRad);
                     target.knockback(2.0F, dx, dz);
+                    // 必须调用 hurt() 触发伤害事件，服务端才会将击退速度同步给玩家客户端
+                    target.hurt(player.damageSources().playerAttack(player), 2.0F);
 
                     // 发送消息提示
                     player.displayClientMessage(Component.translatable("message.noellesroles.hammer.hit", target.getName()).withStyle(ChatFormatting.GREEN), true);

@@ -610,6 +610,8 @@
   "item.lores.noellesroles.once_revolver.line3": "杀手以及中立无法从物品售货机里购买此物品！",
   "item.noellesroles.zero_one_five_gun": "零一五",
   "item.noellesroles.zero_one_five_gun.tooltip": "右键开枪\n开枪后1.2秒自动开第二枪\n命中给予3秒缓慢II\n命中两次击杀目标\n冷却15秒，射程30格",
+  "item.noellesroles.pirate_flintlock": "海盗燧发枪",
+  "item.noellesroles.pirate_flintlock.tooltip": "右键开枪\n射程15格，坐在耐久橡木船上时射程提升为40格\n击杀玩家后80%概率掉落为左轮手枪\n冷却30秒",
   "item.noellesroles.handcuffs": "手铐",
   "item.noellesroles.handcuffs.put": "你给 %s 戴上了手铐",
   "item.noellesroles.handcuffs.recieved": "你被 %s 戴上了手铐。按下潜行尝试挣脱。",
@@ -3071,7 +3073,7 @@
   "announcement.star.role.guardian": "监护人",
   "announcement.star.goals.guardian": "保护你的纸张朋友",
   "announcement.star.win.guardian": "乘客胜利！",
-  "info.screen.roleid.guardian": "平民阵营\n你的朋友因为车祸导致脑部受损，而你作为ta最好的朋友决定带ta坐上前往大城市的列车寻找能治好ta的医生。\n\n技能：花费125金币，当智力障碍患者在5格内时，使其12秒内不受语音禁用和聊天混乱效果，并给予2秒无敌。CD30秒。\n被动：智力障碍患者仅在你视角中白色高亮。",
+  "info.screen.roleid.guardian": "平民阵营\n你的朋友因为车祸导致脑部受损，而你作为ta最好的朋友决定带ta坐上前往大城市的列车寻找能治好ta的医生。\n\n技能：花费125金币，当智力障碍患者在5格内时，使其12秒内不受语音禁用和聊天混乱效果，并给予2秒无敌。CD30秒。\n被动：智力障碍患者仅在你视角中浅蓝色高亮（开局即可透视）。",
   "message.noellesroles.guardian.no_zhizhang": "智力障碍患者不在你附近",
   "message.noellesroles.guardian.too_far": "智力障碍患者不在你附近",
   "message.noellesroles.guardian.not_enough_money": "金币不足！需要 %s 金币",
@@ -3091,5 +3093,16 @@
   "announcement.star.role.noellesroles.theboatboat": "水手",
   "announcement.star.goals.theboatboat": "水手们！启航！",
   "announcement.star.win.theboatboat": "乘客胜利！",
-  "info.screen.roleid.theboatboat": "平民阵营\n一名水手。\n商店可购买耐久船（150金币）"
+  "info.screen.roleid.theboatboat": "平民阵营\n一名水手。\n商店可购买耐久船（150金币）",
+
+  "==================== 海盗角色 ====================": "",
+  "announcement.star.role.jialebihaidao": "海盗",
+  "announcement.star.role.noellesroles.jialebihaidao": "海盗",
+  "announcement.star.goals.jialebihaidao": "抢！抢！抢！！！",
+  "announcement.star.win.jialebihaidao": "杀手胜利！",
+  "info.screen.roleid.jialebihaidao": "杀手阵营\n仅会在水下地图刷新\n一个海盗。\n初始携带一艘耐久橡木船。\n商店可购买海盗弯刀(80金币)、海盗燧发枪(180金币)、耐久橡木船(50金币)、撬棍(30金币)",
+  
+  "==================== 海盗弯刀 ====================": "",
+  "item.noellesroles.pirate_cutlass": "海盗弯刀",
+  "item.noellesroles.pirate_cutlass.tooltip": "蓄力后刺杀目标，使用后消失。\n一次性武器，冷却15秒。"
 }

@@ -706,14 +706,7 @@ public class InstinctRenderer {
                         }
                     }
                 }
-                // 监护人：智力障碍患者在监护人视角中白色高亮（无距离限制）
-                if (SREClient.gameComponent.isRole(self, ModRoles.GUARDIAN)) {
-                    if (SREClient.gameComponent.isRole(target_player, ModRoles.ZHIZHANG)) {
-                        if (GameUtils.isPlayerAliveAndSurvival(target_player)) {
-                            return Color.WHITE.getRGB();
-                        }
-                    }
-                }
+
                 // 智力障碍患者：技能探查到的有刀玩家红色高亮
                 if (SREClient.gameComponent.isRole(self, ModRoles.ZHIZHANG)) {
                     ZhizhangPlayerComponent zComp = ZhizhangPlayerComponent.KEY.get(self);
@@ -1123,6 +1116,30 @@ public class InstinctRenderer {
                     return ModRoles.WORKER.color();
                 }
                 // 工人只能透视工程师和建筑师，其他玩家禁用透视
+                return -2;
+            }
+            return -1;
+        });
+
+        // 监护人：透视智力障碍患者（开局即可透视，无需本能，浅蓝色高亮）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            if (Minecraft.getInstance().player == null)
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(Minecraft.getInstance().player))
+                return -1;
+            if (!SREClient.gameComponent.isRole(Minecraft.getInstance().player, ModRoles.GUARDIAN))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.ZHIZHANG)) {
+                    if (GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+                        return ModRoles.ZHIZHANG.color();
+                    }
+                }
+                // 监护人只能透视智力障碍患者，其他玩家禁用透视
                 return -2;
             }
             return -1;

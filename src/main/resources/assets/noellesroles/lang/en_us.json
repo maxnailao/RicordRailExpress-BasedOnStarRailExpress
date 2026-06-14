@@ -593,6 +593,8 @@
   "item.lores.noellesroles.once_revolver.line3": "Killers and Neutrals cannot buy this from vending machines!",
   "item.noellesroles.zero_one_five_gun": "Zero-One-Five",
   "item.noellesroles.zero_one_five_gun.tooltip": "Right-click to shoot\nAuto-fires second shot after 1.2s\nHit gives 3s Slowness II\nTwo hits kill\n15s cooldown, 30 block range",
+  "item.noellesroles.pirate_flintlock": "Pirate Flintlock",
+  "item.noellesroles.pirate_flintlock.tooltip": "Right-click to shoot\n15 block range, extends to 40 blocks while riding a Durability Oak Boat\n80% chance to drop as a Revolver on kill\n30s cooldown",
   "item.noellesroles.handcuffs": "Handcuffs",
   "item.noellesroles.handcuffs.put": "You handcuffed %s",
   "item.noellesroles.handcuffs.recieved": "You were handcuffed by %s. Press sneak to try to break free.",
@@ -2950,7 +2952,7 @@
   "announcement.star.role.guardian": "Guardian",
   "announcement.star.goals.guardian": "Protect your paper friend",
   "announcement.star.win.guardian": "Passengers win!",
-  "info.screen.roleid.guardian": "Civilian Faction\nYour friend suffered brain damage in a car accident, and as their best friend, you decided to take them on a train to the big city to find a doctor who can heal them.\n\nSkill: Spend 125 coins. When the Intellectually Disabled is within 5 blocks, they are immune to voice silence and chat muddledness for 12 seconds and gain 2 seconds of invincibility. CD 30s.\nPassive: The Intellectually Disabled is always highlighted in white in your view.",
+  "info.screen.roleid.guardian": "Civilian Faction\nYour friend suffered brain damage in a car accident, and as their best friend, you decided to take them on a train to the big city to find a doctor who can heal them.\n\nSkill: Spend 125 coins. When the Intellectually Disabled is within 5 blocks, they are immune to voice silence and chat muddledness for 12 seconds and gain 2 seconds of invincibility. CD 30s.\nPassive: The Intellectually Disabled is always highlighted in light blue in your view.",
   "message.noellesroles.guardian.no_zhizhang": "The Intellectually Disabled is not near you",
   "message.noellesroles.guardian.too_far": "The Intellectually Disabled is not near you",
   "message.noellesroles.guardian.not_enough_money": "Not enough coins! Requires %s coins",
@@ -2970,5 +2972,16 @@
   "announcement.star.role.noellesroles.theboatboat": "Sailor",
   "announcement.star.goals.theboatboat": "Sailors! Set sail!",
   "announcement.star.win.theboatboat": "Passengers win!",
-  "info.screen.roleid.theboatboat": "Civilian Faction\nA sailor.\nCan buy Durability Boat from shop (150 coins)"
+  "info.screen.roleid.theboatboat": "Civilian Faction\nA sailor.\nCan buy Durability Boat from shop (150 coins)",
+
+  "==================== Pirate Class ====================": "",
+  "announcement.star.role.jialebihaidao": "Pirate",
+  "announcement.star.role.noellesroles.jialebihaidao": "Pirate",
+  "announcement.star.goals.jialebihaidao": "Plunder! Plunder! Plunder!!!",
+  "announcement.star.win.jialebihaidao": "Killers win!",
+  "info.screen.roleid.jialebihaidao": "Killer Faction\nOnly spawns on underwater maps\nA pirate.\nStarts with a Durability Boat.\nCan buy Pirate Cutlass (80 coins), Pirate Flintlock (180 coins), Durability Boat (50 coins), Crowbar (30 coins) from shop",
+
+  "==================== Pirate Cutlass ====================": "",
+  "item.noellesroles.pirate_cutlass": "Pirate Cutlass",
+  "item.noellesroles.pirate_cutlass.tooltip": "Charge to stab your target, disappears after use.\nSingle-use weapon, 15s cooldown."
 }

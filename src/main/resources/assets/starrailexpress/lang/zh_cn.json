@@ -1093,6 +1093,7 @@
   "death_reason.starrailexpress.sniper_rifle_backfire": "狙击枪走火",
   "death_reason.starrailexpress.nunchuck_hit": "双节棍",
   "death_reason.starrailexpress.zero_one_five_shot": "零一五",
+  "death_reason.starrailexpress.pirate_flintlock_shot": "海盗燧发枪",
   "death_reason.starrailexpress.phantom_destroyed": "幻影被摧毁",
   "blackout_timeout": "未能执行属于自己的正义",
   "message.kick.outdated_client": "你的客户端版本已经过时了！服务端版本%s，你的版本%s",

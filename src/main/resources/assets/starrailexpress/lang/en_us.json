@@ -1088,6 +1088,7 @@
   "death_reason.starrailexpress.sniper_rifle_backfire": "Sniper Rifle backfire",
   "death_reason.starrailexpress.nunchuck_hit": "Nunchaku",
   "death_reason.starrailexpress.zero_one_five_shot": "Zero-One-Five",
+  "death_reason.starrailexpress.pirate_flintlock_shot": "Pirate Flintlock",
   "message.kick.outdated_client": "Your client version is outdated! Server version %s, your version %s",
   "message.death_reason.null": "Sorry, could not retrieve your death information. An error may have occurred.",
   "message.death_reason.prefix": "[Your cause of death] %s",

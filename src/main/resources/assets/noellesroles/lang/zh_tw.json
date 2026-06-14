@@ -601,6 +601,8 @@
   "item.lores.noellesroles.once_revolver.line3": "殺手以及中立無法從物品售貨機裏購買此物品！",
   "item.noellesroles.zero_one_five_gun": "零一五",
   "item.noellesroles.zero_one_five_gun.tooltip": "右鍵開槍\n開槍後1.2秒自動開第二槍\n命中給予3秒緩慢II\n命中兩次擊殺目標\n冷卻15秒，射程30格",
+  "item.noellesroles.pirate_flintlock": "海盜燃發槍",
+  "item.noellesroles.pirate_flintlock.tooltip": "右鍵開槍\n射程15格，坐在耐久橡木船上時射程提升為40格\n擊殺玩家後80%概率掉落為左輪手槍\n冷卻30秒",
   "item.noellesroles.handcuffs": "手銬",
   "item.noellesroles.handcuffs.put": "你給 %s 戴上了手銬",
   "item.noellesroles.handcuffs.recieved": "你被 %s 戴上了手銬。按下潛行嘗試掙脫。",
@@ -2939,5 +2941,16 @@
   "message.noellesroles.shushi.insufficient_gold": "金幣不足！需要 %s 金幣",
   "hud.shushi.current_term": "當前術語: ",
   "hud.shushi.spell_cost": "施法花費：%s金幣",
-  "hud.shushi.switch_term": "蹲下+技能鍵切換術語"
+  "hud.shushi.switch_term": "蹲下+技能鍵切換術語",
+
+  "==================== 海盜角色 ====================": "",
+  "announcement.star.role.jialebihaidao": "海盜",
+  "announcement.star.role.noellesroles.jialebihaidao": "海盜",
+  "announcement.star.goals.jialebihaidao": "搶！搶！搶！！！",
+  "announcement.star.win.jialebihaidao": "殺手勝利！",
+  "info.screen.roleid.jialebihaidao": "殺手陣營\n僅會在水下地圖刷新\n一個海盜。\n初始攜帶一艘耐久橡木船。\n商店可購買海盜彎刀(80金幣)、海盜燧發槍(180金幣)、耐久橡木船(50金幣)、撬棍(30金幣)",
+  
+  "==================== 海盜彎刀 ====================": "",
+  "item.noellesroles.pirate_cutlass": "海盜彎刀",
+  "item.noellesroles.pirate_cutlass.tooltip": "蓄力後刺殺目標，使用後消失。\n一次性武器，冷卻15秒。"
 }

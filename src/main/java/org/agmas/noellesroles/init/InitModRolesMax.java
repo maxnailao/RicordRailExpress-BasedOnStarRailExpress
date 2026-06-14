@@ -309,6 +309,8 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 0);
         // 水手默认为0，仅在水图动态启用
         Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 0);
+        // 海盗默认为0，仅在水图动态启用
+        Harpymodloader.setRoleMaximum(ModRoles.JIALIEBIADAO_ID, 0);
 
         // 叛徒设置为0
         Harpymodloader.setRoleMaximum(TraitorAndModifiers.TRAITOR_ID, 0);
@@ -429,6 +431,13 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(ModRoles.POISONER_ID, 1);
             } else {
                 Harpymodloader.setRoleMaximum(ModRoles.POISONER_ID, 0);
+            }
+
+            // 智力障碍患者与监护人 - 从配置读取概率和最小玩家数
+            if (players_count >= config.minPlayerForZhizhang && random.nextInt(0, 100) < config.chanceOfZhizhang) {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 1);
+            } else {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 0);
             }
 
             if (players_count >= config.minPlayerForEggRoles && random.nextInt(0, 100) <= EGGS_CHANCE) {
@@ -668,11 +677,13 @@ public class InitModRolesMax {
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 1);
                     Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 1);
                     Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 1);
+                    Harpymodloader.setRoleMaximum(ModRoles.JIALIEBIADAO_ID, 1);
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.THENEWFISHER_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.THEBOATBOAT_ID, 0);
+                    Harpymodloader.setRoleMaximum(ModRoles.JIALIEBIADAO_ID, 0);
                 }
             }
 

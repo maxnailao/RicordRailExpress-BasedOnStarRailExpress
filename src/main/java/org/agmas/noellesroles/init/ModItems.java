@@ -233,6 +233,9 @@ public class ModItems {
     public static final Item STALKER_KNIFE_OFFHAND = register(
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
             "stalker_knife_offhand");
+    public static final Item PIRATE_CUTLASS = register(
+            new org.agmas.noellesroles.content.item.PirateCutlassItem(new Item.Properties().stacksTo(1)),
+            "pirate_cutlass");
     public static final Item FAKE_REVOLVER = register(
             new FakeRevolverItem(new Item.Properties().stacksTo(1).durability(4)),
             "fake_revolver");
@@ -722,6 +725,17 @@ public class ModItems {
             "zero_one_five_gun");
 
     /**
+     * 海盗燧发枪
+     * - 射程15格，坐在耐久橡木船上时射程提升为40格
+     * - 冷却30秒
+     * - 击杀玩家后80%概率掉落（掉落为左轮手枪）
+     */
+    public static final Item PIRATE_FLINTLOCK = register(
+            new org.agmas.noellesroles.content.item.PirateFlintlockItem(
+                    new Item.Properties().stacksTo(1)),
+            "pirate_flintlock");
+
+    /**
      * 尊名纸条
      * - 愚者商店购买（50金币）
      * - 右键墙壁/地面贴附，生成不可破坏的文本实体
@@ -932,6 +946,7 @@ public class ModItems {
         ChargeableItemRegistry.register(TOXIN, new ToxinChargeItem());
         ChargeableItemRegistry.register(ModItems.THROWING_KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(ANTIDOTE, new AntidoteChargeItem());
+        ChargeableItemRegistry.register(ModItems.PIRATE_CUTLASS, new org.agmas.noellesroles.content.item.charge_item.PirateCutlassChargeItem());
     }
     // public static final Item SHERIFF_GUN_MAINTENANCE = register(
     // new SheriffGunMaintenanceItem(new Item.Settings().maxCount(1)),

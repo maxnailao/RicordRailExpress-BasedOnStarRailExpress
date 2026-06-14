@@ -176,6 +176,18 @@ public class NoellesRolesConfig implements ConfigData {
     public int minPlayerForInfected = 12;
 
     /**
+     * 智力障碍患者（与监护人绑定）刷新概率（%）
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int chanceOfZhizhang = 40;
+
+    /**
+     * 智力障碍患者（与监护人绑定）刷新最小玩家数
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int minPlayerForZhizhang = 8;
+
+    /**
      * 疫使感染致死时间（秒）
      * 玩家被感染后多久会死亡
      */
