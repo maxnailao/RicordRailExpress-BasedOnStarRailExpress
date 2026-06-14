@@ -35,7 +35,8 @@ public class MinecraftClientMixin {
     public boolean tmm$hasInstinctOutline(boolean original, @Local(argsOnly = true) Entity entity) {
         if (SRE.isLobby)
             return original;
-        if (SREClient.getCachedInstinctHighlight(entity) != -1)
+        // 使用实时计算而非缓存，确保平民角色（如监护人/智力障碍患者）的高亮轮廓也能正确渲染
+        if (SREClient.getInstinctHighlight(entity) != -1)
             return true;
         return original;
     }

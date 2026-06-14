@@ -445,6 +445,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent> SHUSHI =
           org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent.KEY;
 
+  // 智力障碍患者组件 - 平民阵营，语音禁用+聊天混乱+探查技能
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent> ZHIZHANG = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "zhizhang"),
+                  org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent.class);
+
+  // 监护人组件 - 平民阵营，保护智力障碍患者+解除debuff
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent> GUARDIAN = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "guardian"),
+                  org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -889,6 +901,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SHUSHI)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent::new);
+
+    // 注册智力障碍患者组件 - 平民阵营，语音禁用+聊天混乱+探查技能
+    registry.beginRegistration(Player.class, ZHIZHANG)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent::new);
+
+    // 注册监护人组件 - 平民阵营，保护智力障碍患者
+    registry.beginRegistration(Player.class, GUARDIAN)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

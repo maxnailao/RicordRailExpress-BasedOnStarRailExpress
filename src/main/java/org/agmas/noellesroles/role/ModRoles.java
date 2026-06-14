@@ -304,6 +304,14 @@ public class ModRoles {
     public static final ResourceLocation RESTING_POLICE_ID = Noellesroles.id("resting_police");
     // 哑女 (平民阵营)
     public static final ResourceLocation DUMB_WOMAN_ID = Noellesroles.id("dumb_woman");
+    // 智力障碍患者 (平民阵营，与监护人绑定生成)
+    public static final ResourceLocation ZHIZHANG_ID = Noellesroles.id("zhizhang");
+    // 监护人 (平民阵营，与智力障碍患者绑定生成)
+    public static final ResourceLocation GUARDIAN_ID = Noellesroles.id("guardian");
+    // 钓鱼佬 (平民阵营，仅在水图刷新)
+    public static final ResourceLocation THENEWFISHER_ID = Noellesroles.id("thenewfisher");
+    // 水手 (平民阵营，仅在水图刷新)
+    public static final ResourceLocation THEBOATBOAT_ID = Noellesroles.id("theboatboat");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
@@ -2432,6 +2440,24 @@ public class ModRoles {
         // 设置鹈鹕与傀儡师互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
 
+        // 注册智力障碍患者和监护人的角色组件键
+        TMMRoles.addRoleComponents(ModComponents.ZHIZHANG);
+        TMMRoles.addRoleComponents(ModComponents.GUARDIAN);
+
+        // 注册智力障碍患者技能
+        io.wifi.starrailexpress.api.RoleSkill.register(ModRoles.ZHIZHANG, (context) -> {
+            net.minecraft.server.level.ServerPlayer sp = context.player();
+            var comp = ModComponents.ZHIZHANG.get(sp);
+            comp.useSkill();
+        });
+
+        // 注册监护人技能
+        io.wifi.starrailexpress.api.RoleSkill.register(ModRoles.GUARDIAN, (context) -> {
+            net.minecraft.server.level.ServerPlayer sp = context.player();
+            var comp = ModComponents.GUARDIAN.get(sp);
+            comp.useSkill();
+        });
+
         // 初始化叛徒职业和新修饰符
         TraitorAndModifiers.init();
         ModifierEffects.init();
@@ -2525,6 +2551,148 @@ public class ModRoles {
             false   // 显示计分板
     )).setCanSeeCoin(true).setCanSeeTime(false)
             .setComponentKey(ModComponents.DUMB_WOMAN);
+
+    // ==================== 智力障碍患者与监护人（绑定生成） ====================
+
+    /**
+     * 智力障碍患者角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 与监护人绑定生成
+     * - 被动：持续获得语音禁用和聊天混乱效果（监护人技能可暂时免疫）
+     * - 被动：移动时10%概率视角随机偏移
+     * - 技能：探查周围3.5格玩家背包是否有刀，5秒后高亮3秒，CD60秒
+     * - 商店：风弹(35)、鸡蛋(10)、鱼竿(100)、彩花拉炮(25)
+     */
+    public static SRERole ZHIZHANG = TMMRoles.registerRole(new NormalRole(
+            ZHIZHANG_ID,
+            new Color(173, 216, 230).getRGB(), // 浅蓝色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    ) {
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            // 风弹 minecraft:wind_charge 35
+            var windCharge = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getOptional(net.minecraft.resources.ResourceLocation.parse("minecraft:wind_charge"));
+            windCharge.ifPresent(item -> entries.add(
+                    new io.wifi.starrailexpress.util.ShopEntry(new net.minecraft.world.item.ItemStack(item), 35,
+                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL)));
+            // 鸡蛋 minecraft:egg 10
+            var egg = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getOptional(net.minecraft.resources.ResourceLocation.parse("minecraft:egg"));
+            egg.ifPresent(item -> entries.add(
+                    new io.wifi.starrailexpress.util.ShopEntry(new net.minecraft.world.item.ItemStack(item), 10,
+                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL)));
+            // 鱼竿 minecraft:fishing_rod 100
+            var fishingRod = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getOptional(net.minecraft.resources.ResourceLocation.parse("minecraft:fishing_rod"));
+            fishingRod.ifPresent(item -> entries.add(
+                    new io.wifi.starrailexpress.util.ShopEntry(new net.minecraft.world.item.ItemStack(item), 100,
+                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL)));
+            // 彩花拉炮 supplementaries:confetti_popper 25
+            var confettiPopper = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getOptional(net.minecraft.resources.ResourceLocation.parse("supplementaries:confetti_popper"));
+            confettiPopper.ifPresent(item -> entries.add(
+                    new io.wifi.starrailexpress.util.ShopEntry(new net.minecraft.world.item.ItemStack(item), 25,
+                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL)));
+            return entries;
+        }
+    }).setCanSeeCoin(true)
+            .setComponentKey(ModComponents.ZHIZHANG)
+            .setOccupiedRoleCount(2)
+            .setCanBeRandomedByOtherRoles(false);
+
+    /**
+     * 监护人角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 与智力障碍患者绑定生成
+     * - 技能：花费125金币，解除智力障碍患者的debuff 12秒并给予2秒无敌，CD30秒
+     * - 被动：智力障碍患者在监护人视角中白色高亮
+     */
+    public static SRERole GUARDIAN = TMMRoles.registerRole(new NormalRole(
+            GUARDIAN_ID,
+            Color.WHITE.getRGB(), // 白色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true)
+            .setComponentKey(ModComponents.GUARDIAN)
+            .setOccupiedRoleCount(2)
+            .setCanBeRandomedByOtherRoles(false);
+
+    /**
+     * 钓鱼佬角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 仅在水图刷新（InitModRolesMax 中控制）
+     * - 无技能
+     * - 商店：钓鱼佬鱼竿 (150金币)
+     * - 登车标语：钓鱼佬从不空军
+     */
+    public static SRERole THENEWFISHER = TMMRoles.registerRole(new NormalRole(
+            THENEWFISHER_ID,
+            new Color(0, 119, 190).getRGB(), // 海蓝色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    ) {
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.FISHER_ROD),
+                    150,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
+            return entries;
+        }
+    }).setCanSeeCoin(true);
+
+    /**
+     * 水手角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 仅在水图刷新（InitModRolesMax 中控制）
+     * - 无技能
+     * - 商店：耐久船 (150金币)
+     * - 登车标语：水手们！启航！
+     */
+    public static SRERole THEBOATBOAT = TMMRoles.registerRole(new NormalRole(
+            THEBOATBOAT_ID,
+            new Color(180, 140, 50).getRGB(), // 黄棕色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    ) {
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.DURABILITY_BOAT),
+                    150,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
+            return entries;
+        }
+    }).setCanSeeCoin(true);
 
     public static SRERole PHANTOM_MUSICIAN = TMMRoles
             .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(), false,
