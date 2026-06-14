@@ -39,20 +39,19 @@
 - **权限**: 2
 - **示例**: `/sre:show_replay`
 
-### `sre:show_replay record <message>`
+### `sre:custom_replay record <message>`
 自定义重播事件
 - **权限**: 2
 - **参数**:
   - `message`: 消息内容
 - **示例**: `/sre:custom_replay record "游戏开始"`
 
-### `tmm:entityData set|get <targets> <data>`
+### `tmm:entity_interact_cmd set|get <targets> <data>`
 实体数据管理
 - **权限**: 2
 - **子命令**:
-  - `set <targets> <data>`: 设置实体数据
-  - `get <targets>`: 获取实体数据
-- **示例**: `/tmm:entityData set @e[type=zombie] "custom_data"`
+  - `set <targets> <data>`: 设置右键实体交互执行的命令
+- **示例**: `/tmm:entity_interact_cmd set @e[type=zombie] "custom_data"`
 
 ### `tmm:mood get|set <mood> [target]`
 心情管理
@@ -66,21 +65,6 @@
 重新加载准备区域
 - **权限**: 2
 - **示例**: `/tmm:reloadReadyArea`
-
-### `tmm:setTimer <minutes> <seconds>`
-设置游戏计时器
-- **权限**: 2
-- **参数**:
-  - `minutes`: 分钟 (0-240)
-  - `seconds`: 秒 (0-59)
-- **示例**: `/tmm:setTimer 10 30`
-
-### `tmm:setAutoTrainReset <enabled>`
-设置自动训练重置
-- **权限**: 2
-- **参数**:
-  - `enabled`: true/false (必需)
-- **示例**: `/tmm:setAutoTrainReset true`
 
 ## 配置管理命令
 
@@ -117,28 +101,12 @@ AFK管理
   - `setTime <seconds> [targets]`: 设置AFK时间
 - **示例**: `/tmm:afk setTime 300 @a`
 
-### `sre:pass [open <player>]`
-进度管理
-- **权限**: 无 (查看自己), 2 (查看他人)
-- **参数**:
-  - `open <player>`: 为指定玩家打开进度界面 (需权限2)
-- **示例**: `/sre:pass open Steve`
-
 ### `tmm:skins [player]`
 皮肤管理
 - **权限**: 无 (查看自己), 2 (查看他人)
 - **参数**:
   - `player`: 指定玩家 (可选，需权限2)
 - **示例**: `/tmm:skins Steve`
-
-### `sre:unlock_roles [player|all]`
-解锁角色
-- **权限**: 2
-- **参数**:
-  - 无参数: 为自己打开解锁界面
-  - `player`: 为指定玩家打开界面
-  - `all`: 一键解锁所有角色
-- **示例**: `/sre:unlock_roles all`
 
 ## 地图管理命令
 
@@ -193,7 +161,7 @@ AFK管理
 
 ### `tmm:createpoint <name> <x> <y> <z>`
 创建路径点
-- **权限**: 无限制
+- **权限**: 2
 - **参数**:
   - `name`: 路径点名称
   - `x,y,z`: 坐标
@@ -201,32 +169,8 @@ AFK管理
 
 ### `tmm:togglewaypoints`
 切换路径点显示
-- **权限**: 无限制
-- **示例**: `/tmm:togglewaypoints`
-
-### `tmm:enableBounds`
-启用边界
-- **权限**: 无限制
-- **示例**: `/tmm:enableBounds`
-
-### `tmm:setVisual <visualType>`
-设置视觉效果
-- **权限**: 无限制
-- **参数**:
-  - `visualType`: 视觉类型
-- **示例**: `/tmm:setVisual glow`
-
-### `tmm:manageskins [player]`
-管理皮肤
 - **权限**: 2
-- **参数**:
-  - `player`: 指定玩家 (可选)
-- **示例**: `/tmm:manageskins Steve`
-
-### `tmm:lockToSupporters`
-锁定到支持者
-- **权限**: 无限制
-- **示例**: `/tmm:lockToSupporters`
+- **示例**: `/tmm:togglewaypoints`
 
 ### `listGameRoles`
 列出游戏角色
@@ -243,7 +187,7 @@ AFK管理
 
 ### `tmm:giveRoomKey [player]`
 给予房间钥匙
-- **权限**: 无限制
+- **权限**: 2
 - **参数**:
   - `player`: 指定玩家 (可选)
 - **示例**: `/tmm:giveRoomKey Steve`

@@ -22,7 +22,7 @@ public class EntityDataCommand {
 
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(
-        Commands.literal("tmm:entityData")
+        Commands.literal("tmm:entity_interact_cmd")
             .requires(source -> source.hasPermission(2))
             .then(Commands.literal("set")
                 .then(Commands.argument("targets",

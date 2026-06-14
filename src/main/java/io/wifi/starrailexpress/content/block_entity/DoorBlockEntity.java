@@ -30,7 +30,7 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
 
     public DoorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        this.open = state.getValue(BlockStateProperties.OPEN);
+        this.open = state.getOptionalValue(BlockStateProperties.OPEN).orElse(false);
         this.state.start(this.age);
         this.state.fastForward(10, 1);
     }
@@ -108,6 +108,10 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
 
     public float getYaw() {
         return 180 - this.getFacing().toYRot();
+    }
+
+    public boolean getOpen() {
+        return this.getBlockState().getValue(BlockStateProperties.OPEN);
     }
 
     public Direction getFacing() {

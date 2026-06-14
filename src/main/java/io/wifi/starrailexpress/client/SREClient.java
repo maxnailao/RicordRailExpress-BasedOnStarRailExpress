@@ -59,6 +59,8 @@ import io.wifi.starrailexpress.network.packet.SyncRoomToPlayerPayload;
 import io.wifi.starrailexpress.network.packet.SyncSpecificWaypointVisibilityPacket;
 import io.wifi.starrailexpress.network.packet.SyncWaypointVisibilityPacket;
 import io.wifi.starrailexpress.network.packet.SyncWaypointsPacket;
+import io.wifi.starrailexpress.scenery.client.SceneAssetClient;
+import io.wifi.starrailexpress.scenery.network.SceneAssetNetwork;
 import io.wifi.starrailexpress.util.HPManager;
 import io.wifi.starrailexpress.util.MatrixParticleManager;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
@@ -204,6 +206,8 @@ public class SREClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        SceneAssetClient.initialize();
+        SceneAssetNetwork.registerClientReceivers();
         ClientScheduler.init();
         ClientSkinCache.init();
         ClientConfigEvents.register();
@@ -224,6 +228,8 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.SEAT, NoopRenderer::new);
         EntityRendererRegistry.register(TMMEntities.FIRECRACKER, FirecrackerEntityRenderer::new);
         EntityRendererRegistry.register(TMMEntities.GRENADE, ThrownItemRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.STICKY_GRENADE, ThrownItemRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
 
         // Register entity model layers
@@ -311,6 +317,17 @@ public class SREClient implements ClientModInitializer {
                 TMMBlockEntities.BEVERAGE_PLATE,
                 PlateBlockEntityRenderer::new);
 
+        // PLANE DOORS
+        // Block Entity Renderers
+        BlockEntityRenderers.register(
+                TMMBlockEntities.PLANE_GLASS_DOOR,
+                ctx -> new PlaneSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/small_glass_door.png"), ctx));
+        BlockEntityRenderers.register(
+                TMMBlockEntities.PLANE_WOOD_DOOR,
+                ctx -> new PlaneSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/small_wood_door.png"), ctx));
+        BlockEntityRenderers.register(
+                TMMBlockEntities.PLANE_STEEL_DOOR,
+                ctx -> new PlaneSmallDoorBlockEntityRenderer(SRE.id("textures/item/doors/up_steel_door.png"), ctx));
         // UP DOORS
         // Block Entity Renderers
         BlockEntityRenderers.register(
@@ -531,6 +548,7 @@ public class SREClient implements ClientModInitializer {
             }
             SREClient.handParticleManager.tick();
             RoundTextRenderer.tick();
+            net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.tick();
         });
         SyncMapConfigPayload.registerReceiver();
         FourthRoomStatePayload.registerReceiver();
@@ -568,15 +586,18 @@ public class SREClient implements ClientModInitializer {
                 }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomClientState.clear());
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomCameraDirector.clear());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            FourthRoomClientState.clear();
-            FourthRoomCameraDirector.clear();
-            ClientSkincrawlerState.clearAll();
-            // 清理自定义职业客户端缓存
-            io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
-            // 清理 OpenAL 语音特效资源
-            org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
-        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                client.execute(() -> {
+                    FourthRoomClientState.clear();
+                    FourthRoomCameraDirector.clear();
+                    ClientSkincrawlerState.clearAll();
+                    net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
+                    SceneAssetClient.clearRuntime();
+                    // 清理自定义职业客户端缓存
+                    io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
+                    // 清理 OpenAL 语音特效资源
+                    org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
+                }));
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
@@ -746,6 +767,20 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // Subtitle 字幕报幕
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.subtitle.SubtitleS2CPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.enqueueFromPacket(
+                                payload.mainText(),
+                                payload.subText(),
+                                payload.durationTicks(),
+                                payload.color(),
+                                payload.typewriter(),
+                                payload.screenPosition());
+                    });
+                });
+
         // Instinct keybind
         instinctKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".instinct",
@@ -783,6 +818,12 @@ public class SREClient implements ClientModInitializer {
             AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
+
+            // Subtitle 字幕报幕
+            net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+
+            // 滞时雷引爆倒计时 HUD
+            io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
 
             // RoleUnlockHudRenderer.render(guiGraphics);
 

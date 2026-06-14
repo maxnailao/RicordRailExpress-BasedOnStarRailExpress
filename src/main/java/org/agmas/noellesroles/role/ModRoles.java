@@ -38,6 +38,7 @@ import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerC
 import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.driver.DiverPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocent.coward.CowardPlayerComponent;
@@ -2439,6 +2440,8 @@ public class ModRoles {
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
         // 设置鹈鹕与傀儡师互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
+
+        RoleSkill.register(ModRoles.THE_FOOL, FoolPlayerComponent::useSkill);
 
         // 注册智力障碍患者和监护人的角色组件键
         TMMRoles.addRoleComponents(ModComponents.ZHIZHANG);

@@ -127,6 +127,9 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static KeyMapping abilityBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "category.starrailexpress.keybinds"));
+    public static KeyMapping nextAbilityBind = KeyBindingHelper
+            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".next_ability",
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "category.starrailexpress.keybinds"));
     public static KeyMapping taskInstinctBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.taskinstinct",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "category.starrailexpress.keybinds"));
@@ -970,6 +973,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                 });
             }
             boolean abilityPressed = abilityBind.consumeClick();
+            if (nextAbilityBind.consumeClick()) {
+                ClientAbilityHandler.selectNextSkill(client);
+            }
+            ClientAbilityHandler.tickContinuousInput(client);
             var repairInputComponent = org.agmas.noellesroles.component.ModComponents.REPAIR_ROLES.get(client.player);
             boolean repairGameRunning = SREClient.gameComponent != null
                     && SREClient.gameComponent.isRunning()

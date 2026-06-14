@@ -1,9 +1,7 @@
 package io.wifi.starrailexpress.content.block_entity;
 
-import io.wifi.starrailexpress.content.block.DoorPartBlock;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,16 +27,5 @@ public class UpSmallDoorBlockEntity extends SmallDoorBlockEntity {
     @Override
     protected void toggleOpen(int ticks) {
         super.toggleOpen(ticks);
-        if (this.level == null) {
-            return;
-        }
-        Direction facing = this.getFacing();
-        BlockPos neighborPos = this.getBlockPos().relative(facing.getCounterClockWise());
-        BlockState neighborState = this.level.getBlockState(neighborPos);
-        if (neighborState.is(this.getBlockState().getBlock())
-                && neighborState.getValue(DoorPartBlock.FACING).getOpposite() == facing
-                && this.level.getBlockEntity(neighborPos) instanceof UpSmallDoorBlockEntity neighborEntity) {
-            neighborEntity.toggle(true, ticks);
-        }
     }
 }

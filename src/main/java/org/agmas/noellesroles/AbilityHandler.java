@@ -232,7 +232,9 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.MA_CHEN_XU)) {
-            MaChenXuPlayerComponent.KEY.get(player).tryActiveAbility();
+            MaChenXuPlayerComponent mcxComponent = MaChenXuPlayerComponent.KEY.get(player);
+            String selectedArtId = mcxComponent.getSelectedArtId();
+            mcxComponent.onGhostArt(selectedArtId);
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.WATCHER)) {

@@ -28,6 +28,11 @@ public abstract class TMMButtonBlock extends ButtonBlock {
         this.registerDefaultState(super.defaultBlockState().setValue(ACTIVE, true));
     }
 
+    public TMMButtonBlock(BlockSetType blockSetType, int i, Properties settings) {
+        super(BlockSetType.IRON, 20, settings);
+        this.registerDefaultState(super.defaultBlockState().setValue(ACTIVE, true));
+    }
+
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -57,32 +62,35 @@ public abstract class TMMButtonBlock extends ButtonBlock {
     @Override
     public void press(BlockState state, Level world, BlockPos pos, @Nullable Player player) {
         if (state.getValue(ACTIVE)) {
-            if (!world.isClientSide) {
-                Iterable<BlockPos> iterable = BlockPos.withinManhattan(pos, 1, 1, 1);
-                for (BlockPos blockPos : iterable) {
-                    if (blockPos.equals(pos)) {
-                        continue;
-                    }
-                    if (this.tryOpenDoors(world, blockPos)) {
-                        break;
-                    }
-                }
-            }
+            // if (!world.isClientSide) {
+            // Iterable<BlockPos> iterable = BlockPos.withinManhattan(pos, 1, 1, 1);
+            // for (BlockPos blockPos : iterable) {
+            // if (blockPos.equals(pos)) {
+            // continue;
+            // }
+            // if (this.tryOpenDoors(world, blockPos)) {
+            // break;
+            // }
+            // }
+            // }
         } else {
             world.playSound(player, pos, TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER, SoundSource.BLOCKS, 0.1f, 1f);
         }
         super.press(state, world, pos, player);
     }
 
-    private boolean tryOpenDoors(Level world, BlockPos pos) {
+    protected boolean tryOpenDoors(Level world, BlockPos pos) {
         if (world.getBlockEntity(pos) instanceof SmallDoorBlockEntity entity) {
             if (entity.isJammed()) {
                 if (!world.isClientSide)
-                    world.playSound(null, entity.getBlockPos().getX() + .5f, entity.getBlockPos().getY() + 1, entity.getBlockPos().getZ() + .5f, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 1f, 1f);
+                    world.playSound(null, entity.getBlockPos().getX() + .5f, entity.getBlockPos().getY() + 1,
+                            entity.getBlockPos().getZ() + .5f, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 1f, 1f);
                 return false;
             }
-
-            entity.toggle(false);
+            var state = world.getBlockState(pos);
+            if (state.getBlock() instanceof SmallDoorBlock sb) {
+                sb.toggleDoor(state, world, entity, pos);
+            }
             return true;
         }
         return false;
