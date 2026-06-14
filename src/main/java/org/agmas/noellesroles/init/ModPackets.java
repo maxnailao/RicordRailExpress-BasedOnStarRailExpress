@@ -145,6 +145,11 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(ZeroOneFiveShootPayload.ID, ZeroOneFiveShootPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ZeroOneFiveSecondShotPayload.ID, ZeroOneFiveSecondShotPayload.CODEC);
 
+        // 注册海盗燧发枪射击网络包
+        PayloadTypeRegistry.playC2S().register(PirateFlintlockShootPayload.ID, PirateFlintlockShootPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(PirateFlintlockShootPayload.ID,
+                new PirateFlintlockShootPayload.Receiver());
+
         // 注册鹈鹕网络包
         PayloadTypeRegistry.playC2S().register(PelicanEatC2SPacket.ID, PelicanEatC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(PelicanReleaseC2SPacket.ID, PelicanReleaseC2SPacket.CODEC);

@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
 public record KnifeStabPayload(int target) implements CustomPacketPayload {
@@ -33,6 +34,32 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
     }
 
     public static class Receiver implements ServerPlayNetworking.PlayPayloadHandler<KnifeStabPayload> {
+
+        /**
+         * 根据玩家主手物品应用对应的刀冷却
+         * 海盗弯刀使用独立15秒冷却，其他刀使用原版刀冷却
+         */
+        private static void applyKnifeCooldown(ServerPlayer player) {
+            if (player.isCreative()) return;
+            var cooldowns = player.getCooldowns();
+            if (player.getMainHandItem().is(ModItems.PIRATE_CUTLASS)) {
+                cooldowns.addCooldown(ModItems.PIRATE_CUTLASS,
+                        GameConstants.ITEM_COOLDOWNS.getOrDefault(ModItems.PIRATE_CUTLASS, 15 * 20));
+            } else {
+                cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
+            }
+        }
+
+        /**
+         * 海盗弯刀成功击杀玩家后在服务端同步消耗
+         * 仅在击杀玩家时调用，幻影/假人不消耗
+         */
+        private static void consumePirateCutlass(ServerPlayer player) {
+            if (player.getMainHandItem().is(ModItems.PIRATE_CUTLASS)) {
+                player.getMainHandItem().shrink(1);
+            }
+        }
+
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
@@ -45,10 +72,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 phantomEntity.playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);
                 phantomEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
                 player.swing(InteractionHand.MAIN_HAND);
-                var cooldowns = player.getCooldowns();
-                if (!player.isCreative()) {
-                    cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
-                }
+                applyKnifeCooldown(player);
                 return;
             }
             
@@ -59,10 +83,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 puppeteerBodyEntity.playerHurt(player, Noellesroles.id("knife_puppeteer_body"));
                 puppeteerBodyEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
                 player.swing(InteractionHand.MAIN_HAND);
-                var cooldowns = player.getCooldowns();
-                if (!player.isCreative()) {
-                    cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
-                }
+                applyKnifeCooldown(player);
                 return;
             }
             
@@ -81,13 +102,16 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.KNIFE);
             target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
             player.swing(InteractionHand.MAIN_HAND);
-            var cooldowns = player.getCooldowns();
-            if (!player.isCreative()
+            // 海盗弯刀独立冷却判断；原版刀对LOOSE_END角色无冷却
+            if (player.getMainHandItem().is(ModItems.PIRATE_CUTLASS)) {
+                applyKnifeCooldown(player);
+                consumePirateCutlass(player);
+            } else if (!player.isCreative()
                     && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, TMMRoles.LOOSE_END)
                     && !SREGameWorldComponent.KEY.get(player.level()).isRole(player,
                             SpecialGameModeRoles.SUPER_LOOSE_END)) {
+                var cooldowns = player.getCooldowns();
                 cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
-
             }
         }
     }

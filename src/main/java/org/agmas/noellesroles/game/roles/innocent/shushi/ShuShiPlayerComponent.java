@@ -26,7 +26,6 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 
-import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -292,37 +291,35 @@ public class ShuShiPlayerComponent implements RoleComponent {
         // 减少技能冷却（SREAbilityPlayerComponent）
         SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(target);
         if (abilityComponent != null && abilityComponent.cooldown > 0) {
-            abilityComponent.cooldown = Math.max(0, abilityComponent.cooldown - SKILL_CD_REDUCTION);
-            abilityComponent.sync();
+            int newCooldown = Math.max(0, abilityComponent.cooldown - SKILL_CD_REDUCTION);
+            abilityComponent.setCooldown(newCooldown);
         }
 
         // 减少背包内所有道具的冷却
         ItemCooldowns cooldowns = target.getCooldowns();
-        Map<Item, ItemCooldowns.CooldownInstance> cooldownMap = cooldowns.cooldowns;
+        int currentTick = cooldowns.tickCount;
 
-        if (!cooldownMap.isEmpty()) {
-            // 创建副本避免并发修改
-            HashSet<Map.Entry<Item, ItemCooldowns.CooldownInstance>> entries = new HashSet<>(cooldownMap.entrySet());
-            int currentTick = cooldowns.tickCount;
+        // 收集需要处理的道具及其剩余时间（避免在修改Map时遍历）
+        java.util.HashMap<Item, Integer> itemsToProcess = new java.util.HashMap<>();
+        for (Map.Entry<Item, ItemCooldowns.CooldownInstance> entry : cooldowns.cooldowns.entrySet()) {
+            int remaining = entry.getValue().endTime - currentTick;
+            if (remaining > 0) {
+                itemsToProcess.put(entry.getKey(), remaining);
+            }
+        }
 
-            for (Map.Entry<Item, ItemCooldowns.CooldownInstance> entry : entries) {
-                ItemCooldowns.CooldownInstance instance = entry.getValue();
-                int remaining = instance.endTime - currentTick;
+        // 逐个处理：先移除旧冷却，再以减少后的时长重新添加
+        for (Map.Entry<Item, Integer> entry : itemsToProcess.entrySet()) {
+            Item item = entry.getKey();
+            int remaining = entry.getValue();
+            int newRemaining = Math.max(0, remaining - ITEM_CD_REDUCTION);
 
-                if (remaining > 0) {
-                    // 减少3秒冷却，确保不会出现负数
-                    int newRemaining = Math.max(0, remaining - ITEM_CD_REDUCTION);
-                    int newEndTime = currentTick + newRemaining;
+            // 移除当前冷却
+            cooldowns.removeCooldown(item);
 
-                    if (newRemaining <= 0) {
-                        // 冷却已结束，移除该条目
-                        cooldowns.removeCooldown(entry.getKey());
-                    } else {
-                        // 更新结束时间
-                        cooldowns.cooldowns.put(entry.getKey(),
-                                new ItemCooldowns.CooldownInstance(instance.startTime, newEndTime));
-                    }
-                }
+            // 如果减少后仍有剩余冷却时间，重新添加
+            if (newRemaining > 0) {
+                cooldowns.addCooldown(item, newRemaining);
             }
         }
     }

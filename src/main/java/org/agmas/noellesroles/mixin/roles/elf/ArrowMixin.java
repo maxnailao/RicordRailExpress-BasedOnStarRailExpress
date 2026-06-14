@@ -68,14 +68,12 @@ public class ArrowMixin {
                     
                     // 检查是否是盗猎者
                     if (gameWorld.isRole(serverPlayer, ModRoles.POACHER)) {
-                        ItemStack arrowStack = arrow.getWeaponItem();
-                        if (arrowStack != null && !arrowStack.isEmpty()) {
-                            // 盗猎者的普通箭/毒箭 - 直接击杀玩家(参考游侠逻辑)
-                            isHit = true;
-                            GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
-                            ci.cancel();
-                            return;
-                        }
+                        // 盗猎者的普通箭/毒箭 - 直接击杀玩家，并立即销毁箭矢防止多杀
+                        isHit = true;
+                        GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                        arrow.discard();
+                        ci.cancel();
+                        return;
                     }
                     
                     // 游侠毒箭 - 击杀玩家

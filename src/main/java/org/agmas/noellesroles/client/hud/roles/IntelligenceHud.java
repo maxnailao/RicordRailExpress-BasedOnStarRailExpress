@@ -32,7 +32,7 @@ public class IntelligenceHud {
                 return;
             }
 
-            int remainingMonitors = 2 - intelComp.monitors.size();
+            int remainingMonitors = intelComp.remainingPlaces;
 
             int screenWidth = client.getWindow().getGuiScaledWidth();
             int screenHeight = client.getWindow().getGuiScaledHeight();

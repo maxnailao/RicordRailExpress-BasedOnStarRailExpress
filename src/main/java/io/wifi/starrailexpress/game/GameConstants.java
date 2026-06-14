@@ -61,6 +61,7 @@ public class GameConstants {
         ITEM_COOLDOWNS.put(TMMItems.MONITOR_BROKEN, SREConfig.instance().monitorBrokenCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.NUNCHUCK, 160); // 8秒冷却
         ITEM_COOLDOWNS.put(TMMItems.SNIPER_RIFLE, 80); // 4秒冷却
+        ITEM_COOLDOWNS.put(org.agmas.noellesroles.init.ModItems.PIRATE_CUTLASS, 15 * 20); // 海盗弯刀15秒冷却
 
         SRE.LOGGER.debug("物品冷却时间已重载: 小刀={}秒, 左轮={}秒",
                 SREConfig.instance().knifeCooldown, SREConfig.instance().revolverCooldown);
@@ -195,6 +196,7 @@ public class GameConstants {
         public static ResourceLocation SNIPER_RIFLE_BACKFIRE = SRE.id("sniper_rifle_backfire");
         public static ResourceLocation NUNCHUCK = SRE.id("nunchuck_hit");
         public static ResourceLocation ZERO_ONE_FIVE = SRE.id("zero_one_five_shot");
+        public static ResourceLocation PIRATE_FLINTLOCK = SRE.id("pirate_flintlock_shot");
         // 黑警未能击杀所有玩家
         public static ResourceLocation BLACKOUT_TIMEOUT = SRE.id("blackout_timeout");
         // 鬼魅幻影被摧毁

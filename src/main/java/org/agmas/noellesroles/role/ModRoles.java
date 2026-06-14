@@ -313,6 +313,8 @@ public class ModRoles {
     public static final ResourceLocation THENEWFISHER_ID = Noellesroles.id("thenewfisher");
     // 水手 (平民阵营，仅在水图刷新)
     public static final ResourceLocation THEBOATBOAT_ID = Noellesroles.id("theboatboat");
+    // 海盗 (杀手阵营，仅在水图刷新)
+    public static final ResourceLocation JIALIEBIADAO_ID = Noellesroles.id("jialebihaidao");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
 
@@ -323,7 +325,8 @@ public class ModRoles {
      * - 真实心情系统
      * - 标准冲刺时间
      * - 在计分板上显示
-     * - 无技能
+     * - 技能：放置监视器（最多2个，冷却60秒），范围内有人死亡时触发并高亮周围玩家
+     * - 商店：情报报告（300金币，一次性，显示当前存活杀手角色）
      */
 
     public static SRERole INTELLIGENCE = TMMRoles.registerRole(new NormalRole(
@@ -1518,7 +1521,6 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true)
-      .setCanUseInstinct(true)
       .setMax(1);
 
     // 工人强制赋予矫健修饰符（在游戏开始、角色和修饰符分配完成后直接添加）
@@ -2622,7 +2624,7 @@ public class ModRoles {
      * - 标准冲刺时间
      * - 与智力障碍患者绑定生成
      * - 技能：花费125金币，解除智力障碍患者的debuff 12秒并给予2秒无敌，CD30秒
-     * - 被动：智力障碍患者在监护人视角中白色高亮
+     * - 被动：智力障碍患者在监护人视角中浅蓝色高亮（开局即可透视，无需本能）
      */
     public static SRERole GUARDIAN = TMMRoles.registerRole(new NormalRole(
             GUARDIAN_ID,
@@ -2708,5 +2710,60 @@ public class ModRoles {
             .setCanUseInstinct(true)
             .setCanSeeCoin(true)
             .setMax(1);
+
+    /**
+     * 海盗角色 - 杀手阵营
+     * - 杀手阵营 (isInnocent = false, canUseKiller = true)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 隐藏计分板
+     * - 可以看到游戏时间
+     * - 仅在水图刷新（InitModRolesMax 中控制）
+     * - 无技能
+     * - 商店：海盗弯刀(80)、海盗燧发枪(180)、耐久橡木船(50)、撬棍(30)
+     * - 登车标语：抢！抢！抢！！！
+     */
+    public static SRERole JIALIEBIADAO = TMMRoles.registerRole(new NormalRole(
+            JIALIEBIADAO_ID,
+            new Color(178, 34, 34).getRGB(), // 红棕色
+            false,  // 非乘客阵营（杀手）
+            true,   // 有杀手能力
+            SRERole.MoodType.FAKE,  // 假心情
+            Integer.MAX_VALUE,  // 无限冲刺时间
+            true    // 隐藏计分板
+    ) {
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            // 海盗弯刀 80金币
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.PIRATE_CUTLASS),
+                    80,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.WEAPON));
+            // 海盗燧发枪 180金币
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.PIRATE_FLINTLOCK),
+                    180,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.WEAPON));
+            // 耐久橡木船 50金币
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.DURABILITY_BOAT),
+                    50,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
+            // 撬棍 30金币
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(TMMItems.CROWBAR),
+                    30,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
+            return entries;
+        }
+
+        @Override
+        public java.util.List<ItemStack> getDefaultItems() {
+            return java.util.List.of(
+                    new ItemStack(org.agmas.noellesroles.init.ModItems.DURABILITY_BOAT)
+            );
+        }
+    }).setCanSeeCoin(true).setCanSeeTime(true);
 
 }
