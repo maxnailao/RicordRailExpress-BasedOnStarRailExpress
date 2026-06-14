@@ -35,9 +35,14 @@ public class NRSounds {
     public static final SoundEvent MAFIA = registrar.create("noellesroles.mafia");
     public static final SoundEvent BAKA_BAKA = registrar.create("plush.baka");
     public static final SoundEvent WO_SHI_NAI_LONG = registrar.create("plush.nai_long");
-    public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
     public static final SoundEvent LEVEL = registrar.create("noellesroles.level");
+    //Fumo
+    public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
 
+    public static final SoundEvent GUO1_SOUND = registrar.create("plush.guo1");
+    public static final SoundEvent GUO2_SOUND = registrar.create("plush.guo2");
+    public static final SoundEvent GUO3_SOUND = registrar.create("plush.guo3");
+    public static final SoundEvent GUO4_SOUND = registrar.create("plush.guo4");
     //熊孩子
     public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
     public static final SoundEvent FART = registrar.create("noellesroles.fart");

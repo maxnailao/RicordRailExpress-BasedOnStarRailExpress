@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.init;
 
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.block.Jiale2PlushBlock;
 import org.agmas.noellesroles.content.block.SREPlushBlock;
 import org.agmas.noellesroles.content.block_entity.SREPlushBlockEntity;
 import dev.doctor4t.ratatouille.util.registrar.BlockEntityTypeRegistrar;
@@ -27,11 +28,15 @@ public interface SREFumoBlocks {
             Registries.CREATIVE_MODE_TAB,
             SRE.id("fumo"));
 
+    public static ResourceKey<CreativeModeTab> SPECIAL_FUMO_GROUP = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            SRE.id("special_fumo"));
+
     public static final BlockRegistrar blockRegistrar = new BlockRegistrar(Noellesroles.MOD_ID);
     public static final BlockEntityTypeRegistrar blockEntityRegistrar = new BlockEntityTypeRegistrar(
             Noellesroles.MOD_ID);
-    // Custom Plushs (Test)
-
+    
+    // === 普通Fumo玩偶 ===
     Block MILK_DRAGON_PLUSH = registerBlock("milk_dragon_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block BAKA_PLUSH = registerBlock("baka_plush",
@@ -87,14 +92,22 @@ public interface SREFumoBlocks {
     Block ALLINTOKYO_PLUSH = registerBlock("allintokyo_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     
-    // 添加你的自定义人偶
-    Block JUSTACHEESE_PLUSH = registerBlock("justacheese_plush",
+    // === 特殊Fumo玩偶（独立分类）===
+    Block JUSTACHEESE_PLUSH = registerSpecialBlock("justacheese_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    // SPBGCP
-    Block SPBGCP_PLUSH = registerBlock("spbgcp_plush",
+    Block SPBGCP_PLUSH = registerSpecialBlock("spbgcp_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    // HUAJI
-    Block HUAJI_PLUSH = registerBlock("huaji_plush",
+    Block HUAJI_PLUSH = registerSpecialBlock("huaji_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block QINGMEI_PLUSH = registerSpecialBlock("qingmei_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block JIALE2_PLUSH = registerSpecialBlock("jiale2_plush",
+            new Jiale2PlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block EGG_PLUSH = registerSpecialBlock("egg_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block TANGYE_PLUSH = registerSpecialBlock("tangye_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block XGD_PLUSH = registerSpecialBlock("xgd_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     /**
      * Block Entity
@@ -107,7 +120,8 @@ public interface SREFumoBlocks {
                     LENGXIAOCN_PLUSH, LICRAFTLQ_PLUSH, LUOYERUOSHUI_PLUSH, MIFAN520_PLUSH,
                     NONE_PLUSH, OTITH_PLUSH, THEF0RS4KEN_PLUSH, TOMATO_PLUSH,
                     XIAO_HEI_HAND_PLUSH, XIAOZHANQWQ_PLUSH, ALLINTOKYO_PLUSH, MILK_DRAGON_PLUSH,
-                    JUSTACHEESE_PLUSH, SPBGCP_PLUSH, HUAJI_PLUSH }));
+                    JUSTACHEESE_PLUSH, SPBGCP_PLUSH, HUAJI_PLUSH, QINGMEI_PLUSH, JIALE2_PLUSH,
+                    EGG_PLUSH, TANGYE_PLUSH, XGD_PLUSH }));
 
     @SuppressWarnings("unchecked")
     public static <T extends Block> T registerBlock(String id, T block) {
@@ -117,6 +131,11 @@ public interface SREFumoBlocks {
     @SuppressWarnings("unchecked")
     public static <T extends Block> T registerBlock(String id, T block, Item.Properties settings) {
         return blockRegistrar.createWithItem(id, block, settings, BLOCK_CREATIVE_GROUP);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Block> T registerSpecialBlock(String id, T block) {
+        return blockRegistrar.createWithItem(id, block, SPECIAL_FUMO_GROUP);
     }
 
     @SuppressWarnings("unchecked")
@@ -130,6 +149,13 @@ public interface SREFumoBlocks {
                     return new ItemStack(BAKA_PLUSH.asItem());
                 })
                 .build());
+        
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SPECIAL_FUMO_GROUP, FabricItemGroup.builder()
+                .title(Component.translatable("item_group.starrailexpress.special_fumo_blocks")).icon(() -> {
+                    return new ItemStack(JUSTACHEESE_PLUSH.asItem());
+                })
+                .build());
+        
         blockRegistrar.registerEntries();
         blockEntityRegistrar.registerEntries();
     }

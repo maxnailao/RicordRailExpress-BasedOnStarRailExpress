@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class SREPlushBlockEntity extends BlockEntity {
     public double squash;
+    public int soundIndex = 0;
 
     public SREPlushBlockEntity(BlockPos pos, BlockState state) {
         super(SREFumoBlocks.PLUSH_BLOCK_ENTITY, pos, state);
@@ -43,14 +44,26 @@ public class SREPlushBlockEntity extends BlockEntity {
         this.setChanged();
     }
 
+    public int getNextSoundIndex(int maxSounds) {
+        int currentIndex = this.soundIndex;
+        this.soundIndex = (this.soundIndex + 1) % maxSounds;
+        this.setChanged();
+        if (this.level != null && !this.level.isClientSide) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 2);
+        }
+        return currentIndex;
+    }
+
     @Override
     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
         nbt.putDouble("squash", this.squash);
+        nbt.putInt("soundIndex", this.soundIndex);
     }
 
     @Override
     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
         this.squash = nbt.getDouble("squash");
+        this.soundIndex = nbt.getInt("soundIndex");
     }
 
     @Override

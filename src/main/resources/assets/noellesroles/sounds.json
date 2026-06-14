@@ -46,5 +46,45 @@
         "stream": true
       }
     ]
+  },
+  "plush.spbgcp": {
+    "sounds": [
+      {
+        "name": "noellesroles:spbgcp",
+        "stream": false
+      }
+    ]
+  },
+  "plush.guo1": {
+    "sounds": [
+      {
+        "name": "noellesroles:guo1",
+        "stream": false
+      }
+    ]
+  },
+  "plush.guo2": {
+    "sounds": [
+      {
+        "name": "noellesroles:guo2",
+        "stream": false
+      }
+    ]
+  },
+  "plush.guo3": {
+    "sounds": [
+      {
+        "name": "noellesroles:guo3",
+        "stream": false
+      }
+    ]
+  },
+  "plush.guo4": {
+    "sounds": [
+      {
+        "name": "noellesroles:guo4",
+        "stream": false
+      }
+    ]
   }
 }

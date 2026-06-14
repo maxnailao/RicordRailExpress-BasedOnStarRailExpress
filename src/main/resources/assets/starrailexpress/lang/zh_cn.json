@@ -669,7 +669,7 @@
   "commands.sre.showstats.player_not_found": "玩家 %s 未找到或不在线",
   "container.cabinet": "柜子",
   "container.cargo_box": "货物箱",
-  "credits.starrailexpress.thank_you": "感谢您游玩《哈比快车谋杀案》DLC版！\n残月团队花了很多时间为这个模组增加了更多的功能与游戏内容。\n我们还添加了许多可供游玩的地图与新职业。 \n如果您喜欢并想制作视频或直播，请务必注明我的频道、视频和模组页面！\n 原作者 - RAT / doctor4t \nDLC版作者 - 残月团队 \n本DLC完全开源且免费",
+  "credits.starrailexpress.thank_you": "感谢您游玩《哈比快车谋杀案》DLC版！\n本DLC在残月团队制作的DLC基础上进行修改和拓展。\n我们在残月DLC的基础上添加了许多可供游玩的地图与新职业。\n 原模组作者 - RAT / doctor4t \nDLC拓展 - 瑞科德制作组 原DLC版作者 - 残月团队 \n本DLC与残月DLC一样完全开源且免费",
   "entity.starrailexpress.firecracker": "鞭炮",
   "entity.starrailexpress.grenade": "手榴弹",
   "entity.starrailexpress.note": "便签",
