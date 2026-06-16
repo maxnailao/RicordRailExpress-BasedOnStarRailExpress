@@ -105,7 +105,7 @@ public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingC
             skillEchoRandomTicker = 0;
             return;
         }
-        if (!config.skillEchoRandomBroadcastEnabled) {
+        if (!config.skillEchoEventEnabled || !config.skillEchoRandomBroadcastEnabled) {
             skillEchoRandomTicker = 0;
             return;
         }
@@ -158,8 +158,8 @@ public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingC
         }
         skillEchoAnnouncedRoles.add(roleKey);
 
-        String rolePath = role.getIdentifier() != null ? role.getIdentifier().getPath() : "unknown";
-        Component roleName = RoleUtils.getRoleName(role.getIdentifier() != null ? role.getIdentifier() : ResourceLocation.fromNamespaceAndPath("starrailexpress", "unknown"));
+        Component roleName = RoleUtils.getRoleName(role.getIdentifier() != null ? role.getIdentifier()
+                : ResourceLocation.fromNamespaceAndPath("starrailexpress", "unknown"));
         Component message = Component.translatable("message.noellesroles.skill_echo.heard", roleName)
                 .withStyle(ChatFormatting.GOLD);
 

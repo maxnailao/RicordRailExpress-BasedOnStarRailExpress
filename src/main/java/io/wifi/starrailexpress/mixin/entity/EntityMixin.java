@@ -26,6 +26,27 @@ public class EntityMixin {
     @Shadow
     private Level level;
 
+    @Inject(method = "onExplosionHit", at = @At("HEAD"), cancellable = true)
+    public void addHurtTagToPlayerWithExplosion(Entity direct, CallbackInfo ci) {
+        // if (SRE.isLobby)
+        //     return;
+        // Entity e = (Entity) (Object) this;
+
+        // if (!(e instanceof Player self)) {
+        //     return;
+        // }
+        // if (direct instanceof PrimedTnt tnt) {
+        //     if (tnt.getOwner() instanceof Player player) {
+        //         self.setLastHurtByPlayer(player);
+        //     }
+        // } else if (direct instanceof Projectile projectile) {
+        //     if (projectile.getOwner() instanceof Player player) {
+        //         self.setLastHurtByPlayer(player);
+        //         self.hurtMarked = true;
+        //     }
+        // }
+    }
+
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;vibrationAndSoundEffectsFromBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;ZZLnet/minecraft/world/phys/Vec3;)Z", ordinal = 0))
     public void moving(MoverType p_19973_, Vec3 p_19974_, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
@@ -38,6 +59,8 @@ public class EntityMixin {
 
     @WrapMethod(method = "canCollideWith")
     protected boolean tmm$solid(Entity other, Operation<Boolean> original) {
+        if (SRE.isLobby)
+            return original.call(other);
         final var gameWorldComponent = SREGameWorldComponent.KEY.get(this.level);
         if (gameWorldComponent.isRunning()) {
             Entity self = (Entity) (Object) this;
@@ -56,6 +79,8 @@ public class EntityMixin {
 
     @Inject(method = "canSpawnSprintParticle", at = @At("HEAD"), cancellable = true)
     private void onSpawnSprintParticle(CallbackInfoReturnable<Boolean> ci) {
+        if (SRE.isLobby)
+            return;
         Entity self = (Entity) (Object) this;
         // 只针对玩家，且该玩家对本客户端不可见（隐身效果）
         if (self instanceof Player player && player.isInvisible()) {
@@ -69,7 +94,8 @@ public class EntityMixin {
 
     @Inject(method = "playStepSound", at = @At("HEAD"), cancellable = true)
     private void onPlayStepSound(BlockPos pos, BlockState state, CallbackInfo ci) {
-
+        if (SRE.isLobby)
+            return;
         if ((Entity) (Object) this instanceof Player player && player.isInvisible()) {
             if (SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.WIND_YAOSE)) {
                 ci.cancel();

@@ -31,7 +31,8 @@ public class NRModifiers {
             null,
             null,
             false,
-            false));
+            false))
+            .setDefaultEnableChance(5000);
 
     /** 内向修饰符 */
     public static SREModifier INTROVERTED = HMLModifiers.registerModifier(new SREModifier(
@@ -40,7 +41,10 @@ public class NRModifiers {
             null,
             null,
             false,
-            false)).setServerGameTickEvent((p) -> IntrovertedModifier.serverTick(p)).setMax(2);
+            false))
+            .setServerGameTickEvent((p) -> IntrovertedModifier.serverTick(p))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(5000);
 
     /** 纳税修饰符 */
     public static SREModifier TAXED = HMLModifiers.registerModifier(new SREModifier(
@@ -49,7 +53,9 @@ public class NRModifiers {
             null,
             null,
             false,
-            false)).setMax(1);
+            false))
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2000);
 
     /**
      * 初始化修饰符系统

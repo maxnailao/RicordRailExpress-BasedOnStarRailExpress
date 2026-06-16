@@ -1,5 +1,6 @@
 package org.agmas.harpymodloader.modifiers;
 
+import io.wifi.starrailexpress.api.SREAbstractInfoClass;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.locale.Language;
@@ -10,14 +11,18 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
-public class SREModifier {
+import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+
+public class SREModifier extends SREAbstractInfoClass {
     private final Random random = new Random();
     public ResourceLocation identifier;
+    public boolean canSetSpawnInfoInConfig = true;
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo;
     public HashSet<SRERole> canOnlyBeAppliedTo;
@@ -26,10 +31,22 @@ public class SREModifier {
     public boolean notVigilante;
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
-    public int maxCount = -1;
-    public int enableChance = 100;
-    public int enableNeedPlayerCount = 6;
+    public int defaultMaxCount = -1;
+    public SpawnInfo spawnInfo = new SpawnInfo();
+    public int defaultEnableChance = 10000;
+    public int defaultNeedPlayerCount = 6;
+    public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
+    public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+
+    public SREModifier setCanSetSpawnInfoInConfig(boolean flag) {
+        this.canSetSpawnInfoInConfig = flag;
+        return this;
+    }
+
+    public boolean canSetSpawnInfoInConfig() {
+        return this.canSetSpawnInfoInConfig;
+    }
 
     public SREModifier setClientGameTickEvent(Consumer<Player> event) {
         this.clientTickEvent = event;
@@ -60,35 +77,68 @@ public class SREModifier {
     }
 
     /**
-     * 在启用的状态下，最大分配数量。
+     * 在启用的状态下，默认的最大分配数量。
      * 
      * @param count 最大数量
      * @return
      */
-    public SREModifier setMax(int count) {
-        maxCount = count;
+    public SREModifier setDefaultMax(int count) {
+        defaultMaxCount = count;
+        return this;
+    };
+
+    public SREModifier addDefaultSpawnMaps(String... maps) {
+        return this.setDefaultSpawnMaps(maps);
+    };
+
+    public SREModifier setDefaultSpawnMaps(String... maps) {
+        for (String s : maps) {
+            this.defaultSpawnMaps.add(s);
+        }
         return this;
     };
 
     /**
-     * 启用需要的玩家数量。
+     * 默认启用最大玩家数 -1禁用
      * 
-     * @param count 玩家数量
+     * @param count
      * @return
      */
-    public SREModifier setEnableNeededPlayerCount(int count) {
-        enableNeedPlayerCount = count;
+    public SREModifier setDefaultMaxPlayerCount(int count) {
+        defaultMaxPlayerCount = count;
         return this;
     };
 
     /**
-     * 启用概率（%）
+     * 默认需要玩家数
+     * 
+     * @param count
+     * @return
+     */
+    public SREModifier setDefaultEnableNeededPlayerCount(int count) {
+        defaultNeedPlayerCount = count;
+        return this;
+    };
+
+    /**
+     * 默认启用概率（1/10000）
      * 
      * @param chance
      * @return
      */
-    public SREModifier setEnableChance(int chance) {
-        enableChance = chance;
+    public SREModifier setDefaultEnableChance(int chance) {
+        defaultEnableChance = chance;
+        return this;
+    };
+
+    /**
+     * 生成设置
+     * 
+     * @param chance
+     * @return
+     */
+    public SREModifier setSpawnInfo(SpawnInfo spinfo) {
+        this.spawnInfo = spinfo;
         return this;
     };
 
@@ -100,6 +150,10 @@ public class SREModifier {
         this.canOnlyBeAppliedTo = canOnlyBeAppliedTo;
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
+    }
+
+    public ResourceLocation getIdentifier() {
+        return this.identifier;
     }
 
     public ResourceLocation identifier() {
@@ -155,20 +209,32 @@ public class SREModifier {
      * @return
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
-            List<ServerPlayer> players) {
-        if (this.enableChance >= 0) {
-            int nchance = random.nextInt(0, 100);
-            if (nchance > enableChance) {
+            List<ServerPlayer> players, String mapName) {
+        if (defaultMaxCount == -1)
+            return -1;
+        if (this.spawnInfo.enableChance >= 0) {
+            int nchance = random.nextInt(0, 10000);
+            if (nchance > this.spawnInfo.enableChance) {
                 return 0;
             }
         }
-        if (this.enableNeedPlayerCount >= 0) {
+        if (this.spawnInfo.minEnabledPlayer >= 0) {
             int playerCount = players.size();
-            if (playerCount < this.enableNeedPlayerCount) {
+            if (playerCount < this.spawnInfo.minEnabledPlayer) {
                 return 0;
             }
         }
-        return maxCount;
+        if (this.spawnInfo.maxEnabledPlayer >= 0) {
+            int playerCount = players.size();
+            if (playerCount > this.spawnInfo.maxEnabledPlayer) {
+                return 0;
+            }
+        }
+        if (!this.spawnInfo.map.isEmpty()) {
+            if (!this.spawnInfo.map.contains(mapName))
+                return 0;
+        }
+        return spawnInfo.maxSpawn;
     }
 
     public SREModifier setCannotAppliedToVigilante(boolean flag) {
@@ -178,6 +244,7 @@ public class SREModifier {
 
     /**
      * 是否是"其它模式"的修饰符（用于U键职业介绍页面的模式筛选）
+     * 
      * @return 是否为其他模式修饰符
      */
     public boolean isOtherModeRole() {
@@ -186,11 +253,14 @@ public class SREModifier {
 
     /**
      * 设置是否为"其它模式"的修饰符
+     * 
      * @param isOtherModeRole 是否为其他模式修饰符
      * @return this
      */
     public SREModifier setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
+        if (isOtherModeRole)
+            this.canSetSpawnInfoInConfig = false;
         return this;
     }
 }
