@@ -70,6 +70,10 @@ public class SREPlushBlock extends PlushBlock {
       if (state.getBlock() == SREFumoBlocks.SPBGCP_PLUSH) {
          ret = NRSounds.SPBGCP_SOUND;
       }
+
+      if (state.getBlock() == SREFumoBlocks.YCHENNOC_PLUSH){
+         ret = NRSounds.WJCLB_SOUND;
+      }
       return ret;
    }
 

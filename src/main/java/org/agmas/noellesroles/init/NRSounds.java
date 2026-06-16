@@ -38,6 +38,7 @@ public class NRSounds {
     public static final SoundEvent LEVEL = registrar.create("noellesroles.level");
     //Fumo
     public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
+    public static final SoundEvent WJCLB_SOUND = registrar.create("plush.wjclb");
 
     public static final SoundEvent GUO1_SOUND = registrar.create("plush.guo1");
     public static final SoundEvent GUO2_SOUND = registrar.create("plush.guo2");

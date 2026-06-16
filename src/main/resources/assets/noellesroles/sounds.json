@@ -55,6 +55,14 @@
       }
     ]
   },
+  "plush.wjclb": {
+    "sounds": [
+      {
+        "name": "noellesroles:wjclb",
+        "stream": false
+      }
+    ]
+  },
   "plush.guo1": {
     "sounds": [
       {
