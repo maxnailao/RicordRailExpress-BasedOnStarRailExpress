@@ -5,12 +5,15 @@ import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.events.*;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent.GameStatus;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import java.util.UUID;
@@ -22,6 +25,7 @@ import org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
   private static VoicechatServerApi SERVER_API;
@@ -36,10 +40,13 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     VoicechatPlugin.super.initialize(api);
   }
 
+  public static boolean isAlive(Player player) {
+    return GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
+  }
+
   public static boolean shouldBanVoice(VoicechatConnection senderConnection, VoicechatConnection receiverConnection) {
     if (senderConnection == null || receiverConnection == null)
       return false;
-
     if (!(senderConnection.getPlayer().getPlayer() instanceof Player senderPlayer))
       return false;
     if (!(receiverConnection.getPlayer().getPlayer() instanceof Player receiverPlayer))
@@ -49,7 +56,17 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (PelicanManager.shouldCancelVoice(senderPlayer.getUUID(), receiverPlayer.getUUID())) {
       return true;
     }
-
+    // 亡命徒期间活人玩家不可听话
+    if (RefugeeComponent.KEY.get(senderPlayer.level()).isAnyRevivals) {
+      if (RoleUtils.isPlayerTheJob(senderPlayer, TMMRoles.LOOSE_END)
+          && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(senderPlayer)) {
+        return true;
+      }
+      if (RoleUtils.isPlayerTheJob(receiverPlayer, TMMRoles.LOOSE_END)
+          && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(receiverPlayer)) {
+        return true;
+      }
+    }
     if (senderPlayer.getEffect(ModEffects.TIME_STOP) != null) {
       if (!TimeStopEffect.canMovePlayers.contains(senderPlayer.getUUID())) {
         return true;

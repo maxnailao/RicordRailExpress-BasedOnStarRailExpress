@@ -279,6 +279,14 @@ public class CustomRoleLoader {
         if (data.useRareChance && data.enableRareChance >= 0) role.setDefaultEnableChance(data.enableRareChance);
         if (data.enableNeededPlayerCount >= 0) role.setDefaultEnableNeededPlayerCount(data.enableNeededPlayerCount);
 
+        // 自定义职业直接设置 spawnInfo 并禁止配置覆盖，确保工具设置的值始终生效
+        role.setCanSetSpawnInfoInConfig(false);
+        org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo customSpawn = new org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo();
+        customSpawn.setMax(role.defaultMaxCount);
+        if (role.defaultEnableNeedPlayerCount >= 0) customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);
+        if (role.defaultEnableChance >= 0) customSpawn.setEnableChance(role.defaultEnableChance);
+        role.setSpawnInfo(customSpawn);
+
         // 互斥和绑定生成（需要在所有角色注册完成后处理，这里只存储引用）
         // 这些将在 postInit 中处理
 

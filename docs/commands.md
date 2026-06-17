@@ -521,6 +521,7 @@
 - **权限**: `2`
 - **结构**:
   - `visual snow <enabled>` (bool) — 启用/禁用雪花效果
+  - `visual sand <enabled>` (bool) — 启用/禁用沙尘暴效果
   - `visual fog <enabled>` (bool) — 启用/禁用雾气效果
   - `visual hud <enabled>` (bool) — 启用/禁用 HUD
   - `visual trainSpeed <speed>` (int >= 0) — 设置列车速度
@@ -752,6 +753,7 @@
 | `set sceneOffsetY <value>` | double | 设置场景偏移 Y |
 | `set sceneOffsetZ <value>` | double | 设置场景偏移 Z |
 | `set snowEnabled <value>` | bool | 设置雪花效果 |
+| `set sandEnabled <value>` | bool | 设置沙尘暴效果 |
 | `set fogEnabled <value>` | bool | 设置雾气效果 |
 | `set fogEnd <value>` | float 1~10000 | 设置雾气可见范围 |
 | `set fogShape <value>` | SPHERE or CYLINDER | 设置雾气形状 |

@@ -29,6 +29,7 @@
   "mustCopy": false,
   "haveOutsideSound": false,
   "snowEnabled": false,
+  "sandEnabled": false,
   "weather": "clear",
   "gravity": 0.08,
   "effect": ["minecraft:speed,2", "minecraft:jump_boost,1"],

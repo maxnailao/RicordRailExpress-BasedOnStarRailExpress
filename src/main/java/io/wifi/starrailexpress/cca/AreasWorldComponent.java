@@ -171,6 +171,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     
     // 雪花效果配置（默认关闭）
     public boolean snowEnabled = false;
+    
+    // 沙尘暴效果配置（默认关闭）
+    public boolean sandEnabled = false;
 
     // 雾气效果配置（默认启用）
     public boolean fogEnabled = true;
@@ -469,6 +472,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
         this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
+        this.sandEnabled = tag.contains("sandEnabled") ? tag.getBoolean("sandEnabled") : false;
         this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") : true;
         this.fogEnd = tag.contains("fogEnd") ? tag.getFloat("fogEnd") : 200.0f;
         this.fogShape = tag.contains("fogShape") ? tag.getString("fogShape") : "SPHERE";
@@ -560,6 +564,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("canSwim", this.canSwim);
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
         tag.putBoolean("snowEnabled", this.snowEnabled);
+        tag.putBoolean("sandEnabled", this.sandEnabled);
         tag.putBoolean("fogEnabled", this.fogEnabled);
         tag.putFloat("fogEnd", this.fogEnd);
         tag.putString("fogShape", this.fogShape);

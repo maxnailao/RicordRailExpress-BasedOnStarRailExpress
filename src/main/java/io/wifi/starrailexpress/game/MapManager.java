@@ -261,6 +261,8 @@ public class MapManager {
 
         // 保存雪花效果配置
         jsonObject.addProperty("snowEnabled", areas.snowEnabled);
+        // 保存沙尘暴效果配置
+        jsonObject.addProperty("sandEnabled", areas.sandEnabled);
         jsonObject.addProperty("fogEnabled", areas.fogEnabled);
         jsonObject.addProperty("fogEnd", areas.fogEnd);
         jsonObject.addProperty("fogShape", areas.fogShape);
@@ -367,6 +369,12 @@ public class MapManager {
                 areas.snowEnabled = jsonObject.get("snowEnabled").getAsBoolean();
             } else {
                 areas.snowEnabled = false;
+            }
+            // 加载沙尘暴效果配置（默认关闭）
+            if (jsonObject.has("sandEnabled")) {
+                areas.sandEnabled = jsonObject.get("sandEnabled").getAsBoolean();
+            } else {
+                areas.sandEnabled = false;
             }
             if (jsonObject.has("fogEnabled")) {
                 areas.fogEnabled = jsonObject.get("fogEnabled").getAsBoolean();

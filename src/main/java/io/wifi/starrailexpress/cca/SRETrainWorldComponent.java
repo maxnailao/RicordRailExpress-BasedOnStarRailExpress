@@ -20,6 +20,7 @@ public class SRETrainWorldComponent implements AutoSyncedComponent, ServerTickin
     private int speed = 0; // im km/h
     private int time = 0;
     private boolean snow = false;
+    private boolean sand = false;
     private boolean fog = true;
     private boolean hud = true;
     private TimeOfDay timeOfDay = TimeOfDay.DAY;
@@ -70,6 +71,15 @@ public class SRETrainWorldComponent implements AutoSyncedComponent, ServerTickin
         this.markDirty();
     }
 
+    public boolean isSandEnabled() {
+        return sand;
+    }
+
+    public void setSand(boolean sand) {
+        this.sand = sand;
+        this.markDirty();
+    }
+
     public boolean isFoggy() {
         return fog;
     }
@@ -108,6 +118,7 @@ public class SRETrainWorldComponent implements AutoSyncedComponent, ServerTickin
         this.setSpeed(nbtCompound.getInt("Speed"));
         this.setTime(nbtCompound.getInt("Time"));
         this.setSnow(nbtCompound.getBoolean("Snow"));
+        this.setSand(nbtCompound.getBoolean("Sand"));
         this.setFog(nbtCompound.getBoolean("Fog"));
         this.setHud(nbtCompound.getBoolean("Hud"));
         this.setTimeOfDay(TimeOfDay.valueOf(nbtCompound.getString("TimeOfDay")));
@@ -118,6 +129,7 @@ public class SRETrainWorldComponent implements AutoSyncedComponent, ServerTickin
         nbtCompound.putInt("Speed", speed);
         nbtCompound.putInt("Time", time);
         nbtCompound.putBoolean("Snow", snow);
+        nbtCompound.putBoolean("Sand", sand);
         nbtCompound.putBoolean("Fog", fog);
         nbtCompound.putBoolean("Hud", hud);
         nbtCompound.putString("TimeOfDay", timeOfDay.name());
@@ -152,6 +164,7 @@ public class SRETrainWorldComponent implements AutoSyncedComponent, ServerTickin
 
     public void reset() {
         this.snow = true;
+        this.sand = true;
         this.fog = true;
         this.hud = true;
         this.speed = 130;

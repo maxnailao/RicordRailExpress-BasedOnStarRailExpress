@@ -705,7 +705,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE, // 无限冲刺 / 疲劳
             true // 隐藏计分板
-    )).setComponentKey(ModComponents.DELAYER).setCanSeeCoin(true).setDefaultMax(1).setDefaultEnableChance(20);
+    )).setComponentKey(ModComponents.DELAYER).setCanSeeCoin(true).setDefaultMax(1).setDefaultEnableChance(8000);
     public static SRERole ELF = TMMRoles.registerRole(
             new NormalRole(ELF_ID, new Color(106, 255, 179).getRGB(),
                     true, false, SRERole.MoodType.REAL,

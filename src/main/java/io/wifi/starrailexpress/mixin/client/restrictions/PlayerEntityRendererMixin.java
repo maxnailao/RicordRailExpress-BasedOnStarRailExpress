@@ -83,7 +83,11 @@ public class PlayerEntityRendererMixin {
             if (result == OnGettingPlayerSkin.PlayerSkinResult.DEFAULT) {
                 return skinTexture;
             } else if (result != null && result != OnGettingPlayerSkin.PlayerSkinResult.SKIP) {
-                return result.texture;
+                if (result.type == 2 && result.playerSkin != null) {
+                    return (result.playerSkin.texture());
+                } else {
+                    return result.texture;
+                }
             }
             // 获取普通状态下职业皮肤
             SRERole role = SREClient.gameComponent.getRole(client.player.getUUID());

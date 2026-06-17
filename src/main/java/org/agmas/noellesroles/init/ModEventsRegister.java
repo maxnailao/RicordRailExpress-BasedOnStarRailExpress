@@ -721,6 +721,7 @@ public class ModEventsRegister {
 
     public static void registerEvents() {
         // 吝啬 - 商店购买返还20%金币
+        RefugeeComponent.register();
         OnShopPurchase.EVENT.register((player, entry, price) -> {
             org.agmas.noellesroles.role.ModifierEffects
                     .onStingyPurchase((net.minecraft.server.level.ServerPlayer) player, price);

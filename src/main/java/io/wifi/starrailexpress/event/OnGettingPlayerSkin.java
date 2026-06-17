@@ -5,6 +5,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.client.resources.PlayerSkin.Model;
 import net.minecraft.resources.ResourceLocation;
 
 import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
@@ -46,6 +47,11 @@ public interface OnGettingPlayerSkin {
 
         public static PlayerSkinResult playerSkin(PlayerSkin playerSkin) {
             return new PlayerSkinResult(playerSkin);
+        }
+
+        public static PlayerSkinResult playerSkin(ResourceLocation texture, Model model) {
+            // ResourceLocation texture, @Nullable String textureUrl, @Nullable ResourceLocation capeTexture, @Nullable ResourceLocation elytraTexture, Model model, boolean secure
+            return playerSkin(new PlayerSkin(texture, null, null, null, model, true));
         }
 
         public PlayerSkinResult(ResourceLocation texture, boolean isSlim) {
