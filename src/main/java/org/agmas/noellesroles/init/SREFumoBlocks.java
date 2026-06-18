@@ -111,6 +111,22 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block YCHENNOC_PLUSH = registerSpecialBlock("ychennoc_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block MONGOOSE_PLUSH = registerSpecialBlock("mongoose_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block XIAOXIAN_PLUSH = registerSpecialBlock("xiaoxian_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block LIFELINE_PLUSH = registerSpecialBlock("lifeline_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block RLINGKONG_PLUSH = registerSpecialBlock("rlingkong_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block X1AOBA_PLUSH = registerSpecialBlock("x1aoba_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block CAIZI_PLUSH = registerSpecialBlock("caizi_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block JIALE114514_PLUSH = registerSpecialBlock("jiale114514_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block AKASPING_PLUSH = registerSpecialBlock("akasping_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     /**
      * Block Entity
      */
@@ -123,7 +139,8 @@ public interface SREFumoBlocks {
                     NONE_PLUSH, OTITH_PLUSH, THEF0RS4KEN_PLUSH, TOMATO_PLUSH,
                     XIAO_HEI_HAND_PLUSH, XIAOZHANQWQ_PLUSH, ALLINTOKYO_PLUSH, MILK_DRAGON_PLUSH,
                     JUSTACHEESE_PLUSH, SPBGCP_PLUSH, HUAJI_PLUSH, QINGMEI_PLUSH, JIALE2_PLUSH,
-                    EGG_PLUSH, TANGYE_PLUSH, XGD_PLUSH, YCHENNOC_PLUSH }));
+                    EGG_PLUSH, TANGYE_PLUSH, XGD_PLUSH, YCHENNOC_PLUSH, MONGOOSE_PLUSH, XIAOXIAN_PLUSH, LIFELINE_PLUSH,
+                    RLINGKONG_PLUSH, X1AOBA_PLUSH, CAIZI_PLUSH, JIALE114514_PLUSH, AKASPING_PLUSH }));
 
     @SuppressWarnings("unchecked")
     public static <T extends Block> T registerBlock(String id, T block) {

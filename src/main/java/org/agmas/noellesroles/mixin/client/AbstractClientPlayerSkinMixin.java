@@ -13,13 +13,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(AbstractClientPlayer.class)
 public abstract class AbstractClientPlayerSkinMixin {
 
+    private static final ThreadLocal<Boolean> IN_SKIN_SWAP = ThreadLocal.withInitial(() -> false);
+
     @Inject(method = "getSkin", at = @At("HEAD"), cancellable = true)
     private void applySkinSwap(CallbackInfoReturnable<PlayerSkin> cir) {
+        if (IN_SKIN_SWAP.get()) return;
         AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.level == null)
             return;
-        PlayerSkinResult result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(self);
+        IN_SKIN_SWAP.set(true);
+        PlayerSkinResult result;
+        try {
+            result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(self);
+        } finally {
+            IN_SKIN_SWAP.set(false);
+        }
         if (result == null || result.type == 0 || result.type == -1) {
             return;
         }

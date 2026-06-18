@@ -2295,7 +2295,7 @@
   "subtitle.sre.teamkill_warning": "⚠ Teamkill Warning",
   "subtitle.sre.teamkill_remaining": "Teammates killed: %d/%d · %d more will trigger punishment",
   "subtitle.sre.teamkill_violation": "❌ Violation: Repeated Teamkills",
-  "subtitle.sre.teamkill_punished": "Punishment triggered (%d/%d)"
+  "subtitle.sre.teamkill_punished": "Punishment triggered (%d/%d)",
   "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
   "death_reason.starrailexpress.phantom_destroyed": "Phantom Destroyed",
   "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
