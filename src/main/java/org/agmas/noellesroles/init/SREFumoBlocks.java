@@ -2,6 +2,7 @@ package org.agmas.noellesroles.init;
 
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block.Jiale2PlushBlock;
+import org.agmas.noellesroles.content.block.SPBGCPPlushBlock;
 import org.agmas.noellesroles.content.block.SREPlushBlock;
 import org.agmas.noellesroles.content.block_entity.SREPlushBlockEntity;
 import dev.doctor4t.ratatouille.util.registrar.BlockEntityTypeRegistrar;
@@ -96,7 +97,7 @@ public interface SREFumoBlocks {
     Block JUSTACHEESE_PLUSH = registerSpecialBlock("justacheese_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block SPBGCP_PLUSH = registerSpecialBlock("spbgcp_plush",
-            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+            new SPBGCPPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block HUAJI_PLUSH = registerSpecialBlock("huaji_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block QINGMEI_PLUSH = registerSpecialBlock("qingmei_plush",

@@ -38,7 +38,7 @@ public class NRSounds {
     public static final SoundEvent LEVEL = registrar.create("noellesroles.level");
     public static final SoundEvent SNOW_STORM = registrar.create("noellesroles.winter_storm");
     public static final SoundEvent SAND_STORM = registrar.create("noellesroles.dust_storm");
-    //Fumo
+    /**Fumo */
     public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
     public static final SoundEvent WJCLB_SOUND = registrar.create("plush.wjclb");
 
@@ -46,6 +46,14 @@ public class NRSounds {
     public static final SoundEvent GUO2_SOUND = registrar.create("plush.guo2");
     public static final SoundEvent GUO3_SOUND = registrar.create("plush.guo3");
     public static final SoundEvent GUO4_SOUND = registrar.create("plush.guo4");
+
+    //spbgcp
+    public static final SoundEvent SPBGCP_SOUND1 = registrar.create("plush.spbgcp1");
+    public static final SoundEvent SPBGCP_SOUND2 = registrar.create("plush.spbgcp2");
+    public static final SoundEvent SPBGCP_SOUND3 = registrar.create("plush.spbgcp3");
+    public static final SoundEvent SPBGCP_SOUND4 = registrar.create("plush.spbgcp4");
+
+
     //熊孩子
     public static final SoundEvent CHILD_LAUGH = registrar.create("noellesroles.child_laugh");
     public static final SoundEvent FART = registrar.create("noellesroles.fart");
