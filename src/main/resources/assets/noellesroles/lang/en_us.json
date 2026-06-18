@@ -3034,8 +3034,7 @@
 
   "==================== Pirate Cutlass ====================": "",
   "item.noellesroles.pirate_cutlass": "Pirate Cutlass",
-  "item.noellesroles.pirate_cutlass.tooltip": "Charge to stab your target, disappears after use.\nSingle-use weapon, 15s cooldown."
-  "info.screen.roleid.theboatboat": "Civilian Faction\nA sailor.\nCan buy Durability Boat from shop (150 coins)"
+  "item.noellesroles.pirate_cutlass.tooltip": "Charge to stab your target, disappears after use.\nSingle-use weapon, 15s cooldown.",
   "tooltip.noellesroles.kill_block_panel": "Kills players that touch the block the panel is in",
 
   "message.sre.skill.cast": "Cast %s (x%s)",

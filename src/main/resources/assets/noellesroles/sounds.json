@@ -95,6 +95,14 @@
       }
     ]
   },
+  "plush.tangye": {
+    "sounds": [
+      {
+        "name": "noellesroles:tangye",
+        "stream": false
+      }
+    ]
+  },
   "plush.guo1": {
     "sounds": [
       {
@@ -123,6 +131,14 @@
     "sounds": [
       {
         "name": "noellesroles:guo4",
+        "stream": false
+      }
+    ]
+  },
+"plush.jiale_wa": {
+    "sounds": [
+      {
+        "name": "noellesroles:jiale_wa",
         "stream": false
       }
     ]
