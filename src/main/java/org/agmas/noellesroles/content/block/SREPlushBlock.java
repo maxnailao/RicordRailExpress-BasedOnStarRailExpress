@@ -74,9 +74,9 @@ public class SREPlushBlock extends PlushBlock {
          ret = NRSounds.TANGYE_SOUND;
       }
       if (state.getBlock() == SREFumoBlocks.JIALE114514_PLUSH) {
-         ret = NRSounds.JIALE_WA_SOUND;
+          ret = NRSounds.JIALE_WA_SOUND;
       }
-      if (state.getBlock() == SREFumoBlocks.YCHENNOC_PLUSH){
+       if (state.getBlock() == SREFumoBlocks.YCHENNOC_PLUSH){
          ret = NRSounds.WJCLB_SOUND;
       }
       return ret;
