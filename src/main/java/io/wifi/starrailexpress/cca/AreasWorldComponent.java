@@ -171,6 +171,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     
     // 雪花效果配置（默认关闭）
     public boolean snowEnabled = false;
+    
+    // 沙尘暴效果配置（默认关闭）
+    public boolean sandEnabled = false;
 
     // 雾气效果配置（默认启用）
     public boolean fogEnabled = true;
@@ -203,6 +206,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
 
     // 支持的游戏模式列表，为空表示支持所有模式
     public java.util.List<String> gameModes = new java.util.ArrayList<>();
+
+    // 地图初始物品（格式：["itemId;count", ...]，所有玩家进入地图时获得）
+    public java.util.List<String> initialItems = new java.util.ArrayList<>();
 
     public PosWithOrientation getSpawnPos() {
         return spawnPos;
@@ -466,6 +472,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
         this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
+        this.sandEnabled = tag.contains("sandEnabled") ? tag.getBoolean("sandEnabled") : false;
         this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") : true;
         this.fogEnd = tag.contains("fogEnd") ? tag.getFloat("fogEnd") : 200.0f;
         this.fogShape = tag.contains("fogShape") ? tag.getString("fogShape") : "SPHERE";
@@ -485,6 +492,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.time = tag.contains("time") ? tag.getLong("time") : 18000;
         this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
         this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
+        this.initialItems = new ArrayList<>();
+        if (tag.contains("initialItems")) {
+            var iiList = tag.getList("initialItems", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < iiList.size(); i++) {
+                this.initialItems.add(iiList.getString(i));
+            }
+        }
         // this.playAreaOffset = getVec3dFromNbt(tag, "playAreaOffset");
         // this.playArea = getBoxFromNbt(tag, "playArea");
         //
@@ -550,6 +564,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("canSwim", this.canSwim);
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
         tag.putBoolean("snowEnabled", this.snowEnabled);
+        tag.putBoolean("sandEnabled", this.sandEnabled);
         tag.putBoolean("fogEnabled", this.fogEnabled);
         tag.putFloat("fogEnd", this.fogEnd);
         tag.putString("fogShape", this.fogShape);
@@ -567,6 +582,12 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putLong("time", this.time);
         tag.putBoolean("daylightCycle", this.daylightCycle);
         tag.putBoolean("weatherCycle", this.weatherCycle);
+
+        var initialItemsList = new net.minecraft.nbt.ListTag();
+        for (String item : this.initialItems) {
+            initialItemsList.add(net.minecraft.nbt.StringTag.valueOf(item));
+        }
+        tag.put("initialItems", initialItemsList);
 
         // 房间位置需要写入NBT（如果实现此功能）
         // 这里暂时不实现，因为NBT格式可能需要专门处理Map类型

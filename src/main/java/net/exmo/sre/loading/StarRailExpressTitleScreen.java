@@ -2,6 +2,7 @@ package net.exmo.sre.loading;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.logging.LogUtils;
 import com.mojang.realmsclient.gui.screens.RealmsNotificationsScreen;
 import com.terraformersmc.modmenu.api.ModMenuApi;
@@ -13,12 +14,17 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
+import net.minecraft.client.InputType;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.client.gui.components.SplashRenderer;
+import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.SafetyScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
@@ -83,6 +89,48 @@ public class StarRailExpressTitleScreen extends Screen {
     /** 帧序列播放帧率 */
     private static final float VIDEO_FPS = 20.0F;
     private final FrameAnimationRenderer frameAnimRenderer = new FrameAnimationRenderer(VIDEO_FPS);
+
+    private void setScreenIgnoreMixins(Screen screen) {
+        Minecraft client = this.minecraft;
+        if (SharedConstants.IS_RUNNING_IN_IDE) {
+            LOGGER.error("setScreen called from non-game thread");
+        }
+
+        if (client.screen != null) {
+            client.screen.removed();
+        } else {
+            client.setLastInputType(InputType.NONE);
+        }
+        {
+            if (screen == null && client.level == null) {
+                screen = new TitleScreen();
+            } else if (screen == null && client.player.isDeadOrDying()) {
+                if (client.player.shouldShowDeathScreen()) {
+                    screen = new DeathScreen((Component) null, client.level.getLevelData().isHardcore());
+                } else {
+                    client.player.respawn();
+                }
+            }
+
+            client.screen = screen;
+            if (client.screen != null) {
+                client.screen.added();
+            }
+
+            BufferUploader.reset();
+            if (screen != null) {
+                client.mouseHandler.releaseMouse();
+                KeyMapping.releaseAll();
+                screen.init(client, client.getWindow().getGuiScaledWidth(), client.getWindow().getGuiScaledHeight());
+                client.noRender = false;
+            } else {
+                client.getSoundManager().resume();
+                client.mouseHandler.grabMouse();
+            }
+
+            client.updateTitle();
+        }
+    }
 
     // ── 动画 & 状态 ──────────────────────────────────────────────────
     private long screenOpenTime;
@@ -258,7 +306,6 @@ public class StarRailExpressTitleScreen extends Screen {
                             : new SafetyScreen(this);
                     this.minecraft.setScreen(next);
                 }));
-
         this.menuEntries.add(new MenuEntry(
                 Component.translatable("menu.sre.singleplayer"),
                 () -> this.minecraft.setScreen(new SelectWorldScreen(this))));
@@ -288,6 +335,10 @@ public class StarRailExpressTitleScreen extends Screen {
                     if (FabricLoader.getInstance().isModLoaded("modmenu"))
                         this.minecraft.setScreen(ModMenuApi.createModsScreen(this));
                 }));
+
+        this.menuEntries.add(new MenuEntry(
+                Component.translatable("menu.sre.original"),
+                () -> setScreenIgnoreMixins(new TitleScreen(false))));
         this.menuEntries.add(new MenuEntry(
                 Component.translatable("menu.sre.quit"),
                 () -> this.minecraft.stop()));
@@ -358,7 +409,7 @@ public class StarRailExpressTitleScreen extends Screen {
         renderModernOverlay(g);
 
         // 版本号（左下角）
-        String version = "StarRailExpress 4.3.0 / "+SRE.modPacketVersion;
+        String version = "StarRailExpress 4.3.0 / " + SRE.modPacketVersion;
         if (Minecraft.checkModStatus().shouldReportAsModified())
             version += I18n.get("menu.modded");
         g.drawString(this.font, version, 8, this.height - 14, 0xC8B898, false);

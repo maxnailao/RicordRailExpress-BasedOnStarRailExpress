@@ -11,6 +11,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -34,6 +35,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
@@ -49,7 +51,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class RefugeeComponent implements AutoSyncedComponent, ServerTickingComponent {
-
     public static final ComponentKey<RefugeeComponent> KEY = ComponentRegistry.getOrCreate(
             StupidExpress.id("refugee"),
             RefugeeComponent.class);
@@ -164,8 +165,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         if (i == null) {
             i = 1;
         }
-        MonokumaPlayerComponent.KEY.get( player).clear();
-        WorldModifierComponent.KEY.get( player.serverLevel()).removeModifier(data.uuid, SEModifiers.REFUGEE);
+        MonokumaPlayerComponent.KEY.get(player).clear();
+        WorldModifierComponent.KEY.get(player.serverLevel()).removeModifier(data.uuid, SEModifiers.REFUGEE);
 
         final var areasWorldComponent = AreasWorldComponent.KEY.get(serverLevel);
         final var roomPosition = areasWorldComponent.getRoomPosition(i);
@@ -253,7 +254,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 ppc.stopPsychoAndRefreshPsychoCount(true);
                 ppc.sync();
                 SREPlayerShopComponent srePlayerShopComponent = SREPlayerShopComponent.KEY.get(player);
-                srePlayerShopComponent.addToBalance((int) (SREConfig.instance().psychoModePrice*0.75));
+                srePlayerShopComponent.addToBalance((int) (SREConfig.instance().psychoModePrice * 0.75));
                 srePlayerShopComponent.sync();
             }
             boolean isAlive = GameUtils.isPlayerAliveAndSurvival(player);
@@ -285,7 +286,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             }
             var r = gameWorldComponent.getRole(player);
             if (r != null) {
-                if (r.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())||r.identifier().getPath().equals(ModRoles.MONOKUMA.identifier().getPath())) {
+                if (r.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())
+                        || r.identifier().getPath().equals(ModRoles.MONOKUMA.identifier().getPath())) {
                     continue;
                 }
             }
@@ -499,5 +501,13 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         this.isPendingRestore = false;
         this.pendingWho = null;
         this.sync();
+    }
+
+    public static void register() {
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
+            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END) && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(sender))
+                return false;
+            return true;
+        });
     }
 }

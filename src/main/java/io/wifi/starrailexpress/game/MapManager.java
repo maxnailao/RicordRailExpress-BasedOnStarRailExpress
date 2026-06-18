@@ -261,6 +261,8 @@ public class MapManager {
 
         // 保存雪花效果配置
         jsonObject.addProperty("snowEnabled", areas.snowEnabled);
+        // 保存沙尘暴效果配置
+        jsonObject.addProperty("sandEnabled", areas.sandEnabled);
         jsonObject.addProperty("fogEnabled", areas.fogEnabled);
         jsonObject.addProperty("fogEnd", areas.fogEnd);
         jsonObject.addProperty("fogShape", areas.fogShape);
@@ -282,6 +284,9 @@ public class MapManager {
 
         // 保存天气循环配置
         jsonObject.addProperty("weatherCycle", areas.weatherCycle);
+
+        // 保存地图初始物品
+        jsonObject.add("initialItems", gson.toJsonTree(areas.initialItems));
 
         // 写入文件
         Path temp = mapConfigPath.resolveSibling(mapConfigPath.getFileName() + ".save.tmp");
@@ -364,6 +369,12 @@ public class MapManager {
                 areas.snowEnabled = jsonObject.get("snowEnabled").getAsBoolean();
             } else {
                 areas.snowEnabled = false;
+            }
+            // 加载沙尘暴效果配置（默认关闭）
+            if (jsonObject.has("sandEnabled")) {
+                areas.sandEnabled = jsonObject.get("sandEnabled").getAsBoolean();
+            } else {
+                areas.sandEnabled = false;
             }
             if (jsonObject.has("fogEnabled")) {
                 areas.fogEnabled = jsonObject.get("fogEnabled").getAsBoolean();
@@ -454,6 +465,18 @@ public class MapManager {
                 SRE.LOGGER.info("Loaded weatherCycle: " + areas.weatherCycle);
             } else {
                 areas.weatherCycle = false;
+            }
+
+            // 加载地图初始物品配置
+            areas.initialItems = new java.util.ArrayList<>();
+            if (jsonObject.has("initialItems")) {
+                var iiElement = jsonObject.get("initialItems");
+                if (iiElement.isJsonArray()) {
+                    for (var e : iiElement.getAsJsonArray()) {
+                        areas.initialItems.add(e.getAsString());
+                    }
+                }
+                SRE.LOGGER.info("Loaded initialItems: " + areas.initialItems);
             }
 
             // 应用配置到AreasWorldComponent，使用新的嵌套结构

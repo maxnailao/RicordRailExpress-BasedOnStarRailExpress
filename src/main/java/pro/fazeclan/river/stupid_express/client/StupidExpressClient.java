@@ -3,12 +3,15 @@ package pro.fazeclan.river.stupid_express.client;
 import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import dev.doctor4t.ratatouille.util.TextUtils;
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.StatusInit.StatusBar;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
@@ -17,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.client.resources.PlayerSkin.Model;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -26,6 +30,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.utils.RoleUtils;
+
 import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent;
 import org.agmas.noellesroles.init.NRSounds;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -195,10 +201,14 @@ public class StupidExpressClient implements ClientModInitializer {
         // 注册纵火犯HUD
         RoleHudRenderCallback.EVENT.register(SERoles.ARSONIST.identifier(), (context, tickCounter) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player == null) return;
-            if (SREClient.gameComponent == null) return;
-            if (!SREClient.isRole(SERoles.ARSONIST)) return;
-            if (!SREClient.isPlayerAliveAndInSurvival()) return;
+            if (client.player == null)
+                return;
+            if (SREClient.gameComponent == null)
+                return;
+            if (!SREClient.isRole(SERoles.ARSONIST))
+                return;
+            if (!SREClient.isPlayerAliveAndInSurvival())
+                return;
 
             DousedPlayerComponent ownComp = DousedPlayerComponent.KEY.get(client.player);
             int dousedCount = ownComp.dousedCount;
@@ -230,6 +240,11 @@ public class StupidExpressClient implements ClientModInitializer {
     private static void registerKeyEvents() {
         // 难民时旁观看时全员皮肤改为默认的皮肤
         OnGettingPlayerSkin.EVENT.register((player) -> {
+            if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
+                    || RoleUtils.isPlayerTheJob(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+                return OnGettingPlayerSkin.PlayerSkinResult
+                        .playerSkin(SRE.id("textures/entity/custom_psycho/th_lumen.png"), Model.SLIM);
+            }
             if (SREClient.getLooseEndPenalty()) {
                 PlayerSkin.Model model = player.getSkin().model();
                 boolean isSLIM = (model == PlayerSkin.Model.SLIM);

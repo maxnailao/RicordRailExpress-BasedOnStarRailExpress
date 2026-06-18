@@ -61,7 +61,7 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
 
                 if (var6 instanceof Player) {
                     Player target = (Player) var6;
-                    if ((double) target.distanceTo(player) < (double) 100) {
+                    if ((double) target.distanceTo(player) < (double) 30) {
                         SREGameWorldComponent game = (SREGameWorldComponent) SREGameWorldComponent.KEY
                                 .get(player.level());
                         boolean backfire = false;

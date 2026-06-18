@@ -18,6 +18,10 @@ public class SetVisualCommand {
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                     .executes(context -> executeSnow(context.getSource(),
                         BoolArgumentType.getBool(context, "enabled")))))
+            .then(Commands.literal("sand")
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                    .executes(context -> executeSand(context.getSource(),
+                        BoolArgumentType.getBool(context, "enabled")))))
             .then(Commands.literal("fog")
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                     .executes(context -> executeFog(context.getSource(),
@@ -54,6 +58,16 @@ public class SetVisualCommand {
     SRETrainWorldComponent.KEY.get(source.getLevel()).setSnow(enabled);
     source.sendSuccess(
         () -> Component.translatable("commands.sre.setvisual.snow", enabled)
+            .withStyle(style -> style.withColor(0x00FF00)),
+        true);
+    return 1;
+  }
+
+  private static int executeSand(CommandSourceStack source, boolean enabled) {
+
+    SRETrainWorldComponent.KEY.get(source.getLevel()).setSand(enabled);
+    source.sendSuccess(
+        () -> Component.translatable("commands.sre.setvisual.sand", enabled)
             .withStyle(style -> style.withColor(0x00FF00)),
         true);
     return 1;

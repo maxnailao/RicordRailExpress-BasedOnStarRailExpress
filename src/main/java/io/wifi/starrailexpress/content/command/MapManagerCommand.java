@@ -133,6 +133,7 @@ public class MapManagerCommand {
                   areas.noReset = false;
                   areas.sceneOffsetEnabled = false;
                   areas.snowEnabled = false;
+                  areas.sandEnabled = false;
                   areas.fogEnabled = true;
                   areas.fogEnd = 200.0f;
                   areas.fogShape = "SPHERE";
@@ -170,6 +171,7 @@ public class MapManagerCommand {
                 .then(setHaveOutsideSound())
                 .then(setSceneOffsetEnabled())
                 .then(setSnowEnabled())
+                .then(setSandEnabled())
                 .then(setFogEnabled())
                 .then(setFogEnd())
                 .then(setFogShape())
@@ -184,7 +186,8 @@ public class MapManagerCommand {
                 .then(setEffect())
                 .then(setTime())
                 .then(setDaylightCycle())
-                .then(setWeatherCycle()))
+                .then(setWeatherCycle())
+                .then(setInitialItems()))
             .then(Commands.literal("get")
                 .requires(source -> source.hasPermission(2))
                 .then(getSpawnPos())
@@ -203,6 +206,7 @@ public class MapManagerCommand {
                 .then(buildGetSimple("haveOutsideSound", a -> String.valueOf(a.haveOutsideSound)))
                 .then(buildGetSimple("sceneOffsetEnabled", a -> String.valueOf(a.sceneOffsetEnabled)))
                 .then(buildGetSimple("snowEnabled", a -> String.valueOf(a.snowEnabled)))
+                .then(buildGetSimple("sandEnabled", a -> String.valueOf(a.sandEnabled)))
                 .then(buildGetSimple("fogEnabled", a -> String.valueOf(a.fogEnabled)))
                 .then(buildGetSimple("fogEnd", a -> String.valueOf(a.fogEnd)))
                 .then(buildGetSimple("fogShape", a -> "\"" + a.fogShape + "\""))
@@ -217,6 +221,7 @@ public class MapManagerCommand {
                 .then(buildGetSimple("time", a -> String.valueOf(a.time)))
                 .then(buildGetSimple("daylightCycle", a -> String.valueOf(a.daylightCycle)))
                 .then(buildGetSimple("weatherCycle", a -> String.valueOf(a.weatherCycle)))
+                .then(buildGetSimple("initialItems", a -> a.initialItems.isEmpty() ? "(none)" : String.join(", ", a.initialItems)))
                 .then(getDisabledTasks()))
             .then(Commands.literal("remove")
                 .requires(source -> source.hasPermission(3))
@@ -447,6 +452,13 @@ public class MapManagerCommand {
     sendSetFeedback(source, "snowEnabled", String.valueOf(value));
   }
 
+  private static void setSandEnabled(CommandSourceStack source, boolean value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.sandEnabled = value;
+    areas.sync();
+    sendSetFeedback(source, "sandEnabled", String.valueOf(value));
+  }
+
   private static void setFogEnabled(CommandSourceStack source, boolean value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
     areas.fogEnabled = value;
@@ -578,6 +590,25 @@ public class MapManagerCommand {
     sendSetFeedback(source, "weatherCycle", String.valueOf(value));
   }
 
+  // 16. initialItems
+  private static void setInitialItems(CommandSourceStack source, String value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.initialItems = new java.util.ArrayList<>();
+    if (!value.isEmpty()) {
+      // 支持逗号分隔，格式如 "minecraft:diamond,2,minecraft:stick,1"
+      String[] parts = value.split(",");
+      for (int i = 0; i < parts.length; i += 2) {
+        if (i + 1 < parts.length) {
+          String itemId = parts[i].trim();
+          String countStr = parts[i + 1].trim();
+          areas.initialItems.add(itemId + ";" + countStr);
+        }
+      }
+    }
+    areas.sync();
+    sendSetFeedback(source, "initialItems", "\"" + value + "\"");
+  }
+
   // ======================== list 子命令实现 ========================
 
   private static int executeList(CommandSourceStack source) {
@@ -600,6 +631,7 @@ public class MapManagerCommand {
     sb.append("haveOutsideSound: ").append(areas.haveOutsideSound).append("\n");
     sb.append("sceneOffsetEnabled: ").append(areas.sceneOffsetEnabled).append("\n");
     sb.append("snowEnabled: ").append(areas.snowEnabled).append("\n");
+    sb.append("sandEnabled: ").append(areas.sandEnabled).append("\n");
     sb.append("fogEnabled: ").append(areas.fogEnabled).append("\n");
     sb.append("fogEnd: ").append(areas.fogEnd).append("\n");
     sb.append("fogShape: \"").append(areas.fogShape).append("\"\n");
@@ -614,6 +646,7 @@ public class MapManagerCommand {
     sb.append("time: ").append(areas.time).append("\n");
     sb.append("daylightCycle: ").append(areas.daylightCycle).append("\n");
     sb.append("weatherCycle: ").append(areas.weatherCycle).append("\n");
+    sb.append("initialItems: ").append(areas.initialItems.isEmpty() ? "(none)" : String.join(", ", areas.initialItems)).append("\n");
     sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks));
     source.sendSuccess(
         () -> Component.literal(sb.toString()).withStyle(style -> style.withColor(ChatFormatting.AQUA)),
@@ -896,6 +929,15 @@ public class MapManagerCommand {
             }));
   }
 
+  private static LiteralArgumentBuilder<CommandSourceStack> setInitialItems() {
+    return Commands.literal("initialItems")
+        .then(Commands.argument("value", StringArgumentType.string())
+            .executes(ctx -> {
+              setInitialItems(ctx.getSource(), StringArgumentType.getString(ctx, "value"));
+              return 1;
+            }));
+  }
+
   private static LiteralArgumentBuilder<CommandSourceStack> setReadyArea() {
     return buildSetAABB("readyArea",
         AreasWorldComponent::getReadyArea,
@@ -1014,6 +1056,15 @@ public class MapManagerCommand {
         .then(Commands.argument("value", BoolArgumentType.bool())
             .executes(ctx -> {
               setSnowEnabled(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setSandEnabled() {
+    return Commands.literal("sandEnabled")
+        .then(Commands.argument("value", BoolArgumentType.bool())
+            .executes(ctx -> {
+              setSandEnabled(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
               return 1;
             }));
   }
