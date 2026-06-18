@@ -337,7 +337,7 @@ public class ModRoles {
             SRERole.MoodType.REAL,  //真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
             false   // 显示计分板
-    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1)
+    )).setCanSeeCoin(true).setCanSeeTime(false).setDefaultMax(1)
             .setComponentKey(ModComponents.INTELLIGENCE);
 
     /**
@@ -404,7 +404,11 @@ public class ModRoles {
             .setNeutrals(true) // 中立阵营
             .setCanSeeCoin(true)
             .setCanSeeTime(true)
-            .setComponentKey(ModComponents.CORRUPT_COP);
+            .setComponentKey(ModComponents.CORRUPT_COP)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(1500)
+            .setDefaultEnableNeededPlayerCount(12);
+
 
     /**
      *  召回杀手 - 杀手阵营
@@ -446,7 +450,7 @@ public class ModRoles {
             SRERole.MoodType.REAL,  //真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),    //标准冲刺时间
             false   // 显示计分板
-    )).setCanSeeCoin(true).setCanSeeTime(false).setMax(1);
+    )).setCanSeeCoin(true).setCanSeeTime(false).setDefaultMax(1);
 
     /**
      * 飞行员角色 - 平民阵营
@@ -1563,7 +1567,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true)
-      .setMax(1);
+      .setDefaultMax(1);
 
     // 工人强制赋予矫健修饰符（在游戏开始、角色和修饰符分配完成后直接添加）
     static {

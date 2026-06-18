@@ -385,14 +385,14 @@ public class NoellesRolesConfig implements ConfigData {
     /**
      * 黑警刷新最小玩家数
      */
-    @ConfigEntry.Category(value = "detail")
-    public int minPlayerForCorruptCop = 12;
+    //@ConfigEntry.Category(value = "detail")
+    //public int minPlayerForCorruptCop = 12;
 
     /**
      * 黑警刷新概率（%）
      */
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfCorruptCop = 30;
+    //@ConfigEntry.Category(value = "detail")
+   // public int chanceOfCorruptCop = 30;
 
     /**
      * 悍匪最小玩家数

@@ -67,7 +67,6 @@ public class InitModRolesMax {
                 sreConfig.enableRoundBasedAutoPreset = false;
                 SREConfig.HANDLER.save();
                 org.agmas.harpymodloader.config.HarpyModLoaderConfig.HANDLER.save();
-                SRE.LOGGER.info("[AutoPreset] 第{}局结束，已启用全部职业", round);
             } else {
                 boolean applied = org.agmas.noellesroles.commands.PresetCommand.applyPresetByName(nextPreset);
                 if (applied) {
@@ -629,64 +628,14 @@ public class InitModRolesMax {
                 entry.getValue().setSpawnInfo(spinfo);
         }
         // 以下内容均已统一成新API。（上方）可分别对任何角色进行控制。也可以设置角色不受到控制影响。
-        {
-            // // 建筑师 - 从配置读取概率和最小玩家数
-            // ModRoles.BUILDER.setEnableChance(config.chanceOfBuilder).setEnableNeededPlayerCount(config.minPlayerForBuilder);
-
-            // // 肉汁 - 25%概率
-            // ModRoles.MEATBALL.setEnableChance(config.chanceOfMeatball)
-            // .setEnableNeededPlayerCount(config.minPlayerForMeatball);
-
-            // // 杜鹃 - 45%概率
-            // ModRoles.CUCKOO.setEnableChance(config.chanceOfCuckoo);
-
-            // // 苦力怕 - 20%概率
-            // ModRoles.CREEPER.setEnableChance(config.chanceOfCreeper);
-
-            // // 画家 - 50%概率
-            // ModRoles.PAINTER.setEnableChance(config.chanceOfPainter);
-
-            // // 雇佣兵 - 从配置读取概率和最小玩家数
-            // ModRoles.MERCENARY.setEnableChance(config.chanceOfMercenary)
-            // .setEnableNeededPlayerCount(config.minPlayerForMercenary);
-
-            // // 愚者 - 从配置读取概率和最小玩家数
-            // ModRoles.THE_FOOL.setEnableChance(config.chanceOfTheFool)
-            // .setEnableNeededPlayerCount(config.minPlayerForTheFool);
-
-            // // 猫死灵法师 - 从配置读取概率和最小玩家数
-            // ModRoles.CAT_NECROMANCER.setEnableChance(config.chanceOfCatNecromancer)
-            // .setEnableNeededPlayerCount(config.minPlayerForCatNecromancer);
-
-            // // 更好的义警 - 小概率（基于10000）
-            // ModRoles.BEST_VIGILANTE.setEnableRareChance(config.chanceOfBestVigilante);
-
-            // // 静语者 - 从配置读取概率和最大数量
-            // ModRoles.SILENCER.setEnableChance(config.chanceOfSilencer).setMax(config.silencerMax);
-
-            // // StupidExpress 角色配置
-            // // 失忆者
-            // SERoles.AMNESIAC.setEnableNeededPlayerCount(config.minPlayerForAmnesiac)
-            // .setEnableChance(config.chanceOfAmnesiac);
-
-            // // 悍匪 - 从配置读取概率和最小玩家数
-            // ModRoles.GANGSTERS.setEnableChance(config.chanceOfGangsters)
-            // .setEnableNeededPlayerCount(config.minPlayerForGangsters);
-            // // 钳工 - 与悍匪绑定，由悍匪概率控制
-            // ModRoles.FITTER.setEnableChance(config.chanceOfGangsters)
-            // .setEnableNeededPlayerCount(config.minPlayerForGangsters);
-
-            // // 鹈鹕 - 从配置读取概率和最小玩家数
-            // ModRoles.PELICAN.setEnableChance(config.chanceOfPelican)
-            // .setEnableNeededPlayerCount(config.minPlayerForPelican);
-
+        
         // 黑警 - 从配置读取概率和最小玩家数
-        ModRoles.CORRUPT_COP.setEnableChance(config.chanceOfCorruptCop)
-                .setEnableNeededPlayerCount(config.minPlayerForCorruptCop);
+        //ModRoles.CORRUPT_COP.spawnInfo.setEnableChance(config.chanceOfCorruptCop * 100);
+        //ModRoles.CORRUPT_COP.spawnInfo.setMinEnabledPlayer(config.minPlayerForCorruptCop);
 
         // 教父 - 从配置读取概率和最小玩家数
-        //ModRoles.GODFATHER.setEnableChance(config.chanceOfGodfather)
-        //        .setEnableNeededPlayerCount(config.mafiaMinimumPlayers);
+        //ModRoles.GODFATHER.spawnInfo.setEnableChance(config.chanceOfGodfather * 100);
+        //ModRoles.GODFATHER.spawnInfo.setMinEnabledPlayer(config.mafiaMinimumPlayers);
 
         // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%
         for (var entry : TMMRoles.ROLES.entrySet()) {
