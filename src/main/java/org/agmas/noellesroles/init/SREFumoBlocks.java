@@ -37,7 +37,7 @@ public interface SREFumoBlocks {
     public static final BlockRegistrar blockRegistrar = new BlockRegistrar(Noellesroles.MOD_ID);
     public static final BlockEntityTypeRegistrar blockEntityRegistrar = new BlockEntityTypeRegistrar(
             Noellesroles.MOD_ID);
-    
+
     // === 普通Fumo玩偶 ===
     Block MILK_DRAGON_PLUSH = registerBlock("milk_dragon_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
@@ -93,7 +93,7 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block ALLINTOKYO_PLUSH = registerBlock("allintokyo_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
+
     // === 特殊Fumo玩偶===
     Block JUSTACHEE_PLUSH = registerSpecialBlock("justachee_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
@@ -129,11 +129,12 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block AKASPING_PLUSH = registerSpecialBlock("akasping_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
-    // 自定义玩家 plush（用于 /sre:plush player 命令）
-    Block CUSTOM_PLAYER_PLUSH = registerOpBlock("custom_player_plush",
-            new CustomPlayerPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
+
+
+    // 自定义玩家 plush：单个动态方块，按绑定的玩家名渲染该玩家皮肤
+    Block CUSTOM_PLAYER_PLUSH = registerBlock("custom_player_plush",
+            new org.agmas.noellesroles.content.block.CustomPlayerPlushBlock(
+                    Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     /**
      * Block Entity
      */
@@ -175,13 +176,13 @@ public interface SREFumoBlocks {
                     return new ItemStack(BAKA_PLUSH.asItem());
                 })
                 .build());
-        
+
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SPECIAL_FUMO_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.starrailexpress.special_fumo_blocks")).icon(() -> {
                     return new ItemStack(JUSTACHEE_PLUSH.asItem());
                 })
                 .build());
-        
+
         blockRegistrar.registerEntries();
         blockEntityRegistrar.registerEntries();
     }
