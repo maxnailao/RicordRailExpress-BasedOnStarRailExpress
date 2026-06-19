@@ -684,6 +684,16 @@ public class ModItems {
             "signed_paper");
 
     /**
+     * 花环
+     * - 穿戴在头部时持续给予 san值恢复效果
+     * - 每秒消耗 1 点耐久
+     */
+    public static final Item WREATH = register(
+            new org.agmas.noellesroles.content.item.WreathItem(ArmorMaterials.LEATHER, net.minecraft.world.item.ArmorItem.Type.HELMET,
+                    (new Item.Properties()).stacksTo(1).durability(100)),
+            "wreath");
+
+    /**
      * 雇佣契约（未签订/已签订共用物品）
      */
     public static final Item MERCENARY_CONTRACT = register(
