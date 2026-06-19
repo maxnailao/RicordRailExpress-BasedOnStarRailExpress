@@ -25,17 +25,17 @@ import org.agmas.noellesroles.content.effects.TimeStopEffect;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> INVENTORY_BANED = register("inventory_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> EAT_MEAT_FOOD = register("eat_meat_food",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> NEXT_SKILL_BANED = register("next_skill_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> TAROT_ASSEMBLY = register("tarot_assembly",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> GHOST_STATE = register("ghost_state",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF) {
                 @Override
@@ -57,7 +57,7 @@ public class ModEffects {
                 }
             });
     public static final Holder<MobEffect> MOVE_BANED = register("move_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF) {
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF) {
                 @Override
                 public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
                     if (livingEntity.level().getGameTime() % 20 == 0)
@@ -73,9 +73,9 @@ public class ModEffects {
                 }
             });
     public static final Holder<MobEffect> TURN_BANED = register("turn_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> ONLY_NO_COLLIDE = register("only_no_collide",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
 
@@ -263,12 +263,22 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> CHAT_BAN = register("chat_ban",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x666666));
-    
+
     /**
      * 黑白熊狂暴效果
      */
     public static final Holder<MobEffect> MONOKUMA_FRENZY = register("monokuma_frenzy",
             new org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaFrenzyEffect());
+
+    /**
+     * 伪装效果
+     * - 中性效果
+     * - 持续期间客户端会把玩家皮肤替换为预留的伪装皮肤
+     *   （见 OnGettingPlayerSkin 监听器，皮肤资源位于
+     *   assets/starrailexpress/textures/entity/disguise/disguise_skin.png）
+     */
+    public static final Holder<MobEffect> DISGUISE = register("disguise",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7B68EE));
 
     /**
      * 聊天混乱：拥有此效果的玩家发送的聊天消息内容会被随机替换为特殊字符
@@ -366,6 +376,9 @@ public class ModEffects {
     public static boolean pierceDeath = false;
 
     public static void init() {
+        // 把说话者侧的语音效果（重金属/回响）同步给所有客户端，
+        // 否则听者客户端查不到说话者的效果，OpenAL 语音处理无法生效。
+        org.agmas.noellesroles.voice.VoiceEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

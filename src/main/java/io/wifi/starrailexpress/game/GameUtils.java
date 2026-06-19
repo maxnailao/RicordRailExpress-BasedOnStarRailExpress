@@ -17,6 +17,7 @@ import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.network.original.AnnounceEndingPayload;
+import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -704,6 +705,9 @@ public class GameUtils {
                 });
             }
 
+            // 若存在赞助者，把信封替换为赞助者的 plush（保留信封名称/描述，右键仍可打开介绍 GUI）
+            letter = io.wifi.starrailexpress.sponsor.SponsorManager.decorateIntroStack(letter, serverPlayerEntity);
+
             serverPlayerEntity.addItem(letter);
             i++;
         }
@@ -1059,7 +1063,7 @@ public class GameUtils {
                         stats.getOrCreateRoleStats(playerRole.identifier()).incrementLossesAsRole();
                     }
                 }
-                SREPlayerProgressionComponent.KEY.get(player).onRoundSettled(playerRole, isWinner);
+                ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
             }
         }
     }

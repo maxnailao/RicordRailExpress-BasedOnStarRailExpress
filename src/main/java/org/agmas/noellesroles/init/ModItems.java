@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.index.DevItems;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.index.TMMItems;
+import static io.wifi.starrailexpress.index.TMMItems.*;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.ChatFormatting;
@@ -43,11 +44,9 @@ import static io.wifi.starrailexpress.game.GameConstants.getInTicks;
 
 public class ModItems {
     public static final ItemRegistrar registrar = new ItemRegistrar(Noellesroles.MOD_ID);
-    public static ResourceKey<CreativeModeTab> MISC_CREATIVE_GROUP = ResourceKey.create(
-            Registries.CREATIVE_MODE_TAB,
-            Noellesroles.id("misc"));
 
-    public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
+    public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote",
+            CONSUMABLES_GROUP);
 
     public static final Item FISHER_ROD = register(
             new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
@@ -55,90 +54,90 @@ public class ModItems {
 
     public static final Item REPAIR_TOOLBOX = register(
             new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip", new Item.Properties().stacksTo(4)),
-            "repair_toolbox");
+            "repair_toolbox", REPAIR_MODE_GROUP);
     public static final Item SPARE_PARTS = register(
             new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip", new Item.Properties().stacksTo(16)),
-            "spare_parts");
+            "spare_parts", REPAIR_MODE_GROUP);
     public static final Item RESCUE_FLARE = register(
             new RescueFlareItem(new Item.Properties().stacksTo(4)),
-            "rescue_flare");
+            "rescue_flare", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
-            "flare");
+            "flare", ROLE_ITEMS_GROUP);
     public static final Item REPAIR_MEDKIT = register(
             new RepairMedkitItem(new Item.Properties().stacksTo(4)),
-            "repair_medkit");
+            "repair_medkit", REPAIR_MODE_GROUP);
     public static final Item HUNTER_CHAIN = register(
             new HunterChainItem(new Item.Properties().stacksTo(1).durability(6)),
-            "hunter_chain");
+            "hunter_chain", TOOLS_GROUP);
     public static final Item HUNTER_WEAPON = register(
             new HunterWeaponItem(new Item.Properties().stacksTo(1).durability(96)),
-            "hunter_weapon");
+            "hunter_weapon", WEAPONS_GROUP);
     public static final Item HUNTER_HAMMER = register(
             new HunterWeaponItem("hammer", new Item.Properties().stacksTo(1).durability(84)),
-            "hunter_hammer");
+            "hunter_hammer", WEAPONS_GROUP);
     public static final Item HUNTER_HOOK = register(
             new HunterWeaponItem("hook", new Item.Properties().stacksTo(1).durability(88)),
-            "hunter_hook");
+            "hunter_hook", WEAPONS_GROUP);
     public static final Item HUNTER_PLUGIN_LACERATION = register(
             new HunterAttackPluginItem("laceration", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_laceration");
+            "hunter_plugin_laceration", TOOLS_GROUP);
     public static final Item HUNTER_PLUGIN_CONCUSSION = register(
             new HunterAttackPluginItem("concussion", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_concussion");
+            "hunter_plugin_concussion", TOOLS_GROUP);
     public static final Item HUNTER_PLUGIN_TRACKING = register(
             new HunterAttackPluginItem("tracking", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_tracking");
+            "hunter_plugin_tracking", TOOLS_GROUP);
     public static final Item HUNTER_PLUGIN_SUPPRESSION = register(
             new HunterAttackPluginItem("suppression", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_suppression");
+            "hunter_plugin_suppression", TOOLS_GROUP);
 
     public static final Item HUNTER_PULSE = register(
             new HunterPulseItem(new Item.Properties().stacksTo(1)),
-            "hunter_pulse");
+            "hunter_pulse", TOOLS_GROUP);
     public static final Item HUNTER_BLINK = register(
             new HunterBlinkItem(new Item.Properties().stacksTo(1).durability(4)),
-            "hunter_blink");
+            "hunter_blink", TOOLS_GROUP);
     public static final Item HUNTER_JAMMER = register(
             new HunterJammerItem(new Item.Properties().stacksTo(1).durability(3)),
             "hunter_jammer");
 
     public static final Item SMOKE_PELLET = register(
             new SmokePelletItem(new Item.Properties().stacksTo(8)),
-            "smoke_pellet");
+            "smoke_pellet", TOOLS_GROUP);
     public static final Item DECOY_BEACON = register(
             new DecoyBeaconItem(new Item.Properties().stacksTo(4)),
-            "decoy_beacon");
+            "decoy_beacon", TOOLS_GROUP);
     public static final Item ESCAPE_GRAPPLE = register(
             new EscapeGrappleItem(new Item.Properties().stacksTo(1).durability(3)),
-            "escape_grapple");
+            "escape_grapple", TOOLS_GROUP);
     public static final Item REPAIR_AREA_KEY = register(
             new RepairRouteItem("area_key", new Item.Properties().stacksTo(8)),
-            "repair_area_key");
+            "repair_area_key", REPAIR_MODE_GROUP);
     public static final Item REPAIR_OLD_KEY = register(
             new RepairRouteItem("old_key", new Item.Properties().stacksTo(4)),
-            "repair_old_key");
+            "repair_old_key", REPAIR_MODE_GROUP);
     public static final Item REPAIR_FUSE = register(
             new RepairRouteItem("fuse", new Item.Properties().stacksTo(4)),
-            "repair_fuse");
+            "repair_fuse", REPAIR_MODE_GROUP);
     public static final Item REPAIR_GEAR_HANDLE = register(
             new RepairRouteItem("gear_handle", new Item.Properties().stacksTo(4)),
-            "repair_gear_handle");
+            "repair_gear_handle", REPAIR_MODE_GROUP);
     public static final Item REPAIR_CROWBAR = register(
             new RepairRouteItem("crowbar", new Item.Properties().stacksTo(1).durability(24)),
-            "repair_crowbar");
+            "repair_crowbar", REPAIR_MODE_GROUP);
     public static final Item REPAIR_LOCKPICK = register(
             new RepairRouteItem("lockpick", new Item.Properties().stacksTo(8)),
-            "repair_lockpick");
+            "repair_lockpick", REPAIR_MODE_GROUP);
     public static final Item REPAIR_BATTERY = register(
             new RepairRouteItem("battery", new Item.Properties().stacksTo(4)),
-            "repair_battery");
+            "repair_battery", REPAIR_MODE_GROUP);
     public static final Item REPAIR_VALVE_HANDLE = register(
             new RepairRouteItem("valve_handle", new Item.Properties().stacksTo(4)),
-            "repair_valve_handle");
+            "repair_valve_handle", REPAIR_MODE_GROUP);
     public static final Item REPAIR_BOLT_CUTTER = register(
             new RepairRouteItem("bolt_cutter", new Item.Properties().stacksTo(1).durability(18)),
-            "repair_bolt_cutter");
+            "repair_bolt_cutter", REPAIR_MODE_GROUP);
     public static final Item REPAIR_PRESET_WAND = register(
             new RepairPresetWandItem(new Item.Properties().stacksTo(1)),
             "repair_preset_wand");
@@ -232,7 +231,7 @@ public class ModItems {
             "stalker_knife");
     public static final Item STALKER_KNIFE_OFFHAND = register(
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
-            "stalker_knife_offhand");
+            "stalker_knife_offhand", WEAPONS_GROUP);
     public static final Item PIRATE_CUTLASS = register(
             new org.agmas.noellesroles.content.item.PirateCutlassItem(new Item.Properties().stacksTo(1)),
             "pirate_cutlass");
@@ -523,7 +522,7 @@ public class ModItems {
      */
     public static final Item WHEELCHAIR = register(
             new WheelchairItem(),
-            "wheelchair");
+            "wheelchair", ROLE_ITEMS_GROUP);
     public static final Item DURABILITY_BOAT = register(
             new DurabilityBoatItem(),
             "thenewboat");
@@ -958,24 +957,18 @@ public class ModItems {
     // );
 
     @SuppressWarnings("unchecked")
-    public static Item register(Item item, String id) {
-        // Create the identifier for the item.
-        // Register the item.
-        var registeredItem = registrar.create(id, item, new ResourceKey[] { MISC_CREATIVE_GROUP });
-        // Item registeredItem = Registry.register(BuiltInRegistries.ITEM, itemID,
-        // item);
+    public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
+        ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);
+        allGroups[extraGroups.length] = NOELLESROLES_ALL_GROUP;
+        var registeredItem = registrar.create(id, item, allGroups);
         TMMDescItems.introItems.add(registeredItem);
 
-        // Return the registered item!
         return registeredItem;
     }
 
     public static void init() {
         registrar.registerEntries();
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MISC_CREATIVE_GROUP, FabricItemGroup.builder()
-                .title(Component.translatable("item_group.noellesroles.misc")).icon(() -> {
-                    return new ItemStack(ModItems.WHEELCHAIR);
-                }).build());
+        // 不再注册旧的 MISC_CREATIVE_GROUP 和 SAN_CREATIVE_GROUP，所有物品已分配到新分类标签页
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PAN);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SMOKE_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BLANK_CARTRIDGE);

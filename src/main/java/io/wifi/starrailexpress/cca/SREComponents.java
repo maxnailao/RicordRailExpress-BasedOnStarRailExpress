@@ -29,6 +29,7 @@ public class SREComponents
         registry.register(SREWorldBlackoutComponent.KEY, SREWorldBlackoutComponent::new);
         registry.register(SREMonitorWorldComponent.KEY, SREMonitorWorldComponent::new);
         registry.register(SREGameTimeComponent.KEY, SREGameTimeComponent::new);
+        registry.register(MurderTimeEventComponent.KEY, MurderTimeEventComponent::new);
         registry.register(AutoStartComponent.KEY, AutoStartComponent::new);
         registry.register(ParticipationComponent.KEY, ParticipationComponent::new);
         registry.register(SREGameRoundEndComponent.KEY, SREGameRoundEndComponent::new);
@@ -67,9 +68,6 @@ public class SREComponents
 
         registry.beginRegistration(PlayerBodyEntity.class, PlayerBodyEntityComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(PlayerBodyEntityComponent::new);
-        registry.beginRegistration(Player.class, SREPlayerProgressionComponent.KEY)
-                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
-                .end(SREPlayerProgressionComponent::new);
         registry.beginRegistration(Player.class, SREPlayerNunchuckComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerNunchuckComponent::new);
         registry.beginRegistration(Player.class, NameTagInventoryComponent.KEY)

@@ -1975,10 +1975,23 @@ public class RoleShopHandler {
         TMMItems.GRENADE.getDefaultInstance(),
         275,
         ShopEntry.Type.WEAPON));
+    // 炸弹客商店
     BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.FIRECRACKER.getDefaultInstance(),
-        25,
-        ShopEntry.Type.TOOL));
+            TMMItems.GRENADE.getDefaultInstance(),
+            290,
+            ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+            TMMItems.TIMED_GRENADE.getDefaultInstance(),
+            290,
+            ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+            TMMItems.STICKY_GRENADE.getDefaultInstance(),
+            290,
+            ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+            TMMItems.FIRECRACKER.getDefaultInstance(),
+            25,
+            ShopEntry.Type.TOOL));
 
     // 巡警商店
     // 左轮手枪 - 325金币
@@ -2140,12 +2153,12 @@ public class RoleShopHandler {
     // 匪徒手枪 - 175金币
     BANDIT_SHOP.add(new ShopEntry(
         ModItems.BANDIT_REVOLVER.getDefaultInstance(),
-        175,
+        180,
         ShopEntry.Type.WEAPON));
 
     // 手榴弹 - 600金币
     BANDIT_SHOP.add(new ShopEntry(
-        TMMItems.GRENADE.getDefaultInstance(),
+        TMMItems.TIMED_GRENADE.getDefaultInstance(),
         600,
         ShopEntry.Type.WEAPON));
 

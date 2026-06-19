@@ -243,6 +243,7 @@ public class CommonClientHudRenderer {
   public static void registerRenderersEvent() {
     registerFather();
     UnifiedSkillHud.register();
+    MurderTimeHud.register();
     RepairEscapeHud.register();
     registerSons();
     OtherRolesRegister.registerSons();
