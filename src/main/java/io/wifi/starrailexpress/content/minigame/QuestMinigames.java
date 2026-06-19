@@ -29,6 +29,18 @@ public class QuestMinigames {
     public static final QuestMinigame COOKING = register(
             QuestMinigame.of("cooking", "minigame.starrailexpress.cooking"));
 
+    /** 五子棋小游戏 */
+    public static final QuestMinigame GOMOKU = register(
+            QuestMinigame.of("gomoku", "minigame.starrailexpress.gomoku"));
+
+    /** 打靶小游戏 */
+    public static final QuestMinigame TARGET_SHOOTING = register(
+            QuestMinigame.of("target_shooting", "minigame.starrailexpress.target_shooting"));
+
+    /** 象棋小游戏 */
+    public static final QuestMinigame XIANGQI = register(
+            QuestMinigame.of("xiangqi", "minigame.starrailexpress.xiangqi"));
+
     // ══════════════════════════════════════════════
     // 注册方法
     // ══════════════════════════════════════════════

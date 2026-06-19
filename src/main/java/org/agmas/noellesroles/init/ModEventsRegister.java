@@ -1297,6 +1297,8 @@ public class ModEventsRegister {
             } else {
                 Harpymodloader.officialVerify = true;
             }
+            // 加载小游戏积分榜数据
+            io.wifi.starrailexpress.content.minigame.MinigameScoreboardData.load(server);
         });
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();

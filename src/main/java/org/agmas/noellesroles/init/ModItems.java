@@ -49,6 +49,10 @@ public class ModItems {
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
 
+    public static final Item GAME_CONSOLE = register(
+            new GameConsoleItem(new Item.Properties().stacksTo(1)),
+            "game_console");
+
     public static final Item FISHER_ROD = register(
             new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
             "fisher_rod");

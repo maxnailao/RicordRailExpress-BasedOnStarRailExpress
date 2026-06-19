@@ -1,6 +1,12 @@
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
+import io.wifi.starrailexpress.network.packet.GomokuJoinC2SPacket;
+import io.wifi.starrailexpress.network.packet.GomokuMoveC2SPacket;
+import io.wifi.starrailexpress.network.packet.GomokuStateS2CPacket;
+import io.wifi.starrailexpress.network.packet.XiangqiJoinC2SPacket;
+import io.wifi.starrailexpress.network.packet.XiangqiMoveC2SPacket;
+import io.wifi.starrailexpress.network.packet.XiangqiStateS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -216,5 +222,19 @@ public class ModPackets {
         // 注册窃皮者网络包
         PayloadTypeRegistry.playC2S().register(SkincrawlerC2SPacket.ID, SkincrawlerC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SkincrawlerSkinS2CPacket.ID, SkincrawlerSkinS2CPacket.CODEC);
+
+        // 五子棋网络包
+        PayloadTypeRegistry.playC2S().register(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(GomokuMoveC2SPacket.TYPE, GomokuMoveC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(GomokuStateS2CPacket.TYPE, GomokuStateS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(GomokuMoveC2SPacket.TYPE, GomokuMoveC2SPacket::handle);
+
+        // 象棋网络包
+        PayloadTypeRegistry.playC2S().register(XiangqiJoinC2SPacket.TYPE, XiangqiJoinC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(XiangqiMoveC2SPacket.TYPE, XiangqiMoveC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(XiangqiStateS2CPacket.TYPE, XiangqiStateS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(XiangqiJoinC2SPacket.TYPE, XiangqiJoinC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(XiangqiMoveC2SPacket.TYPE, XiangqiMoveC2SPacket::handle);
     }
 }

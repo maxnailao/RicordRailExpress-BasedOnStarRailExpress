@@ -757,6 +757,24 @@ public class SREClient implements ClientModInitializer {
         // 注册小游戏任务点的客户端网络接收器
         io.wifi.starrailexpress.client.network.MinigameQuestClientNetwork.register();
 
+        // 注册五子棋状态同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.GomokuStateS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.GomokuMinigameScreen gomoku) {
+                        gomoku.onStateReceived(payload);
+                    }
+                }));
+
+        // 注册象棋状态同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.XiangqiStateS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.XiangqiMinigameScreen xiangqi) {
+                        xiangqi.onStateReceived(payload);
+                    }
+                }));
+
         // 注册职业轮选网络包
         RoleRotationClientReceiver.register();
 
