@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomTableHud;
 
 import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
+import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.client.gui.screen.*;
 import io.wifi.starrailexpress.client.model.GeneralModelLoadingPlugin;
@@ -457,6 +458,10 @@ public class SREClient implements ClientModInitializer {
             if (!prevGameRunning && gameComponent.isRunning()) {
                 Minecraft.getInstance().player.getInventory().selected = 8;
             }
+            // 游戏结束时清除高级相机轨道
+            if (prevGameRunning && !gameComponent.isRunning()) {
+                net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+            }
             prevGameRunning = gameComponent.isRunning();
 
             // Fade sound with game start / stop fade
@@ -591,6 +596,7 @@ public class SREClient implements ClientModInitializer {
                 client.execute(() -> {
                     FourthRoomClientState.clear();
                     FourthRoomCameraDirector.clear();
+                    net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
                     ClientSkincrawlerState.clearAll();
                     net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
                     SceneAssetClient.clearRuntime();
@@ -660,6 +666,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(PlayerStatsSyncPayload.ID, (payload, context) ->
                 context.client().execute(() ->
                         ClientPlayerStatsCache.update(payload.playerUuid(), payload.json())));
+        ClientPlayNetworking.registerGlobalReceiver(PlayerDataPartSyncPayload.ID, (payload, context) ->
+                context.client().execute(() ->
+                        ClientPlayerDataCache.update(payload.playerUuid(), payload.part(), payload.json(), payload.updatedAt())));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {
@@ -721,6 +730,14 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OpenProgressionScreenPayload.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterSyncPayload.ID,
+                (payload, context) -> io.wifi.starrailexpress.client.data.ClientRoleRosterCache.update(payload.json()));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.sponsor.SponsorListPayload.ID,
+                (payload, context) -> io.wifi.starrailexpress.client.data.ClientSponsorCache.update(payload.names()));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.OpenRoleRosterScreenPayload.ID,
+                (payload, context) -> context.client().execute(() -> context.client().setScreen(payload.admin()
+                        ? new io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen()
+                        : new io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen())));
         ClientPlayNetworking.registerGlobalReceiver(
                 io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID, (payload, context) -> {
                     context.client().execute(() -> context.client().setScreen(
@@ -792,6 +809,18 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // 高级相机轨道
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.camera.AdvancedCameraPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (payload.clear()) {
+                            net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+                        } else {
+                            net.exmo.sre.camera.client.AdvancedCameraDirector.play(payload.json());
+                        }
+                    });
+                });
+
         // Subtitle 字幕报幕
         ClientPlayNetworking.registerGlobalReceiver(
                 net.exmo.sre.subtitle.SubtitleS2CPayload.ID, (payload, context) -> {
@@ -842,6 +871,7 @@ public class SREClient implements ClientModInitializer {
             WaypointHUD.renderHUD(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
+            net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
 
             // Subtitle 字幕报幕
@@ -876,6 +906,7 @@ public class SREClient implements ClientModInitializer {
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             FourthRoomCameraDirector.tick(client);
+            net.exmo.sre.camera.client.AdvancedCameraDirector.tick(client);
             if (SREClient.gameComponent == null)
                 return;
 
