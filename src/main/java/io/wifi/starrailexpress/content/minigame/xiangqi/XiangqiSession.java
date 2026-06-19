@@ -241,6 +241,112 @@ public class XiangqiSession {
     }
 
     // ══════════════════════════════════════════════
+    // 公共静态验证（客户端本地预判 + 服务端共用）
+    // ══════════════════════════════════════════════
+
+    /**
+     * 客户端本地校验走法是否合法（用于待落子预览）。
+     * @param flatBoard byte[90] 展平棋盘
+     */
+    public static boolean isValidMoveClient(byte[] flatBoard, int fr, int fc, int tr, int tc) {
+        if (fr == tr && fc == tc) return false;
+        if (fr < 0 || fr >= ROWS || fc < 0 || fc >= COLS) return false;
+        if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) return false;
+        byte src = flatBoard[fr * COLS + fc];
+        byte dst = flatBoard[tr * COLS + tc];
+        if (src == 0) return false;
+        if (dst != 0 && getSide(src) == getSide(dst)) return false;
+        byte[][] b = new byte[ROWS][COLS];
+        for (int r = 0; r < ROWS; r++)
+            System.arraycopy(flatBoard, r * COLS, b[r], 0, COLS);
+        return isValidMoveStatic(b, src, fr, fc, tr, tc);
+    }
+
+    private static boolean isValidMoveStatic(byte[][] board, byte src, int fr, int fc, int tr, int tc) {
+        return switch (getType(src)) {
+            case GENERAL -> validGeneralS(board, fr, fc, tr, tc, getSide(src));
+            case ADVISOR -> validAdvisorS(board, fr, fc, tr, tc, getSide(src));
+            case ELEPHANT -> validElephantS(board, fr, fc, tr, tc, getSide(src));
+            case HORSE -> validHorseS(board, fr, fc, tr, tc);
+            case CHARIOT -> validChariotS(board, fr, fc, tr, tc);
+            case CANNON -> validCannonS(board, fr, fc, tr, tc);
+            case SOLDIER -> validSoldierS(fr, fc, tr, tc, getSide(src));
+            default -> false;
+        };
+    }
+
+    private static boolean validGeneralS(byte[][] board, int fr, int fc, int tr, int tc, int side) {
+        int dr = Math.abs(tr - fr), dc = Math.abs(tc - fc);
+        if (dr + dc != 1) return false;
+        return inPalaceS(tr, tc, side);
+    }
+
+    private static boolean validAdvisorS(byte[][] board, int fr, int fc, int tr, int tc, int side) {
+        if (Math.abs(tr - fr) != 1 || Math.abs(tc - fc) != 1) return false;
+        return inPalaceS(tr, tc, side);
+    }
+
+    private static boolean validElephantS(byte[][] board, int fr, int fc, int tr, int tc, int side) {
+        if (Math.abs(tr - fr) != 2 || Math.abs(tc - fc) != 2) return false;
+        if (side == RED && tr < 5) return false;
+        if (side == BLACK && tr > 4) return false;
+        int er = (fr + tr) / 2, ec = (fc + tc) / 2;
+        return board[er][ec] == 0;
+    }
+
+    private static boolean validHorseS(byte[][] board, int fr, int fc, int tr, int tc) {
+        int dr = Math.abs(tr - fr), dc = Math.abs(tc - fc);
+        if (!((dr == 2 && dc == 1) || (dr == 1 && dc == 2))) return false;
+        if (dr == 2) {
+            int legR = fr + (tr > fr ? 1 : -1);
+            if (board[legR][fc] != 0) return false;
+        } else {
+            int legC = fc + (tc > fc ? 1 : -1);
+            if (board[fr][legC] != 0) return false;
+        }
+        return true;
+    }
+
+    private static boolean validChariotS(byte[][] board, int fr, int fc, int tr, int tc) {
+        return countBetweenS(board, fr, fc, tr, tc) == 0;
+    }
+
+    private static boolean validCannonS(byte[][] board, int fr, int fc, int tr, int tc) {
+        int between = countBetweenS(board, fr, fc, tr, tc);
+        if (board[tr][tc] == 0) return between == 0;
+        return between == 1;
+    }
+
+    private static boolean validSoldierS(int fr, int fc, int tr, int tc, int side) {
+        int dr = tr - fr, dc = Math.abs(tc - fc);
+        int forward = (side == RED) ? -1 : 1;
+        boolean crossed = (side == RED) ? (fr <= 4) : (fr >= 5);
+        if (dc == 0 && dr == forward) return true;
+        if (crossed && dr == 0 && dc == 1) return true;
+        return false;
+    }
+
+    private static boolean inPalaceS(int r, int c, int side) {
+        if (c < 3 || c > 5) return false;
+        return side == RED ? (r >= 7 && r <= 9) : (r >= 0 && r <= 2);
+    }
+
+    private static int countBetweenS(byte[][] board, int fr, int fc, int tr, int tc) {
+        if (fr != tr && fc != tc) return -1;
+        int count = 0;
+        if (fr == tr) {
+            int minC = Math.min(fc, tc), maxC = Math.max(fc, tc);
+            for (int c = minC + 1; c < maxC; c++)
+                if (board[fr][c] != 0) count++;
+        } else {
+            int minR = Math.min(fr, tr), maxR = Math.max(fr, tr);
+            for (int r = minR + 1; r < maxR; r++)
+                if (board[r][fc] != 0) count++;
+        }
+        return count;
+    }
+
+    // ══════════════════════════════════════════════
     // 辅助方法
     // ══════════════════════════════════════════════
 

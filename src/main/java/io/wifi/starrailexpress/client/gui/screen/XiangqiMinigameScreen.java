@@ -37,6 +37,8 @@ public class XiangqiMinigameScreen extends Screen {
 
     private static final ResourceLocation PIECE_TEX =
             ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/xiangqi/qizimoban.png");
+    private static final ResourceLocation GHOST_TEX =
+            ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/xiangqi/daifangzhi.png");
 
     // 棋子汉字（索引: pieceType 1-7）
     private static final String[] RED_CHARS = {"", "帅", "仕", "相", "马", "车", "炮", "兵"};
@@ -56,6 +58,8 @@ public class XiangqiMinigameScreen extends Screen {
 
     // 选中棋子（逻辑坐标，未翻转）
     private int selRow = -1, selCol = -1;
+    // 鼠标位置（用于待落子预览）
+    private double lastMouseX, lastMouseY;
 
     private final Runnable onSuccess;
 
@@ -160,6 +164,7 @@ public class XiangqiMinigameScreen extends Screen {
         drawPositionMarkers(g, boardLeft, boardTop);
         drawPieces(g, boardLeft, boardTop);
         drawSelection(g, boardLeft, boardTop);
+        drawGhostPiece(g, boardLeft, boardTop);
         drawInfoBar(g, cx, boardTop - 28);
 
         if (state == State.ENDED) drawEndOverlay(g, cx, cy);
@@ -271,18 +276,24 @@ public class XiangqiMinigameScreen extends Screen {
                 int side = XiangqiSession.getSide(p);
                 String ch = (side == 0) ? RED_CHARS[type] : BLACK_CHARS[type];
                 int color = (side == 0) ? 0xFFCC0000 : 0xFF111111;
+                int shadowColor = (side == 0) ? 0xFF440000 : 0xFF555555;
+                int charW = this.font.width(ch);
+                int textX = (PIECE_SIZE - charW) / 2 + 1; // 居中 + 微调右偏
+                int textY = (PIECE_SIZE - 9) / 2;          // 垂直居中（MC字体高约9）
 
                 if (!isRed) {
                     // 黑方视角：棋子需要180度翻转，使文字正向
                     var pose = g.pose();
                     pose.pushPose();
-                    pose.translate(px + PIECE_SIZE / 2f, py + PIECE_SIZE / 2f, 0);
+                    pose.translate(px + PIECE_SIZE / 2f, py + PIECE_SIZE / 2f, 1);
                     pose.mulPose(Axis.ZP.rotation((float) Math.PI));
                     pose.translate(-PIECE_SIZE / 2f, -PIECE_SIZE / 2f, 0);
-                    g.drawString(this.font, ch, 8, 8, color);
+                    g.drawString(this.font, ch, textX + 1, textY + 1, shadowColor, false);
+                    g.drawString(this.font, ch, textX, textY, color, false);
                     pose.popPose();
                 } else {
-                    g.drawString(this.font, ch, px + 8, py + 8, color);
+                    g.drawString(this.font, ch, px + textX + 1, py + textY + 1, shadowColor, false);
+                    g.drawString(this.font, ch, px + textX, py + textY, color, false);
                 }
             }
         }
@@ -296,6 +307,35 @@ public class XiangqiMinigameScreen extends Screen {
         int px = bl + colToPixelX(vc) - PIECE_SIZE / 2;
         int py = bt + rowToPixelY(vr) - PIECE_SIZE / 2;
         g.fill(px - 2, py - 2, px + PIECE_SIZE + 2, py + PIECE_SIZE + 2, SELECT_COLOR);
+    }
+
+    // ── 待落子预览 ──
+
+    private void drawGhostPiece(GuiGraphics g, int bl, int bt) {
+        if (selRow < 0 || state != State.PLAYING) return;
+        if (currentTurn == null || !currentTurn.equals(localUUID)) return;
+
+        // 反算鼠标指向的棋盘交叉点
+        float relX = (float) (lastMouseX - bl);
+        float relY = (float) (lastMouseY - bt);
+        int vc = Math.round(relX / SPACING);
+        int vr;
+        if (relY <= rowToPixelY(4) + SPACING / 2f) {
+            vr = Math.round(relY / SPACING);
+        } else {
+            vr = Math.round((relY - RIVER_H) / SPACING);
+        }
+        if (vr < 0 || vr >= ROWS || vc < 0 || vc >= COLS) return;
+
+        int lr = logicRow(vr), lc = logicCol(vc);
+        // 不能指向已选棋子本身
+        if (lr == selRow && lc == selCol) return;
+        // 客户端本地校验走法合法性
+        if (!XiangqiSession.isValidMoveClient(boardData, selRow, selCol, lr, lc)) return;
+
+        int px = bl + colToPixelX(vc) - PIECE_SIZE / 2;
+        int py = bt + rowToPixelY(vr) - PIECE_SIZE / 2;
+        g.blit(GHOST_TEX, px, py, 0, 0, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE);
     }
 
     // ── 信息栏 ──
@@ -333,6 +373,13 @@ public class XiangqiMinigameScreen extends Screen {
     // ══════════════════════════════════════════════
     // 交互
     // ══════════════════════════════════════════════
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        super.mouseMoved(mouseX, mouseY);
+    }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
