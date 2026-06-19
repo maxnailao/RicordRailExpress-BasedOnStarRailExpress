@@ -95,7 +95,7 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
 
     // === 特殊Fumo玩偶===
-    Block JUSTACHEESE_PLUSH = registerSpecialBlock("justachee_plush",
+    Block JUSTACHEESE_PLUSH = registerSpecialBlock("justacheese_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block SPBGCP_PLUSH = registerSpecialBlock("spbgcp_plush",
             new SPBGCPPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
