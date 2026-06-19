@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.api;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.event.OnRoleSkillUse;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -255,6 +256,9 @@ public final class RoleSkill {
 
     public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted) {
         if (player == null) {
+            return false;
+        }
+        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
             return false;
         }
         SRERole role = getRole(player);
