@@ -15,10 +15,8 @@ loom {
     runs {
         // 针对 'runClient' 任务进行配置
         client {
-            // 添加程序参数来设置玩家名
-            programArg "--username"
-            programArg "debug_player" // 把这里改成你想要的游戏内名字
-
+            // 添加程序参数来设置玩家名和 UUID
+            programArgs "--username", "debug_player", "--uuid", "8667ba71-b85a-4004-af54-45d406651831"
         }
     }
 }

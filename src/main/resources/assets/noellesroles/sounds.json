@@ -142,5 +142,13 @@
         "stream": false
       }
     ]
+  },
+  "plush.hdbzq": {
+    "sounds": [
+      {
+        "name": "noellesroles:hdbzq",
+        "stream": false
+      }
+    ]
   }
 }

@@ -151,6 +151,7 @@ public class ModItems {
                             .alwaysEdible().build())),
             "pill");
     public static final Item TOXIN = register(new ToxinItem((new Item.Properties()).stacksTo(1)), "toxin");
+    public static final Item REUSABLE_TOXIN = register(new ReusableToxinItem((new Item.Properties()).stacksTo(1).durability(0)), "reusable_toxin");
     public static final Item CATALYST = register(new CatalystItem((new Item.Properties()).stacksTo(1)), "catalyst");
     public static final Item BANDIT_REVOLVER = register(new BanditRevolverItem((new Item.Properties()).stacksTo(1)),
             "bandit_revolver");
