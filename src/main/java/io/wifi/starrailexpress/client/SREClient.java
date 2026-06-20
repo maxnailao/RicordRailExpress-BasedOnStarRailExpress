@@ -792,6 +792,31 @@ public class SREClient implements ClientModInitializer {
                     }
                 }));
 
+        // 注册斗地主状态同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.DoudizhuStateS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.DoudizhuMinigameScreen doudizhu) {
+                        doudizhu.onStateReceived(payload);
+                    }
+                }));
+
+        // 注册麻将状态同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.MahjongStateS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MahjongMinigameScreen mahjong) {
+                        mahjong.onStateReceived(payload);
+                    }
+                }));
+
+        // 注册积分榜数据接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.ScoreboardDataS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    io.wifi.starrailexpress.client.gui.screen.MinigameScoreboardScreen.onScoreboardDataReceived(payload);
+                }));
+
         // 注册职业轮选网络包
         RoleRotationClientReceiver.register();
 

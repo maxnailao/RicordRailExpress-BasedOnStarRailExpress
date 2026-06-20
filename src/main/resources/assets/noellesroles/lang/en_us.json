@@ -634,6 +634,7 @@
     "screen.noellesroles.scoreboard.time": "Time",
     "screen.noellesroles.scoreboard.empty": "No records",
     "screen.noellesroles.scoreboard.close_hint": "Press ESC or ~ to go back",
+    "screen.noellesroles.scoreboard.loading": "Loading...",
   "item.noellesroles.pill": "Pill",
   "item.noellesroles.toxin": "Poison Syringe",
   "item.noellesroles.throwing_knife": "Throwing Knife",
@@ -3141,5 +3142,17 @@
   "screen.starrailexpress.xiangqi.opponent_turn": "Opponent's Turn",
   "screen.starrailexpress.xiangqi.win": "You Win!",
   "screen.starrailexpress.xiangqi.lose": "You Lose!",
-  "screen.starrailexpress.xiangqi.opponent_left": "Opponent Left"
+  "screen.starrailexpress.xiangqi.opponent_left": "Opponent Left",
+"minigame.starrailexpress.tetris": "Tetris",
+"screen.starrailexpress.tetris.title": "Tetris",
+"screen.starrailexpress.tetris.score": "Score: %s",
+"screen.starrailexpress.tetris.level": "Level: %s",
+"screen.starrailexpress.tetris.lines": "Lines: %s",
+"screen.starrailexpress.tetris.next": "Next",
+"screen.starrailexpress.tetris.game_over": "Game Over",
+"screen.starrailexpress.tetris.final_score": "Final Score: %s",
+"minigame.starrailexpress.doudizhu": "Dou Dizhu",
+"screen.starrailexpress.doudizhu.title": "Dou Dizhu",
+"minigame.starrailexpress.mahjong": "Mahjong",
+"screen.starrailexpress.mahjong.title": "Mahjong"
 }

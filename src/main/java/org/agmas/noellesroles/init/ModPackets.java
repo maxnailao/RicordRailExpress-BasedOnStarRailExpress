@@ -7,6 +7,17 @@ import io.wifi.starrailexpress.network.packet.GomokuStateS2CPacket;
 import io.wifi.starrailexpress.network.packet.XiangqiJoinC2SPacket;
 import io.wifi.starrailexpress.network.packet.XiangqiMoveC2SPacket;
 import io.wifi.starrailexpress.network.packet.XiangqiStateS2CPacket;
+import io.wifi.starrailexpress.network.packet.DoudizhuJoinC2SPacket;
+import io.wifi.starrailexpress.network.packet.DoudizhuBidC2SPacket;
+import io.wifi.starrailexpress.network.packet.DoudizhuPlayC2SPacket;
+import io.wifi.starrailexpress.network.packet.DoudizhuStateS2CPacket;
+import io.wifi.starrailexpress.network.packet.MahjongJoinC2SPacket;
+import io.wifi.starrailexpress.network.packet.MahjongDiscardC2SPacket;
+import io.wifi.starrailexpress.network.packet.MahjongActionC2SPacket;
+import io.wifi.starrailexpress.network.packet.MahjongStateS2CPacket;
+import io.wifi.starrailexpress.network.packet.ScoreboardSubmitC2SPacket;
+import io.wifi.starrailexpress.network.packet.ScoreboardRequestC2SPacket;
+import io.wifi.starrailexpress.network.packet.ScoreboardDataS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -236,5 +247,30 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(XiangqiStateS2CPacket.TYPE, XiangqiStateS2CPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(XiangqiJoinC2SPacket.TYPE, XiangqiJoinC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(XiangqiMoveC2SPacket.TYPE, XiangqiMoveC2SPacket::handle);
+
+        // 斗地主网络包
+        PayloadTypeRegistry.playC2S().register(DoudizhuJoinC2SPacket.TYPE, DoudizhuJoinC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(DoudizhuBidC2SPacket.TYPE, DoudizhuBidC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(DoudizhuPlayC2SPacket.TYPE, DoudizhuPlayC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(DoudizhuStateS2CPacket.TYPE, DoudizhuStateS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DoudizhuJoinC2SPacket.TYPE, DoudizhuJoinC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(DoudizhuBidC2SPacket.TYPE, DoudizhuBidC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(DoudizhuPlayC2SPacket.TYPE, DoudizhuPlayC2SPacket::handle);
+
+        // 麻将网络包
+        PayloadTypeRegistry.playC2S().register(MahjongJoinC2SPacket.TYPE, MahjongJoinC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(MahjongDiscardC2SPacket.TYPE, MahjongDiscardC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(MahjongActionC2SPacket.TYPE, MahjongActionC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(MahjongStateS2CPacket.TYPE, MahjongStateS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MahjongJoinC2SPacket.TYPE, MahjongJoinC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(MahjongDiscardC2SPacket.TYPE, MahjongDiscardC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(MahjongActionC2SPacket.TYPE, MahjongActionC2SPacket::handle);
+
+        // 积分榜网络包
+        PayloadTypeRegistry.playC2S().register(ScoreboardSubmitC2SPacket.TYPE, ScoreboardSubmitC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ScoreboardRequestC2SPacket.TYPE, ScoreboardRequestC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(ScoreboardDataS2CPacket.TYPE, ScoreboardDataS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ScoreboardSubmitC2SPacket.TYPE, ScoreboardSubmitC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(ScoreboardRequestC2SPacket.TYPE, ScoreboardRequestC2SPacket::handle);
     }
 }

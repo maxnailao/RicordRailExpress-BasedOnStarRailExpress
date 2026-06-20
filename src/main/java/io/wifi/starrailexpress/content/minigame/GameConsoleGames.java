@@ -34,8 +34,13 @@ public class GameConsoleGames {
         ENABLED_IDS.add("gomoku");
         ENABLED_IDS.add("target_shooting");
         ENABLED_IDS.add("xiangqi");
+        ENABLED_IDS.add("tetris");
+        ENABLED_IDS.add("doudizhu");
+        ENABLED_IDS.add("mahjong");
         // 打靶小游戏启用积分榜
         SCOREBOARD_ENABLED_IDS.add("target_shooting");
+        // 俄罗斯方块启用积分榜
+        SCOREBOARD_ENABLED_IDS.add("tetris");
     }
 
     /**

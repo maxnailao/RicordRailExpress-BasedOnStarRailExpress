@@ -649,6 +649,7 @@
     "screen.noellesroles.scoreboard.time": "时间",
     "screen.noellesroles.scoreboard.empty": "暂无记录",
     "screen.noellesroles.scoreboard.close_hint": "按 ESC 或 ~ 返回",
+    "screen.noellesroles.scoreboard.loading": "加载中...",
   "item.noellesroles.pill": "药丸",
   "item.noellesroles.toxin": "毒针",
   "item.noellesroles.throwing_knife": "飞刀",
@@ -3288,5 +3289,17 @@
   "screen.starrailexpress.xiangqi.opponent_turn": "对手回合",
   "screen.starrailexpress.xiangqi.win": "你赢了！",
   "screen.starrailexpress.xiangqi.lose": "你输了！",
-  "screen.starrailexpress.xiangqi.opponent_left": "对手已离开"
+  "screen.starrailexpress.xiangqi.opponent_left": "对手已离开",
+"minigame.starrailexpress.tetris": "俄罗斯方块",
+"screen.starrailexpress.tetris.title": "俄罗斯方块",
+"screen.starrailexpress.tetris.score": "分数: %s",
+"screen.starrailexpress.tetris.level": "等级: %s",
+"screen.starrailexpress.tetris.lines": "消行: %s",
+"screen.starrailexpress.tetris.next": "下一个",
+"screen.starrailexpress.tetris.game_over": "游戏结束",
+"screen.starrailexpress.tetris.final_score": "最终分数: %s",
+"minigame.starrailexpress.doudizhu": "斗地主",
+"screen.starrailexpress.doudizhu.title": "斗地主",
+"minigame.starrailexpress.mahjong": "麻将",
+"screen.starrailexpress.mahjong.title": "麻将"
 }

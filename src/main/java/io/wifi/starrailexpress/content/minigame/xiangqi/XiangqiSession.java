@@ -175,8 +175,13 @@ public class XiangqiSession {
         };
     }
 
-    /** 帅/将: 一步一格正交，九宫内 */
+    /** 帅/将: 一步一格正交，九宫内；支持飞将（同列无阻挡直取对方将/帅） */
     private boolean validGeneral(int fr, int fc, int tr, int tc, int side) {
+        // 飞将：同列、中间无棋子、目标是对方将/帅
+        if (fc == tc && board[tr][tc] != 0 && getType(board[tr][tc]) == GENERAL) {
+            if (countBetween(fr, fc, tr, tc) == 0) return true;
+        }
+        // 常规走法：一步一格正交，九宫内
         int dr = Math.abs(tr - fr), dc = Math.abs(tc - fc);
         if (dr + dc != 1) return false;
         return inPalace(tr, tc, side);
@@ -276,6 +281,11 @@ public class XiangqiSession {
     }
 
     private static boolean validGeneralS(byte[][] board, int fr, int fc, int tr, int tc, int side) {
+        // 飞将：同列、中间无棋子、目标是对方将/帅
+        if (fc == tc && board[tr][tc] != 0 && getType(board[tr][tc]) == GENERAL) {
+            if (countBetweenS(board, fr, fc, tr, tc) == 0) return true;
+        }
+        // 常规走法
         int dr = Math.abs(tr - fr), dc = Math.abs(tc - fc);
         if (dr + dc != 1) return false;
         return inPalaceS(tr, tc, side);

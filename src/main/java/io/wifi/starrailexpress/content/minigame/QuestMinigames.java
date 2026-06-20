@@ -41,6 +41,18 @@ public class QuestMinigames {
     public static final QuestMinigame XIANGQI = register(
             QuestMinigame.of("xiangqi", "minigame.starrailexpress.xiangqi"));
 
+    /** 俄罗斯方块 */
+    public static final QuestMinigame TETRIS = register(
+            QuestMinigame.of("tetris", "minigame.starrailexpress.tetris"));
+
+    /** 斗地主 */
+    public static final QuestMinigame DOUDIZHU = register(
+            QuestMinigame.of("doudizhu", "minigame.starrailexpress.doudizhu"));
+
+    /** 麻将 */
+    public static final QuestMinigame MAHJONG = register(
+            QuestMinigame.of("mahjong", "minigame.starrailexpress.mahjong"));
+
     // ══════════════════════════════════════════════
     // 注册方法
     // ══════════════════════════════════════════════
