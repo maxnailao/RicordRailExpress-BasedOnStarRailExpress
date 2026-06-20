@@ -45,12 +45,19 @@ public class MahjongSessionManager {
 
     public void handleLeave(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        waitingQueue.removeIf(w -> w.getUUID().equals(uuid));
+        
+        // 先从等待队列中移除
+        boolean wasInWaitingQueue = waitingQueue.removeIf(w -> w.getUUID().equals(uuid));
 
         MahjongSession session = activeGames.get(uuid);
         if (session != null && !session.isFinished()) {
             session.handlePlayerLeave(player);
             cleanupSession(session);
+        }
+        
+        // 如果玩家在游戏结束后离开，确保从activeGames中清理
+        if (wasInWaitingQueue || session == null) {
+            activeGames.remove(uuid);
         }
     }
 
@@ -62,9 +69,13 @@ public class MahjongSessionManager {
     }
 
     public void handleAction(ServerPlayer player, byte actionType, byte tileType) {
+        handleAction(player, actionType, tileType, (byte) 0);
+    }
+
+    public void handleAction(ServerPlayer player, byte actionType, byte tileType, byte chiOptionIndex) {
         MahjongSession session = activeGames.get(player.getUUID());
         if (session == null || session.isFinished()) return;
-        session.routeAction(player, actionType, tileType);
+        session.routeAction(player, actionType, tileType, chiOptionIndex);
         if (session.isFinished()) cleanupSession(session);
     }
 
@@ -79,8 +90,12 @@ public class MahjongSessionManager {
 
     private void cleanupSession(MahjongSession session) {
         for (int i = 0; i < 4; i++) {
-            if (session.getPlayer(i) != null)
-                activeGames.remove(session.getPlayer(i).getUUID());
+            ServerPlayer p = session.getPlayer(i);
+            if (p != null) {
+                activeGames.remove(p.getUUID());
+                // 同时从等待队列中移除（防止重复加入）
+                waitingQueue.removeIf(w -> w.getUUID().equals(p.getUUID()));
+            }
         }
     }
 

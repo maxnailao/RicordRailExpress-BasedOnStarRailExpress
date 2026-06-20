@@ -53,6 +53,10 @@ public class QuestMinigames {
     public static final QuestMinigame MAHJONG = register(
             QuestMinigame.of("mahjong", "minigame.starrailexpress.mahjong"));
 
+    /** 撬锁积分（掌机版） */
+    public static final QuestMinigame LOCKPICK_SCORE = register(
+            QuestMinigame.of("lockpick_score", "minigame.starrailexpress.lockpick_score"));
+
     // ══════════════════════════════════════════════
     // 注册方法
     // ══════════════════════════════════════════════

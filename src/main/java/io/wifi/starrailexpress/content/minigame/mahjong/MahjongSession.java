@@ -357,11 +357,21 @@ public class MahjongSession {
 
     /** 玩家选择动作（动作窗口中） */
     public void handleAction(int playerIdx, byte actionType, byte tileType) {
+        handleAction(playerIdx, actionType, tileType, (byte) 0);
+    }
+
+    /** 玩家选择动作（动作窗口中），chiOptionIndex用于指定吃牌选项索引 */
+    public void handleAction(int playerIdx, byte actionType, byte tileType, byte chiOptionIndex) {
         if (phase != Phase.ACTION_WINDOW) return;
         if (hasResponded[playerIdx]) return;
 
         chosenActions[playerIdx] = actionType;
         hasResponded[playerIdx] = true;
+        // 存储吃牌选项索引供后续使用
+        if (actionType == ACTION_CHI) {
+            // 在tileType字段中临时存储选项索引（高8位）
+            chosenActions[playerIdx] = (byte) ((actionType & 0xFF) | ((chiOptionIndex & 0x0F) << 4));
+        }
 
         // 检查是否所有人都已响应
         boolean allResponded = true;
@@ -373,8 +383,19 @@ public class MahjongSession {
 
     private void resolveActions() {
         // 优先级：胡 > 杠 > 碰 > 吃
-        // 按优先级处理
-        for (byte priority : new byte[]{ACTION_HU, ACTION_KONG, ACTION_PONG, ACTION_CHI}) {
+        // 点炮胡的优先级最高，有人点炮即胡牌（不需要等待其他玩家选择）
+        
+        // 首先检查是否有人要胡牌（点炮）
+        for (int i = 0; i < 4; i++) {
+            if (i == lastDiscardBy) continue;
+            if (chosenActions[i] == ACTION_HU) {
+                executeAction(i, ACTION_HU, getType(lastDiscard));
+                return;
+            }
+        }
+        
+        // 如果没有人胡牌，按正常优先级处理其他动作
+        for (byte priority : new byte[]{ACTION_KONG, ACTION_PONG, ACTION_CHI}) {
             for (int i = 0; i < 4; i++) {
                 if (i == lastDiscardBy) continue;
                 if (chosenActions[i] == priority) {
@@ -383,6 +404,7 @@ public class MahjongSession {
                 }
             }
         }
+        
         // 全部pass，进入下一轮
         advanceTurn();
     }
@@ -432,7 +454,13 @@ public class MahjongSession {
             case ACTION_CHI -> {
                 List<int[]> chiOpts = getChiOptions(playerIdx, discardType);
                 if (chiOpts.isEmpty()) { advanceTurn(); return; }
-                int[] opt = chiOpts.get(0); // 自动选第一种
+                
+                // 从chosenActions中提取吃牌选项索引（高4位）
+                int chiOptionIdx = (chosenActions[playerIdx] >> 4) & 0x0F;
+                // 确保索引有效
+                if (chiOptionIdx >= chiOpts.size()) chiOptionIdx = 0;
+                
+                int[] opt = chiOpts.get(chiOptionIdx);
                 int[] meld = new int[3];
                 meld[0] = lastDiscard;
                 int tile1 = findTile(hands[playerIdx], opt[0]);
@@ -607,6 +635,10 @@ public class MahjongSession {
 
     /** SessionManager 路由：动作选择 */
     public void routeAction(ServerPlayer player, byte actionType, byte tileType) {
+        routeAction(player, actionType, tileType, (byte) 0);
+    }
+
+    public void routeAction(ServerPlayer player, byte actionType, byte tileType, byte chiOptionIndex) {
         int pi = getPlayerIndex(player);
         if (pi < 0) return;
         if (actionType == ACTION_DRAW_WIN) {
@@ -615,7 +647,7 @@ public class MahjongSession {
             // 自杠（暗杠/加杠）
             handleSelfKong(pi, tileType);
         } else {
-            handleAction(pi, actionType, tileType);
+            handleAction(pi, actionType, tileType, chiOptionIndex);
         }
     }
 

@@ -146,6 +146,12 @@ public class DoudizhuSession {
 
     public void handleBid(int playerIndex, int bidScore) {
         if (phase != Phase.BIDDING || playerIndex != currentBidder) return;
+        // 校验叫分合法性：bidScore 必须为 0（不叫）或 > highestBid（叫更高分）
+        if (bidScore < 0 || bidScore > 3) return;
+        if (bidScore > 0 && bidScore <= highestBid) {
+            // 叫分不高于当前最高分，视为无效操作，不叫
+            bidScore = 0;
+        }
         bids[playerIndex] = bidScore;
         if (bidScore > highestBid) {
             highestBid = bidScore;
@@ -425,10 +431,10 @@ public class DoudizhuSession {
     // 牌型判定
     // ══════════════════════════════════════════════
 
-    static class HandInfo {
-        HandType type;
-        int rank;    // 主 rank（用于大小比较）
-        int length;  // 连续长度（顺子/连对/飞机用）
+    public static class HandInfo {
+        public final HandType type;
+        public final int rank;
+        public final int length;
         HandInfo(HandType t, int r, int l) { type = t; rank = r; length = l; }
     }
 
@@ -622,8 +628,11 @@ public class DoudizhuSession {
         for (int i = 0; i < 3; i++)
             names[i] = isAI[i] ? "AI" : (players[i] != null ? players[i].getName().getString() : "?");
 
+        // 叫分阶段用 currentBidder 表示当前叫分者，出牌阶段用 currentTurn
+        int turnForClient = (phase == Phase.BIDDING) ? currentBidder : currentTurn;
+
         return DoudizhuStateS2CPacket.create(
-            phase.ordinal(), pi, currentTurn, landlordIndex,
+            phase.ordinal(), pi, turnForClient, landlordIndex,
             Arrays.copyOf(hands[pi], hands[pi].length),
             oppCount1, oppCount2,
             bottomCards,

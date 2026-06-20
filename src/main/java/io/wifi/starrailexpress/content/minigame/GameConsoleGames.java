@@ -37,10 +37,13 @@ public class GameConsoleGames {
         ENABLED_IDS.add("tetris");
         ENABLED_IDS.add("doudizhu");
         ENABLED_IDS.add("mahjong");
+        ENABLED_IDS.add("lockpick_score");
         // 打靶小游戏启用积分榜
         SCOREBOARD_ENABLED_IDS.add("target_shooting");
         // 俄罗斯方块启用积分榜
         SCOREBOARD_ENABLED_IDS.add("tetris");
+        // 撬锁积分启用积分榜
+        SCOREBOARD_ENABLED_IDS.add("lockpick_score");
     }
 
     /**

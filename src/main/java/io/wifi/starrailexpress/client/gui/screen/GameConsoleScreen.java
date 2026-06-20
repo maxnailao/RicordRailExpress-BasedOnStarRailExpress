@@ -23,14 +23,22 @@ import java.util.List;
 public class GameConsoleScreen extends Screen {
 
     // 布局常量
-    private static final int PANEL_WIDTH = 240;
-    private static final int ITEM_HEIGHT = 28;
-    private static final int ITEM_SPACING = 2;
-    private static final int VISIBLE_ITEMS = 6;
+    private static final int PANEL_WIDTH = 260;
+    private static final int ITEM_HEIGHT = 30;
+    private static final int ITEM_SPACING = 3;
+    private static final int SCROLLBAR_W = 8;
+    private static final int SCROLLBAR_PAD = 4;
 
-    // 滚动
+    // 滚动状态
     private int scrollOffset = 0;
     private int maxScroll = 0;
+    private boolean draggingScrollbar = false;
+    private int dragStartY = 0;
+    private int dragStartScroll = 0;
+
+    // 动态计算
+    private int panelLeft, panelRight, panelTop, panelBottom;
+    private int listStartX, listStartY, listWidth, listHeight;
 
     // 选中的游戏
     private String selectedMinigameId = null;
@@ -45,11 +53,25 @@ public class GameConsoleScreen extends Screen {
     protected void init() {
         super.init();
 
+        // 动态计算面板尺寸（占屏幕60%高度，最小200px）
+        int panelH = Math.max(200, (int) (this.height * 0.6));
+        int panelW = Math.min(PANEL_WIDTH, this.width - 40);
+        panelLeft = (this.width - panelW) / 2;
+        panelRight = panelLeft + panelW;
+        panelTop = (this.height - panelH) / 2;
+        panelBottom = panelTop + panelH;
+
+        // 列表区域
+        listStartX = panelLeft + 8;
+        listStartY = panelTop + 28; // 标题行下方
+        listWidth = panelW - 16 - SCROLLBAR_W - SCROLLBAR_PAD;
+        listHeight = panelBottom - panelTop - 36 - 24; // 顶部标题 + 底部提示
+
         // 计算最大滚动量
         List<QuestMinigame> allGames = GameConsoleGames.getAvailable();
-        int listHeight = VISIBLE_ITEMS * (ITEM_HEIGHT + ITEM_SPACING);
         int totalHeight = allGames.size() * (ITEM_HEIGHT + ITEM_SPACING);
         maxScroll = Math.max(0, totalHeight - listHeight);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
 
         // 默认选中第一个
         if (selectedMinigameId == null && !allGames.isEmpty()) {
@@ -58,101 +80,118 @@ public class GameConsoleScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
 
-        // 标题
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 12, 0xFFFFFF);
-
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        int panelLeft = centerX - PANEL_WIDTH / 2;
-        int panelRight = centerX + PANEL_WIDTH / 2;
-        int panelTop = centerY - 80;
-        int panelBottom = centerY + 80;
-
-        // 面板背景
-        guiGraphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xEE1A1A2E);
-        guiGraphics.renderOutline(panelLeft, panelTop, PANEL_WIDTH, panelBottom - panelTop, 0xFF4A4A6A);
-
-        // 游戏列表
         List<QuestMinigame> allGames = GameConsoleGames.getAvailable();
-        int listStartX = panelLeft + 8;
-        int listStartY = panelTop + 8;
 
+        // ── 面板背景 ──
+        g.fill(panelLeft, panelTop, panelRight, panelBottom, 0xEE1A1A2E);
+        g.renderOutline(panelLeft, panelTop, panelRight - panelLeft, panelBottom - panelTop, 0xFF4A4A6A);
+
+        // ── 顶部标题栏 ──
+        g.fill(panelLeft + 1, panelTop + 1, panelRight - 1, panelTop + 24, 0xFF2A2A5A);
+        g.drawCenteredString(this.font, this.title, (panelLeft + panelRight) / 2, panelTop + 8, 0xFFEEEEFF);
+
+        // ── 游戏列表（裁剪区域）──
+        int itemAreaRight = panelRight - SCROLLBAR_W - SCROLLBAR_PAD - 4;
         int firstVisible = scrollOffset / (ITEM_HEIGHT + ITEM_SPACING);
-        int visibleCount = VISIBLE_ITEMS + 1;
+        int visibleCount = listHeight / (ITEM_HEIGHT + ITEM_SPACING) + 2;
 
         for (int i = firstVisible; i < Math.min(allGames.size(), firstVisible + visibleCount); i++) {
             QuestMinigame game = allGames.get(i);
             int itemY = listStartY + i * (ITEM_HEIGHT + ITEM_SPACING) - scrollOffset;
-            if (itemY < panelTop - ITEM_HEIGHT || itemY > panelBottom) continue;
+            if (itemY + ITEM_HEIGHT < listStartY || itemY > listStartY + listHeight) continue;
 
             boolean isSelected = game.id().equals(selectedMinigameId);
-            boolean isHovered = mouseX >= listStartX && mouseX <= panelRight - 20
-                    && mouseY >= itemY && mouseY <= itemY + ITEM_HEIGHT;
+            boolean isHovered = mouseX >= listStartX && mouseX <= itemAreaRight
+                    && mouseY >= itemY && mouseY <= itemY + ITEM_HEIGHT
+                    && mouseY >= listStartY && mouseY <= listStartY + listHeight;
 
-            // 背景色
+            // 背景
             int bgColor = isSelected ? 0xFF4A6B9A : (isHovered ? 0xFF3A4B6A : 0xFF2A2A4A);
-            guiGraphics.fill(listStartX, itemY, panelRight - 16, itemY + ITEM_HEIGHT, bgColor);
+            g.fill(listStartX, itemY, itemAreaRight, itemY + ITEM_HEIGHT, bgColor);
 
             // 选中指示条
             if (isSelected) {
-                guiGraphics.fill(listStartX, itemY, listStartX + 3, itemY + ITEM_HEIGHT, 0xFF66BBFF);
+                g.fill(listStartX, itemY, listStartX + 3, itemY + ITEM_HEIGHT, 0xFF66BBFF);
+                // 顶部和底部高光线
+                g.fill(listStartX, itemY, itemAreaRight, itemY + 1, 0x4066BBFF);
+                g.fill(listStartX, itemY + ITEM_HEIGHT - 1, itemAreaRight, itemY + ITEM_HEIGHT, 0x4066BBFF);
             }
 
             // 游戏名称
-            guiGraphics.drawString(this.font, game.displayName(),
-                    listStartX + 10, itemY + (ITEM_HEIGHT - 8) / 2, 0xFFFFFF);
+            g.drawString(this.font, game.displayName(),
+                    listStartX + 10, itemY + (ITEM_HEIGHT - 9) / 2, 0xFFFFFFFF);
+
+            // 积分榜标记
+            if (GameConsoleGames.hasScoreboard(game.id())) {
+                g.drawString(this.font, "\u2605", itemAreaRight - 12, itemY + (ITEM_HEIGHT - 9) / 2, 0xFFFFCC00, false);
+            }
         }
 
-        // 滚动条
+        // ── 滚动条 ──
         if (maxScroll > 0) {
-            int scrollBarX = panelRight - 12;
-            int scrollBarH = panelBottom - panelTop;
-            int thumbH = Math.max(20, (int) ((float) (VISIBLE_ITEMS * (ITEM_HEIGHT + ITEM_SPACING))
-                    / (allGames.size() * (ITEM_HEIGHT + ITEM_SPACING)) * scrollBarH));
-            int thumbY = panelTop + (int) ((float) scrollOffset / maxScroll * (scrollBarH - thumbH));
-            guiGraphics.fill(scrollBarX, panelTop, scrollBarX + 4, panelBottom, 0xFF1A1A2E);
-            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 4, thumbY + thumbH, 0xFF6A8BAA);
+            int sbX = panelRight - SCROLLBAR_W - SCROLLBAR_PAD;
+            int sbY = listStartY;
+            int sbH = listHeight;
+            int trackH = sbH;
+            int thumbH = Math.max(20, (int) ((float) listHeight / (allGames.size() * (ITEM_HEIGHT + ITEM_SPACING)) * sbH));
+            int thumbY = sbY + (maxScroll > 0 ? (int) ((float) scrollOffset / maxScroll * (sbH - thumbH)) : 0);
+            boolean sbHovered = mouseX >= sbX && mouseX <= sbX + SCROLLBAR_W && mouseY >= sbY && mouseY <= sbY + sbH;
+
+            // 滑轨
+            g.fill(sbX, sbY, sbX + SCROLLBAR_W, sbY + sbH, 0xFF1A1A3E);
+            g.renderOutline(sbX, sbY, SCROLLBAR_W, sbH, 0xFF3A3A5A);
+
+            // 滑块
+            int thumbColor = draggingScrollbar ? 0xFF88BBDD : (sbHovered ? 0xFF7AAACC : 0xFF5A8AAA);
+            g.fill(sbX + 1, thumbY, sbX + SCROLLBAR_W - 1, thumbY + thumbH, thumbColor);
+            // 滑块纹理线
+            int midY = thumbY + thumbH / 2;
+            g.fill(sbX + 2, midY - 2, sbX + SCROLLBAR_W - 2, midY - 1, 0x40FFFFFF);
+            g.fill(sbX + 2, midY, sbX + SCROLLBAR_W - 2, midY + 1, 0x40FFFFFF);
+            g.fill(sbX + 2, midY + 2, sbX + SCROLLBAR_W - 2, midY + 3, 0x40FFFFFF);
         }
 
-        // 底部提示
+        // ── 底部提示 ──
         if (selectedMinigameId != null) {
-            guiGraphics.drawCenteredString(this.font,
-                    Component.translatable("screen.noellesroles.game_console.hint"),
-                    centerX, panelBottom + 12, 0x888888);
-        } else {
-            guiGraphics.drawCenteredString(this.font,
+            String hint = "Enter/\u53cc\u51fb: \u5f00\u59cb    ~: \u79ef\u5206\u699c    \u2191\u2193: \u5bfc\u822a";
+            g.drawCenteredString(this.font, hint, (panelLeft + panelRight) / 2, panelBottom - 16, 0xFF8888AA);
+        } else if (allGames.isEmpty()) {
+            g.drawCenteredString(this.font,
                     Component.translatable("screen.noellesroles.game_console.no_games"),
-                    centerX, centerY, 0xFF5555);
+                    (panelLeft + panelRight) / 2, (panelTop + panelBottom) / 2, 0xFFFF5555);
         }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            int panelLeft = this.width / 2 - PANEL_WIDTH / 2;
-            int panelRight = this.width / 2 + PANEL_WIDTH / 2;
-            int panelTop = this.height / 2 - 80;
-            int panelBottom = this.height / 2 + 80;
-            int listStartX = panelLeft + 8;
-            int listStartY = panelTop + 8;
+            // 滚动条拖拽
+            int sbX = panelRight - SCROLLBAR_W - SCROLLBAR_PAD;
+            if (maxScroll > 0 && mouseX >= sbX && mouseX <= sbX + SCROLLBAR_W
+                    && mouseY >= listStartY && mouseY <= listStartY + listHeight) {
+                draggingScrollbar = true;
+                dragStartY = (int) mouseY;
+                dragStartScroll = scrollOffset;
+                return true;
+            }
 
+            // 游戏项点击
+            int itemAreaRight = panelRight - SCROLLBAR_W - SCROLLBAR_PAD - 4;
             List<QuestMinigame> allGames = GameConsoleGames.getAvailable();
             for (int i = 0; i < allGames.size(); i++) {
                 int itemY = listStartY + i * (ITEM_HEIGHT + ITEM_SPACING) - scrollOffset;
-                if (mouseX >= listStartX && mouseX <= panelRight - 20
+                if (itemY + ITEM_HEIGHT < listStartY || itemY > listStartY + listHeight) continue;
+                if (mouseX >= listStartX && mouseX <= itemAreaRight
                         && mouseY >= itemY && mouseY <= itemY + ITEM_HEIGHT) {
 
                     String clickedId = allGames.get(i).id();
-
                     if (clickedId.equals(selectedMinigameId)) {
-                        // 双击或再次点击已选中的游戏 → 启动游戏
                         launchGame(clickedId);
                     } else {
-                        // 单击选中
                         selectedMinigameId = clickedId;
                     }
                     return true;
@@ -163,11 +202,37 @@ public class GameConsoleScreen extends Screen {
     }
 
     @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        draggingScrollbar = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (draggingScrollbar && maxScroll > 0) {
+            List<QuestMinigame> allGames = GameConsoleGames.getAvailable();
+            int totalH = allGames.size() * (ITEM_HEIGHT + ITEM_SPACING);
+            int thumbH = Math.max(20, (int) ((float) listHeight / totalH * listHeight));
+            int trackRange = listHeight - thumbH;
+            if (trackRange > 0) {
+                int delta = (int) mouseY - dragStartY;
+                scrollOffset = Mth.clamp(dragStartScroll + (int) ((float) delta / trackRange * maxScroll), 0, maxScroll);
+            }
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
     public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
-        scrollOffset = Mth.clamp(
-                (int) (scrollOffset - scrollY * (ITEM_HEIGHT + ITEM_SPACING)),
-                0, maxScroll);
-        return true;
+        // 仅在鼠标位于面板区域时响应滚动
+        if (mx >= panelLeft && mx <= panelRight && my >= panelTop && my <= panelBottom) {
+            scrollOffset = Mth.clamp(
+                    (int) (scrollOffset - scrollY * (ITEM_HEIGHT + ITEM_SPACING)),
+                    0, maxScroll);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -176,7 +241,27 @@ public class GameConsoleScreen extends Screen {
             launchGame(selectedMinigameId);
             return true;
         }
-        // ~ 键打开积分榜（仅对有积分榜的游戏有效）
+        // 上下方向键导航
+        if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN) {
+            List<QuestMinigame> allGames = GameConsoleGames.getAvailable();
+            if (!allGames.isEmpty()) {
+                int idx = -1;
+                for (int i = 0; i < allGames.size(); i++) {
+                    if (allGames.get(i).id().equals(selectedMinigameId)) { idx = i; break; }
+                }
+                if (keyCode == GLFW.GLFW_KEY_UP) idx = Math.max(0, idx - 1);
+                else idx = Math.min(allGames.size() - 1, idx + 1);
+                selectedMinigameId = allGames.get(idx).id();
+                // 确保选中项可见
+                int itemY = listStartY + idx * (ITEM_HEIGHT + ITEM_SPACING) - scrollOffset;
+                if (itemY < listStartY) scrollOffset = idx * (ITEM_HEIGHT + ITEM_SPACING);
+                if (itemY + ITEM_HEIGHT > listStartY + listHeight)
+                    scrollOffset = idx * (ITEM_HEIGHT + ITEM_SPACING) + ITEM_HEIGHT + ITEM_SPACING - listHeight;
+                scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+            }
+            return true;
+        }
+        // ~ 键打开积分榜
         if (keyCode == GLFW.GLFW_KEY_GRAVE_ACCENT && selectedMinigameId != null
                 && GameConsoleGames.hasScoreboard(selectedMinigameId)) {
             if (minecraft != null) {
