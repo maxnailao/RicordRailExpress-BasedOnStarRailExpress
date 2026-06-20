@@ -42,7 +42,6 @@ public class NRSounds {
     public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
     public static final SoundEvent TANGYE_SOUND = registrar.create("plush.tangye");
     public static final SoundEvent JIALE_WA_SOUND = registrar.create("plush.jiale_wa");
-    public static final SoundEvent EGG_YOLK_PIE_SOUND = registrar.create("plush.egg_yolk_pie");
     public static final SoundEvent WJCLB_SOUND = registrar.create("plush.wjclb");
 
     public static final SoundEvent GUO1_SOUND = registrar.create("plush.guo1");
@@ -50,6 +49,8 @@ public class NRSounds {
     public static final SoundEvent GUO3_SOUND = registrar.create("plush.guo3");
     public static final SoundEvent GUO4_SOUND = registrar.create("plush.guo4");
 
+    //egg
+    public static final SoundEvent HDBZQ_SOUND = registrar.create("plush.hdbzq");
     //spbgcp
     public static final SoundEvent SPBGCP_SOUND1 = registrar.create("plush.spbgcp1");
     public static final SoundEvent SPBGCP_SOUND2 = registrar.create("plush.spbgcp2");
