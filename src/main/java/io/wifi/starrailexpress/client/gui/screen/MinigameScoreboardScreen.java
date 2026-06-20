@@ -1,8 +1,9 @@
 package io.wifi.starrailexpress.client.gui.screen;
 
-import io.wifi.starrailexpress.content.minigame.GameConsoleGames;
-import io.wifi.starrailexpress.content.minigame.MinigameScoreboardData;
 import io.wifi.starrailexpress.content.minigame.QuestMinigame;
+import io.wifi.starrailexpress.network.packet.ScoreboardDataS2CPacket;
+import io.wifi.starrailexpress.network.packet.ScoreboardRequestC2SPacket;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -10,14 +11,14 @@ import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 小游戏积分榜界面
  * <p>
  * 显示指定小游戏的排行榜数据。
- * 从 MinigameScoreboardData 静态数据中读取。
+ * 数据从服务端请求，通过 S2C 网络包获取，不依赖本地存储。
  * </p>
  */
 public class MinigameScoreboardScreen extends Screen {
@@ -27,10 +28,15 @@ public class MinigameScoreboardScreen extends Screen {
     private static final int VISIBLE_ROWS = 10;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd HH:mm");
 
+    /** 客户端缓存：从服务端接收到的积分榜数据 */
+    private static final Map<String, List<ScoreboardDataS2CPacket.Entry>> CLIENT_CACHE =
+            new ConcurrentHashMap<>();
+
     private final String minigameId;
     private final Screen parent;
     private int scrollOffset = 0;
     private int maxScroll = 0;
+    private boolean loading = true;
 
     public MinigameScoreboardScreen(String minigameId, Screen parent) {
         super(Component.translatable("screen.noellesroles.scoreboard.title"));
@@ -38,13 +44,19 @@ public class MinigameScoreboardScreen extends Screen {
         this.parent = parent;
     }
 
+    /**
+     * 由 S2C 网络包接收器调用，缓存服务端返回的积分榜数据
+     */
+    public static void onScoreboardDataReceived(ScoreboardDataS2CPacket packet) {
+        CLIENT_CACHE.put(packet.minigameId(), Collections.unmodifiableList(packet.entries()));
+    }
+
     @Override
     protected void init() {
         super.init();
-        List<MinigameScoreboardData.ScoreEntry> scores = MinigameScoreboardData.getScores(minigameId);
-        int totalHeight = scores.size() * ROW_HEIGHT;
-        int visibleHeight = VISIBLE_ROWS * ROW_HEIGHT;
-        maxScroll = Math.max(0, totalHeight - visibleHeight);
+        loading = true;
+        // 向服务端请求积分榜数据
+        ClientPlayNetworking.send(new ScoreboardRequestC2SPacket(minigameId));
     }
 
     @Override
@@ -87,22 +99,32 @@ public class MinigameScoreboardScreen extends Screen {
         g.fill(panelLeft + 4, headerY + 12, panelRight - 4, headerY + 13, 0xFF3A3A5A);
 
         // 数据行
-        List<MinigameScoreboardData.ScoreEntry> scores = MinigameScoreboardData.getScores(minigameId);
+        List<ScoreboardDataS2CPacket.Entry> scores = CLIENT_CACHE.getOrDefault(minigameId, Collections.emptyList());
         int dataStartY = headerY + 18;
 
-        if (scores.isEmpty()) {
+        if (scores.isEmpty() && loading) {
+            g.drawCenteredString(this.font,
+                    Component.translatable("screen.noellesroles.scoreboard.loading"),
+                    centerX, centerY, 0x888888);
+            loading = false;
+        } else if (scores.isEmpty()) {
             g.drawCenteredString(this.font,
                     Component.translatable("screen.noellesroles.scoreboard.empty"),
                     centerX, centerY, 0x888888);
         } else {
+            if (maxScroll == 0 && scores.size() > VISIBLE_ROWS) {
+                int totalHeight = scores.size() * ROW_HEIGHT;
+                int visibleHeight = VISIBLE_ROWS * ROW_HEIGHT;
+                maxScroll = Math.max(0, totalHeight - visibleHeight);
+            }
+
             int firstVisible = scrollOffset / ROW_HEIGHT;
             for (int i = firstVisible; i < Math.min(scores.size(), firstVisible + VISIBLE_ROWS + 1); i++) {
                 int rowY = dataStartY + i * ROW_HEIGHT - scrollOffset;
                 if (rowY < panelTop + 36 || rowY > panelBottom - 10) continue;
 
-                MinigameScoreboardData.ScoreEntry entry = scores.get(i);
+                ScoreboardDataS2CPacket.Entry entry = scores.get(i);
 
-                // 前三名高亮
                 int rankColor = i < 3 ? 0xFFFFD700 : 0xFFFFFF;
                 int bgColor = i % 2 == 0 ? 0xFF2A2A4A : 0xFF222244;
                 g.fill(panelLeft + 4, rowY, panelRight - 4, rowY + ROW_HEIGHT - 2, bgColor);

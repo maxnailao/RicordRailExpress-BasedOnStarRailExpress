@@ -4,7 +4,6 @@ import io.wifi.starrailexpress.content.minigame.xiangqi.XiangqiSession;
 import io.wifi.starrailexpress.network.packet.XiangqiJoinC2SPacket;
 import io.wifi.starrailexpress.network.packet.XiangqiMoveC2SPacket;
 import io.wifi.starrailexpress.network.packet.XiangqiStateS2CPacket;
-import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -37,6 +36,8 @@ public class XiangqiMinigameScreen extends Screen {
 
     private static final ResourceLocation PIECE_TEX =
             ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/xiangqi/qizimoban.png");
+    private static final ResourceLocation GHOST_TEX =
+            ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/xiangqi/daifangzhi.png");
 
     // 棋子汉字（索引: pieceType 1-7）
     private static final String[] RED_CHARS = {"", "帅", "仕", "相", "马", "车", "炮", "兵"};
@@ -56,6 +57,14 @@ public class XiangqiMinigameScreen extends Screen {
 
     // 选中棋子（逻辑坐标，未翻转）
     private int selRow = -1, selCol = -1;
+    // 鼠标位置（用于待落子预览）
+    private double lastMouseX, lastMouseY;
+
+    // 移动动画
+    private static final long ANIM_DURATION = 300; // 毫秒
+    private int animFromRow = -1, animFromCol = -1;
+    private int animToRow = -1, animToCol = -1;
+    private long animStartTime = 0;
 
     private final Runnable onSuccess;
 
@@ -86,6 +95,8 @@ public class XiangqiMinigameScreen extends Screen {
     // ══════════════════════════════════════════════
 
     public void onStateReceived(XiangqiStateS2CPacket packet) {
+        byte[] prevBoard = new byte[ROWS * COLS];
+        System.arraycopy(boardData, 0, prevBoard, 0, ROWS * COLS);
         System.arraycopy(packet.boardData(), 0, boardData, 0, ROWS * COLS);
         isRed = packet.isRed();
         currentTurn = packet.currentTurn();
@@ -94,9 +105,15 @@ public class XiangqiMinigameScreen extends Screen {
 
         switch (packet.action()) {
             case XiangqiStateS2CPacket.WAITING -> state = State.WAITING;
-            case XiangqiStateS2CPacket.GAME_START, XiangqiStateS2CPacket.MOVE -> {
+            case XiangqiStateS2CPacket.GAME_START -> {
                 state = State.PLAYING;
                 selRow = -1; selCol = -1;
+                animFromRow = -1; // 开局无动画
+            }
+            case XiangqiStateS2CPacket.MOVE -> {
+                state = State.PLAYING;
+                selRow = -1; selCol = -1;
+                detectAndStartAnimation(prevBoard, boardData);
             }
             case XiangqiStateS2CPacket.WIN -> {
                 state = State.ENDED;
@@ -112,8 +129,28 @@ public class XiangqiMinigameScreen extends Screen {
         }
     }
 
+    /** 比较前后棋盘状态，检测走子并触发动画 */
+    private void detectAndStartAnimation(byte[] prev, byte[] curr) {
+        int fromIdx = -1, toIdx = -1;
+        byte movedPiece = 0;
+        for (int i = 0; i < ROWS * COLS; i++) {
+            if (prev[i] != 0 && curr[i] == 0) {
+                fromIdx = i;
+            }
+            if (prev[i] != curr[i] && curr[i] != 0 && prev[i] != curr[i]) {
+                toIdx = i;
+                movedPiece = curr[i];
+            }
+        }
+        if (fromIdx >= 0 && toIdx >= 0) {
+            animFromRow = fromIdx / COLS; animFromCol = fromIdx % COLS;
+            animToRow = toIdx / COLS; animToCol = toIdx % COLS;
+            animStartTime = System.currentTimeMillis();
+        }
+    }
+
     // ══════════════════════════════════════════════
-    // 坐标转换（视角翻转）
+    // 坐标转换（视角翻转：黑方看到己方棋子在底部）
     // ══════════════════════════════════════════════
 
     /** 逻辑行 → 屏幕行 */
@@ -160,6 +197,7 @@ public class XiangqiMinigameScreen extends Screen {
         drawPositionMarkers(g, boardLeft, boardTop);
         drawPieces(g, boardLeft, boardTop);
         drawSelection(g, boardLeft, boardTop);
+        drawGhostPiece(g, boardLeft, boardTop);
         drawInfoBar(g, cx, boardTop - 28);
 
         if (state == State.ENDED) drawEndOverlay(g, cx, cy);
@@ -217,6 +255,7 @@ public class XiangqiMinigameScreen extends Screen {
         int riverBottom = bt + rowToPixelY(5);
         g.fill(bl + 1, riverY, bl + BOARD_W - 1, riverBottom, RIVER_COLOR);
 
+        // 楚河汉界（根据视角翻转）
         String left = isRed ? "楚 河" : "汉 界";
         String right = isRed ? "汉 界" : "楚 河";
         int textY = riverY + (riverBottom - riverY) / 2 - 4;
@@ -253,39 +292,58 @@ public class XiangqiMinigameScreen extends Screen {
         }
     }
 
-    // ── 棋子 ──
+    // ── 棋子（含平移动画） ──
 
     private void drawPieces(GuiGraphics g, int bl, int bt) {
+        float animProgress = getAnimProgress();
+        boolean animActive = animFromRow >= 0 && animProgress < 1.0f;
+
         for (int vr = 0; vr < ROWS; vr++) {
             for (int vc = 0; vc < COLS; vc++) {
                 byte p = getViewPiece(vr, vc);
                 if (p == 0) continue;
-                int px = bl + colToPixelX(vc) - PIECE_SIZE / 2;
-                int py = bt + rowToPixelY(vr) - PIECE_SIZE / 2;
+
+                int logicR = logicRow(vr), logicC = logicCol(vc);
+                float px = bl + colToPixelX(vc) - PIECE_SIZE / 2f;
+                float py = bt + rowToPixelY(vr) - PIECE_SIZE / 2f;
+
+                // 平移动画偏移
+                if (animActive && logicR == animToRow && logicC == animToCol) {
+                    int fromVr = viewRow(animFromRow), fromVc = viewCol(animFromCol);
+                    float fromPx = bl + colToPixelX(fromVc) - PIECE_SIZE / 2f;
+                    float fromPy = bt + rowToPixelY(fromVr) - PIECE_SIZE / 2f;
+                    px = fromPx + (px - fromPx) * animProgress;
+                    py = fromPy + (py - fromPy) * animProgress;
+                }
+
+                int ipx = Math.round(px), ipy = Math.round(py);
 
                 // 底图
-                g.blit(PIECE_TEX, px, py, 0, 0, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE);
+                g.blit(PIECE_TEX, ipx, ipy, 0, 0, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE);
 
-                // 汉字（需要处理翻转）
+                // 汉字
                 int type = XiangqiSession.getType(p);
                 int side = XiangqiSession.getSide(p);
                 String ch = (side == 0) ? RED_CHARS[type] : BLACK_CHARS[type];
                 int color = (side == 0) ? 0xFFCC0000 : 0xFF111111;
+                int shadowColor = (side == 0) ? 0xFF440000 : 0xFF555555;
+                int charW = this.font.width(ch);
+                int textX = (PIECE_SIZE - charW) / 2 + 1;
+                int textY = (PIECE_SIZE - 9) / 2;
 
-                if (!isRed) {
-                    // 黑方视角：棋子需要180度翻转，使文字正向
-                    var pose = g.pose();
-                    pose.pushPose();
-                    pose.translate(px + PIECE_SIZE / 2f, py + PIECE_SIZE / 2f, 0);
-                    pose.mulPose(Axis.ZP.rotation((float) Math.PI));
-                    pose.translate(-PIECE_SIZE / 2f, -PIECE_SIZE / 2f, 0);
-                    g.drawString(this.font, ch, 8, 8, color);
-                    pose.popPose();
-                } else {
-                    g.drawString(this.font, ch, px + 8, py + 8, color);
-                }
+                g.drawString(this.font, ch, ipx + textX + 1, ipy + textY + 1, shadowColor, false);
+                g.drawString(this.font, ch, ipx + textX, ipy + textY, color, false);
             }
         }
+    }
+
+    /** 计算动画进度 [0, 1]，使用 easeOut 缓动 */
+    private float getAnimProgress() {
+        if (animFromRow < 0) return 1.0f;
+        long elapsed = System.currentTimeMillis() - animStartTime;
+        float t = Math.min(1.0f, (float) elapsed / ANIM_DURATION);
+        // easeOut: 1 - (1-t)^2
+        return 1.0f - (1.0f - t) * (1.0f - t);
     }
 
     // ── 选中高亮 ──
@@ -296,6 +354,35 @@ public class XiangqiMinigameScreen extends Screen {
         int px = bl + colToPixelX(vc) - PIECE_SIZE / 2;
         int py = bt + rowToPixelY(vr) - PIECE_SIZE / 2;
         g.fill(px - 2, py - 2, px + PIECE_SIZE + 2, py + PIECE_SIZE + 2, SELECT_COLOR);
+    }
+
+    // ── 待落子预览 ──
+
+    private void drawGhostPiece(GuiGraphics g, int bl, int bt) {
+        if (selRow < 0 || state != State.PLAYING) return;
+        if (currentTurn == null || !currentTurn.equals(localUUID)) return;
+
+        // 反算鼠标指向的棋盘交叉点
+        float relX = (float) (lastMouseX - bl);
+        float relY = (float) (lastMouseY - bt);
+        int vc = Math.round(relX / SPACING);
+        int vr;
+        if (relY <= rowToPixelY(4) + SPACING / 2f) {
+            vr = Math.round(relY / SPACING);
+        } else {
+            vr = Math.round((relY - RIVER_H) / SPACING);
+        }
+        if (vr < 0 || vr >= ROWS || vc < 0 || vc >= COLS) return;
+
+        int lr = logicRow(vr), lc = logicCol(vc);
+        // 不能指向已选棋子本身
+        if (lr == selRow && lc == selCol) return;
+        // 客户端本地校验走法合法性
+        if (!XiangqiSession.isValidMoveClient(boardData, selRow, selCol, lr, lc)) return;
+
+        int px = bl + colToPixelX(vc) - PIECE_SIZE / 2;
+        int py = bt + rowToPixelY(vr) - PIECE_SIZE / 2;
+        g.blit(GHOST_TEX, px, py, 0, 0, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE, PIECE_SIZE);
     }
 
     // ── 信息栏 ──
@@ -333,6 +420,13 @@ public class XiangqiMinigameScreen extends Screen {
     // ══════════════════════════════════════════════
     // 交互
     // ══════════════════════════════════════════════
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        super.mouseMoved(mouseX, mouseY);
+    }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {

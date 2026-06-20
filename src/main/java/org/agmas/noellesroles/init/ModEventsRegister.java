@@ -2180,6 +2180,12 @@ public class ModEventsRegister {
             }
         });
 
+        // 服务器Tick事件 - 斗地主 AI 驱动 + 麻将动作超时
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            io.wifi.starrailexpress.content.minigame.doudizhu.DoudizhuSessionManager.INSTANCE.tick();
+            io.wifi.starrailexpress.content.minigame.mahjong.MahjongSessionManager.INSTANCE.tick();
+        });
+
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
         });

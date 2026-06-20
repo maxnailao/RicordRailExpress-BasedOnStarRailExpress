@@ -1,7 +1,8 @@
 package io.wifi.starrailexpress.client.gui.screen;
 
-import io.wifi.starrailexpress.content.minigame.MinigameScoreboardData;
+import io.wifi.starrailexpress.network.packet.ScoreboardSubmitC2SPacket;
 import io.wifi.starrailexpress.index.TMMSounds;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -394,8 +395,8 @@ public class TargetShootingMinigameScreen extends Screen {
     private void endGame() {
         state = State.ENDED; endTime = System.currentTimeMillis();
         int finalScore = (int) (score * difficulty.scoreMultiplier);
-        if (minecraft != null && minecraft.player != null)
-            MinigameScoreboardData.addScore("target_shooting", minecraft.player.getName().getString(), finalScore);
+        // 通过 C2S 网络包将分数提交到服务端，防止客户端篡改
+        ClientPlayNetworking.send(new ScoreboardSubmitC2SPacket("target_shooting", finalScore));
     }
 
     private void playGunSound() {

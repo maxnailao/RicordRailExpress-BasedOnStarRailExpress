@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.init;
 
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.block.CustomPlayerPlushBlock;
 import org.agmas.noellesroles.content.block.Jiale2PlushBlock;
 import org.agmas.noellesroles.content.block.SPBGCPPlushBlock;
 import org.agmas.noellesroles.content.block.SREPlushBlock;
@@ -130,11 +131,8 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block CHAORENQIANG_PLUSH = registerSpecialBlock("chaorenqiang_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
-    // === 自定义玩家Fumo玩偶 ===
     Block CUSTOM_PLAYER_PLUSH = registerSpecialBlock("custom_player_plush",
-            new org.agmas.noellesroles.content.block.CustomPlayerPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
+            new CustomPlayerPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     /**
      * Block Entity
      */

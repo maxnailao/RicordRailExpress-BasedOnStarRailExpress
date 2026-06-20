@@ -26,6 +26,9 @@ public class MinigameScreenFactory {
         FACTORY.put("gomoku", GomokuMinigameScreen::new);
         FACTORY.put("target_shooting", TargetShootingMinigameScreen::new);
         FACTORY.put("xiangqi", XiangqiMinigameScreen::new);
+        FACTORY.put("tetris", TetrisMinigameScreen::new);
+        FACTORY.put("doudizhu", DoudizhuMinigameScreen::new);
+        FACTORY.put("mahjong", MahjongMinigameScreen::new);
     }
 
     public static Screen create(String minigameId, BlockPos pos, Runnable onSuccess) {
