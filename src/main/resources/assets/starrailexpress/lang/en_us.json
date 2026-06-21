@@ -2554,5 +2554,17 @@
   "message.warden.target_died": "§6Your verdict target has died, verdict voided.",
   "hud.noellesroles.warden.no_gun": "§6Justice is coming",
   "hud.noellesroles.warden.ready": "§aVerdict Ready",
-  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply"
+  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
+
+  "screen.sre.skins.knife.testofknifeskin.name": "testofknifeskin",
+
+  "screen.sre.skins.preview": "Preview",
+  "screen.sre.skins.locked": "Locked",
+  "screen.sre.skins.no_items": "No skinnable items in inventory",
+  "screen.sre.skins.hat_title": "Hat",
+  "screen.sre.skins.instructions": "Select an item category to view available skins",
+
+  "commands.sre.skins.give.success": "Unlocked skin %s (%s) for %d player(s): %s",
+  "commands.sre.skins.give.unknown_type": "Unknown skin type: %s",
+  "commands.sre.skins.give.unknown_skin": "Skin %s does not exist in type %s"
 }

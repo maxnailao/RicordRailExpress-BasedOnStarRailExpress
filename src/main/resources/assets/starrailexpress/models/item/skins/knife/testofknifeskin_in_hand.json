@@ -1,0 +1,6 @@
+{
+	"parent": "wathe:item/knife",
+	"textures": {
+		"layer0": "starrailexpress:item/skins/knife/testofknifeskin"
+	}
+}

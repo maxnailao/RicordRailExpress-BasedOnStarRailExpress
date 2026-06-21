@@ -327,7 +327,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinEnabled = true;
     @ConfigEntry.Category(value = "skin")
-    public boolean isItemSkinManagementEnabled = false;
+    public boolean isItemSkinManagementEnabled = true;
 
     @ConfigEntry.Category(value = "skin")
     public boolean itemSkinSyncServerEnabled = false;

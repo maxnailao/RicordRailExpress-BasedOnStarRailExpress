@@ -1,10 +1,12 @@
 package io.wifi.starrailexpress.util;
 
+import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.content.item.Colors;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -296,14 +298,26 @@ public class ItemSkinManager {
      */
     public static void sync(Player player) {
         PlayerEconomyManager.flushBlocking(player.getUUID());
+        // 同步 CCA 组件到客户端
+        if (player instanceof ServerPlayer serverPlayer) {
+            SREPlayerSkinsComponent.KEY.sync(serverPlayer);
+        }
     }
 
     public static void unlockSkinForItemTypeNoSync(Player player, String itemTypeName, String skinName) {
         PlayerEconomyManager.unlockSkinForItemType(player, itemTypeName, skinName);
+        // 同步更新 CCA 组件
+        if (player instanceof ServerPlayer serverPlayer) {
+            SREPlayerSkinsComponent.KEY.get(serverPlayer).unlockSkinForItemType(itemTypeName, skinName);
+        }
     }
 
     public static void unlockSkinForItemType(Player player, String itemTypeName, String skinName) {
         PlayerEconomyManager.unlockSkinForItemType(player, itemTypeName, skinName);
+        // 同步更新 CCA 组件
+        if (player instanceof ServerPlayer serverPlayer) {
+            SREPlayerSkinsComponent.KEY.get(serverPlayer).unlockSkinForItemType(itemTypeName, skinName);
+        }
     }
 
     /**
@@ -315,6 +329,10 @@ public class ItemSkinManager {
      */
     public static void setEquippedSkinForItemType(Player player, String itemTypeName, String skinName) {
         PlayerEconomyManager.setEquippedSkinForItemType(player, itemTypeName, skinName);
+        // 同步更新 CCA 组件
+        if (player instanceof ServerPlayer serverPlayer) {
+            SREPlayerSkinsComponent.KEY.get(serverPlayer).setEquippedSkinForItemType(itemTypeName, skinName);
+        }
     }
 
     /**
