@@ -150,5 +150,13 @@
         "stream": false
       }
     ]
+  },
+  "plush.slhcat": {
+    "sounds": [
+      {
+        "name": "noellesroles:slhcat",
+        "stream": false
+      }
+    ]
   }
 }

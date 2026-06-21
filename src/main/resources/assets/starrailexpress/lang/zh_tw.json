@@ -2336,5 +2336,17 @@
   "minigame.starrailexpress.slice_food": "切食材",
   "minigame.starrailexpress.three_cards": "三張牌",
   "minigame.starrailexpress.break_jar": "砸碎罐子",
-  "minigame.starrailexpress.zone_calibration": "區間校準"
+  "minigame.starrailexpress.zone_calibration": "區間校準",
+
+  "screen.sre.skins.knife.testofknifeskin.name": "testofknifeskin",
+
+  "screen.sre.skins.preview": "預覽",
+  "screen.sre.skins.locked": "未解鎖",
+  "screen.sre.skins.no_items": "背包中沒有可換膚的物品",
+  "screen.sre.skins.hat_title": "帽子",
+  "screen.sre.skins.instructions": "選擇物品類別以查看可用皮膚",
+
+  "commands.sre.skins.give.success": "已將皮膚 %s（%s）解鎖給 %d 名玩家：%s",
+  "commands.sre.skins.give.unknown_type": "未知的物品皮膚類型：%s",
+  "commands.sre.skins.give.unknown_skin": "皮膚 %s 在類型 %s 中不存在"
 }

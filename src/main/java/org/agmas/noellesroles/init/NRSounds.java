@@ -43,6 +43,7 @@ public class NRSounds {
     public static final SoundEvent TANGYE_SOUND = registrar.create("plush.tangye");
     public static final SoundEvent JIALE_WA_SOUND = registrar.create("plush.jiale_wa");
     public static final SoundEvent WJCLB_SOUND = registrar.create("plush.wjclb");
+    public static final SoundEvent SLHCAT_SOUND = registrar.create("plush.slhcat");
 
     public static final SoundEvent GUO1_SOUND = registrar.create("plush.guo1");
     public static final SoundEvent GUO2_SOUND = registrar.create("plush.guo2");

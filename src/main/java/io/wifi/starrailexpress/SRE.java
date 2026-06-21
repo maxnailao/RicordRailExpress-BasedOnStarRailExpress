@@ -130,6 +130,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         registerEventHandlers();
         registerServerLifecycleEvents();
         initRegistries();
+        SRESkinRegistry.register();
         initNetworkStatistics();
         registerCommandArgumentTypes();
         registerCommands();
