@@ -47,6 +47,10 @@ public final class MatchRecordStore {
     private MatchRecordStore() {
     }
 
+    /** 一页战绩摘要 + 数据库内总条数（用于客户端虚拟列表的滚动条与按需拉取）。 */
+    public record MatchPage(int total, int offset, List<MatchRecord.Summary> items) {
+    }
+
     public static boolean isAvailable() {
         return MysqlPlayerDataStore.getDataSource() != null;
     }
@@ -62,12 +66,17 @@ public final class MatchRecordStore {
         return CompletableFuture.supplyAsync(() -> save(record), EXECUTOR);
     }
 
-    public static CompletableFuture<List<MatchRecord.Summary>> listRecentAsync(int limit) {
+    /**
+     * 按需拉取一页战绩（{@code offset} 起 {@code limit} 条，按时间倒序），并附带总条数。
+     * 仅在客户端滚动到对应区间时才会调用——既减少网络流量，也只在需要时查询数据库。
+     */
+    public static CompletableFuture<MatchPage> listWindowAsync(int offset, int limit) {
         if (!isAvailable()) {
-            return CompletableFuture.completedFuture(new ArrayList<>());
+            return CompletableFuture.completedFuture(new MatchPage(0, Math.max(0, offset), new ArrayList<>()));
         }
+        int safeOffset = Math.max(0, offset);
         int clamped = limit <= 0 ? DEFAULT_LIST_LIMIT : Math.min(limit, MAX_LIST_LIMIT);
-        return CompletableFuture.supplyAsync(() -> listRecent(clamped), EXECUTOR);
+        return CompletableFuture.supplyAsync(() -> listWindow(safeOffset, clamped), EXECUTOR);
     }
 
     public static CompletableFuture<Optional<MatchRecord>> loadAsync(String matchId) {
@@ -107,23 +116,34 @@ public final class MatchRecordStore {
         }
     }
 
-    private static List<MatchRecord.Summary> listRecent(int limit) {
+    private static MatchPage listWindow(int offset, int limit) {
         HikariDataSource source = MysqlPlayerDataStore.getDataSource();
-        List<MatchRecord.Summary> result = new ArrayList<>();
+        List<MatchRecord.Summary> items = new ArrayList<>();
+        int total = 0;
         if (source == null) {
-            return result;
+            return new MatchPage(0, offset, items);
         }
-        String sql = "SELECT summary_json FROM " + tableName() + " ORDER BY created_at DESC LIMIT ?";
+        String countSql = "SELECT COUNT(*) FROM " + tableName();
+        String pageSql = "SELECT summary_json FROM " + tableName() + " ORDER BY created_at DESC LIMIT ? OFFSET ?";
         try (Connection connection = source.getConnection()) {
             ensureSchema(connection);
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (Statement statement = connection.createStatement()) {
+                statement.setQueryTimeout(STATEMENT_TIMEOUT_SECONDS);
+                try (ResultSet resultSet = statement.executeQuery(countSql)) {
+                    if (resultSet.next()) {
+                        total = resultSet.getInt(1);
+                    }
+                }
+            }
+            try (PreparedStatement statement = connection.prepareStatement(pageSql)) {
                 statement.setQueryTimeout(STATEMENT_TIMEOUT_SECONDS);
                 statement.setInt(1, limit);
+                statement.setInt(2, offset);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     while (resultSet.next()) {
                         MatchRecord.Summary summary = MatchRecord.summaryFromJson(resultSet.getString("summary_json"));
                         if (summary != null) {
-                            result.add(summary);
+                            items.add(summary);
                         }
                     }
                 }
@@ -131,7 +151,7 @@ public final class MatchRecordStore {
         } catch (SQLException exception) {
             logger.warn("读取全局战绩列表失败。", exception);
         }
-        return result;
+        return new MatchPage(total, offset, items);
     }
 
     private static Optional<MatchRecord> load(String matchId) {

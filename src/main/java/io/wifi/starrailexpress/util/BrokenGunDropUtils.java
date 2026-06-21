@@ -8,7 +8,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -61,13 +60,10 @@ public final class BrokenGunDropUtils {
 
     public static void prepareBrokenGunEntity(ItemEntity item) {
         item.setPickUpDelay(DESPAWN_TICKS);
-        if (item.level() instanceof ServerLevel) {
-            Scheduler.schedule(() -> {
-                if (item.isAlive() && isBrokenGun(item.getItem())) {
-                    item.discard();
-                }
-            }, DESPAWN_TICKS);
-        }
+        // 不要在这里通过 Scheduler 安排销毁：dropBrokenGun 本身常常是在一个已调度的任务里被调用的
+        // (例如 GunShootPayload 的延迟掉枪任务)，若此处再次 Scheduler.schedule 会在 Scheduler 的
+        // removeIf 遍历过程中修改其 CopyOnWriteArrayList，抛出 ConcurrentModificationException 导致崩溃。
+        // 破损手枪的销毁与落地粒子已由 ItemEntityMixin#tmm$tickBrokenGunEffects 在 DESPAWN_TICKS 处统一处理。
     }
 
     public static boolean shouldBreakVictimGunOnKillerKill(SREGameWorldComponent gameWorldComponent, Player victim,

@@ -108,16 +108,12 @@ public class ShopContent {
             result = List.of();
         }
 
-        if (!sreRole.isVigilanteTeam()) {
-            return result;
-        }
 
-        ArrayList<ShopEntry> vigilanteEntries = new ArrayList<>(result);
-        vigilanteEntries.add(createSheriffBulletEntry());
-        return vigilanteEntries;
+            return result;
+
     }
 
-    private static ShopEntry createSheriffBulletEntry() {
+    public static ShopEntry createSheriffBulletEntry() {
         return new ShopEntry(ModItems.BULLET.getDefaultInstance(), SREConfig.instance().sheriffBulletPrice,
                 ShopEntry.Type.WEAPON) {
             @Override

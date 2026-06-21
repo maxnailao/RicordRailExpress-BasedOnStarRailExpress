@@ -1404,6 +1404,7 @@ public class RoleShopHandler {
     {
       List<ShopEntry> entries = new ArrayList<>();
       entries.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+      entries.add(ShopContent.createSheriffBulletEntry());
       ShopContent.customEntries.put(
           TMMRoles.VIGILANTE.identifier(), entries);
     }

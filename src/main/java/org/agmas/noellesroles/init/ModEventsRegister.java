@@ -1361,6 +1361,28 @@ public class ModEventsRegister {
         MapScanner.registerMapScanEvent();
         CustomWinnerClass.registerCustomWinners();
         XiaoNaoHandler.registerEvent();
+        // 通用物证：血迹路径。凶手击杀后开始"滴血跟随"，边走边沿途留下会衰减的血迹（仅他杀触发）。
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            io.wifi.starrailexpress.SREConfig cfg = io.wifi.starrailexpress.SREConfig.instance();
+            if (cfg == null || !cfg.enableForensicEvidence || !cfg.forensicBloodTrail)
+                return;
+            if (victim == null || killer == null || victim.level().isClientSide)
+                return;
+            if (!(killer instanceof net.minecraft.server.level.ServerPlayer killerSp))
+                return;
+            SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(victim.level());
+            if (gw == null || !gw.isRunning())
+                return;
+            io.wifi.starrailexpress.game.forensic.ForensicCategory cat =
+                    io.wifi.starrailexpress.game.forensic.ForensicCategory.fromDeathReason(deathReason);
+            // 凶器大类决定滴血持续时长（枪/穿刺出血久=血迹更长，刀较短）
+            int bleedTicks = switch (cat) {
+                case FIREARM, PROJECTILE -> 14 * 20;
+                case BLADE -> 8 * 20;
+                default -> 10 * 20;
+            };
+            gw.startKillerBleed(killerSp, victim.position(), victim.level().getGameTime(), bleedTicks);
+        });
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorld == null || !gameWorld.isRunning())

@@ -8,9 +8,14 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import org.agmas.noellesroles.component.ModComponents;
@@ -21,6 +26,8 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
@@ -56,6 +63,10 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     public int chargeTicks = 0;
     private UUID chargingCorpseUuid = null;
 
+    // ==================== 已读取(已标记)的尸体 ====================
+    /** 已被本模仿者读取过的尸体实体UUID，尸体不会被清理，而是标记防止重复读取 */
+    public final Set<UUID> markedCorpses = new HashSet<>();
+
     // ==================== 召回者状态 ====================
     public boolean imitRecallerPlaced = false;
     public double imitRecallerX = 0, imitRecallerY = 0, imitRecallerZ = 0;
@@ -90,6 +101,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         isCharging = false;
         chargeTicks = 0;
         chargingCorpseUuid = null;
+        markedCorpses.clear();
         imitRecallerPlaced = false;
         imitRecallerX = imitRecallerY = imitRecallerZ = 0;
         imitBoxerInvulnTicks = 0;
@@ -159,6 +171,14 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     public void startCharging(UUID corpseEntityUuid) {
         if (isCharging)
             return;
+        // 已读取过的尸体不能重复读取
+        if (markedCorpses.contains(corpseEntityUuid)) {
+            if (player instanceof ServerPlayer sp) {
+                sp.displayClientMessage(Component.translatable("message.noellesroles.imitator.corpse_already_read")
+                        .withStyle(ChatFormatting.RED), true);
+            }
+            return;
+        }
         isCharging = true;
         chargeTicks = 0;
         chargingCorpseUuid = corpseEntityUuid;
@@ -212,8 +232,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
             this.sync();
             return;
         }
-        // 尸体会消失
-        corpse.discard();
+        // 不清理尸体，改为标记（防止重复读取，并给予可见的发光标记）
+        markCorpse(corpse);
 
         // 不能吃杀手和中立的能力
         if (!role.isInnocent()) {
@@ -264,6 +284,16 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         sp.displayClientMessage(Component.translatable("message.noellesroles.imitator.eat_complete",
                 roleName).withStyle(ChatFormatting.GREEN), true);
         this.sync();
+    }
+
+    /**
+     * 标记尸体：记录其UUID（防止重复读取），并施加持续发光作为可见标记。
+     * 不再调用 discard()，尸体保留在世界中。
+     */
+    private void markCorpse(PlayerBodyEntity corpse) {
+        markedCorpses.add(corpse.getUUID());
+        // 持续发光标记（约16分钟，足够一局游戏）
+        corpse.addEffect(new MobEffectInstance(MobEffects.GLOWING, 20000, 0, false, false, false));
     }
 
     // ==================== 槽位管理 ====================
@@ -567,6 +597,9 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 吃尸体充能
         if (isCharging) {
+            // 读取尸体技能期间无法移动（通过高等级缓慢效果实现）
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 10, 255, false, false, false));
             chargeTicks++;
             if (chargeTicks >= MAX_CHARGE_TICKS) {
                 completeEat();
@@ -620,6 +653,13 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         tag.putBoolean("isCharging", isCharging);
         tag.putInt("chargeTicks", chargeTicks);
 
+        // 已读取的尸体
+        ListTag markedList = new ListTag();
+        for (UUID id : markedCorpses) {
+            markedList.add(StringTag.valueOf(id.toString()));
+        }
+        tag.put("markedCorpses", markedList);
+
         // 召回者状态
         tag.putBoolean("imitRecPlaced", imitRecallerPlaced);
         tag.putDouble("imitRecX", imitRecallerX);
@@ -663,6 +703,17 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         copyActionCooldown = tag.contains("copyActionCd") ? tag.getInt("copyActionCd") : 0;
         isCharging = tag.contains("isCharging") && tag.getBoolean("isCharging");
         chargeTicks = tag.contains("chargeTicks") ? tag.getInt("chargeTicks") : 0;
+
+        markedCorpses.clear();
+        if (tag.contains("markedCorpses")) {
+            ListTag markedList = tag.getList("markedCorpses", Tag.TAG_STRING);
+            for (int i = 0; i < markedList.size(); i++) {
+                try {
+                    markedCorpses.add(UUID.fromString(markedList.getString(i)));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+        }
 
         imitRecallerPlaced = tag.contains("imitRecPlaced") && tag.getBoolean("imitRecPlaced");
         imitRecallerX = tag.contains("imitRecX") ? tag.getDouble("imitRecX") : 0;

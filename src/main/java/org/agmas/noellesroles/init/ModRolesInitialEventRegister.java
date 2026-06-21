@@ -235,7 +235,6 @@ public class ModRolesInitialEventRegister {
                 return;
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
-                RoleInitialItems.replaceSheriffTeamGuns(player, role);
                 if (!SREItemUtils.hasItem(player, ModItems.SHERIFF_REVOLVER)) {
                     player.addItem(SheriffRevolverItem.createUnloadedStack());
                 }

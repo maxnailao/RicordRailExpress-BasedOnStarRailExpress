@@ -72,32 +72,17 @@ public class RoleInitialItems {
                 }
             }
         }
-        replaceSheriffTeamGuns(player, role);
+
     }
 
-    public static void replaceSheriffTeamGuns(Player player, SRERole role) {
-        if (role == null || !role.isVigilanteTeam()) {
-            return;
-        }
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (shouldReplaceWithSheriffRevolver(role, stack)) {
-                player.getInventory().setItem(i, SheriffRevolverItem.createUnloadedStack());
-            }
-        }
-    }
+
 
     private static ItemStack normalizeInitialItemForRole(SRERole role, ItemStack stack) {
-        if (shouldReplaceWithSheriffRevolver(role, stack)) {
-            return SheriffRevolverItem.createUnloadedStack();
-        }
+
         return stack.copy();
     }
 
-    private static boolean shouldReplaceWithSheriffRevolver(SRERole role, ItemStack stack) {
-        return role != null && role.isVigilanteTeam() && stack != null && !stack.isEmpty()
-                && stack.is(TMMItemTags.GUNS) && !stack.is(ModItems.SHERIFF_REVOLVER);
-    }
+
 
     /**
      * 初始化初始物品映射，职业的初始物品加在这里。

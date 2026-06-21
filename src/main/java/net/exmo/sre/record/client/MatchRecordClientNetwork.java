@@ -12,7 +12,8 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * 客户端网络处理：接收战绩列表 / 回放数据并打开对应 GUI，提供向服务端发起请求的辅助方法。
+ * 客户端网络处理：接收战绩列表分页 / 回放数据并打开对应 GUI，
+ * 提供「按需拉取某一页」与「拉取某场回放」的辅助方法（仅在滚动到对应区间时调用）。
  */
 public final class MatchRecordClientNetwork {
 
@@ -23,10 +24,10 @@ public final class MatchRecordClientNetwork {
         ClientPlayNetworking.registerGlobalReceiver(RecordListS2CPayload.ID, (payload, context) -> {
             List<MatchRecord.Summary> summaries = MatchRecord.summaryListFromJson(payload.json());
             context.client().execute(() -> {
-                ClientMatchRecordCache.setSummaries(summaries);
+                ClientMatchRecordCache.applyWindow(payload.offset(), payload.total(), summaries);
                 Minecraft client = context.client();
                 if (client.screen instanceof MatchRecordsScreen recordsScreen) {
-                    recordsScreen.refreshEntries();
+                    recordsScreen.onWindowUpdated();
                 } else {
                     client.setScreen(new MatchRecordsScreen());
                 }
@@ -52,17 +53,19 @@ public final class MatchRecordClientNetwork {
                 if (client.screen instanceof MatchRecordsScreen recordsScreen) {
                     recordsScreen.showRecord(record);
                 } else {
-                    // 通过 /sre:records <id> 直接打开某场回放：开屏后再补拉列表填充左侧
+                    // 通过 /sre:records <id> 直接打开某场回放：开屏后再补拉首页填充左侧列表
+                    ClientMatchRecordCache.resetWindows();
                     client.setScreen(new MatchRecordsScreen(record));
-                    requestList(0);
+                    requestWindow(0, MatchRecordsScreen.PAGE_SIZE);
                 }
             });
         });
     }
 
-    public static void requestList(int limit) {
+    /** 请求战绩列表的一页（offset 起 limit 条）。 */
+    public static void requestWindow(int offset, int limit) {
         if (ClientPlayNetworking.canSend(RecordListRequestC2SPayload.ID)) {
-            ClientPlayNetworking.send(new RecordListRequestC2SPayload(limit));
+            ClientPlayNetworking.send(new RecordListRequestC2SPayload(offset, limit));
         }
     }
 

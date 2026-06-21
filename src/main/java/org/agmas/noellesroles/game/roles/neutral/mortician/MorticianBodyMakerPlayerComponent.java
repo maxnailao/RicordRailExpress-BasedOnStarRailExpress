@@ -523,6 +523,12 @@ public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent
             this.draggedBody.setYRot(player.getYRot());
             this.draggedBody.setYHeadRot(player.getYRot());
             this.draggedBody.yBodyRot = player.getYRot();
+            // 通用物证·拖痕：记录该尸体被拖动过（首次记录即同步）
+            io.wifi.starrailexpress.cca.SREGameWorldComponent forensicGw =
+                    io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            if (forensicGw != null && this.draggedBody.getPlayerUuid() != null) {
+                forensicGw.markCorpseDragged(this.draggedBody.getPlayerUuid());
+            }
         } else if (this.draggedBody != null) {
             // 尸体已消失，自动解除拖动并使技能进入冷却
             this.draggedBody = null;

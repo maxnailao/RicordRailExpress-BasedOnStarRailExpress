@@ -14,6 +14,7 @@ import org.agmas.noellesroles.client.screen.TelegrapherScreen;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.AbilityC2SPacket;
 import org.agmas.noellesroles.packet.AbilityWithTargetC2SPacket;
+import org.agmas.noellesroles.packet.VeteranDashC2SPacket;
 import org.agmas.noellesroles.packet.VultureEatC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -113,6 +114,13 @@ public final class GKeyRoleSkill {
                 return true;
             }
             ClientPlayNetworking.send(new org.agmas.noellesroles.packet.CreeperAbilityC2SPacket());
+            return true;
+        });
+        register(ModRoles.VETERAN, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                return true;
+            }
+            ClientPlayNetworking.send(new VeteranDashC2SPacket());
             return true;
         });
         register(ModRoles.VULTURE, false, (client, gameWorld) -> {

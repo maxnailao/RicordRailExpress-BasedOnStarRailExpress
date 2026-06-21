@@ -74,6 +74,10 @@ public class TrainDoorBlock extends SmallDoorBlock {
                     if (hasLockpick) {
                         world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
                                 TMMSounds.ITEM_LOCKPICK_DOOR, SoundSource.BLOCKS, 1f, 1f);
+                        // 通用物证·破门痕：真·开锁器开锁开门时留痕（万能钥匙/勋章等不留痕）
+                        if (mainHandItem.is(TMMItems.LOCKPICK)) {
+                            entity.recordTamper((byte) 2);
+                        }
                         return superOpenFunction.apply(state, world, entity, lowerPos);
                     } else if (hasIronDoorKey) {
                         if (!player.isCreative()) {

@@ -43,7 +43,12 @@ public final class MatchRecord {
     public static final class MatchPlayer {
         public String uuid;
         public String name;
+        /** 当前 / 最终职业 id。 */
         public String roleId;
+        /** 旧职业 id（发生过换职业时存在），否则为 null。 */
+        public String oldRoleId;
+        /** 阵营：1 好人 / 2 中立 / 3 中立偏杀手 / 4 杀手 / 5 治安官，其余为未知(-1)。 */
+        public int faction = -1;
         public boolean alive = true;
     }
 
@@ -61,14 +66,16 @@ public final class MatchRecord {
         public boolean hidden;
     }
 
-    /** 列表视图所需的精简摘要（不含完整事件，便于战绩列表分页展示）。 */
+    /**
+     * 列表视图所需的精简摘要：仅含列表卡片需要的字段（不含玩家名单与事件），
+     * 以尽量减少分页 / 滚动加载时的网络流量。
+     */
     public static final class Summary {
         public String matchId;
         public long createdAt;
         public String winningTeam;
         public String winningTitleJson;
         public int playerCount;
-        public List<MatchPlayer> players = new ArrayList<>();
     }
 
     public Summary toSummary() {
@@ -78,7 +85,6 @@ public final class MatchRecord {
         summary.winningTeam = winningTeam;
         summary.winningTitleJson = winningTitleJson;
         summary.playerCount = playerCount;
-        summary.players = players == null ? new ArrayList<>() : new ArrayList<>(players);
         return summary;
     }
 

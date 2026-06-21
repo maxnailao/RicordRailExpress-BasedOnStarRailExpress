@@ -114,7 +114,8 @@ public abstract class ItemEntityMixin {
             item.discard();
             return;
         }
-        if (item.tickCount % 5 == 0) {
+        // 只在落地后冒少量粒子，掉落途中不显示
+        if (item.onGround() && item.tickCount % 8 == 0) {
             tmm$spawnBrokenGunParticles(serverLevel, item);
         }
     }

@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.client.screen.DetectiveInspectScreenHandler;
 import org.agmas.noellesroles.client.screen.ModScreenHandlers;
 import org.agmas.noellesroles.client.screen.PostmanScreenHandler;
@@ -43,6 +45,7 @@ import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlaye
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.telegrapher.TelegrapherPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
@@ -94,6 +97,7 @@ public class RicesRoleRhapsody implements ModInitializer {
     public static final CustomPacketPayload.Type<TrapperSwitchC2SPacket> TRAPPER_SWITCH_PACKET = TrapperSwitchC2SPacket.ID;
     public static final CustomPacketPayload.Type<StarAbilityC2SPacket> STAR_ABILITY_PACKET = StarAbilityC2SPacket.ID;
     public static final CustomPacketPayload.Type<SingerAbilityC2SPacket> SINGER_ABILITY_PACKET = SingerAbilityC2SPacket.ID;
+    public static final CustomPacketPayload.Type<VeteranDashC2SPacket> VETERAN_DASH_PACKET = VeteranDashC2SPacket.ID;
     public static final CustomPacketPayload.Type<PsychologistC2SPacket> PSYCHOLOGIST_PACKET = PsychologistC2SPacket.ID;
     public static final CustomPacketPayload.Type<PuppeteerC2SPacket> PUPPETEER_PACKET = PuppeteerC2SPacket.ID;
 
@@ -111,6 +115,9 @@ public class RicesRoleRhapsody implements ModInitializer {
     public static final CustomPacketPayload.Type<LootPoolsInfoRequestC2SPacket> LOOT_POOLS_INFO_REQUEST_PACKET = LootPoolsInfoRequestC2SPacket.ID;
     public static final CustomPacketPayload.Type<LootPoolsInfoCheckC2SPacket> LOOT_POOLS_INFO_CHECK_CLIENT_PACKET = LootPoolsInfoCheckC2SPacket.ID;
     public static final CustomPacketPayload.Type<LootDataRefreshC2SPacket> LOOT_DATA_REFRESH_CLIENT_PACKET = LootDataRefreshC2SPacket.ID;
+
+    private static final int VETERAN_DASH_COOLDOWN_TICKS = 60 * 20;
+    private static final double VETERAN_DASH_SPEED = 1.25D;
 
     @Override
     public void onInitialize() {
@@ -327,6 +334,9 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 注册歌手技能包
         PayloadTypeRegistry.playC2S().register(SingerAbilityC2SPacket.ID, SingerAbilityC2SPacket.CODEC);
+
+        // 注册退伍军人冲刺包
+        PayloadTypeRegistry.playC2S().register(VeteranDashC2SPacket.ID, VeteranDashC2SPacket.CODEC);
 
         // 注册心理学家技能包
         PayloadTypeRegistry.playC2S().register(PsychologistC2SPacket.ID, PsychologistC2SPacket.CODEC);
@@ -993,6 +1003,11 @@ public class RicesRoleRhapsody implements ModInitializer {
             ConfigWorldComponent.onPlayerUsedSkill(context.player());
         });
 
+        // 处理退伍军人持刀冲刺包
+        ServerPlayNetworking.registerGlobalReceiver(VETERAN_DASH_PACKET, (payload, context) -> {
+            handleVeteranDash(context.player());
+        });
+
         // 处理心理学家治疗包
         ServerPlayNetworking.registerGlobalReceiver(PSYCHOLOGIST_PACKET, (payload, context) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
@@ -1128,6 +1143,65 @@ public class RicesRoleRhapsody implements ModInitializer {
                     ItemSkinManager.getCoinNum(context.player()), ItemSkinManager.getLootChance(context.player()))
             );
         });
+    }
+
+    private static void handleVeteranDash(ServerPlayer player) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (!gameWorld.isRole(player, ModRoles.VETERAN)) {
+            return;
+        }
+        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+            return;
+        }
+        if (!VeteranKnifeHandler.isHeldKnife(player.getMainHandItem())
+                && !VeteranKnifeHandler.isHeldKnife(player.getOffhandItem())) {
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.veteran_dash.no_knife")
+                            .withStyle(ChatFormatting.RED),
+                    true);
+            return;
+        }
+
+        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
+        if (ability.cooldown > 0) {
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.veteran_dash.cooldown",
+                            String.format("%.1f", ability.cooldown / 20.0F))
+                            .withStyle(ChatFormatting.RED),
+                    true);
+            return;
+        }
+
+        Vec3 direction = getVeteranDashDirection(player);
+        if (direction.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+
+        Vec3 current = player.getDeltaMovement();
+        Vec3 dashMotion = new Vec3(
+                direction.x * VETERAN_DASH_SPEED,
+                Math.max(current.y, 0.08D),
+                direction.z * VETERAN_DASH_SPEED);
+        player.setDeltaMovement(dashMotion);
+        player.hurtMarked = true;
+        player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), dashMotion));
+        player.level().playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.7F, 1.4F);
+
+        ability.setCooldown(VETERAN_DASH_COOLDOWN_TICKS);
+        ConfigWorldComponent.onPlayerUsedSkill(player);
+    }
+
+    private static Vec3 getVeteranDashDirection(ServerPlayer player) {
+        Vec3 movement = player.getDeltaMovement();
+        Vec3 horizontal = new Vec3(movement.x, 0.0D, movement.z);
+        if (horizontal.lengthSqr() < 0.0025D) {
+            Vec3 look = player.getLookAngle();
+            horizontal = new Vec3(look.x, 0.0D, look.z);
+        }
+        if (horizontal.lengthSqr() < 1.0E-4D) {
+            return Vec3.ZERO;
+        }
+        return horizontal.normalize();
     }
 
     /**
@@ -1313,8 +1387,6 @@ public class RicesRoleRhapsody implements ModInitializer {
         if (role.equals(ModRoles.VETERAN)) {
             // 重置退伍军人组件
             // 不需要（谁写的啊！！！）
-            // 给予一把刀
-            player.addItem(new ItemStack(TMMItems.KNIFE));
         }
 
         // ==================== 歌手角色处理 ====================

@@ -581,8 +581,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(ModVersionPacket.ID, new ModVersionPacket.Receiver());
         // 全局战绩 / 回放查询请求
         ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.record.network.RecordListRequestC2SPayload.ID,
-                (payload, context) -> net.exmo.sre.record.MatchRecordService.openListFor(context.player(),
-                        payload.limit()));
+                (payload, context) -> net.exmo.sre.record.MatchRecordService.openListWindow(context.player(),
+                        payload.offset(), payload.limit()));
         ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.record.network.RecordReplayRequestC2SPayload.ID,
                 (payload, context) -> net.exmo.sre.record.MatchRecordService.openReplayFor(context.player(),
                         payload.matchId()));

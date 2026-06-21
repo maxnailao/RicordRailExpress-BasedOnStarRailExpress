@@ -17,12 +17,15 @@ import java.util.List;
 
 /**
  * 全局战绩 / 对局回放 GUI —— 参考游戏介绍（Intro）界面的暗金主从布局：
- * 左侧为对局卡片列表，右侧为所选对局的回放时间线详情。
+ * 左侧为对局卡片列表（虚拟列表，按滚动位置按需向服务端拉取分页），
+ * 右侧为所选对局的详情：玩家按阵营分组（显示本地化职业名与旧职业）+ 事件时间线。
  * 不展示 Store Buy（商店购买）与隐藏事件。
  */
 public class MatchRecordsScreen extends Screen {
 
     private static final String STORE_BUY = "STORE_BUY";
+    /** 每页拉取的战绩条数。 */
+    public static final int PAGE_SIZE = 16;
 
     // ── 布局常量（对齐 RoleIntroduceScreen 的观感） ──
     private static final int MAX_USABLE_WIDTH = 760;
@@ -44,8 +47,12 @@ public class MatchRecordsScreen extends Screen {
     private static final int CREAM = 0xFFF5E8C8;
     private static final int TAN = 0xFF9E8B6E;
 
-    private List<MatchRecord.Summary> entries = new ArrayList<>();
+    // 阵营展示顺序（好人→治安官→中立→中立偏杀→杀手→未知）
+    private static final int[] FACTION_ORDER = { 1, 5, 2, 3, 4, 0 };
+
+    private final Screen parent;
     private String selectedMatchId;
+    private int selectedIndex = -1;
     private MatchRecord selectedRecord;
     private final List<FormattedCharSequence> detailLines = new ArrayList<>();
 
@@ -65,15 +72,25 @@ public class MatchRecordsScreen extends Screen {
     private int dragDetailStartOffset;
 
     public MatchRecordsScreen() {
+        this((Screen) null);
+    }
+
+    public MatchRecordsScreen(Screen parent) {
         super(Component.translatable("screen.sre.records.list.title"));
+        this.parent = parent;
     }
 
     public MatchRecordsScreen(MatchRecord initial) {
-        this();
+        this((Screen) null);
         if (initial != null) {
             this.selectedRecord = initial;
             this.selectedMatchId = initial.matchId;
         }
+    }
+
+    @Override
+    public void onClose() {
+        this.minecraft.setScreen(parent);
     }
 
     @Override
@@ -87,18 +104,44 @@ public class MatchRecordsScreen extends Screen {
         panelH = height - panelY - 42;
         leftX = panelX;
         rightX = panelX + leftW;
-        refreshEntries();
+        ensurePage(0);
+        onWindowUpdated();
         rebuildDetailLines();
     }
 
-    /** 收到新列表时刷新左侧卡片（不打断当前选择）。 */
-    public void refreshEntries() {
-        this.entries = new ArrayList<>(ClientMatchRecordCache.getSummaries());
-        int totalH = entries.size() * (CARD_H + CARD_SPACING);
-        maxListScroll = Math.max(0, totalH - listAreaH());
-        listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
-        if (selectedMatchId == null && !entries.isEmpty()) {
-            selectMatch(entries.get(0));
+    // ══════════════════════════════════════════════════════════════════
+    // 虚拟列表数据访问
+    // ══════════════════════════════════════════════════════════════════
+
+    private int total() {
+        return ClientMatchRecordCache.getTotal();
+    }
+
+    private MatchRecord.Summary at(int index) {
+        return ClientMatchRecordCache.getAt(index);
+    }
+
+    /** 确保某下标所在分页已被请求（去重，仅首次发包）。 */
+    private void ensurePage(int index) {
+        if (index < 0) {
+            return;
+        }
+        int page = index / PAGE_SIZE;
+        if (ClientMatchRecordCache.markPageRequested(page)) {
+            MatchRecordClientNetwork.requestWindow(page * PAGE_SIZE, PAGE_SIZE);
+        }
+    }
+
+    /** 收到新一页数据时刷新（不打断当前选择，必要时补完首选）。 */
+    public void onWindowUpdated() {
+        recomputeListScroll();
+        if (selectedMatchId == null && total() > 0) {
+            selectIndex(0);
+        } else if (selectedRecord == null && selectedIndex >= 0) {
+            MatchRecord.Summary summary = at(selectedIndex);
+            if (summary != null && summary.matchId != null && summary.matchId.equals(selectedMatchId)) {
+                loadSelected(summary.matchId);
+            }
         }
     }
 
@@ -115,18 +158,34 @@ public class MatchRecordsScreen extends Screen {
         }
     }
 
-    private void selectMatch(MatchRecord.Summary summary) {
-        if (summary == null || summary.matchId == null) {
+    private void selectIndex(int index) {
+        if (index < 0 || index >= total()) {
             return;
         }
-        selectedMatchId = summary.matchId;
-        detailScrollOffset = 0;
-        MatchRecord cached = ClientMatchRecordCache.getRecord(summary.matchId);
+        selectedIndex = index;
+        ensurePage(index);
+        MatchRecord.Summary summary = at(index);
+        if (summary != null && summary.matchId != null) {
+            selectedMatchId = summary.matchId;
+            detailScrollOffset = 0;
+            loadSelected(summary.matchId);
+        }
+        int cardY = index * (CARD_H + CARD_SPACING);
+        if (cardY < listScrollOffset) {
+            listScrollOffset = cardY;
+        } else if (cardY + CARD_H > listScrollOffset + listAreaH()) {
+            listScrollOffset = cardY + CARD_H - listAreaH();
+        }
+        recomputeListScroll();
+    }
+
+    private void loadSelected(String matchId) {
+        MatchRecord cached = ClientMatchRecordCache.getRecord(matchId);
         if (cached != null) {
             selectedRecord = cached;
         } else {
             selectedRecord = null;
-            MatchRecordClientNetwork.requestReplay(summary.matchId);
+            MatchRecordClientNetwork.requestReplay(matchId);
         }
         rebuildDetailLines();
     }
@@ -138,6 +197,16 @@ public class MatchRecordsScreen extends Screen {
     private int detailContentH() {
         return panelH - BANNER_H - PANEL_PAD * 2 - 4;
     }
+
+    private void recomputeListScroll() {
+        int totalH = total() * (CARD_H + CARD_SPACING);
+        maxListScroll = Math.max(0, totalH - listAreaH());
+        listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 详情（按阵营分组 + 本地化职业名 + 旧职业）
+    // ══════════════════════════════════════════════════════════════════
 
     private void rebuildDetailLines() {
         detailLines.clear();
@@ -155,19 +224,9 @@ public class MatchRecordsScreen extends Screen {
 
         String dashes = dashes(textW);
 
-        // 玩家名单
         if (selectedRecord.players != null && !selectedRecord.players.isEmpty()) {
-            detailLines.addAll(font.split(Component.translatable("screen.sre.records.detail.players",
-                    selectedRecord.players.size()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), textW));
-            detailLines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
-            for (MatchRecord.MatchPlayer player : selectedRecord.players) {
-                MutableComponent line = Component.literal("• ").withStyle(ChatFormatting.DARK_GRAY)
-                        .append(Component.literal(player.name == null ? "?" : player.name)
-                                .withStyle(ChatFormatting.WHITE));
-                if (player.roleId != null && !player.roleId.isBlank()) {
-                    line.append(Component.literal("  " + rolePath(player.roleId)).withStyle(ChatFormatting.GRAY));
-                }
-                detailLines.addAll(font.split(line, textW));
+            for (int faction : FACTION_ORDER) {
+                appendFactionGroup(faction, dashes, textW);
             }
             detailLines.add(FormattedCharSequence.EMPTY);
         }
@@ -199,9 +258,61 @@ public class MatchRecordsScreen extends Screen {
         detailScrollOffset = Mth.clamp(detailScrollOffset, 0, maxDetailScroll);
     }
 
-    private static String rolePath(String roleId) {
-        int idx = roleId.indexOf(':');
-        return idx >= 0 ? roleId.substring(idx + 1) : roleId;
+    private void appendFactionGroup(int faction, String dashes, int textW) {
+        List<MatchRecord.MatchPlayer> members = new ArrayList<>();
+        for (MatchRecord.MatchPlayer player : selectedRecord.players) {
+            if (factionBucket(player.faction) == faction) {
+                members.add(player);
+            }
+        }
+        if (members.isEmpty()) {
+            return;
+        }
+        ChatFormatting color = factionColor(faction);
+        MutableComponent header = Component.translatable(factionKey(faction)).withStyle(color, ChatFormatting.BOLD);
+        header.append(Component.literal(" (" + members.size() + ")").withStyle(ChatFormatting.DARK_GRAY));
+        detailLines.addAll(font.split(header, textW));
+        detailLines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
+        for (MatchRecord.MatchPlayer player : members) {
+            MutableComponent line = Component.literal("• ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(player.name == null ? "?" : player.name).withStyle(ChatFormatting.WHITE))
+                    .append(Component.literal("  "))
+                    .append(ReplayDisplayUtils.getRoleDisplayName(player.roleId).withStyle(color));
+            if (player.oldRoleId != null && !player.oldRoleId.isBlank()) {
+                line.append(Component.literal("  "))
+                        .append(Component.translatable("screen.sre.records.detail.old_role",
+                                ReplayDisplayUtils.getRoleDisplayName(player.oldRoleId))
+                                .withStyle(ChatFormatting.DARK_GRAY));
+            }
+            detailLines.addAll(font.split(line, textW));
+        }
+        detailLines.add(FormattedCharSequence.EMPTY);
+    }
+
+    private static int factionBucket(int faction) {
+        return (faction >= 1 && faction <= 5) ? faction : 0;
+    }
+
+    private static String factionKey(int faction) {
+        return switch (faction) {
+            case 1 -> "display.type.role.innocent";
+            case 2 -> "display.type.role.neutral";
+            case 3 -> "display.type.role.neutral_for_killer";
+            case 4 -> "display.type.role.killer";
+            case 5 -> "display.type.role.vigilante";
+            default -> "screen.sre.records.faction.unknown";
+        };
+    }
+
+    private static ChatFormatting factionColor(int faction) {
+        return switch (faction) {
+            case 1 -> ChatFormatting.GREEN;
+            case 2 -> ChatFormatting.YELLOW;
+            case 3 -> ChatFormatting.LIGHT_PURPLE;
+            case 4 -> ChatFormatting.RED;
+            case 5 -> ChatFormatting.AQUA;
+            default -> ChatFormatting.GRAY;
+        };
     }
 
     private String dashes(int textW) {
@@ -231,33 +342,46 @@ public class MatchRecordsScreen extends Screen {
 
     private void renderLeftPanel(GuiGraphics g, int mouseX, int mouseY) {
         drawPanelBg(g, leftX, panelY, leftW, panelH);
+        recomputeListScroll();
         int areaX = leftX + PANEL_PAD;
         int areaY = panelY + PANEL_PAD;
         int areaW = leftW - PANEL_PAD * 2 - SCROLL_W - 2;
         int areaH = listAreaH();
+        int total = total();
 
-        if (entries.isEmpty()) {
+        if (total <= 0) {
             g.drawCenteredString(font, Component.translatable("screen.sre.records.empty").withStyle(ChatFormatting.GRAY),
                     leftX + leftW / 2, areaY + areaH / 2, TAN);
         } else {
             g.enableScissor(areaX, areaY, areaX + areaW, areaY + areaH);
-            for (int i = 0; i < entries.size(); i++) {
+            int firstVis = Math.max(0, listScrollOffset / (CARD_H + CARD_SPACING));
+            int lastVis = Math.min(total - 1, (listScrollOffset + areaH) / (CARD_H + CARD_SPACING));
+            for (int i = firstVis; i <= lastVis; i++) {
                 int cardY = areaY + i * (CARD_H + CARD_SPACING) - listScrollOffset;
-                if (cardY + CARD_H < areaY || cardY > areaY + areaH) {
+                MatchRecord.Summary summary = at(i);
+                if (summary == null) {
+                    ensurePage(i);
+                    renderPlaceholder(g, areaX, cardY, areaW);
                     continue;
                 }
                 boolean hovered = isInRect(mouseX, mouseY, areaX, cardY, areaW, CARD_H);
-                boolean selected = entries.get(i).matchId != null
-                        && entries.get(i).matchId.equals(selectedMatchId);
-                renderCard(g, entries.get(i), areaX, cardY, areaW, CARD_H, hovered, selected);
+                boolean selected = summary.matchId != null && summary.matchId.equals(selectedMatchId);
+                renderCard(g, summary, areaX, cardY, areaW, CARD_H, hovered, selected);
             }
             g.disableScissor();
         }
 
         int sbX = leftX + leftW - PANEL_PAD - SCROLL_W;
-        int totalH = Math.max(1, entries.size() * (CARD_H + CARD_SPACING));
+        int totalH = Math.max(1, total * (CARD_H + CARD_SPACING));
         renderVScrollbar(g, sbX, areaY, areaH, listScrollOffset, maxListScroll, totalH, mouseX, mouseY,
                 draggingListScroll);
+    }
+
+    private void renderPlaceholder(GuiGraphics g, int x, int y, int w) {
+        g.fill(x, y, x + w, y + CARD_H, 0xFF5A4530);
+        g.fillGradient(x + 1, y + 1, x + w - 1, y + CARD_H - 1, 0xFF150D06, 0xFF0E0804);
+        g.drawCenteredString(font, Component.translatable("screen.sre.records.loading_row")
+                .withStyle(ChatFormatting.DARK_GRAY), x + w / 2, y + (CARD_H - font.lineHeight) / 2, TAN);
     }
 
     private void renderCard(GuiGraphics g, MatchRecord.Summary summary, int x, int y, int w, int h,
@@ -301,11 +425,8 @@ public class MatchRecordsScreen extends Screen {
             return;
         }
 
-        // 横幅
-        g.fillGradient(rightX + 1, panelY + 1, rightX + rightW / 2, panelY + BANNER_H,
-                0xCC8B6914, 0x448B6914);
-        g.fillGradient(rightX + rightW / 2, panelY + 1, rightX + rightW - 1, panelY + BANNER_H,
-                0x448B6914, 0x00000000);
+        g.fillGradient(rightX + 1, panelY + 1, rightX + rightW / 2, panelY + BANNER_H, 0xCC8B6914, 0x448B6914);
+        g.fillGradient(rightX + rightW / 2, panelY + 1, rightX + rightW - 1, panelY + BANNER_H, 0x448B6914, 0x00000000);
 
         Component bannerTitle;
         if (selectedRecord != null && selectedRecord.winningTitleJson != null) {
@@ -375,14 +496,10 @@ public class MatchRecordsScreen extends Screen {
             int areaW = leftW - PANEL_PAD * 2 - SCROLL_W - 2;
             int areaH = listAreaH();
             if (isInRect((int) mx, (int) my, areaX, areaY, areaW, areaH)) {
-                for (int i = 0; i < entries.size(); i++) {
-                    int cardY = areaY + i * (CARD_H + CARD_SPACING) - listScrollOffset;
-                    if (isInRect((int) mx, (int) my, areaX, cardY, areaW, CARD_H)) {
-                        selectMatch(entries.get(i));
-                        this.minecraft.getSoundManager()
-                                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
-                        return true;
-                    }
+                int index = (int) ((my - areaY + listScrollOffset) / (CARD_H + CARD_SPACING));
+                if (index >= 0 && index < total() && at(index) != null) {
+                    selectIndex(index);
+                    this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
                 }
                 return true;
             }
@@ -409,7 +526,7 @@ public class MatchRecordsScreen extends Screen {
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
         if (draggingListScroll && maxListScroll > 0) {
             int areaH = listAreaH();
-            int totalH = Math.max(1, entries.size() * (CARD_H + CARD_SPACING));
+            int totalH = Math.max(1, total() * (CARD_H + CARD_SPACING));
             int thumbH = Math.max(SCROLL_MIN_THUMB, (int) (areaH * Math.min(1f, (float) areaH / totalH)));
             double trackH = areaH - thumbH;
             if (trackH > 0) {
@@ -458,35 +575,18 @@ public class MatchRecordsScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // ↑ / ↓ 切换选中对局
-        if ((keyCode == 265 || keyCode == 264) && !entries.isEmpty()) {
-            int current = indexOfSelected();
-            int idx = Mth.clamp(current + (keyCode == 265 ? -1 : 1), 0, entries.size() - 1);
-            selectMatch(entries.get(idx));
-            int cardY = idx * (CARD_H + CARD_SPACING);
-            if (cardY < listScrollOffset) {
-                listScrollOffset = cardY;
-            } else if (cardY + CARD_H > listScrollOffset + listAreaH()) {
-                listScrollOffset = cardY + CARD_H - listAreaH();
-            }
-            listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
+        if ((keyCode == 265 || keyCode == 264) && total() > 0) {
+            int base = selectedIndex < 0 ? 0 : selectedIndex;
+            selectIndex(Mth.clamp(base + (keyCode == 265 ? -1 : 1), 0, total() - 1));
             return true;
         }
-        // R 刷新列表
-        if (keyCode == 82) {
-            MatchRecordClientNetwork.requestList(0);
+        if (keyCode == 82) { // R 刷新
+            ClientMatchRecordCache.resetWindows();
+            selectedIndex = -1;
+            ensurePage(0);
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    private int indexOfSelected() {
-        for (int i = 0; i < entries.size(); i++) {
-            if (entries.get(i).matchId != null && entries.get(i).matchId.equals(selectedMatchId)) {
-                return i;
-            }
-        }
-        return 0;
     }
 
     private static boolean isInRect(int px, int py, int x, int y, int w, int h) {

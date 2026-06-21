@@ -250,9 +250,7 @@ public class SubtitleHUD {
                 applyAlpha(PANEL_BOTTOM, alpha * (compact ? 0.56f : 0.68f)));
         guiGraphics.renderOutline(x, y, w, h, applyAlpha(PANEL_BORDER, alpha * 0.45f));
         guiGraphics.fill(x + 2, y + 1, x + w - 2, y + 2, applyAlpha(0x55FFFFFF, alpha * 0.45f));
-        if (compact) {
-            guiGraphics.fill(x + 1, y + 2, x + 3, y + h - 2, accent);
-        } else {
+        if (!compact) {
             guiGraphics.fill(x + 12, y + h - 2, x + w - 12, y + h - 1, accent);
         }
     }

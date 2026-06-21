@@ -56,6 +56,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     // 画板系统：本局已画出的物品类别（每个物品只能被画出一次）
     private Set<Integer> drawnCategories = new HashSet<>();
 
+    // 通用物证（第4批·拖痕）：被葬仪曳柩拖动过的尸体（按尸体主人UUID记录），同步给客户端供尸检显示
+    private Set<UUID> draggedCorpseOwners = new HashSet<>();
+
     /**
      * 获取玩家本局击杀数
      */
@@ -114,6 +117,128 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
      */
     public Set<Integer> getDrawnCategories() {
         return new HashSet<>(drawnCategories);
+    }
+
+    // ==================== 通用物证：血迹路径（第2批）====================
+    private static final class BloodSpot {
+        final double x;
+        final double y;
+        final double z;
+        final long spawnTick;
+
+        BloodSpot(double x, double y, double z, long spawnTick) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.spawnTick = spawnTick;
+        }
+    }
+
+    /** 正在"滴血"的凶手：在 until 之前边走边沿途留血迹。 */
+    private static final class Bleeder {
+        long until;
+        double lastX;
+        double lastZ;
+    }
+
+    private final java.util.List<BloodSpot> bloodSpots = new java.util.ArrayList<>();
+    private final java.util.Map<UUID, Bleeder> bleeders = new java.util.HashMap<>();
+    private static final int MAX_BLOOD_SPOTS = 200;
+    private static final double TRAIL_MIN_SPACING = 1.8; // 相邻血滴最小间距（格），降低密度
+    private static final net.minecraft.core.particles.DustParticleOptions BLOOD_DUST =
+            new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.45f, 0.02f, 0.02f), 0.9f);
+
+    /**
+     * 凶手击杀后开始"滴血跟随"：在案发处落一滴，并标记凶手在 bleedTicks 内边走边沿途留血迹。
+     * 仅服务端状态，靠粒子广播可见。
+     */
+    public void startKillerBleed(net.minecraft.server.level.ServerPlayer killer,
+            net.minecraft.world.phys.Vec3 site, long now, int bleedTicks) {
+        if (!(world instanceof ServerLevel) || killer == null) {
+            return;
+        }
+        addBloodSpotInternal(site.x, site.y + 0.05, site.z, now);
+        Bleeder b = new Bleeder();
+        b.until = now + bleedTicks;
+        b.lastX = killer.getX();
+        b.lastZ = killer.getZ();
+        bleeders.put(killer.getUUID(), b);
+    }
+
+    private void addBloodSpotInternal(double x, double y, double z, long now) {
+        bloodSpots.add(new BloodSpot(x, y, z, now));
+        while (bloodSpots.size() > MAX_BLOOD_SPOTS) {
+            bloodSpots.remove(0);
+        }
+    }
+
+    /** 每 tick：推进滴血凶手沿途留迹；并按节奏重广播血迹粒子、到期移除。 */
+    private void tickBlood(ServerLevel serverWorld) {
+        long now = serverWorld.getGameTime();
+
+        // 1) 凶手滴血跟随：移动足够距离才落一滴，天然稀疏，且跟着凶手走
+        if (!bleeders.isEmpty()) {
+            java.util.Iterator<java.util.Map.Entry<UUID, Bleeder>> bit = bleeders.entrySet().iterator();
+            while (bit.hasNext()) {
+                java.util.Map.Entry<UUID, Bleeder> en = bit.next();
+                Bleeder b = en.getValue();
+                if (now >= b.until) {
+                    bit.remove();
+                    continue;
+                }
+                net.minecraft.world.entity.player.Player p = serverWorld.getPlayerByUUID(en.getKey());
+                if (!(p instanceof net.minecraft.server.level.ServerPlayer sp)
+                        || !GameUtils.isPlayerAliveAndSurvival(sp)) {
+                    bit.remove();
+                    continue;
+                }
+                double dx = sp.getX() - b.lastX;
+                double dz = sp.getZ() - b.lastZ;
+                if (dx * dx + dz * dz >= TRAIL_MIN_SPACING * TRAIL_MIN_SPACING) {
+                    addBloodSpotInternal(sp.getX(), sp.getY() + 0.05, sp.getZ(), now);
+                    b.lastX = sp.getX();
+                    b.lastZ = sp.getZ();
+                }
+            }
+        }
+
+        // 2) 重广播 + 到期移除（每 12 tick，每点仅 1 粒，避免过密）
+        if (bloodSpots.isEmpty() || now % 12 != 0) {
+            return;
+        }
+        int maxAge = io.wifi.starrailexpress.SREConfig.instance().forensicBloodTrailSeconds * 20;
+        if (maxAge <= 0) {
+            return;
+        }
+        java.util.Iterator<BloodSpot> it = bloodSpots.iterator();
+        while (it.hasNext()) {
+            BloodSpot s = it.next();
+            if (now - s.spawnTick >= maxAge) {
+                it.remove();
+                continue;
+            }
+            serverWorld.sendParticles(BLOOD_DUST, s.x, s.y, s.z, 1, 0.03, 0.0, 0.03, 0.0);
+        }
+    }
+
+    public void clearBloodTrail() {
+        bloodSpots.clear();
+        bleeders.clear();
+    }
+
+    // ==================== 通用物证：拖痕（第4批）====================
+    /** 标记某尸体被拖动过（按尸体主人UUID）。仅在首次记录时同步，避免每tick刷同步。 */
+    public void markCorpseDragged(UUID corpseOwner) {
+        if (corpseOwner == null) {
+            return;
+        }
+        if (draggedCorpseOwners.add(corpseOwner)) {
+            sync();
+        }
+    }
+
+    public boolean wasCorpseDragged(UUID corpseOwner) {
+        return corpseOwner != null && draggedCorpseOwners.contains(corpseOwner);
     }
 
     public int getPlayerCount() {
@@ -504,9 +629,13 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     @Override
     public void readFromNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+        // this.lockedToSupporters = nbtCompound.getBoolean("LockedToSupporters");
+        // this.enableWeights = nbtCompound.getBoolean("EnableWeights");
         this.canJump = nbtCompound.contains("canJump") ? nbtCompound.getBoolean("canJump") : false;
         this.haveOutsideSounds = nbtCompound.contains("haveOutsideSounds") ? nbtCompound.getBoolean("haveOutsideSounds")
                 : false;
+        // this.syncRole = nbtCompound.getBoolean("SyncRole");
+        // if (!syncRole) {
         if (nbtCompound.contains("StartingPlayerCount")) {
             this.startingPlayerCount = nbtCompound.getInt("StartingPlayerCount");
         } else {
@@ -529,6 +658,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             this.psychosActive = 0;
         this.isSkillAvailable = nbtCompound.contains("isSkillAvailable") ? nbtCompound.getBoolean("isSkillAvailable")
                 : false;
+        // this.backfireChance = nbtCompound.getFloat("BackfireChance");
         if (nbtCompound.contains("LooseEndWinner")) {
             this.looseEndWinner = nbtCompound.getUUID("LooseEndWinner");
         } else {
@@ -550,6 +680,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 this.drawnCategories.add(((net.minecraft.nbt.IntTag) tag).getAsInt());
             }
         }
+        // 读取被拖动过的尸体
+        this.draggedCorpseOwners.clear();
+        if (nbtCompound.contains("DraggedCorpses", Tag.TAG_LIST)) {
+            for (UUID u : uuidListFromNbt(nbtCompound, "DraggedCorpses")) {
+                this.draggedCorpseOwners.add(u);
+            }
+        }
+        // }else {
     }
 
     public ArrayList<UUID> uuidListFromNbt(CompoundTag nbtCompound, String listName) {
@@ -575,6 +713,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (gameStatus == GameStatus.INACTIVE) {
             return;
         }
+        // nbtCompound.putBoolean("LockedToSupporters", lockedToSupporters);
+        // nbtCompound.putBoolean("EnableWeights", enableWeights);
+        // nbtCompound.putBoolean("SyncRole", syncRole);
         if (haveOutsideSounds)
             nbtCompound.putBoolean("haveOutsideSounds", haveOutsideSounds);
         if (canJump)
@@ -594,6 +735,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 drawnList.add(net.minecraft.nbt.IntTag.valueOf(category));
             }
             nbtCompound.put("DrawnCategories", drawnList);
+        }
+        // 保存被拖动过的尸体
+        if (!draggedCorpseOwners.isEmpty()) {
+            nbtCompound.put("DraggedCorpses", nbtFromUuidList(new ArrayList<>(draggedCorpseOwners)));
         }
     }
 
@@ -683,6 +828,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 // run game loop logic
                 gameMode.tickServerGameLoop(serverWorld, this);
 
+                tickBlood(serverWorld);
             }
 
             // if (serverWorld.getGameTime() % 40 == 0) {

@@ -34,7 +34,7 @@ public final class MatchRecordCommand {
             source.sendFailure(Component.translatable("commands.sre.records.unavailable"));
             return 0;
         }
-        MatchRecordService.openListFor(player, 0);
+        MatchRecordService.openListWindow(player, 0, 0);
         source.sendSuccess(() -> Component.translatable("commands.sre.records.opening_list"), false);
         return 1;
     }

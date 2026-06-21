@@ -29,6 +29,10 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
     protected boolean blasted = false;
     protected int cooldown = 0;
 
+    // 通用物证·破门痕（第4批）：被工具强行打开的记录
+    protected long tamperedTime = -1L; // 被破坏的游戏刻；-1=未被破坏
+    protected byte tamperedTool = 0; // 0=无 1=撬棍 2=开锁器
+
     public DoorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.open = state.getOptionalValue(BlockStateProperties.OPEN).orElse(false);
@@ -143,6 +147,8 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
         nbt.putBoolean("blasted", this.isBlasted());
         nbt.putInt("closeCountdown", this.getCloseCountdown());
         nbt.putInt("jammedTime", this.getJammedTime());
+        nbt.putLong("tamperedTime", this.tamperedTime);
+        nbt.putByte("tamperedTool", this.tamperedTool);
         nbt.putString("keyName", this.getKeyName());
     }
 
@@ -153,6 +159,8 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
         this.setBlasted(nbt.getBoolean("blasted"));
         this.setCloseCountdown(nbt.getInt("closeCountdown"));
         this.setJammed(nbt.getInt("jammedTime"));
+        this.tamperedTime = nbt.contains("tamperedTime") ? nbt.getLong("tamperedTime") : -1L;
+        this.tamperedTool = nbt.getByte("tamperedTool");
         this.setKeyName(nbt.getString("keyName"));
     }
 
@@ -189,6 +197,7 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
             this.toggle(false);
         }
         this.setBlasted(true);
+        recordTamper((byte) 1);
     }
 
     public boolean isJammed() {
@@ -205,6 +214,29 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
 
     public void setBlasted(boolean blasted) {
         this.blasted = blasted;
+    }
+
+    // ===== 通用物证·破门痕 =====
+    public long getTamperedTime() {
+        return this.tamperedTime;
+    }
+
+    public byte getTamperedTool() {
+        return this.tamperedTool;
+    }
+
+    /** 记录本门被工具强行打开（1=撬棍 2=开锁器）。仅服务端记录并同步；受物证开关控制。 */
+    public void recordTamper(byte tool) {
+        if (this.level == null || this.level.isClientSide) {
+            return;
+        }
+        io.wifi.starrailexpress.SREConfig cfg = io.wifi.starrailexpress.SREConfig.instance();
+        if (cfg == null || !cfg.enableForensicEvidence || !cfg.forensicDoorMark) {
+            return;
+        }
+        this.tamperedTime = this.level.getGameTime();
+        this.tamperedTool = tool;
+        this.sync();
     }
 
     public void setCooldown(int cooldown) {

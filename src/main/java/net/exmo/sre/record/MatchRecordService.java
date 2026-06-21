@@ -1,6 +1,8 @@
 package net.exmo.sre.record;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.api.replay.ReplayTimelineEvent;
@@ -10,13 +12,15 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -66,6 +70,26 @@ public final class MatchRecordService {
         record.winningTitleJson = title == null ? null : Component.Serializer.toJson(title, registryAccess);
         record.playerCount = data.getPlayerCount();
 
+        // 扫描换职业事件，得到每位玩家的「最初旧职业」与「最终现职业」
+        Map<UUID, String> firstOldRole = new HashMap<>();
+        Map<UUID, String> lastNewRole = new HashMap<>();
+        for (GameReplayData.ReplayEvent event : data.getTimeline()) {
+            if (event.getType() != GameReplayData.EventType.CHANGE_ROLE) {
+                continue;
+            }
+            UUID player = event.getSourcePlayer();
+            String message = event.getMessage();
+            if (player == null || message == null) {
+                continue;
+            }
+            int separator = message.indexOf("===");
+            if (separator < 0) {
+                continue;
+            }
+            firstOldRole.putIfAbsent(player, message.substring(0, separator));
+            lastNewRole.put(player, message.substring(separator + 3));
+        }
+
         Map<UUID, String> roles = data.getPlayerRoles();
         if (roles != null) {
             for (Map.Entry<UUID, String> entry : roles.entrySet()) {
@@ -73,10 +97,17 @@ public final class MatchRecordService {
                 if (uuid == null) {
                     continue;
                 }
+                String currentRole = lastNewRole.getOrDefault(uuid, entry.getValue());
+                String oldRole = firstOldRole.get(uuid);
+                if (oldRole != null && oldRole.equals(currentRole)) {
+                    oldRole = null;
+                }
                 MatchRecord.MatchPlayer player = new MatchRecord.MatchPlayer();
                 player.uuid = uuid.toString();
                 player.name = GameReplayManager.playerNames.getOrDefault(uuid, uuid.toString());
-                player.roleId = entry.getValue();
+                player.roleId = currentRole;
+                player.oldRoleId = oldRole;
+                player.faction = factionOf(currentRole);
                 record.players.add(player);
             }
         }
@@ -95,14 +126,27 @@ public final class MatchRecordService {
         return record;
     }
 
-    /** 响应「打开战绩列表」请求：异步查询数据库并把结果同步给玩家。 */
-    public static void openListFor(ServerPlayer player, int limit) {
+    private static int factionOf(String roleId) {
+        if (roleId == null) {
+            return -1;
+        }
+        ResourceLocation id = ResourceLocation.tryParse(roleId);
+        if (id == null) {
+            return -1;
+        }
+        SRERole role = TMMRoles.ROLES.get(id);
+        return role == null ? -1 : PlayerRoleWeightManager.getRoleType(role);
+    }
+
+    /** 响应「按需拉取战绩列表的一页」请求：仅查询并同步该窗口，减少流量与数据库负载。 */
+    public static void openListWindow(ServerPlayer player, int offset, int limit) {
         if (player == null) {
             return;
         }
         MinecraftServer server = player.getServer();
         int requested = limit <= 0 ? DEFAULT_LIST_LIMIT : limit;
-        MatchRecordStore.listRecentAsync(requested).whenComplete((summaries, err) -> {
+        int safeOffset = Math.max(0, offset);
+        MatchRecordStore.listWindowAsync(safeOffset, requested).whenComplete((page, err) -> {
             if (server == null) {
                 return;
             }
@@ -110,10 +154,12 @@ public final class MatchRecordService {
                 if (!isOnline(server, player)) {
                     return;
                 }
-                String json = (err != null || summaries == null)
-                        ? "[]"
-                        : MatchRecord.summaryListToJson(summaries);
-                ServerPlayNetworking.send(player, new RecordListS2CPayload(json));
+                if (err != null || page == null) {
+                    ServerPlayNetworking.send(player, new RecordListS2CPayload(safeOffset, 0, "[]"));
+                    return;
+                }
+                ServerPlayNetworking.send(player, new RecordListS2CPayload(page.offset(), page.total(),
+                        MatchRecord.summaryListToJson(page.items())));
             });
         });
     }

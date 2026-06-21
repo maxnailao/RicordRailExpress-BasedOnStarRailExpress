@@ -122,7 +122,7 @@ public class SREConfig implements ConfigData {
     public int notePrice = 10;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
-    public int sheriffBulletPrice = 60;
+    public int sheriffBulletPrice = 55;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int sheriffBulletMaxCarry = 4;
@@ -133,6 +133,8 @@ public class SREConfig implements ConfigData {
     public int knifeCooldown = 30;
     @ConfigEntry.Category(value = "cooldowns")
     public int revolverCooldown = 15;
+    @ConfigEntry.Category(value = "cooldowns")
+    public int sheriffCooldown = 10;
     @ConfigEntry.Category(value = "cooldowns")
     public int derringerCooldown = 1;
     @ConfigEntry.Category(value = "cooldowns")
@@ -158,7 +160,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "cooldowns")
     public int psychoGlobalCooldown = 20;
     @ConfigEntry.Category(value = "cooldowns")
-    public int sheriffRevolverReloadCooldown = 15;
+    public int sheriffRevolverReloadCooldown = 12;
     // 游戏配置 - 服务端只读
 
     // 双重人格配置
@@ -213,6 +215,32 @@ public class SREConfig implements ConfigData {
     
     @ConfigSync(shouldSync = true)
     public boolean disablePlayerMountain = true;
+
+    // ===== 通用物证系统（尸检线索下放给所有人）=====
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean enableForensicEvidence = true;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicShowWeaponCategory = false;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicShowCorpseFacing = true;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicBloodTrail = true;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public int forensicBloodTrailSeconds = 40;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicShowDeathOrder = false;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicShowDragMark = true;
+    @ConfigEntry.Category(value = "forensic")
+    @ConfigSync(shouldSync = true)
+    public boolean forensicDoorMark = false;
 
     // // 自动切换预设配置 - 游戏开始前自动应用指定预设，留空则不自动切换
     // @Tooltip(count = 3)

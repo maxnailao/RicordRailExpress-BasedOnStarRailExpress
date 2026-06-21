@@ -12,7 +12,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -31,7 +33,12 @@ public class TMMRoles {
     public static final SRERole CIVILIAN = registerRole(new NormalRole(SRE.id("civilian"), 0x36E51B, true, false,
             SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false));
     public static final SRERole VIGILANTE = registerRole(new NormalRole(SRE.id("vigilante"), 0x1B8AE5, true, false,
-            SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false).setVigilanteTeam(true));
+            SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false){
+        @Override
+        public List<ItemStack> getDefaultItems() {
+            return List.of(new ItemStack(ModItems.SHERIFF_REVOLVER).copy());
+        }
+    }.setVigilanteTeam(true));
     public static final SRERole KILLER = registerRole(
             new NormalRole(SRE.id("killer"), 0xC13838, false, true, SRERole.MoodType.FAKE, -1, true));
     public static final SRERole LOOSE_END = registerRole(

@@ -982,6 +982,14 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.BulletItem(new Item.Properties().stacksTo(64)),
             "bullet", CONSUMABLES_GROUP);
 
+    /**
+     * 磁铁
+     * - 携带在物品栏中时持续吸取周围8格内的掉落物到自己身边
+     */
+    public static final Item MAGNET = register(
+            new MagnetItem(new Item.Properties().stacksTo(1)),
+            "magnet", TOOLS_GROUP);
+
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     public static List<ShopEntry> POISONER_SHOP_ENTRIES = new ArrayList<>();
