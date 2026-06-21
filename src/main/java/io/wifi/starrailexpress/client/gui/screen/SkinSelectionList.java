@@ -3,7 +3,7 @@ package io.wifi.starrailexpress.client.gui.screen;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -67,8 +67,8 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             if (o1.isUnlocked != o2.isUnlocked) {
                 return o1.isUnlocked ? -1 : 1;
             }
-            var qColors = SkinManager.QualityColor.values();
-            for (SkinManager.QualityColor qColor : qColors) {
+            var qColors = ItemSkinManager.QualityColor.values();
+            for (ItemSkinManager.QualityColor qColor : qColors) {
                 if (o1.skinColor == qColor.getColor()) {
                     return o2.skinColor == qColor.getColor() ? 0 : -1;
                 } else if (o2.skinColor == qColor.getColor()) {
@@ -92,7 +92,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             availableSkins.add(entry.getKey());
         }
         if (itemType.getItem() instanceof SkinableItem it) {
-            var allSkins = SkinManager.getSkins(it.getItemSkinType());
+            var allSkins = ItemSkinManager.getSkins(it.getItemSkinType());
             if (allSkins != null) {
                 for (String skinName : allSkins.keySet()) {
                     if (!availableSkins.contains(skinName)) {
@@ -193,7 +193,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             this.skinName = skinName;
             int sskinColor = java.awt.Color.WHITE.getRGB();
             if (itemType.getItem() instanceof SkinableItem it) {
-                var skin = SkinManager.Skin.fromString(it.getItemSkinType(), skinName);
+                var skin = ItemSkinManager.Skin.fromString(it.getItemSkinType(), skinName);
                 if (skin != null)
                     sskinColor = skin.getColor();
             }

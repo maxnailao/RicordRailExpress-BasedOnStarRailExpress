@@ -51,6 +51,8 @@ public class SREComponents
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerMoodComponent::new);
         registry.beginRegistration(Player.class, SREPlayerShopComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerShopComponent::new);
+        registry.beginRegistration(Player.class, SREPlayerMinigameTaskComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerMinigameTaskComponent::new);
         registry.beginRegistration(Player.class, DynamicShopComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(DynamicShopComponent::new);
         registry.beginRegistration(Player.class, SREPlayerPoisonComponent.KEY)

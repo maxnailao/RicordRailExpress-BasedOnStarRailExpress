@@ -157,7 +157,7 @@ public class Harpymodloader implements ModInitializer {
             ForceModifierCommand.register(dispatcher);
             SetEnabledModifierCommand.register(dispatcher);
             SetCompanionRoleCommand.register(dispatcher);
-            SetRoleCountCommand.register(dispatcher);
+            RoleCountManager.registerCommands(dispatcher);
             SetRoleWeightCommand.register(dispatcher);
             SetPlayerWeightCommand.register(dispatcher);
             ToggleCustomRoleWeightsCommand.register(dispatcher);
@@ -172,7 +172,8 @@ public class Harpymodloader implements ModInitializer {
         // 检查自定义职业
         if ("customrole".equals(role.identifier().getNamespace())) {
             var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(role.identifier().getPath());
-            if (cd != null && !cd.displayName.isEmpty()) return Component.literal(cd.displayName);
+            if (cd != null && !cd.displayName.isEmpty())
+                return Component.literal(cd.displayName);
         }
         if (role.identifier().getNamespace().equalsIgnoreCase("starrailexpress")) {
             return Component.translatable("announcement.star.role." + role.identifier().getPath());
@@ -188,11 +189,11 @@ public class Harpymodloader implements ModInitializer {
      * 例如：setOccupationRole(医生, 毒师) 表示分配医生时也会分配毒师
      * 
      * @param mainRole      主职业
-     * @param companionRole 関联职业
+     * @param companionRole 关联职业
      */
     public static void setOccupationRole(SRERole mainRole, SRERole companionRole) {
         Occupations_Roles.put(mainRole, companionRole);
-        LOGGER.info("Added occupation relation: " + mainRole.getIdentifier() + " -> " + companionRole.getIdentifier());
+        LOGGER.debug("Added occupation relation: " + mainRole.getIdentifier() + " -> " + companionRole.getIdentifier());
     }
 
     /**
@@ -202,7 +203,7 @@ public class Harpymodloader implements ModInitializer {
      */
     public static void removeOccupationRole(SRERole mainRole) {
         Occupations_Roles.remove(mainRole);
-        LOGGER.info("Removed occupation relation for: " + mainRole.getIdentifier());
+        LOGGER.debug("Removed occupation relation for: " + mainRole.getIdentifier());
     }
 
     /**
@@ -210,7 +211,7 @@ public class Harpymodloader implements ModInitializer {
      */
     public static void clearOccupationRoles() {
         Occupations_Roles.clear();
-        LOGGER.info("Cleared all occupation relations");
+        LOGGER.debug("Cleared all occupation relations");
     }
 
     /**

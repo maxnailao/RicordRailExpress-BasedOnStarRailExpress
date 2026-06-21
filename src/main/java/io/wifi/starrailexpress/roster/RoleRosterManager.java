@@ -113,7 +113,9 @@ public final class RoleRosterManager {
     public static void setFromJson(String json) {
         RoleRosterState incoming = fromJson(json);
         boolean enabled = incoming.enabled;
-        state.roleCounts = incoming.normalized().roleCounts;
+        incoming.normalized();
+        state.roleCounts = incoming.roleCounts;
+        state.modifierCounts = incoming.modifierCounts;
         state.enabled = enabled;
         afterMutated();
     }
@@ -137,6 +139,7 @@ public final class RoleRosterManager {
 
     public static void clear() {
         state.roleCounts.clear();
+        state.modifierCounts.clear();
         afterMutated();
     }
 

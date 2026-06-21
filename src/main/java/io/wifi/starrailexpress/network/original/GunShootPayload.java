@@ -7,12 +7,14 @@ import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.event.IsShootBackFire;
 import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.PacketTracker;
+import io.wifi.starrailexpress.util.BrokenGunDropUtils;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -32,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -55,6 +58,14 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
             if (player.getCooldowns().isOnCooldown(mainHandStack.getItem()))
                 return;
+            if (mainHandStack.is(ModItems.SHERIFF_REVOLVER)) {
+                if (!SheriffRevolverItem.isLoaded(mainHandStack)) {
+                    return;
+                }
+                if (!player.isCreative()) {
+                    SheriffRevolverItem.markEmpty(mainHandStack);
+                }
+            }
             player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
                     TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
                     1f + player.getRandom().nextFloat() * .1f - .05f);
@@ -64,7 +75,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof GhostPhantomEntity phantomEntity
                     && phantomEntity.distanceToSqr(player) < 65 * 65) {
                 phantomEntity.playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);
-                
+
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
                         1f + player.getRandom().nextFloat() * .1f - .05f);
@@ -72,7 +83,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 for (ServerPlayer tracking : PlayerLookup.tracking(player))
                     PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
                 PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
-                
+
                 if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
                     var cooldowns = player.getCooldowns();
                     if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
@@ -83,12 +94,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 }
                 return;
             }
-            
+
             // 检查是否是傀儡师假人
             if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof PuppeteerBodyEntity puppeteerBodyEntity
                     && puppeteerBodyEntity.distanceToSqr(player) < 30 * 30) {
                 puppeteerBodyEntity.playerHurt(player, Noellesroles.id("gun_puppeteer_body"));
-                
+
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
                         1f + player.getRandom().nextFloat() * .1f - .05f);
@@ -96,7 +107,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 for (ServerPlayer tracking : PlayerLookup.tracking(player))
                     PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
                 PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
-                
+
                 if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
                     var cooldowns = player.getCooldowns();
                     if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
@@ -107,7 +118,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 }
                 return;
             }
-            
+
             // cancel if derringer has been shot
             Boolean isUsed = mainHandStack.getOrDefault(SREDataComponentTypes.USED, false);
             if (mainHandStack.is(TMMItems.DERRINGER)) {
@@ -145,14 +156,16 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 boolean shouldDropRevolver = game.isInnocent(target) && !player.isCreative()
                         && mainHandStack.is(TMMItemTags.GUNS) && !mainHandStack.is(TMMItems.DERRINGER);
                 var dropresult = AllowShootRevolverDrop.EVENT.invoker().allowDrop(player, target);
-                if (dropresult.equals(AllowShootRevolverDrop.ShouldDropResult.FALSE)) {
+                if (dropresult.equals(TrueFalseResult.FALSE)) {
                     shouldDropRevolver = false;
-                } else if (dropresult.equals(AllowShootRevolverDrop.ShouldDropResult.TRUE)) {
+                } else if (dropresult.equals(TrueFalseResult.TRUE)) {
                     shouldDropRevolver = true;
                 }
+                boolean shouldDropBrokenKillerGun = !dropresult.equals(TrueFalseResult.FALSE)
+                        && BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game, player, target, mainHandStack);
                 if (backfire) {
                     GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.BACKFIRE);
-                } else if (shouldDropRevolver) {
+                } else if (shouldDropRevolver || shouldDropBrokenKillerGun) {
                     {
                         Scheduler.schedule(() -> {
                             {
@@ -167,9 +180,13 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                                 }
 
                                 if (flag) {
-                                    ItemEntity item = player.drop(revolver.getDefaultInstance(), false, false);
+                                    ItemEntity item = shouldDropBrokenKillerGun
+                                            ? BrokenGunDropUtils.dropBrokenGun(player, false)
+                                            : player.drop(revolver.getDefaultInstance(), false, false);
                                     if (item != null) {
-                                        item.setPickUpDelay(10);
+                                        if (!shouldDropBrokenKillerGun) {
+                                            item.setPickUpDelay(10);
+                                        }
                                         item.setThrower(player);
                                     }
                                     PacketTracker.sendToClient(player, new GunDropPayload());

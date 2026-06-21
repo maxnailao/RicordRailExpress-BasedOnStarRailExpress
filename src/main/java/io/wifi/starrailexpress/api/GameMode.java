@@ -45,6 +45,7 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.PlayerDeathPayload;
 import io.wifi.starrailexpress.network.TriggerScreenEdgeEffectPayload;
+import io.wifi.starrailexpress.util.BrokenGunDropUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -678,10 +679,10 @@ public abstract class GameMode {
                     && GameUtils.isPlayerAliveAndSurvival(serverPlayerEntity)
                     && canDeath) {
                 serverPlayerEntity.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
-                OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
+
                 // 关闭任务透视发包
                 ServerPlayNetworking.send(serverPlayerEntity, new PlayerDeathPayload());
-                OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
+
                 SREPlayerPoisonComponent poisonComponent = SREPlayerPoisonComponent.KEY.maybeGet(serverPlayerEntity)
                         .orElse(null);
                 SREArmorPlayerComponent bartenderPlayerComponent = SREArmorPlayerComponent.KEY
@@ -695,6 +696,9 @@ public abstract class GameMode {
                 if (bartenderPlayerComponent != null) {
                     bartenderPlayerComponent.clear();
                 }
+                OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
+                OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
+                
                 var cantSend = SRE.cantSendReplay.stream().anyMatch((pre) -> {
                     return pre.test(serverPlayerEntity);
                 });
@@ -738,7 +742,12 @@ public abstract class GameMode {
                 for (int i = 0; i < list.size(); i++) {
                     ItemStack stack = list.get(i);
                     if (GameUtils.shouldDropOnDeath(stack)) {
-                        victim.drop(stack, true, false);
+                        if (BrokenGunDropUtils.shouldBreakVictimGunOnKillerKill(gameWorldComponent, victim, killer,
+                                stack)) {
+                            BrokenGunDropUtils.dropBrokenGun(victim);
+                        } else {
+                            victim.drop(stack, true, false);
+                        }
                         list.set(i, ItemStack.EMPTY);
                     }
                 }

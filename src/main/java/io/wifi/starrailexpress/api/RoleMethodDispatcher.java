@@ -1,9 +1,12 @@
 package io.wifi.starrailexpress.api;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import io.wifi.starrailexpress.util.SREItemUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -16,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
+import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 
@@ -65,21 +69,23 @@ public class RoleMethodDispatcher {
                     GameConstants.MAX_STREAK_BONUS);
             // 并列任务奖励倍率
             float rewardMultiplier = isParallelTask ? GameConstants.PARALLEL_TASK_REWARD_MULTIPLIER : 1f;
-            if (role.isInnocent()) {
+            // 平民/中立完成任务：本人获得金币，并以此喂养场上所有杀手（任务驱动收入）
+            if (role.isInnocent() || role.isNeutrals()) {
                 SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(player);
-                shopComponent.addToBalance((int) ((50 + streakBonus) * rewardMultiplier));
-            } else if (role.isNeutrals()) {
-                SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(player);
-                shopComponent.addToBalance((int) ((50 + streakBonus) * rewardMultiplier));
-            } else if (role.canUseKiller()) {
-                player.level().players().forEach(
-                        a -> {
-                            if (role.canUseKiller()) {
-                                SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(a);
-                                shopComponent.addToBalance((int) (5 * rewardMultiplier));
-                            }
-                        });
+                shopComponent.addToBalance(
+                        (int) ((SREConfig.instance().civilianTaskReward + streakBonus) * rewardMultiplier));
+                // 任意平民/中立完成一个任务 -> 每个杀手获得 killerTaskIncome
+                int killerGain = (int) (SREConfig.instance().killerTaskIncome * rewardMultiplier);
+                if (killerGain > 0) {
+                    player.level().players().forEach(a -> {
+                        SRERole aRole = getCurrentRole(a);
+                        if (aRole != null && aRole.canUseKiller()) {
+                            SREPlayerShopComponent.KEY.get(a).addToBalance(killerGain);
+                        }
+                    });
+                }
             }
+            // 杀手自己的伪装任务不再产生收入（防止杀手互刷）
             role.onFinishQuest(player, quest);
         }
     }
@@ -123,6 +129,10 @@ public class RoleMethodDispatcher {
      * 调用玩家角色的 onPickupItem 方法
      */
     public static InteractionResult callOnPickupItem(Player player, ItemStack item) {
+        // 持有警长左轮时，禁止捡起其他枪械（按 guns tag 判断）
+        if (item.is(TMMItemTags.GUNS) && SREItemUtils.hasItem(player, ModItems.SHERIFF_REVOLVER)) {
+            return InteractionResult.FAIL;
+        }
         SRERole role = getCurrentRole(player);
         if (role != null) {
             if (role.cantPickupItem(player).test(item.getItem())) {

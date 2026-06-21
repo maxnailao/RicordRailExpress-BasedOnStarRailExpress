@@ -4,7 +4,6 @@ import io.wifi.starrailexpress.api.RoleMethodDispatcher;
 import io.wifi.starrailexpress.api.SRERole;
 import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 
 import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
 
@@ -19,5 +18,5 @@ public interface ModdedRoleAssigned {
         }
     });
 
-    void assignModdedRole(Player player, SRERole role);
+    void assignModdedRole(ServerPlayer player, SRERole role);
 }

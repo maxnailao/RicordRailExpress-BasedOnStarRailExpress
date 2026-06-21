@@ -28,6 +28,13 @@ public abstract class InstinctMixin {
         if (player == null)
             return;
 
+        // 迷雾区域内关闭本能
+        if (org.agmas.noellesroles.client.scene.SceneFogClient.isLocalPlayerInFog()) {
+            cir.setReturnValue(false);
+            cir.cancel();
+            return;
+        }
+
         // 鹈鹕肚内玩家不能开启本能
         if (PelicanManager.isStashed(player)) {
             cir.setReturnValue(false);

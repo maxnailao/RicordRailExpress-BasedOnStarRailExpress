@@ -17,7 +17,9 @@ import org.agmas.noellesroles.init.ModEffects;
  * 客户端据此在 {@link DisguiseVariants} 中查出对应皮肤并替换玩家显示，
  * 从而实现「不同伪装道具 / 不同药水效果等级 → 不同皮肤」。
  * <p>
- * 效果会随实体数据自动同步到所有客户端，因此其他玩家也能看到伪装后的皮肤，无需额外的网络包。
+ * 注意：原版只会把玩家自身的 MobEffect 同步给他自己，其它玩家的效果不会下发。
+ * 因此为了让<b>其他玩家也能看到</b>伪装皮肤，需要由 {@link DisguiseEffectSync}
+ * 在服务端把本效果广播给所有其它客户端。
  */
 public class DisguiseItem extends Item {
 
@@ -44,6 +46,8 @@ public class DisguiseItem extends Item {
                     false, // showParticles
                     true // showIcon
             ));
+            // 记录伪装事件（低频关键事件）
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordDisguise(player.getUUID());
             // 消耗物品（创造模式下不消耗）
             itemStack.consume(1, player);
         }

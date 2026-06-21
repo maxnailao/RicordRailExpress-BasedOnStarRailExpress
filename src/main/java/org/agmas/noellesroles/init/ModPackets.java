@@ -63,9 +63,15 @@ public class ModPackets {
 
         PayloadTypeRegistry.playC2S().register(VendingMachinesBuyC2SPacket.TYPE,
                 VendingMachinesBuyC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(LotteryMachineDrawC2SPacket.TYPE,
+                LotteryMachineDrawC2SPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(VendingBuyMessageCallBackS2CPacket.ID,
                 VendingBuyMessageCallBackS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenLotteryMachineScreenS2CPacket.ID,
+                OpenLotteryMachineScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(LotteryMachineResultS2CPacket.ID,
+                LotteryMachineResultS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WheelchairMoveC2SPacket.ID, WheelchairMoveC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BroadcastMessageS2CPacket.ID, BroadcastMessageS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CanMoveInTimeStopS2CPacket.ID, CanMoveInTimeStopS2CPacket.CODEC);
@@ -99,6 +105,8 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(OpenKeyForgeGuiS2CPacket.ID, OpenKeyForgeGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenVendingMachinesScreenS2CPacket.ID,
                 OpenVendingMachinesScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenSupplyCrateScreenS2CPacket.ID,
+                OpenSupplyCrateScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenRepairStationScreenS2CPacket.ID,
                 OpenRepairStationScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(RepairCoinRewardS2CPacket.ID,
@@ -233,6 +241,10 @@ public class ModPackets {
         // 注册窃皮者网络包
         PayloadTypeRegistry.playC2S().register(SkincrawlerC2SPacket.ID, SkincrawlerC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SkincrawlerSkinS2CPacket.ID, SkincrawlerSkinS2CPacket.CODEC);
+
+        // 注册物资箱网络包
+        PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
 
         // 五子棋网络包
         PayloadTypeRegistry.playC2S().register(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket.CODEC);

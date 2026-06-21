@@ -204,6 +204,7 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                         this.taskStreak, false);
             }
             this.taskStreak++; // 完成奖励发放后增加连击计数（并列任务也增加连击）
+            // 小游戏任务已与 Mood 任务解耦，改由 SREPlayerMinigameTaskComponent 独立计时刷新
             // 大胃王：完成进食任务时额外恢复理智并给金币
             if (task.getType() == Task.EAT && this.player instanceof ServerPlayer sp) {
                 ModifierEffects.onBigEaterTaskComplete(sp);

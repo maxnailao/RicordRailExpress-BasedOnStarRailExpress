@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.item.SkinableItem;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
@@ -606,15 +606,15 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         // 将装备的皮肤数据编码为整数ID，减少网络传输量
         List<Map.Entry<String, String>> validEquipped = new ArrayList<>();
         for (Map.Entry<String, String> entry : equippedSkins.entrySet()) {
-            if (SkinManager.getSkinTypeId(entry.getKey()) >= 0
-                    && SkinManager.getSkinId(entry.getKey(), entry.getValue()) >= 0) {
+            if (ItemSkinManager.getSkinTypeId(entry.getKey()) >= 0
+                    && ItemSkinManager.getSkinId(entry.getKey(), entry.getValue()) >= 0) {
                 validEquipped.add(entry);
             }
         }
         buf.writeVarInt(validEquipped.size());
         for (Map.Entry<String, String> entry : validEquipped) {
-            buf.writeVarInt(SkinManager.getSkinTypeId(entry.getKey()));
-            buf.writeVarInt(SkinManager.getSkinId(entry.getKey(), entry.getValue()));
+            buf.writeVarInt(ItemSkinManager.getSkinTypeId(entry.getKey()));
+            buf.writeVarInt(ItemSkinManager.getSkinId(entry.getKey(), entry.getValue()));
         }
 
         if (!SREConfig.instance().isItemSkinManagementEnabled) {
@@ -626,18 +626,18 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         // 先过滤掉typeId未知的条目
         List<Map.Entry<String, Map<String, Boolean>>> validUnlocked = new ArrayList<>();
         for (Map.Entry<String, Map<String, Boolean>> typeEntry : unlockedSkins.entrySet()) {
-            if (SkinManager.getSkinTypeId(typeEntry.getKey()) >= 0) {
+            if (ItemSkinManager.getSkinTypeId(typeEntry.getKey()) >= 0) {
                 validUnlocked.add(typeEntry);
             }
         }
         buf.writeVarInt(validUnlocked.size());
         for (Map.Entry<String, Map<String, Boolean>> typeEntry : validUnlocked) {
-            int typeId = SkinManager.getSkinTypeId(typeEntry.getKey());
+            int typeId = ItemSkinManager.getSkinTypeId(typeEntry.getKey());
             buf.writeVarInt(typeId);
             Map<String, Boolean> typeSkins = typeEntry.getValue();
             List<Integer> validSkinIds = new ArrayList<>();
             for (String skinName : typeSkins.keySet()) {
-                int skinId = SkinManager.getSkinId(typeEntry.getKey(), skinName);
+                int skinId = ItemSkinManager.getSkinId(typeEntry.getKey(), skinName);
                 if (skinId >= 0) {
                     validSkinIds.add(skinId);
                 }
@@ -658,9 +658,9 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         for (int i = 0; i < equippedCount; i++) {
             int typeId = buf.readVarInt();
             int skinId = buf.readVarInt();
-            String typeName = SkinManager.getSkinTypeById(typeId);
+            String typeName = ItemSkinManager.getSkinTypeById(typeId);
             if (typeName != null) {
-                String skinName = SkinManager.getSkinById(typeName, skinId);
+                String skinName = ItemSkinManager.getSkinById(typeName, skinId);
                 if (skinName != null) {
                     equippedSkins.put(typeName, skinName);
                 }
@@ -671,13 +671,13 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         int typeCount = buf.readVarInt();
         for (int i = 0; i < typeCount; i++) {
             int typeId = buf.readVarInt();
-            String typeName = SkinManager.getSkinTypeById(typeId);
+            String typeName = ItemSkinManager.getSkinTypeById(typeId);
             int skinCount = buf.readVarInt();
             Map<String, Boolean> skins = new HashMap<>();
             for (int j = 0; j < skinCount; j++) {
                 int skinId = buf.readVarInt();
                 if (typeName != null) {
-                    String skinName = SkinManager.getSkinById(typeName, skinId);
+                    String skinName = ItemSkinManager.getSkinById(typeName, skinId);
                     if (skinName != null) {
                         skins.put(skinName, true);
                     }

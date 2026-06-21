@@ -17,7 +17,7 @@ public class QuestMinigames {
     public static final QuestMinigame LOCKPICK = register(
             QuestMinigame.of("lockpick", "minigame.starrailexpress.lockpick"));
 
-    /** 配钥匙小游戏 */
+    /** 判定 */
     public static final QuestMinigame KEY_MAKING = register(
             QuestMinigame.of("key_making", "minigame.starrailexpress.key_making"));
 
@@ -56,6 +56,83 @@ public class QuestMinigames {
     /** 撬锁积分（掌机版） */
     public static final QuestMinigame LOCKPICK_SCORE = register(
             QuestMinigame.of("lockpick_score", "minigame.starrailexpress.lockpick_score"));
+
+    /** 水阀小游戏 */
+    public static final QuestMinigame WATER_VALVE = register(
+            QuestMinigame.of("water_valve", "minigame.starrailexpress.water_valve"));
+
+    /** 打字小游戏 */
+    public static final QuestMinigame TYPING = register(
+            QuestMinigame.of("typing", "minigame.starrailexpress.typing"));
+
+    /** 管道小鸟（Flappy Bird） */
+    public static final QuestMinigame PIPE_BIRD = register(
+            QuestMinigame.of("pipe_bird", "minigame.starrailexpress.pipe_bird"));
+
+    /** 水果忍者 */
+    public static final QuestMinigame FRUIT_NINJA = register(
+            QuestMinigame.of("fruit_ninja", "minigame.starrailexpress.fruit_ninja"));
+
+    /** 打老鼠 */
+    public static final QuestMinigame MOUSE_WHACK = register(
+            QuestMinigame.of("mouse_whack", "minigame.starrailexpress.mouse_whack"));
+
+    /** 打砖块 */
+    public static final QuestMinigame BRICK_BREAKER = register(
+            QuestMinigame.of("brick_breaker", "minigame.starrailexpress.brick_breaker"));
+
+    /** 找零钱 */
+    public static final QuestMinigame MAKE_CHANGE = register(
+            QuestMinigame.of("make_change", "minigame.starrailexpress.make_change"));
+
+    /** 贪吃蛇 */
+    public static final QuestMinigame SNAKE = register(
+            QuestMinigame.of("snake", "minigame.starrailexpress.snake"));
+    /** 扫雷 */
+    public static final QuestMinigame MINESWEEPER = register(
+            QuestMinigame.of("minesweeper", "minigame.starrailexpress.minesweeper"));
+    /** 记忆游戏 */
+    public static final QuestMinigame SIMON_SAYS = register(
+            QuestMinigame.of("simon_says", "minigame.starrailexpress.simon_says"));
+    /** 2048 */
+    public static final QuestMinigame GAME_2048 = register(
+            QuestMinigame.of("game_2048", "minigame.starrailexpress.game_2048"));
+    /** 接蛋 */
+    public static final QuestMinigame CATCH_EGGS = register(
+            QuestMinigame.of("catch_eggs", "minigame.starrailexpress.catch_eggs"));
+    /** 颜色分类 */
+    public static final QuestMinigame COLOR_SORT = register(
+            QuestMinigame.of("color_sort", "minigame.starrailexpress.color_sort"));
+    /** 猜数字 */
+    public static final QuestMinigame GUESS_NUMBER = register(
+            QuestMinigame.of("guess_number", "minigame.starrailexpress.guess_number"));
+    /** 反应测试 */
+    public static final QuestMinigame REACTION_TEST = register(
+            QuestMinigame.of("reaction_test", "minigame.starrailexpress.reaction_test"));
+    /** 连连看 */
+    public static final QuestMinigame LINK_MATCH = register(
+            QuestMinigame.of("link_match", "minigame.starrailexpress.link_match"));
+    /** 翻牌配对 */
+    public static final QuestMinigame MEMORY_MATCH = register(
+            QuestMinigame.of("memory_match", "minigame.starrailexpress.memory_match"));
+    /** 接管道 */
+    public static final QuestMinigame PIPE_CONNECT = register(
+            QuestMinigame.of("pipe_connect", "minigame.starrailexpress.pipe_connect"));
+    /** 点灯 */
+    public static final QuestMinigame LIGHTS_OUT = register(
+            QuestMinigame.of("lights_out", "minigame.starrailexpress.lights_out"));
+    /** 24点 */
+    public static final QuestMinigame GAME_24 = register(
+            QuestMinigame.of("game_24", "minigame.starrailexpress.game_24"));
+    /** 迷宫 */
+    public static final QuestMinigame MAZE = register(
+            QuestMinigame.of("maze", "minigame.starrailexpress.maze"));
+    /** 平衡天平 */
+    public static final QuestMinigame BALANCE_SCALE = register(
+            QuestMinigame.of("balance_scale", "minigame.starrailexpress.balance_scale"));
+    /** 华容道 */
+    public static final QuestMinigame KLOTSKI = register(
+            QuestMinigame.of("klotski", "minigame.starrailexpress.klotski"));
 
     // ══════════════════════════════════════════════
     // 注册方法

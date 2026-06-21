@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "noellesroles:block/scene_stove" },
+    "lit=true": { "model": "noellesroles:block/scene_stove_lit" }
+  }
+}

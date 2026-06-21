@@ -3,7 +3,9 @@ package org.agmas.noellesroles.client.screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class VendingMachinesGui extends AbstractPixelScreen {
     private static final int MAX_PANEL_WIDTH = 300;
@@ -55,9 +58,11 @@ public class VendingMachinesGui extends AbstractPixelScreen {
     private final List<VendingGoods> goods = new ArrayList<>();
     private final DroppedItem droppedItem = new DroppedItem();
 
-    private BiPredicate<ItemStack, Integer> purchaseCheck = (stack, price) -> {
-        return (SREPlayerShopComponent.KEY.get(Minecraft.getInstance().player).balance >= price);
-
+    private Predicate<VendingGoods> purchaseCheck = goods -> {
+        if (Minecraft.getInstance().player == null) {
+            return false;
+        }
+        return goods.currency.getBalance(Minecraft.getInstance().player) >= goods.price;
     };
     private BiConsumer<ItemStack, Integer> onPurchaseTriggered = (stack, price) -> {
     };
@@ -121,12 +126,21 @@ public class VendingMachinesGui extends AbstractPixelScreen {
         this(Component.translatable("Vending Machine"), vendingItems);
     }
 
+    public VendingMachinesGui(List<ShopEntry> vendingItems) {
+        this(Component.translatable("Vending Machine"), vendingItems);
+    }
+
     public VendingMachinesGui setBlockPos(BlockPos blockPos) {
         this.blockPos = blockPos;
         return this;
     }
 
     public VendingMachinesGui(Component title, Map<ItemStack, Integer> vendingItems) {
+        super(title == null ? Component.empty() : title);
+        setGoods(vendingItems);
+    }
+
+    public VendingMachinesGui(Component title, List<ShopEntry> vendingItems) {
         super(title == null ? Component.empty() : title);
         setGoods(vendingItems);
     }
@@ -150,7 +164,23 @@ public class VendingMachinesGui extends AbstractPixelScreen {
                     continue;
                 }
                 Integer price = entry.getValue();
-                this.goods.add(new VendingGoods(stack.copy(), Math.max(0, price == null ? 0 : price)));
+                this.goods.add(new VendingGoods(stack.copy(), Math.max(0, price == null ? 0 : price),
+                        ShopEntry.Currency.MONEY));
+            }
+        }
+        this.selectedIndex = this.goods.isEmpty() ? -1 : 0;
+        this.scrollRows = 0;
+        clampScrollRows();
+    }
+
+    public final void setGoods(List<ShopEntry> vendingItems) {
+        this.goods.clear();
+        if (vendingItems != null) {
+            for (ShopEntry entry : vendingItems) {
+                if (entry == null || entry.stack().isEmpty()) {
+                    continue;
+                }
+                this.goods.add(new VendingGoods(entry.stack().copy(), Math.max(0, entry.price()), entry.currency()));
             }
         }
         this.selectedIndex = this.goods.isEmpty() ? -1 : 0;
@@ -160,7 +190,7 @@ public class VendingMachinesGui extends AbstractPixelScreen {
 
     public void setPurchaseCheck(BiPredicate<ItemStack, Integer> purchaseCheck) {
         if (purchaseCheck != null) {
-            this.purchaseCheck = purchaseCheck;
+            this.purchaseCheck = goods -> purchaseCheck.test(goods.stack, goods.price);
         }
     }
 
@@ -406,13 +436,13 @@ public class VendingMachinesGui extends AbstractPixelScreen {
             guiGraphics.pose().pushPose();
             guiGraphics.pose().scale(textScale, textScale, 1);
 
-            Component priceText = Component.translatable("gui.vendingmachine.money_display", goods.price);
+            Component priceText = formatPrice(goods);
             int slotTextX = (int) ((slotX + this.slotSize / 2) / textScale) - font.width(priceText) / 2;
             int slotTextY = (int) ((slotY + this.slotSize) / textScale) + 2;
             guiGraphics.drawString(this.font, priceText,
                     slotTextX,
                     slotTextY,
-                    0xFFE6C878,
+                    goods.currency.color(),
                     false);
             guiGraphics.pose().popPose();
 
@@ -467,13 +497,13 @@ public class VendingMachinesGui extends AbstractPixelScreen {
                         false);
 
 
-                Component priceText = Component.translatable("gui.vendingmachine.money_display", selected.price);
+                Component priceText = formatPrice(selected);
                 int slotTextX = (int) ((this.previewX + this.previewSize / 2) / textScale) - font.width(priceText) / 2;
                 int slotTextY = (int) ((this.previewY + this.previewSize) / textScale) + 4;
                 guiGraphics.drawString(this.font, priceText,
                         slotTextX,
                         slotTextY,
-                        0xFFE6C878,
+                        selected.currency.color(),
                         false);
             }
         }
@@ -646,7 +676,7 @@ public class VendingMachinesGui extends AbstractPixelScreen {
 
         if (infoGoods != null) {
             String name = infoGoods.stack.getHoverName().getString();
-            String text = name + "  $" + infoGoods.price;
+            String text = name + "  " + formatPrice(infoGoods).getString();
             guiGraphics.drawString(this.font, text,
                     this.panelLeft + 10,
                     this.panelTop + this.panelHeight - this.font.lineHeight - 8,
@@ -703,13 +733,16 @@ public class VendingMachinesGui extends AbstractPixelScreen {
 
         VendingGoods selected = this.goods.get(this.selectedIndex);
         ItemStack purchaseStack = selected.stack.copy();
-        if (!this.purchaseCheck.test(purchaseStack, selected.price)) {
+        if (!this.purchaseCheck.test(selected)) {
+            addPurchaseMessage(selected.currency == ShopEntry.Currency.MINIGAME_TOKEN
+                    ? "noellesroles.not_enough_minigame_token"
+                    : "noellesroles.not_enough_money");
             return;
         }
 
         cache_selected = selected;
         ClientPlayNetworking.send(new VendingMachinesBuyC2SPacket(blockPos,
-                BuiltInRegistries.ITEM.getKey(purchaseStack.getItem()).toString()));
+                BuiltInRegistries.ITEM.getKey(purchaseStack.getItem()).toString(), this.selectedIndex));
         this.onPurchaseTriggered.accept(purchaseStack.copy(), selected.price);
 
     }
@@ -813,6 +846,10 @@ public class VendingMachinesGui extends AbstractPixelScreen {
 
     private boolean isSelectedIndexValid() {
         return this.selectedIndex >= 0 && this.selectedIndex < this.goods.size();
+    }
+
+    private Component formatPrice(VendingGoods goods) {
+        return Component.translatable(goods.currency.priceTranslationKey(), goods.price);
     }
 
     private int getTotalRows() {
@@ -998,10 +1035,12 @@ public class VendingMachinesGui extends AbstractPixelScreen {
     private static final class VendingGoods {
         private final ItemStack stack;
         private final int price;
+        private final ShopEntry.Currency currency;
 
-        private VendingGoods(ItemStack stack, int price) {
+        private VendingGoods(ItemStack stack, int price, ShopEntry.Currency currency) {
             this.stack = stack;
             this.price = price;
+            this.currency = currency == null ? ShopEntry.Currency.MONEY : currency;
         }
     }
 
@@ -1108,25 +1147,22 @@ public class VendingMachinesGui extends AbstractPixelScreen {
             return;
         }
 
-        // 获取玩家金钱
-        SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(this.minecraft.player);
-        int balance = shopComponent.balance;
+        int balance = SREPlayerShopComponent.KEY.get(this.minecraft.player).balance;
+        int tokens = SREPlayerMinigameTaskComponent.KEY.get(this.minecraft.player).getTokens();
 
-        // 创建金钱显示文本
-        Component moneyText = Component.translatable("gui.vendingmachine.money_display",
-                String.valueOf(balance));
+        Component moneyText = Component.translatable("gui.vendingmachine.money_display", balance);
+        Component tokenText = Component.translatable("gui.vendingmachine.minigame_token_display", tokens);
 
-        // 计算位置（右上角）
-        int textWidth = this.font.width(moneyText);
+        int textWidth = Math.max(this.font.width(moneyText), this.font.width(tokenText));
         int xPos = this.width - textWidth - 10;
         int yPos = 10;
 
-        // 绘制背景
         int bgWidth = textWidth + 12;
-        int bgHeight = this.font.lineHeight + 6;
+        int bgHeight = this.font.lineHeight * 2 + 9;
         guiGraphics.fill(xPos - 6, yPos - 3, xPos + bgWidth - 6, yPos + bgHeight - 3, 0xA0000000);
 
-        // 绘制文本
-        guiGraphics.drawString(this.font, moneyText, xPos, yPos, 0xFFFFD700, false);
+        guiGraphics.drawString(this.font, moneyText, xPos, yPos, ShopEntry.Currency.MONEY.color(), false);
+        guiGraphics.drawString(this.font, tokenText, xPos, yPos + this.font.lineHeight + 3,
+                ShopEntry.Currency.MINIGAME_TOKEN.color(), false);
     }
 }

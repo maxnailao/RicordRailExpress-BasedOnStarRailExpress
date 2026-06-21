@@ -18,6 +18,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.init.FunnyItems;
+import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 
@@ -51,6 +53,9 @@ public interface TMMItems {
             SRE.id("sanity"));
     ResourceKey<CreativeModeTab> ROLE_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             SRE.id("role_items"));
+            
+    ResourceKey<CreativeModeTab> FUNNY_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+            SRE.id("funny_item"));
     ResourceKey<CreativeModeTab> MISC_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             SRE.id("misc_items"));
 
@@ -65,13 +70,16 @@ public interface TMMItems {
             Noellesroles.id("all"));
 
     // === 武器 (WEAPONS) ===
-    Item KNIFE = registrar.create("knife", new KnifeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP, SRE_ALL_GROUP);
+    Item KNIFE = registrar.create("knife", new KnifeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
+            SRE_ALL_GROUP);
     Item BAT = registrar.create("bat",
             new BatItem(new Item.Properties().stacksTo(1)
                     .attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
             WEAPONS_GROUP, SRE_ALL_GROUP);
-    Item CROWBAR = registrar.create("crowbar", new CrowbarItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP, SRE_ALL_GROUP);
-    Item GRENADE = registrar.create("grenade", new GrenadeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP, SRE_ALL_GROUP);
+    Item CROWBAR = registrar.create("crowbar", new CrowbarItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
+            SRE_ALL_GROUP);
+    Item GRENADE = registrar.create("grenade", new GrenadeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
+            SRE_ALL_GROUP);
     Item STICKY_GRENADE = registrar.create("sticky_grenade", new StickyGrenadeItem(new Item.Properties().stacksTo(1)),
             WEAPONS_GROUP, SRE_ALL_GROUP);
     Item TIMED_GRENADE = registrar.create("timed_grenade", new TimedGrenadeItem(new Item.Properties().stacksTo(1)),
@@ -80,7 +88,8 @@ public interface TMMItems {
             WEAPONS_GROUP, SRE_ALL_GROUP);
     Item REVOLVER = registrar.create("revolver", new RevolverItem(new Item.Properties().stacksTo(1)),
             WEAPONS_GROUP, SRE_ALL_GROUP);
-    Item STANDARD_REVOLVER = registrar.create("standard_revolver", new StandardRevolverItem(new Item.Properties().stacksTo(1)),
+    Item STANDARD_REVOLVER = registrar.create("standard_revolver",
+            new StandardRevolverItem(new Item.Properties().stacksTo(1)),
             WEAPONS_GROUP, SRE_ALL_GROUP);
     Item DERRINGER = registrar.create("derringer", new DerringerItem(new Item.Properties().stacksTo(1)),
             WEAPONS_GROUP, SRE_ALL_GROUP);
@@ -119,27 +128,37 @@ public interface TMMItems {
             CONSUMABLES_GROUP, SRE_ALL_GROUP);
     Item POISON_VIAL = registrar.create("poison_vial", new Item(new Item.Properties().stacksTo(1)),
             CONSUMABLES_GROUP, SRE_ALL_GROUP);
-    Item SCORPION = registrar.create("scorpion", new Item(new Item.Properties().stacksTo(1)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+    Item SCORPION = registrar.create("scorpion", new Item(new Item.Properties().stacksTo(1)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
     Item OLD_FASHIONED = registrar.create("old_fashioned",
-            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
     Item MOJITO = registrar.create("mojito",
-            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
     Item MARTINI = registrar.create("martini",
-            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
     Item COSMOPOLITAN = registrar.create("cosmopolitan",
-            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
     Item CHAMPAGNE = registrar.create("champagne",
-            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP, SRE_ALL_GROUP);
+            new CocktailItem(new Item.Properties().stacksTo(1).food(Foods.HONEY_BOTTLE)), CONSUMABLES_GROUP,
+            SRE_ALL_GROUP);
 
     // === 装备 (EQUIPMENT) ===
     Item EMOJI_HELMET = registrar.create("emoji_helmet", new EmojiHelmetItem(new Item.Properties().stacksTo(1)),
             EQUIPMENT_GROUP, SRE_ALL_GROUP);
-    Item DRAWING_BOARD = sreRegistrar.create("drawing_board", new io.wifi.starrailexpress.content.item.DrawingBoardItem(), EQUIPMENT_GROUP, SRE_ALL_GROUP);
-    Item ADMIN_DRAWING_BOARD = sreRegistrar.create("admin_drawing_board", new io.wifi.starrailexpress.content.item.AdminDrawingBoardItem(), new net.minecraft.resources.ResourceKey[]{net.minecraft.world.item.CreativeModeTabs.OP_BLOCKS});
+    Item DRAWING_BOARD = sreRegistrar.create("drawing_board",
+            new io.wifi.starrailexpress.content.item.DrawingBoardItem(), EQUIPMENT_GROUP, SRE_ALL_GROUP);
+    Item ADMIN_DRAWING_BOARD = sreRegistrar.create("admin_drawing_board",
+            new io.wifi.starrailexpress.content.item.AdminDrawingBoardItem(),
+            new net.minecraft.resources.ResourceKey[] { net.minecraft.world.item.CreativeModeTabs.OP_BLOCKS });
 
     // === 杂项 (MISC) ===
     Item BLACKOUT = registrar.create("blackout", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
-    Item MONITOR_BROKEN = registrar.create("monitor_broken", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
+    Item MONITOR_BROKEN = registrar.create("monitor_broken", new Item(new Item.Properties().stacksTo(1)),
+            SRE_ALL_GROUP);
     Item PSYCHO_MODE = registrar.create("psycho_mode", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
 
     public static void initialize() {
@@ -182,25 +201,29 @@ public interface TMMItems {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SANITY_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.sanity"))
-                .icon(() -> new ItemStack(OLD_FASHIONED))  // 临时图标，后续被 ModItems 中的 WREATH 覆盖
+                .icon(() -> new ItemStack(PSYCHO_MODE))
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ROLE_ITEMS_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.role_items"))
-                .icon(() -> new ItemStack(OLD_FASHIONED))  // 临时图标
+                .icon(() -> new ItemStack(ModItems.BUCKET_OF_H2SO4))
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MISC_ITEMS_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.misc_items"))
                 .icon(() -> new ItemStack(BLACKOUT))
                 .build());
 
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, FUNNY_ITEMS_GROUP, FabricItemGroup.builder()
+                .title(Component.translatable("itemGroup.starrailexpress.funny_items"))
+                .icon(() -> new ItemStack(FunnyItems.PROBLEM_SET))
+                .build());
         // 注册特殊分类/汇总标签页
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, REPAIR_MODE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.repair_mode"))
-                .icon(() -> new ItemStack(TMMItems.IRON_DOOR_KEY))  // 临时图标
+                .icon(() -> new ItemStack(ModItems.REPAIR_TOOLBOX))
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SEALED_ARTIFACTS_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.sealed_artifacts"))
-                .icon(() -> new ItemStack(TMMItems.IRON_DOOR_KEY))  // 临时图标
+                .icon(() -> new ItemStack(ModItems.SEALED_BLIND_LANTERN))
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SRE_ALL_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.all"))
@@ -208,7 +231,7 @@ public interface TMMItems {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, NOELLESROLES_ALL_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.noellesroles.all"))
-                .icon(() -> new ItemStack(TMMItems.IRON_DOOR_KEY))  // 临时图标
+                .icon(() -> new ItemStack(ModItems.BLANK_CARTRIDGE))
                 .build());
         if (INIT_ITEMS.LETTER == null)
             INIT_ITEMS.LETTER = LETTER;
@@ -217,8 +240,7 @@ public interface TMMItems {
         SkinableItem.add(TMMItems.REVOLVER);
         // SkinnableItem.add(TMMItems.LOCKPICK);
         SkinableItem.add(TMMItems.GRENADE);
-        SkinableItem.add(TMMItems.STICKY_GRENADE);
-        SkinableItem.add(TMMItems.TIMED_GRENADE);
+
         SkinableItem.add(TMMItems.BAT);
 
         // 注册蓄力物品

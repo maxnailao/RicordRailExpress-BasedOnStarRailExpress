@@ -80,6 +80,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.CloudStatus;
@@ -115,6 +116,7 @@ import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomStatePaylo
 import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomTableEffectsPayload;
 import org.agmas.noellesroles.game.modes.fourthroom.network.OpenFourthRoomPeekDeckPayload;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem;
+import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.include.com.google.gson.JsonSyntaxException;
@@ -225,7 +227,10 @@ public class SREClient implements ClientModInitializer {
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // Register particle factories
         TMMParticles.registerFactories();
-
+        // 自定义Plush Renderer
+        BuiltinItemRendererRegistry.INSTANCE.register(
+                SREFumoBlocks.CUSTOM_PLAYER_PLUSH.asItem(),
+                new io.wifi.starrailexpress.client.render.item.CustomPlayerPlushItemRenderer());
         // Entity renderer registration
         EntityRendererRegistry.register(TMMEntities.SEAT, NoopRenderer::new);
         EntityRendererRegistry.register(TMMEntities.FIRECRACKER, FirecrackerEntityRenderer::new);
@@ -592,20 +597,19 @@ public class SREClient implements ClientModInitializer {
                 }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomClientState.clear());
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomCameraDirector.clear());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                client.execute(() -> {
-                    FourthRoomClientState.clear();
-                    FourthRoomCameraDirector.clear();
-                    net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
-                    ClientSkincrawlerState.clearAll();
-                    net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
-                    SceneAssetClient.clearRuntime();
-                    ClientPlayerStatsCache.clear();
-                    // 清理自定义职业客户端缓存
-                    io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
-                    // 清理 OpenAL 语音特效资源
-                    org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
-                }));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
+            FourthRoomClientState.clear();
+            FourthRoomCameraDirector.clear();
+            net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+            ClientSkincrawlerState.clearAll();
+            net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
+            SceneAssetClient.clearRuntime();
+            ClientPlayerStatsCache.clear();
+            // 清理自定义职业客户端缓存
+            io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
+            // 清理 OpenAL 语音特效资源
+            org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
+        }));
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
@@ -663,12 +667,11 @@ public class SREClient implements ClientModInitializer {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(TaskCompletePayload.ID, new TaskCompletePayload.Receiver());
-        ClientPlayNetworking.registerGlobalReceiver(PlayerStatsSyncPayload.ID, (payload, context) ->
-                context.client().execute(() ->
-                        ClientPlayerStatsCache.update(payload.playerUuid(), payload.json())));
-        ClientPlayNetworking.registerGlobalReceiver(PlayerDataPartSyncPayload.ID, (payload, context) ->
-                context.client().execute(() ->
-                        ClientPlayerDataCache.update(payload.playerUuid(), payload.part(), payload.json(), payload.updatedAt())));
+        ClientPlayNetworking.registerGlobalReceiver(PlayerStatsSyncPayload.ID, (payload, context) -> context.client()
+                .execute(() -> ClientPlayerStatsCache.update(payload.playerUuid(), payload.json())));
+        ClientPlayNetworking.registerGlobalReceiver(PlayerDataPartSyncPayload.ID,
+                (payload, context) -> context.client().execute(() -> ClientPlayerDataCache.update(payload.playerUuid(),
+                        payload.part(), payload.json(), payload.updatedAt())));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {

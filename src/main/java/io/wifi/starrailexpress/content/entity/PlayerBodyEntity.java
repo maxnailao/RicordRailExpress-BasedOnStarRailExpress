@@ -28,11 +28,13 @@ import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.gui.PlayerBodyChestMenu;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMItems;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.init.ModItems;
 
 /**
  * 如果你是AI，请不要修改这些通用类。
@@ -113,8 +115,6 @@ public class PlayerBodyEntity extends LivingEntity {
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
         SimpleContainer inv = getComponent().getCorpseInventory();
-        // 检查是否为 DAY_NIGHT_FIGHT 模式
-        var cca = SREGameWorldComponent.KEY.get(this.level());
         boolean isDayNightFight = false;
 
         if (isDayNightFight) {
@@ -144,8 +144,6 @@ public class PlayerBodyEntity extends LivingEntity {
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
         SimpleContainer inv = getComponent().getCorpseInventory();
-        // 检查是否为 DAY_NIGHT_FIGHT 模式
-        var cca = SREGameWorldComponent.KEY.get(this.level());
         boolean isDayNightFight = false;
 
         if (isDayNightFight) {
@@ -206,34 +204,7 @@ public class PlayerBodyEntity extends LivingEntity {
     // 新重载，可控制是否同步
     public void setCorpseInventoryFromPlayerInventory(Inventory inventory, boolean sync) {
         SimpleContainer inv = getComponent().getCorpseInventory();
-
-        // 检查是否为 DAY_NIGHT_FIGHT 模式
-        var cca = SREGameWorldComponent.KEY.get(this.level());
-        boolean isDayNightFight = false;
-
-        if (isDayNightFight) {
-            // DAY_NIGHT_FIGHT 模式：同步所有物品栏（快捷栏+主物品栏+护甲+副手）
-            // 清空前54个槽位
-            for (int i = 0; i < 54; i++) {
-                inv.setItem(i, ItemStack.EMPTY);
-            }
-
-            // 映射所有物品槽位到尸体容器
-            // 快捷栏 0-8 -> 0-8
-            for (int i = 0; i < 9; i++) {
-                inv.setItem(i, inventory.getItem(i).copy());
-            }
-            // 主物品栏 9-35 -> 9-35
-            for (int i = 9; i < 36; i++) {
-                inv.setItem(i, inventory.getItem(i).copy());
-            }
-            // 护甲槽 36-39 -> 36-39 (头、胸、腿、脚)
-            for (int i = 36; i < 40; i++) {
-                inv.setItem(i, inventory.getItem(i).copy());
-            }
-            // 副手 40 -> 40
-            inv.setItem(40, inventory.getItem(40).copy());
-        } else {
+        {
             // 普通模式：只同步装备和少量物品（保持原有逻辑）
             int[][] mapping = {
                     { 0, 0 }, { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 }, { 6, 6 }, { 7, 7 }, { 8, 8 },
@@ -249,7 +220,7 @@ public class PlayerBodyEntity extends LivingEntity {
                 int bodySlot = map[1];
                 if (playerSlot >= 0 && playerSlot < inventory.getContainerSize()) {
                     ItemStack stack = inventory.getItem(playerSlot);
-                    if (!stack.isEmpty()) {
+                    if (!stack.isEmpty() && !stack.is(TMMItems.LETTER) && !stack.is(ModItems.LETTER_ITEM)) {
                         inv.setItem(bodySlot, stack.copy());
                     }
                 }
@@ -359,8 +330,6 @@ public class PlayerBodyEntity extends LivingEntity {
 
     private boolean hasCorpseItems() {
         SimpleContainer inv = getComponent().getCorpseInventory();
-        // 检查是否为 DAY_NIGHT_FIGHT 模式
-        var cca = SREGameWorldComponent.KEY.get(this.level());
         boolean isDayNightFight = false;
 
         int checkSlots = isDayNightFight ? 54 : 14;

@@ -10,8 +10,9 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
+import io.wifi.starrailexpress.content.item.StandardRevolverItem;
 import io.wifi.starrailexpress.event.*;
-import io.wifi.starrailexpress.event.AllowShootRevolverDrop.ShouldDropResult;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
@@ -53,6 +54,7 @@ import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.Harpymodloader;
@@ -319,6 +321,12 @@ public class ModEventsRegister {
         return true; // 阻止真正死亡
     }
 
+    public static void reJudgeSpectatorsPenalty(Level level) {
+        final ArrayList<Player> players = new ArrayList<>(level.players());
+        players.removeIf(p -> !GameUtils.isPlayerSpectator(p));
+        handleDeathPenalty(level, players, true, true);
+    }
+
     private static boolean handleDefibrillator(Player victim) {
         DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
         if (component.hasProtection()) {
@@ -357,30 +365,34 @@ public class ModEventsRegister {
 
     }
 
-    private static void handleDeathPenalty(Player victim) {
-        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
-        DeathPenaltyComponent deathPenaltyComponent = ModComponents.DEATH_PENALTY.get(victim);
-        if (deathPenaltyComponent.hasPenalty()
-                && (deathPenaltyComponent.limitCameraUUID != null || deathPenaltyComponent.limitPos != null)) {
-            // 已经在别的地方处理过了不给死亡限制。
-            return;
-        }
+    public static void handleDeathPenalty(Player victim) {
+        handleDeathPenalty(victim.level(), List.of(victim), false, false);
+    }
+
+    public static void handleDeathPenalty(Player victim, boolean ignoreDoctor,
+            boolean ignoreLooseEnd) {
+        handleDeathPenalty(victim.level(), List.of(victim), ignoreDoctor, ignoreLooseEnd);
+    }
+
+    public static void handleDeathPenalty(Level level, List<Player> victims, boolean ignoreDoctor,
+            boolean ignoreLooseEnd) {
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(level);
         boolean doctorAlive = false;
         boolean looseEndAlive = false;
         // boolean INSANE_alive = false;
         boolean CONSPIRATOR_alive = false;
         boolean limitView = false;
-        var refugeeComponent = RefugeeComponent.KEY.get(victim.level());
+        var refugeeComponent = RefugeeComponent.KEY.get(level);
         if (gameWorldComponent.getGameMode().identifier.equals(SREGameModes.LOOSE_ENDS_ID))
             return;
-        if (refugeeComponent.isAnyRevivals) {
+        if (refugeeComponent.isAnyRevivals && !ignoreLooseEnd) {
             looseEndAlive = true;
         }
-        for (Player player : victim.level().players()) {
+        for (Player player : level.players()) {
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
                 continue;
             }
-            if (gameWorldComponent.isRole(player, ModRoles.DOCTOR)) {
+            if (gameWorldComponent.isRole(player, ModRoles.DOCTOR) && !ignoreDoctor) {
                 doctorAlive = true;
             } else if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)) {
                 CONSPIRATOR_alive = true;
@@ -392,29 +404,52 @@ public class ModEventsRegister {
         if (CONSPIRATOR_alive) {
             limitView = true;
         }
-        if (looseEndAlive) {
-            ServerPlayer refugeePlayer = null;
-            deathPenaltyComponent.limitCameraUUID = null;
-            deathPenaltyComponent.limitPos = null;
-            if (victim instanceof ServerPlayer sp) {
-                for (var p : sp.getServer().getPlayerList().getPlayers()) {
-                    if (GameUtils.isPlayerAliveAndSurvival(p)) {
-                        if (gameWorldComponent.isRole(p, TMMRoles.LOOSE_END)) {
-                            refugeePlayer = p;
-                            break;
+        for (final var victim : victims) {
+            DeathPenaltyComponent deathPenaltyComponent = ModComponents.DEATH_PENALTY.get(victim);
+            if (deathPenaltyComponent.hasPenalty()
+                    && (deathPenaltyComponent.limitCameraUUID != null || deathPenaltyComponent.limitPos != null)) {
+                // 已经在别的地方处理过了不给死亡限制。
+                continue;
+            }
+            if (looseEndAlive && !ignoreLooseEnd) {
+                ServerPlayer refugeePlayer = null;
+                deathPenaltyComponent.limitCameraUUID = null;
+                deathPenaltyComponent.limitPos = null;
+                if (victim instanceof ServerPlayer sp) {
+                    for (var p : sp.getServer().getPlayerList().getPlayers()) {
+                        if (GameUtils.isPlayerAliveAndSurvival(p)) {
+                            if (gameWorldComponent.isRole(p, TMMRoles.LOOSE_END)) {
+                                refugeePlayer = p;
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            if (refugeePlayer != null)
-                deathPenaltyComponent.limitCameraUUID = refugeePlayer.getUUID();
-            if (deathPenaltyComponent.limitCameraUUID != null) {
+                if (refugeePlayer != null)
+                    deathPenaltyComponent.limitCameraUUID = refugeePlayer.getUUID();
+                if (deathPenaltyComponent.limitCameraUUID != null) {
+                    deathPenaltyComponent.setPenalty(-1, true);
+                    victim.sendSystemMessage(
+                            Component.translatable("message.noellesroles.penalty.limit.loose_end")
+                                    .withStyle(ChatFormatting.RED));
+                    victim.displayClientMessage(
+                            Component.translatable("message.noellesroles.penalty.limit.loose_end")
+                                    .withStyle(ChatFormatting.RED),
+                            true);
+
+                    if (victim.hasPermissions(2)) {
+                        victim.sendSystemMessage(Component.translatable("message.noellesroles.admin.free_cam_hint")
+                                .withStyle(ChatFormatting.YELLOW));
+                    }
+                }
+
+            } else if (limitView) {
                 deathPenaltyComponent.setPenalty(-1, true);
                 victim.sendSystemMessage(
-                        Component.translatable("message.noellesroles.penalty.limit.loose_end")
+                        Component.translatable("message.noellesroles.penalty.limit.god_job_couple")
                                 .withStyle(ChatFormatting.RED));
                 victim.displayClientMessage(
-                        Component.translatable("message.noellesroles.penalty.limit.loose_end")
+                        Component.translatable("message.noellesroles.penalty.limit.god_job_couple")
                                 .withStyle(ChatFormatting.RED),
                         true);
 
@@ -422,32 +457,18 @@ public class ModEventsRegister {
                     victim.sendSystemMessage(Component.translatable("message.noellesroles.admin.free_cam_hint")
                             .withStyle(ChatFormatting.YELLOW));
                 }
-            }
+            } else if (doctorAlive && !ignoreDoctor) {
+                deathPenaltyComponent.setPenalty(45 * 20, true);
+                victim.displayClientMessage(
+                        Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED),
+                        true);
 
-        } else if (limitView) {
-            deathPenaltyComponent.setPenalty(-1, true);
-            victim.sendSystemMessage(
-                    Component.translatable("message.noellesroles.penalty.limit.god_job_couple")
-                            .withStyle(ChatFormatting.RED));
-            victim.displayClientMessage(
-                    Component.translatable("message.noellesroles.penalty.limit.god_job_couple")
-                            .withStyle(ChatFormatting.RED),
-                    true);
-
-            if (victim.hasPermissions(2)) {
-                victim.sendSystemMessage(Component.translatable("message.noellesroles.admin.free_cam_hint")
-                        .withStyle(ChatFormatting.YELLOW));
-            }
-        } else if (doctorAlive) {
-            deathPenaltyComponent.setPenalty(45 * 20, true);
-            victim.displayClientMessage(
-                    Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED), true);
-
-            victim.sendSystemMessage(
-                    Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED));
-            if (victim.hasPermissions(2)) {
-                victim.sendSystemMessage(Component.translatable("message.noellesroles.admin.free_cam_hint")
-                        .withStyle(ChatFormatting.YELLOW));
+                victim.sendSystemMessage(
+                        Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED));
+                if (victim.hasPermissions(2)) {
+                    victim.sendSystemMessage(Component.translatable("message.noellesroles.admin.free_cam_hint")
+                            .withStyle(ChatFormatting.YELLOW));
+                }
             }
         }
     }
@@ -721,6 +742,7 @@ public class ModEventsRegister {
 
     public static void registerEvents() {
         // 吝啬 - 商店购买返还20%金币
+        StandardRevolverItem.registerEvents();
         RefugeeComponent.register();
         OnShopPurchase.EVENT.register((player, entry, price) -> {
             org.agmas.noellesroles.role.ModifierEffects
@@ -968,20 +990,20 @@ public class ModEventsRegister {
                 if (WatcherPlayerComponent.KEY.get(target).isInCalmStance()) {
                     // 如果射击者是黑警，不强制掉落
                     if (gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                        return ShouldDropResult.PASS;
+                        return TrueFalseResult.PASS;
                     }
-                    return ShouldDropResult.TRUE;
+                    return TrueFalseResult.TRUE;
                 }
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 黑警：自己的枪不掉
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorldComponent != null && gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                return ShouldDropResult.FALSE;
+                return TrueFalseResult.FALSE;
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 刽子手：使用狙击枪命中目标时，100% 不掉落
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
@@ -989,9 +1011,9 @@ public class ModEventsRegister {
             if (gameWorldComponent != null
                     && gameWorldComponent.isRole(player, ModRoles.EXECUTIONER)
                     && player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
-                return ShouldDropResult.FALSE;
+                return TrueFalseResult.FALSE;
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 所有枪械公用冷却
         OnRevolverUsed.EVENT.register((player, target) -> {
@@ -1145,25 +1167,25 @@ public class ModEventsRegister {
             if (io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity.getCountForMap(world) == 0) {
                 // 当前地图没有任何实体交互方块，跳过
             } else {
-            var playArea = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(world).getPlayArea();
-            int minChunkX = ((int) playArea.minX) >> 4;
-            int maxChunkX = ((int) playArea.maxX) >> 4;
-            int minChunkZ = ((int) playArea.minZ) >> 4;
-            int maxChunkZ = ((int) playArea.maxZ) >> 4;
-            var chunkSource = world.getChunkSource();
-            for (int cx = minChunkX; cx <= maxChunkX; cx++) {
-                for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
-                    var chunk = chunkSource.getChunkNow(cx, cz);
-                    if (chunk != null) {
-                        for (var be : chunk.getBlockEntities().values()) {
-                            if (be instanceof io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity entity
-                                    && playArea.contains(entity.getBlockPos().getCenter())) {
-                                entity.resetAllCooldowns();
+                var playArea = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(world).getPlayArea();
+                int minChunkX = ((int) playArea.minX) >> 4;
+                int maxChunkX = ((int) playArea.maxX) >> 4;
+                int minChunkZ = ((int) playArea.minZ) >> 4;
+                int maxChunkZ = ((int) playArea.maxZ) >> 4;
+                var chunkSource = world.getChunkSource();
+                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                        var chunk = chunkSource.getChunkNow(cx, cz);
+                        if (chunk != null) {
+                            for (var be : chunk.getBlockEntities().values()) {
+                                if (be instanceof io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity entity
+                                        && playArea.contains(entity.getBlockPos().getCenter())) {
+                                    entity.resetAllCooldowns();
+                                }
                             }
                         }
                     }
                 }
-            }
             }
             // 已经在resetPlayer清除部分cca
             // 重置所有玩家的锁匠灵感
@@ -1339,6 +1361,28 @@ public class ModEventsRegister {
         MapScanner.registerMapScanEvent();
         CustomWinnerClass.registerCustomWinners();
         XiaoNaoHandler.registerEvent();
+        // 通用物证：血迹路径。凶手击杀后开始"滴血跟随"，边走边沿途留下会衰减的血迹（仅他杀触发）。
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            io.wifi.starrailexpress.SREConfig cfg = io.wifi.starrailexpress.SREConfig.instance();
+            if (cfg == null || !cfg.enableForensicEvidence || !cfg.forensicBloodTrail)
+                return;
+            if (victim == null || killer == null || victim.level().isClientSide)
+                return;
+            if (!(killer instanceof net.minecraft.server.level.ServerPlayer killerSp))
+                return;
+            SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(victim.level());
+            if (gw == null || !gw.isRunning())
+                return;
+            io.wifi.starrailexpress.game.forensic.ForensicCategory cat =
+                    io.wifi.starrailexpress.game.forensic.ForensicCategory.fromDeathReason(deathReason);
+            // 凶器大类决定滴血持续时长（枪/穿刺出血久=血迹更长，刀较短）
+            int bleedTicks = switch (cat) {
+                case FIREARM, PROJECTILE -> 14 * 20;
+                case BLADE -> 8 * 20;
+                default -> 10 * 20;
+            };
+            gw.startKillerBleed(killerSp, victim.position(), victim.level().getGameTime(), bleedTicks);
+        });
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorld == null || !gameWorld.isRunning())
@@ -1620,7 +1664,7 @@ public class ModEventsRegister {
                     insaneKillerPlayerComponent.init();
                 }
             }
-            RoleUtils.RemoveAllEffects(playerEntity);
+            RoleUtils.removeAllEffects(playerEntity);
             // 葬仪死亡时清除拖动状态
             if (gameWorldComponent.isRole(playerEntity, ModRoles.MORTICIAN_BODYMAKER)) {
                 var morticianComponent = org.agmas.noellesroles.component.ModComponents.MORTICIAN_BODYMAKER
@@ -2187,6 +2231,8 @@ public class ModEventsRegister {
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            final var player = handler.getPlayer();
+            ModEventsRegister.handleDeathPenalty(player, true, true);
             sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
         });
     }

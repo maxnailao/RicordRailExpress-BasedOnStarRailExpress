@@ -78,7 +78,8 @@ public class SniperProjectileUtil {
         double stepSize = 0.1;
         int steps = (int) (distance / stepSize);
 
-        for (int i = 0; i <= steps; i++) {
+        // 从 i=1 开始检测，跳过射手自身位置（射手可能站在不完整方块内）
+        for (int i = 1; i <= steps; i++) {
             Vec3 testPos = startVec.add(direction.scale(i * stepSize));
             BlockPos blockPos = BlockPos.containing(testPos);
 
@@ -114,7 +115,8 @@ public class SniperProjectileUtil {
         double stepSize = 0.1;
         int steps = (int) (distance / stepSize);
 
-        for (int i = 0; i <= steps; i++) {
+        // 从 i=1 开始检测，跳过射手自身位置（射手可能站在不完整方块内）
+        for (int i = 1; i <= steps; i++) {
             Vec3 testPos = startVec.add(direction.scale(i * stepSize));
             BlockPos blockPos = BlockPos.containing(testPos);
 

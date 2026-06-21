@@ -2,6 +2,7 @@ package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.roster.MapRestrictionGate;
 import io.wifi.starrailexpress.roster.RoleRosterManager;
 import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.minecraft.resources.ResourceLocation;
@@ -76,7 +77,12 @@ public class RoleAssignmentPool {
                 return true;
             }
             if (rosterActive) {
-                // 名单接管：仅保留名单内（数量 > 0）的职业，忽略 harpy 的 disabled 列表
+                // 名单接管：忽略 harpy 的 disabled 列表，但地图限制仍然生效——
+                // 被本回合地图限制挡在当前地图之外的职业必须排除，避免地图特定职业泄漏。
+                if (MapRestrictionGate.isRoleForbidden(role.identifier())) {
+                    return true;
+                }
+                // 仅保留名单内（数量 > 0）的职业
                 return roster.countFor(role.identifier().toString()) <= 0;
             }
             return HarpyModLoaderConfig.HANDLER.instance().getDisabled().contains(role.identifier().toString());

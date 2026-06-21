@@ -1,11 +1,15 @@
 package org.agmas.noellesroles.game.roles.killer.imitator;
 
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
@@ -17,6 +21,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions;
+import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
+import org.agmas.noellesroles.packet.BuilderWallS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
@@ -68,6 +77,16 @@ public class ImitatorSkillRegistry {
         ALLOWED_ROLES.add(ModRoles.ATHLETE_ID);
         ALLOWED_ROLES.add(ModRoles.BOXER_ID);
         ALLOWED_ROLES.add(ModRoles.GHOST_ID);
+        ALLOWED_ROLES.add(ModRoles.NOISEMAKER_ID);
+        ALLOWED_ROLES.add(ModRoles.SINGER_ID);
+        ALLOWED_ROLES.add(ModRoles.GLITCH_ROBOT_ID);
+        ALLOWED_ROLES.add(ModRoles.CLOCKMAKER_ID);
+        ALLOWED_ROLES.add(ModRoles.ALCHEMIST_ID);
+        ALLOWED_ROLES.add(ModRoles.PILOT_ID);
+        ALLOWED_ROLES.add(ModRoles.PAINTER_ID);
+        ALLOWED_ROLES.add(ModRoles.BUILDER_ID);
+        ALLOWED_ROLES.add(ModRoles.ACCOUNTANT_ID);
+        ALLOWED_ROLES.add(ModRoles.DOCTOR_ID);
 
         SKILL_COOLDOWNS.put(ModRoles.RECALLER_ID, 90 * 20); // 30秒
         SKILL_COOLDOWNS.put(ModRoles.SUPERSTAR_ID, 90 * 20); // 60秒(参考原本)
@@ -77,6 +96,16 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.ATHLETE_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.BOXER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.GHOST_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.NOISEMAKER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.SINGER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.GLITCH_ROBOT_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.CLOCKMAKER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.ALCHEMIST_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.PILOT_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.PAINTER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.BUILDER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.ACCOUNTANT_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.DOCTOR_ID, 90 * 20); // 90秒
 
         MESSAGE_SKILLS.add(ModRoles.TELEGRAPHER_ID);
         MESSAGE_SKILLS.add(ModRoles.BROADCASTER_ID);
@@ -107,6 +136,32 @@ public class ImitatorSkillRegistry {
             return SkillResult.SUCCESS;
         } else if (roleId.equals(ModRoles.GHOST_ID)) {
             return executeGhost(player);
+        } else if (roleId.equals(ModRoles.NOISEMAKER_ID)) {
+            executeNoiseMaker(player);
+            return SkillResult.SUCCESS;
+        } else if (roleId.equals(ModRoles.SINGER_ID)) {
+            executeSinger(player);
+            return SkillResult.SUCCESS;
+        } else if (roleId.equals(ModRoles.GLITCH_ROBOT_ID)) {
+            executeGlitchRobot(player);
+            return SkillResult.SUCCESS;
+        } else if (roleId.equals(ModRoles.CLOCKMAKER_ID)) {
+            return executeClockmaker(player);
+        } else if (roleId.equals(ModRoles.ALCHEMIST_ID)) {
+            return executeAlchemist(player);
+        } else if (roleId.equals(ModRoles.PILOT_ID)) {
+            return executePilot(player);
+        } else if (roleId.equals(ModRoles.PAINTER_ID)) {
+            return executePainter(player);
+        } else if (roleId.equals(ModRoles.BUILDER_ID)) {
+            executeBuilder(player);
+            return SkillResult.SUCCESS;
+        } else if (roleId.equals(ModRoles.ACCOUNTANT_ID)) {
+            executeAccountant(player);
+            return SkillResult.SUCCESS;
+        } else if (roleId.equals(ModRoles.DOCTOR_ID)) {
+            executeDoctor(player);
+            return SkillResult.SUCCESS;
         }
         return SkillResult.FAIL;
     }
@@ -286,6 +341,236 @@ public class ImitatorSkillRegistry {
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.ghost_invisible")
                 .withStyle(ChatFormatting.GRAY), true);
         return SkillResult.SUCCESS;
+    }
+
+    /**
+     * 大嗓门：制造噪音，使15格内的玩家发光6秒并收到提示
+     */
+    private static void executeNoiseMaker(ServerPlayer player) {
+        final double range = 15.0;
+        ServerLevel level = player.serverLevel();
+        level.playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_HARP.value(),
+                SoundSource.PLAYERS, 2.0F, 0.0F);
+
+        Component heard = Component.translatable("message.noellesroles.imitator.noisemaker_heard")
+                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
+        for (Player target : level.players()) {
+            if (target.equals(player))
+                continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(target))
+                continue;
+            if (target.distanceToSqr(player) > range * range)
+                continue;
+            target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 120, 0, false, false, false));
+            target.displayClientMessage(heard, true);
+        }
+
+        player.addEffect(new MobEffectInstance(MobEffects.LUCK, 120, 0, false, false, false));
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.noisemaker_used")
+                .withStyle(ChatFormatting.AQUA), true);
+    }
+
+    /**
+     * 歌手：奏响乐章，使4格内的玩家被定身2秒（无法移动）
+     */
+    private static void executeSinger(ServerPlayer player) {
+        final double range = 4.0;
+        ServerLevel level = player.serverLevel();
+        level.playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BELL.value(),
+                SoundSource.RECORDS, 3.0F, 1.0F);
+
+        Component heard = Component.translatable("message.noellesroles.imitator.singer_heard")
+                .withStyle(ChatFormatting.LIGHT_PURPLE);
+        for (Player target : level.players()) {
+            if (target.equals(player))
+                continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(target))
+                continue;
+            if (target.distanceToSqr(player) > range * range)
+                continue;
+            target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 40, 0, false, true, true));
+            target.displayClientMessage(heard, true);
+        }
+
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.singer_used")
+                .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+    }
+
+    /**
+     * 故障机器人：在脚下生成一团缓慢效果云（半径6，缓慢III，持续5秒）
+     */
+    private static void executeGlitchRobot(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        AreaEffectCloud cloud = new AreaEffectCloud(level, player.getX(), player.getY(), player.getZ());
+        cloud.setRadius(6.0F);
+        cloud.setDuration(100); // 5秒
+        cloud.setRadiusOnUse(0.0F);
+        cloud.setRadiusPerTick(0.0F);
+        cloud.setWaitTime(0);
+        cloud.setParticle(ParticleTypes.EFFECT);
+        cloud.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 2, false, false, true));
+        level.addFreshEntity(cloud);
+
+        level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE,
+                SoundSource.PLAYERS, 1.0F, 0.6F);
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.glitch_used")
+                .withStyle(ChatFormatting.DARK_AQUA), true);
+    }
+
+    /**
+     * 钟表匠：削减45秒局内时间（最低保留90秒），并加快世界时间
+     */
+    private static SkillResult executeClockmaker(ServerPlayer player) {
+        final int minTime = 1800; // 90秒
+        final int reduction = 900; // 45秒
+        SREGameTimeComponent gameTime = SREGameTimeComponent.KEY.get(player.level());
+        long currentTime = gameTime.getTime();
+        if (currentTime <= minTime) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.imitator.clockmaker_min")
+                    .withStyle(ChatFormatting.RED), true);
+            return SkillResult.FAIL;
+        }
+        long newTime = Math.max(minTime, currentTime - reduction);
+        gameTime.setTime((int) newTime);
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.setDayTime(serverLevel.getDayTime() + 2000);
+        }
+        player.level().playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_PLING.value(),
+                SoundSource.PLAYERS, 1.0F, 1.5F);
+
+        long newSeconds = newTime / 20;
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.clockmaker_used",
+                reduction / 20, newSeconds / 60, newSeconds % 60)
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), true);
+        return SkillResult.SUCCESS;
+    }
+
+    /**
+     * 药剂师：调制一份鹤顶红（毒药），放入背包
+     */
+    private static SkillResult executeAlchemist(ServerPlayer player) {
+        if (!RoleUtils.isPlayerHasFreeSlot(player)) {
+            player.displayClientMessage(Component.translatable("message.hotbar.full")
+                    .withStyle(ChatFormatting.RED), true);
+            return SkillResult.FAIL;
+        }
+        RoleUtils.insertStackInFreeSlot(player, ModItems.HEDINGHONG.getDefaultInstance());
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.alchemist_potion")
+                .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+        return SkillResult.SUCCESS;
+    }
+
+    /**
+     * 飞行员：获得一个喷气背包
+     */
+    private static SkillResult executePilot(ServerPlayer player) {
+        if (!RoleUtils.isPlayerHasFreeSlot(player)) {
+            player.displayClientMessage(Component.translatable("message.hotbar.full")
+                    .withStyle(ChatFormatting.RED), true);
+            return SkillResult.FAIL;
+        }
+        RoleUtils.insertStackInFreeSlot(player, ModItems.JETPACK.getDefaultInstance());
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.pilot_jetpack")
+                .withStyle(ChatFormatting.AQUA), true);
+        return SkillResult.SUCCESS;
+    }
+
+    /**
+     * 画家：获得一块画板
+     */
+    private static SkillResult executePainter(ServerPlayer player) {
+        if (!RoleUtils.isPlayerHasFreeSlot(player)) {
+            player.displayClientMessage(Component.translatable("message.hotbar.full")
+                    .withStyle(ChatFormatting.RED), true);
+            return SkillResult.FAIL;
+        }
+        RoleUtils.insertStackInFreeSlot(player, TMMItems.DRAWING_BOARD.getDefaultInstance());
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.painter_board")
+                .withStyle(ChatFormatting.GOLD), true);
+        return SkillResult.SUCCESS;
+    }
+
+    /**
+     * 建筑师：朝面前方向架起一堵 4×3 的临时墙（20秒后消失）
+     */
+    private static void executeBuilder(ServerPlayer player) {
+        final int wallLength = 4, wallHeight = 3, wallThickness = 1, duration = 400;
+        Direction facing = player.getDirection();
+        Direction wallExtend = facing.getCounterClockWise();
+        BlockPos basePos = player.blockPosition();
+
+        List<BlockPos> all = new ArrayList<>();
+        for (int t = 0; t < wallThickness; t++) {
+            for (int l = 0; l < wallLength; l++) {
+                for (int h = 0; h < wallHeight; h++) {
+                    int halfLength = wallLength / 2;
+                    all.add(basePos.relative(wallExtend, l - halfLength).above(h).relative(facing, t));
+                }
+            }
+        }
+
+        int minY = all.stream().mapToInt(BlockPos::getY).min().orElse(basePos.getY());
+        int cobwebY = minY + 2;
+        List<BlockPos> brick = new ArrayList<>();
+        List<BlockPos> cobweb = new ArrayList<>();
+        for (BlockPos pos : all) {
+            if (pos.getY() == cobwebY) {
+                cobweb.add(pos);
+            } else {
+                brick.add(pos);
+            }
+        }
+
+        UUID wallId = UUID.randomUUID();
+        final Set<BlockPos> positions = new HashSet<>(all);
+        BuilderWallPositions.addWall(positions);
+
+        ServerLevel level = player.serverLevel();
+        BuilderWallS2CPacket packet = new BuilderWallS2CPacket(wallId, brick, cobweb, duration);
+        for (ServerPlayer p : level.players()) {
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, packet);
+        }
+        level.playSound(null, player.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+        // 计划在持续时间结束后移除墙
+        var server = player.getServer();
+        server.tell(new net.minecraft.server.TickTask(server.getTickCount() + duration, () -> {
+            BuilderWallPositions.removeWall(positions);
+            BuilderRemoveWallS2CPacket removePacket = new BuilderRemoveWallS2CPacket(wallId);
+            for (ServerPlayer p : level.players()) {
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, removePacket);
+            }
+        }));
+
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.builder_wall")
+                .withStyle(ChatFormatting.GREEN), true);
+    }
+
+    /**
+     * 会计：进账一笔金币
+     */
+    private static void executeAccountant(ServerPlayer player) {
+        final int income = 100;
+        SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+        shop.balance += income;
+        shop.sync();
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 0.5F, 1.0F);
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.accountant_income", income)
+                .withStyle(ChatFormatting.GOLD), true);
+    }
+
+    /**
+     * 医生：自我治疗（即时回血 + 再生II + 吸收）
+     */
+    private static void executeDoctor(ServerPlayer player) {
+        player.heal(6.0F); // 即时回复3颗心
+        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1, false, false, true)); // 再生II 10秒
+        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 30 * 20, 0, false, false, true)); // 吸收 30秒
+        player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS,
+                1.0F, 1.5F);
+        player.displayClientMessage(Component.translatable("message.noellesroles.imitator.doctor_heal")
+                .withStyle(ChatFormatting.GREEN), true);
     }
 
     /**

@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.original.GunDropPayload;
 import io.wifi.starrailexpress.network.original.ShootMuzzleS2CPayload;
+import io.wifi.starrailexpress.util.BrokenGunDropUtils;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.FriendlyByteBuf;
@@ -93,11 +94,11 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                                                 false);
                                         if (item != null) {
                                             item.setPickUpDelay(10);
-                                            item.setThrower(player);
                                         }
-
-                                        ServerPlayNetworking.send(player, new GunDropPayload());
+                                        item.setThrower(player);
                                     }
+
+                                    ServerPlayNetworking.send(player, new GunDropPayload());
                                 }
                             }
                         }

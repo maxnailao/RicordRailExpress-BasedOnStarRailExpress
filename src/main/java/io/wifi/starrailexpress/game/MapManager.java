@@ -285,6 +285,9 @@ public class MapManager {
         // 保存天气循环配置
         jsonObject.addProperty("weatherCycle", areas.weatherCycle);
 
+        // 保存小游戏任务系统开关
+        jsonObject.addProperty("minigameQuestEnabled", areas.minigameQuestEnabled);
+
         // 保存地图初始物品
         jsonObject.add("initialItems", gson.toJsonTree(areas.initialItems));
 
@@ -465,6 +468,13 @@ public class MapManager {
                 SRE.LOGGER.info("Loaded weatherCycle: " + areas.weatherCycle);
             } else {
                 areas.weatherCycle = false;
+            }
+
+            // 加载小游戏任务系统开关（默认关闭）
+            if (jsonObject.has("minigameQuestEnabled")) {
+                areas.minigameQuestEnabled = jsonObject.get("minigameQuestEnabled").getAsBoolean();
+            } else {
+                areas.minigameQuestEnabled = false;
             }
 
             // 加载地图初始物品配置

@@ -204,6 +204,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     
     public boolean mustCopy = false;
 
+    // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
+    public boolean minigameQuestEnabled = false;
+
     // 支持的游戏模式列表，为空表示支持所有模式
     public java.util.List<String> gameModes = new java.util.ArrayList<>();
 
@@ -492,6 +495,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.time = tag.contains("time") ? tag.getLong("time") : 18000;
         this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
         this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
+        this.minigameQuestEnabled = tag.contains("minigameQuestEnabled") && tag.getBoolean("minigameQuestEnabled");
         this.initialItems = new ArrayList<>();
         if (tag.contains("initialItems")) {
             var iiList = tag.getList("initialItems", net.minecraft.nbt.Tag.TAG_STRING);
@@ -582,6 +586,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putLong("time", this.time);
         tag.putBoolean("daylightCycle", this.daylightCycle);
         tag.putBoolean("weatherCycle", this.weatherCycle);
+        tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
 
         var initialItemsList = new net.minecraft.nbt.ListTag();
         for (String item : this.initialItems) {

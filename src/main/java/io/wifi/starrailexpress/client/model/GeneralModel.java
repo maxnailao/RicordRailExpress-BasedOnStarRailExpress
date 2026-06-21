@@ -2,7 +2,7 @@ package io.wifi.starrailexpress.client.model;
 
 import io.wifi.starrailexpress.index.SRECosmetics;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -56,7 +56,7 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         var itml = defaultModelLocation.id();
         defaultBakedModel = baker.bake(itml.withPath("item/" + itml.getPath()),
                 settings);
-        for (SkinManager.Skin skin : SkinManager.getSkins(itemType).values()) {
+        for (ItemSkinManager.Skin skin : ItemSkinManager.getSkins(itemType).values()) {
             for (GeneralModelLoadingPlugin.Variant variant : GeneralModelLoadingPlugin.Variant.values()) {
                 var bakedModel = baker.bake(
                         GeneralModelLoadingPlugin.getModelLocation(itemType, skin.getName(), variant),
@@ -94,7 +94,7 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         if (skinName == null) {
             skinName = getSkinFromPlayerComponent(stack);
         }
-        var skin = SkinManager.Skin.fromString(itemType, skinName);
+        var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
 
         if (skin != null && bakeModels.containsKey(skin.getName()) && bakeModels.containsKey(skin.getName())
                 && bakeModels.get(skin.getName()).containsKey(variant))
@@ -109,7 +109,7 @@ public class GeneralModel implements UnbakedModel, BakedModel {
     private String getSkinFromPlayerComponent(ItemStack stack) {
         Player player = Minecraft.getInstance().player;
         if (player != null) {
-            return SkinManager.getEquippedSkin(player, stack);
+            return ItemSkinManager.getEquippedSkin(player, stack);
         }
         // 如果无法获取玩家或组件，则回退到原始方法
         return SRECosmetics.getSkin(stack);

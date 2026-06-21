@@ -2,7 +2,7 @@ package org.agmas.noellesroles.commands;
 
 import com.mojang.brigadier.Command;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -31,7 +31,7 @@ public final class RepairShopCommand {
                 }
                 RepairRoleDatabase.loadInto(player);
                 var component = ModComponents.REPAIR_ROLES.get(player);
-                ServerPlayNetworking.send(player, new OpenRepairRoleShopS2CPacket(SkinManager.getCoinNum(player),
+                ServerPlayNetworking.send(player, new OpenRepairRoleShopS2CPacket(ItemSkinManager.getCoinNum(player),
                         new ArrayList<>(component.ownedRoles)));
                 return Command.SINGLE_SUCCESS;
             }));

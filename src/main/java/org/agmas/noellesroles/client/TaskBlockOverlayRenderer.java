@@ -243,6 +243,7 @@ public class TaskBlockOverlayRenderer {
             }
             {
                 shouldDisplay[11] = true;
+                shouldDisplay[12] = true; // 物资箱：生存玩家始终可见
             }
 
             // 拿着钥匙
@@ -260,6 +261,7 @@ public class TaskBlockOverlayRenderer {
          * 9: 椅子（包括马桶）
          * 10: 音符盒
          * 11: 售货机
+         * 12: 物资箱
          */
         var playerMood = SREPlayerMoodComponent.KEY.get(client.player);
         if (playerMood != null) {
@@ -372,10 +374,29 @@ public class TaskBlockOverlayRenderer {
                                 Component.translatable("hud.noellesroles.task_instinct.render.vending_machine"));
                     }
                     break;
+                case 12:
+                    if (shouldDisplay[type]) {
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(186, 85, 211), 1f,
+                                true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.supply_crate"));
+                    }
+                    break;
                 default:
                     BlockState block = renderContext.world().getBlockState(pos);
                     if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        if (it.shouldRenderTaskInstinct(block, pos, player)) {
+                        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务且该点本局未被使用时金色透视，
+                        // 否则不显示——即只有刷新到对应任务时才能透视看到小游戏点位。
+                        boolean isMinigamePoint = type == 14 || type == 15;
+                        if (isMinigamePoint) {
+                            var mgComp = io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(player);
+                            if (mgComp != null && mgComp.hasPendingTask() && !mgComp.isBlockUsed(pos)) {
+                                TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                        new Color(255, 215, 0), 1f,
+                                        true, 0f,
+                                        Component.translatable("hud.sre.minigame_task"));
+                            }
+                        } else if (it.shouldRenderTaskInstinct(block, pos, player)) {
                             java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
                             float alpha = c.getAlpha() / 255f;
                             TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,

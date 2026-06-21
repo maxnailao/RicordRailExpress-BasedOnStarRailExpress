@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.utils.lottery;
 
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -62,15 +62,15 @@ public class LotteryManager {
 
                     // 去除前缀
                     String trueName = getTrueName(curQualityList.get(resultIdx));
-                    if (itemStack != null && !SkinManager.isSkinUnlocked(player, itemStack, trueName))
-                        SkinManager.unlockSkin(player, itemStack, trueName);
+                    if (itemStack != null && !ItemSkinManager.isSkinUnlocked(player, itemStack, trueName))
+                        ItemSkinManager.unlockSkin(player, itemStack, trueName);
                     //coin
                     else if (trueName.equals("coin")) {
-                        SkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i) * COIN_CARD_EXTRA_REWARD));
+                        ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i) * COIN_CARD_EXTRA_REWARD));
                     }
                     // 处理重复皮肤
                     else
-                        SkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i)));
+                        ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i)));
                     int resultQuality = i;
                     return new Pair<>(resultQuality, resultIdx);
                 }
@@ -153,7 +153,7 @@ public class LotteryManager {
 //        LotteryRecordData lotteryRecordData = LotteryRecordStorage.getInstance()
 //                .getPlayerLotteryRecord(player.getUUID());
 //        return lotteryRecordData.lotteryChance > 0;
-        return SkinManager.getLootChance(player) > 0;
+        return ItemSkinManager.getLootChance(player) > 0;
     }
 
     /** 添加抽奖机会 */
@@ -161,7 +161,7 @@ public class LotteryManager {
 //        LotteryRecordStorage.getInstance().updatePlayerLotteryData(player.getUUID(),
 //                lotteryRecordData -> lotteryRecordData.lotteryChance += chance);
 //        LotteryRecordStorage.getInstance().savePlayerData(player.getUUID());
-        SkinManager.addLootChance(player, chance);
+        ItemSkinManager.addLootChance(player, chance);
     }
 
     /**

@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.packet;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -53,14 +53,14 @@ public record RepairRoleShopPurchaseC2SPacket(String roleId) implements CustomPa
                 refresh(player);
                 return;
             }
-            int coins = SkinManager.getCoinNum(player);
+            int coins = ItemSkinManager.getCoinNum(player);
             if (coins < RepairRoleDefinition.UNLOCK_PRICE) {
                 player.displayClientMessage(Component.translatable("message.noellesroles.repair.role_not_enough_skin_coins",
                         RepairRoleDefinition.UNLOCK_PRICE).withStyle(ChatFormatting.RED), true);
                 refresh(player);
                 return;
             }
-            SkinManager.addCoinNum(player, -RepairRoleDefinition.UNLOCK_PRICE);
+            ItemSkinManager.addCoinNum(player, -RepairRoleDefinition.UNLOCK_PRICE);
             component.unlock(role);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.role_purchased", role.displayName())
                     .withStyle(ChatFormatting.GREEN), true);
@@ -71,7 +71,7 @@ public record RepairRoleShopPurchaseC2SPacket(String roleId) implements CustomPa
     public static void refresh(ServerPlayer player) {
         RepairRoleDatabase.loadInto(player);
         var component = ModComponents.REPAIR_ROLES.get(player);
-        ServerPlayNetworking.send(player, new OpenRepairRoleShopS2CPacket(SkinManager.getCoinNum(player),
+        ServerPlayNetworking.send(player, new OpenRepairRoleShopS2CPacket(ItemSkinManager.getCoinNum(player),
                 new ArrayList<>(component.ownedRoles)));
     }
 }

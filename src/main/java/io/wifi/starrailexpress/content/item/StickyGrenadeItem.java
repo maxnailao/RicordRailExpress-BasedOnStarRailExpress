@@ -83,6 +83,6 @@ public class StickyGrenadeItem extends SkinableItem {
 
     @Override
     public String getItemSkinType() {
-        return "sticky_grenade";
+        return "grenade";
     }
 }

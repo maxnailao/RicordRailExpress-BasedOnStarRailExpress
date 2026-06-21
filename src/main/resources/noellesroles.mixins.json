@@ -84,6 +84,8 @@
     "client.roles.bartender.DefenseVialViewMixin",
     "client.roles.builder.BuilderBlockUpdateMixin",
     "client.roles.bodymaker.BodymakerScreenMixin",
+    "client.forensic.ForensicCorpseHudMixin",
+    "client.forensic.ForensicDoorHudMixin",
     "client.roles.coroner.CoronerHudMixin",
     "client.roles.coroner.CustomRolesRoleNameRendererMixin",
     "client.roles.detective.PlaySoundEventMixin",

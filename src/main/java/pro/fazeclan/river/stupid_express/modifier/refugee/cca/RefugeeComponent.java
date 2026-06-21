@@ -1,18 +1,43 @@
 package pro.fazeclan.river.stupid_express.modifier.refugee.cca;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
+import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.ModEventsRegister;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
+import org.ladysnake.cca.api.v3.component.ComponentKey;
+import org.ladysnake.cca.api.v3.component.ComponentRegistry;
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
+import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import org.ladysnake.cca.api.v3.util.CheckEnvironment;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.cca.*;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -31,24 +56,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
-import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
-import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
-import org.ladysnake.cca.api.v3.util.CheckEnvironment;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.utils.StupidRoleUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 
 public class RefugeeComponent implements AutoSyncedComponent, ServerTickingComponent {
     public static final ComponentKey<RefugeeComponent> KEY = ComponentRegistry.getOrCreate(
@@ -211,12 +221,13 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         // Effects and notifications
         // 变更：亡命徒发光时间由 30s 调整为 5 分钟（300s）
         player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 5 * 60 * 20, 0, false, false));
-        serverLevel.getServer().getCommands().performPrefixedCommand(serverLevel.getServer().createCommandSourceStack(),
-                "title @a subtitle {\"translate\":\"title.stupid_express.refugee.subtlte.active\",\"color\":\"dark_red\"}");
-        serverLevel.getServer().getCommands().performPrefixedCommand(serverLevel.getServer().createCommandSourceStack(),
-                "title @a title {\"translate\":\"title.stupid_express.refugee.active\",\"color\":\"dark_red\"}");
-        serverLevel.getServer().getCommands().performPrefixedCommand(serverLevel.getServer().createCommandSourceStack(),
-                "title @a subtitle \"\"");
+        for (final ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
+            SRENetworkMessageUtils.sendSubtitle(p,
+                    Component.translatable("title.stupid_express.refugee.subtlte.active")
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+            SRENetworkMessageUtils.sendTitle(p,
+                    Component.translatable("title.stupid_express.refugee.active").withStyle(ChatFormatting.DARK_RED));
+        }
         serverLevel.players().forEach(p -> {
             ServerPlayNetworking.send(p, new TriggerStatusBarPayload("loose_end"));
             p.playNotifySound(SoundEvents.WITHER_DEATH, SoundSource.PLAYERS, 1.0f, 1.0f);
@@ -368,8 +379,13 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         }
         isAnyRevivals = false;
         gameWorldComponent.enableSkillsAndSync();
-        sp.getServer().getCommands().performPrefixedCommand(sp.getServer().createCommandSourceStack(),
-                "title @a title {\"translate\":\"title.stupid_express.refugee.died\",\"color\":\"gold\"}");
+        for (final ServerPlayer p : sp.getServer().getPlayerList().getPlayers()) {
+            SRENetworkMessageUtils.sendTitle(p,
+                    Component.translatable("title.stupid_express.refugee.died").withStyle(ChatFormatting.GOLD));
+            SRENetworkMessageUtils.sendSubtitle(p,
+                    Component.translatable("title.stupid_express.refugee.died.subtitle")
+                            .withStyle(ChatFormatting.AQUA));
+        }
 
         sp.getServer().getPlayerList().getPlayers().forEach((p) -> {
             ServerPlayNetworking.send(p, new RemoveStatusBarPayload("loose_end"));
@@ -384,7 +400,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
         LoadPlayersStats();
         players_stats.clear(); // 清空玩家位置信息，避免浪费资源
-
+        ModEventsRegister.reJudgeSpectatorsPenalty(level); // 重新送上1新鲜的penalty
         this.sync();
     }
 
@@ -505,7 +521,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
     public static void register() {
         ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
-            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END) && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(sender))
+            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END)
+                    && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(sender))
                 return false;
             return true;
         });

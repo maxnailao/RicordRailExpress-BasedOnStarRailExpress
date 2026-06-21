@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "open=false": {
+      "model": "noellesroles:block/cellar"
+    },
+    "open=true": {
+      "model": "noellesroles:block/cellar_open"
+    }
+  }
+}

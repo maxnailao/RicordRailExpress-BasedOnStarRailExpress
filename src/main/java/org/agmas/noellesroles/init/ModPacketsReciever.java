@@ -18,6 +18,7 @@ import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -44,6 +45,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
+import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.entity.ThrowingKnifeEntity;
 import org.agmas.noellesroles.content.item.ChefFoodItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -86,18 +88,23 @@ public class ModPacketsReciever {
           BlockEntity blockEntity = serverLevel.getBlockEntity(payload.blockPos());
           if (blockEntity instanceof VendingMachinesBlockEntity vendingMachinesBlockEntity) {
             List<ShopEntry> shops = vendingMachinesBlockEntity.getShops();
-            shops.stream().filter(a -> {
-              if (BuiltInRegistries.ITEM.getKey(a.stack().getItem()).toString().equals(payload.item())) {
-                return true;
-              }
-              return false;
-            }).findFirst().ifPresent(entry -> {
-              SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
-              if (playerShopComponent.balance < entry.price()) {
-                player.displayClientMessage(Component.translatable("noellesroles.not_enough_money")
+            Optional<ShopEntry> selectedEntry = Optional.empty();
+            if (payload.slot() >= 0 && payload.slot() < shops.size()) {
+              selectedEntry = Optional.of(shops.get(payload.slot()));
+            }
+            if (selectedEntry.isEmpty()) {
+              selectedEntry = shops.stream().filter(a -> BuiltInRegistries.ITEM.getKey(a.stack().getItem()).toString().equals(payload.item()))
+                  .findFirst();
+            }
+            selectedEntry.ifPresent(entry -> {
+              if (!entry.hasEnoughCurrency(player)) {
+                String messageKey = entry.currency() == ShopEntry.Currency.MINIGAME_TOKEN
+                    ? "noellesroles.not_enough_minigame_token"
+                    : "noellesroles.not_enough_money";
+                player.displayClientMessage(Component.translatable(messageKey)
                     .withStyle(ChatFormatting.RED), true);
                 ServerPlayNetworking.send(player,
-                    new VendingBuyMessageCallBackS2CPacket("not_enough_money"));
+                    new VendingBuyMessageCallBackS2CPacket(messageKey));
                 player.connection.send(new ClientboundSoundPacket(
                     BuiltInRegistries.SOUND_EVENT.wrapAsHolder(TMMSounds.UI_SHOP_BUY_FAIL),
                     SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 1.0F,
@@ -113,7 +120,7 @@ public class ModPacketsReciever {
               } else {
                 if (OnVendingMachinesBuyItems.EVENT.invoker().allowBuy(player, entry)) {
                   if (entry.onBuy(player)) {
-                    playerShopComponent.addToBalance(-entry.price());
+                    entry.spendCurrency(player);
                     player.displayClientMessage(Component.translatable("noellesroles.bought_item")
                         .withStyle(ChatFormatting.GREEN), true);
                     ServerPlayNetworking.send(player,
@@ -155,6 +162,53 @@ public class ModPacketsReciever {
 
             });
           }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      });
+    });
+    ServerPlayNetworking.registerGlobalReceiver(LotteryMachineDrawC2SPacket.TYPE, (payload, context) -> {
+      context.server().execute(() -> {
+        try {
+          ServerPlayer player = context.player();
+          ServerLevel serverLevel = player.serverLevel();
+          BlockEntity blockEntity = serverLevel.getBlockEntity(payload.blockPos());
+          if (!(blockEntity instanceof LotteryMachineBlockEntity lotteryMachine)) {
+            return;
+          }
+          if (!lotteryMachine.hasPrizes()) {
+            sendLotteryResult(player, payload.blockPos(), false, "noellesroles.lottery.empty", ItemStack.EMPTY);
+            playShopSound(player, false);
+            return;
+          }
+          if (!lotteryMachine.canAfford(player)) {
+            String messageKey = lotteryMachine.getDrawCurrency() == ShopEntry.Currency.MINIGAME_TOKEN
+                ? "noellesroles.not_enough_minigame_token"
+                : "noellesroles.not_enough_money";
+            sendLotteryResult(player, payload.blockPos(), false, messageKey, ItemStack.EMPTY);
+            playShopSound(player, false);
+            return;
+          }
+          Optional<ShopEntry> selected = lotteryMachine.draw(player.getRandom());
+          if (selected.isEmpty()) {
+            sendLotteryResult(player, payload.blockPos(), false, "noellesroles.lottery.empty", ItemStack.EMPTY);
+            playShopSound(player, false);
+            return;
+          }
+          ShopEntry entry = selected.get();
+          if (!entry.onBuy(player)) {
+            sendLotteryResult(player, payload.blockPos(), false, "noellesroles.cant_buy_item", ItemStack.EMPTY);
+            playShopSound(player, false);
+            return;
+          }
+          lotteryMachine.spendDrawCost(player);
+          ItemStack result = entry.stack().copy();
+          sendLotteryResult(player, payload.blockPos(), true, "noellesroles.lottery.won", result);
+          player.displayClientMessage(Component.translatable("noellesroles.lottery.won", result.getHoverName())
+              .withStyle(ChatFormatting.GREEN), true);
+          playShopSound(player, true);
+          SRE.REPLAY_MANAGER.recordStoreBuy(player.getUUID(),
+              BuiltInRegistries.ITEM.getKey(result.getItem()), result.getCount(), lotteryMachine.getDrawCost());
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -1225,6 +1279,19 @@ public class ModPacketsReciever {
         player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
       }
     });
+  }
+
+  private static void sendLotteryResult(ServerPlayer player, BlockPos blockPos, boolean success, String messageKey,
+      ItemStack result) {
+    ServerPlayNetworking.send(player,
+        new LotteryMachineResultS2CPacket(blockPos, success, messageKey, result == null ? ItemStack.EMPTY : result));
+  }
+
+  private static void playShopSound(ServerPlayer player, boolean success) {
+    player.connection.send(new ClientboundSoundPacket(
+        BuiltInRegistries.SOUND_EVENT.wrapAsHolder(success ? TMMSounds.UI_SHOP_BUY : TMMSounds.UI_SHOP_BUY_FAIL),
+        SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 1.0F,
+        0.9F + player.getRandom().nextFloat() * 0.2F, player.getRandom().nextLong()));
   }
 
 }

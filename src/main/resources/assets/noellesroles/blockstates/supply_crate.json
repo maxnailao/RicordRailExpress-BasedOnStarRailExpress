@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,opened=false": {
+      "model": "noellesroles:block/supply_crate",
+      "y": 0
+    },
+    "facing=east,opened=false": {
+      "model": "noellesroles:block/supply_crate",
+      "y": 90
+    },
+    "facing=south,opened=false": {
+      "model": "noellesroles:block/supply_crate",
+      "y": 180
+    },
+    "facing=west,opened=false": {
+      "model": "noellesroles:block/supply_crate",
+      "y": 270
+    },
+    "facing=north,opened=true": {
+      "model": "noellesroles:block/supply_crate_open",
+      "y": 0
+    },
+    "facing=east,opened=true": {
+      "model": "noellesroles:block/supply_crate_open",
+      "y": 90
+    },
+    "facing=south,opened=true": {
+      "model": "noellesroles:block/supply_crate_open",
+      "y": 180
+    },
+    "facing=west,opened=true": {
+      "model": "noellesroles:block/supply_crate_open",
+      "y": 270
+    }
+  }
+}

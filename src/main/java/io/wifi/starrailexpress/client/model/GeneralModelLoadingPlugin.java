@@ -3,7 +3,7 @@ package io.wifi.starrailexpress.client.model;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -43,8 +43,8 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
     @Override
     public void onInitializeModelLoader(Context pluginContext) {
         // make sure all models get loaded
-        for (var entry : SkinManager.getSkins().entrySet()) {
-            for (SkinManager.Skin skin : entry.getValue().values()) {
+        for (var entry : ItemSkinManager.getSkins().entrySet()) {
+            for (ItemSkinManager.Skin skin : entry.getValue().values()) {
                 for (Variant variant : Variant.values()) {
                     pluginContext.addModels(getModelLocation(entry.getKey(), skin.getName(), variant));
                 }

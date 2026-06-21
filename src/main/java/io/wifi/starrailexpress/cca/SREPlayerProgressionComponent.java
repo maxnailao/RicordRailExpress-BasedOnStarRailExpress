@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.HolderLookup;
@@ -493,11 +493,11 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 quest.rewarded = true;
                 grantExperience(quest.rewardExperience, quest.title);
                 if (quest.rewardCoins > 0) {
-                    SkinManager.addCoinNum(this.player, quest.rewardCoins);
+                    ItemSkinManager.addCoinNum(this.player, quest.rewardCoins);
                     this.claimedCoinRewards += quest.rewardCoins;
                 }
                 if (quest.rewardLoot > 0) {
-                    SkinManager.addLootChance(this.player, quest.rewardLoot);
+                    ItemSkinManager.addLootChance(this.player, quest.rewardLoot);
                     this.claimedLootRewards += quest.rewardLoot;
                 }
                 if (quest.rewardCard != FactionCardType.NONE) {
@@ -550,10 +550,10 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             return;
         }
         int coinReward = DEFAULT_LEVEL_REWARD_COINS + level * 2;
-        SkinManager.addCoinNum(this.player, coinReward);
+        ItemSkinManager.addCoinNum(this.player, coinReward);
         this.claimedCoinRewards += coinReward;
         if (level % 5 == 0) {
-            SkinManager.addLootChance(this.player, 1);
+            ItemSkinManager.addLootChance(this.player, 1);
             this.claimedLootRewards += 1;
         }
         if (level == 3) {

@@ -1,7 +1,5 @@
 package io.wifi.starrailexpress.content.command;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.CommandNode;
@@ -16,18 +14,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -137,7 +131,7 @@ public class SREHelpCommand {
                 new Entry("/stuck", "stuck"),
                 new Entry("/vt_mode", "vt_mode"),
                 new Entry("/nr_free_cam", "nr_free_cam"),
-                new Entry("/DisplayItem", "displayitem"),
+                new Entry("/item_display", "displayitem"),
                 new Entry("/cooldown", "cooldown"),
                 new Entry("/item", "item"),
                 new Entry("/goods:add", "goods.add"),
@@ -162,14 +156,14 @@ public class SREHelpCommand {
 
         CATEGORIES.put("client", List.of(
                 new Entry("/sre:client", "sre.client"),
-                new Entry("/sreclient:scene", "sreclient.scene")));
+                new Entry("/sre:client scene", "sreclient.scene")));
 
         CATEGORIES.put("mixin", List.of(
                 new Entry("/kill", "kill")));
     }
 
     /** 用于判断某条注册指令是否属于本 Mod (按类的包名前缀)。 */
-    private static final List<String> OUR_PACKAGES = List.of(
+    public static final List<String> OUR_PACKAGES = List.of(
             "io.wifi", "net.exmo", "org.agmas", "pro.fazeclan", "cn.zbx1425");
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {

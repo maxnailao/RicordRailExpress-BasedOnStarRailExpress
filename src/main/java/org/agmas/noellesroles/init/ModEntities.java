@@ -296,6 +296,28 @@ public class ModEntities {
                             .trackRangeBlocks(32)
                             .build());
 
+    /** 滚石实体 - 沿方向滚动碾死玩家 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<RollingStoneEntity> ROLLING_STONE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("rolling_stone"),
+            FabricEntityTypeBuilder.<RollingStoneEntity>create(MobCategory.MISC, RollingStoneEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.8F, 1.8F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /** 移动平台实体 - 可站立、往返移动 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<MovingPlatformEntity> MOVING_PLATFORM = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("moving_platform"),
+            FabricEntityTypeBuilder.<MovingPlatformEntity>create(MobCategory.MISC, MovingPlatformEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.0F, 0.2F))
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(1)
+                    .build());
+
     /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）

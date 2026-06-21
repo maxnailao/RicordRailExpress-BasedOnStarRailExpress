@@ -7,7 +7,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.Noellesroles;
 
-public record VendingMachinesBuyC2SPacket(BlockPos blockPos, String item) implements CustomPacketPayload {
+public record VendingMachinesBuyC2SPacket(BlockPos blockPos, String item, int slot) implements CustomPacketPayload {
     public static final ResourceLocation VENDING_MACHINES_BUY_C2S = ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID,
             "vending_machines_buy_c2s");
     public static final CustomPacketPayload.Type<VendingMachinesBuyC2SPacket> TYPE = new CustomPacketPayload.Type<>(
@@ -18,6 +18,10 @@ public record VendingMachinesBuyC2SPacket(BlockPos blockPos, String item) implem
             VendingMachinesBuyC2SPacket::decode
     );
 
+    public VendingMachinesBuyC2SPacket(BlockPos blockPos, String item) {
+        this(blockPos, item, -1);
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
@@ -26,12 +30,14 @@ public record VendingMachinesBuyC2SPacket(BlockPos blockPos, String item) implem
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeBlockPos(this.blockPos);
         buf.writeUtf(this.item);
+        buf.writeInt(this.slot);
     }
 
     public static VendingMachinesBuyC2SPacket decode(RegistryFriendlyByteBuf buf) {
         return new VendingMachinesBuyC2SPacket(
                 buf.readBlockPos(),
-                buf.readUtf()
+                buf.readUtf(),
+                buf.readInt()
         );
     }
 }
