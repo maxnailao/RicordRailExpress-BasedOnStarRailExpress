@@ -236,10 +236,11 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
                 if (!SREItemUtils.hasItem(player, ModItems.SHERIFF_REVOLVER)) {
-                    player.addItem(SheriffRevolverItem.createUnloadedStack());
+                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
                 return;
             }
+
             if (role.identifier().equals(ModRoles.ATTENDANT.identifier())) {
                 if (player instanceof ServerPlayer sp)
                     SRE.SendRoomInfoToPlayer(sp);

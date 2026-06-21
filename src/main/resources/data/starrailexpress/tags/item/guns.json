@@ -2,14 +2,12 @@
   "replace": false,
   "values": [
     "#starrailexpress:cooldown_guns",
-    "noellesroles:sheriff_revolver",
     "noellesroles:once_revolver",
     "trainmurdermystery:derringer",
     "noellesroles:fake_revolver",
     "noellesroles:executioner_gun",
     "noellesroles:zero_one_five_gun",
-    "noellesroles:sheriff_revolver"
-    "noellesroles:zero_one_five_gun",
+    "noellesroles:sheriff_revolver",
     "noellesroles:pirate_flintlock"
   ]
 }

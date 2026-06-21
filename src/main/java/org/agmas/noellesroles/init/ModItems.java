@@ -152,6 +152,8 @@ public class ModItems {
             "pill", CONSUMABLES_GROUP);
     public static final Item TOXIN = register(new ToxinItem((new Item.Properties()).stacksTo(1)), "toxin",
             CONSUMABLES_GROUP);
+    public static final Item REUSABLE_TOXIN = register(new ReusableToxinItem((new Item.Properties()).stacksTo(1)), "reusable_toxin",
+            NOELLESROLES_ALL_GROUP);
     public static final Item CATALYST = register(new CatalystItem((new Item.Properties()).stacksTo(1)), "catalyst",
             CONSUMABLES_GROUP);
     public static final Item BANDIT_REVOLVER = register(new BanditRevolverItem((new Item.Properties()).stacksTo(1)),

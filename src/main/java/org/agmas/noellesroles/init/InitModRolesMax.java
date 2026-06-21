@@ -666,8 +666,8 @@ public class InitModRolesMax {
         //ModRoles.CORRUPT_COP.spawnInfo.setMinEnabledPlayer(config.minPlayerForCorruptCop);
 
         // 教父 - 从配置读取概率和最小玩家数
-        //ModRoles.GODFATHER.spawnInfo.setEnableChance(config.chanceOfGodfather * 100);
-        //ModRoles.GODFATHER.spawnInfo.setMinEnabledPlayer(config.mafiaMinimumPlayers);
+        // ModRoles.GODFATHER.spawnInfo.setEnableChance(config.chanceOfGodfather * 100);
+        // ModRoles.GODFATHER.spawnInfo.setMinEnabledPlayer(config.mafiaMinimumPlayers);
 
             // // 苦力怕 - 20%概率
             // ModRoles.CREEPER.setEnableChance(config.chanceOfCreeper);
@@ -712,7 +712,6 @@ public class InitModRolesMax {
             // // 教父 - 从配置读取概率和最小玩家数
             // ModRoles.GODFATHER.setEnableChance(config.chanceOfGodfather)
             // .setEnableNeededPlayerCount(config.mafiaMinimumPlayers);
-        }
 
         // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%
         for (var entry : TMMRoles.ROLES.entrySet()) {

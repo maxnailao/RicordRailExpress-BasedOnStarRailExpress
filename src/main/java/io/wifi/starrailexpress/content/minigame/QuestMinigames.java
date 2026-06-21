@@ -108,9 +108,6 @@ public class QuestMinigames {
     /** 连连看 */
     public static final QuestMinigame LINK_MATCH = register(
             QuestMinigame.of("link_match", "minigame.starrailexpress.link_match"));
-    /** 俄罗斯方块 */
-    public static final QuestMinigame TETRIS = register(
-            QuestMinigame.of("tetris", "minigame.starrailexpress.tetris"));
     /** 翻牌配对 */
     public static final QuestMinigame MEMORY_MATCH = register(
             QuestMinigame.of("memory_match", "minigame.starrailexpress.memory_match"));

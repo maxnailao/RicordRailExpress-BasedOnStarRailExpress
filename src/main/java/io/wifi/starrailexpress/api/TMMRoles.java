@@ -1,8 +1,10 @@
+
 package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.compat.CrosshairaddonsCompat;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -34,10 +36,11 @@ public class TMMRoles {
             SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false));
     public static final SRERole VIGILANTE = registerRole(new NormalRole(SRE.id("vigilante"), 0x1B8AE5, true, false,
             SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false){
-        @Override
+       /* @Override
         public List<ItemStack> getDefaultItems() {
-            return List.of(new ItemStack(ModItems.SHERIFF_REVOLVER).copy());
+            return List.of(new ItemStack(TMMItems.REVOLVER).copy());
         }
+        */
     }.setVigilanteTeam(true));
     public static final SRERole KILLER = registerRole(
             new NormalRole(SRE.id("killer"), 0xC13838, false, true, SRERole.MoodType.FAKE, -1, true));

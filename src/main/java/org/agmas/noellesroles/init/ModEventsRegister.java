@@ -990,20 +990,20 @@ public class ModEventsRegister {
                 if (WatcherPlayerComponent.KEY.get(target).isInCalmStance()) {
                     // 如果射击者是黑警，不强制掉落
                     if (gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                        return ShouldDropResult.PASS;
+                        return TrueFalseResult.PASS;
                     }
-                    return ShouldDropResult.TRUE;
+                    return TrueFalseResult.TRUE;
                 }
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 黑警：自己的枪不掉
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorldComponent != null && gameWorldComponent.isRole(player, ModRoles.CORRUPT_COP)) {
-                return ShouldDropResult.FALSE;
+                return TrueFalseResult.FALSE;
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 刽子手：使用狙击枪命中目标时，100% 不掉落
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
@@ -1011,9 +1011,9 @@ public class ModEventsRegister {
             if (gameWorldComponent != null
                     && gameWorldComponent.isRole(player, ModRoles.EXECUTIONER)
                     && player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
-                return ShouldDropResult.FALSE;
+                return TrueFalseResult.FALSE;
             }
-            return ShouldDropResult.PASS;
+            return TrueFalseResult.PASS;
         });
         // 所有枪械公用冷却
         OnRevolverUsed.EVENT.register((player, target) -> {
