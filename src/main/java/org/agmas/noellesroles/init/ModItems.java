@@ -1095,7 +1095,7 @@ public class ModItems {
         ITEM_COOLDOWNS.put(ModItems.BANDIT_REVOLVER, getInTicks(0, 40));
         ITEM_COOLDOWNS.put(ModItems.SHORT_SHOTGUN, getInTicks(30, 0));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));
-        ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 75));
+        ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 60));
         // 毒药/80
         ModItems.POISONER_SHOP_ENTRIES
                 .add(new ShopEntry(ModItems.TOXIN.getDefaultInstance(), 80, ShopEntry.Type.POISON));
