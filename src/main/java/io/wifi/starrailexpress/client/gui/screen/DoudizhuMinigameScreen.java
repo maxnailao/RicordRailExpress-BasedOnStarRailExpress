@@ -117,11 +117,13 @@ public class DoudizhuMinigameScreen extends Screen {
                 ClientPlayNetworking.send(new DoudizhuJoinC2SPacket(DoudizhuJoinC2SPacket.ACTION_FILL_AI)))
                 .bounds(cx - 50, by - 30, 100, 18).build();
 
-        addWidget(btnBidPass); addWidget(btnBid1);
-        addWidget(btnBid2); addWidget(btnBid3);
-        addWidget(btnPlay); addWidget(btnPass);
-        addWidget(btnFillAI);
+        addRenderableWidget(btnBidPass); addRenderableWidget(btnBid1);
+        addRenderableWidget(btnBid2); addRenderableWidget(btnBid3);
+        addRenderableWidget(btnPlay); addRenderableWidget(btnPass);
+        addRenderableWidget(btnFillAI);
     }
+
+    private int highestBidCache = 0; // 缓存当前最高叫分，用于按钮启用/禁用
 
     private void updateButtonVisibility() {
         btnBidPass.visible = false; btnBid1.visible = false;
@@ -129,13 +131,18 @@ public class DoudizhuMinigameScreen extends Screen {
         btnPlay.visible = false; btnPass.visible = false;
         btnFillAI.visible = false;
 
+        // 计算最高叫分
+        highestBidCache = 0;
+        for (int b : bids) if (b > highestBidCache) highestBidCache = b;
+
         if (phase == Phase.WAITING) {
             btnFillAI.visible = true;
         } else if (phase == Phase.BIDDING && currentTurn == playerIndex) {
-            btnBidPass.visible = true; btnBid1.visible = true;
-            btnBid2.visible = bids[playerIndex] < 2 || true; // 总是可见
-            btnBid3.visible = true;
-            // 禁用低于当前最高叫分的选项
+            btnBidPass.visible = true;
+            btnBid1.visible = highestBidCache < 1;
+            btnBid2.visible = highestBidCache < 2;
+            btnBid3.visible = highestBidCache < 3;
+            // 至少保留"不叫"按钮可见；如果所有叫分按钮被禁用，仍可不叫
         } else if (phase == Phase.PLAYING && currentTurn == playerIndex) {
             btnPlay.visible = true;
             boolean mustPlay = (lastPlayed.length == 0 || lastPlayedBy == playerIndex || consecutivePasses >= 2);
@@ -213,13 +220,16 @@ public class DoudizhuMinigameScreen extends Screen {
         int[] cards = new int[selectedIndices.size()];
         int i = 0;
         for (int idx : selectedIndices) cards[i++] = myHand[idx];
+        // 客户端预校验牌型，避免无效出牌被服务器静默拒绝后选中状态丢失
+        DoudizhuSession.HandInfo info = DoudizhuSession.detectHandType(cards);
+        if (info.type == DoudizhuSession.HandType.INVALID) return;
         ClientPlayNetworking.send(new DoudizhuPlayC2SPacket(cards));
-        selectedIndices.clear();
+        // 不在这里清除选中状态，等待服务器确认后的状态同步会自动清除
     }
 
     private void sendPass() {
         ClientPlayNetworking.send(new DoudizhuPlayC2SPacket(new int[0]));
-        selectedIndices.clear();
+        // 不在这里清除选中状态，等待服务器确认后的状态同步会自动清除
     }
 
     // ── 渲染 ──
@@ -244,14 +254,10 @@ public class DoudizhuMinigameScreen extends Screen {
         renderButtons(g, mouseX, mouseY, partialTick);
     }
 
+    // 按钮已通过 addRenderableWidget 注册，由 Screen 自动渲染和事件分发
+    // 无需手动渲染按钮，此方法保留为空以防未来扩展
     private void renderButtons(GuiGraphics g, int mx, int my, float pt) {
-        if (btnBidPass.visible) btnBidPass.render(g, mx, my, pt);
-        if (btnBid1.visible) btnBid1.render(g, mx, my, pt);
-        if (btnBid2.visible) btnBid2.render(g, mx, my, pt);
-        if (btnBid3.visible) btnBid3.render(g, mx, my, pt);
-        if (btnPlay.visible) btnPlay.render(g, mx, my, pt);
-        if (btnPass.visible) btnPass.render(g, mx, my, pt);
-        if (btnFillAI.visible) btnFillAI.render(g, mx, my, pt);
+        // buttons rendered automatically by Screen's renderWidgets via addRenderableWidget
     }
 
     private void renderWaiting(GuiGraphics g) {
@@ -492,20 +498,13 @@ public class DoudizhuMinigameScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 按钮优先处理
-        if (phase == Phase.BIDDING && currentTurn == playerIndex) {
-            if (btnBidPass.mouseClicked(mouseX, mouseY, button)) return true;
-            if (btnBid1.mouseClicked(mouseX, mouseY, button)) return true;
-            if (btnBid2.mouseClicked(mouseX, mouseY, button)) return true;
-            if (btnBid3.mouseClicked(mouseX, mouseY, button)) return true;
+        // 先让 Screen 基类处理按钮点击（通过 addRenderableWidget 注册的按钮）
+        // 按钮的 visible 由 updateButtonVisibility 控制，不可见的按钮不会响应点击
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
         }
-        if (phase == Phase.PLAYING && currentTurn == playerIndex) {
-            if (btnPlay.mouseClicked(mouseX, mouseY, button)) return true;
-            if (btnPass.visible && btnPass.mouseClicked(mouseX, mouseY, button)) return true;
-        }
-        if (phase == Phase.WAITING && btnFillAI.mouseClicked(mouseX, mouseY, button)) return true;
 
-        // 手牌点击
+        // 手牌点击（仅在叫分或出牌阶段）
         if ((phase == Phase.BIDDING || phase == Phase.PLAYING) && myHand.length > 0) {
             int totalW = (myHand.length - 1) * CARD_SPACING + CARD_W;
             int startX = (width - totalW) / 2;
@@ -522,7 +521,7 @@ public class DoudizhuMinigameScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     // ── 工具方法 ──

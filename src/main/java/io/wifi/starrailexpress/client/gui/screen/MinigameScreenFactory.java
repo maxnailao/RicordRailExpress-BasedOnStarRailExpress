@@ -29,6 +29,7 @@ public class MinigameScreenFactory {
         FACTORY.put("tetris", TetrisMinigameScreen::new);
         FACTORY.put("doudizhu", DoudizhuMinigameScreen::new);
         FACTORY.put("mahjong", MahjongMinigameScreen::new);
+        FACTORY.put("lockpick_score", LockpickScoreMinigameScreen::new);
         FACTORY.put("reactor_temperature", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
                 SimpleQuestMinigameScreen.Mode.REACTOR_TEMPERATURE));
         FACTORY.put("box_sort", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,

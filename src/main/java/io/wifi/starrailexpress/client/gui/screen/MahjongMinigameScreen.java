@@ -190,10 +190,18 @@ public class MahjongMinigameScreen extends Screen {
             // 解析可用动作（去重）
             Set<Byte> actionTypes = new LinkedHashSet<>();
             Map<Byte, Byte> actionTileMap = new LinkedHashMap<>();
+            Map<Byte, List<int[]>> chiOptionsMap = new LinkedHashMap<>(); // 存储吃牌的所有选项
+            
             for (int i = 0; i < availableActions.length - 1; i += 2) {
                 byte act = availableActions[i];
                 actionTypes.add(act);
                 if (!actionTileMap.containsKey(act)) actionTileMap.put(act, availableActions[i + 1]);
+            }
+
+            // 如果是吃动作，需要获取所有吃牌选项
+            if (actionTypes.contains((byte) 1)) { // ACTION_CHI = 1
+                int discardType = actionTileMap.get((byte) 1);
+                chiOptionsMap.put((byte) 1, getChiOptionsForDisplay(discardType));
             }
 
             int totalBtns = actionTypes.size();
@@ -208,21 +216,139 @@ public class MahjongMinigameScreen extends Screen {
                     case 2 -> "碰";
                     case 3 -> "杠";
                     case 4 -> "胡";
-                    case 5 -> "过";
+                    case 5 -> "过"; // 不吃不碰
                     case 6 -> "自摸";
                     default -> null;
                 };
                 if (label == null) continue;
+                
                 byte finalAct = act;
                 byte finalTileType = actionTileMap.getOrDefault(act, (byte) 0);
-                Button btn = Button.builder(Component.literal(label), b -> {
-                    ClientPlayNetworking.send(new MahjongActionC2SPacket(finalAct, finalTileType));
-                }).pos(bx, by).size(btnW, btnH).build();
-                actionButtons.add(btn);
-                addRenderableWidget(btn);
-                bx += btnW + gap;
+                
+                // 如果是吃牌且有多个选项，创建下拉菜单按钮
+                if (act == 1 && chiOptionsMap.containsKey((byte) 1)) {
+                    List<int[]> chiOpts = chiOptionsMap.get((byte) 1);
+                    if (chiOpts.size() > 1) {
+                        // 创建吃牌按钮，点击后显示选项
+                        final int finalBx = bx;
+                        final int finalBy = by;
+                        Button btnChi = Button.builder(Component.literal("吃 (" + chiOpts.size() + ")"), b -> {
+                            showChiOptions(chiOpts, finalBx, finalBy);
+                        }).pos(bx, by).size(btnW + 20, btnH).build();
+                        actionButtons.add(btnChi);
+                        addRenderableWidget(btnChi);
+                        bx += btnW + 20 + gap;
+                        continue;
+                    }
+                }
+                
+                // "过"按钮使用不同的样式（灰色，表示放弃）
+                if (act == 5) { // ACTION_PASS
+                    Button btnPass = Button.builder(Component.literal("过"), b -> {
+                        ClientPlayNetworking.send(new MahjongActionC2SPacket(finalAct, (byte) 0, (byte) 0));
+                    }).pos(bx, by).size(btnW, btnH).build();
+                    // 设置"过"按钮为半透明灰色，视觉上区分
+                    btnPass.setAlpha(0.7f);
+                    actionButtons.add(btnPass);
+                    addRenderableWidget(btnPass);
+                    bx += btnW + gap;
+                } else {
+                    Button btn = Button.builder(Component.literal(label), b -> {
+                        ClientPlayNetworking.send(new MahjongActionC2SPacket(finalAct, finalTileType, (byte) 0));
+                    }).pos(bx, by).size(btnW, btnH).build();
+                    actionButtons.add(btn);
+                    addRenderableWidget(btn);
+                    bx += btnW + gap;
+                }
             }
         }
+    }
+
+    /** 显示吃牌选项供玩家选择 */
+    private void showChiOptions(List<int[]> chiOpts, int baseX, int baseY) {
+        // 清除现有按钮
+        for (Button b : actionButtons) removeWidget(b);
+        actionButtons.clear();
+        
+        int btnW = 60, btnH = 22, gap = 6;
+        int totalW = chiOpts.size() * btnW + (chiOpts.size() - 1) * gap;
+        int bx = (width - totalW) / 2;
+        int by = baseY;
+        
+        for (int i = 0; i < chiOpts.size(); i++) {
+            int[] opt = chiOpts.get(i);
+            String label = "吃" + (i + 1) + " (" + getTileName(opt[0]) + "," + getTileName(opt[1]) + ")";
+            byte finalIdx = (byte) i;
+            Button btn = Button.builder(Component.literal(label), b -> {
+                ClientPlayNetworking.send(new MahjongActionC2SPacket((byte) 1, (byte) lastDiscard, finalIdx));
+            }).pos(bx, by).size(btnW, btnH).build();
+            actionButtons.add(btn);
+            addRenderableWidget(btn);
+            bx += btnW + gap;
+        }
+        
+        // 添加取消按钮
+        Button btnCancel = Button.builder(Component.literal("取消"), b -> {
+            updateButtons(); // 恢复原始按钮
+        }).pos((width - 50) / 2, by + 30).size(50, btnH).build();
+        actionButtons.add(btnCancel);
+        addRenderableWidget(btnCancel);
+    }
+
+    /** 获取牌的中文名称用于显示 */
+    private String getTileName(int tileId) {
+        int type = io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.getType(tileId);
+        int rank = io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.suitRank(type);
+        if (io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.isWan(type)) {
+            return CN_NUM[rank] + "万";
+        } else if (io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.isTiao(type)) {
+            return CN_NUM[rank] + "条";
+        } else if (io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.isBing(type)) {
+            return CN_NUM[rank] + "饼";
+        } else if (io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.isZi(type)) {
+            int ziIdx = type - 27;
+            return ZI_NAMES[ziIdx];
+        }
+        return "?";
+    }
+
+    /** 获取当前可吃的牌型对应的所有吃牌选项 */
+    private List<int[]> getChiOptionsForDisplay(int discardType) {
+        List<int[]> options = new ArrayList<>();
+        if (io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.isZi(discardType)) return options;
+        
+        int suitStart = (discardType / 9) * 9;
+        int rank = discardType - suitStart;
+        
+        // 三种顺子: (r-2,r-1,r), (r-1,r,r+1), (r,r+1,r+2)
+        if (rank >= 2) {
+            boolean has1 = false, has2 = false;
+            for (int t : myHand) {
+                int type = io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.getType(t);
+                if (type == suitStart + rank - 2) has1 = true;
+                if (type == suitStart + rank - 1) has2 = true;
+            }
+            if (has1 && has2) options.add(new int[]{suitStart + rank - 2, suitStart + rank - 1});
+        }
+        if (rank >= 1 && rank <= 7) {
+            boolean has1 = false, has2 = false;
+            for (int t : myHand) {
+                int type = io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.getType(t);
+                if (type == suitStart + rank - 1) has1 = true;
+                if (type == suitStart + rank + 1) has2 = true;
+            }
+            if (has1 && has2) options.add(new int[]{suitStart + rank - 1, suitStart + rank + 1});
+        }
+        if (rank <= 6) {
+            boolean has1 = false, has2 = false;
+            for (int t : myHand) {
+                int type = io.wifi.starrailexpress.content.minigame.mahjong.MahjongSession.getType(t);
+                if (type == suitStart + rank + 1) has1 = true;
+                if (type == suitStart + rank + 2) has2 = true;
+            }
+            if (has1 && has2) options.add(new int[]{suitStart + rank + 1, suitStart + rank + 2});
+        }
+        return options;
     }
 
     // ══════════════════════════════════════════════
@@ -304,30 +430,30 @@ public class MahjongMinigameScreen extends Screen {
         g.fill(6, 6, 7, height - 6, 0x40FFFFFF);
         g.fill(width - 7, 6, width - 6, height - 6, 0x40FFFFFF);
 
-        // ── 中央毛毡区 ──
-        int feltM = 50;
+        // ── 中央毛毡区（优化布局，留出更多空间给弃牌区）──
+        int feltM = 55; // 增大边距，为弃牌区留出更多空间
         g.fill(feltM, feltM, width - feltM, height - feltM, C_TABLE_FELT);
         g.fill(feltM, feltM, width - feltM, feltM + 1, 0x30000000);
         g.fill(feltM, height - feltM - 1, width - feltM, height - feltM, 0x30000000);
 
-        // ── 我的弃牌区（底部偏上）──
-        renderDiscardArea(g, playerIndex, cx - 55, cy + 50, "我");
+        // ── 我的弃牌区（底部偏上，更靠近手牌）──
+        renderDiscardArea(g, playerIndex, cx - 60, cy + 80, "我");
 
-        // ── 我的手牌（底部）──
+        // ── 我的手牌（底部，向上移动避免与弃牌区重叠）──
         renderMyHand(g);
 
-        // ── 我的副露（手牌右侧）──
-        int meldStartX = (width + myHand.length * (TW + TS)) / 2 + 8;
-        int meldStartY = height - TH - 28;
+        // ── 我的副露（手牌右侧，调整位置）──
+        int meldStartX = (width + myHand.length * (TW + TS)) / 2 + 12;
+        int meldStartY = height - TH - 35;
         for (int[] meld : myMelds) {
             for (int tile : meld) {
                 drawTile(g, meldStartX, meldStartY, tile, SW, SH, false);
-                meldStartX += SW + 1;
+                meldStartX += SW + 2;
             }
-            meldStartX += 4;
+            meldStartX += 6;
         }
 
-        // ── 对家（顶部）──
+        // ── 对家（顶部，向下移动避免与弃牌区重叠）──
         renderTopOpponent(g, 0);
 
         // ── 右侧对手 ──
@@ -336,30 +462,37 @@ public class MahjongMinigameScreen extends Screen {
         // ── 左侧对手 ──
         renderLeftOpponent(g, 2);
 
-        // ── 中央弃牌区（使用相对座位索引）──
+        // ─ 中央弃牌区（使用相对座位索引，优化位置避免重叠）──
         int oppSeat = (playerIndex + 2) % 4;
         int rightSeat = (playerIndex + 1) % 4;
         int leftSeat = (playerIndex + 3) % 4;
-        renderDiscardArea(g, oppSeat, cx - 55, cy - 55, getPlayerNameShort(oppSeat));
-        renderDiscardArea(g, rightSeat, cx + 20, cy - 10, getPlayerNameShort(rightSeat));
-        renderDiscardArea(g, leftSeat, cx - 85, cy - 10, getPlayerNameShort(leftSeat));
+        
+        // 对家弃牌区（顶部中央偏下）
+        renderDiscardArea(g, oppSeat, cx - 60, cy - 85, getPlayerNameShort(oppSeat));
+        // 右侧弃牌区（右侧中央偏左）
+        renderDiscardArea(g, rightSeat, cx + 30, cy - 15, getPlayerNameShort(rightSeat));
+        // 左侧弃牌区（左侧中央偏右）
+        renderDiscardArea(g, leftSeat, cx - 95, cy - 15, getPlayerNameShort(leftSeat));
 
-        // ── 最后出牌高亮 ──
+        // ── 最后出牌高亮（居中显示，更醒目）──
         if (lastDiscard >= 0 && lastDiscardBy >= 0) {
             int lx = cx - SW / 2, ly = cy - SH / 2;
             drawTile(g, lx, ly, lastDiscard, SW, SH, true);
-            // 显示出牌者名称
+            // 显示出牌者名称（带背景）
             String byName = getPlayerName(lastDiscardBy);
-            g.drawString(font, byName, lx - font.width(byName) / 2 + SW / 2, ly - 10, 0xAAFFFFFF, false);
+            int nameW = font.width(byName) + 8;
+            g.fill(lx - 2, ly - 14, lx + nameW, ly - 2, C_NAME_BG);
+            g.drawString(font, byName, lx + 2, ly - 12, 0xAAFFFFFF, false);
         }
 
-        // ── 信息栏（右下角）──
-        int infoX = width - 100, infoY = height - 40;
-        g.fill(infoX - 6, infoY - 4, width - 6, infoY + 28, C_NAME_BG);
+        // ── 信息栏（右下角，优化位置）──
+        int infoX = width - 110, infoY = height - 45;
+        g.fill(infoX - 8, infoY - 6, width - 8, infoY + 32, C_NAME_BG);
+        g.fill(infoX - 8, infoY - 6, width - 8, infoY - 5, C_GOLD); // 顶部金线
         g.drawString(font, "剩余: " + wallRemaining + "张", infoX, infoY, 0xFFE0E0E0, false);
-        g.drawString(font, "[庄] " + getPlayerName(dealerIndex), infoX, infoY + 12, C_GOLD, false);
+        g.drawString(font, "[庄] " + getPlayerName(dealerIndex), infoX, infoY + 14, C_GOLD, false);
 
-        // ── 回合提示（顶部居中）──
+        // ─ 回合提示（顶部居中，优化位置和样式）──
         if (phase == 2 || phase == 3) {
             String turnStr;
             int turnColor;
@@ -372,26 +505,30 @@ public class MahjongMinigameScreen extends Screen {
             }
             int ttw = font.width(turnStr);
             int ttx = (width - ttw) / 2;
-            g.fill(ttx - 8, 36, ttx + ttw + 8, 52, C_NAME_BG);
-            g.drawString(font, turnStr, ttx, 38, turnColor, true);
+            g.fill(ttx - 10, 38, ttx + ttw + 10, 56, C_NAME_BG);
+            g.fill(ttx - 10, 38, ttx + ttw + 10, 39, C_GOLD); // 顶部金线
+            g.drawString(font, turnStr, ttx, 40, turnColor, true);
         }
 
-        // ── 动作窗口倒计时 ──
+        // ── 动作窗口倒计时（优化位置和样式）──
         if (phase == 3 && availableActions != null && availableActions.length > 0 && availableActions[0] != 0) {
-            // 仅对有动作选项的玩家显示倒计时
             boolean hasRealAction = false;
             for (byte a : availableActions) {
-                if (a != 0 && a != 5) { hasRealAction = true; break; } // 0=NONE, 5=PASS
+                if (a != 0 && a != 5) { hasRealAction = true; break; }
             }
             if (hasRealAction) {
                 long elapsed = System.currentTimeMillis() - actionWindowStartClient;
                 int remaining = Math.max(0, 15 - (int)(elapsed / 1000));
                 String timer = remaining + "s";
-                g.drawString(font, timer, width / 2 - font.width(timer) / 2, 56, remaining <= 5 ? 0xFFFF5252 : 0xFFFFFFFF, false);
+                int timerW = font.width(timer) + 16;
+                int timerX = (width - timerW) / 2;
+                g.fill(timerX, 58, timerX + timerW, 74, C_NAME_BG);
+                g.fill(timerX, 58, timerX + timerW, 59, remaining <= 5 ? 0xFFFF5252 : C_GOLD);
+                g.drawString(font, timer, timerX + 8, 60, remaining <= 5 ? 0xFFFF5252 : 0xFFFFFFFF, false);
             }
         }
 
-        // ── 结束 ──
+        // ── 结束画面（优化样式）──
         if (phase == 4) {
             String result;
             if (winnerIndex >= 0) {
@@ -400,10 +537,12 @@ public class MahjongMinigameScreen extends Screen {
                 result = "流局!";
             }
             int rw = font.width(result);
-            g.fill(cx - rw / 2 - 16, cy - 24, cx + rw / 2 + 16, cy + 14, 0xDD000000);
-            g.fill(cx - rw / 2 - 16, cy - 24, cx + rw / 2 + 16, cy - 23, C_GOLD);
-            g.fill(cx - rw / 2 - 16, cy + 13, cx + rw / 2 + 16, cy + 14, C_GOLD);
-            g.drawString(font, result, (width - rw) / 2, cy - 14, C_GOLD, true);
+            g.fill(cx - rw / 2 - 20, cy - 28, cx + rw / 2 + 20, cy + 18, 0xDD000000);
+            g.fill(cx - rw / 2 - 20, cy - 28, cx + rw / 2 + 20, cy - 27, C_GOLD);
+            g.fill(cx - rw / 2 - 20, cy + 17, cx + rw / 2 + 20, cy + 18, C_GOLD);
+            g.fill(cx - rw / 2 - 20, cy - 28, cx - rw / 2 - 19, cy + 18, C_GOLD);
+            g.fill(cx + rw / 2 + 19, cy - 28, cx + rw / 2 + 20, cy + 18, C_GOLD);
+            g.drawString(font, result, (width - rw) / 2, cy - 16, C_GOLD, true);
         }
     }
 
@@ -412,27 +551,32 @@ public class MahjongMinigameScreen extends Screen {
     // ══════════════════════════════════════════════
 
     private void drawTile(GuiGraphics g, int x, int y, int tileId, int w, int h, boolean highlight) {
-        // 阴影
-        g.fill(x + 1, y + h, x + w + 1, y + h + 2, C_TILE_SHADOW);
-        g.fill(x + w, y + 1, x + w + 2, y + h, C_TILE_SHADOW);
-        // 背景
+        // 阴影（增强立体感）
+        g.fill(x + 2, y + h - 1, x + w + 2, y + h + 3, C_TILE_SHADOW);
+        g.fill(x + w - 1, y + 2, x + w + 3, y + h - 1, C_TILE_SHADOW);
+        
+        // 牌背渐变效果
         g.fill(x, y, x + w, y + h, C_TILE_BG);
-        // 边框
-        g.fill(x, y, x + w, y + 1, C_TILE_BORDER);          // 上
-        g.fill(x, y + h - 1, x + w, y + h, C_TILE_BORDER);  // 下
-        g.fill(x, y, x + 1, y + h, C_TILE_BORDER);           // 左
-        g.fill(x + w - 1, y, x + w, y + h, C_TILE_BORDER);   // 右
-        // 内发光
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x20FFFFFF);
+        
+        // 边框（更粗的边框）
+        g.fill(x, y, x + w, y + 2, C_TILE_BORDER);          // 上
+        g.fill(x, y + h - 2, x + w, y + h, C_TILE_BORDER);  // 下
+        g.fill(x, y, x + 2, y + h, C_TILE_BORDER);           // 左
+        g.fill(x + w - 2, y, x + w, y + h, C_TILE_BORDER);   // 右
+        
+        // 内发光和阴影（增加立体感）
+        g.fill(x + 2, y + 2, x + w - 2, y + 4, 0x30FFFFFF);  // 顶部高光
+        g.fill(x + 2, y + h - 4, x + w - 2, y + h - 2, 0x20000000); // 底部阴影
 
         if (highlight) {
-            g.fill(x - 1, y - 1, x + w + 1, y + h + 1, C_LAST_DISCARD);
+            g.fill(x - 2, y - 2, x + w + 2, y + h + 2, C_LAST_DISCARD);
             g.fill(x, y, x + w, y + h, C_TILE_BG);
-            g.fill(x, y, x + w, y + 1, C_TILE_BORDER);
-            g.fill(x, y + h - 1, x + w, y + h, C_TILE_BORDER);
-            g.fill(x, y, x + 1, y + h, C_TILE_BORDER);
-            g.fill(x + w - 1, y, x + w, y + h, C_TILE_BORDER);
-            g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x20FFFFFF);
+            g.fill(x, y, x + w, y + 2, C_TILE_BORDER);
+            g.fill(x, y + h - 2, x + w, y + h, C_TILE_BORDER);
+            g.fill(x, y, x + 2, y + h, C_TILE_BORDER);
+            g.fill(x + w - 2, y, x + w, y + h, C_TILE_BORDER);
+            g.fill(x + 2, y + 2, x + w - 2, y + 4, 0x30FFFFFF);
+            g.fill(x + 2, y + h - 4, x + w - 2, y + h - 2, 0x20000000);
         }
 
         int type = MahjongSession.getType(tileId);
@@ -452,27 +596,35 @@ public class MahjongMinigameScreen extends Screen {
 
     // ── 万子：中文数字 + "万" 文字 ──
     private void drawWanTile(GuiGraphics g, int x, int y, int w, int h, int rank) {
-        // 上半：中文数字（红色大号）
+        // 上半：中文数字（红色大号，带阴影）
         String num = CN_NUM[rank];
         int nw = font.width(num);
-        g.drawString(font, num, x + (w - nw) / 2 + 1, y + 4 + 1, 0x30000000, false);
-        g.drawString(font, num, x + (w - nw) / 2, y + 4, C_WAN, false);
-        // 下半："万"（红色大号）
+        int numY = y + 5;
+        // 阴影
+        g.drawString(font, num, x + (w - nw) / 2 + 2, numY + 2, 0x40000000, false);
+        // 主文字
+        g.drawString(font, num, x + (w - nw) / 2, numY, C_WAN, false);
+        
+        // 下半："万"（红色大号，带阴影）
         String wan = "万";
         int ww = font.width(wan);
-        g.drawString(font, wan, x + (w - ww) / 2 + 1, y + h / 2 + 3 + 1, 0x30000000, false);
-        g.drawString(font, wan, x + (w - ww) / 2, y + h / 2 + 3, C_WAN, false);
+        int wanY = y + h / 2 + 4;
+        // 阴影
+        g.drawString(font, wan, x + (w - ww) / 2 + 2, wanY + 2, 0x40000000, false);
+        // 主文字
+        g.drawString(font, wan, x + (w - ww) / 2, wanY, C_WAN, false);
     }
 
     // ── 条子：绿色竹节图案 + 左上角数字标注 ──
     private void drawTiaoTile(GuiGraphics g, int x, int y, int w, int h, int rank) {
-        // 左上角小数字标注（方便识别）
+        // 左上角小数字标注（方便识别，带阴影）
         String label = CN_NUM[rank];
+        g.drawString(font, label, x + 3, y + 3, 0x40000000, false);
         g.drawString(font, label, x + 2, y + 2, C_TIAO, false);
 
-        // 竹节图形
+        // 竹节图形（增强视觉效果）
         int cx = x + w / 2;
-        int stickW = 2, stickH = (rank <= 5) ? 22 : 10;
+        int stickW = 3, stickH = (rank <= 5) ? 24 : 11;
         if (rank <= 5) {
             // 单行竹节
             int[] xOffs = BAM_X[rank];
@@ -480,12 +632,14 @@ public class MahjongMinigameScreen extends Screen {
             int topY = y + (h - stickH) / 2 + 2;
             for (int i = 0; i < n; i++) {
                 int sx = cx + xOffs[i] - stickW / 2;
-                // 竹节主体（深绿）
+                // 竹节主体（深绿，带渐变）
                 g.fill(sx, topY, sx + stickW, topY + stickH, C_TIAO);
-                // 竹节横纹（浅绿，每4px一道）
+                // 竹节横纹（浅绿，每4px一道，增强纹理）
                 for (int j = 3; j < stickH; j += 5) {
-                    g.fill(sx - 1, topY + j, sx + stickW + 1, topY + j + 1, 0xFF4CAF50);
+                    g.fill(sx - 1, topY + j, sx + stickW + 1, topY + j + 1, 0xFF66BB6A);
                 }
+                // 竹节边缘高光
+                g.fill(sx, topY, sx + 1, topY + stickH, 0x40FFFFFF);
             }
         } else {
             // 双行竹节
@@ -497,35 +651,44 @@ public class MahjongMinigameScreen extends Screen {
             for (int i = 0; i < row1; i++) {
                 int sx = cx + xOffs[i] - stickW / 2;
                 g.fill(sx, topY1, sx + stickW, topY1 + stickH, C_TIAO);
-                for (int j = 3; j < stickH; j += 5) g.fill(sx - 1, topY1 + j, sx + stickW + 1, topY1 + j + 1, 0xFF4CAF50);
+                for (int j = 3; j < stickH; j += 5) g.fill(sx - 1, topY1 + j, sx + stickW + 1, topY1 + j + 1, 0xFF66BB6A);
+                g.fill(sx, topY1, sx + 1, topY1 + stickH, 0x40FFFFFF);
             }
             int off = row1;
             for (int i = 0; i < row2; i++) {
                 int sx = cx + xOffs[off + i] - stickW / 2;
                 g.fill(sx, topY2, sx + stickW, topY2 + stickH, C_TIAO);
-                for (int j = 3; j < stickH; j += 5) g.fill(sx - 1, topY2 + j, sx + stickW + 1, topY2 + j + 1, 0xFF4CAF50);
+                for (int j = 3; j < stickH; j += 5) g.fill(sx - 1, topY2 + j, sx + stickW + 1, topY2 + j + 1, 0xFF66BB6A);
+                g.fill(sx, topY2, sx + 1, topY2 + stickH, 0x40FFFFFF);
             }
         }
     }
 
     // ── 饼子：圆形图案 + 左上角数字标注 ──
     private void drawBingTile(GuiGraphics g, int x, int y, int w, int h, int rank) {
-        // 左上角小数字标注
+        // 左上角小数字标注（带阴影）
         String label = CN_NUM[rank];
+        g.drawString(font, label, x + 3, y + 3, 0x40000000, false);
         g.drawString(font, label, x + 2, y + 2, C_BING, false);
 
-        // 圆点图形
+        // 圆点图形（增强立体感）
         int cx = x + w / 2;
         int cy = y + h / 2 + 2;
         int[][] dots = DOT_P[rank];
         for (int[] dot : dots) {
             int dx = cx + dot[0];
             int dy = cy + dot[1];
-            int r = 2; // 圆半径
+            int r = 3; // 增大圆半径
+            // 外圈阴影
+            g.fill(dx - r - 1, dy - r - 1, dx + r + 2, dy + r + 2, 0x30000000);
             // 绿色外圈
             g.fill(dx - r, dy - r, dx + r + 1, dy + r + 1, C_TIAO);
+            // 内圈高光
+            g.fill(dx - r + 1, dy - r + 1, dx + r, dy - r + 2, 0x40FFFFFF);
             // 红色内芯
             g.fill(dx - 1, dy - 1, dx + 2, dy + 2, C_WAN);
+            // 内芯高光
+            g.fill(dx, dy, dx + 1, dy + 1, 0x80FFFFFF);
         }
     }
 

@@ -53,6 +53,10 @@ public class QuestMinigames {
     public static final QuestMinigame MAHJONG = register(
             QuestMinigame.of("mahjong", "minigame.starrailexpress.mahjong"));
 
+    /** 撬锁积分（掌机版） */
+    public static final QuestMinigame LOCKPICK_SCORE = register(
+            QuestMinigame.of("lockpick_score", "minigame.starrailexpress.lockpick_score"));
+
     /** 水阀小游戏 */
     public static final QuestMinigame WATER_VALVE = register(
             QuestMinigame.of("water_valve", "minigame.starrailexpress.water_valve"));
