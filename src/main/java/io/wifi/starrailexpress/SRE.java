@@ -27,11 +27,11 @@ import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.event.AFKEventHandler;
-import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.PlayerMountainHandler;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
@@ -49,6 +49,7 @@ import io.wifi.starrailexpress.scenery.server.SceneAssetServer;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import io.wifi.starrailexpress.util.Scheduler;
+import net.exmo.sre.mod_whitelist.server.command.ModWhitelistCommand;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -73,6 +74,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
 
+import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.modes.fourthroom.network.*;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.jetbrains.annotations.NotNull;
@@ -173,6 +176,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void initConfig() {
         ConfigEvents.register();
+        SREConfig.HANDLER.nothing();
+        HarpyModLoaderConfig.HANDLER.nothing();
+        NoellesRolesConfig.HANDLER.nothing();
+        StupidExpressConfig.HANDLER.nothing();
     }
 
     public static void initConstants() {
@@ -191,15 +198,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PlayerInteractionHandler.register();
         EntityInteractionHandler.register();
         AFKEventHandler.register();
-
-        // 制式左轮永不掉落：无论谁持有，命中玩家后枪都不会掉落
-        AllowShootRevolverDrop.EVENT.register((player, target) -> {
-            if (player.getMainHandItem().is(TMMItems.STANDARD_REVOLVER)) {
-                return AllowShootRevolverDrop.ShouldDropResult.FALSE;
-            }
-            return AllowShootRevolverDrop.ShouldDropResult.PASS;
-        });
-
+        PlayerMountainHandler.register();
         // 队友击杀违规检测：短期内多次击杀队友则执行 mcfunction
         TeamKillViolationHandler.registerEvent();
 
@@ -309,7 +308,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-
+			ModWhitelistCommand.registerGlobal(dispatcher);
             SREHelpCommand.register(dispatcher);
             SREVoteCommand.register(dispatcher, registryAccess);
             NarratorCommand.register(dispatcher, registryAccess);
@@ -325,6 +324,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             MoneyCommand.register(dispatcher);
             CustomReplayEventCommand.register(dispatcher, registryAccess);
             ReplayScreenCommand.register(dispatcher);
+            net.exmo.sre.record.MatchRecordCommand.register(dispatcher);
             SetAutoTrainResetCommand.register(dispatcher);
             SetBoundCommand.register(dispatcher);
             AutoStartCommand.register(dispatcher);
@@ -353,6 +353,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             ShieldCommand.register(dispatcher);
             StaminaCommand.register(dispatcher);
             SceneCommand.register(dispatcher);
+            SceneEventCommand.register(dispatcher);
+            SceneTaskCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.MinigameTaskCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
             io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
@@ -553,6 +556,16 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         // 职业轮选数据包
         PayloadTypeRegistry.playC2S().register(RoleRotationSelectC2SPacket.TYPE, RoleRotationSelectC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(RoleRotationSyncS2CPacket.TYPE, RoleRotationSyncS2CPacket.CODEC);
+
+        // 全局战绩 / 回放查询数据包
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.record.network.RecordListRequestC2SPayload.ID,
+                net.exmo.sre.record.network.RecordListRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.record.network.RecordListS2CPayload.ID,
+                net.exmo.sre.record.network.RecordListS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.record.network.RecordReplayRequestC2SPayload.ID,
+                net.exmo.sre.record.network.RecordReplayRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.record.network.RecordReplayS2CPayload.ID,
+                net.exmo.sre.record.network.RecordReplayS2CPayload.CODEC);
     }
 
     private void registerGlobalReceivers() {
@@ -566,6 +579,13 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         });
         ServerPlayNetworking.registerGlobalReceiver(KnifeStabPayload.ID, new KnifeStabPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(ModVersionPacket.ID, new ModVersionPacket.Receiver());
+        // 全局战绩 / 回放查询请求
+        ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.record.network.RecordListRequestC2SPayload.ID,
+                (payload, context) -> net.exmo.sre.record.MatchRecordService.openListFor(context.player(),
+                        payload.limit()));
+        ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.record.network.RecordReplayRequestC2SPayload.ID,
+                (payload, context) -> net.exmo.sre.record.MatchRecordService.openReplayFor(context.player(),
+                        payload.matchId()));
         ServerPlayNetworking.registerGlobalReceiver(GunShootPayload.ID, new GunShootPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(SniperShootPayload.TYPE, new SniperShootPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(StoreBuyPayload.ID, new StoreBuyPayload.Receiver());

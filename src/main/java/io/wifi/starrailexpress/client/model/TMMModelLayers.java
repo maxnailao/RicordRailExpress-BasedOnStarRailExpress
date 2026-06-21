@@ -1,7 +1,6 @@
 package io.wifi.starrailexpress.client.model;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.client.model.entity.CustomPlayerPlushModel;
 import io.wifi.starrailexpress.client.model.entity.PlayerSkeletonEntityModel;
 import io.wifi.starrailexpress.client.render.block_entity.PlaneSmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.client.render.block_entity.SmallDoorBlockEntityRenderer;
@@ -21,10 +20,8 @@ public interface TMMModelLayers {
     ModelLayerLocation PLAYER_BODY_SLIM = layer("player_body_slim");
     ModelLayerLocation WHEEL = layer("wheel");
     ModelLayerLocation PLAYER_SKELETON = layer("player_skeleton");
-    ModelLayerLocation CUSTOM_PLAYER_PLUSH = layer("custom_player_plush");
 
     static void initialize() {
-        EntityModelLayerRegistry.registerModelLayer(CUSTOM_PLAYER_PLUSH, CustomPlayerPlushModel::createBodyLayer);
 
         EntityModelLayerRegistry.registerModelLayer(SMALL_DOOR, SmallDoorBlockEntityRenderer::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(UP_SMALL_DOOR, UpSmallDoorBlockEntityRenderer::getTexturedModelData);

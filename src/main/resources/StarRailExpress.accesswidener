@@ -44,3 +44,13 @@ accessible method net/minecraft/client/gui/screens/Screen addRenderableOnly (Lne
 accessible method net/minecraft/client/gui/screens/Screen addWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)Lnet/minecraft/client/gui/components/events/GuiEventListener;
 accessible method net/minecraft/client/gui/screens/Screen removeWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)V
 accessible method net/minecraft/client/gui/screens/Screen clearWidgets ()V
+
+accessible method net/minecraft/client/player/AbstractClientPlayer getPlayerInfo ()Lnet/minecraft/client/multiplayer/PlayerInfo;
+
+accessible field net/minecraft/world/level/block/entity/SkullBlockEntity mainThreadExecutor Ljava/util/concurrent/Executor;
+accessible field net/minecraft/world/level/block/entity/SkullBlockEntity profileCacheByName Lcom/google/common/cache/LoadingCache;
+accessible field net/minecraft/world/level/block/entity/SkullBlockEntity profileCacheById Lcom/google/common/cache/LoadingCache;
+
+accessible method net/minecraft/world/level/block/entity/SkullBlockEntity fetchProfileByName (Ljava/lang/String;Lnet/minecraft/server/Services;)Ljava/util/concurrent/CompletableFuture;
+
+accessible method net/minecraft/world/level/block/entity/SkullBlockEntity fetchProfileById (Ljava/util/UUID;Lnet/minecraft/server/Services;Ljava/util/function/BooleanSupplier;)Ljava/util/concurrent/CompletableFuture;

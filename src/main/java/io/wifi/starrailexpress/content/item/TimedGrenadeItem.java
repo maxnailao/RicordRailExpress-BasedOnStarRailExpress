@@ -168,7 +168,7 @@ public class TimedGrenadeItem extends SkinableItem {
 
     @Override
     public String getItemSkinType() {
-        return "timed_grenade";
+        return "grenade";
     }
 
     // ─── 客户端查询接口 ───

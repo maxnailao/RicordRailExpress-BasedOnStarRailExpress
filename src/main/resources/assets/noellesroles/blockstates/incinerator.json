@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "noellesroles:block/incinerator" },
+    "facing=east": { "model": "noellesroles:block/incinerator", "y": 90 },
+    "facing=south": { "model": "noellesroles:block/incinerator", "y": 180 },
+    "facing=west": { "model": "noellesroles:block/incinerator", "y": 270 }
+  }
+}

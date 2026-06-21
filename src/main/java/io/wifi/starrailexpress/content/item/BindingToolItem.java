@@ -17,9 +17,39 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class BindingToolItem extends Item {
     private BlockPos lastCameraPos = null;
+    private BlockPos lastReactorPos = null;
 
     public BindingToolItem(Properties settings) {
         super(settings);
+    }
+
+    private InteractionResult handleReactorBind(net.minecraft.server.level.ServerLevel level,
+            org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity reactor, BlockPos pos, Player player) {
+        if (reactor.isClosed()) {
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.reactor.already_closed").withStyle(ChatFormatting.GRAY),
+                    true);
+            return InteractionResult.SUCCESS;
+        }
+        if (lastReactorPos == null || lastReactorPos.equals(pos)) {
+            lastReactorPos = pos;
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.reactor.first_selected").withStyle(ChatFormatting.AQUA),
+                    true);
+            return InteractionResult.SUCCESS;
+        }
+        // 绑定第二个反应堆：关闭两者
+        BlockEntity firstBe = level.getBlockEntity(lastReactorPos);
+        reactor.close();
+        if (firstBe instanceof org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity first) {
+            first.close();
+        }
+        lastReactorPos = null;
+        player.displayClientMessage(
+                Component.translatable("message.noellesroles.reactor.pair_closed").withStyle(ChatFormatting.GREEN),
+                true);
+        org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity.onReactorClosed(level);
+        return InteractionResult.SUCCESS;
     }
 
     public static BlockPos CalcRelativePosition(BlockPos from, BlockPos to) {
@@ -50,6 +80,14 @@ public class BindingToolItem extends Item {
         if (player == null) {
             return InteractionResult.PASS;
         }
+
+        // 反应堆绑定：好人（非创造）也可使用，用于关闭破坏任务的反应堆
+        BlockEntity clicked = world.getBlockEntity(pos);
+        if (clicked instanceof org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity reactor
+                && world instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            return handleReactorBind(serverLevel, reactor, pos, player);
+        }
+
         if (!player.isCreative()) {
             return InteractionResult.PASS;
         }

@@ -10,7 +10,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.SREItemUtils;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -1125,7 +1125,7 @@ public class RicesRoleRhapsody implements ModInitializer {
         // 处理更新抽卡数据请求包
         ServerPlayNetworking.registerGlobalReceiver(LOOT_DATA_REFRESH_CLIENT_PACKET, (payload, context) -> {
             ServerPlayNetworking.send(context.player(), new LootDataRefreshS2CPacket(
-                    SkinManager.getCoinNum(context.player()), SkinManager.getLootChance(context.player()))
+                    ItemSkinManager.getCoinNum(context.player()), ItemSkinManager.getLootChance(context.player()))
             );
         });
     }

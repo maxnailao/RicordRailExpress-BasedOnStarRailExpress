@@ -2,7 +2,6 @@ package org.agmas.noellesroles.client.renderer;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;

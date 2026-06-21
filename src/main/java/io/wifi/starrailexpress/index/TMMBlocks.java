@@ -2,6 +2,8 @@ package io.wifi.starrailexpress.index;
 
 import java.util.function.ToIntFunction;
 
+import org.agmas.noellesroles.init.ModBlocks;
+
 import dev.doctor4t.ratatouille.util.registrar.BlockRegistrar;
 
 import io.wifi.starrailexpress.SRE;
@@ -683,7 +685,7 @@ public interface TMMBlocks {
     // 第四房间牌桌
     Block FOURTH_ROOM_TABLE = registrar.createWithItem("fourth_room_table",
             new org.agmas.noellesroles.game.modes.fourthroom.block.FourthRoomTableBlock(),
-            TMMItems.EQUIPMENT_GROUP);
+            ModBlocks.BLOCK_CREATIVE_GROUP);
 
     // 实体交互方块 - 普通版本
     Block ENTITY_INTERACTION_BLOCK = sreBlockRegistrar.create("entity_interaction_block",

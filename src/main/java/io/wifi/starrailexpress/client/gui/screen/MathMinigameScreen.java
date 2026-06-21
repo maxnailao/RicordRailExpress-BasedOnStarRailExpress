@@ -120,6 +120,13 @@ public class MathMinigameScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
+        // 居中圆角卡片作为题面背板
+        int cardW = 260;
+        int cardH = 150;
+        int cardX = this.width / 2 - cardW / 2;
+        int cardY = this.height / 2 - cardH / 2 - 10;
+        MinigameUI.panel(guiGraphics, cardX, cardY, cardX + cardW, cardY + cardH, 0);
+
         if (failed) {
             Component failText = Component.translatable("screen.math_solver.failed")
                     .withStyle(ChatFormatting.RED);
@@ -144,7 +151,7 @@ public class MathMinigameScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fillGradient(0, 0, width, height, 0x521A1A2E, 0x5216213E);
+        // 透明背景
     }
 
     @Override

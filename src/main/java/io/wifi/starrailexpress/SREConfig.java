@@ -20,7 +20,6 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
-
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableRepairMode = false;
@@ -68,6 +67,11 @@ public class SREConfig implements ConfigData {
     @Tooltip(count = 3)
     public boolean isLobby = false;
 
+    @ConfigEntry.Category(value = "map")
+    @Tooltip(count = 2)
+    @ConfigSync(shouldSync = true)
+    public boolean shouldOpenDoorHaveCollision = true;
+
     @ConfigEntry.Category(value = "shop")
     @ConfigSync(shouldSync = true)
     public int knifePrice = 130;
@@ -106,7 +110,7 @@ public class SREConfig implements ConfigData {
     public int bodyBagPrice = 100;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
-    public int blackoutPrice = 140;
+    public int blackoutPrice = 190;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int monitorBrokenPrice = 60;
@@ -116,6 +120,12 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int notePrice = 10;
+    @ConfigSync(shouldSync = true)
+    @ConfigEntry.Category(value = "shop")
+    public int sheriffBulletPrice = 60;
+    @ConfigSync(shouldSync = true)
+    @ConfigEntry.Category(value = "shop")
+    public int sheriffBulletMaxCarry = 4;
 
     // 物品冷却时间配置（秒）- 服务端只读
 
@@ -145,6 +155,10 @@ public class SREConfig implements ConfigData {
     public int monitorBrokenCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
     public int monitorBrokenCooldownGlobal = 40;
+    @ConfigEntry.Category(value = "cooldowns")
+    public int psychoGlobalCooldown = 20;
+    @ConfigEntry.Category(value = "cooldowns")
+    public int sheriffRevolverReloadCooldown = 15;
     // 游戏配置 - 服务端只读
 
     // 双重人格配置
@@ -162,8 +176,17 @@ public class SREConfig implements ConfigData {
 
     public int safeTimeCooldown = 30;
     public int startingMoney = 100;
-    public int passiveMoneyAmount = 5;
-    public int passiveMoneyInterval = 10;
+    // 杀手保底被动（降到 3/15秒，主要收入改由任务驱动，见 killerTaskIncome）
+    public int passiveMoneyAmount = 6;
+    public int passiveMoneyInterval = 15;
+    // 任意平民/中立完成一个任务时，每个杀手获得的金币（任务驱动收入）
+    public int killerTaskIncome = 5;
+    // 平民/中立完成一个任务本人获得的金币（不含连击奖励）
+    public int civilianTaskReward = 50;
+    // 同一小游戏任务点完成后对该玩家的复用冷却（秒）
+    public int minigameBlockCooldownSeconds = 90;
+    // 小游戏任务独立刷新间隔（秒），与 Mood 任务解耦
+    public int minigameTaskIntervalSeconds = 75;
     public int moneyPerKill = 100;
     public int grenadeMoneyPerKill = 75;
     public int grenadeMaxMoneyReward = 375;
@@ -178,6 +201,18 @@ public class SREConfig implements ConfigData {
     public boolean verboseTrainResetLogs = true;
     public boolean logGameEvent = true;
     public boolean savePlayerBodyItems = true;
+
+    @ConfigEntry.Category(value = "items")
+    public boolean enableBrokenGunDropWhenKillerKillsGunHolder = false;
+    @ConfigEntry.Category(value = "items")
+    public int brokenGunDropChanceWhenKillerKillsGunHolder = 60;
+    @ConfigEntry.Category(value = "items")
+    public boolean enableBrokenGunDropWhenKillerShootsPlayer = true;
+    @ConfigEntry.Category(value = "items")
+    public int brokenGunDropChanceWhenKillerShootsPlayer = 60;
+    
+    @ConfigSync(shouldSync = true)
+    public boolean disablePlayerMountain = true;
 
     // // 自动切换预设配置 - 游戏开始前自动应用指定预设，留空则不自动切换
     // @Tooltip(count = 3)

@@ -27,7 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.RoleWeightedUtil;
-import org.agmas.harpymodloader.commands.SetRoleCountCommand;
+import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
@@ -45,6 +45,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SREMurderGameMode extends GameMode {
+    private static final int VIGILANTE_PASSIVE_MONEY_AMOUNT = 5;
+    private static final int VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS = 15 * 20;
+
     public SREMurderGameMode(ResourceLocation identifier) {
         super(identifier, 10, 6);
     }
@@ -200,6 +203,15 @@ public class SREMurderGameMode extends GameMode {
         int killerMods = (int) allModifiers.stream().filter(modifier -> modifier.killerOnly).count();
         Collections.shuffle(allModifiers);
 
+        // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
+        // 才由名单决定修饰符的启用/禁用与数量（取代 disabledModifiers / MODIFIER_MAX），
+        // 但地图限制仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
+        io.wifi.starrailexpress.roster.RoleRosterState roster =
+                io.wifi.starrailexpress.roster.RoleRosterManager.isEnabled()
+                        ? io.wifi.starrailexpress.roster.RoleRosterManager.getState() : null;
+        boolean rosterActive = roster != null && roster.modifierCounts != null
+                && !roster.modifierCounts.isEmpty();
+
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
         for (var mod : allModifiers) {
             Collections.shuffle(shuffledPlayers);
@@ -228,11 +240,19 @@ public class SREMurderGameMode extends GameMode {
                 }
             }
 
-            if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
+            if (rosterActive) {
+                // 名单接管：地图特定修饰符仍受地图限制约束；仅分配名单内（数量 > 0）的修饰符。
+                if (io.wifi.starrailexpress.roster.MapRestrictionGate.isModifierForbidden(mod.identifier)
+                        || roster.modifierCountFor(mod.identifier.toString()) <= 0) {
+                    continue;
+                }
+            } else if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
                 continue;
             }
 
-            int m_max = Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier, 1);
+            int m_max = rosterActive
+                    ? roster.modifierCountFor(mod.identifier.toString())
+                    : Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier, 1);
             int targetAssignments = specificDesiredRoleCount;
             if (m_max != -1) {
                 targetAssignments = Math.min(targetAssignments, m_max);
@@ -474,9 +494,9 @@ public class SREMurderGameMode extends GameMode {
 
         // 第一步：处理强制分配的角色
         Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
-        int killerCount = SetRoleCountCommand.getKillerCount(players.size());
-        int vigilanteCount = SetRoleCountCommand.getVigilanteCount(players.size());
-        int neutralsCount = SetRoleCountCommand.getNatureCount(players.size());
+        int killerCount = RoleCountManager.getKillerCount(players.size());
+        int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
+        int neutralsCount = RoleCountManager.getNeutralCount(players.size());
 
         // 处理强制分配的角色，减少对应角色类型的数量需求
         for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
@@ -643,9 +663,14 @@ public class SREMurderGameMode extends GameMode {
         for (ServerPlayer player : serverWorld.players()) {
             // passive money
             if (gameWorldComponent.canAutoAddMoney(player)) {
-                Integer balanceToAdd = GameConstants.PASSIVE_MONEY_TICKER.apply(serverWorld.getGameTime());
+                Integer balanceToAdd = GameConstants.getPassiveMoneyTicker().apply(serverWorld.getGameTime());
                 if (balanceToAdd > 0)
                     SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
+            }
+            if (gameWorldComponent.isRole(player, TMMRoles.VIGILANTE)
+                    && !GameUtils.isPlayerEliminated(player)
+                    && serverWorld.getGameTime() % VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS == 0) {
+                SREPlayerShopComponent.KEY.get(player).addToBalance(VIGILANTE_PASSIVE_MONEY_AMOUNT);
             }
 
             // check if some civilians are still alive

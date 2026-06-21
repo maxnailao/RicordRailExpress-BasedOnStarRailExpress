@@ -16,6 +16,7 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.util.SREItemUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -42,6 +43,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
@@ -110,6 +112,9 @@ public class ModRolesInitialEventRegister {
         org.agmas.noellesroles.game.roles.innocent.child.ChildPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
+            if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
+                ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
+            }
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
                 FoodDrinkGlowComponent.KEY.get(player).init();
             }
@@ -230,7 +235,10 @@ public class ModRolesInitialEventRegister {
                 return;
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
-                player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
+                RoleInitialItems.replaceSheriffTeamGuns(player, role);
+                if (!SREItemUtils.hasItem(player, ModItems.SHERIFF_REVOLVER)) {
+                    player.addItem(SheriffRevolverItem.createUnloadedStack());
+                }
                 return;
             }
             if (role.identifier().equals(ModRoles.ATTENDANT.identifier())) {
@@ -278,7 +286,8 @@ public class ModRolesInitialEventRegister {
                     pelicanComponent.init();
                     int totalPlayers = SREGameWorldComponent.KEY.get(player.level()).getPlayerCount();
                     double percent = NoellesRolesConfig.HANDLER.instance().pelicanEatPercentage;
-                    pelicanComponent.requiredEaten = Math.max(1, (int) Math.ceil(totalPlayers * (percent / 100.0D)) - 1);
+                    pelicanComponent.requiredEaten = Math.max(1,
+                            (int) Math.ceil(totalPlayers * (percent / 100.0D)) - 1);
                     pelicanComponent.sync();
                 }
             }
@@ -339,9 +348,9 @@ public class ModRolesInitialEventRegister {
             }
             // 巫毒师角色初始化 - 开局75秒冷却
             if (role.equals(ModRoles.VOODOO)) {
-                abilityPlayerComponent.cooldown = 100 * 20; 
+                abilityPlayerComponent.cooldown = 100 * 20;
                 abilityPlayerComponent.sync();
-                return; 
+                return;
             }
             if (role.equals(ModRoles.BOMBER)) {
                 if (role.equals(ModRoles.MONITOR)) {
@@ -412,7 +421,8 @@ public class ModRolesInitialEventRegister {
             }
             // 幻音师角色初始化
             if (role.equals(ModRoles.PHANTOM_MUSICIAN)) {
-                var pmComponent = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(player);
+                var pmComponent = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        .get(player);
                 pmComponent.init();
                 pmComponent.sync();
             }
@@ -483,43 +493,45 @@ public class ModRolesInitialEventRegister {
                 SRE.id("infected_infect"),
                 "skill.noellesroles.infected.infect",
                 context -> {
-            ServerPlayer player = context.player();
-            UUID targetUuid = context.target();
+                    ServerPlayer player = context.player();
+                    UUID targetUuid = context.target();
 
-            if (targetUuid == null) {
-                return false;
-            }
+                    if (targetUuid == null) {
+                        return false;
+                    }
 
-            Player target = player.level().getPlayerByUUID(targetUuid);
-            if (target == null) {
-                return false;
-            }
+                    Player target = player.level().getPlayerByUUID(targetUuid);
+                    if (target == null) {
+                        return false;
+                    }
 
-            if (!GameUtils.isPlayerAliveAndSurvival(target)) {
-                return false;
-            }
+                    if (!GameUtils.isPlayerAliveAndSurvival(target)) {
+                        return false;
+                    }
 
-            InfectedPlayerComponent targetComponent = ModComponents.INFECTED.get(target);
-            if (targetComponent.infectedTicks > 0) {
-                return false;
-            }
+                    InfectedPlayerComponent targetComponent = ModComponents.INFECTED.get(target);
+                    if (targetComponent.infectedTicks > 0) {
+                        return false;
+                    }
 
-            targetComponent.infect(player);
+                    targetComponent.infect(player);
 
-            if (NRSounds.INFECTED_INFECT != null) {
-                player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
-                    NRSounds.SYRINGE_STAB, SoundSource.MASTER, 0.5f, 0.5f);
-            }
-            return true;
-        }).cooldownSeconds(80).charges(3).build());
+                    if (NRSounds.INFECTED_INFECT != null) {
+                        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                                NRSounds.SYRINGE_STAB, SoundSource.MASTER, 0.5f, 0.5f);
+                    }
+                    return true;
+                }).cooldownSeconds(80).charges(3).build());
 
         // 鹈鹕技能注册：按技能键吞噬鼠标准星对准的玩家，蹲下按技能键释放最后吞噬的玩家
         RoleSkill.register(ModRoles.PELICAN,
                 RoleSkill.skill(SRE.id("pelican_eat"), "skill.noellesroles.pelican.eat", context -> {
                     ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
+                    if (player.isSpectator())
+                        return false;
                     PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(player);
-                    if (comp == null || context.target() == null) return false;
+                    if (comp == null || context.target() == null)
+                        return false;
                     Player candidate = player.level().getPlayerByUUID(context.target());
                     if (!(candidate instanceof ServerPlayer target)
                             || !GameUtils.isPlayerAliveAndSurvival(target)
@@ -527,7 +539,8 @@ public class ModRolesInitialEventRegister {
                             || !player.hasLineOfSight(target)) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.pelican.no_target")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     return comp.tryEat(target);
@@ -550,27 +563,36 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.WARLOCK, context -> {
             ServerPlayer player = context.player();
             var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
-            if (comp == null) return;
+            if (comp == null)
+                return;
             UUID targetUuid = context.target();
             ServerPlayer target = null;
             if (targetUuid != null) {
                 Player p = player.level().getPlayerByUUID(targetUuid);
-                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp) && player.distanceToSqr(sp) <= 4.0D * 4.0D) {
+                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)
+                        && player.distanceToSqr(sp) <= 4.0D * 4.0D) {
                     target = sp;
                 }
             }
             if (target != null && comp.tryMark(target)) {
-                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.marked", target.getName().getString()).withStyle(ChatFormatting.LIGHT_PURPLE), true);
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.warlock.marked", target.getName().getString())
+                                .withStyle(ChatFormatting.LIGHT_PURPLE),
+                        true);
             } else {
-                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED), true);
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED),
+                        true);
             }
         });
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
             ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(player);
-            if (comp == null) return;
+            var comp = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                    .get(player);
+            if (comp == null)
+                return;
             comp.useTeleport();
         });
 
@@ -683,9 +705,11 @@ public class ModRolesInitialEventRegister {
                 "skill.noellesroles.cuckoo.place_egg",
                 context -> {
                     ServerPlayer player = context.player();
-                    if (!(player instanceof ServerPlayer sp)) return false;
+                    if (!(player instanceof ServerPlayer sp))
+                        return false;
                     var comp = org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent.KEY.get(player);
-                    if (comp == null) return false;
+                    if (comp == null)
+                        return false;
                     return comp.placeEgg(sp);
                 }).cooldownSeconds(20).build());
 
@@ -710,7 +734,8 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     ServerPlayer player = context.player();
                     var comp = ModComponents.NOISEMAKER.get(player);
-                    if (comp == null) return false;
+                    if (comp == null)
+                        return false;
                     comp.useAbility(); // 组件内部已管理效果逻辑
                     return true;
                 }).cooldownSeconds(60).build());
@@ -722,11 +747,13 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     ServerPlayer player = context.player();
                     var comp = org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent.KEY.get(player);
-                    if (comp == null) return false;
+                    if (comp == null)
+                        return false;
                     if (!comp.abilityUnlocked) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.ghost.not_unlocked")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     return comp.useAbility();
@@ -739,7 +766,8 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     ServerPlayer player = context.player();
                     var comp = CandleBearerPlayerComponent.KEY.get(player);
-                    if (comp == null) return false;
+                    if (comp == null)
+                        return false;
                     return comp.useAbility();
                 }).charges(5).build());
 
@@ -782,14 +810,17 @@ public class ModRolesInitialEventRegister {
                     if (player.hasEffect(MobEffects.LEVITATION)) {
                         player.removeEffect(MobEffects.LEVITATION);
                         player.displayClientMessage(
-                                Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA), true);
+                                Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
+                                true);
                         return true;
                     }
-                    if (!context.skillReady()) return false;
+                    if (!context.skillReady())
+                        return false;
                     player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
                             10 * 20, 1, true, false, true));
                     player.displayClientMessage(
-                            Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN), true);
+                            Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
+                            true);
                     return true;
                 }).cooldownSeconds(60).toggleable(true).build());
 
@@ -919,7 +950,8 @@ public class ModRolesInitialEventRegister {
                         if (effect != null && effect.getDuration() > 0) {
                             player.removeEffect(MobEffects.INVISIBILITY);
                             player.displayClientMessage(
-                                    Component.translatable("tip.phantom.exited").withStyle(ChatFormatting.YELLOW), true);
+                                    Component.translatable("tip.phantom.exited").withStyle(ChatFormatting.YELLOW),
+                                    true);
                             return true;
                         }
                         return false;
@@ -1004,7 +1036,8 @@ public class ModRolesInitialEventRegister {
                     if (shop.balance < 300) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.insufficient_funds_money", 300)
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     shop.addToBalance(-300);
@@ -1026,16 +1059,19 @@ public class ModRolesInitialEventRegister {
                     if (targetUuid == null) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.nianshou.no_target")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     Player target = player.level().getPlayerByUUID(targetUuid);
-                    if (!(target instanceof ServerPlayer targetPlayer)) return false;
+                    if (!(target instanceof ServerPlayer targetPlayer))
+                        return false;
                     NianShouPlayerComponent comp = NianShouPlayerComponent.KEY.get(player);
                     if (comp.getRedPacketCount() <= 0) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.nianshou.no_red_packet")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     comp.useRedPacket();
@@ -1043,7 +1079,8 @@ public class ModRolesInitialEventRegister {
                     configWorld.addRedPacketTimer(targetPlayer.getUUID());
                     player.displayClientMessage(
                             Component.translatable("message.noellesroles.nianshou.red_packet_sent", target.getName())
-                                    .withStyle(ChatFormatting.GOLD), true);
+                                    .withStyle(ChatFormatting.GOLD),
+                            true);
                     return true;
                 }).build());
 
@@ -1054,14 +1091,17 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     ServerPlayer player = context.player();
                     UUID targetUuid = context.target();
-                    if (targetUuid == null) return false;
+                    if (targetUuid == null)
+                        return false;
                     Player target = player.level().getPlayerByUUID(targetUuid);
-                    if (!(target instanceof ServerPlayer sp)) return false;
+                    if (!(target instanceof ServerPlayer sp))
+                        return false;
                     SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
                     if (shop.balance < 100) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.insufficient_funds")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     shop.addToBalance(-100);
@@ -1077,14 +1117,17 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     ServerPlayer player = context.player();
                     UUID targetUuid = context.target();
-                    if (targetUuid == null) return false;
+                    if (targetUuid == null)
+                        return false;
                     Player target = player.level().getPlayerByUUID(targetUuid);
-                    if (target == null) return false;
+                    if (target == null)
+                        return false;
                     SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
                     if (shop.balance < 200) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.insufficient_funds")
-                                        .withStyle(ChatFormatting.RED), true);
+                                        .withStyle(ChatFormatting.RED),
+                                true);
                         return false;
                     }
                     shop.addToBalance(-200);
@@ -1098,7 +1141,8 @@ public class ModRolesInitialEventRegister {
                 "skill.maid_sakuya.timestop",
                 context -> {
                     ServerPlayer player = context.player();
-                    if (player.getCooldowns().isOnCooldown(Items.CLOCK)) return false;
+                    if (player.getCooldowns().isOnCooldown(Items.CLOCK))
+                        return false;
                     return TimeStopEffect.tryTriggerStart(player, 20 * 5,
                             Component.translatable("title.maid_sakuya.timestopper")
                                     .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
@@ -1110,7 +1154,8 @@ public class ModRolesInitialEventRegister {
                 "skill.noellesroles.jojo.timestop",
                 context -> {
                     ServerPlayer player = context.player();
-                    if (player.getCooldowns().isOnCooldown(Items.CLOCK)) return false;
+                    if (player.getCooldowns().isOnCooldown(Items.CLOCK))
+                        return false;
                     return TimeStopEffect.tryTriggerStart(player, 20 * 3,
                             Component.translatable("hud.noellesroles.jojo.the_world")
                                     .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));

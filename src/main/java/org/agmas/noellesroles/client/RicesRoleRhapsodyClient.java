@@ -711,7 +711,7 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.TRIPWIRE_TRAP, TripwireTrapEntityRenderer::new);
 
         // 傀儡本体实体渲染器 - 使用玩家皮肤渲染
-        EntityRendererRegistry.register(ModEntities.PUPPETEER_BODY, PuppeteerBodyEntityRenderer::new);
+        // 使用PlayerBodyEntity相同逻辑
 
         // 鬼魅幻影实体渲染器 - 使用玩家皮肤渲染（完全参照傀儡师）
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);

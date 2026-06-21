@@ -29,12 +29,14 @@ public class ModWhitelistCommand {
 	 * Registers all mod whitelist commands
 	 * Called during server initialization
 	 */
-	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+	public static void registerServerOnly(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(
 				Commands.literal("mw:reload")
 						.requires(source -> source.hasPermission(3)) // OP only
 						.executes(ModWhitelistCommand::reloadConfig));
-
+		MWLogger.LOGGER.debug("Mod Whitelist commands registered");
+	}
+	public static void registerGlobal(CommandDispatcher<CommandSourceStack> dispatcher){
 		dispatcher.register(
 				Commands.literal("mw:maxplayers")
 						.requires(source -> source.hasPermission(3)) // OP only
@@ -43,8 +45,6 @@ public class ModWhitelistCommand {
 						.then(Commands.literal("set")
 								.then(Commands.argument("count", IntegerArgumentType.integer(1, 256))
 										.executes(ModWhitelistCommand::setMaxPlayers))));
-
-		MWLogger.LOGGER.debug("Mod Whitelist commands registered");
 	}
 
 	/**
@@ -74,7 +74,7 @@ public class ModWhitelistCommand {
 	 * Handles the mw:maxplayers get command
 	 * Displays the current maximum player count
 	 */
-	private static int getMaxPlayers(CommandContext<CommandSourceStack> context) {
+	public static int getMaxPlayers(CommandContext<CommandSourceStack> context) {
 		CommandSourceStack source = context.getSource();
 		MinecraftServer server = source.getServer();
 
@@ -98,7 +98,7 @@ public class ModWhitelistCommand {
 	 * Handles the mw:maxplayers set command
 	 * Sets the maximum player count
 	 */
-	private static int setMaxPlayers(CommandContext<CommandSourceStack> context) {
+	public static int setMaxPlayers(CommandContext<CommandSourceStack> context) {
 		CommandSourceStack source = context.getSource();
 		MinecraftServer server = source.getServer();
 		int newMaxPlayers = IntegerArgumentType.getInteger(context, "count");

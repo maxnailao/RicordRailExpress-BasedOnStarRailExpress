@@ -12,18 +12,18 @@ public class DisplayItemCommand {
     public static void register() {
         CommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess, environment) -> {
-                    dispatcher.register(Commands.literal("DisplayItem")
-                            .executes(context->{
+                    dispatcher.register(Commands.literal("item_display")
+                            .requires(ctx -> ctx.hasPermission(2))
+                            .executes(context -> {
                                 ServerPlayer player = context.getSource().getPlayer();
-                                if(player != null) {
+                                if (player != null) {
                                     ItemStack itemStack = player.getItemInHand(InteractionHand.MAIN_HAND);
-                                    if(!itemStack.isEmpty())
+                                    if (!itemStack.isEmpty())
                                         ServerPlayNetworking.send(player, new DisplayItemS2CPacket(itemStack));
                                     return 1;
                                 }
                                 return 0;
-                            })
-                    );
+                            }));
                 });
     }
 }

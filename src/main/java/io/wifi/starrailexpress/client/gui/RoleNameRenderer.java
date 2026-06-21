@@ -2,7 +2,9 @@ package io.wifi.starrailexpress.client.gui;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.content.item.DisguiseEffectSync;
 import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -72,6 +74,9 @@ public class RoleNameRenderer {
         // 鹈鹕肚内玩家不能通过准星查看玩家身份
         if (PelicanManager.isStashed(player))
             return;
+        if (DisguiseEffectSync.HAD_DISGUISE.getOrDefault(player.getUUID(), false)){
+            return;
+        }
         Component nametag = Component.empty();
         final Component[] note = new Component[] { Component.empty(), Component.empty(), Component.empty(),
                 Component.empty() };
@@ -122,6 +127,16 @@ public class RoleNameRenderer {
                 int nameWidth = renderer.width(nametag);
                 context.drawString(renderer, nametag, -nameWidth / 2, 16,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
+                // 游戏未开始且不在大厅时，在名字下方提示该玩家是否参与本局
+                if (!component.isRunning() && !SREClient.isInLobby()
+                        && !ParticipationComponent.KEY.get(player.level()).isParticipating(target)) {
+                    MutableComponent partTag = Component
+                            .translatable("hud.sre.participation.not_participating")
+                            .withStyle(ChatFormatting.GOLD);
+                    int partWidth = renderer.width(partTag);
+                    context.drawString(renderer, partTag, -partWidth / 2, 16 + renderer.lineHeight + 2,
+                            Mth.color(1f, 0.69f, 0f) | (255 << 24));
+                }
                 if (component.isRunning()) {
                     TrainRole playerRole = TrainRole.BYSTANDER;
                     if (component.canUseKillerFeatures(player))

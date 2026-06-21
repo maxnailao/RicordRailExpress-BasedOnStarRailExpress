@@ -31,7 +31,9 @@ public final class DisguiseVariants {
     public static final List<Variant> VARIANTS = List.of(
             new Variant("textures/entity/disguise/disguise_skin_1.png", false),
             new Variant("textures/entity/disguise/disguise_skin_2.png", false),
-            new Variant("textures/entity/disguise/disguise_skin_3.png", true));
+            new Variant("textures/entity/disguise/disguise_skin_3.png", true),
+            new Variant("textures/entity/disguise/disguise_skin_black.png", false),  // 全黑皮肤
+            new Variant("textures/entity/disguise/disguise_skin_white.png", false)); // 全白皮肤
 
     /**
      * 根据伪装效果等级取对应变体。

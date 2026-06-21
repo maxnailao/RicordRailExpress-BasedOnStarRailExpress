@@ -7,7 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.minecraft.commands.SharedSuggestionProvider;
 
 import java.util.ArrayList;
@@ -83,6 +83,6 @@ public class SkinArgumentType implements ArgumentType<String> {
 
     @Override
     public Collection<String> getExamples() {
-        return new ArrayList<>(SkinManager.getSkins().keySet());
+        return new ArrayList<>(ItemSkinManager.getSkins().keySet());
     }
 }

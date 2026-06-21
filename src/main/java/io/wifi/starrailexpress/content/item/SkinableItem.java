@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.content.item;
 
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
@@ -40,11 +40,11 @@ public abstract class SkinableItem extends Item {
         }
 
         String skinName = "default";
-        skinName = SkinManager.getEquippedSkin(player, itemStack);
+        skinName = ItemSkinManager.getEquippedSkin(player, itemStack);
         if (skinName == null) {
             skinName = "default";
         }
-        SkinManager.Skin skin = SkinManager.Skin.fromString(itemName, skinName);
+        ItemSkinManager.Skin skin = ItemSkinManager.Skin.fromString(itemName, skinName);
 
         if (skin != null) {
             list.add(Component.translatable("tip.skin").withStyle(style -> style.withColor(Colors.GRAY))
@@ -74,7 +74,7 @@ public abstract class SkinableItem extends Item {
     public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int i, boolean bl) {
         if (entity instanceof Player player) {
             if (itemStack.get(SREDataComponentTypes.SKIN) == null) {
-                itemStack.set(SREDataComponentTypes.SKIN, SkinManager.getEquippedSkin(player, itemStack));
+                itemStack.set(SREDataComponentTypes.SKIN, ItemSkinManager.getEquippedSkin(player, itemStack));
             }
         }
     }

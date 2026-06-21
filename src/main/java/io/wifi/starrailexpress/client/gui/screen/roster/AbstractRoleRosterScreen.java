@@ -5,9 +5,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -15,17 +18,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 职业轮换查看 / 编辑界面的共同基类：负责暖色面板布局、可滚动的职业列表与基础交互。
+ * 职业轮换查看 / 编辑界面的共同基类：负责暖色面板布局、可滚动列表与基础交互。
+ * <p>
+ * 通过顶部的“职业 / 修饰符”切换页，同一套布局可同时管理职业与修饰符两类条目。
  */
 abstract class AbstractRoleRosterScreen extends Screen {
     protected static final int ROW_H = 22;
 
+    /** 当前展示页：职业或修饰符。 */
+    protected enum Tab {
+        ROLES, MODIFIERS
+    }
+
+    /** 列表中一个可增减数量的条目（职业或修饰符），渲染所需信息已预先解析。 */
+    protected record Entry(String id, Component name, int color, boolean modifier) {
+    }
+
     protected RoleRosterState working;
-    protected final List<SRERole> roles = new ArrayList<>();
+    protected Tab tab = Tab.ROLES;
+    protected final List<Entry> entries = new ArrayList<>();
 
     protected int panelX, panelY, panelW, panelH;
     protected int listTop, listBottom;
     protected float scroll;
+
+    private Button rolesTabButton;
+    private Button modifiersTabButton;
 
     protected AbstractRoleRosterScreen(Component title, RoleRosterState working) {
         super(title);
@@ -41,6 +59,9 @@ abstract class AbstractRoleRosterScreen extends Screen {
     /** 列表中要展示的职业（查看界面只显示名单内职业）。 */
     protected abstract boolean shouldShow(SRERole role);
 
+    /** 列表中要展示的修饰符（查看界面只显示名单内修饰符）。 */
+    protected abstract boolean shouldShowModifier(SREModifier modifier);
+
     @Override
     protected void init() {
         super.init();
@@ -48,18 +69,60 @@ abstract class AbstractRoleRosterScreen extends Screen {
         this.panelH = this.height - 40;
         this.panelX = (this.width - panelW) / 2;
         this.panelY = 20;
-        this.listTop = panelY + 52;
+        // 在标题与列表之间留出一行用于职业 / 修饰符切换页。
+        this.listTop = panelY + 74;
         this.listBottom = panelY + panelH - 40;
 
-        rebuildRoles();
+        addTabButtons();
+        rebuildEntries();
         buildControls();
     }
 
-    protected void rebuildRoles() {
-        roles.clear();
-        for (SRERole role : Noellesroles.getAllRolesSorted()) {
-            if (isRosterEligible(role) && shouldShow(role)) {
-                roles.add(role);
+    private void addTabButtons() {
+        int tabW = (panelW - 32) / 2;
+        rolesTabButton = addRenderableWidget(
+                Button.builder(Component.translatable("gui.sre.role_roster.tab.roles"), b -> switchTab(Tab.ROLES))
+                        .bounds(panelX + 16, panelY + 50, tabW - 4, 18).build());
+        modifiersTabButton = addRenderableWidget(
+                Button.builder(Component.translatable("gui.sre.role_roster.tab.modifiers"), b -> switchTab(Tab.MODIFIERS))
+                        .bounds(panelX + 16 + tabW + 4, panelY + 50, tabW - 4, 18).build());
+        refreshTabButtons();
+    }
+
+    private void switchTab(Tab next) {
+        if (this.tab == next) {
+            return;
+        }
+        this.tab = next;
+        this.scroll = 0;
+        rebuildEntries();
+        refreshTabButtons();
+    }
+
+    private void refreshTabButtons() {
+        if (rolesTabButton != null) {
+            rolesTabButton.active = this.tab != Tab.ROLES;
+        }
+        if (modifiersTabButton != null) {
+            modifiersTabButton.active = this.tab != Tab.MODIFIERS;
+        }
+    }
+
+    protected void rebuildEntries() {
+        entries.clear();
+        if (tab == Tab.ROLES) {
+            for (SRERole role : Noellesroles.getAllRolesSorted()) {
+                if (isRosterEligible(role) && shouldShow(role)) {
+                    entries.add(new Entry(role.identifier().toString(),
+                            RoleUtils.getRoleName(role), role.color(), false));
+                }
+            }
+        } else {
+            for (SREModifier modifier : HMLModifiers.MODIFIERS) {
+                if (isModifierEligible(modifier) && shouldShowModifier(modifier)) {
+                    entries.add(new Entry(modifier.identifier().toString(),
+                            RoleUtils.getModifierName(modifier), modifier.color(), true));
+                }
             }
         }
         clampScroll();
@@ -73,13 +136,26 @@ abstract class AbstractRoleRosterScreen extends Screen {
         }
     }
 
-    /** 子类可覆盖此方法来显示启用的职业数量，而非列表中显示的数量。 */
+    protected static boolean isModifierEligible(SREModifier modifier) {
+        try {
+            return !modifier.isOtherModeRole();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /** 读取条目当前在名单中的数量（按页区分职业 / 修饰符）。 */
+    protected int countOf(Entry entry) {
+        return entry.modifier() ? working.modifierCountFor(entry.id()) : working.countFor(entry.id());
+    }
+
+    /** 子类可覆盖此方法来显示启用的条目数量，而非列表中显示的数量。 */
     protected int hintCount() {
-        return roles.size();
+        return entries.size();
     }
 
     protected int contentHeight() {
-        return roles.size() * ROW_H;
+        return entries.size() * ROW_H;
     }
 
     protected void clampScroll() {
@@ -123,9 +199,9 @@ abstract class AbstractRoleRosterScreen extends Screen {
         enableScissor(panelX + 1, listTop, panelX + panelW - 1, listBottom);
         try {
             int y = listTop - (int) scroll;
-            for (SRERole role : roles) {
+            for (Entry entry : entries) {
                 if (y + ROW_H >= listTop - ROW_H && y <= listBottom + ROW_H) {
-                    renderRow(g, role, y, mouseX, mouseY);
+                    renderRow(g, entry, y, mouseX, mouseY);
                 }
                 y += ROW_H;
             }
@@ -139,7 +215,7 @@ abstract class AbstractRoleRosterScreen extends Screen {
         super.render(g, mouseX, mouseY, delta);
     }
 
-    private void renderRow(GuiGraphics g, SRERole role, int y, int mouseX, int mouseY) {
+    private void renderRow(GuiGraphics g, Entry entry, int y, int mouseX, int mouseY) {
         int rowX = panelX + 10;
         int rowW = panelW - 20;
         boolean hovered = mouseX >= rowX && mouseX <= rowX + rowW
@@ -149,9 +225,9 @@ abstract class AbstractRoleRosterScreen extends Screen {
         RoleRosterStyle.drawPanel(g, rowX, y, rowW, ROW_H - 3,
                 hovered ? RoleRosterStyle.ROW_BG_HOVER : RoleRosterStyle.ROW_BG, RoleRosterStyle.ROW_BORDER);
 
-        int count = working.countFor(role.identifier().toString());
-        int nameColor = count > 0 ? (role.color() == 0 ? RoleRosterStyle.TEXT : role.color()) : 0x807060;
-        g.drawString(this.font, RoleUtils.getRoleName(role), rowX + 8, y + 6, nameColor, false);
+        int count = countOf(entry);
+        int nameColor = count > 0 ? (entry.color() == 0 ? RoleRosterStyle.TEXT : entry.color()) : 0x807060;
+        g.drawString(this.font, entry.name(), rowX + 8, y + 6, nameColor, false);
 
         if (editable()) {
             // 右侧 [-] N [+]
@@ -197,7 +273,7 @@ abstract class AbstractRoleRosterScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (editable() && mouseY >= listTop && mouseY <= listBottom && button == 0) {
             int y = listTop - (int) scroll;
-            for (SRERole role : roles) {
+            for (Entry entry : entries) {
                 int rowX = panelX + 10;
                 int rowW = panelW - 20;
                 int bx = rowX + rowW - 8;
@@ -205,11 +281,11 @@ abstract class AbstractRoleRosterScreen extends Screen {
                 int minusX = bx - 12 - 20 - 12;
                 if (mouseY >= y + 4 && mouseY <= y + 15) {
                     if (mouseX >= plusX && mouseX <= plusX + 11) {
-                        adjust(role, 1);
+                        adjust(entry, 1);
                         return true;
                     }
                     if (mouseX >= minusX && mouseX <= minusX + 11) {
-                        adjust(role, -1);
+                        adjust(entry, -1);
                         return true;
                     }
                 }
@@ -219,13 +295,13 @@ abstract class AbstractRoleRosterScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private void adjust(SRERole role, int delta) {
-        String id = role.identifier().toString();
-        int next = Math.max(0, working.countFor(id) + delta);
+    private void adjust(Entry entry, int delta) {
+        var counts = entry.modifier() ? working.modifierCounts : working.roleCounts;
+        int next = Math.max(0, countOf(entry) + delta);
         if (next <= 0) {
-            working.roleCounts.remove(id);
+            counts.remove(entry.id());
         } else {
-            working.roleCounts.put(id, next);
+            counts.put(entry.id(), next);
         }
     }
 

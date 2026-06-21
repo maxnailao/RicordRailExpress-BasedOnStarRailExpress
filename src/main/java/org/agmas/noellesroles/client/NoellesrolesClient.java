@@ -80,6 +80,8 @@ import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
+import org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.CustomFishingHookEntity;
@@ -226,6 +228,15 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
+        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.LOTTERY_MACHINE_BLOCK, RenderType.translucent());
+        // 场景方块：有毒区域 / 迷雾区域 半透明
+        BlockRenderLayerMap.INSTANCE.putBlock(
+                org.agmas.noellesroles.init.ModSceneBlocks.POISON_ZONE, RenderType.translucent());
+        BlockRenderLayerMap.INSTANCE.putBlock(
+                org.agmas.noellesroles.init.ModSceneBlocks.FOG_ZONE, RenderType.translucent());
+        // 灌木（树叶贴图）使用 cutout 渲染层
+        BlockRenderLayerMap.INSTANCE.putBlock(
+                org.agmas.noellesroles.init.ModSceneBlocks.BUSH, RenderType.cutoutMipped());
 
         // 注册C4背部渲染
         LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
@@ -272,6 +283,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
+                org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
+                org.agmas.noellesroles.client.render.MovingPlatformRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
 
@@ -666,14 +681,40 @@ public class NoellesrolesClient implements ClientModInitializer {
             context.client().execute(() -> {
                 BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());
                 if (blockEntity instanceof VendingMachinesBlockEntity vendingMachinesBlockEntity) {
-                    Map<ItemStack, Integer> shopItems = new LinkedHashMap<>();
-                    vendingMachinesBlockEntity.getShops().forEach(shop -> {
-                        shopItems.put(shop.stack(), shop.price());
-                    });
-                    context.client().setScreen(new VendingMachinesGui(shopItems).setBlockPos(payload.blockPos()));
+                    context.client().setScreen(new VendingMachinesGui(vendingMachinesBlockEntity.getShops())
+                            .setBlockPos(payload.blockPos()));
                 }
             });
 
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OpenSupplyCrateScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());
+                if (blockEntity instanceof SupplyCrateBlockEntity crate) {
+                    context.client().setScreen(new SupplyCrateGui(payload.blockPos(), crate));
+                }
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OpenLotteryMachineScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());
+                if (blockEntity instanceof LotteryMachineBlockEntity lotteryMachineBlockEntity) {
+                    context.client().setScreen(new LotteryMachineGui(payload.blockPos(),
+                            lotteryMachineBlockEntity.getShops(),
+                            lotteryMachineBlockEntity.getDrawCost(),
+                            lotteryMachineBlockEntity.getDrawCurrency()));
+                }
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(LotteryMachineResultS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                if (context.client().screen instanceof LotteryMachineGui lotteryMachineGui) {
+                    lotteryMachineGui.handleResult(payload);
+                }
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ToggleInsaneSkillC2SPacket.ID, (payload, context) -> {

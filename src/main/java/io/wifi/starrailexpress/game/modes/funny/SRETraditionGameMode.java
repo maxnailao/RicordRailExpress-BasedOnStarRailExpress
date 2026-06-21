@@ -6,16 +6,19 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
+import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.Harpymodloader;
-import org.agmas.harpymodloader.commands.SetRoleCountCommand;
+import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,8 +72,8 @@ public class SRETraditionGameMode extends SREMurderGameMode {
         Harpymodloader.setRoleMaximum(TMMRoles.VIGILANTE.getIdentifier(), 100);
 
         // 计算各阵营人数
-        int killerCount = SetRoleCountCommand.getKillerCount(players.size());
-        int vigilanteCount = SetRoleCountCommand.getVigilanteCount(players.size());
+        int killerCount = RoleCountManager.getKillerCount(players.size());
+        int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         // 中立数量设为 0
 
         // 打乱玩家顺序，确保公平分配
@@ -113,6 +116,19 @@ public class SRETraditionGameMode extends SREMurderGameMode {
                         new AnnounceWelcomePayload(role.getIdentifier().toString(), killerCount,
                                 players.size() - killerCount));
                 ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
+            }
+        }
+
+        // 传统模式：义警初始武器改为普通左轮（替换掉 ModdedRoleAssigned 事件给的警长手枪）
+        for (ServerPlayer player : players) {
+            var role = gameWorldComponent.getRole(player);
+            if (role != null && role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    ItemStack stack = player.getInventory().getItem(i);
+                    if (stack.is(ModItems.SHERIFF_REVOLVER)) {
+                        player.getInventory().setItem(i, TMMItems.REVOLVER.getDefaultInstance().copy());
+                    }
+                }
             }
         }
 

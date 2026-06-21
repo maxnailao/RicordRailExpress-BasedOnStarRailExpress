@@ -26,7 +26,7 @@ import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 @Environment(EnvType.CLIENT)
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation","rawtypes"})
 public class SpawnInfoGuiProvider {
 
     private static class EditableEntry {
@@ -99,7 +99,6 @@ public class SpawnInfoGuiProvider {
                 field -> field.getType() == RoleSpawnInfoEntries.class);
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static List<AbstractConfigListEntry> provide(
             String i18n,
             Field field,
@@ -208,7 +207,7 @@ public class SpawnInfoGuiProvider {
             EditableEntry defaultEntry,
             String i18n) {
 
-        ConfigEntryBuilder eb = ConfigEntryBuilder.create();
+        ConfigEntryBuilder.create();
         List<AbstractConfigListEntry<?>> controls = buildSpawnInfoControls(
                 currentEntry.spawnInfo,
                 defaultEntry.spawnInfo,

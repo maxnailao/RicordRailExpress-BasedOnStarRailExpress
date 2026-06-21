@@ -16,7 +16,7 @@ public class ModWhitelistServer implements DedicatedServerModInitializer {
 
 		// Register commands
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			ModWhitelistCommand.register(dispatcher);
+			ModWhitelistCommand.registerServerOnly(dispatcher);
 		});
 	}
 }

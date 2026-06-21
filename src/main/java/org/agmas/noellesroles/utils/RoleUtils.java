@@ -89,7 +89,7 @@ public class RoleUtils extends MCItemsUtils {
                 soundSource, x, y, z, volume, pitch, serverPlayer.getRandom().nextLong()));
     }
 
-    public static void RemoveAllPlayerAttributes(ServerPlayer serverPlayer) {
+    public static void removeAllPlayerAttributes(ServerPlayer serverPlayer) {
         var attris = serverPlayer.getAttributes();
         if (attris != null) {
             var allAttris = attris.getSyncableAttributes();
@@ -108,7 +108,7 @@ public class RoleUtils extends MCItemsUtils {
         }
     }
 
-    public static boolean RemoveAllEffects(Player entity) {
+    public static boolean removeAllEffects(Player entity) {
         if (entity.getActiveEffects() != null && !entity.getActiveEffects().isEmpty())
             return entity.removeAllEffects();
         return false;
@@ -275,7 +275,9 @@ public class RoleUtils extends MCItemsUtils {
         // 给新职业
         gameWorldComponent.addRole(player, role);
         // 触发事件
-        ((ModdedRoleAssigned) ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(player, role);
+        if (player instanceof ServerPlayer sp){
+            (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
+        }
     }
 
     public static MutableComponent getRoleName(ResourceLocation roleIdentifier) {
@@ -283,12 +285,14 @@ public class RoleUtils extends MCItemsUtils {
             return null;
         // 检查自定义职业的显示名称
         if (roleIdentifier.getNamespace().equals("customrole")) {
-            var customData = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(roleIdentifier.getPath());
+            var customData = io.wifi.starrailexpress.customrole.CustomRoleLoader
+                    .getCustomRoleData(roleIdentifier.getPath());
             if (customData != null && !customData.displayName.isEmpty()) {
                 return Component.literal(customData.displayName);
             }
             // 服务端不可用时，回退到客户端网络同步的数据
-            customData = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(roleIdentifier.getPath());
+            customData = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork
+                    .getSyncedRole(roleIdentifier.getPath());
             if (customData != null && !customData.displayName.isEmpty()) {
                 return Component.literal(customData.displayName);
             }
@@ -350,18 +354,24 @@ public class RoleUtils extends MCItemsUtils {
         var res = ResourceLocation.tryParse(roleName);
         if (res == null) {
             if (roleName.startsWith("customrole:")) {
-                var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(roleName.substring("customrole:".length()));
-                if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
-                cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(roleName.substring("customrole:".length()));
-                if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
+                var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader
+                        .getCustomRoleData(roleName.substring("customrole:".length()));
+                if (cd != null && !cd.description.isEmpty())
+                    return Component.literal(fixNewlines(cd.description));
+                cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork
+                        .getSyncedRole(roleName.substring("customrole:".length()));
+                if (cd != null && !cd.description.isEmpty())
+                    return Component.literal(fixNewlines(cd.description));
             }
             return Component.translatable("info.screen.roleid." + roleName);
         }
         if ("customrole".equals(res.getNamespace())) {
             var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(res.getPath());
-            if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
+            if (cd != null && !cd.description.isEmpty())
+                return Component.literal(fixNewlines(cd.description));
             cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(res.getPath());
-            if (cd != null && !cd.description.isEmpty()) return Component.literal(fixNewlines(cd.description));
+            if (cd != null && !cd.description.isEmpty())
+                return Component.literal(fixNewlines(cd.description));
         }
         return Component.translatable("info.screen.roleid." + res.getPath());
     }

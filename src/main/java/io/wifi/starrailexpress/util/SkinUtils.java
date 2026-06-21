@@ -24,7 +24,7 @@ public class SkinUtils {
         if (itemStack.getItem() instanceof io.wifi.starrailexpress.content.item.SkinableItem) {
             SRECosmetics.setSkin(player, itemStack, skinName);
             String itemTypeName = getItemTypeName(itemStack);
-            SkinManager.setEquippedSkinForItemType(player, itemTypeName, skinName);
+            ItemSkinManager.setEquippedSkinForItemType(player, itemTypeName, skinName);
         }
     }
     

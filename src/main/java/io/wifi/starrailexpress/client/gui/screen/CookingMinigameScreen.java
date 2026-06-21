@@ -42,6 +42,8 @@ public class CookingMinigameScreen extends Screen {
 
     private int targetType;
     private int caughtCount;
+    private int spawnCount;
+    private int uiTicks;
 
     public CookingMinigameScreen(BlockPos questPos, Runnable onSuccess) {
         super(Component.translatable("screen.starrailexpress.cooking_minigame"));
@@ -54,6 +56,7 @@ public class CookingMinigameScreen extends Screen {
         panX = (this.width - PAN_WIDTH) / 2f;
         foods.clear();
         caughtCount = 0;
+        spawnCount = 0;
         spawnTimer = 30;
 
         foodTextures = new ResourceLocation[FOOD_BUFF_IDS.length];
@@ -71,17 +74,24 @@ public class CookingMinigameScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        uiTicks++;
         if (foodTextures == null) return;
         if (movingLeft && panX > 0) panX -= 8;
         if (movingRight && panX + PAN_WIDTH < this.width) panX += 8;
 
         if (--spawnTimer <= 0) {
             spawnTimer = 18 + rng.nextInt(25);
-            foods.add(new FoodItem(30 + rng.nextFloat() * (this.width - 60), -FOOD_SIZE,
-                    rng.nextInt(foodTextures.length)));
+            spawnCount++;
+            int type;
+            if (spawnCount % 5 == 0) {
+                type = targetType;
+            } else {
+                type = rng.nextInt(foodTextures.length);
+            }
+            foods.add(new FoodItem(30 + rng.nextFloat() * (this.width - 60), -FOOD_SIZE, type));
         }
 
-        for (FoodItem food : foods) food.y += 4.5f;
+        for (FoodItem food : foods) food.y += 6.5f;
 
         List<FoodItem> toRemove = new ArrayList<>();
         for (FoodItem food : foods) {
@@ -113,13 +123,17 @@ public class CookingMinigameScreen extends Screen {
 
         if (foodTextures == null) return;
 
-        // 目标图标 + 进度
-        int iconX = this.width / 2 - 30;
-        int iconY = 10;
+        // 顶部目标 HUD 卡片：目标图标 + 进度
+        int cardW = 116;
+        int cardX = this.width / 2 - cardW / 2;
+        int cardY = 8;
+        MinigameUI.panel(guiGraphics, cardX, cardY, cardX + cardW, cardY + FOOD_SIZE + 14, 0);
+        int iconX = cardX + 10;
+        int iconY = cardY + 7;
         guiGraphics.blit(foodTextures[targetType], iconX, iconY, 0, 0, FOOD_SIZE, FOOD_SIZE, FOOD_SIZE, FOOD_SIZE);
         guiGraphics.drawString(this.font,
                 Component.translatable("screen.starrailexpress.cooking_count", caughtCount, TARGET_COUNT),
-                iconX + FOOD_SIZE + 4, iconY + (FOOD_SIZE - 8) / 2, FOOD_COLORS[targetType]);
+                iconX + FOOD_SIZE + 8, iconY + (FOOD_SIZE - 8) / 2, FOOD_COLORS[targetType]);
 
         // 掉落食材
         for (FoodItem food : foods) {
@@ -127,20 +141,23 @@ public class CookingMinigameScreen extends Screen {
                     (int) food.x, (int) food.y, 0, 0, FOOD_SIZE, FOOD_SIZE, FOOD_SIZE, FOOD_SIZE);
         }
 
-        // 平底锅
+        // 平底锅（带柔和接住高亮）
         int panY = this.height - 42;
+        float glow = MinigameUI.pulse(uiTicks, 0.18f);
+        MinigameUI.roundRect(guiGraphics, (int) panX, panY - 3, (int) panX + PAN_WIDTH, panY,
+                2, MinigameUI.withAlpha(0xFFFFC46B, 0.25f + 0.2f * glow));
         guiGraphics.blit(PAN_TEXTURE, (int) panX, panY, 0, 0,
                 PAN_WIDTH, 14, PAN_WIDTH, 14);
 
         // 操作提示
         guiGraphics.drawCenteredString(this.font,
                 Component.translatable("screen.starrailexpress.cooking_hint"),
-                this.width / 2, this.height - 15, 0xAAAAAA);
+                this.width / 2, this.height - 15, MinigameUI.MUTED);
     }
 
     @Override
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fillGradient(0, 0, width, height, 0x521A1A2E, 0x5216213E);
+        MinigameUI.dim(guiGraphics, width, height);
     }
 
     @Override

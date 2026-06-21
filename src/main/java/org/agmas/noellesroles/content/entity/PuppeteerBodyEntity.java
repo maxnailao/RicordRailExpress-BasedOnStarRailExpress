@@ -3,6 +3,7 @@ package org.agmas.noellesroles.content.entity;
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -33,10 +34,18 @@ import java.util.UUID;
  * 如果本体被杀死，傀儡师也会死亡。
  */
 public class PuppeteerBodyEntity extends LivingEntity {
+    public ResourceLocation defaultTexture = DefaultPlayerSkin.getDefaultTexture();
+
+    @Override
+    public void kill() {
+        this.discard();
+    }
 
     /** 所有者 UUID */
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(
             PuppeteerBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    // 不会被自然刷新
+    private boolean persistenceRequired = false;
 
     /** 皮肤 GameProfile（用于渲染玩家皮肤） */
     private GameProfile skinProfile = null;
@@ -53,6 +62,10 @@ public class PuppeteerBodyEntity extends LivingEntity {
     /** 所有者玩家引用（缓存） */
     private Player ownerCache = null;
 
+    public boolean isPersistenceRequired() {
+        return this.persistenceRequired;
+    }
+
     @Override
     public boolean hasCustomName() {
         return false;
@@ -65,7 +78,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     @Override
     public boolean isCustomNameVisible() {
-        return false ;
+        return false;
     }
 
     @Override
@@ -78,6 +91,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         this.setNoGravity(false); // 有重力
         this.setCustomNameVisible(false);
         this.setHealth(20.0F); // 20点生命值（和玩家一样）
+        this.persistenceRequired = false;
     }
 
     @Override
@@ -118,10 +132,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
      * 获取所有者玩家
      */
     public Player getOwner() {
-        if (ownerCache != null && ownerCache.isAlive()) {
+        if (ownerCache != null) {
             return ownerCache;
         }
-
         Optional<UUID> ownerUuid = getOwnerUuid();
         if (ownerUuid.isPresent()) {
             ownerCache = level().getPlayerByUUID(ownerUuid.get());
@@ -129,7 +142,6 @@ public class PuppeteerBodyEntity extends LivingEntity {
         }
         return null;
     }
-
 
     /**
      * 获取皮肤 GameProfile（用于客户端渲染）
@@ -145,13 +157,18 @@ public class PuppeteerBodyEntity extends LivingEntity {
         return ownerName;
     }
 
+    public void setPersistenceRequired() {
+        this.persistenceRequired = true;
+    }
+
     @Override
     public void tick() {
         super.tick();
-
         if (level().isClientSide())
             return;
-
+        if (this.persistenceRequired) {
+            return;
+        }
         final var gameWorldComponent = SREGameWorldComponent.KEY.get(level());
         if (gameWorldComponent != null) {
             if (!gameWorldComponent.isRunning()) {
@@ -180,10 +197,10 @@ public class PuppeteerBodyEntity extends LivingEntity {
         if (owner != null) {
             // 通知傀儡师组件本体死亡
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
-            if (gameWorld.isRole( owner, ModRoles.PUPPETEER)) {
+            if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
                 PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(owner);
                 puppeteerComp.onBodyDeath(player, deathReason);
-            }else {
+            } else {
                 owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
                 ModEffects.pierceDeath = true;
                 GameUtils.killPlayer(owner, true, player, deathReason);
@@ -234,7 +251,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
-
+        if (nbt.contains("PersistenceRequired")) {
+            this.persistenceRequired = nbt.getBoolean("PersistenceRequired");
+        }
         if (nbt.contains("OwnerUUID")) {
             this.entityData.set(OWNER_UUID, Optional.of(nbt.getUUID("OwnerUUID")));
         }
@@ -248,6 +267,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
+        nbt.putBoolean("PersistenceRequired", this.persistenceRequired);
 
         Optional<UUID> ownerUuid = getOwnerUuid();
         ownerUuid.ifPresent(uuid -> nbt.putUUID("OwnerUUID", uuid));

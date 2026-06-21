@@ -147,6 +147,7 @@ public class MapManagerCommand {
                   areas.time = 18000;
                   areas.daylightCycle = false;
                   areas.weatherCycle = false;
+                  areas.minigameQuestEnabled = false;
                   areas.sync();
                   ctx.getSource().sendSuccess(
                       () -> Component.literal("Created new area configuration")
@@ -187,6 +188,7 @@ public class MapManagerCommand {
                 .then(setTime())
                 .then(setDaylightCycle())
                 .then(setWeatherCycle())
+                .then(setMinigameQuestEnabled())
                 .then(setInitialItems()))
             .then(Commands.literal("get")
                 .requires(source -> source.hasPermission(2))
@@ -221,6 +223,7 @@ public class MapManagerCommand {
                 .then(buildGetSimple("time", a -> String.valueOf(a.time)))
                 .then(buildGetSimple("daylightCycle", a -> String.valueOf(a.daylightCycle)))
                 .then(buildGetSimple("weatherCycle", a -> String.valueOf(a.weatherCycle)))
+                .then(buildGetSimple("minigameQuestEnabled", a -> String.valueOf(a.minigameQuestEnabled)))
                 .then(buildGetSimple("initialItems", a -> a.initialItems.isEmpty() ? "(none)" : String.join(", ", a.initialItems)))
                 .then(getDisabledTasks()))
             .then(Commands.literal("remove")
@@ -590,6 +593,14 @@ public class MapManagerCommand {
     sendSetFeedback(source, "weatherCycle", String.valueOf(value));
   }
 
+  // 15b. minigameQuestEnabled
+  private static void setMinigameQuestEnabled(CommandSourceStack source, boolean value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.minigameQuestEnabled = value;
+    areas.sync();
+    sendSetFeedback(source, "minigameQuestEnabled", String.valueOf(value));
+  }
+
   // 16. initialItems
   private static void setInitialItems(CommandSourceStack source, String value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
@@ -646,6 +657,7 @@ public class MapManagerCommand {
     sb.append("time: ").append(areas.time).append("\n");
     sb.append("daylightCycle: ").append(areas.daylightCycle).append("\n");
     sb.append("weatherCycle: ").append(areas.weatherCycle).append("\n");
+    sb.append("minigameQuestEnabled: ").append(areas.minigameQuestEnabled).append("\n");
     sb.append("initialItems: ").append(areas.initialItems.isEmpty() ? "(none)" : String.join(", ", areas.initialItems)).append("\n");
     sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks));
     source.sendSuccess(
@@ -925,6 +937,15 @@ public class MapManagerCommand {
         .then(Commands.argument("value", BoolArgumentType.bool())
             .executes(ctx -> {
               setWeatherCycle(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setMinigameQuestEnabled() {
+    return Commands.literal("minigameQuestEnabled")
+        .then(Commands.argument("value", BoolArgumentType.bool())
+            .executes(ctx -> {
+              setMinigameQuestEnabled(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
               return 1;
             }));
   }

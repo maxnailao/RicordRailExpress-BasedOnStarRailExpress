@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.StatusInit.StatusBar;
+import io.wifi.starrailexpress.client.util.SREClientUtils;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
@@ -258,10 +259,10 @@ public class StupidExpressClient implements ClientModInitializer {
             if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
                     || RoleUtils.isPlayerTheJob(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 return OnGettingPlayerSkin.PlayerSkinResult
-                        .playerSkin(SRE.id("textures/entity/custom_psycho/th_lumen.png"), Model.SLIM);
+                        .playerSkin(SRE.id("textures/entity/custom_psycho/th_sariel.png"), Model.SLIM);
             }
             if (SREClient.getLooseEndPenalty()) {
-                PlayerSkin.Model model = player.getSkin().model();
+                PlayerSkin.Model model = SREClientUtils.getPlayerOriginalSkin(player).model();
                 boolean isSLIM = (model == PlayerSkin.Model.SLIM);
                 if (isSLIM) {
                     return OnGettingPlayerSkin.PlayerSkinResult.alexSlim();

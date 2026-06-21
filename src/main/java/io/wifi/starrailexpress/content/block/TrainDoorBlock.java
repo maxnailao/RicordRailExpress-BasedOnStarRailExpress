@@ -37,9 +37,12 @@ public class TrainDoorBlock extends SmallDoorBlock {
             DoorOpenSuperFunction superOpenFunction,
             BlockState state, Level world, BlockPos pos, Player player,
             BlockHitResult hit) {
-
+        
         BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
         if (world.getBlockEntity(lowerPos) instanceof SmallDoorBlockEntity entity) {
+            if (entity.isInCooldown()) {
+                return InteractionResult.FAIL;
+            }
             if (entity.isBlasted()) {
                 return InteractionResult.PASS;
             }

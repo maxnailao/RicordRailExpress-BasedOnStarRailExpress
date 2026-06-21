@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "noellesroles:block/supply_crate",
+    "north": "noellesroles:block/supply_crate",
+    "east": "noellesroles:block/supply_crate",
+    "south": "noellesroles:block/supply_crate",
+    "west": "noellesroles:block/supply_crate",
+    "up": "noellesroles:block/supply_crate_open",
+    "down": "noellesroles:block/supply_crate"
+  }
+}

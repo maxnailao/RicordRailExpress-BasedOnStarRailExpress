@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=true": {
+      "model": "noellesroles:block/reactor_active"
+    },
+    "active=false": {
+      "model": "noellesroles:block/reactor"
+    }
+  }
+}

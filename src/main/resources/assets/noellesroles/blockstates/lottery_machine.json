@@ -1,0 +1,23 @@
+{
+  "variants": {
+    "half=lower,facing=north": {
+      "model": "noellesroles:block/lottery_machine",
+      "y": 180
+    },
+    "half=lower,facing=east": {
+      "model": "noellesroles:block/lottery_machine",
+      "y": 270
+    },
+    "half=lower,facing=south": {
+      "model": "noellesroles:block/lottery_machine",
+      "y": 0
+    },
+    "half=lower,facing=west": {
+      "model": "noellesroles:block/lottery_machine",
+      "y": 90
+    },
+    "half=upper": {
+      "model": "noellesroles:block/lottery_machine_top"
+    }
+  }
+}

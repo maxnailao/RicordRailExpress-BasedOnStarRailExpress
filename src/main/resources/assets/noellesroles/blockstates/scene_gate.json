@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "closed=true": {
+      "model": "noellesroles:block/scene_gate"
+    },
+    "closed=false": {
+      "model": "noellesroles:block/scene_gate_open"
+    }
+  }
+}
