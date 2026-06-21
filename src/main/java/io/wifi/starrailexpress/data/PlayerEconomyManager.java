@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -155,6 +156,27 @@ public final class PlayerEconomyManager {
     private static void onJoin(ServerPlayer player) {
         Entry entry = get(player.getUUID());
         entry.online = true;
+        // 如果内存中没有数据，从 CCA 组件恢复（服务器重启后 NBT 持久化的数据）
+        if (entry.state.equipped.isEmpty() && entry.state.unlocked.isEmpty()) {
+            try {
+                SREPlayerSkinsComponent cca = SREPlayerSkinsComponent.KEY.get(player);
+                Map<String, String> ccaEquipped = cca.getEquippedSkins();
+                if (!ccaEquipped.isEmpty()) {
+                    entry.state.equipped.putAll(ccaEquipped);
+                }
+                Map<String, Map<String, Boolean>> ccaUnlocked = cca.getUnlockedSkins();
+                if (!ccaUnlocked.isEmpty()) {
+                    ccaUnlocked.forEach((type, skins) ->
+                            entry.state.unlocked.put(type, new ConcurrentHashMap<>(skins)));
+                }
+                if (!ccaEquipped.isEmpty() || !ccaUnlocked.isEmpty()) {
+                    entry.updatedAt = System.currentTimeMillis();
+                    entry.dirty = true;
+                }
+            } catch (Exception e) {
+                SRE.LOGGER.warn("从 CCA 组件恢复玩家 {} 的皮肤数据失败", player.getUUID(), e);
+            }
+        }
         send(player, entry);
         if (!isDatabaseEnabled()) {
             return;

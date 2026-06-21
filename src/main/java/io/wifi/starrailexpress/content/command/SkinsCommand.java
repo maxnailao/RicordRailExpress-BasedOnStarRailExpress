@@ -7,7 +7,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.network.OpenSkinScreenPaylod;
-import io.wifi.starrailexpress.util.SkinManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -27,13 +27,13 @@ public class SkinsCommand {
     /** 物品类型补全 */
     private static final SuggestionProvider<CommandSourceStack> SKIN_TYPE_SUGGESTIONS =
             (ctx, builder) -> SharedSuggestionProvider.suggest(
-                    SkinManager.getSkins().keySet(), builder);
+                    ItemSkinManager.getSkins().keySet(), builder);
 
     /** 皮肤ID补全（根据已输入的物品类型动态补全） */
     private static final SuggestionProvider<CommandSourceStack> SKIN_ID_SUGGESTIONS =
             (ctx, builder) -> {
                 String typeName = StringArgumentType.getString(ctx, "type");
-                HashMap<String, SkinManager.Skin> skins = SkinManager.getSkins(typeName);
+                HashMap<String, ItemSkinManager.Skin> skins = ItemSkinManager.getSkins(typeName);
                 if (skins != null) {
                     return SharedSuggestionProvider.suggest(skins.keySet(), builder);
                 }
@@ -85,14 +85,14 @@ public class SkinsCommand {
         String skinName = StringArgumentType.getString(ctx, "skin");
 
         // 验证物品类型是否已注册
-        if (SkinManager.getSkinTypeId(typeName) < 0) {
+        if (ItemSkinManager.getSkinTypeId(typeName) < 0) {
             ctx.getSource().sendFailure(
                     Component.translatable("commands.sre.skins.give.unknown_type", typeName));
             return 0;
         }
 
         // 验证皮肤是否存在
-        HashMap<String, SkinManager.Skin> skins = SkinManager.getSkins(typeName);
+        HashMap<String, ItemSkinManager.Skin> skins = ItemSkinManager.getSkins(typeName);
         if (skins == null || !skins.containsKey(skinName)) {
             ctx.getSource().sendFailure(
                     Component.translatable("commands.sre.skins.give.unknown_skin", skinName, typeName));
@@ -103,9 +103,9 @@ public class SkinsCommand {
         int count = 0;
         for (ServerPlayer target : targets) {
             // 1. 解锁皮肤
-            SkinManager.unlockSkinForItemType(target, typeName, skinName);
+            ItemSkinManager.unlockSkinForItemType(target, typeName, skinName);
             // 2. 设置为当前装备皮肤
-            SkinManager.setEquippedSkinForItemType(target, typeName, skinName);
+            ItemSkinManager.setEquippedSkinForItemType(target, typeName, skinName);
             // 3. 在背包中找到匹配物品并设置 SKIN DataComponent
             for (ItemStack stack : target.getInventory().items) {
                 if (stack.getItem() instanceof SkinableItem skinable
@@ -114,7 +114,7 @@ public class SkinsCommand {
                 }
             }
             // 4. 同步到客户端
-            SkinManager.sync(target);
+            ItemSkinManager.sync(target);
             count++;
         }
 
