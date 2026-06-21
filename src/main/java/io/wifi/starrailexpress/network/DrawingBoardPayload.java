@@ -34,7 +34,7 @@ public class DrawingBoardPayload {
 
         public static DrawBoardSavePayload decode(FriendlyByteBuf buf) {
             int color = buf.readByte();
-            byte[] pixels = buf.readByteArray();
+            byte[] pixels = buf.readByteArray(1024); // 限制最大大小，防止OOM崩溃
             return new DrawBoardSavePayload(color, pixels);
         }
     }

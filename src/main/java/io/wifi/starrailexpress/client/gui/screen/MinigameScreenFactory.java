@@ -112,8 +112,7 @@ public class MinigameScreenFactory {
                 SimpleQuestMinigameScreen.Mode.REACTION_TEST));
         FACTORY.put("link_match", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
                 SimpleQuestMinigameScreen.Mode.LINK_MATCH));
-        FACTORY.put("tetris", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
-                SimpleQuestMinigameScreen.Mode.TETRIS));
+        // tetris 已在第29行注册为独立的 TetrisMinigameScreen，不再用简化版覆盖
         FACTORY.put("memory_match", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
                 SimpleQuestMinigameScreen.Mode.MEMORY_MATCH));
         FACTORY.put("pipe_connect", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,

@@ -28,7 +28,8 @@ public record DoudizhuPlayC2SPacket(int[] cardIds) implements CustomPacketPayloa
     }
 
     public static DoudizhuPlayC2SPacket read(FriendlyByteBuf buf) {
-        int len = buf.readByte();
+        int len = buf.readByte() & 0xFF; // 无符号读取，防止负数导致崩溃
+        if (len > 20) len = 20; // 最大出牌数限制
         int[] arr = new int[len];
         for (int i = 0; i < len; i++) arr[i] = buf.readByte();
         return new DoudizhuPlayC2SPacket(arr);

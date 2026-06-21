@@ -185,11 +185,15 @@ public record MahjongStateS2CPacket(
         if (data == null || data.length == 0 || data[0] == 0) return new int[0][];
         int pos = 0;
         int count = data[pos++] & 0xFF;
+        if (count > 8) count = 8; // 安全上限
         int[][] melds = new int[count][];
         for (int i = 0; i < count; i++) {
+            if (pos >= data.length) { melds[i] = new int[0]; continue; }
             int tileCount = data[pos++] & 0xFF;
+            if (tileCount > 4) tileCount = 4; // 一副露最多4张牌
             melds[i] = new int[tileCount];
             for (int j = 0; j < tileCount; j++) {
+                if (pos >= data.length) { break; }
                 melds[i][j] = data[pos++] & 0xFF;
             }
         }
@@ -228,12 +232,16 @@ public record MahjongStateS2CPacket(
         for (int o = 0; o < 3; o++) {
             if (pos >= data.length) { result[o] = new int[0][]; continue; }
             int count = data[pos++] & 0xFF;
+            if (count > 8) count = 8; // 安全上限
             if (count == 0) { result[o] = new int[0][]; continue; }
             result[o] = new int[count][];
             for (int i = 0; i < count; i++) {
+                if (pos >= data.length) { result[o][i] = new int[0]; continue; }
                 int tileCount = data[pos++] & 0xFF;
+                if (tileCount > 4) tileCount = 4; // 一副露最多4张牌
                 result[o][i] = new int[tileCount];
                 for (int j = 0; j < tileCount; j++) {
+                    if (pos >= data.length) { break; }
                     result[o][i][j] = data[pos++] & 0xFF;
                 }
             }

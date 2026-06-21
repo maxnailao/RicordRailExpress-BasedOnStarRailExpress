@@ -53,8 +53,8 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
         this.finalPhaseThreshold = buf.readInt();
         this.remainingTime = buf.readInt();
         
-        // 读取rotationOrder
-        int orderSize = buf.readInt();
+        // 读取rotationOrder（带安全上限）
+        int orderSize = Math.min(buf.readInt(), 200);
         this.rotationOrder = new HashMap<>();
         for (int i = 0; i < orderSize; i++) {
             UUID uuid = buf.readUUID();
@@ -62,28 +62,28 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
             rotationOrder.put(uuid, index);
         }
         
-        // 读取selectedRoles
-        int selectedSize = buf.readInt();
+        // 读取selectedRoles（带安全上限）
+        int selectedSize = Math.min(buf.readInt(), 200);
         this.selectedRoles = new HashMap<>();
         for (int i = 0; i < selectedSize; i++) {
             UUID uuid = buf.readUUID();
-            String rolePath = buf.readUtf();
+            String rolePath = buf.readUtf(256);
             selectedRoles.put(uuid, rolePath);
         }
         
-        // 读取currentCandidates
-        int candidatesSize = buf.readInt();
+        // 读取currentCandidates（带安全上限）
+        int candidatesSize = Math.min(buf.readInt(), 500);
         this.currentCandidates = new ArrayList<>();
         for (int i = 0; i < candidatesSize; i++) {
-            String rolePath = buf.readUtf();
+            String rolePath = buf.readUtf(256);
             currentCandidates.add(rolePath);
         }
         
         // 读取myRotationIndex
         this.myRotationIndex = buf.readInt();
         
-        // 读取randomChoosers
-        int randomSize = buf.readInt();
+        // 读取randomChoosers（带安全上限）
+        int randomSize = Math.min(buf.readInt(), 200);
         this.randomChoosers = new HashSet<>();
         for (int i = 0; i < randomSize; i++) {
             randomChoosers.add(buf.readUUID());

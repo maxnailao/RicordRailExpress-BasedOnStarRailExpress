@@ -48,7 +48,8 @@ public record DoudizhuStateS2CPacket(
         for (int v : arr) buf.writeByte(v);
     }
     private static int[] readInts(FriendlyByteBuf buf) {
-        int len = buf.readByte();
+        int len = buf.readByte() & 0xFF; // 无符号读取，防止负数导致NegativeArraySizeException
+        if (len > 64) len = 64; // 安全上限
         int[] arr = new int[len];
         for (int i = 0; i < len; i++) arr[i] = buf.readByte();
         return arr;

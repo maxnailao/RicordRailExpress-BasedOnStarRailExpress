@@ -34,9 +34,14 @@ public class DrawingBoardServerNetwork {
             ItemStack stack = findDrawingBoardInHands(player);
             if (stack.isEmpty()) return;
 
+            // 验证像素数据长度，防止恶意/损坏的客户端导致崩溃
+            byte[] data = payload.pixels();
+            if (data == null || data.length < 256) {
+                return; // 数据不完整，静默忽略
+            }
+
             // 保存像素数据
             byte[][] pixels = new byte[16][16];
-            byte[] data = payload.pixels();
             for (int i = 0; i < 256; i++) {
                 pixels[i / 16][i % 16] = data[i];
             }

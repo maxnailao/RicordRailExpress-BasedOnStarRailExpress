@@ -2438,7 +2438,6 @@
   "minigame.starrailexpress.three_cards": "Three Cards",
   "minigame.starrailexpress.break_jar": "Break Jar",
   "minigame.starrailexpress.zone_calibration": "Zone Calibration",
-  "minigame.starrailexpress.zone_calibration": "Zone Calibration",
   "minigame.starrailexpress.water_valve": "Water Valve",
   "minigame.starrailexpress.water_valve.hint": "Click and drag to turn the valve",
   "minigame.starrailexpress.water_valve.clockwise": "↻ Clockwise",
@@ -2532,12 +2531,9 @@
   "minigame.starrailexpress.balance_scale.target": "Target: %s",
   "minigame.starrailexpress.balance_scale.weight": "Weight: %s",
   "item.starrailexpress.broken_gun": "Broken Gun",
-  "item.starrailexpress.broken_gun.tooltip": "The barrel is warped. Cannot be picked up and vanishes after 10 seconds."
-  "minigame.starrailexpress.zone_calibration": "Zone Calibration"
-  "subtitle.sre.teamkill_punished": "Punishment triggered (%d/%d)",
-  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
+  "item.starrailexpress.broken_gun.tooltip": "The barrel is warped. Cannot be picked up and vanishes after 10 seconds.",
+  "minigame.starrailexpress.zone_calibration": "Zone Calibration",
   "death_reason.starrailexpress.phantom_destroyed": "Phantom Destroyed",
-  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
   "announcement.star.role.wifi:warden": "Warden",
   "announcement.star.goals.wifi:warden": "Judge the killer, uphold justice",
   "message.warden.verdict_used": "§9You have cast Justice Discipline on %s!",
@@ -2554,15 +2550,8 @@
   "message.warden.target_died": "§6Your verdict target has died, verdict voided.",
   "hud.noellesroles.warden.no_gun": "§6Justice is coming",
   "hud.noellesroles.warden.ready": "§aVerdict Ready",
-  "hud.noellesroles.repair.skill_state.collector_supply": "Emergency Supply",
 
   "screen.sre.skins.knife.testofknifeskin.name": "testofknifeskin",
-
-  "screen.sre.skins.preview": "Preview",
-  "screen.sre.skins.locked": "Locked",
-  "screen.sre.skins.no_items": "No skinnable items in inventory",
-  "screen.sre.skins.hat_title": "Hat",
-  "screen.sre.skins.instructions": "Select an item category to view available skins",
 
   "commands.sre.skins.give.success": "Unlocked skin %s (%s) for %d player(s): %s",
   "commands.sre.skins.give.unknown_type": "Unknown skin type: %s",

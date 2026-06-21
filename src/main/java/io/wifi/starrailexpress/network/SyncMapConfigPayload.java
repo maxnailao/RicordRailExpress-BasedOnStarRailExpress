@@ -23,14 +23,16 @@ public record SyncMapConfigPayload(List<MapConfig.MapEntry> maps) implements Cus
 
     public static SyncMapConfigPayload decode(FriendlyByteBuf buf) {
         int size = buf.readInt();
+        if (size < 0) size = 0;
+        if (size > 500) size = 500; // 安全上限，防止损坏/恶意数据导致OOM
         List<MapConfig.MapEntry> maps = new ArrayList<>();
         
         for (int i = 0; i < size; i++) {
-            String id = buf.readUtf();
-            String displayName = buf.readUtf();
-            String description = buf.readUtf();
+            String id = buf.readUtf(256);
+            String displayName = buf.readUtf(256);
+            String description = buf.readUtf(1024);
             boolean canSelect = buf.readBoolean();
-            String color = buf.readUtf();
+            String color = buf.readUtf(64);
             
             MapConfig.MapEntry entry = new MapConfig.MapEntry();
             entry.id = id;

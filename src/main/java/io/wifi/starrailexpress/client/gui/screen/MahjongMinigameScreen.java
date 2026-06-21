@@ -453,13 +453,13 @@ public class MahjongMinigameScreen extends Screen {
             meldStartX += 6;
         }
 
-        // ── 对家（顶部，向下移动避免与弃牌区重叠）──
-        renderTopOpponent(g, 0);
+        // ── 对家（顶部）── oppIdx=1 对应 (playerIndex+2)%4 = 对家
+        renderTopOpponent(g, 1);
 
-        // ── 右侧对手 ──
-        renderRightOpponent(g, 1);
+        // ── 右侧对手（下家）── oppIdx=0 对应 (playerIndex+1)%4 = 下家
+        renderRightOpponent(g, 0);
 
-        // ── 左侧对手 ──
+        // ── 左侧对手（上家）── oppIdx=2 对应 (playerIndex+3)%4 = 上家
         renderLeftOpponent(g, 2);
 
         // ─ 中央弃牌区（使用相对座位索引，优化位置避免重叠）──

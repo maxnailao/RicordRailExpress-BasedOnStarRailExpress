@@ -19,14 +19,13 @@ public record UpdateSkinSelectedPayload(String id, String name) implements Custo
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeUtf(id);
-        buf.writeUtf(name);
-
+        buf.writeUtf(id, 128);
+        buf.writeUtf(name, 128);
     }
 
     public static UpdateSkinSelectedPayload decode(FriendlyByteBuf buf) {
-        String id = buf.readUtf();
-        String name = buf.readUtf();
+        String id = buf.readUtf(128); // 限制字符串长度，防止恶意客户端发送超长字符串导致OOM
+        String name = buf.readUtf(128);
         return new UpdateSkinSelectedPayload(id,name);
     }
     public static void registerReceiver() {

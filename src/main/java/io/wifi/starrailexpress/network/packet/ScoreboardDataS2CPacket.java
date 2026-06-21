@@ -42,6 +42,8 @@ public record ScoreboardDataS2CPacket(
     public static ScoreboardDataS2CPacket read(FriendlyByteBuf buf) {
         String id = buf.readUtf(64);
         int count = buf.readInt();
+        if (count < 0) count = 0;
+        if (count > 100) count = 100; // 安全上限，防止OOM崩溃
         List<Entry> list = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             list.add(new Entry(buf.readUtf(64), buf.readInt(), buf.readLong()));
