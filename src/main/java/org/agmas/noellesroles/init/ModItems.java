@@ -1061,7 +1061,7 @@ public class ModItems {
                 .add(new ShopEntry(TMMItems.SCORPION.getDefaultInstance(), 15, ShopEntry.Type.POISON));
         // 催化剂/100
         ModItems.POISONER_SHOP_ENTRIES
-                .add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+                .add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
         // 假药丸/20
         ModItems.POISONER_SHOP_ENTRIES
                 .add(new ShopEntry(ModItems.createPillStack(true), 20, ShopEntry.Type.TOOL));
