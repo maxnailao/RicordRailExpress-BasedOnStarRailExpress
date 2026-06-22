@@ -19,15 +19,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * - 原版CD为300秒（5分钟），仇杀客改为30秒
  * - 修改射击狂热的疯狂模式：一层护盾（护甲为1）、狂暴皮肤（type=1）
  */
-@Mixin(targets = "io.wifi.starrailexpress.cca.PlayerShopComponent")
+@Mixin(targets = "io.wifi.starrailexpress.cca.SREPlayerShopComponent")
 public class PlayerPsychoComponentCooldownMixin {
 
     /**
      * 拦截usePsychoMode方法，为仇杀客设置自定义的疯狂模式冷却时间
      * 在方法开头注入，这样后续的原方法调用会使用我们设置的CD
      */
-    @Inject(method = "usePsychoMode", at = @At("TAIL"), remap = false)
+    @Inject(method = "usePsychoMode(Lnet/minecraft/world/entity/player/Player;DI)Z", at = @At("TAIL"), remap = false)
     private static void noellesroles$modifyBloodFeudistPsychoCooldown(@NotNull Player player,
+            double multiplier, int armour,
             CallbackInfoReturnable<Boolean> cir) {
         // 只在服务端处理
         if (player.level().isClientSide()) {
