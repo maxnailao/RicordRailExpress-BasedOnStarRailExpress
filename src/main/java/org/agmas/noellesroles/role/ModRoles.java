@@ -407,7 +407,7 @@ public class ModRoles {
             .setCanSeeTime(true)
             .setComponentKey(ModComponents.CORRUPT_COP)
             .setDefaultMax(1)
-            .setDefaultEnableChance(1500)
+            .setDefaultEnableChance(4000)
             .setDefaultEnableNeededPlayerCount(12);
 
 
