@@ -1,7 +1,7 @@
 {
   "gui.sre.role_roster.view.title": "职业轮换名单",
   "gui.sre.role_roster.edit.title": "职业轮换名单（管理员）",
-  "screen.limited_inventory.menu.records": "我的邮箱",
+  "screen.limited_inventory.menu.records": "游戏记录",
   "screen.limited_inventory.button.participate.hover_text": "点击参与游戏/不参与游戏",
   "screen.limited_inventory.participation.joined": "参与状态：已参与",
   "screen.limited_inventory.participation.left": "参与状态：未参与",
