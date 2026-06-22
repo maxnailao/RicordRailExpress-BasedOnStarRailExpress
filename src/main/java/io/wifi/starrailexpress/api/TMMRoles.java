@@ -16,7 +16,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -36,12 +35,11 @@ public class TMMRoles {
             SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false));
     public static final SRERole VIGILANTE = registerRole(new NormalRole(SRE.id("vigilante"), 0x1B8AE5, true, false,
             SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false){
-       /* @Override
+        @Override
         public List<ItemStack> getDefaultItems() {
             return List.of(new ItemStack(TMMItems.REVOLVER).copy());
         }
-        */
-    }.setVigilanteTeam(true));
+    }.setVigilanteTeam(true).setDefaultMax(0).setCanSetSpawnInfoInConfig(false));
     public static final SRERole KILLER = registerRole(
             new NormalRole(SRE.id("killer"), 0xC13838, false, true, SRERole.MoodType.FAKE, -1, true));
     public static final SRERole LOOSE_END = registerRole(

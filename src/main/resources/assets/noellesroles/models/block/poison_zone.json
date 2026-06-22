@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "minecraft:block/slime_block"
+    "all": "noellesroles:block/poison_zone"
   }
 }

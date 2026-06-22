@@ -19,14 +19,13 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MovingPlatformEntity extends Entity {
 
-    private static final double SPEED = 0.08;
-
     private double homeX;
     private double homeY;
     private double homeZ;
     private double dirX;
     private double dirZ;
     private double distance = 5.0;
+    private double speed = 0.08;
     private double progress = 0.0;
     private boolean forward = true;
 
@@ -35,14 +34,17 @@ public class MovingPlatformEntity extends Entity {
         this.noPhysics = true;
     }
 
-    /** 设置往返路径：从 home 沿 dir 方向移动 distance 格。 */
-    public void setup(Vec3 home, Direction dir, double distance) {
+    /** 设置往返路径：从 home 沿 dir 方向移动 distance 格，速度 speed，碰撞箱尺寸 collisionSize。 */
+    public void setup(Vec3 home, Direction dir, double distance, double speed, double collisionSize) {
         this.homeX = home.x;
         this.homeY = home.y;
         this.homeZ = home.z;
         this.dirX = dir.getStepX();
         this.dirZ = dir.getStepZ();
         this.distance = distance;
+        this.speed = speed;
+        double half = collisionSize / 2.0;
+        this.setBoundingBox(new AABB(-half, 0, -half, half, 0.2, half));
         this.setPos(home.x, home.y, home.z);
     }
 
@@ -68,6 +70,7 @@ public class MovingPlatformEntity extends Entity {
         this.dirX = tag.getDouble("DirX");
         this.dirZ = tag.getDouble("DirZ");
         this.distance = tag.getDouble("Distance");
+        this.speed = tag.contains("Speed") ? tag.getDouble("Speed") : 0.08;
         this.progress = tag.getDouble("Progress");
         this.forward = tag.getBoolean("Forward");
     }
@@ -80,6 +83,7 @@ public class MovingPlatformEntity extends Entity {
         tag.putDouble("DirX", this.dirX);
         tag.putDouble("DirZ", this.dirZ);
         tag.putDouble("Distance", this.distance);
+        tag.putDouble("Speed", this.speed);
         tag.putDouble("Progress", this.progress);
         tag.putBoolean("Forward", this.forward);
     }
@@ -91,7 +95,7 @@ public class MovingPlatformEntity extends Entity {
             return;
         }
 
-        this.progress += SPEED * (this.forward ? 1 : -1);
+        this.progress += this.speed * (this.forward ? 1 : -1);
         if (this.progress >= this.distance) {
             this.progress = this.distance;
             this.forward = false;

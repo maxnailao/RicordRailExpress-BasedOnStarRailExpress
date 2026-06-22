@@ -1,7 +1,19 @@
 package io.wifi.starrailexpress.client.gui.screen;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.joml.Matrix4f;
+
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.MapVotingComponent;
 import io.wifi.starrailexpress.client.InputHandler;
@@ -17,23 +29,25 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import org.joml.Matrix4f;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MapSelectorScreen extends Screen {
     private static final int CARD_WIDTH = 164;
     private static final int CARD_HEIGHT = 224;
     private static final int CARD_SPACING = 18;
-    private static final int SMALL_CARD_WIDTH = 120;
-    private static final int SMALL_CARD_HEIGHT = 160;
+    private static final int SCREEN_PADDING_DEFAULT_TOP = 18;
+    private static final int SCREEN_PADDING_TIMER_TOP = 48;
+    // private static final int SMALL_CARD_WIDTH = 120;
+    private static final int SMALL_SCREEN_PADDING = 16;
+    private static final int SCREEN_MAP_RENDER_SMALL_TOP = 52;
+    private static final int SCREEN_MAP_RENDER_DEFAULT_TOP = 84;
+    private static final int SMALL_CARD_HEIGHT = 120;
     private static final int SMALL_CARD_SPACING = 10;
     private static final int ROW_SPACING = 12;
     private static final int SIDE_PADDING = 56;
-    private static final int BOTTOM_PANEL_HEIGHT = 86;
+    private static final int BOTTOM_PANEL_DEFAULT_HEIGHT = 72;
+    private static final int BOTTOM_PANEL_MEDIUM_HEIGHT = 56;
+    private static final int BOTTOM_PANEL_SMALL_UI_THRESHOLD = 52;
+    private static final int BOTTOM_PANEL_MIN_HEIGHT = 40;
     private static final int PARTICLE_COUNT = 68;
 
     private static final int COLOR_BG_TOP = 0xFF060B18;
@@ -46,6 +60,7 @@ public class MapSelectorScreen extends Screen {
     private static final int COLOR_TEXT_DIM = 0xFF97A6CC;
     private static final int COLOR_ACCENT = 0xFF51D2FF;
     private static final int COLOR_WARNING = 0xFFFF6D6D;
+    private static final double HW_RATE = (double) CARD_WIDTH / (double) CARD_HEIGHT;
 
     private final List<MapOption> mapOptions = new ArrayList<>();
     private final List<Particle> particles = new ArrayList<>();
@@ -53,19 +68,22 @@ public class MapSelectorScreen extends Screen {
 
     private MapOption hoveredMap;
     private MapOption selectedMap;
-
+    private int bottomPanelHeight = 86;
     private float introProgress;
     private float backgroundTick;
     private float scrollTarget;
     private float scrollPosition;
     private long openedAt;
-
-    // Computed by recalculateLayout(), read by getMaxScroll / ensureMapVisible / render
+    private int headerTextMaxWidth = 0;
+    // Computed by recalculateLayout(), read by getMaxScroll / ensureMapVisible /
+    // render
     private int layoutRows = 1;
     private int layoutCols;
     private int layoutCW = CARD_WIDTH;
     private int layoutCH = CARD_HEIGHT;
     private int layoutCS = CARD_SPACING;
+    private int screenMapRenderTop = SCREEN_MAP_RENDER_DEFAULT_TOP;
+    private int screenPaddingTop = SCREEN_PADDING_DEFAULT_TOP;
 
     public MapSelectorScreen() {
         super(Component.translatable("gui.sre.map_selector.title"));
@@ -128,23 +146,49 @@ public class MapSelectorScreen extends Screen {
             layoutCS = CARD_SPACING;
             return;
         }
-
+        boolean isSmall = height <= 300;
+        if (isSmall) {
+            screenPaddingTop = 12;
+            screenMapRenderTop = SCREEN_MAP_RENDER_SMALL_TOP;
+        } else {
+            screenPaddingTop = SCREEN_PADDING_DEFAULT_TOP;
+            screenMapRenderTop = SCREEN_MAP_RENDER_DEFAULT_TOP;
+        }
         int availableWidth = width - SIDE_PADDING * 2;
         int perRowFull = Math.max(1, (availableWidth + CARD_SPACING) / (CARD_WIDTH + CARD_SPACING));
-
-        if (cardCount <= perRowFull) {
+        boolean smallLayout = cardCount <= perRowFull;
+        int availableHeight = height - screenMapRenderTop - BOTTOM_PANEL_DEFAULT_HEIGHT - ROW_SPACING * 2;
+        smallLayout = smallLayout || (availableHeight <= (SMALL_CARD_HEIGHT) * 2);
+        if (isSmall) {
             layoutRows = 1;
             layoutCols = cardCount;
-            layoutCW = CARD_WIDTH;
-            layoutCH = CARD_HEIGHT;
+            layoutCH = Math.min(CARD_HEIGHT,
+                    Math.max(100, availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - BOTTOM_PANEL_MIN_HEIGHT));
+            layoutCW = Math.min(Math.max(80, (int) ((double) layoutCH * HW_RATE)), CARD_WIDTH);
             layoutCS = CARD_SPACING;
+            bottomPanelHeight = BOTTOM_PANEL_MIN_HEIGHT;
+        } else if (smallLayout) {
+            layoutRows = 1;
+            layoutCols = cardCount;
+            layoutCH = Math.min(CARD_HEIGHT, Math.max(100, availableHeight));
+            layoutCW = Math.min(Math.max(80, (int) ((double) layoutCH * HW_RATE)), CARD_WIDTH);
+            layoutCS = CARD_SPACING;
+            bottomPanelHeight = Math.max(BOTTOM_PANEL_MIN_HEIGHT,
+                    Math.min(availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - layoutCH, BOTTOM_PANEL_DEFAULT_HEIGHT));
         } else {
             layoutRows = 2;
             layoutCols = (cardCount + 1) / 2;
-            layoutCW = SMALL_CARD_WIDTH;
-            // Cap card height so both rows fit between the header (84px top) and the bottom panel
-            int availableHeight = height - 84 - BOTTOM_PANEL_HEIGHT - 12 - ROW_SPACING;
-            layoutCH = Math.min(SMALL_CARD_HEIGHT, Math.max(80, availableHeight / 2));
+            // Cap card height so both rows fit between the header (84px top) and the bottom
+            // panel
+            bottomPanelHeight = Math.max(BOTTOM_PANEL_MEDIUM_HEIGHT,
+                    Math.min(availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - layoutCH * 2,
+                            BOTTOM_PANEL_DEFAULT_HEIGHT));
+            layoutCH = Math.min(CARD_HEIGHT, Math.max(SMALL_CARD_HEIGHT, availableHeight / 2));
+            if (layoutCH >= CARD_HEIGHT) {
+                bottomPanelHeight = BOTTOM_PANEL_DEFAULT_HEIGHT;
+            }
+            layoutCW = (int) ((double) layoutCH * HW_RATE);
+
             layoutCS = SMALL_CARD_SPACING;
         }
     }
@@ -319,7 +363,8 @@ public class MapSelectorScreen extends Screen {
 
         float time = (System.currentTimeMillis() - openedAt) / 1000.0f;
         for (Particle particle : particles) {
-            float size = particle.size * (0.8f + 0.2f * (float) Math.sin(time * particle.twinkleSpeed + particle.phase));
+            float size = particle.size
+                    * (0.8f + 0.2f * (float) Math.sin(time * particle.twinkleSpeed + particle.phase));
             int alpha = (int) (255.0f * particle.getAlpha(time));
             int color = withAlpha(0xC7E4FF, alpha);
 
@@ -338,25 +383,51 @@ public class MapSelectorScreen extends Screen {
         float show = easeOutCubic(Mth.clamp((introProgress - 0.04f) * 1.3f, 0.0f, 1.0f));
         int alpha = (int) (show * 255.0f);
         int yOffset = (int) ((1.0f - show) * 12.0f);
-
-        int titleY = 28 - yOffset;
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.title").withStyle(ChatFormatting.BOLD),
-                width / 2,
-                titleY,
-                withAlpha(COLOR_TEXT, alpha));
+        boolean isSmall = screenPaddingTop < SCREEN_PADDING_DEFAULT_TOP;
+        int titleY = screenPaddingTop - yOffset;
+        Component maintitle = Component.translatable("gui.sre.map_selector.title").withStyle(ChatFormatting.BOLD);
+        headerTextMaxWidth = Math.max(headerTextMaxWidth,
+                font.width(maintitle));
+        if (isSmall) {
+            guiGraphics.fill(SMALL_SCREEN_PADDING - 6, titleY - 2, SMALL_SCREEN_PADDING - 4,
+                    titleY + 14 + font.lineHeight + 2,
+                    withAlpha(new java.awt.Color(230, 230, 255).getRGB(), alpha));
+            guiGraphics.drawString(
+                    font,
+                    maintitle,
+                    SMALL_SCREEN_PADDING,
+                    titleY,
+                    withAlpha(COLOR_TEXT, alpha));
+        } else {
+            guiGraphics.drawCenteredString(
+                    font,
+                    maintitle,
+                    width / 2,
+                    titleY,
+                    withAlpha(COLOR_TEXT, alpha));
+        }
 
         Component keyHint = InputHandler.getOpenVotingScreenKeybind() != null
                 ? InputHandler.getOpenVotingScreenKeybind().getTranslatedKeyMessage()
                 : Component.literal("M");
-        Component subtitle = Component.translatable("gui.sre.map_selector.subtitle", keyHint);
-        guiGraphics.drawCenteredString(
-                font,
-                subtitle,
-                width / 2,
-                titleY + 16,
-                withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.92f)));
+        Component subtitle = Component.translatable("gui.sre.map_selector.voting_active", keyHint);
+        headerTextMaxWidth = Math.max(headerTextMaxWidth,
+                font.width(subtitle));
+        if (isSmall) {
+            guiGraphics.drawString(
+                    font,
+                    subtitle,
+                    SMALL_SCREEN_PADDING,
+                    titleY + 14,
+                    withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.92f)));
+        } else {
+            guiGraphics.drawCenteredString(
+                    font,
+                    subtitle,
+                    width / 2,
+                    titleY + 14,
+                    withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.92f)));
+        }
     }
 
     private void renderMapOptions(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -373,19 +444,14 @@ public class MapSelectorScreen extends Screen {
         int totalHeight = layoutCH * layoutRows + (layoutRows - 1) * ROW_SPACING;
 
         int startX = totalWidth > availableWidth ? SIDE_PADDING : (width - totalWidth) / 2;
-        int startY;
-        if (layoutRows == 1) {
-            startY = Mth.clamp((height - layoutCH) / 2, 84, Math.max(84, height - layoutCH - 12));
-        } else {
-            int topBound = 84;
-            int bottomBound = height - BOTTOM_PANEL_HEIGHT - 12;
-            startY = Mth.clamp((height - totalHeight) / 2, topBound, Math.max(topBound, bottomBound - totalHeight));
-        }
+        int availableHeight = (height - bottomPanelHeight - 12 - screenMapRenderTop);
+        int startY = screenMapRenderTop + availableHeight / 2 - totalHeight / 2;
 
         if (totalWidth > availableWidth) {
             int arrowY = startY + totalHeight / 2 - 4;
             guiGraphics.fill(0, startY - 10, SIDE_PADDING, startY + totalHeight + 10, withAlpha(0x02050E, 115));
-            guiGraphics.fill(width - SIDE_PADDING, startY - 10, width, startY + totalHeight + 10, withAlpha(0x02050E, 115));
+            guiGraphics.fill(width - SIDE_PADDING, startY - 10, width, startY + totalHeight + 10,
+                    withAlpha(0x02050E, 115));
 
             int pulseAlpha = (int) (140.0f + Math.sin(backgroundTick * 4.0f) * 55.0f);
             if (scrollTarget > 1.0f) {
@@ -405,7 +471,8 @@ public class MapSelectorScreen extends Screen {
             float entrance = easeOutCubic(Mth.clamp((introProgress - map.introDelay) * 1.8f, 0.0f, 1.0f));
             float cardX = startX + col * (layoutCW + layoutCS) - scrollPosition + (1.0f - entrance) * 10.0f;
             float baseY = startY + row * (layoutCH + ROW_SPACING);
-            float cardY = baseY + (1.0f - entrance) * (22.0f + col * 1.2f) - map.hoverTime * 8.0f - map.selectionTime * 4.0f;
+            float cardY = baseY + (1.0f - entrance) * (22.0f + col * 1.2f) - map.hoverTime * 8.0f
+                    - map.selectionTime * 4.0f;
 
             if (cardX + layoutCW < -24 || cardX > width + 24) {
                 continue;
@@ -502,11 +569,15 @@ public class MapSelectorScreen extends Screen {
                 previewY + previewHeight,
                 withAlpha(0x1A2647, (int) (alpha * 0.90f)),
                 withAlpha(0x0B1226, (int) (alpha * 0.90f)));
-        drawRectBorder(guiGraphics, previewX, previewY, previewWidth, previewHeight, 1, withAlpha(mapAccent, (int) (alpha * 0.62f)));
+        drawRectBorder(guiGraphics, previewX, previewY, previewWidth, previewHeight, 1,
+                withAlpha(mapAccent, (int) (alpha * 0.62f)));
 
         drawMapPreviewImage(guiGraphics, map.id, previewX + 1, previewY + 1, previewWidth - 2, previewHeight - 2);
 
-        float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight + 18.0f) - 8.0f;
+        float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight * 2);
+        if (scanY > previewHeight) {
+            scanY = previewHeight * 2 - scanY;
+        }
         int scanAlpha = (int) (alpha * (0.08f + map.hoverTime * 0.10f + map.selectionTime * 0.12f));
         guiGraphics.fill(
                 previewX + 2,
@@ -545,7 +616,8 @@ public class MapSelectorScreen extends Screen {
                     badgeX + badgeWidth,
                     badgeY + 13,
                     withAlpha(badgeColor, (int) (alpha * 0.30f)));
-            drawRectBorder(guiGraphics, badgeX, badgeY, badgeWidth, 13, 1, withAlpha(badgeColor, (int) (alpha * 0.75f)));
+            drawRectBorder(guiGraphics, badgeX, badgeY, badgeWidth, 13, 1,
+                    withAlpha(badgeColor, (int) (alpha * 0.75f)));
             guiGraphics.drawCenteredString(
                     font,
                     voteText,
@@ -572,7 +644,8 @@ public class MapSelectorScreen extends Screen {
 
     private void drawMapPreviewImage(GuiGraphics guiGraphics, String id, int x, int y, int width, int height) {
         try {
-            ResourceLocation textureLocation = ResourceLocation.tryBuild(SRE.MOD_ID, "textures/gui/maps/" + id + ".png");
+            ResourceLocation textureLocation = ResourceLocation.tryBuild(SRE.MOD_ID,
+                    "textures/gui/maps/" + id + ".png");
             if (textureLocation != null && textureExists(textureLocation)) {
                 guiGraphics.blit(textureLocation, x, y, 0, 0, width, height, width, height);
                 return;
@@ -654,7 +727,8 @@ public class MapSelectorScreen extends Screen {
         int tagY = y + 10;
         int tagTextColor = withAlpha(0x081126, (int) (255.0f * selectionAmount));
 
-        guiGraphics.fill(tagX, tagY, tagX + tagWidth, tagY + 12, withAlpha(glowColor, (int) (205.0f * selectionAmount)));
+        guiGraphics.fill(tagX, tagY, tagX + tagWidth, tagY + 12,
+                withAlpha(glowColor, (int) (205.0f * selectionAmount)));
         guiGraphics.drawString(font, tagText, tagX + 5, tagY + 2, tagTextColor, false);
     }
 
@@ -668,7 +742,7 @@ public class MapSelectorScreen extends Screen {
             return;
         }
 
-        int panelTop = height - BOTTOM_PANEL_HEIGHT + (int) ((1.0f - reveal) * 18.0f);
+        int panelTop = height - bottomPanelHeight + (int) ((1.0f - reveal) * 18.0f);
         int alpha = (int) (220.0f * reveal);
 
         guiGraphics.fillGradient(
@@ -679,27 +753,54 @@ public class MapSelectorScreen extends Screen {
                 withAlpha(COLOR_PANEL, alpha),
                 withAlpha(COLOR_PANEL_DARK, Math.min(255, alpha + 18)));
         guiGraphics.fill(0, panelTop, width, panelTop + 1, withAlpha(COLOR_ACCENT, (int) (alpha * 0.85f)));
-
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.selected", selectedMap.displayName).withStyle(ChatFormatting.BOLD),
-                width / 2,
-                panelTop + 14,
-                withAlpha(COLOR_TEXT, alpha));
-
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.map_id", selectedMap.id),
-                width / 2,
-                panelTop + 32,
-                withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.95f)));
-
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.confirm_prompt"),
-                width / 2,
-                panelTop + 51,
-                withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.82f)));
+        boolean isSmall = bottomPanelHeight <= BOTTOM_PANEL_SMALL_UI_THRESHOLD;
+        int perlineHeight = (bottomPanelHeight - 8) / (isSmall ? 2 : 3);
+        int perlineOffsetY = font.lineHeight / 2;
+        int idx = 0;
+        {
+            idx++;
+            if (isSmall) {
+                guiGraphics.drawCenteredString(
+                        font,
+                        Component
+                                .translatable("gui.sre.map_selector.selected_with_id", selectedMap.displayName,
+                                        Component
+                                                .translatable("gui.sre.map_selector.selected_with_id_warp",
+                                                        selectedMap.id)
+                                                .withStyle(
+                                                        style -> style.withBold(false).withColor(ChatFormatting.GRAY)))
+                                .withStyle(ChatFormatting.BOLD),
+                        width / 2,
+                        panelTop + 4 + perlineHeight / 2 - perlineOffsetY,
+                        withAlpha(COLOR_TEXT, alpha));
+            } else {
+                guiGraphics.drawCenteredString(
+                        font,
+                        Component.translatable("gui.sre.map_selector.selected", selectedMap.displayName)
+                                .withStyle(ChatFormatting.BOLD),
+                        width / 2,
+                        panelTop + 4 + perlineHeight / 2 - perlineOffsetY,
+                        withAlpha(COLOR_TEXT, alpha));
+            }
+        }
+        if (!isSmall) {
+            idx++;
+            guiGraphics.drawCenteredString(
+                    font,
+                    Component.translatable("gui.sre.map_selector.map_id", selectedMap.id),
+                    width / 2,
+                    panelTop + 4 + perlineHeight * idx - perlineHeight / 2 - perlineOffsetY,
+                    withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.95f)));
+        }
+        {
+            idx++;
+            guiGraphics.drawCenteredString(
+                    font,
+                    Component.translatable("gui.sre.map_selector.confirm_prompt"),
+                    width / 2,
+                    panelTop + 4 + perlineHeight * idx - perlineHeight / 2 - perlineOffsetY,
+                    withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.82f)));
+        }
     }
 
     private void renderVotingTimer(GuiGraphics guiGraphics) {
@@ -707,34 +808,45 @@ public class MapSelectorScreen extends Screen {
         if (votingComponent == null || !votingComponent.isVotingActive()) {
             return;
         }
+        float show = easeOutCubic(Mth.clamp((introProgress - 0.04f) * 1.3f, 0.0f, 1.0f));
+        int yOffset = (int) ((1.0f - show) * 12.0f);
 
         int timeLeft = Math.max(0, votingComponent.getVotingTimeLeft() / 20);
         int totalTime = Math.max(1, votingComponent.getTotalVotingTime() / 20);
         float progress = Mth.clamp(timeLeft / (float) totalTime, 0.0f, 1.0f);
 
-        String timerText = Component.translatable("gui.sre.map_selector.voting_timer", timeLeft).getString();
-        int panelWidth = font.width(timerText) + 28;
-        int panelX = (width - panelWidth) / 2;
-        int panelY = 56;
+        boolean isSmall = screenPaddingTop < SCREEN_PADDING_DEFAULT_TOP;
 
+        Component timerText = Component.translatable("gui.sre.map_selector.voting_timer", timeLeft);
+        int panelWidth;
+        int panelX;
+        int panelY;
+        int panelHeight;
+        if (isSmall) {
+            panelWidth = font.width(timerText) + 28;
+            panelX = (width - panelWidth - SMALL_SCREEN_PADDING + 6);
+            panelY = screenPaddingTop - 2 - yOffset;
+            panelHeight = 14 + font.lineHeight + 2;
+        } else {
+            panelWidth = font.width(timerText) + 28;
+            panelX = (width - panelWidth) / 2;
+            panelY = SCREEN_PADDING_TIMER_TOP;
+            panelHeight = 18;
+        }
         float urgencyPulse = timeLeft <= 10 ? (0.65f + 0.35f * (float) Math.sin(backgroundTick * 8.0f)) : 1.0f;
         int frameColor = timeLeft <= 10 ? COLOR_WARNING : COLOR_ACCENT;
 
-        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + 18, withAlpha(COLOR_PANEL_DARK, (int) (190.0f * urgencyPulse)));
-        drawRectBorder(guiGraphics, panelX, panelY, panelWidth, 18, 1, withAlpha(frameColor, (int) (220.0f * urgencyPulse)));
-        guiGraphics.drawString(font, timerText, panelX + 12, panelY + 5, withAlpha(COLOR_TEXT, 245), false);
+        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight,
+                withAlpha(COLOR_PANEL_DARK, (int) (190.0f * urgencyPulse)));
+        drawRectBorder(guiGraphics, panelX, panelY, panelWidth, panelHeight, 1,
+                withAlpha(frameColor, (int) (220.0f * urgencyPulse)));
+        guiGraphics.drawString(font, timerText, panelX + 12, panelY + (panelHeight - font.lineHeight) / 2,
+                withAlpha(COLOR_TEXT, 245), false);
 
-        int progressY = panelY + 18;
+        int progressY = panelY + panelHeight;
         guiGraphics.fill(panelX, progressY, panelX + panelWidth, progressY + 3, withAlpha(0x23304F, 230));
         guiGraphics.fill(panelX, progressY, panelX + Math.max(1, (int) (panelWidth * progress)), progressY + 3,
                 withAlpha(frameColor, 245));
-
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.voting_active"),
-                width / 2,
-                panelY + 27,
-                withAlpha(COLOR_TEXT_DIM, 220));
     }
 
     private int getVoteCount(String mapId) {
@@ -789,13 +901,15 @@ public class MapSelectorScreen extends Screen {
 
     private void submitVote(MapOption map) {
         MapVotingComponent votingComponent = getVotingComponent();
-        if (votingComponent == null || !votingComponent.isVotingActive() || minecraft == null || minecraft.player == null) {
+        if (votingComponent == null || !votingComponent.isVotingActive() || minecraft == null
+                || minecraft.player == null) {
             return;
         }
 
         ClientPlayNetworking.send(new io.wifi.starrailexpress.network.VoteForMapPayload(map.id));
         minecraft.player.displayClientMessage(
-                Component.translatable("gui.sre.map_selector.selected", map.displayName).withStyle(ChatFormatting.GREEN),
+                Component.translatable("gui.sre.map_selector.selected", map.displayName)
+                        .withStyle(ChatFormatting.GREEN),
                 false);
     }
 
@@ -897,7 +1011,8 @@ public class MapSelectorScreen extends Screen {
         }
 
         MapVotingComponent votingComponent = getVotingComponent();
-        if (minecraft != null && minecraft.player != null && votingComponent != null && votingComponent.isVotingActive()) {
+        if (minecraft != null && minecraft.player != null && votingComponent != null
+                && votingComponent.isVotingActive()) {
             ClientPlayNetworking.send(new io.wifi.starrailexpress.network.VoteForMapPayload(selectedMap.id));
             minecraft.player.displayClientMessage(
                     Component.translatable("gui.sre.map_selector.voted_for", selectedMap.displayName)
@@ -934,7 +1049,8 @@ public class MapSelectorScreen extends Screen {
         super.onClose();
     }
 
-    private void drawRectBorder(GuiGraphics guiGraphics, int x, int y, int width, int height, int thickness, int color) {
+    private void drawRectBorder(GuiGraphics guiGraphics, int x, int y, int width, int height, int thickness,
+            int color) {
         for (int i = 0; i < thickness; i++) {
             guiGraphics.fill(x + i, y + i, x + width - i, y + i + 1, color);
             guiGraphics.fill(x + i, y + height - i - 1, x + width - i, y + height - i, color);

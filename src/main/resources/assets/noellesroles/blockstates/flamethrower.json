@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "noellesroles:block/flamethrower"
-    }
+    "facing=north": { "model": "noellesroles:block/flamethrower" },
+    "facing=east":  { "model": "noellesroles:block/flamethrower", "y": 90 },
+    "facing=south": { "model": "noellesroles:block/flamethrower", "y": 180 },
+    "facing=west":  { "model": "noellesroles:block/flamethrower", "y": 270 }
   }
 }

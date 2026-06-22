@@ -235,12 +235,15 @@ public class ModRolesInitialEventRegister {
                 return;
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
-                if (!SREItemUtils.hasItem(player, ModItems.SHERIFF_REVOLVER)) {
-                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
+                if (!SREItemUtils.hasItem(player, io.wifi.starrailexpress.index.TMMItems.REVOLVER)) {
+                    player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
                 return;
             }
-
+            if (role.identifier().equals(ModRoles.SHERIFF_ID)) {
+                // 警卫角色初始化：重置任务计数
+                return;
+            }
             if (role.identifier().equals(ModRoles.ATTENDANT.identifier())) {
                 if (player instanceof ServerPlayer sp)
                     SRE.SendRoomInfoToPlayer(sp);

@@ -56,6 +56,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     private boolean canSeeBodyRoleInfo = false;
     private boolean canUseInstinct = false;
     private boolean canIgnoreBlackout = false;
+    private boolean canUseSkillWhileSpectator = false;
     private boolean mafiaTeam = false;
     /**
      * -1
@@ -720,6 +721,15 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public boolean canSeeCoin() {
         return this.canSeeCoin;
+    }
+
+    public SRERole setCanUseSkillWhileSpectator(boolean able) {
+        this.canUseSkillWhileSpectator = able;
+        return this;
+    }
+
+    public boolean canUseSkillWhileSpectator() {
+        return this.canUseSkillWhileSpectator;
     }
 
     public SRERole setCanPickUpRevolver(boolean able) {

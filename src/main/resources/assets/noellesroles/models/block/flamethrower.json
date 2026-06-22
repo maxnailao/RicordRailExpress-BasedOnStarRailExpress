@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/orientable",
   "textures": {
-    "all": "minecraft:block/magma"
+    "top": "noellesroles:block/flamethrower_top",
+    "front": "noellesroles:block/flamethrower_front",
+    "side": "noellesroles:block/flamethrower_side"
   }
 }

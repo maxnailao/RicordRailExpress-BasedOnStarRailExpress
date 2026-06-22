@@ -179,14 +179,14 @@ public class SREConfig implements ConfigData {
     public int safeTimeCooldown = 30;
     public int startingMoney = 100;
     // 杀手保底被动（降到 3/15秒，主要收入改由任务驱动，见 killerTaskIncome）
-    public int passiveMoneyAmount = 6;
+    public int passiveMoneyAmount = 5;
     public int passiveMoneyInterval = 15;
     // 任意平民/中立完成一个任务时，每个杀手获得的金币（任务驱动收入）
     public int killerTaskIncome = 5;
     // 平民/中立完成一个任务本人获得的金币（不含连击奖励）
     public int civilianTaskReward = 50;
     // 同一小游戏任务点被该玩家使用后的复用冷却（秒），各玩家独立；冷却期间不可再次使用且不显示透视
-    public int minigameBlockCooldownSeconds = 120;
+    public int minigameBlockCooldownSeconds = 200;
     // 小游戏任务独立刷新间隔（秒），与 Mood 任务解耦
     public int minigameTaskIntervalSeconds = 75;
     public int moneyPerKill = 100;
@@ -209,7 +209,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "items")
     public int brokenGunDropChanceWhenKillerKillsGunHolder = 60;
     @ConfigEntry.Category(value = "items")
-    public boolean enableBrokenGunDropWhenKillerShootsPlayer = true;
+    public boolean enableBrokenGunDropWhenKillerShootsPlayer = false;
     @ConfigEntry.Category(value = "items")
     public int brokenGunDropChanceWhenKillerShootsPlayer = 60;
     
@@ -307,8 +307,6 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "sync")
     public int mysqlSyncConnectTimeoutMs = 5000;
 
-    // 赞助者列表：从该云端 URL 拉取赞助者名单（txt，一行一个名字）。留空则禁用该功能。
-    // 名字按命名约定对应 plush（名字 X → noellesroles:X_plush）。
     @ConfigEntry.Category(value = "sponsor")
     @Tooltip(count = 2)
     public String sponsorListUrl = "";

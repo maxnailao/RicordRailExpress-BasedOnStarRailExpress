@@ -182,9 +182,6 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
-        if (serverPlayer.isSpectator()) {
-            return false;
-        }
         var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         if (!gameWorldComponent.isSkillAvailable) {
             return false;

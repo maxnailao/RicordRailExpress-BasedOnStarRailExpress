@@ -6,12 +6,16 @@ import org.agmas.noellesroles.scene.SceneEventManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+
+import java.util.List;
 
 /**
- * 滚石触发板方块实体：踩踏触发冷却 + 破坏任务激活时周期性召唤滚石。
+ * 滚石触发板方块实体：踩踏触发冷却 + 玩家检测 + 破坏任务激活时周期性召唤滚石。
  */
 public class RollingStoneTriggerPlateEntity extends BlockEntity {
 
@@ -20,7 +24,7 @@ public class RollingStoneTriggerPlateEntity extends BlockEntity {
     /** 破坏任务期间召唤间隔。 */
     public static final int SABOTAGE_INTERVAL = 100;
 
-    private long lastTrigger = Long.MIN_VALUE;
+    private long lastTrigger = 0L;
 
     public RollingStoneTriggerPlateEntity(BlockPos pos, BlockState state) {
         super(ModSceneBlocks.ROLLING_STONE_TRIGGER_ENTITY, pos, state);
@@ -40,8 +44,19 @@ public class RollingStoneTriggerPlateEntity extends BlockEntity {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
+        long now = serverLevel.getGameTime();
+        if (now - be.lastTrigger >= STEP_COOLDOWN && now % 10 == 0) {
+            // expandTowards(0, 1, 0) 向上扩展 1 格以检测站在板上的玩家
+            List<Player> playersOnPlate = serverLevel.getEntitiesOfClass(Player.class,
+                    new AABB(pos).expandTowards(0, 1, 0).inflate(0.2),
+                    p -> p.isAlive() && !p.isSpectator());
+            if (!playersOnPlate.isEmpty() && be.tryTrigger(serverLevel)) {
+                RollingStoneTriggerPlate.spawnStone(serverLevel, pos, state.getValue(RollingStoneTriggerPlate.FACING));
+            }
+        }
+        // 破坏任务期间周期性召唤
         if (SceneEventManager.isSabotageActive(serverLevel)
-                && serverLevel.getGameTime() % SABOTAGE_INTERVAL == 0) {
+                && now % SABOTAGE_INTERVAL == 0) {
             RollingStoneTriggerPlate.spawnStone(serverLevel, pos, state.getValue(RollingStoneTriggerPlate.FACING));
         }
     }

@@ -232,6 +232,22 @@ public final class RoleSkill {
         return role == null ? List.of() : getSelectableDefinitions(role.identifier());
     }
 
+    /**
+     * 全局旁观者检查：回报该玩家是否为旁观者且不允许使用技能。
+     * 返回 true = 被拦截（不应释放技能）。
+     * 所有技能派发路径应在入口处调用此方法。
+     */
+    public static boolean blockForSpectator(ServerPlayer player) {
+        if (!player.isSpectator()) {
+            return false;
+        }
+        SRERole role = getRole(player);
+        if (role != null && role.canUseSkillWhileSpectator()) {
+            return false;
+        }
+        return true;
+    }
+
     public static boolean beginUse(ServerPlayer player) {
         return beginUse(player, null, -1, Phase.PRESS, false);
     }
@@ -263,6 +279,10 @@ public final class RoleSkill {
         }
         SRERole role = getRole(player);
         if (role == null) {
+            return false;
+        }
+        // 旁观者模式禁止使用技能（通过 canUseSkillWhileSpectator() 标记豁免）
+        if (blockForSpectator(player)) {
             return false;
         }
 

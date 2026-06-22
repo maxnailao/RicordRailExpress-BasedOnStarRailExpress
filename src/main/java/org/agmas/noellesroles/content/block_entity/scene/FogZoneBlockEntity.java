@@ -65,7 +65,7 @@ public class FogZoneBlockEntity extends BlockEntity {
                 var entry = iterator.next();
                 UUID uuid = entry.getKey();
                 long lastSeen = entry.getValue();
-                if (lastSeen < currentTick) {
+                if (lastSeen < currentTick - 1) {
                     // 玩家已离开迷雾区域，重置计时并设置冷却
                     iterator.remove();
                     playerInFogSince.remove(uuid);

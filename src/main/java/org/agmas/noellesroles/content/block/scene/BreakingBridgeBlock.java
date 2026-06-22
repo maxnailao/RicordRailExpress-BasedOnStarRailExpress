@@ -33,6 +33,8 @@ public class BreakingBridgeBlock extends Block {
     /** 断裂到恢复的延迟。 */
     public static final int RECOVER_DELAY = 80;
 
+    private static final VoxelShape SLAB_SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 8.0, 16.0);
+
     public BreakingBridgeBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(this.stateDefinition.any().setValue(BROKEN, false));
@@ -45,12 +47,12 @@ public class BreakingBridgeBlock extends Block {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(BROKEN) ? Shapes.empty() : Shapes.block();
+        return state.getValue(BROKEN) ? Shapes.empty() : SLAB_SHAPE;
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(BROKEN) ? Shapes.empty() : Shapes.block();
+        return state.getValue(BROKEN) ? Shapes.empty() : SLAB_SHAPE;
     }
 
     @Override

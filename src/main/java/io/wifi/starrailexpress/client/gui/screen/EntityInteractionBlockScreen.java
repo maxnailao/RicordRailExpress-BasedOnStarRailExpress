@@ -493,6 +493,8 @@ public class EntityInteractionBlockScreen extends Screen {
                     action.roleWinId != null && !action.roleWinId.isEmpty() ? action.roleWinId : "?",
                     action.roleWinDescription != null && !action.roleWinDescription.isEmpty() ? action.roleWinDescription : "?").getString();
             case SEND_WELCOME -> Component.translatable("action.send_welcome").getString();
+            case TRIGGER_SABOTAGE -> Component.translatable("action.trigger_sabotage",
+                    action.sabotageDuration).getString();
         };
 
         return baseText + teleportSuffix + teamSuffix;
@@ -1968,6 +1970,11 @@ public class EntityInteractionBlockScreen extends Screen {
                 if (roleWinSubtitleInput != null) {
                     action.roleWinSubtitle = roleWinSubtitleInput.getValue();
                 }
+            }
+
+            // 保存破坏任务持续时间（秒）
+            if (selectedType == EntityInteractionBlockEntity.ActionType.TRIGGER_SABOTAGE && valueInput != null) {
+                try { action.sabotageDuration = Integer.parseInt(valueInput.getValue()); } catch (NumberFormatException e) {}
             }
 
             // 保存阵营过滤参数

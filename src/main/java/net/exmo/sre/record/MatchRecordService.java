@@ -1,6 +1,7 @@
 package net.exmo.sre.record;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
@@ -40,7 +41,7 @@ public final class MatchRecordService {
      * 若远端数据库不可用（未开启 MySQL 同步）则静默跳过。
      */
     public static void recordFinishedMatch(ServerLevel level) {
-        if (level == null || !MatchRecordStore.isAvailable()) {
+        if (level == null || !MatchRecordStore.isAvailable() || !SREConfig.instance().isStatsSyncEnabled) {
             return;
         }
         GameReplayManager manager = SRE.REPLAY_MANAGER;

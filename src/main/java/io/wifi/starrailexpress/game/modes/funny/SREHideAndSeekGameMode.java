@@ -10,7 +10,6 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -220,7 +219,8 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         RoleAssignmentPool killerPool = RoleAssignmentPool.createUnlimited("Killer",
                 role -> role.identifier() == SpecialGameModeRoles.SEEKER.identifier());
         RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
-                role -> role.isVigilanteTeam() && !role.isOtherModeRole() && !(role instanceof RepairRole));
+                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        role.isVigilanteTeam() && !role.isOtherModeRole() && !(role instanceof RepairRole));
         // 中立池
         RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
                 role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&

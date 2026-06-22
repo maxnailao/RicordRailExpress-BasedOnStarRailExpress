@@ -42,8 +42,16 @@ public class FlamethrowerBlockEntity extends BlockEntity {
         }
         Direction dir = state.getValue(FlamethrowerBlock.FACING);
         boolean sabotage = SceneEventManager.isSabotageActive(serverLevel);
+        boolean hasRedstone = state.getValue(FlamethrowerBlock.POWERED);
         long phase = serverLevel.getGameTime() % CYCLE;
-        boolean firing = sabotage || phase < BURST;
+
+        // 红石信号控制：收到红石信号时由红石电平控制喷火开关，忽略周期和破坏任务
+        boolean firing;
+        if (hasRedstone) {
+            firing = level.hasNeighborSignal(pos); // 红石信号直接控制
+        } else {
+            firing = sabotage || phase < BURST; // 无红石信号时正常逻辑
+        }
 
         // 点火嘴常亮小火苗
         serverLevel.sendParticles(ParticleTypes.SMALL_FLAME,

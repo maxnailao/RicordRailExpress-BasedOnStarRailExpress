@@ -36,6 +36,9 @@ public class CellarBlock extends Block {
     /** 关闭后无法再次打开的冷却。 */
     public static final int COOLDOWN = 100;
 
+    /** 活板门碰撞箱：厚度 3 像素，大小与原版活板门一致 */
+    private static final VoxelShape TRAPDOOR_SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 3.0, 16.0);
+
     public CellarBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(this.stateDefinition.any()
@@ -50,12 +53,12 @@ public class CellarBlock extends Block {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(OPEN) ? Shapes.empty() : Shapes.block();
+        return state.getValue(OPEN) ? Shapes.empty() : TRAPDOOR_SHAPE;
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(OPEN) ? Shapes.empty() : Shapes.block();
+        return state.getValue(OPEN) ? Shapes.empty() : TRAPDOOR_SHAPE;
     }
 
     @Override

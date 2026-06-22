@@ -221,6 +221,13 @@ public class ModEventsRegister {
         if (!boxerComponent.isInvulnerable)
             return false;
 
+        // 钢筋铁骨无法抵挡：被列车碾压、误杀平民死亡(shot_innocent)、挂机死亡
+        if (deathReason.equals(GameConstants.DeathReasons.FELL_OUT_OF_TRAIN)
+                || deathReason.getPath().equals("death_afk")
+                || deathReason.getPath().equals("shot_innocent")) {
+            return false; // 穿透无敌，允许死亡
+        }
+
         // 钢筋铁骨可以反弹任何死亡 - 不再限制死亡原因
 
         // 尝试找到攻击者（如果是刀或棍棒攻击）
@@ -1778,6 +1785,12 @@ public class ModEventsRegister {
             return true;
         });
         AllowPlayerDeath.EVENT.register((player, deathReason) -> {
+            // 算命大师无法抵挡：被列车碾压、误杀平民死亡、挂机死亡
+            if (deathReason.equals(GameConstants.DeathReasons.FELL_OUT_OF_TRAIN)
+                    || deathReason.getPath().equals("death_afk")
+                    || deathReason.getPath().equals("shot_innocent")) {
+                return true; // 穿透庇护，允许死亡
+            }
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
             for (var p : player.level().players()) {

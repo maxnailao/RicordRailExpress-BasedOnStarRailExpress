@@ -25,12 +25,6 @@ public class BindingToolItem extends Item {
 
     private InteractionResult handleReactorBind(net.minecraft.server.level.ServerLevel level,
             org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity reactor, BlockPos pos, Player player) {
-        if (reactor.isClosed()) {
-            player.displayClientMessage(
-                    Component.translatable("message.noellesroles.reactor.already_closed").withStyle(ChatFormatting.GRAY),
-                    true);
-            return InteractionResult.SUCCESS;
-        }
         if (lastReactorPos == null || lastReactorPos.equals(pos)) {
             lastReactorPos = pos;
             player.displayClientMessage(
@@ -38,17 +32,16 @@ public class BindingToolItem extends Item {
                     true);
             return InteractionResult.SUCCESS;
         }
-        // 绑定第二个反应堆：关闭两者
+        // 绑定两个反应堆为配对关系
         BlockEntity firstBe = level.getBlockEntity(lastReactorPos);
-        reactor.close();
+        reactor.setPartnerPos(lastReactorPos);
         if (firstBe instanceof org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity first) {
-            first.close();
+            first.setPartnerPos(pos);
         }
-        lastReactorPos = null;
         player.displayClientMessage(
-                Component.translatable("message.noellesroles.reactor.pair_closed").withStyle(ChatFormatting.GREEN),
+                Component.translatable("message.noellesroles.reactor.pair_bound").withStyle(ChatFormatting.GREEN),
                 true);
-        org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity.onReactorClosed(level);
+        lastReactorPos = null;
         return InteractionResult.SUCCESS;
     }
 

@@ -1,23 +1,6 @@
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
-import io.wifi.starrailexpress.network.packet.GomokuJoinC2SPacket;
-import io.wifi.starrailexpress.network.packet.GomokuMoveC2SPacket;
-import io.wifi.starrailexpress.network.packet.GomokuStateS2CPacket;
-import io.wifi.starrailexpress.network.packet.XiangqiJoinC2SPacket;
-import io.wifi.starrailexpress.network.packet.XiangqiMoveC2SPacket;
-import io.wifi.starrailexpress.network.packet.XiangqiStateS2CPacket;
-import io.wifi.starrailexpress.network.packet.DoudizhuJoinC2SPacket;
-import io.wifi.starrailexpress.network.packet.DoudizhuBidC2SPacket;
-import io.wifi.starrailexpress.network.packet.DoudizhuPlayC2SPacket;
-import io.wifi.starrailexpress.network.packet.DoudizhuStateS2CPacket;
-import io.wifi.starrailexpress.network.packet.MahjongJoinC2SPacket;
-import io.wifi.starrailexpress.network.packet.MahjongDiscardC2SPacket;
-import io.wifi.starrailexpress.network.packet.MahjongActionC2SPacket;
-import io.wifi.starrailexpress.network.packet.MahjongStateS2CPacket;
-import io.wifi.starrailexpress.network.packet.ScoreboardSubmitC2SPacket;
-import io.wifi.starrailexpress.network.packet.ScoreboardRequestC2SPacket;
-import io.wifi.starrailexpress.network.packet.ScoreboardDataS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -245,6 +228,14 @@ public class ModPackets {
         // 注册物资箱网络包
         PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
+
+        // 注册移动平台配置网络包
+        PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
+
+        // 注册反应堆小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
 
         // 五子棋网络包
         PayloadTypeRegistry.playC2S().register(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket.CODEC);

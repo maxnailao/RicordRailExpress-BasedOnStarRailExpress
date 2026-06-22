@@ -75,18 +75,31 @@ public class RollingStoneTriggerPlate extends BaseEntityBlock {
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+        tryTriggerPlate(level, pos, state, entity);
+        super.stepOn(level, pos, state, entity);
+    }
+
+    @Override
+    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+        tryTriggerPlate(level, pos, state, entity);
+    }
+
+    private void tryTriggerPlate(Level level, BlockPos pos, BlockState state, Entity entity) {
         if (!level.isClientSide && entity instanceof Player && level instanceof ServerLevel serverLevel) {
             BlockEntity be = serverLevel.getBlockEntity(pos);
             if (be instanceof RollingStoneTriggerPlateEntity plate && plate.tryTrigger(serverLevel)) {
                 spawnStone(serverLevel, pos, state.getValue(FACING));
             }
         }
-        super.stepOn(level, pos, state, entity);
     }
 
-    /** 在触发板上方朝指定方向召唤一颗滚石。 */
+    /** 从触发板 FACING 反方向 6 格、上方 2 格处召唤滚石，朝 FACING 方向滚动。 */
     public static void spawnStone(ServerLevel level, BlockPos pos, Direction dir) {
-        Vec3 origin = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+        Direction opposite = dir.getOpposite();
+        Vec3 origin = new Vec3(
+                pos.getX() + 0.5 + opposite.getStepX() * 6,
+                pos.getY() + 2.0,
+                pos.getZ() + 0.5 + opposite.getStepZ() * 6);
         RollingStoneEntity.spawn(level, origin, dir);
     }
 

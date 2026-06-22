@@ -7,12 +7,13 @@ import io.wifi.starrailexpress.client.particle.HandParticle;
 import io.wifi.starrailexpress.client.render.TMMRenderLayers;
 import io.wifi.starrailexpress.compat.CrosshairaddonsCompat;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeRevolver;
+import io.wifi.starrailexpress.util.SniperProjectileUtil;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.original.SniperShootPayload;
-import io.wifi.starrailexpress.util.SniperProjectileUtil;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -22,6 +23,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.NotNull;
@@ -88,24 +90,23 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
 
     private static void shoot(Level world, Player user, ItemStack stack) {
         if (world.isClientSide) {
-            // 客户端射击逻辑
             HitResult collision = getGunTarget(user);
             if (collision instanceof EntityHitResult entityHitResult) {
                 Entity target = entityHitResult.getEntity();
                 ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, target.getId()));
                 CrosshairaddonsCompat.arrowHit();
-                // 在路径上生成 SMOKE 粒子
+                spawnSmokeTrail(world, user, collision.getLocation());
+            } else if (collision instanceof BlockHitResult blockHit) {
+                ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, -1, blockHit.getBlockPos()));
                 spawnSmokeTrail(world, user, collision.getLocation());
             } else {
                 ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, -1));
-                // 在路径上生成 SMOKE 粒子（到视线终点）
                 spawnSmokeTrail(world, user, collision.getLocation());
             }
             user.setXRot(user.getXRot() - 4);
             spawnHandParticle();
-            // 客户端设置冷却，防止重复射击
             if (!user.isCreative()) {
-                user.getCooldowns().addCooldown(stack.getItem(), 80); // 4 秒冷却
+                user.getCooldowns().addCooldown(stack.getItem(), 80);
             }
         }
     }

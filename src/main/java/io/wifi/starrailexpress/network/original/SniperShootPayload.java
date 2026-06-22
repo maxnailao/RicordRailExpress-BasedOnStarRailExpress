@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.PacketTracker;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -17,27 +18,38 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
-public record SniperShootPayload(Action action, int targetOrShooterId) implements CustomPacketPayload {
+public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable BlockPos hitBlockPos) implements CustomPacketPayload {
     public static final Type<SniperShootPayload> TYPE = new Type<>(SRE.id("sniper_shoot"));
     public static final StreamCodec<FriendlyByteBuf, SniperShootPayload> STREAM_CODEC = StreamCodec.ofMember(
             SniperShootPayload::write,
             SniperShootPayload::new
     );
 
+    public SniperShootPayload(Action action, int targetOrShooterId) {
+        this(action, targetOrShooterId, null);
+    }
+
     private SniperShootPayload(FriendlyByteBuf buf) {
         this(
             buf.readEnum(Action.class),
-            buf.readInt()
+            buf.readInt(),
+            buf.readBoolean() ? buf.readBlockPos() : null
         );
     }
 
     private void write(FriendlyByteBuf buf) {
         buf.writeEnum(action);
         buf.writeInt(targetOrShooterId);
+        buf.writeBoolean(hitBlockPos != null);
+        if (hitBlockPos != null) {
+            buf.writeBlockPos(hitBlockPos);
+        }
     }
 
     public enum Action {
@@ -60,7 +72,6 @@ public record SniperShootPayload(Action action, int targetOrShooterId) implement
 
             if (!mainHandStack.is(TMMItems.SNIPER_RIFLE))
                 return;
-            // SRE.LOGGER.info("sniper shoot payload");
             switch (payload.action()) {
                 case SHOOT -> {
                     if (player.getCooldowns().isOnCooldown(mainHandStack.getItem()))
@@ -68,30 +79,31 @@ public record SniperShootPayload(Action action, int targetOrShooterId) implement
                     if (SniperRifleItem.getAmmoCount(mainHandStack) <= 0)
                         return;
 
-                    // 设置冷却时间 - 任何射击行为都应该设置冷却
                     if (!player.isCreative()){
                         player.getCooldowns().addCooldown(mainHandStack.getItem(),
                                 GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0));
                     }
 
-                    // 消耗一颗子弹
                     SniperRifleItem.consumeAmmo(mainHandStack);
 
-                    // 播放射击声音 - 全场都能听到
                     player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                             TMMSounds.ITEM_SNIPER_RIFLE_SHOOT, SoundSource.MASTER, 10f,
                             1f + player.getRandom().nextFloat() * .1f - .05f);
 
-                    // 发送枪口粒子效果
                     for (ServerPlayer tracking : PlayerLookup.tracking(player))
                         PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
 
-                    // 处理目标命中
+                    // 处理方块命中（列车标靶）
+                    if (payload.hitBlockPos() != null && player.serverLevel() != null
+                            && player.serverLevel().getBlockState(payload.hitBlockPos()).getBlock() instanceof TrainTargetBlock) {
+                        TrainTargetBlock.onHit(player.serverLevel(), payload.hitBlockPos());
+                    }
+
+                    // 处理实体命中
                     if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof Player target
                             && target.distanceTo(player) < 200.0) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
 
-                        // 检查角色权限
                         final var role = game.getRole(player);
                         if (role != null) {
                             if (!role.onGunHit(player, target)) {
@@ -99,17 +111,14 @@ public record SniperShootPayload(Action action, int targetOrShooterId) implement
                             }
                         }
 
-                        // 计算距离（50米 = 50个方块）
                         double distance = player.distanceTo(target);
                         boolean longRangeKill = distance >= 50.0;
 
-                        // 如果是远距离射击（50米以上），移除目标的护盾
                         if (longRangeKill) {
                             var bartenderComponent = io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(target);
                             if (bartenderComponent != null && bartenderComponent.getArmor() > 0) {
                                 bartenderComponent.armor = 0;
                                 bartenderComponent.sync();
-                                // 触发护盾破碎事件
                                 io.wifi.starrailexpress.event.OnShieldBroken.EVENT.invoker().onShieldBroken(target, player);
                             }
                         }

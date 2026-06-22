@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/template_trapdoor_bottom",
   "textures": {
-    "all": "minecraft:block/iron_block"
+    "texture": "noellesroles:block/manhole"
   }
 }

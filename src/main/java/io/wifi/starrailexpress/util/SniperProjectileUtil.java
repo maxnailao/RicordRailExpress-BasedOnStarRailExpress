@@ -14,87 +14,58 @@ import java.util.function.Predicate;
 public class SniperProjectileUtil {
 
     /**
-     * 获取狙击枪的目标，忽略屏障方块和本模组的屏障镶板
+     * 获取狙击枪的目标，忽略屏障方块和本模组的屏障镶板。
+     * 使用与左轮手枪相同的 ProjectileUtil.getHitResultOnViewVector 进行射线检测，
+     * 如果射线命中了屏障方块，则自动跳过穿透到后方。
      */
     public static HitResult getSniperHitResult(Entity shooter, Predicate<Entity> filter, double range) {
-        Vec3 startVec = shooter.getEyePosition(1.0F);
-        Vec3 lookVec = shooter.getViewVector(1.0F);
-        Vec3 endVec = startVec.add(lookVec.scale(range));
+        // 像左轮一样使用原版射线检测
+        HitResult hit = net.minecraft.world.entity.projectile.ProjectileUtil.getHitResultOnViewVector(shooter, filter, (float) range);
 
-        // 首先检测实体碰撞
-        HitResult entityHit = getEntityHitResult(shooter, startVec, endVec, filter);
-        if (entityHit != null) {
-            // 检查射击路径上是否有非屏障方块阻挡
-            if (!isPathBlockedByNonBarrier(shooter.level(), startVec, entityHit.getLocation())) {
-                return entityHit;
-            }
-        }
-
-        // 如果没有击中实体，或者路径被阻挡，检测方块碰撞（忽略屏障）
-        BlockHitResult blockHit = getBlockHitResultIgnoringBarriers(shooter.level(), startVec, endVec);
-        return blockHit != null ? blockHit : new BlockHitResult(endVec, null, BlockPos.containing(endVec), false);
-    }
-
-    /**
-     * 获取实体碰撞结果
-     */
-    private static HitResult getEntityHitResult(Entity shooter, Vec3 startVec, Vec3 endVec, Predicate<Entity> filter) {
-        Level level = shooter.level();
-        AABB searchBox = new AABB(startVec, endVec).inflate(1.0);
-
-        Entity closestEntity = null;
-        Vec3 closestHitPos = null;
-        double closestDistance = Double.MAX_VALUE;
-
-        for (Entity entity : level.getEntities(shooter, searchBox, filter)) {
-            AABB entityBox = entity.getBoundingBox().inflate(0.3);
-            Vec3 hitPos = entityBox.clip(startVec, endVec).orElse(null);
-            if (hitPos != null) {
-                double distance = startVec.distanceToSqr(hitPos);
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestEntity = entity;
-                    closestHitPos = hitPos;
+        // 如果命中屏障方块，尝试穿透
+        if (hit instanceof BlockHitResult blockHit) {
+            BlockPos hitPos = blockHit.getBlockPos();
+            if (isBarrierBlock(shooter.level(), hitPos)) {
+                // 从屏障后方继续射线
+                Vec3 startVec = shooter.getEyePosition(1.0F);
+                Vec3 lookVec = shooter.getViewVector(1.0F);
+                // 从屏障方块后方重新开始检测
+                Vec3 newStart = blockHit.getLocation().add(lookVec.scale(0.5));
+                double remainingRange = range - startVec.distanceTo(newStart);
+                if (remainingRange > 0) {
+                    HitResult penetrativeHit = getBlockHitResultIgnoringBarriers(shooter.level(), newStart, newStart.add(lookVec.scale(remainingRange)));
+                    if (penetrativeHit instanceof BlockHitResult) {
+                        return penetrativeHit;
+                    }
                 }
             }
         }
-
-        if (closestEntity != null) {
-            return new EntityHitResult(closestEntity, closestHitPos);
-        }
-        return null;
+        return hit;
     }
 
     /**
      * 检测方块碰撞，忽略屏障方块和本模组的屏障镶板
      */
     private static BlockHitResult getBlockHitResultIgnoringBarriers(Level level, Vec3 startVec, Vec3 endVec) {
-        // 使用分步射线检测，跳过屏障方块
         Vec3 direction = endVec.subtract(startVec);
         double distance = direction.length();
         direction = direction.normalize();
 
-        // 步长：0.1个方块
         double stepSize = 0.1;
         int steps = (int) (distance / stepSize);
 
-        // 从 i=1 开始检测，跳过射手自身位置（射手可能站在不完整方块内）
         for (int i = 1; i <= steps; i++) {
             Vec3 testPos = startVec.add(direction.scale(i * stepSize));
             BlockPos blockPos = BlockPos.containing(testPos);
 
-            // 检查是否是屏障方块
             if (!isBarrierBlock(level, blockPos)) {
-                // 检查方块是否有碰撞体积
                 if (!level.getBlockState(blockPos).isAir() && level.getBlockState(blockPos).isSuffocating(level, blockPos)) {
-                    // 计算大致的碰撞方向
                     Direction hitDirection = Direction.getNearest(direction.x, direction.y, direction.z);
                     return new BlockHitResult(testPos, hitDirection, blockPos, false);
                 }
             }
         }
 
-        // 最后检测终点
         BlockPos endBlock = BlockPos.containing(endVec);
         if (!isBarrierBlock(level, endBlock) && !level.getBlockState(endBlock).isAir()) {
             Direction hitDirection = Direction.getNearest(direction.x, direction.y, direction.z);
@@ -102,29 +73,6 @@ public class SniperProjectileUtil {
         }
 
         return null;
-    }
-
-    /**
-     * 检查路径上是否有非屏障方块阻挡
-     */
-    private static boolean isPathBlockedByNonBarrier(Level level, Vec3 startVec, Vec3 endVec) {
-        Vec3 direction = endVec.subtract(startVec);
-        double distance = direction.length();
-        direction = direction.normalize();
-
-        double stepSize = 0.1;
-        int steps = (int) (distance / stepSize);
-
-        // 从 i=1 开始检测，跳过射手自身位置（射手可能站在不完整方块内）
-        for (int i = 1; i <= steps; i++) {
-            Vec3 testPos = startVec.add(direction.scale(i * stepSize));
-            BlockPos blockPos = BlockPos.containing(testPos);
-
-            if (!isBarrierBlock(level, blockPos) && !level.getBlockState(blockPos).isAir()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

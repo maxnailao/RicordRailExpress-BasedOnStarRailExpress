@@ -11,11 +11,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -27,8 +30,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PoisonZoneBlock extends BaseEntityBlock {
 
+    public static final BooleanProperty RENDER_DISAPPEAR = BooleanProperty.create("render_disappear");
+
     public PoisonZoneBlock(Properties settings) {
         super(settings.noOcclusion().noCollission());
+        this.registerDefaultState(this.stateDefinition.any().setValue(RENDER_DISAPPEAR, false));
     }
 
     @Override
@@ -37,8 +43,13 @@ public class PoisonZoneBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(RENDER_DISAPPEAR);
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return state.getValue(RENDER_DISAPPEAR) ? RenderShape.INVISIBLE : RenderShape.MODEL;
     }
 
     @Override

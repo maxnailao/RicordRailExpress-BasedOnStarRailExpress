@@ -61,8 +61,8 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
-        // 清除现有角色
-        gameWorldComponent.clearRoleMap();
+        // 清除现有角色，暂不同步
+        gameWorldComponent.clearRoleMap(false);
 
         // 为所有玩家分配待定职业
         ArrayList<ServerPlayer> unassignedPlayers = new ArrayList<>(players);
@@ -114,7 +114,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     }
 
     private void broadcastRotationState(ServerLevel serverWorld) {
-        RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
         for (ServerPlayer player : serverWorld.players()) {
             RoleRotationSyncS2CPacket.sendToPlayer(player);
             // 打开GUI

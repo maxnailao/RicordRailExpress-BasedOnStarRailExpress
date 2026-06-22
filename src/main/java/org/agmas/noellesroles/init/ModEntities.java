@@ -302,7 +302,7 @@ public class ModEntities {
             BuiltInRegistries.ENTITY_TYPE,
             Noellesroles.id("rolling_stone"),
             FabricEntityTypeBuilder.<RollingStoneEntity>create(MobCategory.MISC, RollingStoneEntity::new)
-                    .dimensions(EntityDimensions.fixed(1.8F, 1.8F))
+                    .dimensions(EntityDimensions.fixed(2.0F, 2.0F))
                     .trackRangeBlocks(128)
                     .trackedUpdateRate(2)
                     .build());

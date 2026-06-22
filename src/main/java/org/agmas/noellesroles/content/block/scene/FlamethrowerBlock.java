@@ -18,20 +18,25 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 喷火装置：定时朝 FACING 方向喷火；破坏任务激活时持续喷火。被火焰范围波及的玩家死亡。
- * 使用原版熔炉/磁石贴图风格（这里用原版磁石贴图作为装置外观）。
+ * 喷火装置：定时朝 FACING 方向喷火；破坏任务激活时持续喷火。
+ * 接收到红石信号时由红石控制喷火开关（高电平喷火，低电平熄火）。
+ * 被火焰范围波及的玩家死亡。
  */
 public class FlamethrowerBlock extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
     public FlamethrowerBlock(Properties settings) {
         super(settings);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(POWERED, false));
     }
 
     @Override
@@ -46,12 +51,23 @@ public class FlamethrowerBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, POWERED);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection());
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
+            boolean notify) {
+        if (!level.isClientSide) {
+            boolean isPowered = level.hasNeighborSignal(pos);
+            if (isPowered != state.getValue(POWERED)) {
+                level.setBlock(pos, state.setValue(POWERED, isPowered), Block.UPDATE_ALL);
+            }
+        }
     }
 
     @Nullable

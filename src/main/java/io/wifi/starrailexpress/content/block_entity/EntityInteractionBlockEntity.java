@@ -1030,7 +1030,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
         Set<ActionType> specialActions = Set.of(
                 ActionType.TELEPORT, ActionType.RESURRECT, ActionType.BROADCAST_MESSAGE, ActionType.CLEAR_ENTITIES,
-                ActionType.ROLE_CUSTOM_WIN);
+                ActionType.ROLE_CUSTOM_WIN, ActionType.TRIGGER_SABOTAGE);
 
         // 需要玩家过滤的动作类型
         if (playerActions.contains(action.type)) {
@@ -1333,6 +1333,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             }
             case SEND_WELCOME -> {
                 RoleUtils.sendWelcomeAnnouncement(player);
+            }
+            case TRIGGER_SABOTAGE -> {
+                int duration = action.sabotageDuration > 0 ? action.sabotageDuration : 60;
+                org.agmas.noellesroles.scene.SceneEventManager.startSabotage(world, duration * 20);
             }
         }
     }
@@ -1900,7 +1904,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         ADD_MODIFIER, // 为玩家添加修饰符
         REMOVE_MODIFIER, // 为玩家移除修饰符
         ROLE_CUSTOM_WIN, // 带绑定职业的自定义获胜
-        SEND_WELCOME // 发送欢迎报幕
+        SEND_WELCOME, // 发送欢迎报幕
+        TRIGGER_SABOTAGE // 触发破坏任务
     }
 
     // 条件数据类
@@ -1987,6 +1992,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public String roleWinId = ""; // 职业ID
         public String roleWinDescription = ""; // 获胜描述（标题）
         public String roleWinSubtitle = ""; // 获胜子标题
+        public int sabotageDuration = 60; // 破坏任务持续时间（秒，用于TRIGGER_SABOTAGE）
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -2006,6 +2012,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putString("RoleWinId", roleWinId != null ? roleWinId : "");
             tag.putString("RoleWinDescription", roleWinDescription != null ? roleWinDescription : "");
             tag.putString("RoleWinSubtitle", roleWinSubtitle != null ? roleWinSubtitle : "");
+            tag.putInt("SabotageDuration", sabotageDuration);
             return tag;
         }
 
@@ -2044,6 +2051,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             if (action.roleWinDescription.isEmpty()) action.roleWinDescription = "";
             action.roleWinSubtitle = tag.getString("RoleWinSubtitle");
             if (action.roleWinSubtitle.isEmpty()) action.roleWinSubtitle = "";
+            action.sabotageDuration = tag.contains("SabotageDuration") ? tag.getInt("SabotageDuration") : 60;
             return action;
         }
     }

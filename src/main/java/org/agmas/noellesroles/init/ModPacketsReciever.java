@@ -402,6 +402,8 @@ public class ModPacketsReciever {
     });
 
     ServerPlayNetworking.registerGlobalReceiver(NinjaAbilityC2SPacket.ID, (payload, context) -> {
+      if (RoleSkill.blockForSpectator(context.player()))
+        return;
       NinjaPlayerComponent comp = NinjaPlayerComponent.KEY.get(context.player());
       if (comp != null)
         comp.useAbility();
@@ -706,11 +708,12 @@ public class ModPacketsReciever {
     ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillSelectC2SPacket.ID, (payload, context) ->
       RoleSkill.selectSkill(context.player(), payload.slot()));
     ServerPlayNetworking.registerGlobalReceiver(AbilityWithTargetC2SPacket.ID, (payload, context) -> {
-      
       RoleSkill.beginUseShiftedWithTarget(context.player(), payload.target());
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.INSANE_KILLER_ABILITY_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
+        return;
+      if (RoleSkill.blockForSpectator(context.player()))
         return;
       ServerPlayer player = (ServerPlayer) context.player();
       var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
@@ -850,6 +853,8 @@ public class ModPacketsReciever {
         (payload, context) -> {
           if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
             return;
+          if (RoleSkill.blockForSpectator(context.player()))
+            return;
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
               .get(player.level());
@@ -870,6 +875,8 @@ public class ModPacketsReciever {
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.SHADOW_FALCON_ABILITY_PACKET,
         (payload, context) -> {
           if (context.player().hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (RoleSkill.blockForSpectator(context.player()))
             return;
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
@@ -1053,6 +1060,8 @@ public class ModPacketsReciever {
         // 建筑师技能包处理
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.BUILDER_ABILITY_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))
+        return;
+      if (RoleSkill.blockForSpectator(context.player()))
         return;
       ServerPlayer player = context.player();
       SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());

@@ -5,11 +5,9 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
-import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
@@ -31,14 +29,10 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
-import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
-import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -49,10 +43,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.util.CheckEnvironment;
-import pro.fazeclan.river.stupid_express.StupidExpress;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class RoleRotationWorldComponent implements AutoSyncedComponent {
     public static final ComponentKey<RoleRotationWorldComponent> KEY = ComponentRegistry.getOrCreate(
@@ -227,39 +218,13 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
 
         // 使用阳光自选模式的RoleAssignmentPool方法来抽取职业池
         // getAllRoles会正确处理地图限制、解锁状态和角色占用数量
-        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(killerCount, vigilanteCount, neutralsCount, totalPlayerCount, 0);
-        
+        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(killerCount, vigilanteCount, neutralsCount,
+                totalPlayerCount + 5, 0);
+
         // 将基础角色添加到职业池
         for (RoleInstance inst : baseRoles) {
             if (inst.role() != null) {
                 rolePool.add(inst.role());
-            }
-        }
-
-        // 额外再抽取5个平民职业
-        ArrayList<SRERole> availableRoles = new ArrayList<>(StupidExpress.getEnableRoles(true));
-        availableRoles.removeIf(role ->
-            role == null ||
-            role == TMMRoles.CIVILIAN ||  // 排除平民本身
-            role.isOtherModeRole() ||
-            !role.canBeRandomed() ||
-            role == SpecialGameModeRoles.CUSTOM_PENDING ||
-            role == TMMRoles.KILLER ||
-            !role.isInnocent() ||
-            role.isVigilanteTeam() ||
-            role.canUseKiller() ||
-            role.isNeutrals() ||
-            isSpecialCivilianRole(role) ||  // 排除特殊平民职业
-            isRoleInPool(role)  // 排除基础池中已有的职业，防止重复
-        );
-
-        // 创建平民职业池并抽取5个
-        if (!availableRoles.isEmpty()) {
-            RoleAssignmentPool civilianPool = RoleAssignmentPool.createUnlimited("RoleRotationCivilian",
-                    role -> availableRoles.contains(role));
-            List<SRERole> extraCivilians = civilianPool.selectRoles(Math.min(5, availableRoles.size()));
-            for (SRERole civilian : extraCivilians) {
-                rolePool.add(civilian);
             }
         }
 
@@ -268,82 +233,6 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
 
         // 随机分配轮选序号（按卡片类型分段）
         assignRotationOrder(players);
-    }
-
-    private ArrayList<RoleInstance> expandRolesToPool(ArrayList<SRERole> availableRoles, int count, int totalPlayers, ServerLevel serverWorld, int killerCount) {
-        ArrayList<RoleInstance> result = new ArrayList<>();
-        Random random = new Random(serverWorld.getGameTime());
-
-        // 获取职业权重信息（基于实际玩家数）
-        int vigilanteCount = RoleCountManager.getVigilanteCount(totalPlayers);
-        int neutralsCount = RoleCountManager.getNeutralCount(totalPlayers);
-
-        vigilanteCount = Math.max(0, vigilanteCount);
-        neutralsCount = Math.max(0, neutralsCount);
-
-        // 分别创建各阵营职业池
-        List<SRERole> killerRoles = availableRoles.stream()
-                .filter(r -> PlayerRoleWeightManager.getRoleType(r) == 4)
-                .collect(Collectors.toList());
-        List<SRERole> vigilanteRoles = availableRoles.stream()
-                .filter(r -> PlayerRoleWeightManager.getRoleType(r) == 5)
-                .collect(Collectors.toList());
-        List<SRERole> neutralRoles = availableRoles.stream()
-                .filter(r -> PlayerRoleWeightManager.getRoleType(r) == 2 || PlayerRoleWeightManager.getRoleType(r) == 3)
-                .collect(Collectors.toList());
-        List<SRERole> innocentRoles = availableRoles.stream()
-                .filter(r -> PlayerRoleWeightManager.getRoleType(r) == 1)
-                .collect(Collectors.toList());
-
-        // 添加杀手职业
-        for (int i = 0; i < killerCount && result.size() < count; i++) {
-            if (!killerRoles.isEmpty()) {
-                result.add(new RoleInstance(UUID.randomUUID(), killerRoles.get(random.nextInt(killerRoles.size()))));
-            } else {
-                // 如果没有杀手阵营的职业，使用TMMRoles.KILLER
-                result.add(new RoleInstance(UUID.randomUUID(), TMMRoles.KILLER));
-            }
-        }
-
-        // 添加警长职业
-        for (int i = 0; i < vigilanteCount && result.size() < count; i++) {
-            if (!vigilanteRoles.isEmpty()) {
-                result.add(new RoleInstance(UUID.randomUUID(), vigilanteRoles.get(random.nextInt(vigilanteRoles.size()))));
-            }
-        }
-
-        // 添加中立职业
-        for (int i = 0; i < neutralsCount && result.size() < count; i++) {
-            if (!neutralRoles.isEmpty()) {
-                result.add(new RoleInstance(UUID.randomUUID(), neutralRoles.get(random.nextInt(neutralRoles.size()))));
-            }
-        }
-
-        // 添加额外5个平民职业（不能相同，不能与池中已有职业重复，且排除特殊平民职业）
-        List<SRERole> usedRoles = result.stream().map(RoleInstance::role).collect(Collectors.toList());
-        List<SRERole> extraInnocents = new ArrayList<>();
-        List<SRERole> availableExtra = new ArrayList<>(innocentRoles);
-        availableExtra.removeIf(role -> role == TMMRoles.CIVILIAN || usedRoles.stream().anyMatch(r -> r.identifier().equals(role.identifier())) || isSpecialCivilianRole(role));
-        Collections.shuffle(availableExtra, random);
-        for (int i = 0; i < 5 && i < availableExtra.size() && result.size() < count; i++) {
-            SRERole extraRole = availableExtra.get(i);
-            if (!extraInnocents.contains(extraRole)) {
-                extraInnocents.add(extraRole);
-                result.add(new RoleInstance(UUID.randomUUID(), extraRole));
-            }
-        }
-
-        // 如果还不够，用平民填充
-        while (result.size() < count) {
-            if (!innocentRoles.isEmpty()) {
-                result.add(new RoleInstance(UUID.randomUUID(), innocentRoles.get(random.nextInt(innocentRoles.size()))));
-            } else {
-                result.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
-            }
-        }
-
-        Collections.shuffle(result, random);
-        return result;
     }
 
     private void assignRotationOrder(List<ServerPlayer> players) {
@@ -359,10 +248,18 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         for (ServerPlayer p : players) {
             int card = getPlayerCardType(p.getUUID());
             switch (card) {
-                case 0: killerCardUsers.add(p); break;
-                case 1: neutralCardUsers.add(p); break;
-                case 2: civilianCardUsers.add(p); break;
-                default: noCardUsers.add(p); break;
+                case 0:
+                    killerCardUsers.add(p);
+                    break;
+                case 1:
+                    neutralCardUsers.add(p);
+                    break;
+                case 2:
+                    civilianCardUsers.add(p);
+                    break;
+                default:
+                    noCardUsers.add(p);
+                    break;
             }
         }
 
@@ -373,16 +270,16 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         Collections.shuffle(noCardUsers, random);
 
         // 计算各区间: 基于总人数 n
-        // 杀手卡: 前 [0.4*n, 0.5*n)   (取整)
+        // 杀手卡: 前 [0.4*n, 0.5*n) (取整)
         // 中立卡: 前 [0, 0.2*n)
         // 平民卡: 后 [0.7*n, n)
         // 无卡: 填充剩余空缺
         int killerStart = (int) Math.floor(n * 0.4);
-        int killerEnd   = Math.min((int) Math.ceil(n * 0.5), n);
+        int killerEnd = Math.min((int) Math.ceil(n * 0.5), n);
         int neutralStart = 0;
-        int neutralEnd   = Math.min((int) Math.ceil(n * 0.2), n);
+        int neutralEnd = Math.min((int) Math.ceil(n * 0.2), n);
         int civilianStart = (int) Math.floor(n * 0.7);
-        int civilianEnd   = n;
+        int civilianEnd = n;
 
         // 构建序号槽位数组（1-based），null 表示空缺
         Integer[] slots = new Integer[n];
@@ -391,7 +288,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         // 放置中立卡用户
         nextSlot = neutralStart;
         for (ServerPlayer p : neutralCardUsers) {
-            while (nextSlot < neutralEnd && slots[nextSlot] != null) nextSlot++;
+            while (nextSlot < neutralEnd && slots[nextSlot] != null)
+                nextSlot++;
             if (nextSlot < neutralEnd) {
                 slots[nextSlot] = p.getUUID().hashCode(); // 占位
                 playerRotationOrder.put(p.getUUID(), nextSlot + 1);
@@ -400,14 +298,16 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         }
         // 中立卡放不下的放到相邻空缺
         for (ServerPlayer p : neutralCardUsers) {
-            if (playerRotationOrder.containsKey(p.getUUID())) continue;
+            if (playerRotationOrder.containsKey(p.getUUID()))
+                continue;
             fillNearestSlot(slots, p, n);
         }
 
         // 放置杀手卡用户
         nextSlot = killerStart;
         for (ServerPlayer p : killerCardUsers) {
-            while (nextSlot < killerEnd && slots[nextSlot] != null) nextSlot++;
+            while (nextSlot < killerEnd && slots[nextSlot] != null)
+                nextSlot++;
             if (nextSlot < killerEnd) {
                 slots[nextSlot] = p.getUUID().hashCode();
                 playerRotationOrder.put(p.getUUID(), nextSlot + 1);
@@ -415,14 +315,16 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             }
         }
         for (ServerPlayer p : killerCardUsers) {
-            if (playerRotationOrder.containsKey(p.getUUID())) continue;
+            if (playerRotationOrder.containsKey(p.getUUID()))
+                continue;
             fillNearestSlot(slots, p, n);
         }
 
         // 放置平民卡用户
         nextSlot = civilianStart;
         for (ServerPlayer p : civilianCardUsers) {
-            while (nextSlot < civilianEnd && slots[nextSlot] != null) nextSlot++;
+            while (nextSlot < civilianEnd && slots[nextSlot] != null)
+                nextSlot++;
             if (nextSlot < civilianEnd) {
                 slots[nextSlot] = p.getUUID().hashCode();
                 playerRotationOrder.put(p.getUUID(), nextSlot + 1);
@@ -430,7 +332,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             }
         }
         for (ServerPlayer p : civilianCardUsers) {
-            if (playerRotationOrder.containsKey(p.getUUID())) continue;
+            if (playerRotationOrder.containsKey(p.getUUID()))
+                continue;
             fillNearestSlot(slots, p, n);
         }
 
@@ -457,7 +360,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     public int getPlayerRotationIndex(UUID uuid) {
         return playerRotationOrder.getOrDefault(uuid, -1);
     }
-    
+
     public HashMap<UUID, Integer> getRotationOrderMap() {
         return playerRotationOrder;
     }
@@ -552,7 +455,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             // 播放全场音效（音符盒 - 所有人能听到）
             for (ServerPlayer p : serverWorld.players()) {
                 serverWorld.playSound(null, p.getX(), p.getY(), p.getZ(),
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
+                        SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
             }
         }
 
@@ -597,13 +500,18 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
                 int type = PlayerRoleWeightManager.getRoleType(role);
                 if (cardType == 0) {
                     // 杀手卡：优先杀手阵营 (type 4)
-                    if (type == 4) priorityRoles.add(role);
-                    else otherRoles.add(role);
+                    if (type == 4)
+                        priorityRoles.add(role);
+                    else
+                        otherRoles.add(role);
                 } else {
                     // 中立卡：优先非杀手方中立 (type 2)，其次杀手方中立 (type 3)
-                    if (type == 2) priorityRoles.add(role);
-                    else if (type == 3) otherRoles.add(role);
-                    else otherRoles.add(role);
+                    if (type == 2)
+                        priorityRoles.add(role);
+                    else if (type == 3)
+                        otherRoles.add(role);
+                    else
+                        otherRoles.add(role);
                 }
             }
 
@@ -709,7 +617,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         if (world instanceof ServerLevel serverWorld) {
             for (ServerPlayer p : serverWorld.players()) {
                 serverWorld.playSound(null, p.getX(), p.getY(), p.getZ(),
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
+                        SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
             }
         }
 
@@ -754,7 +662,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
 
         // 发送消息
         MutableComponent msg = Component.translatable("gui.sre.role_rotation.selected",
-                Component.literal(String.valueOf(playerRotationOrder.get(player.getUUID()))).withStyle(ChatFormatting.GOLD),
+                Component.literal(String.valueOf(playerRotationOrder.get(player.getUUID())))
+                        .withStyle(ChatFormatting.GOLD),
                 RoleUtils.getRoleName(role).withColor(role.getColor()));
         player.displayClientMessage(msg.withStyle(ChatFormatting.GREEN), true);
     }
@@ -764,13 +673,13 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         confirmCountdown = 6 * 20; // 6秒
         sync();
     }
-    
+
     public void tickConfirmCountdown() {
         if (confirmCountdown > 0) {
             confirmCountdown--;
         }
     }
-    
+
     /**
      * 执行职业调整阶段：把剩余池子中的杀手/中立/警长职业和特殊平民职业分配给随机平民
      * 使用 SetRoleCountCommand 的目标数量，只补充不足的类型
@@ -780,9 +689,9 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         ArrayList<SRERole> remainingPool = new ArrayList<>(rolePool);
 
         // 按类型分类剩余优先职业
-        ArrayList<SRERole> remainingKillers = new ArrayList<>();      // type 4
-        ArrayList<SRERole> remainingVigilantes = new ArrayList<>();   // type 5
-        ArrayList<SRERole> remainingNeutrals = new ArrayList<>();     // type 2, 3
+        ArrayList<SRERole> remainingKillers = new ArrayList<>(); // type 4
+        ArrayList<SRERole> remainingVigilantes = new ArrayList<>(); // type 5
+        ArrayList<SRERole> remainingNeutrals = new ArrayList<>(); // type 2, 3
         ArrayList<SRERole> remainingSpecialCivilians = new ArrayList<>();
 
         for (SRERole role : remainingPool) {
@@ -903,6 +812,15 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
                             .withStyle(ChatFormatting.GOLD),
                     true);
         }
+        doNothing(selectedSpecialCivilians);
+    }
+
+    /**
+     * 神秘方法，如果你想保留某个东西又不想让他出现unused警告就请调用它！虽然没有任何用处...
+     * 
+     * @param __nothing
+     */
+    public void doNothing(Object... __nothing) {
     }
 
     public int getConfirmCountdown() {
@@ -936,7 +854,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         GameUtils.recordPlayerStats(serverWorld, gameWorldComponent, new ArrayList<>(serverWorld.players()));
         int SAFE_TIME_COOLDOWN = SREConfig.instance().safeTimeCooldown * 20;
         GameUtils.addItemCooldowns(serverWorld, SAFE_TIME_COOLDOWN);
-        SRE.REPLAY_MANAGER.updateReplayInitialRoles(new ArrayList<>(serverWorld.players()), gameWorldComponent.getRoles());
+        SRE.REPLAY_MANAGER.updateReplayInitialRoles(new ArrayList<>(serverWorld.players()),
+                gameWorldComponent.getRoles());
 
         clear();
         sync();
@@ -971,15 +890,15 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             ModRoles.LOCKSMITH,
             RedHouseRoles.BAKA,
             RedHouseRoles.PACHURI,
-            ModRoles.FITTER
-    );
+            ModRoles.FITTER);
 
     /**
      * 检查是否是特殊平民职业
      * 以硬编码的特殊平民职业列表 + isInnocent() && !canBeRandomed() 的平民职业为准
      */
     private boolean isSpecialCivilianRole(SRERole role) {
-        if (role == null) return false;
+        if (role == null)
+            return false;
         // 1. 硬编码的特殊平民职业
         ResourceLocation id = role.identifier();
         for (SRERole special : SPECIAL_CIVILIAN_ROLES) {
@@ -998,7 +917,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
      * 检查角色是否已在池子中（基于 identifier 比较）
      */
     private boolean isRoleInPool(SRERole role) {
-        if (role == null) return false;
+        if (role == null)
+            return false;
         ResourceLocation id = role.identifier();
         for (SRERole r : rolePool) {
             if (id.equals(r.identifier())) {
@@ -1041,7 +961,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     private void updateRoleRotationCache() {
         // 更新基础状态
         RoleRotationCache.updateBaseState(isSelecting, currentRotationIndex, totalPlayerCount, confirmCountdown);
-        
+
         // 更新 rotationOrder
         HashMap<UUID, Integer> orderMap = new HashMap<>();
         for (Map.Entry<UUID, Integer> entry : playerRotationOrder.entrySet()) {
