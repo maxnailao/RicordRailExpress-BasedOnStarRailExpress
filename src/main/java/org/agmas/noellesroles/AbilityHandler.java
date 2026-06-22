@@ -49,6 +49,7 @@ import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPl
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.UUID;
