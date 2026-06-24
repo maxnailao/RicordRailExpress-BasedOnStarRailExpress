@@ -59,9 +59,11 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
                 }
             }
             if(state.getBlock() instanceof SmallDoorBlock sb){
+                door.blast();
                 sb.open(state, world, door, null);
+            } else {
+                door.blast();
             }
-            door.blast();
             // 记录撬门事件（低频关键事件）
             if (!world.isClientSide && SRE.REPLAY_MANAGER != null) {
                 SRE.REPLAY_MANAGER.recordDoorPry(player.getUUID(), context.getClickedPos());
