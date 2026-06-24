@@ -1048,6 +1048,10 @@ public class InstinctRenderer {
                             return new Color(0, 0, 180).getRGB(); // 深蓝色
                         }
                     }
+                    // 风精灵：杀手本能中透视的框为浅青色
+                    if (SREClient.gameComponent.isRole(target_player, ModRoles.WIND_YAOSE)) {
+                        return new Color(255, 255, 51).getRGB(); // 黄色
+                    }
                     
                 // 默认fallback
                     if (target_role == null)

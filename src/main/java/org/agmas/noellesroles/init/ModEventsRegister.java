@@ -1369,6 +1369,7 @@ public class ModEventsRegister {
         CustomWinnerClass.registerCustomWinners();
         XiaoNaoHandler.registerEvent();
         // 通用物证：血迹路径。凶手击杀后开始"滴血跟随"，边走边沿途留下会衰减的血迹（仅他杀触发）。
+        /*
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             io.wifi.starrailexpress.SREConfig cfg = io.wifi.starrailexpress.SREConfig.instance();
             if (cfg == null || !cfg.enableForensicEvidence || !cfg.forensicBloodTrail)
@@ -1390,6 +1391,7 @@ public class ModEventsRegister {
             };
             gw.startKillerBleed(killerSp, victim.position(), victim.level().getGameTime(), bleedTicks);
         });
+         */
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorld == null || !gameWorld.isRunning())
