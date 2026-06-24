@@ -28,19 +28,15 @@ import org.agmas.noellesroles.content.block.scene.BushBlock;
 import org.agmas.noellesroles.content.block.scene.CropBlock;
 import org.agmas.noellesroles.content.block.scene.DustBlock;
 import org.agmas.noellesroles.content.block.scene.IncineratorBlock;
-import org.agmas.noellesroles.content.block.scene.MovingPlatformBlock;
 import org.agmas.noellesroles.content.block.scene.StatueBlock;
 import org.agmas.noellesroles.content.block.scene.StoveBlock;
 import org.agmas.noellesroles.content.block.scene.TransportPointBlock;
 import org.agmas.noellesroles.content.block_entity.scene.CropBlockEntity;
-import org.agmas.noellesroles.content.block.scene.ReactorBlock;
 import org.agmas.noellesroles.content.block.scene.RollingStoneTriggerPlate;
 import org.agmas.noellesroles.content.block.scene.SceneGateBlock;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
 import org.agmas.noellesroles.content.block_entity.scene.FlamethrowerBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.IncineratorBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.RollingStoneTriggerPlateEntity;
 import org.agmas.noellesroles.content.block_entity.scene.FogZoneBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.ManholeBlockEntity;
@@ -93,17 +89,12 @@ public interface ModSceneBlocks {
 
     BlockEntityType<SceneGateBlockEntity> SCENE_GATE_ENTITY = blockEntityRegistrar.create("scene_gate",
             BlockEntityType.Builder.of(SceneGateBlockEntity::new, SCENE_GATE));
-    Block REACTOR = registerBlock("reactor",
-            new ReactorBlock(Properties.ofFullCopy(Blocks.NETHERITE_BLOCK)
-                    .lightLevel(state -> state.getValue(ReactorBlock.ACTIVE) ? 12 : 0)));
 
     BlockEntityType<FlamethrowerBlockEntity> FLAMETHROWER_ENTITY = blockEntityRegistrar.create("flamethrower",
             BlockEntityType.Builder.of(FlamethrowerBlockEntity::new, FLAMETHROWER));
     Block ROLLING_STONE_TRIGGER = registerBlock("rolling_stone_trigger",
             new RollingStoneTriggerPlate(Properties.ofFullCopy(Blocks.STONE).noOcclusion()));
 
-    BlockEntityType<ReactorBlockEntity> REACTOR_ENTITY = blockEntityRegistrar.create("reactor",
-            BlockEntityType.Builder.of(ReactorBlockEntity::new, REACTOR));
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(
             "rolling_stone_trigger",
             BlockEntityType.Builder.of(RollingStoneTriggerPlateEntity::new, ROLLING_STONE_TRIGGER));
@@ -114,13 +105,9 @@ public interface ModSceneBlocks {
             new TrainTargetBlock(Properties.ofFullCopy(Blocks.TARGET)));
     Block INCINERATOR = registerBlock("incinerator",
             new IncineratorBlock(Properties.ofFullCopy(Blocks.FURNACE).lightLevel(s -> 13)));
-    Block MOVING_PLATFORM = registerBlock("moving_platform",
-            new MovingPlatformBlock(Properties.ofFullCopy(Blocks.SMOOTH_STONE)));
 
     BlockEntityType<IncineratorBlockEntity> INCINERATOR_ENTITY = blockEntityRegistrar.create("incinerator",
             BlockEntityType.Builder.of(IncineratorBlockEntity::new, INCINERATOR));
-    BlockEntityType<MovingPlatformBlockEntity> MOVING_PLATFORM_ENTITY = blockEntityRegistrar.create("moving_platform",
-            BlockEntityType.Builder.of(MovingPlatformBlockEntity::new, MOVING_PLATFORM));
 
     // ───────────────────────── 场景任务点方块 ─────────────────────────
 
