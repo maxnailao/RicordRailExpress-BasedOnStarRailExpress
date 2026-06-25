@@ -166,6 +166,7 @@ public class ModRoles {
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
     public static final ResourceLocation FIGHTER_ID = Noellesroles.id("fighter");
+    public static final ResourceLocation WORKER_ID = Noellesroles.id("worker");
     public static final ResourceLocation AGENT_ID = Noellesroles.id("agent");
     public static final ResourceLocation ATHLETE_ID = Noellesroles.id("athlete");
     public static final ResourceLocation SUPERSTAR_ID = Noellesroles.id("star");

@@ -49,7 +49,7 @@ import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPl
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.UUID;
@@ -303,7 +303,7 @@ public class AbilityHandler {
                 player.displayClientMessage(
                         Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
                                 .withStyle(ChatFormatting.RED),
-                        true);
+                                true);
                 return;
             }
 
@@ -336,7 +336,7 @@ public class AbilityHandler {
                 player.displayClientMessage(
                         Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
                                 .withStyle(ChatFormatting.RED),
-                        true);
+                                true);
                 return;
             }
 

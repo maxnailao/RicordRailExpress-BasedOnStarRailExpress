@@ -129,10 +129,10 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.CORRUPT_COP_ID, 1);
 
         // 邮差每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.POSTMAN_ID, 1);
+        Harpymodloader.setRoleMaximum(ModRoles.COURIER_ID, 1);
 
         // 私家侦探每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.DETECTIVE_ID, 1);
+        Harpymodloader.setRoleMaximum(ModRoles.AGENT_ID, 1);
 
         // 运动员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);
@@ -572,7 +572,6 @@ public class InitModRolesMax {
                 entry.getValue().setSpawnInfo(spinfo);
         }
         // 以下内容均已统一成新API。（上方）可分别对任何角色进行控制。也可以设置角色不受到控制影响。
-        {
             // // 建筑师 - 从配置读取概率和最小玩家数
             // ModRoles.BUILDER.setEnableChance(config.chanceOfBuilder).setEnableNeededPlayerCount(config.minPlayerForBuilder);
 
