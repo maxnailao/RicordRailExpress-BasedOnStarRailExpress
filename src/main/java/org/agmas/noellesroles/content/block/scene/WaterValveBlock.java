@@ -63,15 +63,20 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
             BlockHitResult hit) {
         if (level.isClientSide) {
             if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
-                Minecraft.getInstance().setScreen(
-                        new SimpleQuestMinigameScreen(pos,
-                                () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                                        new org.agmas.noellesroles.packet.WaterValveMinigameCompleteC2SPacket(pos)),
-                                SimpleQuestMinigameScreen.Mode.WATER_VALVE));
+                openWaterValveScreen(pos);
             }
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
+    }
+
+    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    private void openWaterValveScreen(BlockPos pos) {
+        Minecraft.getInstance().setScreen(
+                new SimpleQuestMinigameScreen(pos,
+                        () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                                new org.agmas.noellesroles.packet.WaterValveMinigameCompleteC2SPacket(pos)),
+                        SimpleQuestMinigameScreen.Mode.WATER_VALVE));
     }
 
     @Nullable

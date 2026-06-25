@@ -40,12 +40,17 @@ public class HurricaneDeviceBlock extends BaseEntityBlock {
         if (level.isClientSide && player.isCreative()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof HurricaneDeviceBlockEntity hbe) {
-                Minecraft.getInstance().setScreen(new HurricaneDeviceConfigScreen(pos, hbe.getRadius(),
-                        hbe.getHeight(), hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
+                openHurricaneDeviceScreen(pos, hbe);
             }
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
+    }
+
+    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    private void openHurricaneDeviceScreen(BlockPos pos, HurricaneDeviceBlockEntity hbe) {
+        Minecraft.getInstance().setScreen(new HurricaneDeviceConfigScreen(pos, hbe.getRadius(),
+                hbe.getHeight(), hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
     }
 
     @Nullable

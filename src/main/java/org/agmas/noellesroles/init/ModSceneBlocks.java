@@ -88,23 +88,24 @@ public interface ModSceneBlocks {
 
     Block SCENE_GATE = registerBlock("scene_gate",
             new SceneGateBlock(Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().strength(-1.0F, 3600000.0F)));
-    Block FLAMETHROWER = registerBlock("flamethrower",
-            new FlamethrowerBlock(Properties.ofFullCopy(Blocks.MAGMA_BLOCK).lightLevel(s -> 7)));
-
     BlockEntityType<SceneGateBlockEntity> SCENE_GATE_ENTITY = blockEntityRegistrar.create("scene_gate",
             BlockEntityType.Builder.of(SceneGateBlockEntity::new, SCENE_GATE));
+
+    Block FLAMETHROWER = registerBlock("flamethrower",
+            new FlamethrowerBlock(Properties.ofFullCopy(Blocks.MAGMA_BLOCK).lightLevel(s -> 7)));
     Block WATER_VALVE = registerQuestBlock("water_valve",
             new WaterValveBlock(Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .noOcclusion()
                     .lightLevel(state -> state.getValue(WaterValveBlock.ACTIVE) ? 8 : 0)));
+
+    BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
+            BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
 
     BlockEntityType<FlamethrowerBlockEntity> FLAMETHROWER_ENTITY = blockEntityRegistrar.create("flamethrower",
             BlockEntityType.Builder.of(FlamethrowerBlockEntity::new, FLAMETHROWER));
     Block ROLLING_STONE_TRIGGER = registerBlock("rolling_stone_trigger",
             new RollingStoneTriggerPlate(Properties.ofFullCopy(Blocks.STONE).noOcclusion()));
 
-    BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
-            BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(
             "rolling_stone_trigger",
             BlockEntityType.Builder.of(RollingStoneTriggerPlateEntity::new, ROLLING_STONE_TRIGGER));
@@ -178,7 +179,7 @@ public interface ModSceneBlocks {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, QUEST_CREATIVE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.noellesroles.quest"))
-                .icon(() -> new ItemStack(WATER_VALVE.asItem()))
+                .icon(() -> new ItemStack(STOVE.asItem()))
                 .build());
 
         // 将原版黑色混凝土加入 SRE 任务点方块分类
