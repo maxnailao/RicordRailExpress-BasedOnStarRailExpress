@@ -11,9 +11,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.GameType;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.ManipulatorPlayerWidget;
+import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
+import org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -104,8 +107,16 @@ public abstract class ManipulatorScreenMixin extends LimitedHandledScreen<Invent
             return List.of();
         }
 
+        // 只显示已标记的目标（需先潜行盯人 6 秒完成标记）
+        ManipulatorPlayerComponent comp = ManipulatorPlayerComponent.KEY.get(player);
+        java.util.UUID marked = comp.markedTarget;
+        if (marked == null) {
+            return List.of();
+        }
         return client.getConnection().getOnlinePlayers().stream()
-                .filter(a -> a.getProfile().getId() != player.getUUID() && a.getGameMode() == GameType.ADVENTURE)
+                .filter(a -> a.getProfile().getId().equals(marked)
+                        && a.getProfile().getId() != player.getUUID()
+                        && a.getGameMode() == GameType.ADVENTURE)
                 .collect(Collectors.toList());
     }
 
@@ -123,6 +134,13 @@ public abstract class ManipulatorScreenMixin extends LimitedHandledScreen<Invent
 
     @Inject(method = "init", at = @At("HEAD"))
     private void noellesroles$onInit(CallbackInfo ci) {
+        // 操控期间打开背包即取消操控
+        if (player != null && ModRoles.MANIPULATOR != null) {
+            ManipulatorPlayerComponent comp = ManipulatorPlayerComponent.KEY.get(player);
+            if (comp.isControlling) {
+                ClientPlayNetworking.send(new ManipulatorControlInputC2SPacket(0, 0f, 0f, true));
+            }
+        }
         if (roleScreenHelper != null) {
             roleScreenHelper.getPaginationHelper().clearManagedWidgets(this);
         }

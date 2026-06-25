@@ -17,6 +17,8 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.client.blood.BloodMain;
 import org.agmas.noellesroles.client.utils.RoleDisabledUtilsForClient;
 import org.agmas.noellesroles.commands.*;
+import org.agmas.noellesroles.register.NRCommandRegister;
+import org.agmas.noellesroles.register.NREventRegister;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.game.presets.Preset;
@@ -197,48 +199,11 @@ public class Noellesroles implements ModInitializer {
         NRSounds.initialize();
         registerMaxRoleCount();
 
-        // 注册C4系统
-        org.agmas.noellesroles.game.c4.C4Detonation.register();
-        org.agmas.noellesroles.game.c4.PliersDefuseManager.register();
-        // 注册鹈鹕系统
-        org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.register();
-        // 注册 Mafia 系统
-        org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.register();
-
-        // 注册事件处理器
-        ModEventsRegister.registerEvents();
-        org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler.register();
-        org.agmas.noellesroles.game.modes.repair.RepairCombatEvents.register();
-        org.agmas.noellesroles.game.modes.repair.RepairWorldInteractions.register();
-
-        // 注册疫使胜利检测
-        org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.registerEvent();
+        // 世界系统与事件处理器注册
+        NREventRegister.registerWorldSystemsAndEvents();
 
         // 注册命令
-        BroadcastCommand.register();
-        AdminFreeCamCommand.register();
-        SetRoleMaxCommand.register();
-        NoellesrolesConfigCommand.register();
-        VTCommand.register();
-        org.agmas.noellesroles.commands.HeliumCommand.register();
-        ExtraItemsManagerCommand.register();
-        GameUtilsCommand.register();
-        RoomCommand.register();
-        StuckCommand.register();
-        DisplayItemCommand.register();
-        GoodsManagerCommand.register();
-        WheelchairFieldItemCommand.register();
-        GamblerMiracleCommand.register();
-        EggClearCommand.register();
-        RepairShopCommand.register();
-        RepairStartCommand.register();
-        RepairRoleCommand.register();
-        RepairMapCommand.register();
-        RepairPresetCommand.register();
-        MurderTimeCommand.register();
-
-        // 注册疫使测试指令
-        org.agmas.noellesroles.commands.InfectedCommand.register();
+        NRCommandRegister.registerCommands();
 
         // 加载预设配置
         Preset.PresetManager.loadPresets();

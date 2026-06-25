@@ -80,59 +80,7 @@ public class StupidExpress implements ModInitializer {
 
         pro.fazeclan.river.stupid_express.network.SplitPersonalitySwitchPacket.register();
 
-        GameInitializeEvent.EVENT.register((ServerLevel, gameWorldComponent, serverPlayers) -> {
-            var refugeeC = RefugeeComponent.KEY.get(ServerLevel);
-            if (refugeeC != null) {
-                refugeeC.reset();
-            }
-        });
-        StupidEventRegister.register();
-        LoversWinCheckEvent.register();
-        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
-            var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
-            if (gameWorldComponent.getGameMode() instanceof WTLooseEndsGameMode)
-                return;
-            var modifierComponent = WorldModifierComponent.KEY.get(victim.level());
-            if (gameWorldComponent != null) {
-                SRERole role = gameWorldComponent.getRole(victim);
-                if (role != null) {
-                    if (role.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
-                        var refugeeComponent = RefugeeComponent.KEY.get(victim.level());
-                        refugeeComponent.onLooseEndDeath(victim, deathReason);
-                    }
-                }
-            }
-            if (modifierComponent != null) {
-                if (modifierComponent.isModifier(victim, SEModifiers.SPLIT_PERSONALITY)) {
-                    var splc = SplitPersonalityComponent.KEY.get(victim);
-                    if (splc != null && !splc.isDeath()) {
-                        splc.setDeath(true);
-                    }
-                }
-            }
-        });
-        GameInitializeEvent.EVENT.register((ServerLevel, gameWorldComponent, serverPlayers) -> {
-            serverPlayers.forEach(serverPlayer -> {
-                RemoveStatusBarPayload payload = new RemoveStatusBarPayload("loose_end");
-                ServerPlayNetworking.send(serverPlayer, payload);
-            });
-        });
-
-        SRE.cantSendReplay.add(
-                (player -> {
-                    WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(player.level());
-                    return modifierComponent.isModifier(player, SEModifiers.SPLIT_PERSONALITY);
-                }));
-        SRE.cantUseChatHud.add(
-                (player -> {
-                    WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(player.level());
-                    SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(player.level());
-                    var role = gameComponent.getRole(player);
-                    return role != null && !SRE.canUseChatHud.stream().anyMatch((pre) -> pre.test(role))
-                            && modifierComponent.isModifier(player, SEModifiers.SPLIT_PERSONALITY);
-                }));
-
-        PlayerStatsBeforeRefugee.RegisterDeathEvent();
+        StupidEventRegister.registerInitEvents();
     }
 
     public static ResourceLocation id(String key) {

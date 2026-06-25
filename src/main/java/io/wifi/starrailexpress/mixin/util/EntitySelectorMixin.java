@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.mixin.util;
 
-import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.CollisionRules;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,8 +16,8 @@ public class EntitySelectorMixin {
     private static void pushableBy(Entity entity, CallbackInfoReturnable<Predicate<Entity>> cir) {
         Predicate<Entity> originalPredicate = cir.getReturnValue();
         Predicate<Entity> additionalPredicate = e -> {
-            if (!SRE.cantPushableBy.isEmpty())
-                return !SRE.cantPushableBy.stream()
+            if (!CollisionRules.cantPushableBy.isEmpty())
+                return !CollisionRules.cantPushableBy.stream()
                         .anyMatch(predicate -> predicate.test(e) || predicate.test(entity));
             return true;
         };

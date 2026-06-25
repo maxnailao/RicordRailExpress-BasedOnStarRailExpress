@@ -39,6 +39,7 @@ public class NRSounds {
     public static final SoundEvent SNOW_STORM = registrar.create("noellesroles.winter_storm");
     public static final SoundEvent SAND_STORM = registrar.create("noellesroles.dust_storm");
     public static final SoundEvent BROKEN_ALARM = registrar.create("noellesroles.broken_alarm");
+    public static final SoundEvent CIRCUS_BACKGROUND = registrar.create("noellesroles.circus_background");
     /**Fumo */
     public static final SoundEvent SPBGCP_SOUND = registrar.create("plush.spbgcp");
     public static final SoundEvent TANGYE_SOUND = registrar.create("plush.tangye");

@@ -47,8 +47,8 @@ import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponen
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -296,7 +296,7 @@ public class InstinctRenderer {
             if (target instanceof Player targetPlayer) {
                 if (targetPlayer.distanceToSqr(self) > 40 * 40)
                     return -2;
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -325,7 +325,7 @@ public class InstinctRenderer {
                 return -1;
 
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -366,7 +366,7 @@ public class InstinctRenderer {
 
             // 所有玩家都显示葬仪的颜色（无法透视的职业除外）
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -613,13 +613,13 @@ public class InstinctRenderer {
             if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.CONSPIRATOR)) {
                 return -1;
             }
-            if (!SREClient.gameComponent.isRole(self, ModRoles.DETECTIVE)) {
+            if (!SREClient.gameComponent.isRole(self, ModRoles.AGENT)) {
                 return -1;
             }
             var awpc = DetectivePlayerComponent.KEY.get(self);
             if (awpc.conspiratorInstinctTime <= 0)
                 return -1;
-            return ModRoles.DETECTIVE.color();
+            return ModRoles.AGENT.color();
         });
         // 失忆
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
@@ -1013,7 +1013,7 @@ public class InstinctRenderer {
                     if (RoleUtils.compareRole(target_role, ModRoles.LOST_KILLER)) {
                         return TMMRoles.CIVILIAN.color();
                     }
-                    if (RoleUtils.compareRole(target_role, ModRoles.SLIPPERY_GHOST)) {
+                    if (RoleUtils.compareRole(target_role, ModRoles.PRANKSTER)) {
                         return -2;
                     }
                     if (RoleUtils.compareRole(target_role, SERoles.AMNESIAC)) {
@@ -1169,14 +1169,14 @@ public class InstinctRenderer {
 
     /**
      * 检查目标玩家是否属于「无法被任何本能透视」的职业。
-     * 包含：小透明、秉烛人、雇佣兵、滑头鬼、赌徒。
+     * 包含：小透明、秉烛人、雇佣兵、捣蛋鬼、赌徒。
      */
     private static boolean isTargetInvisibleToInstinct(Player target) {
         if (SREClient.gameComponent == null || target == null) return false;
         return SREClient.gameComponent.isRole(target, ModRoles.GHOST)
             || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
             || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
-            || SREClient.gameComponent.isRole(target, ModRoles.SLIPPERY_GHOST)
+            || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
             || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
     }
 

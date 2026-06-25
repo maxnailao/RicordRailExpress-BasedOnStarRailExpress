@@ -185,13 +185,13 @@ public class NoellesRolesConfig implements ConfigData {
     public boolean insanePlayersSeeMorphs = true;
 
     /**
-     * Areas that will spawn Swast. Use | to split maps
+     * Areas that will spawn Ma Chen Xu and Guest Ghost. Use | to split maps
      */
 
     public ArrayList<String> maChenXuMaps = new ArrayList<>(List.of("areas_qiyucun"));
 
     /**
-     * Areas that will spawn Swast. Use | to split maps
+     * Areas that will spawn big-map roles (for example Swast). Use | to split maps
      */
 
     public ArrayList<String> swastMaps = new ArrayList<>(
@@ -230,21 +230,6 @@ public class NoellesRolesConfig implements ConfigData {
     /**
      * 特殊警卫配置
      */
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfPatroller = 80;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfMartialArtsInstructor = 60;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfElf = 70;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfSwast = 70;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfDoublePatroller = 20;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfDoubleElf = 10;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfBestVigilante = 10;
-
     /**
      * 特殊警卫刷新最小玩家数
      */
@@ -361,7 +346,42 @@ public class NoellesRolesConfig implements ConfigData {
      * Manipulator - Control target cooldown in seconds
      */
 
-    public int manipulatorCooldown = 60;
+    public int manipulatorCooldown = 80;
+
+    /**
+     * Manipulator - Max distance (blocks) allowed to start controlling a marked target
+     */
+    public int manipulatorMaxControlRange = 100;
+
+    /**
+     * Manipulator - Total control duration in seconds
+     */
+    public int manipulatorControlSeconds = 30;
+
+    /**
+     * Manipulator - Seconds of uninterrupted staring required to mark a target
+     */
+    public int manipulatorMarkSeconds = 6;
+
+    /**
+     * Manipulator - Max distance (blocks) to stare-mark a target
+     */
+    public int manipulatorMarkRange = 20;
+
+    /**
+     * Manipulator - Nausea duration (seconds) applied to the target on a successful mark
+     */
+    public int manipulatorMarkNauseaSeconds = 4;
+
+    /**
+     * Manipulator - Coins rewarded for a successful mark
+     */
+    public int manipulatorMarkReward = 15;
+
+    /**
+     * Manipulator - Coins rewarded when the controlled target dies during control
+     */
+    public int manipulatorTargetDeathReward = 75;
 
     /**
      * Skill Echo Event - global switch (default off)

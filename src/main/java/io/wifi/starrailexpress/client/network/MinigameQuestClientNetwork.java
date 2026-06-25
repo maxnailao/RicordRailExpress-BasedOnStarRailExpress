@@ -21,7 +21,10 @@ public class MinigameQuestClientNetwork {
                             payload.pos(),
                             payload.data().getString("MinigameId"),
                             payload.data().getInt("MarkerColor"),
-                            payload.data().getBoolean("IsTaskMarker"))));
+                            payload.data().getBoolean("IsTaskMarker"),
+                            payload.data().getBoolean("IsSabotageTrigger"),
+                            payload.data().getInt("SabotageDuration"),
+                            payload.data().getInt("SabotageCooldown"))));
                 });
 
         // 冒险模式：打开小游戏界面

@@ -1,6 +1,7 @@
 package pro.fazeclan.river.stupid_express.constants;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -226,7 +227,7 @@ public class SEModifiers {
                     .get(player);
             skinSplitPersonalityComponent2.clear();
         });
-        SRE.canCollide.add(p -> {
+        CollisionRules.canCollide.add(p -> {
             var modifiers = WorldModifierComponent.KEY.get(p.level());
             if (modifiers.isModifier(p.getUUID(), FEATHER)) {
                 return true;

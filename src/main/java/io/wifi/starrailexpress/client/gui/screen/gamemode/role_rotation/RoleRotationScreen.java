@@ -578,7 +578,7 @@ public class RoleRotationScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // 按ESC打开退出菜单
+        // 按 ESC 打开退出菜单
         if(keyCode == 256){
             this.minecraft.setScreen(new WithParentScreenPauseScreen(this));
             return true;

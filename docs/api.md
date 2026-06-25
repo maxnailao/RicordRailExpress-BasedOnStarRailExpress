@@ -1049,6 +1049,19 @@ AllowPlayerPunching.EVENT.register((attacker, target) -> true);
 AllowPlayerOpenLockedDoor.EVENT.register((player) -> true);
 ```
 
+#### `AllowPlayerControlled` — 是否允许玩家被操控/附身
+
+**类型:** 可拦截（任意监听器返回 `false` 即阻止）。在操纵师等附身职业发动操控前触发，可用于让某些职业/效果免疫被操控。  
+**Type:** Vetoable (any listener returning `false` blocks it). Fired before a possession-style role (e.g. Manipulator) takes control; lets roles/effects make a target immune.
+
+```java
+// controller 发起者，target 目标；返回 false 阻止操控
+AllowPlayerControlled.EVENT.register((controller, target) -> {
+    // 例：被标记为"不可操控"的玩家免疫
+    return !ImmunityComponent.KEY.get(target).immune;
+});
+```
+
 #### `OnGetInstinctHighlight` — 获取本能高亮实体
 
 **类型:** 首个非 `null` 列表返回值生效。可自定义本能技能高亮的实体范围。

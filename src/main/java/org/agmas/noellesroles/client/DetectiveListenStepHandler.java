@@ -81,7 +81,7 @@ public class DetectiveListenStepHandler {
         if (player == null || SREClient.gameComponent == null) {
             return false;
         }
-        if (SREClient.gameComponent.isRole(player, ModRoles.DETECTIVE)) {
+        if (SREClient.gameComponent.isRole(player, ModRoles.AGENT)) {
             return true;
         }
         if (SREClient.gameComponent.isRole(player, ModRoles.REPAIR_HUNTER)) {

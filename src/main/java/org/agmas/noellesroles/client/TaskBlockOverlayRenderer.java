@@ -4,9 +4,11 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
+import io.wifi.starrailexpress.content.block_entity.MinigameQuestBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -209,7 +211,7 @@ public class TaskBlockOverlayRenderer {
         if (!SREClient.gameComponent.isRunning())
             return;
 
-        boolean shouldDisplay[] = new boolean[20];
+        boolean shouldDisplay[] = new boolean[64];
         for (int i = 0; i < shouldDisplay.length; i++) {
             shouldDisplay[i] = false;
         }
@@ -303,6 +305,25 @@ public class TaskBlockOverlayRenderer {
                     case BREATHE:
                         // 呼吸任务无需特殊方块高亮
                         break;
+                    case LIGHT_STOVE:
+                        shouldDisplay[16] = true; // 炉灶 — 橙色
+                        break;
+                    case CLEAN_DUST:
+                        shouldDisplay[17] = true; // 灰尘 — 淡灰色
+                        break;
+                    case TRANSPORT:
+                        shouldDisplay[18] = true; // 运输点起点 — 亮绿色
+                        shouldDisplay[19] = true; // 运输点终点 — 深红色
+                        break;
+                    case PRAY:
+                        shouldDisplay[20] = true; // 雕像 — 淡黄色
+                        break;
+                    case PRUNE_BUSH:
+                        shouldDisplay[21] = true; // 灌木 — 黄绿色
+                        break;
+                    case HARVEST_CROP:
+                        shouldDisplay[22] = true; // 草垫 — 棕黄色
+                        break;
                     default:
                         break;
 
@@ -382,19 +403,78 @@ public class TaskBlockOverlayRenderer {
                                 Component.translatable("hud.noellesroles.task_instinct.render.supply_crate"));
                     }
                     break;
+                case 16:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(255, 165, 0), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.light_stove"));
+                    break;
+                case 17:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(192, 192, 192), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.clean_dust"));
+                    break;
+                case 18:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(0, 255, 100), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.transport_start"));
+                    break;
+                case 19:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(180, 40, 40), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.transport_end"));
+                    break;
+                case 20:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(255, 255, 180), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.pray"));
+                    break;
+                case 21:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(173, 255, 47), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.prune_bush"));
+                    break;
+                case 22:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(218, 165, 32), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.harvest_crop"));
+                    break;
                 default:
                     BlockState block = renderContext.world().getBlockState(pos);
                     if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务且该点本局未被使用时金色透视，
-                        // 否则不显示——即只有刷新到对应任务时才能透视看到小游戏点位。
-                        boolean isMinigamePoint = type == 14 || type == 15;
+                        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务、该点本局未被使用、
+                        // 且该点的 minigameId 与玩家指派的目标类型匹配（或无指定目标）时才金色透视
+                        boolean isMinigamePoint = (type == 14 || type == 15)
+                                && renderContext.world().getBlockEntity(pos) instanceof MinigameQuestBlockEntity;
                         if (isMinigamePoint) {
-                            var mgComp = io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(player);
+                            var mgComp = SREPlayerMinigameTaskComponent.KEY.get(player);
                             if (mgComp != null && mgComp.hasPendingTask() && !mgComp.isBlockUsed(pos)) {
-                                TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                        new Color(255, 215, 0), 1f,
-                                        true, 0f,
-                                        Component.translatable("hud.sre.minigame_task"));
+                                // 读取该方块的小游戏类型
+                                boolean typeMatches = true;
+                                if (renderContext.world().getBlockEntity(pos) instanceof MinigameQuestBlockEntity questBe) {
+                                    String blockMgId = questBe.getMinigameId();
+                                    if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
+                                            && !mgComp.targetMinigameId.equals(blockMgId)) {
+                                        typeMatches = false;
+                                    }
+                                }
+                                if (typeMatches) {
+                                    var targetMg = mgComp.getTargetMinigame();
+                                    net.minecraft.network.chat.Component label = targetMg != null
+                                            ? net.minecraft.network.chat.Component.translatable("hud.sre.minigame_task_specific",
+                                                    targetMg.displayName())
+                                            : net.minecraft.network.chat.Component.translatable("hud.sre.minigame_task_any");
+                                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                            new Color(255, 215, 0), 1f,
+                                            true, 0f,
+                                            label);
+                                }
                             }
                         } else if (it.shouldRenderTaskInstinct(block, pos, player)) {
                             java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);

@@ -15,7 +15,7 @@ import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerCompo
 import java.util.UUID;
 
 /**
- * 私家侦探审查界面的 ScreenHandler
+ * 探员审查界面的 ScreenHandler
  *
  * 这是一个只读的界面，玩家无法拿取或移动任何物品。
  * 当目标玩家移动时，界面会自动关闭。
@@ -98,7 +98,7 @@ public class DetectiveInspectScreenHandler extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         // 检查查看者是否还在审查状态
-        DetectivePlayerComponent component = ModComponents.DETECTIVE.get(player);
+        DetectivePlayerComponent component = ModComponents.AGENT.get(player);
         return component.isInspecting();
     }
     
@@ -107,7 +107,7 @@ public class DetectiveInspectScreenHandler extends AbstractContainerMenu {
         super.removed(player);
         
         // 清除审查状态
-        DetectivePlayerComponent component = ModComponents.DETECTIVE.get(player);
+        DetectivePlayerComponent component = ModComponents.AGENT.get(player);
         component.stopInspecting();
     }
     

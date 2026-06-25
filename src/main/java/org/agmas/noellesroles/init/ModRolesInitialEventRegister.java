@@ -2,7 +2,6 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.RolePassive;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -43,7 +42,6 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
-import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
@@ -76,7 +74,7 @@ import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPl
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
@@ -174,8 +172,8 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(ModRoles.EXAMPLER.identifier())) {
                 var tpc = SREAbilityPlayerComponent.KEY.get(player);
-                tpc.init();
-                tpc.charges = 0;
+                tpc.init(false);
+                tpc.status = 0;
                 tpc.sync();
                 return;
             }
@@ -1029,7 +1027,8 @@ public class ModRolesInitialEventRegister {
                         context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("seize"))
                         .announceToSelf(false).build());
 
-        // 出题人技能注册（无目标）：给所有人出题，冷却240秒，消耗300金币
+        // 出题人技能注册，不能注册，注册会出BUG。
+        // ：给所有人出题，冷却240秒，消耗300金币
         RoleSkill.register(ModRoles.EXAMPLER, RoleSkill.skill(
                 SRE.id("exampler_problem_all"),
                 "skill.noellesroles.exampler.problem_all",

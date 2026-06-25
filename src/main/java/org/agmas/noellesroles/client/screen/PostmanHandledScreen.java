@@ -9,11 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.packet.PostmanC2SPacket;
 
 /**
- * 邮差传递界面 - 基于 HandledScreen
+ * 射命丸文传递界面 - 基于 HandledScreen
  *
  * 布局：
  * - 顶部：文字说明
@@ -26,7 +26,7 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
     @SuppressWarnings("unused")
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/hopper.png");
     
-    private PostmanPlayerComponent postmanComponent;
+    private AyayayaPlayerComponent postmanComponent;
     private Button confirmButton;
     
     public PostmanHandledScreen(PostmanScreenHandler handler, Inventory inventory, Component title) {
@@ -40,7 +40,7 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
     protected void init() {
         super.init();
         
-        this.postmanComponent = PostmanPlayerComponent.KEY.get(minecraft.player);
+        this.postmanComponent = AyayayaPlayerComponent.KEY.get(minecraft.player);
         
         // 确认交换按钮 - 放在槽位右侧
         int buttonWidth = 70;
@@ -91,7 +91,7 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
         super.render(context, mouseX, mouseY, delta);
         
         // 每次渲染时重新获取组件，确保读取最新数据
-        this.postmanComponent = PostmanPlayerComponent.KEY.get(minecraft.player);
+        this.postmanComponent = AyayayaPlayerComponent.KEY.get(minecraft.player);
         
         if (postmanComponent == null || !postmanComponent.isDeliveryActive()) {
             this.onClose();
@@ -120,8 +120,8 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
         
         // 绘制确认状态 - 直接读取组件中的最新值
         boolean isReceiver = postmanComponent.isReceiver;
-        boolean myConfirmed = isReceiver ? postmanComponent.targetConfirmed : postmanComponent.postmanConfirmed;
-        boolean otherConfirmed = isReceiver ? postmanComponent.postmanConfirmed : postmanComponent.targetConfirmed;
+        boolean myConfirmed = isReceiver ? postmanComponent.targetConfirmed : postmanComponent.senderConfirmed;
+        boolean otherConfirmed = isReceiver ? postmanComponent.senderConfirmed : postmanComponent.targetConfirmed;
         
         // 显示双方确认状态
         Component myStatus = myConfirmed ?
@@ -162,7 +162,7 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
         if (postmanComponent == null || confirmButton == null) return;
         
         boolean isReceiver = postmanComponent.isReceiver;
-        boolean myConfirmed = isReceiver ? postmanComponent.targetConfirmed : postmanComponent.postmanConfirmed;
+        boolean myConfirmed = isReceiver ? postmanComponent.targetConfirmed : postmanComponent.senderConfirmed;
         boolean bothConfirmed = postmanComponent.isBothConfirmed();
         
         // 如果已经确认或双方都确认，禁用确认按钮
@@ -201,7 +201,7 @@ public class PostmanHandledScreen extends AbstractContainerScreen<PostmanScreenH
         super.containerTick();
         
         // 每次 tick 重新获取组件，确保读取最新同步数据
-        this.postmanComponent = PostmanPlayerComponent.KEY.get(minecraft.player);
+        this.postmanComponent = AyayayaPlayerComponent.KEY.get(minecraft.player);
         
         updateButtonState();
         

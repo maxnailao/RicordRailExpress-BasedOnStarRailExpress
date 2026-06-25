@@ -193,8 +193,8 @@ public class ConspiratorPlayerComponent implements RoleComponent, ServerTickingC
                         Component.translatable("message.noellesroles.conspirator.cursed")
                                 .withStyle(ChatFormatting.DARK_PURPLE),
                         true);
-                // 触发私家侦探被动
-                if (gameWorld.isRole(target, ModRoles.DETECTIVE)) {
+                // 触发探员被动
+                if (gameWorld.isRole(target, ModRoles.AGENT)) {
                     target.displayClientMessage(
                             Component
                                     .translatable("message.noellesroles.conspirator.cursed.known",

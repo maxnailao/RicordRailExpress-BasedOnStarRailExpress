@@ -24,10 +24,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
-import org.agmas.noellesroles.content.item.FlareItem;
 import org.agmas.noellesroles.content.item.charge_item.*;
 import org.agmas.noellesroles.utils.LocalDateData;
-import org.agmas.noellesroles.content.item.JetpackItem;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -352,7 +350,7 @@ public class ModItems {
 
     /**
      * 空包弹
-     * - 滑头鬼专属物品
+     * - 捣蛋鬼专属物品
      * - 在商店以100金币购买
      * - 右键对目标玩家使用，使其手中枪械进入30秒冷却
      */
@@ -362,7 +360,7 @@ public class ModItems {
 
     /**
      * 烟雾弹
-     * - 滑头鬼专属物品
+     * - 捣蛋鬼专属物品
      * - 在商店以300金币购买
      * - 右键投掷，形成烟雾区域
      * - 进入烟雾的玩家获得失明效果
@@ -468,8 +466,8 @@ public class ModItems {
             "alarm_trap", ROLE_ITEMS_GROUP);
 
     /**
-     * 传递盒
-     * - 邮差专属物品
+     * 快递包裹盒子
+     * - 射命丸文专属物品
      * - 在商店以150金币购买
      * - 指针对准玩家并右键使用，打开传递界面
      * - 双方可以放入一样物品并交换
@@ -477,6 +475,16 @@ public class ModItems {
     public static final Item DELIVERY_BOX = register(
             new DeliveryBoxItem(new Item.Properties().stacksTo(8)),
             "delivery_box", ROLE_ITEMS_GROUP);
+ /**
+     * 快递包裹盒子
+     * - 射命丸文专属物品
+     * - 在商店以150金币购买
+     * - 指针对准玩家并右键使用，打开传递界面
+     * - 双方可以放入一样物品并交换
+     */
+    public static final Item NEWSPAPER = register(
+            new NewspaperItem(new Item.Properties().stacksTo(8)),
+            "newspaper", ROLE_ITEMS_GROUP);
 
     /**
      * 迷幻瓶
@@ -748,6 +756,16 @@ public class ModItems {
             new MercenaryContractItem(new Item.Properties().stacksTo(1)),
             "mercenary_contract", ROLE_ITEMS_GROUP);
 
+    /** 信使信封（发送用） */
+    public static final Item COURIER_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "courier_mail", ROLE_ITEMS_GROUP);
+
+    /** 信使信封（接收用） */
+    public static final Item RECEIVED_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "received_mail", ROLE_ITEMS_GROUP);
+
     /**
      * 时停钟
      */
@@ -992,6 +1010,15 @@ public class ModItems {
             new MagnetItem(new Item.Properties().stacksTo(1)),
             "magnet", TOOLS_GROUP);
 
+    /**
+     * 运输物品（场景任务「运输点任务」）
+     * - 在运输点起点右键获得此物品
+     * - 手持此物品右键运输点终点即可完成运输任务
+     */
+    public static final Item TRANSPORT_PACKAGE = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "transport_package", MISC_ITEMS_GROUP);
+
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     public static List<ShopEntry> POISONER_SHOP_ENTRIES = new ArrayList<>();
@@ -1046,6 +1073,8 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.LETTER_ITEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEFIBRILLATOR);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BOMB);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.COURIER_MAIL);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.RECEIVED_MAIL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.WRITTEN_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.FLASH_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DECOY_GRENADE);

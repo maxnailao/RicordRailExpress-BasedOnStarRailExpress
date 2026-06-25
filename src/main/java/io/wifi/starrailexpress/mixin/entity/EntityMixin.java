@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.mixin.entity;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.CollisionRules;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerAFKComponent;
 import io.wifi.starrailexpress.event.CanCollideWith;
@@ -55,7 +56,7 @@ public class EntityMixin {
             } else if (result.equals(TrueFalseResult.TRUE)) {
                 return true;
             }
-            if (SRE.canCollideEntity.stream().anyMatch(p -> p.test(self) || p.test(other))) {
+            if (CollisionRules.canCollideEntity.stream().anyMatch(p -> p.test(self) || p.test(other))) {
                 return true;
             }
 
@@ -69,7 +70,7 @@ public class EntityMixin {
                 if (other instanceof Player so) {
                     // final var role = gameWorldComponent.getRole((Player) self);
                     // final var role1 = gameWorldComponent.getRole((Player) other);
-                    return SRE.canCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
+                    return CollisionRules.canCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
                 }
             }
         }

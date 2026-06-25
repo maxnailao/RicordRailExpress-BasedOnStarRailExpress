@@ -243,8 +243,14 @@ public class MapManager {
         jsonObject.add("roomPositions", roomPositionsObj);
         jsonObject.addProperty("canJump", areas.canJump);
         jsonObject.addProperty("canSwim", areas.canSwim);
+        jsonObject.addProperty("enableOxygenDrowning", areas.enableOxygenDrowning);
+        jsonObject.addProperty("mapStatusBar", (areas.mapStatusBar == null
+                ? io.wifi.starrailexpress.game.data.MapStatusBarType.NONE
+                : areas.mapStatusBar).name());
         jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
+        jsonObject.add("enableSceneTask", gson.toJsonTree(areas.enableSceneTask));
         jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
+        jsonObject.addProperty("sceneOutsideSound", areas.sceneOutsideSound);
         jsonObject.addProperty("noReset", areas.noReset);
         jsonObject.addProperty("mustCopy", areas.mustCopy);
 
@@ -355,6 +361,11 @@ public class MapManager {
             } else {
                 areas.haveOutsideSound = false;
             }
+            if (jsonObject.has("sceneOutsideSound")) {
+                areas.sceneOutsideSound = jsonObject.get("sceneOutsideSound").getAsString();
+            } else {
+                areas.sceneOutsideSound = "train";
+            }
             if (jsonObject.has("canJump")) {
                 areas.canJump = jsonObject.get("canJump").getAsBoolean();
             } else {
@@ -366,6 +377,12 @@ public class MapManager {
             } else {
                 areas.canSwim = false;
             }
+
+            areas.enableOxygenDrowning = jsonObject.has("enableOxygenDrowning")
+                    && jsonObject.get("enableOxygenDrowning").getAsBoolean();
+            areas.mapStatusBar = jsonObject.has("mapStatusBar")
+                    ? io.wifi.starrailexpress.game.data.MapStatusBarType.byName(jsonObject.get("mapStatusBar").getAsString())
+                    : io.wifi.starrailexpress.game.data.MapStatusBarType.NONE;
 
             // 加载雪花效果配置（默认关闭）
             if (jsonObject.has("snowEnabled")) {
@@ -685,8 +702,14 @@ public class MapManager {
                 for (JsonElement data : jsonArr.asList()) {
                     areas.disabledTasks.add(data.getAsString());
                 }
-            } else {
-                areas.disabledTasks.add("BREATHE");
+            }
+
+            areas.enableSceneTask.clear();
+            if (jsonObject.has("enableSceneTask")) {
+                var jsonArr = jsonObject.get("enableSceneTask").getAsJsonArray();
+                for (JsonElement data : jsonArr.asList()) {
+                    areas.enableSceneTask.add(data.getAsString());
+                }
             }
 
             // 加载支持的游戏模式列表

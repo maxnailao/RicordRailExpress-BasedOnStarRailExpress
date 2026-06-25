@@ -100,6 +100,26 @@ public class ModEntities {
                     .trackedUpdateRate(1)
                     .build());
 
+    @SuppressWarnings("deprecation")
+    public static final EntityType<HurricaneEntity> HURRICANE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("hurricane"),
+            FabricEntityTypeBuilder.<HurricaneEntity>create(MobCategory.MISC, HurricaneEntity::new)
+                    .dimensions(EntityDimensions.fixed(2.5F, 6.0F))
+                    .trackRangeBlocks(96)
+                    .trackedUpdateRate(1)
+                    .build());
+
+    @SuppressWarnings("deprecation")
+    public static final EntityType<MummyEntity> MUMMY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("mummy"),
+            FabricEntityTypeBuilder.<MummyEntity>create(MobCategory.CREATURE, MummyEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.95F))
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
     /**
      * 净化弹实体 - 可投掷物品，落地时取消范围内玩家中毒状态
      */
@@ -137,6 +157,17 @@ public class ModEntities {
                     .dimensions(EntityDimensions.fixed(0.5F, 0.1F))
                     .trackRangeBlocks(32)
                     .trackedUpdateRate(20)
+                    .build());
+
+    /** 信鸽实体 - 信使快递邮件 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<PigeonEntity> PIGEON = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pigeon"),
+            FabricEntityTypeBuilder.<PigeonEntity>create(MobCategory.MISC, PigeonEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.5F, 0.9F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
                     .build());
 
     /**
@@ -327,8 +358,10 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(WHEELCHAIR, WheelchairEntity.createAttributes());
         // 注册傀儡本体实体属性（LivingEntity 必须注册属性才能生成）
         FabricDefaultAttributeRegistry.register(PUPPETEER_BODY, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(PIGEON, PigeonEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
     }
 }

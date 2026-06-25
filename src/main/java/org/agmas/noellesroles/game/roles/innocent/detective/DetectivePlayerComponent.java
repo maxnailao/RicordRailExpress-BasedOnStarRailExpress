@@ -12,9 +12,9 @@ import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
- * 私家侦探组件
+ * 探员组件
  *
- * 管理私家侦探的技能状态：
+ * 管理探员的技能状态：
  * - 审查技能冷却时间（60秒）
  * - 当前正在查看的目标玩家
  * - 目标玩家移动检测
@@ -26,7 +26,7 @@ public class DetectivePlayerComponent implements RoleComponent, ServerTickingCom
     }
 
     /** 组件键 - 用于从玩家获取此组件 */
-    public static final ComponentKey<DetectivePlayerComponent> KEY = ModComponents.DETECTIVE;
+    public static final ComponentKey<DetectivePlayerComponent> KEY = ModComponents.AGENT;
 
     // 审查技能冷却时间（单位：tick，20 tick = 1秒）
     public static final int INSPECT_COOLDOWN = 60 * 20; // 60秒
@@ -134,7 +134,7 @@ public class DetectivePlayerComponent implements RoleComponent, ServerTickingCom
      * 同步到客户端
      */
     public void sync() {
-        ModComponents.DETECTIVE.sync(this.player);
+        ModComponents.AGENT.sync(this.player);
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.agmas.noellesroles.scene.ManholeRegistry;
 import org.agmas.noellesroles.scene.SceneRoleAccess;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import net.minecraft.core.BlockPos;
@@ -48,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowableInterface {
 
-    public static final int TASK_INSTINCT_ID = 15;
+    public static final int TASK_INSTINCT_ID = 23;
     /** 传送的最大水平距离。 */
     public static final double TRAVEL_RANGE = 48.0;
     /** 离开井盖后的冷却时间（1分钟） */
@@ -91,20 +92,25 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
         if (!(player instanceof ServerPlayer sp) || !(level instanceof ServerLevel serverLevel)) {
             return InteractionResult.CONSUME;
         }
-        if (!SceneRoleAccess.canEnterRestricted(player, null)) {
+        var role = SceneRoleAccess.roleOf(player);
+        if (!SceneRoleAccess.canEnterRestricted(player, null)
+                && (role == null || !role.canJumpManhole())) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.denied"), true);
             serverLevel.playSound(null, pos, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.6F, 0.7F);
             return InteractionResult.CONSUME;
         }
-        // 检查离开井盖后的冷却时间
-        Long cooldownUntil = manholeCooldownUntil.get(player.getUUID());
-        if (cooldownUntil != null && serverLevel.getGameTime() < cooldownUntil) {
-            long remainingSec = (cooldownUntil - serverLevel.getGameTime()) / 20;
-            sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.cooldown", remainingSec), true);
-            return InteractionResult.CONSUME;
-        }
-        if (cooldownUntil != null) {
-            manholeCooldownUntil.remove(player.getUUID());
+        // 检查离开井盖后的冷却时间（游戏未开始时不检查冷却）
+        boolean gameRunning = SREGameWorldComponent.KEY.get(serverLevel).isRunning();
+        if (gameRunning) {
+            Long cooldownUntil = manholeCooldownUntil.get(player.getUUID());
+            if (cooldownUntil != null && serverLevel.getGameTime() < cooldownUntil) {
+                long remainingSec = (cooldownUntil - serverLevel.getGameTime()) / 20;
+                sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.cooldown", remainingSec), true);
+                return InteractionResult.CONSUME;
+            }
+            if (cooldownUntil != null) {
+                manholeCooldownUntil.remove(player.getUUID());
+            }
         }
         BlockPos target = ManholeRegistry.findInLookDirection(serverLevel, player, pos, TRAVEL_RANGE);
         if (target == null) {
@@ -112,8 +118,10 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
             return InteractionResult.CONSUME;
         }
 
-        // 设置冷却时间（离开井盖后1分钟无法再次进入）
-        manholeCooldownUntil.put(player.getUUID(), serverLevel.getGameTime() + MANHOLE_COOLDOWN_TICKS);
+        // 设置冷却时间（离开井盖后1分钟无法再次进入，游戏未开始时不设置）
+        if (gameRunning) {
+            manholeCooldownUntil.put(player.getUUID(), serverLevel.getGameTime() + MANHOLE_COOLDOWN_TICKS);
+        }
 
         // 起点特效
         serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
@@ -160,7 +168,8 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     @Override
     public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
         SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
-        return role != null && role.canUseInstinct();
+        return SceneRoleAccess.canEnterRestricted(player, null)
+                || (role != null && role.canJumpManhole());
     }
 
     @Override

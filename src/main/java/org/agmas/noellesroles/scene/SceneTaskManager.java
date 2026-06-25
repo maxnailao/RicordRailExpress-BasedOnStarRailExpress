@@ -1,13 +1,16 @@
 package org.agmas.noellesroles.scene;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.agmas.noellesroles.content.block.scene.StatueBlock;
 
 import io.wifi.starrailexpress.api.RoleMethodDispatcher;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -23,6 +26,32 @@ import net.minecraft.world.phys.HitResult;
  */
 public final class SceneTaskManager {
     private SceneTaskManager() {
+    }
+
+    /**
+     * 场景任务完成回调接口。
+     * 当任意场景任务完成时触发，用于 SREPlayerTaskComponent 等外部系统监听任务完成事件。
+     */
+    @FunctionalInterface
+    public interface SceneTaskCompletionCallback {
+        /**
+         * @param player 完成任务的玩家
+         * @param type   完成的任务类型
+         */
+        void onSceneTaskCompleted(ServerPlayer player, Type type);
+    }
+
+    /** 已注册的任务完成回调列表。 */
+    private static final List<SceneTaskCompletionCallback> COMPLETION_CALLBACKS = new ArrayList<>();
+
+    /** 注册场景任务完成回调。 */
+    public static void registerCompletionCallback(SceneTaskCompletionCallback callback) {
+        COMPLETION_CALLBACKS.add(callback);
+    }
+
+    /** 取消注册场景任务完成回调。 */
+    public static void unregisterCompletionCallback(SceneTaskCompletionCallback callback) {
+        COMPLETION_CALLBACKS.remove(callback);
     }
 
     public enum Type {
@@ -63,9 +92,20 @@ public final class SceneTaskManager {
         ACTIVE.remove(player.getUUID());
     }
 
+    public static void clear(Player player, Type type) {
+        State s = ACTIVE.get(player.getUUID());
+        if (s != null && s.type == type) {
+            ACTIVE.remove(player.getUUID());
+        }
+    }
+
     public static Type getType(Player player) {
         State s = ACTIVE.get(player.getUUID());
         return s == null ? null : s.type;
+    }
+
+    public static boolean hasTransportTask(Player player) {
+        return getType(player) == Type.TRANSPORT;
     }
 
     private static boolean has(Player player, Type type) {
@@ -83,11 +123,11 @@ public final class SceneTaskManager {
     }
 
     /** 返回是否需要清理玩家快捷栏的刷子（任务完成）。 */
-    public static void reportDustStroke(ServerPlayer player) {
+    public static void reportDustStroke(ServerPlayer player, boolean blockCleaned) {
         State s = ACTIVE.get(player.getUUID());
         if (s != null && s.type == Type.CLEAN_DUST) {
             s.counter++;
-            if (s.counter >= DUST_STROKES) {
+            if (blockCleaned || s.counter >= DUST_STROKES) {
                 // 清理快捷栏中的刷子
                 net.minecraft.world.entity.player.Inventory inv = player.getInventory();
                 for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -97,6 +137,9 @@ public final class SceneTaskManager {
                 }
                 complete(player);
             }
+        } else if (blockCleaned && hasSceneTask(player, Type.CLEAN_DUST)) {
+            removeInventoryItem(player, net.minecraft.world.item.Items.BRUSH);
+            notifyTaskComponent(player, Type.CLEAN_DUST);
         }
     }
 
@@ -116,8 +159,19 @@ public final class SceneTaskManager {
     }
 
     public static void reportBushPruned(ServerPlayer player) {
-        if (has(player, Type.PRUNE_BUSH)) {
+        State s = ACTIVE.get(player.getUUID());
+        if (s != null && s.type == Type.PRUNE_BUSH) {
+            // 清理快捷栏中的剪刀
+            net.minecraft.world.entity.player.Inventory inv = player.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                if (inv.getItem(i).is(net.minecraft.world.item.Items.SHEARS)) {
+                    inv.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+                }
+            }
             complete(player);
+        } else if (hasSceneTask(player, Type.PRUNE_BUSH)) {
+            removeInventoryItem(player, net.minecraft.world.item.Items.SHEARS);
+            notifyTaskComponent(player, Type.PRUNE_BUSH);
         }
     }
 
@@ -128,6 +182,8 @@ public final class SceneTaskManager {
             if (s.counter >= CROP_BOUNCES) {
                 complete(player);
             }
+        } else if (hasSceneTask(player, Type.HARVEST_CROP)) {
+            notifyTaskComponent(player, Type.HARVEST_CROP);
         }
     }
 
@@ -168,7 +224,7 @@ public final class SceneTaskManager {
                 s.anchor.getZ() + 0.5) <= STOVE_RADIUS * STOVE_RADIUS) {
             if (++s.timer >= STOVE_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -183,7 +239,7 @@ public final class SceneTaskManager {
         if (looking) {
             if (++s.timer >= PRAY_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -198,7 +254,7 @@ public final class SceneTaskManager {
         if (!someoneNear) {
             if (++s.timer >= ALONE_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -208,16 +264,56 @@ public final class SceneTaskManager {
     // ───────────── 完成 ─────────────
 
     public static void complete(ServerPlayer player) {
-        ACTIVE.remove(player.getUUID());
-        completeNoRemove(player);
+        State s = ACTIVE.get(player.getUUID());
+        if (s != null) {
+            Type completedType = s.type;
+            ACTIVE.remove(player.getUUID());
+            completeNoRemove(player, completedType);
+        }
     }
 
-    private static void completeNoRemove(ServerPlayer player) {
-        RoleMethodDispatcher.callOnFinishQuest(player, "scene_task", 0, false);
+    private static void completeNoRemove(ServerPlayer player, Type completedType) {
+        if (!hasSceneTask(player, completedType)) {
+            RoleMethodDispatcher.callOnFinishQuest(player, "scene_task", 0, false);
+        }
+        // 触发所有已注册的场景任务完成回调
+        notifyTaskComponent(player, completedType);
         if (player.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
                     player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.6, 0.4, 0.0);
         }
         player.displayClientMessage(Component.translatable("message.noellesroles.scene_task.complete"), true);
+    }
+
+    private static void notifyTaskComponent(ServerPlayer player, Type completedType) {
+        if (!COMPLETION_CALLBACKS.isEmpty()) {
+            for (SceneTaskCompletionCallback callback : COMPLETION_CALLBACKS) {
+                callback.onSceneTaskCompleted(player, completedType);
+            }
+        }
+    }
+
+    private static boolean hasSceneTask(ServerPlayer player, Type type) {
+        SREPlayerTaskComponent.Task taskType = switch (type) {
+            case LIGHT_STOVE -> SREPlayerTaskComponent.Task.LIGHT_STOVE;
+            case CLEAN_DUST -> SREPlayerTaskComponent.Task.CLEAN_DUST;
+            case TRANSPORT -> SREPlayerTaskComponent.Task.TRANSPORT;
+            case PRAY -> SREPlayerTaskComponent.Task.PRAY;
+            case PRUNE_BUSH -> SREPlayerTaskComponent.Task.PRUNE_BUSH;
+            case HARVEST_CROP -> SREPlayerTaskComponent.Task.HARVEST_CROP;
+            case BE_ALONE -> SREPlayerTaskComponent.Task.BE_ALONE;
+        };
+        SREPlayerTaskComponent comp = SREPlayerTaskComponent.KEY.get(player);
+        return comp != null && comp.tasks.get(taskType) instanceof SREPlayerTaskComponent.SceneTriggeredTask;
+    }
+
+    private static void removeInventoryItem(ServerPlayer player, net.minecraft.world.item.Item item) {
+        net.minecraft.world.entity.player.Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).is(item)) {
+                inv.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+                return;
+            }
+        }
     }
 }

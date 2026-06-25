@@ -17,12 +17,12 @@ import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
 import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
@@ -147,19 +147,19 @@ public abstract class PlayerResetMixin {
         InsaneKillerPlayerComponent insaneKillerComp = ModComponents.INSANE_KILLER.get(player);
         insaneKillerComp.clear();
 
-        SlipperyGhostPlayerComponent slipperyGhostComp = ModComponents.SLIPPERY_GHOST.get(player);
+        SlipperyGhostPlayerComponent slipperyGhostComp = ModComponents.PRANKSTER.get(player);
         slipperyGhostComp.clear();
 
         BroadcasterPlayerComponent broadcasterComp = ModComponents.BROADCASTER.get(player);
         broadcasterComp.clear();
 
-        PostmanPlayerComponent postmanComp = ModComponents.POSTMAN.get(player);
+        AyayayaPlayerComponent postmanComp = ModComponents.AYAYAYA.get(player);
         postmanComp.clear();
 
-        DetectivePlayerComponent detectiveComp = ModComponents.DETECTIVE.get(player);
+        DetectivePlayerComponent detectiveComp = ModComponents.AGENT.get(player);
         detectiveComp.clear();
 
-        BoxerPlayerComponent boxerComp = ModComponents.BOXER.get(player);
+        BoxerPlayerComponent boxerComp = ModComponents.FIGHTER.get(player);
         boxerComp.clear();
 
         AthletePlayerComponent athleteComp = ModComponents.ATHLETE.get(player);

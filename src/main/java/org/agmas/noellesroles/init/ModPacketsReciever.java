@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.starrailexpress.network.packet.EditNewspaperPacket;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -25,6 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.Filterable;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -34,6 +36,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.WritableBookContent;
+import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import org.agmas.harpymodloader.Harpymodloader;
@@ -52,7 +56,6 @@ import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.content.item.ThrowingKnife;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
 import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
-import org.agmas.noellesroles.packet.ShortShotgunEquipPayload;
 import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.pilot.PilotPlayerComponent;
@@ -70,8 +73,9 @@ import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayer
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.packet.*;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -93,7 +97,8 @@ public class ModPacketsReciever {
               selectedEntry = Optional.of(shops.get(payload.slot()));
             }
             if (selectedEntry.isEmpty()) {
-              selectedEntry = shops.stream().filter(a -> BuiltInRegistries.ITEM.getKey(a.stack().getItem()).toString().equals(payload.item()))
+              selectedEntry = shops.stream()
+                  .filter(a -> BuiltInRegistries.ITEM.getKey(a.stack().getItem()).toString().equals(payload.item()))
                   .findFirst();
             }
             selectedEntry.ifPresent(entry -> {
@@ -271,14 +276,14 @@ public class ModPacketsReciever {
           ServerPlayer firstKiller = allExamplers.isEmpty() ? null : allExamplers.getFirst();
           for (ServerPlayer killer : allExamplers) {
             var abpc = SREAbilityPlayerComponent.KEY.get(killer);
-            abpc.charges++;
+            abpc.status++;
             // Noellesroles.LOGGER.info("Increase 1");
-            if (abpc.charges >= 3) {
+            if (abpc.status >= 3) {
               if (RoleUtils.insertStackInFreeSlot(killer, ModItems.ExamplerPsychoItemStack.copy())) {
                 killer.displayClientMessage(
                     Component.translatable("message.exampler.get_test_psycho").withStyle(ChatFormatting.GOLD),
                     true);
-                abpc.charges -= 3;
+                abpc.status -= 3;
               }
             }
             abpc.sync();
@@ -342,7 +347,8 @@ public class ModPacketsReciever {
       if (context.player().level().getPlayerByUUID(payload.player()) == null)
         return;
 
-      if (gameWorldComponent.isRole(context.player(), ModRoles.VOODOO)) {
+      if (gameWorldComponent.isRole(context.player(), ModRoles.VOODOO)
+          || gameWorldComponent.isRole(context.player(), BounsRoles.LENGXIAO)) {
         abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
             NoellesRolesConfig.HANDLER.instance().voodooCooldown);
         abilityPlayerComponent.sync();
@@ -357,18 +363,58 @@ public class ModPacketsReciever {
         morphlingPlayerComponent.startMorph(payload.player());
       }
     });
+    // newspaperHandler
+    ServerPlayNetworking.registerGlobalReceiver(EditNewspaperPacket.ID, (payload, context) -> {
+      var player = context.player();
+      var mainHandItem = player.getMainHandItem();
+      if (mainHandItem.is(ModItems.NEWSPAPER)) {
+        var titOpt = payload.title();
+        if (titOpt.isPresent()) {
+          var list = new ArrayList<Filterable<Component>>();
+          for (var p : payload.pages()) {
+            list.add(Filterable.passThrough(Component.literal(p)));
+          }
+          String title = titOpt.get();
+          String shortTitle = title;
+          if (shortTitle.length() >= 10) {
+            shortTitle = shortTitle.substring(0, 8) + "...";
+          }
+          mainHandItem.set(DataComponents.WRITTEN_BOOK_CONTENT,
+              new WrittenBookContent(Filterable.passThrough(title), player.getScoreboardName(), 1, list, true));
+          mainHandItem.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.newspaper.name",
+                  Component.translatable("item.noellesroles.newspaper.title.warp", shortTitle)
+                      .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
 
+          if (mainHandItem.has(DataComponents.WRITABLE_BOOK_CONTENT)) {
+            mainHandItem.remove(DataComponents.WRITABLE_BOOK_CONTENT);
+          }
+        } else {
+          var list = new ArrayList<Filterable<String>>();
+          for (var p : payload.pages()) {
+            list.add(Filterable.passThrough(p));
+          }
+          mainHandItem.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.newspaper.draft",
+                  Component.translatable("item.noellesroles.newspaper.draft.warp", player.getName()).withStyle(
+                      ChatFormatting.ITALIC, ChatFormatting.GRAY)));
+          mainHandItem.set(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(list));
+        }
+      }
+    });
     // 静语者技能数据包处理
     ServerPlayNetworking.registerGlobalReceiver(SilencerC2SPacket.ID, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
-      if (payload.targetPlayer() == null) return;
-      if (context.player().level().getPlayerByUUID(payload.targetPlayer()) == null) return;
+      if (payload.targetPlayer() == null)
+        return;
+      if (context.player().level().getPlayerByUUID(payload.targetPlayer()) == null)
+        return;
       if (gameWorldComponent.isRole(context.player(), ModRoles.SILENCER)) {
-        org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent silencerComponent =
-            org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent.KEY.get(context.player());
+        org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent silencerComponent = org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent.KEY
+            .get(context.player());
         if (silencerComponent != null) {
           silencerComponent.startSkill(payload.targetPlayer());
         }
@@ -378,17 +424,21 @@ public class ModPacketsReciever {
     // 静语者帮助数据包处理（其他玩家右键静语者目标）
     ServerPlayNetworking.registerGlobalReceiver(SilencerHelpC2SPacket.ID, (payload, context) -> {
       ServerPlayer helper = context.player();
-      ServerPlayer targetPlayer = context.player().level().getServer().getPlayerList().getPlayer(payload.targetPlayer());
-      if (targetPlayer == null) return;
-      if (!GameUtils.isPlayerAliveAndSurvival(helper)) return;
-      if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer)) return;
+      ServerPlayer targetPlayer = context.player().level().getServer().getPlayerList()
+          .getPlayer(payload.targetPlayer());
+      if (targetPlayer == null)
+        return;
+      if (!GameUtils.isPlayerAliveAndSurvival(helper))
+        return;
+      if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+        return;
       // Find the silencer who has targetPlayer as their target
       targetPlayer.level().players().forEach(p -> {
         if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)) {
           SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(sp.level());
           if (gw.isRole(sp, ModRoles.SILENCER)) {
-            org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent sc =
-                org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent.KEY.get(sp);
+            org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent sc = org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent.KEY
+                .get(sp);
             if (sc != null && sc.phase == 2 && targetPlayer.getUUID().equals(sc.targetUUID)) {
               sc.helpTarget();
               // 提示帮助者
@@ -425,17 +475,49 @@ public class ModPacketsReciever {
         return;
 
       if (gameWorldComponent.isRole(context.player(), ModRoles.MANIPULATOR)) {
-        // 设置操纵师的冷却时间（根据配置）
-        abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
-            NoellesRolesConfig.HANDLER.instance().manipulatorCooldown);
-        abilityPlayerComponent.sync();
-
-        // 获取操纵师组件并设置目标
+        // 获取操纵师组件并设置目标；校验（标记/距离/事件）与冷却由 setTarget 内部处理
         ManipulatorPlayerComponent manipulatorPlayerComponent = (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY
             .get(context.player());
         manipulatorPlayerComponent.setTarget(payload.player());
       }
     });
+
+    // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {
+          ManipulatorPlayerComponent manipulatorPlayerComponent =
+              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
+            return;
+          if (payload.stop()) {
+            manipulatorPlayerComponent.stopControl(false);
+            return;
+          }
+          var targetPlayer = context.player().level().getPlayerByUUID(manipulatorPlayerComponent.target);
+          if (targetPlayer == null)
+            return;
+          var inControlCCA = org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.KEY.get(targetPlayer);
+          // 校验：发送者确实是该目标的操控者
+          if (!context.player().getUUID().equals(inControlCCA.controller))
+            return;
+          inControlCCA.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
+        });
+
+    // 操纵师附身期间：以目标身份释放目标自身技能（冷却记在目标身上）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket.ID, (payload, context) -> {
+          ManipulatorPlayerComponent manipulatorPlayerComponent =
+              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
+            return;
+          var targetPlayer = context.player().level().getPlayerByUUID(manipulatorPlayerComponent.target);
+          if (!(targetPlayer instanceof net.minecraft.server.level.ServerPlayer targetServerPlayer))
+            return;
+          var inControlCCA = org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.KEY.get(targetPlayer);
+          if (!context.player().getUUID().equals(inControlCCA.controller))
+            return;
+          RoleSkill.beginUsePossessed(targetServerPlayer);
+        });
 
     ServerPlayNetworking.registerGlobalReceiver(TryThrowItemPacket.ID, (payload, context) -> {
       final var player = context.player();
@@ -482,9 +564,11 @@ public class ModPacketsReciever {
         }
       }
       // 阴阳剑Q键突进
-      if (player.getMainHandItem().getItem() instanceof org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem) {
+      if (player.getMainHandItem()
+          .getItem() instanceof org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem) {
         if (SREGameWorldComponent.KEY.get(player.level()).isRole(player.getUUID(), ModRoles.MONOKUMA)) {
-          var comp = org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player).orElse(null);
+          var comp = org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player)
+              .orElse(null);
           if (comp != null && comp.phase == 2) {
             org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem.performDashAttack(player);
           }
@@ -679,7 +763,8 @@ public class ModPacketsReciever {
             playerShopComponent.sync();
 
             // 记录广播员发送的消息
-            Noellesroles.LOGGER.info("[Broadcaster] {} sent broadcast: {}", context.player().getName().getString(), message);
+            Noellesroles.LOGGER.info("[Broadcaster] {} sent broadcast: {}", context.player().getName().getString(),
+                message);
 
             for (ServerPlayer player : Objects.requireNonNull(context.player().getServer())
                 .getPlayerList().getPlayers()) {
@@ -705,8 +790,8 @@ public class ModPacketsReciever {
       }
       RoleSkill.beginUse(context.player(), payload.target(), payload.slot(), payload.phase(), payload.forceShifted());
     });
-    ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillSelectC2SPacket.ID, (payload, context) ->
-      RoleSkill.selectSkill(context.player(), payload.slot()));
+    ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillSelectC2SPacket.ID,
+        (payload, context) -> RoleSkill.selectSkill(context.player(), payload.slot()));
     ServerPlayNetworking.registerGlobalReceiver(AbilityWithTargetC2SPacket.ID, (payload, context) -> {
       RoleSkill.beginUseShiftedWithTarget(context.player(), payload.target());
     });
@@ -960,7 +1045,7 @@ public class ModPacketsReciever {
 
             // 为目标设置氦气变声（4分钟 = 240秒 = 4800 ticks）
             HeliumBuzzPlayerComponent buzz = HeliumBuzzPlayerComponent.KEY.get(target);
-            buzz.apply(4 * 60 * 20, 1);  // 4分钟，强度1
+            buzz.apply(4 * 60 * 20, 1); // 4分钟，强度1
 
             // 记录到组件
             pc.addAffectedTarget(target.getUUID());
@@ -978,38 +1063,41 @@ public class ModPacketsReciever {
     // ==================== 鹈鹕技能网络包处理 ====================
     ServerPlayNetworking.registerGlobalReceiver(PelicanEatC2SPacket.ID,
         (payload, context) -> {
-            ServerPlayer player = context.player();
-            if (player.isSpectator()) return;
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (!gameWorldComponent.isSkillAvailable) {
-                player.displayClientMessage(
-                    Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
-                return;
+          ServerPlayer player = context.player();
+          if (player.isSpectator())
+            return;
+          SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorldComponent.isSkillAvailable) {
+            player.displayClientMessage(
+                Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+            return;
+          }
+          if (!gameWorldComponent.isRole(player, ModRoles.PELICAN))
+            return;
+          org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent comp = org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent.KEY
+              .get(player);
+          // 蹲下释放，否则对鼠标准星目标吞噬
+          if (player.isShiftKeyDown()) {
+            comp.releaseLast();
+          } else {
+            // 寻找2.15格内有视线的最近存活玩家
+            ServerPlayer target = null;
+            double closest = 2.15D * 2.15D;
+            for (ServerPlayer p : player.serverLevel()
+                .getPlayers(p -> p != player && GameUtils.isPlayerAliveAndSurvival(p))) {
+              double dist = player.distanceToSqr(p);
+              if (dist < closest && player.hasLineOfSight(p)) {
+                closest = dist;
+                target = p;
+              }
             }
-            if (!gameWorldComponent.isRole(player, ModRoles.PELICAN)) return;
-            org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent comp =
-                org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent.KEY.get(player);
-            // 蹲下释放，否则对鼠标准星目标吞噬
-            if (player.isShiftKeyDown()) {
-                comp.releaseLast();
+            if (target != null) {
+              comp.tryEat(target);
             } else {
-                // 寻找2.15格内有视线的最近存活玩家
-                ServerPlayer target = null;
-                double closest = 2.15D * 2.15D;
-                for (ServerPlayer p : player.serverLevel().getPlayers(p -> p != player && GameUtils.isPlayerAliveAndSurvival(p))) {
-                    double dist = player.distanceToSqr(p);
-                    if (dist < closest && player.hasLineOfSight(p)) {
-                        closest = dist;
-                        target = p;
-                    }
-                }
-                if (target != null) {
-                    comp.tryEat(target);
-                } else {
-                    player.displayClientMessage(
-                        Component.translatable("message.noellesroles.pelican.no_target").withStyle(ChatFormatting.RED), true);
-                }
+              player.displayClientMessage(
+                  Component.translatable("message.noellesroles.pelican.no_target").withStyle(ChatFormatting.RED), true);
             }
+          }
         });
 
     // ==================== 愚者网络包处理 ====================
@@ -1049,7 +1137,8 @@ public class ModPacketsReciever {
     // 短管霰弹枪装备音效包处理
     ServerPlayNetworking.registerGlobalReceiver(ShortShotgunEquipPayload.ID, (payload, context) -> {
       ServerPlayer player = context.player();
-      if (player.level().isClientSide) return;
+      if (player.level().isClientSide)
+        return;
       // 播放上膛音效，让附近所有玩家都能听到
       player.level().playSound(null, player.blockPosition(), NRSounds.SHOTGUNU_COCK, SoundSource.PLAYERS, 1.0F, 1.0F);
     });
@@ -1057,40 +1146,41 @@ public class ModPacketsReciever {
     // 零一五枪射击包处理
     ServerPlayNetworking.registerGlobalReceiver(ZeroOneFiveShootPayload.ID, new ZeroOneFiveShootPayload.Receiver());
 
-        // 建筑师技能包处理
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.BUILDER_ABILITY_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.SAFE_TIME))
-        return;
-      if (RoleSkill.blockForSpectator(context.player()))
-        return;
-      ServerPlayer player = context.player();
-      SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+    // 建筑师技能包处理
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.BUILDER_ABILITY_PACKET,
+        (payload, context) -> {
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (RoleSkill.blockForSpectator(context.player()))
+            return;
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
-      if (!gameWorldComponent.isSkillAvailable) {
-        player.displayClientMessage(
-            Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
-        return;
-      }
+          if (!gameWorldComponent.isSkillAvailable) {
+            player.displayClientMessage(
+                Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+            return;
+          }
 
-      if (gameWorldComponent.isRole(player, ModRoles.BUILDER)) {
-        org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent builderComponent =
-            org.agmas.noellesroles.component.ModComponents.BUILDER.get(player);
+          if (gameWorldComponent.isRole(player, ModRoles.BUILDER)) {
+            org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent builderComponent = org.agmas.noellesroles.component.ModComponents.BUILDER
+                .get(player);
 
-        // 蹲下按技能键切换模式（不受冷却影响）
-        if (payload.shiftDown()) {
-          builderComponent.switchMode();
-          return;
-        }
+            // 蹲下按技能键切换模式（不受冷却影响）
+            if (payload.shiftDown()) {
+              builderComponent.switchMode();
+              return;
+            }
 
-        // 根据当前模式使用技能
-        if (builderComponent.isBuildMode()) {
-          builderComponent.useBuildAbility();
-        } else {
-          builderComponent.useDemolishAbility();
-        }
-        ConfigWorldComponent.onPlayerUsedSkill(player);
-      }
-    });
+            // 根据当前模式使用技能
+            if (builderComponent.isBuildMode()) {
+              builderComponent.useBuildAbility();
+            } else {
+              builderComponent.useDemolishAbility();
+            }
+            ConfigWorldComponent.onPlayerUsedSkill(player);
+          }
+        });
 
     // 葬仪模式切换包处理
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORTICIAN_TOGGLE_MODE_PACKET, (payload, context) -> {
@@ -1123,8 +1213,8 @@ public class ModPacketsReciever {
       }
 
       if (gameWorldComponent.isRole(player, ModRoles.IMITATOR)) {
-        org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent imitatorComponent =
-            org.agmas.noellesroles.component.ModComponents.IMITATOR.get(player);
+        org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent imitatorComponent = org.agmas.noellesroles.component.ModComponents.IMITATOR
+            .get(player);
         if (imitatorComponent != null) {
           imitatorComponent.switchSlot();
         }
@@ -1138,8 +1228,9 @@ public class ModPacketsReciever {
 
       if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
         MorticianBodyMakerPlayerComponent morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
-        if (morticianComponent == null) return;
-        
+        if (morticianComponent == null)
+          return;
+
         // 安全时间内直接进入造尸冷却（必须在isSkillAvailable判断之前）
         if (context.player().hasEffect(ModEffects.SAFE_TIME)) {
           morticianComponent.bodyCreationCooldown = MorticianBodyMakerPlayerComponent.BODY_CREATION_COOLDOWN;
@@ -1150,11 +1241,13 @@ public class ModPacketsReciever {
         if (!gameWorldComponent.isSkillAvailable) {
           return;
         }
-        
+
         // 检查造尸冷却
         if (!morticianComponent.canCreateBody()) {
           player.displayClientMessage(
-              Component.translatable("message.noellesroles.mortician_bodymaker.cooldown", (morticianComponent.bodyCreationCooldown + 19) / 20)
+              Component
+                  .translatable("message.noellesroles.mortician_bodymaker.cooldown",
+                      (morticianComponent.bodyCreationCooldown + 19) / 20)
                   .withStyle(ChatFormatting.RED),
               true);
           return;
@@ -1177,117 +1270,162 @@ public class ModPacketsReciever {
 
     // ==================== 咒法师网络包 ====================
 
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockKillC2SPacket.ID, (payload, context) -> {
-      ServerPlayer player = context.player();
-      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-      if (!gameWorld.isSkillAvailable) return;
-      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
-      if (!gameWorld.isRole(player, ModRoles.WARLOCK)) return;
-      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-      var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
-      ServerPlayer victim = comp.tryHexKill();
-      if (victim != null) {
-        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
-            io.wifi.starrailexpress.index.TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5.0F, 1.0F);
-        GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
-        player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString()).withStyle(ChatFormatting.DARK_PURPLE), true);
-      } else {
-        // 检查是否因为距离太远而失败
-        if (comp.markedTarget != null) {
-          ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
-          if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
-              && player.distanceTo(marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
-            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
-                .withStyle(ChatFormatting.RED), true);
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockKillC2SPacket.ID,
+        (payload, context) -> {
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isSkillAvailable)
+            return;
+          if (player.hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (!gameWorld.isRole(player, ModRoles.WARLOCK))
+            return;
+          if (!GameUtils.isPlayerAliveAndSurvival(player))
+            return;
+          var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+          ServerPlayer victim = comp.tryHexKill();
+          if (victim != null) {
+            player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                io.wifi.starrailexpress.index.TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5.0F, 1.0F);
+            GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString())
+                    .withStyle(ChatFormatting.DARK_PURPLE),
+                true);
           } else {
-            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+            // 检查是否因为距离太远而失败
+            if (comp.markedTarget != null) {
+              ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
+              if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
+                  && player.distanceTo(
+                      marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
+                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
+                    .withStyle(ChatFormatting.RED), true);
+              } else {
+                player.displayClientMessage(
+                    Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED),
+                    true);
+              }
+            } else {
+              player.displayClientMessage(
+                  Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+            }
           }
-        } else {
-          player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
-        }
-      }
-    });
+        });
 
     // ==================== 嬉命人网络包 ====================
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.EmbalmerC2SPacket.ID, (payload, context) -> {
-      ServerPlayer player = context.player();
-      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-      if (!gameWorld.isSkillAvailable) return;
-      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
-      if (!gameWorld.isRole(player, ModRoles.EMBALMER)) return;
-      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-      var comp = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY.get(player);
-      if (comp.masqueradeCooldown > 0) {
-        player.displayClientMessage(Component.translatable("message.noellesroles.embalmer.cooldown", (comp.masqueradeCooldown + 19) / 20).withStyle(ChatFormatting.RED), true);
-        return;
-      }
-      // Trigger masquerade - 排除拥有 jeb 修饰符的玩家
-      java.util.List<ServerPlayer> players = player.serverLevel().getPlayers(p2 ->
-          !p2.isSpectator() && !WorldModifierComponent.KEY.get(p2.level()).isModifier(p2, SEModifiers.JEB_));
-      if (players.size() < 2) { player.displayClientMessage(Component.literal("Need at least 2 players."), true); return; }
-      java.util.Map<UUID, UUID> swaps = new java.util.LinkedHashMap<>();
-      java.util.Map<UUID, Float> pitches = new java.util.HashMap<>();
-      java.util.List<UUID> uuids = new java.util.ArrayList<>();
-      for (var p : players) uuids.add(p.getUUID());
-      java.util.Collections.shuffle(uuids, new java.util.Random());
-      for (int i = 0; i < uuids.size(); i++) {
-        UUID from = players.get(i).getUUID();
-        UUID to = uuids.get(i);
-        if (from.equals(to)) to = uuids.get((i + 1) % uuids.size());
-        swaps.put(from, to);
-        pitches.put(from, 0.7F + (new java.util.Random().nextFloat() * 0.6F));
-      }
-      comp.skinSwaps = swaps;
-      comp.voicePitches = pitches;
-      comp.masqueradeActive = true;
-      comp.masqueradeTicksLeft = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION;
-      comp.masqueradeCooldown = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_COOLDOWN;
-      comp.sync();
-      // 全场播放音效（遍历所有玩家，绕过距离衰减）
-      for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
-        p.playNotifySound(SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.MASTER, 1.0F, 1.0F);
-      }
-      // 广播皮肤交换数据给所有玩家
-      EmbalmerSkinSwapS2CPacket swapPacket =
-          new EmbalmerSkinSwapS2CPacket(swaps, pitches,
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.EmbalmerC2SPacket.ID,
+        (payload, context) -> {
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isSkillAvailable)
+            return;
+          if (player.hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (!gameWorld.isRole(player, ModRoles.EMBALMER))
+            return;
+          if (!GameUtils.isPlayerAliveAndSurvival(player))
+            return;
+          var comp = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY.get(player);
+          if (comp.masqueradeCooldown > 0) {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.embalmer.cooldown", (comp.masqueradeCooldown + 19) / 20)
+                    .withStyle(ChatFormatting.RED),
+                true);
+            return;
+          }
+          // Trigger masquerade - 排除拥有 jeb 修饰符的玩家
+          java.util.List<ServerPlayer> players = player.serverLevel().getPlayers(
+              p2 -> !p2.isSpectator() && !WorldModifierComponent.KEY.get(p2.level()).isModifier(p2, SEModifiers.JEB_));
+          if (players.size() < 2) {
+            player.displayClientMessage(Component.literal("Need at least 2 players."), true);
+            return;
+          }
+          java.util.Map<UUID, UUID> swaps = new java.util.LinkedHashMap<>();
+          java.util.Map<UUID, Float> pitches = new java.util.HashMap<>();
+          java.util.List<UUID> uuids = new java.util.ArrayList<>();
+          for (var p : players)
+            uuids.add(p.getUUID());
+          java.util.Collections.shuffle(uuids, new java.util.Random());
+          for (int i = 0; i < uuids.size(); i++) {
+            UUID from = players.get(i).getUUID();
+            UUID to = uuids.get(i);
+            if (from.equals(to))
+              to = uuids.get((i + 1) % uuids.size());
+            swaps.put(from, to);
+            pitches.put(from, 0.7F + (new java.util.Random().nextFloat() * 0.6F));
+          }
+          comp.skinSwaps = swaps;
+          comp.voicePitches = pitches;
+          comp.masqueradeActive = true;
+          comp.masqueradeTicksLeft = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION;
+          comp.masqueradeCooldown = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_COOLDOWN;
+          comp.sync();
+          // 全场播放音效（遍历所有玩家，绕过距离衰减）
+          for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+            p.playNotifySound(SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.MASTER, 1.0F, 1.0F);
+          }
+          // 广播皮肤交换数据给所有玩家
+          EmbalmerSkinSwapS2CPacket swapPacket = new EmbalmerSkinSwapS2CPacket(swaps, pitches,
               org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION);
-      for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
-        ServerPlayNetworking.send(p, swapPacket);
-      }
-      player.displayClientMessage(Component.translatable("message.noellesroles.embalmer.activated").withStyle(ChatFormatting.DARK_PURPLE), true);
-    });
+          for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+            ServerPlayNetworking.send(p, swapPacket);
+          }
+          player.displayClientMessage(
+              Component.translatable("message.noellesroles.embalmer.activated").withStyle(ChatFormatting.DARK_PURPLE),
+              true);
+        });
 
     // ==================== 窃皮者网络包 ====================
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SkincrawlerC2SPacket.ID, (payload, context) -> {
-      ServerPlayer player = context.player();
-      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-      if (!gameWorld.isSkillAvailable) return;
-      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
-      if (!gameWorld.isRole(player, ModRoles.SKINCRAWLER)) return;
-      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-      var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(player);
-      if (comp.stealCooldown > 0) { player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.cooldown", (comp.stealCooldown + 19) / 20).withStyle(ChatFormatting.RED), true); return; }
-      io.wifi.starrailexpress.content.entity.PlayerBodyEntity body = null;
-      for (io.wifi.starrailexpress.content.entity.PlayerBodyEntity b : player.serverLevel().getEntitiesOfClass(io.wifi.starrailexpress.content.entity.PlayerBodyEntity.class, player.getBoundingBox().inflate(3.0D))) {
-        if (b.getPlayerUuid() != null && !b.getPlayerUuid().equals(player.getUUID())) { body = b; break; }
-      }
-      if (body != null) {
-        UUID prev = comp.stolenSkin != null ? comp.stolenSkin : player.getUUID();
-        comp.stolenSkin = body.getPlayerUuid();
-        body.setPlayerUuid(prev);
-        comp.stealCooldown = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.STEAL_COOLDOWN;
-        // 广播皮肤给所有玩家
-        for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
-            ServerPlayNetworking.send(p, new org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket(player.getUUID(), comp.stolenSkin));
-        }
-        comp.sync();
-        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
-            net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_LEATHER, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.0f);
-        player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.stolen").withStyle(ChatFormatting.GOLD), true);
-      } else {
-        player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
-      }
-    });
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SkincrawlerC2SPacket.ID,
+        (payload, context) -> {
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isSkillAvailable)
+            return;
+          if (player.hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (!gameWorld.isRole(player, ModRoles.SKINCRAWLER))
+            return;
+          if (!GameUtils.isPlayerAliveAndSurvival(player))
+            return;
+          var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(player);
+          if (comp.stealCooldown > 0) {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.skincrawler.cooldown", (comp.stealCooldown + 19) / 20)
+                    .withStyle(ChatFormatting.RED),
+                true);
+            return;
+          }
+          io.wifi.starrailexpress.content.entity.PlayerBodyEntity body = null;
+          for (io.wifi.starrailexpress.content.entity.PlayerBodyEntity b : player.serverLevel().getEntitiesOfClass(
+              io.wifi.starrailexpress.content.entity.PlayerBodyEntity.class, player.getBoundingBox().inflate(3.0D))) {
+            if (b.getPlayerUuid() != null && !b.getPlayerUuid().equals(player.getUUID())) {
+              body = b;
+              break;
+            }
+          }
+          if (body != null) {
+            UUID prev = comp.stolenSkin != null ? comp.stolenSkin : player.getUUID();
+            comp.stolenSkin = body.getPlayerUuid();
+            body.setPlayerUuid(prev);
+            comp.stealCooldown = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.STEAL_COOLDOWN;
+            // 广播皮肤给所有玩家
+            for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+              ServerPlayNetworking.send(p,
+                  new org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket(player.getUUID(), comp.stolenSkin));
+            }
+            comp.sync();
+            player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_LEATHER, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f,
+                1.0f);
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.skincrawler.stolen").withStyle(ChatFormatting.GOLD), true);
+          } else {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
+          }
+        });
   }
 
   private static void sendLotteryResult(ServerPlayer player, BlockPos blockPos, boolean success, String messageKey,

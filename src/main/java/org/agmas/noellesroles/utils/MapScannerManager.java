@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class MapScannerManager {
     public static class MapScannerInfo {
@@ -32,12 +33,22 @@ public class MapScannerManager {
 
     public static class MapScannerInfos {
         public ArrayList<MapScannerInfo> infos;
+        public ArrayList<String> minigameIds;
 
         public MapScannerInfos(HashMap<BlockPos, Integer> blocks) {
             infos = new ArrayList<MapScannerInfo>();
             for (var entry : blocks.entrySet()) {
                 infos.add(new MapScannerInfo(entry.getKey(), entry.getValue()));
             }
+            this.minigameIds = new ArrayList<>();
+        }
+
+        public MapScannerInfos(HashMap<BlockPos, Integer> blocks, HashSet<String> minigameIds) {
+            infos = new ArrayList<MapScannerInfo>();
+            for (var entry : blocks.entrySet()) {
+                infos.add(new MapScannerInfo(entry.getKey(), entry.getValue()));
+            }
+            this.minigameIds = new ArrayList<>(minigameIds);
         }
 
         public HashMap<BlockPos, Integer> getInfos() {
@@ -46,6 +57,10 @@ public class MapScannerManager {
                 blocks.put(info.pos.getBlockPos(), info.type);
             }
             return blocks;
+        }
+
+        public HashSet<String> getMinigameIds() {
+            return this.minigameIds != null ? new HashSet<>(this.minigameIds) : new HashSet<>();
         }
     }
 
@@ -92,7 +107,7 @@ public class MapScannerManager {
         File mapConfigFile = mapConfigPath.toFile();
         try {
             FileWriter writer = new FileWriter(mapConfigFile);
-            MapScannerInfos infos = new MapScannerInfos(GameUtils.taskBlocks);
+            MapScannerInfos infos = new MapScannerInfos(GameUtils.taskBlocks, areaC.availableMinigameIds);
             gson.toJson(infos, writer);
             writer.close();
             SRE.LOGGER.info("Successfully cache scanner points for map: " + mapName);
@@ -121,6 +136,9 @@ public class MapScannerManager {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
             MapScannerInfos mapinfos = gson.fromJson(jsonObject, MapScannerInfos.class);
             GameUtils.taskBlocks = mapinfos.getInfos();
+            // 恢复可用小游戏种类 ID
+            areaC.availableMinigameIds.clear();
+            areaC.availableMinigameIds.addAll(mapinfos.getMinigameIds());
             reader.close();
         } catch (Exception e) {
             e.printStackTrace();

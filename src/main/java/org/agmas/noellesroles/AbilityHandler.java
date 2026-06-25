@@ -57,7 +57,18 @@ import java.util.UUID;
 public class AbilityHandler {
 
     public static void handler(ServerPlayer player) {
-        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player))
+        handler(player, false);
+    }
+
+    /**
+     * 通用技能服务端处理。
+     *
+     * @param possessed 若为 true，则跳过 {@link ModEffects#SKILL_BANED} 拦截
+     *                  （用于操纵师附身时以目标身份释放目标技能）。
+     */
+    public static void handler(ServerPlayer player, boolean possessed) {
+        // 通用技能服务端处理
+        if (player.isSpectator())
             return;
         SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                 .get(player);
@@ -69,7 +80,7 @@ public class AbilityHandler {
         if (SpellbreakerPlayerComponent.consumePendingSkillFail(player)) {
             return;
         }
-        if (player.hasEffect(ModEffects.SKILL_BANED)) {
+        if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
         if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
@@ -516,6 +527,10 @@ public class AbilityHandler {
     }
 
     public static void handlerWithTarget(ServerPlayer player, UUID targetUUID) {
+        handlerWithTarget(player, targetUUID, false);
+    }
+
+    public static void handlerWithTarget(ServerPlayer player, UUID targetUUID, boolean possessed) {
         if (player.isSpectator())
             return;
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
@@ -526,7 +541,7 @@ public class AbilityHandler {
         if (SpellbreakerPlayerComponent.consumePendingSkillFail(player)) {
             return;
         }
-        if (player.hasEffect(ModEffects.SKILL_BANED)) {
+        if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.IMITATOR)) {

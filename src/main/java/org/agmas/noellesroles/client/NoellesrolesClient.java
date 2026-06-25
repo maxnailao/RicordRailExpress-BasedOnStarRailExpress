@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StaminaRenderer;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
@@ -27,6 +28,7 @@ import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
+import io.wifi.starrailexpress.network.packet.ShowCustomNewspaperPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -91,6 +93,11 @@ import org.agmas.noellesroles.content.entity.WheelchairEntityModel;
 import org.agmas.noellesroles.content.entity.WheelchairEntityRenderer;
 import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.MercenaryContractItem;
+import org.agmas.noellesroles.client.screen.CourierScreen;
+import org.agmas.noellesroles.client.screen.CourierMailReceiveScreen;
+import org.agmas.noellesroles.content.item.CourierMailItem;
+import org.agmas.noellesroles.content.item.NewspaperItem;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
@@ -109,7 +116,6 @@ import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-
 
 import static org.agmas.noellesroles.client.RicesRoleRhapsodyClient.*;
 import static org.agmas.noellesroles.content.effects.TimeStopEffect.clientPositions;
@@ -150,6 +156,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static Set<BlockPos> enabledTaskMarkerPositions = new HashSet<>();
     public static boolean isShowHelpDisplay = true;
     private static boolean foolMeetingPauseHandled = false;
+    /** 操纵师附身期间，本地相机是否已绑定到被操控目标 */
+    public static boolean manipulatorCameraBound = false;
     public static Map<UUID, UUID> SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static Map<UUID, UUID> JEB_SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static int jebShuffleTime = 0;
@@ -212,6 +220,31 @@ public class NoellesrolesClient implements ClientModInitializer {
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
         // 注册游戏结束事件，清除建筑师客户端墙
+        {
+            NewspaperItem.runner = (stack, hand) -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                if (!hand.equals(InteractionHand.MAIN_HAND))
+                    return false;
+                minecraft.setScreen(new NewspaperScreen(stack, hand));
+                return true;
+            };
+        }
+        // 信使信封 GUI 回调
+        {
+            CourierMailItem.openSendScreen = (player, hand) -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                // 只有信使可以打开送信页面
+                if (SREClient.gameComponent != null && minecraft.level != null
+                        && !SREClient.gameComponent.isRole(player, ModRoles.COURIER)) {
+                    return;
+                }
+                minecraft.setScreen(new CourierScreen(hand));
+            };
+            CourierMailItem.openReceiveScreen = (player, hand) -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                minecraft.setScreen(new CourierMailReceiveScreen(hand));
+            };
+        }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
         });
@@ -237,15 +270,17 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 灌木（树叶贴图）使用 cutout 渲染层
         BlockRenderLayerMap.INSTANCE.putBlock(
                 org.agmas.noellesroles.init.ModSceneBlocks.BUSH, RenderType.cutoutMipped());
+        // 水阀（镶板贴图，透明背景）使用 cutout 渲染层
+        BlockRenderLayerMap.INSTANCE.putBlock(
+                org.agmas.noellesroles.init.ModSceneBlocks.WATER_VALVE, RenderType.cutout());
 
         // 注册C4背部渲染
         LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
-            (entityType, entityRenderer, registrationHelper, context) -> {
-                if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
-                    registrationHelper.register(new C4BackFeatureRenderer(pr));
-                }
-            }
-        );
+                (entityType, entityRenderer, registrationHelper, context) -> {
+                    if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
+                        registrationHelper.register(new C4BackFeatureRenderer(pr));
+                    }
+                });
 
         MercenaryContractItem.openGuiRunner = () -> {
             Minecraft client = Minecraft.getInstance();
@@ -285,8 +320,14 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
+        EntityRendererRegistry.register(ModEntities.PIGEON,
+                org.agmas.noellesroles.client.render.PigeonRenderer::new);
         EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
                 org.agmas.noellesroles.client.render.MovingPlatformRenderer::new);
+        EntityRendererRegistry.register(ModEntities.HURRICANE,
+                org.agmas.noellesroles.client.render.EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MUMMY,
+                net.minecraft.client.renderer.entity.HuskRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
 
@@ -315,17 +356,25 @@ public class NoellesrolesClient implements ClientModInitializer {
             TaskBlockOverlayRenderer.render(renderContext);
         });
         InstinctRenderer.registerInstinctEvents();
+
+        ClientPlayNetworking.registerGlobalReceiver(ShowCustomNewspaperPacket.ID, (payload, context) -> {
+            context.client().setScreen(new NewspaperScreen(payload.pages(),
+                    (payload.title().orElse(Component.literal(""))), (payload.author().orElse(Component.literal("")))));
+        });
         ClientPlayNetworking.registerGlobalReceiver(CreateClientSmokeAreaPacket.ID, (payload, context) -> {
             ClientSmokeAreaManager.createSmokeArea(context.client().level, payload.position(), payload.radius(),
                     payload.durationTicks());
         });
         // 建筑师墙数据S2C包
-        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID, (payload, context) -> {
-            ClientWallManager.createWall(payload.wallId(), payload.brickPositions(), payload.cobwebPositions(), payload.durationTicks());
-        });
-        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket.ID, (payload, context) -> {
-            ClientWallManager.removeWall(payload.wallId());
-        });
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,
+                (payload, context) -> {
+                    ClientWallManager.createWall(payload.wallId(), payload.brickPositions(), payload.cobwebPositions(),
+                            payload.durationTicks());
+                });
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket.ID,
+                (payload, context) -> {
+                    ClientWallManager.removeWall(payload.wallId());
+                });
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
             final var p = context.player();
             final var level = context.client().level;
@@ -418,8 +467,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                         NoellesrolesClient.isTaskInstinctEnabled = true;
                         if (client.player != null) {
                             client.player.displayClientMessage(
-                                    net.minecraft.network.chat.Component.translatable("message.tip.taskpoint_instinct_enable")
-                                            .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+                                    net.minecraft.network.chat.Component
+                                            .translatable("message.tip.taskpoint_instinct_enable")
+                                            .withStyle(net.minecraft.ChatFormatting.GREEN),
+                                    true);
                         }
                     }
                 }
@@ -512,7 +563,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     .info("Blood Particle status: " + (bloodMain.enabled ? "Enabled" : "Disabled"));
         });
         ClientPlayNetworking.registerGlobalReceiver(ClearBloodParticlesS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> BloodParticle.clearParticlesInRange(payload.x(), payload.y(), payload.z(), payload.range()));
+            context.client().execute(
+                    () -> BloodParticle.clearParticlesInRange(payload.x(), payload.y(), payload.z(), payload.range()));
         });
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
             RoleNameRenderer.displayTags.putAll(payload.nametags());
@@ -523,6 +575,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(RepairCombatFeedbackS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> RepairEscapeHud.pushCombatCue(payload.kind(), payload.entityId(),
                     payload.x(), payload.y(), payload.z(), payload.weaponId()));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(MapStatusBarSyncS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> org.agmas.noellesroles.client.hud.MapStatusBarClientState
+                    .set(payload.barType(), payload.value(), payload.maxValue()));
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
@@ -651,7 +707,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleSelectionS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
-                if (context.client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen) {
+                if (context
+                        .client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen) {
                     return;
                 }
                 context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen(
@@ -660,7 +717,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleShopS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
-                if (context.client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleShopScreen screen) {
+                if (context
+                        .client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleShopScreen screen) {
                     screen.updateData(payload.skinCoins(), payload.ownedRoles());
                     screen.init(context.client(), context.client().getWindow().getGuiScaledWidth(),
                             context.client().getWindow().getGuiScaledHeight());
@@ -673,7 +731,8 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(OpenRepairStationScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
-                context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairStationScreen(payload.blockPos()));
+                context.client().setScreen(
+                        new org.agmas.noellesroles.client.screen.repair.RepairStationScreen(payload.blockPos()));
             });
         });
 
@@ -908,9 +967,9 @@ public class NoellesrolesClient implements ClientModInitializer {
         DetectiveListenStepHandler.registerEvents();
         InvisbleHandItem.register();
         // 注册零一五第二枪客户端处理器
-//        ClientPlayNetworking.registerGlobalReceiver(
-//                org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload.ID,
-//                new ZeroOneFiveSecondShotHandler());
+        // ClientPlayNetworking.registerGlobalReceiver(
+        // org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload.ID,
+        // new ZeroOneFiveSecondShotHandler());
         OnKillerCohortDisplay.EVENT.register((player) -> {
             if (player == null)
                 return null;
@@ -975,6 +1034,44 @@ public class NoellesrolesClient implements ClientModInitializer {
                         });
             }
         });
+        // 操纵师附身：相机绑定到目标 + 远程驱动目标移动
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.level == null)
+                return;
+            org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent manipulatorComp =
+                    org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent.KEY.get(client.player);
+            if (manipulatorComp.isControlling && manipulatorComp.target != null) {
+                net.minecraft.world.entity.player.Player target = client.level.getPlayerByUUID(manipulatorComp.target);
+                if (target != null) {
+                    if (client.getCameraEntity() != target) {
+                        client.setCameraEntity(target);
+                        manipulatorCameraBound = true;
+                    }
+                    // 读取移动键（已经过 ModEffects 按键拦截）→ 发送驱动包
+                    int bits = 0;
+                    if (client.options.keyUp.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_FORWARD;
+                    if (client.options.keyDown.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_BACK;
+                    if (client.options.keyLeft.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_LEFT;
+                    if (client.options.keyRight.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_RIGHT;
+                    if (client.options.keyJump.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_JUMP;
+                    if (client.options.keySprint.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_SPRINT;
+                    ClientPlayNetworking.send(new org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket(
+                            bits, client.player.getYRot(), client.player.getXRot(), false));
+                }
+            } else if (manipulatorCameraBound) {
+                // 操控结束：解除相机绑定
+                if (client.getCameraEntity() != client.player) {
+                    client.setCameraEntity(client.player);
+                }
+                manipulatorCameraBound = false;
+            }
+        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (taskInstinctBind.consumeClick()) {
                 isTaskInstinctEnabled = !isTaskInstinctEnabled;
@@ -1024,7 +1121,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             var repairInputComponent = org.agmas.noellesroles.component.ModComponents.REPAIR_ROLES.get(client.player);
             boolean repairGameRunning = SREClient.gameComponent != null
                     && SREClient.gameComponent.isRunning()
-                    && SREClient.gameComponent.getGameMode() == io.wifi.starrailexpress.api.SREGameModes.REPAIR_ESCAPE_MODE;
+                    && SREClient.gameComponent
+                            .getGameMode() == io.wifi.starrailexpress.api.SREGameModes.REPAIR_ESCAPE_MODE;
             if (client.screen == null && repairGameRunning && repairInputComponent.carriedBy != null) {
                 if (client.options.keyAttack.consumeClick()) {
                     ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("left"));
@@ -1033,7 +1131,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("right"));
                 }
             }
-            if (client.screen == null && repairGameRunning && repairInputComponent.downed && repairInputComponent.carriedBy == null
+            if (client.screen == null && repairGameRunning && repairInputComponent.downed
+                    && repairInputComponent.carriedBy == null
                     && client.options.keyShift.consumeClick()) {
                 ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("downed"));
             }

@@ -12,6 +12,7 @@ import io.wifi.starrailexpress.content.block_entity.SecurityMonitorBlockEntity;
 import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
 import io.wifi.starrailexpress.content.item.BindingToolItem;
 import io.wifi.starrailexpress.game.MapManager;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.index.TMMBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -126,8 +127,12 @@ public class MapManagerCommand {
                   var areas = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
                   areas.canJump = false;
                   areas.canSwim = false;
+                  areas.enableOxygenDrowning = false;
+                  areas.mapStatusBar = MapStatusBarType.NONE;
                   areas.disabledTasks = new HashSet<>();
+                  areas.enableSceneTask = new HashSet<>();
                   areas.haveOutsideSound = false;
+                  areas.sceneOutsideSound = "train";
                   areas.mapName = "new_area";
                   areas.mustCopy = false;
                   areas.noReset = false;
@@ -168,8 +173,11 @@ public class MapManagerCommand {
                 .then(setRoomPositions())
                 .then(setCanJump())
                 .then(setCanSwim())
+                .then(setEnableOxygenDrowning())
+                .then(setMapStatusBar())
                 .then(setNoReset())
                 .then(setHaveOutsideSound())
+                .then(setSceneOutsideSound())
                 .then(setSceneOffsetEnabled())
                 .then(setSnowEnabled())
                 .then(setSandEnabled())
@@ -182,6 +190,7 @@ public class MapManagerCommand {
                 .then(setMustCopy())
                 .then(setMapName())
                 .then(setDisabledTasks())
+                .then(setEnableSceneTask())
                 .then(setWeather())
                 .then(setGravity())
                 .then(setEffect())
@@ -204,8 +213,11 @@ public class MapManagerCommand {
                 .then(getRoomPositions())
                 .then(buildGetSimple("canJump", a -> String.valueOf(a.canJump)))
                 .then(buildGetSimple("canSwim", a -> String.valueOf(a.canSwim)))
+                .then(buildGetSimple("enableOxygenDrowning", a -> String.valueOf(a.enableOxygenDrowning)))
+                .then(buildGetSimple("mapStatusBar", a -> String.valueOf(a.mapStatusBar == null ? MapStatusBarType.NONE : a.mapStatusBar)))
                 .then(buildGetSimple("noReset", a -> String.valueOf(a.noReset)))
                 .then(buildGetSimple("haveOutsideSound", a -> String.valueOf(a.haveOutsideSound)))
+                .then(buildGetSimple("sceneOutsideSound", a -> a.sceneOutsideSound))
                 .then(buildGetSimple("sceneOffsetEnabled", a -> String.valueOf(a.sceneOffsetEnabled)))
                 .then(buildGetSimple("snowEnabled", a -> String.valueOf(a.snowEnabled)))
                 .then(buildGetSimple("sandEnabled", a -> String.valueOf(a.sandEnabled)))
@@ -225,7 +237,8 @@ public class MapManagerCommand {
                 .then(buildGetSimple("weatherCycle", a -> String.valueOf(a.weatherCycle)))
                 .then(buildGetSimple("minigameQuestEnabled", a -> String.valueOf(a.minigameQuestEnabled)))
                 .then(buildGetSimple("initialItems", a -> a.initialItems.isEmpty() ? "(none)" : String.join(", ", a.initialItems)))
-                .then(getDisabledTasks()))
+                .then(getDisabledTasks())
+                .then(getEnableSceneTask()))
             .then(Commands.literal("remove")
                 .requires(source -> source.hasPermission(3))
                 .then(Commands.argument("mapName", MapLoadArgumentType.string())
@@ -425,6 +438,20 @@ public class MapManagerCommand {
     areas.canSwim = value;
     areas.sync();
     sendSetFeedback(source, "canSwim", String.valueOf(value));
+  }
+
+  private static void setEnableOxygenDrowning(CommandSourceStack source, boolean value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.enableOxygenDrowning = value;
+    areas.sync();
+    sendSetFeedback(source, "enableOxygenDrowning", String.valueOf(value));
+  }
+
+  private static void setMapStatusBar(CommandSourceStack source, MapStatusBarType value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.mapStatusBar = value == null ? MapStatusBarType.NONE : value;
+    areas.sync();
+    sendSetFeedback(source, "mapStatusBar", areas.mapStatusBar.name());
   }
 
   private static void setNoReset(CommandSourceStack source, boolean value) {
@@ -638,8 +665,11 @@ public class MapManagerCommand {
     sb.append("roomPositions: ").append(formatRoomPositions(areas.getRoomPositions())).append("\n");
     sb.append("canJump: ").append(areas.canJump).append("\n");
     sb.append("canSwim: ").append(areas.canSwim).append("\n");
+    sb.append("enableOxygenDrowning: ").append(areas.enableOxygenDrowning).append("\n");
+    sb.append("mapStatusBar: ").append(areas.mapStatusBar == null ? MapStatusBarType.NONE : areas.mapStatusBar).append("\n");
     sb.append("noReset: ").append(areas.noReset).append("\n");
     sb.append("haveOutsideSound: ").append(areas.haveOutsideSound).append("\n");
+    sb.append("sceneOutsideSound: \"").append(areas.sceneOutsideSound).append("\"\n");
     sb.append("sceneOffsetEnabled: ").append(areas.sceneOffsetEnabled).append("\n");
     sb.append("snowEnabled: ").append(areas.snowEnabled).append("\n");
     sb.append("sandEnabled: ").append(areas.sandEnabled).append("\n");
@@ -659,7 +689,8 @@ public class MapManagerCommand {
     sb.append("weatherCycle: ").append(areas.weatherCycle).append("\n");
     sb.append("minigameQuestEnabled: ").append(areas.minigameQuestEnabled).append("\n");
     sb.append("initialItems: ").append(areas.initialItems.isEmpty() ? "(none)" : String.join(", ", areas.initialItems)).append("\n");
-    sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks));
+    sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks)).append("\n");
+    sb.append("enableSceneTask: ").append(formatDisabledTasks(areas.enableSceneTask));
     source.sendSuccess(
         () -> Component.literal(sb.toString()).withStyle(style -> style.withColor(ChatFormatting.AQUA)),
         false);
@@ -1045,6 +1076,33 @@ public class MapManagerCommand {
             }));
   }
 
+  private static LiteralArgumentBuilder<CommandSourceStack> setEnableOxygenDrowning() {
+    return Commands.literal("enableOxygenDrowning")
+        .then(Commands.argument("value", BoolArgumentType.bool())
+            .executes(ctx -> {
+              setEnableOxygenDrowning(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setMapStatusBar() {
+    return Commands.literal("mapStatusBar")
+        .then(Commands.argument("value", StringArgumentType.word())
+            .suggests((ctx, builder) -> {
+              for (MapStatusBarType type : MapStatusBarType.values()) {
+                String name = type.name().toLowerCase();
+                if (name.startsWith(builder.getRemainingLowerCase())) {
+                  builder.suggest(name);
+                }
+              }
+              return builder.buildFuture();
+            })
+            .executes(ctx -> {
+              setMapStatusBar(ctx.getSource(), MapStatusBarType.byName(StringArgumentType.getString(ctx, "value")));
+              return 1;
+            }));
+  }
+
   private static LiteralArgumentBuilder<CommandSourceStack> setNoReset() {
     return Commands.literal("noReset")
         .then(Commands.argument("value", BoolArgumentType.bool())
@@ -1061,6 +1119,28 @@ public class MapManagerCommand {
               setHaveOutsideSound(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
               return 1;
             }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setSceneOutsideSound() {
+    return Commands.literal("sceneOutsideSound")
+        .then(Commands.argument("value", StringArgumentType.word())
+            .suggests((ctx, builder) -> {
+              for (String s : new String[] { "train", "wind", "sand_storm", "snow_storm", "circus" }) {
+                if (s.startsWith(builder.getRemainingLowerCase()))
+                  builder.suggest(s);
+              }
+              return builder.buildFuture();
+            })
+            .executes(ctx -> {
+              setSceneOutsideSound(ctx.getSource(), StringArgumentType.getString(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static void setSceneOutsideSound(CommandSourceStack source, String value) {
+    var areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.sceneOutsideSound = value;
+    sendSetFeedback(source, "sceneOutsideSound", value);
   }
 
   private static LiteralArgumentBuilder<CommandSourceStack> setSceneOffsetEnabled() {
@@ -1183,6 +1263,42 @@ public class MapManagerCommand {
                 })));
   }
 
+  // enableSceneTask
+  private static void addEnableSceneTask(CommandSourceStack source, String taskId) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    if (areas.enableSceneTask == null)
+      areas.enableSceneTask = new HashSet<>();
+    areas.enableSceneTask.add(taskId);
+    areas.sync();
+    sendSetFeedback(source, "enableSceneTask.add", taskId);
+  }
+
+  private static void removeEnableSceneTask(CommandSourceStack source, String taskId) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    if (areas.enableSceneTask != null && areas.enableSceneTask.remove(taskId)) {
+      areas.sync();
+      sendSetFeedback(source, "enableSceneTask.remove", taskId);
+    } else {
+      source.sendFailure(Component.literal("场景任务 " + taskId + " 不在启用列表中"));
+    }
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setEnableSceneTask() {
+    return Commands.literal("enableSceneTask")
+        .then(Commands.literal("add")
+            .then(Commands.argument("taskId", StringArgumentType.string())
+                .executes(ctx -> {
+                  addEnableSceneTask(ctx.getSource(), StringArgumentType.getString(ctx, "taskId"));
+                  return 1;
+                })))
+        .then(Commands.literal("remove")
+            .then(Commands.argument("taskId", StringArgumentType.string())
+                .executes(ctx -> {
+                  removeEnableSceneTask(ctx.getSource(), StringArgumentType.getString(ctx, "taskId"));
+                  return 1;
+                })));
+  }
+
   // ======================== get 命令树构建 ========================
 
   private static LiteralArgumentBuilder<CommandSourceStack> getSpawnPos() {
@@ -1287,6 +1403,23 @@ public class MapManagerCommand {
               AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
               boolean has = a.disabledTasks != null && a.disabledTasks.contains(taskId);
               sendGetFeedback(ctx.getSource(), "disabledTasks.contains(" + taskId + ")", String.valueOf(has));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> getEnableSceneTask() {
+    return Commands.literal("enableSceneTask")
+        .executes(ctx -> {
+          AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+          sendGetFeedback(ctx.getSource(), "enableSceneTask", formatDisabledTasks(a.enableSceneTask));
+          return 1;
+        })
+        .then(Commands.argument("taskId", StringArgumentType.string())
+            .executes(ctx -> {
+              String taskId = StringArgumentType.getString(ctx, "taskId");
+              AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+              boolean has = a.enableSceneTask != null && a.enableSceneTask.contains(taskId);
+              sendGetFeedback(ctx.getSource(), "enableSceneTask.contains(" + taskId + ")", String.valueOf(has));
               return 1;
             }));
   }

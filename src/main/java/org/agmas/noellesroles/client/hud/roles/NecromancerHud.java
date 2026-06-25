@@ -23,7 +23,7 @@ public class NecromancerHud {
         BiConsumer<FakeGuiGraphics, DeltaTracker> necoConsumer = (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
 
-            // 获取拳击手组件
+            // 获取斗士组件
             var nc = NecromancerComponent.KEY.get(client.level);
             var pc = SREAbilityPlayerComponent.KEY.get(client.player);
             // 渲染位置 - 右下角

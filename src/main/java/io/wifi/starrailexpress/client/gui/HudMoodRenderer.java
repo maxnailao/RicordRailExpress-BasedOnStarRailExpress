@@ -176,9 +176,17 @@ public class HudMoodRenderer {
 
     private static void renderMinigameTaskHud(Font textRenderer, FakeGuiGraphics context,
             SREPlayerMinigameTaskComponent minigameTask, int lineY) {
-        Component title = minigameTask.hasPendingTask()
-                ? Component.translatable("hud.sre.minigame_task_count", minigameTask.getPendingMinigameTasks())
-                : Component.translatable("hud.sre.minigame_task");
+        Component title;
+        if (minigameTask.hasPendingTask()) {
+            var targetMg = minigameTask.getTargetMinigame();
+            if (targetMg != null) {
+                title = Component.translatable("hud.sre.minigame_task_specific", targetMg.displayName());
+            } else {
+                title = Component.translatable("hud.sre.minigame_task_any");
+            }
+        } else {
+            title = Component.translatable("hud.sre.minigame_task_any");
+        }
         boolean hasNotice = minigameNoticeTicks > 0 && minigameNoticeText != null;
         int titleWidth = textRenderer.width(title);
         int noticeWidth = hasNotice ? textRenderer.width(minigameNoticeText) : 0;

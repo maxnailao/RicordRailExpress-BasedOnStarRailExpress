@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -81,6 +82,11 @@ public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
             public void add(@NotNull Player player, int amount) {
                 SREPlayerShopComponent.KEY.get(player).addToBalance(amount);
             }
+
+            @Override
+            public ItemStack iconStack() {
+                return Items.GOLD_NUGGET.getDefaultInstance();
+            }
         },
         MINIGAME_TOKEN("minigame_token", "gui.vendingmachine.minigame_token_display", 0xFF7CFCA0) {
             @Override
@@ -91,6 +97,11 @@ public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
             @Override
             public void add(@NotNull Player player, int amount) {
                 SREPlayerMinigameTaskComponent.KEY.get(player).addTokens(amount);
+            }
+
+            @Override
+            public ItemStack iconStack() {
+                return Items.AMETHYST_SHARD.getDefaultInstance();
             }
         };
 
@@ -107,6 +118,9 @@ public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
         public abstract int getBalance(@NotNull Player player);
 
         public abstract void add(@NotNull Player player, int amount);
+
+        /** 获取该货币对应的图标 ItemStack（用于 GUI 渲染）。 */
+        public abstract ItemStack iconStack();
 
         public String serializedName() {
             return this.serializedName;

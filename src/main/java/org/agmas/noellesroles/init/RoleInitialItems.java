@@ -11,8 +11,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 
 import java.util.ArrayList;
@@ -328,6 +328,11 @@ public class RoleInitialItems {
             return pliers;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.FITTER, fitterItems);
+
+        // 信使初始物品 - 信封
+        List<Supplier<ItemStack>> courierItems = new ArrayList<>();
+        courierItems.add(() -> ModItems.COURIER_MAIL.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.COURIER, courierItems);
 
         // 休假警员初始物品 - 一次性手枪
         List<Supplier<ItemStack>> restingPoliceItems = new ArrayList<>();

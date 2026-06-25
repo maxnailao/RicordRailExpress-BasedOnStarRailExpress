@@ -256,8 +256,8 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             ClientPlayNetworking.send(new PuppeteerC2SPacket(PuppeteerC2SPacket.Action.RETURN_TO_BODY));
             return true;
         }
-        // ==================== 拳击手：激活钢筋铁骨技能 ====================
-        if (gameWorld.isRole(client.player, ModRoles.BOXER)) {
+        // ==================== 斗士：激活钢筋铁骨技能 ====================
+        if (gameWorld.isRole(client.player, ModRoles.FIGHTER)) {
             // 检查玩家是否存活
             if (!GameUtils.isPlayerAliveAndSurvival(client.player))
                 return true;
@@ -350,8 +350,8 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             return true;
         }
 
-        // ==================== 私家侦探：审查玩家物品栏 ====================
-        if (gameWorld.isRole(client.player, ModRoles.DETECTIVE)) {
+        // ==================== 探员：审查玩家物品栏 ====================
+        if (gameWorld.isRole(client.player, ModRoles.AGENT)) {
             // 使用准星检测目标玩家
             net.minecraft.world.phys.HitResult hitResult = client.hitResult;
             if (hitResult != null && hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
@@ -730,10 +730,10 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      * 注册Screen
      */
     public static void registerScreens() {
-        // 注册邮差传递界面
+        // 注册射命丸文传递界面
         MenuScreens.register(ModScreenHandlers.POSTMAN_SCREEN_HANDLER, PostmanHandledScreen::new);
 
-        // 注册私家侦探审查界面
+        // 注册探员审查界面
         MenuScreens.register(ModScreenHandlers.DETECTIVE_INSPECT_SCREEN_HANDLER, DetectiveInspectScreen::new);
     }
 

@@ -1,6 +1,9 @@
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.network.packet.*;
+import io.wifi.starrailexpress.network.packet.EditNewspaperPacket;
+import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
+import io.wifi.starrailexpress.network.packet.ShowCustomNewspaperPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -61,6 +64,10 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
 
+
+        PayloadTypeRegistry.playS2C().register(ShowCustomNewspaperPacket.ID, ShowCustomNewspaperPacket.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(EditNewspaperPacket.ID, EditNewspaperPacket.STREAM_CODEC);
+
         PayloadTypeRegistry.playC2S().register(PlayerResetS2CPacket.ID, PlayerResetS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ChefCookC2SPacket.ID, ChefCookC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(PlayerResetS2CPacket.ID, PlayerResetS2CPacket.CODEC);
@@ -83,6 +90,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(VultureEatC2SPacket.ID, VultureEatC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(TryThrowItemPacket.ID, TryThrowItemPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenKeyForgeGuiS2CPacket.ID, OpenKeyForgeGuiS2CPacket.CODEC);
@@ -96,6 +105,7 @@ public class ModPackets {
                 RepairCoinRewardS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(RepairCombatFeedbackS2CPacket.ID,
                 RepairCombatFeedbackS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(MapStatusBarSyncS2CPacket.ID, MapStatusBarSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RepairStationActionC2SPacket.ID,
                 RepairStationActionC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(RepairStationActionC2SPacket.ID, RepairStationActionC2SPacket::handle);
@@ -229,6 +239,11 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
 
+        // 注册移动平台配置网络包
+        PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket::handle);
         // TODO: 反应堆/移动平台网络包暂时移除，后续加回
         // PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
         // ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
@@ -258,6 +273,21 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(DoudizhuBidC2SPacket.TYPE, DoudizhuBidC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(DoudizhuPlayC2SPacket.TYPE, DoudizhuPlayC2SPacket::handle);
 
+        // 注册反应堆小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
+
+        // 注册水阀小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket::handle);
+
+        // 信使邮件包
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.CourierMailSendC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailSendC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CourierMailSendC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailSendC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.CourierMailReceiveC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailReceiveC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CourierMailReceiveC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailReceiveC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.CourierMailReplyC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailReplyC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CourierMailReplyC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailReplyC2SPacket::handle);
         // 麻将网络包
         PayloadTypeRegistry.playC2S().register(MahjongJoinC2SPacket.TYPE, MahjongJoinC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(MahjongDiscardC2SPacket.TYPE, MahjongDiscardC2SPacket.CODEC);

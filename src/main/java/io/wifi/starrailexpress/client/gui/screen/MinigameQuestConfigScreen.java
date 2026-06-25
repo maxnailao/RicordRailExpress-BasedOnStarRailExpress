@@ -17,59 +17,75 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 /**
- * 小游戏任务点配置界面（创造模式右键镶板打开）
+ * 小游戏任务点配置界面
  * 左侧：可滚动的小游戏列表
- * 右侧：任务路标颜色选择
+ * 右侧：列向排列的配置控件
  */
 public class MinigameQuestConfigScreen extends Screen {
 
-    private static final int PANEL_WIDTH = 280;
-    private static final int ITEM_HEIGHT = 28;
+    private static final int PANEL_WIDTH = 340;
+    private static final int LIST_WIDTH = 200;
+    private static final int ITEM_HEIGHT = 24;
     private static final int ITEM_SPACING = 2;
-    private static final int VISIBLE_ITEMS = 8;
+    private static final int VISIBLE_ITEMS = 10;
 
     private final BlockPos pos;
     private String selectedMinigameId;
     private int markerColor;
     private boolean isTaskMarker;
+    private boolean isSabotageTrigger;
+    private int sabotageDuration;
+    private int sabotageCooldown;
 
-    // 滚动
     private int scrollOffset = 0;
     private int maxScroll = 0;
 
-    // 颜色输入
     private EditBox colorInput;
+    private EditBox sabotageDurationInput;
+    private EditBox sabotageCooldownInput;
+    private Button markerBtn, sabotageBtn;
 
     private static final Component TITLE = Component.translatable("screen.starrailexpress.minigame_quest_config");
 
-    public MinigameQuestConfigScreen(BlockPos pos, String selectedMinigameId, int markerColor, boolean isTaskMarker) {
+    public MinigameQuestConfigScreen(BlockPos pos, String selectedMinigameId, int markerColor, boolean isTaskMarker,
+            boolean isSabotageTrigger, int sabotageDuration, int sabotageCooldown) {
         super(TITLE);
         this.pos = pos;
         this.selectedMinigameId = selectedMinigameId != null ? selectedMinigameId : QuestMinigames.getDefaultId();
         this.markerColor = markerColor;
         this.isTaskMarker = isTaskMarker;
+        this.isSabotageTrigger = isSabotageTrigger;
+        this.sabotageDuration = sabotageDuration > 0 ? sabotageDuration : 60;
+        this.sabotageCooldown = sabotageCooldown > 0 ? sabotageCooldown : 300;
     }
+
+    // ── 布局常量 ──
+
+    private int panelLeft() { return this.width / 2 - PANEL_WIDTH / 2; }
+    private int panelTop() { return this.height / 2 - PANEL_WIDTH / 2 + 20; }
+    private int panelRight() { return this.width / 2 + PANEL_WIDTH / 2; }
+    private int panelBottom() { return this.height / 2 + PANEL_WIDTH / 2; }
+    private int rightColX() { return panelLeft() + LIST_WIDTH + 12; }
 
     @Override
     protected void init() {
         super.init();
+        int rx = rightColX();
+        int top = panelTop();
+        int cy = top;
 
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        int panelLeft = centerX - PANEL_WIDTH / 2;
-
-        // 颜色输入框
-        int inputY = centerY + PANEL_WIDTH / 2 + 10;
+        // ── 右侧列：颜色 ──
+        cy += 4;
         String hexColor = String.format("%06X", markerColor & 0xFFFFFF);
-        colorInput = new EditBox(this.font, panelLeft, inputY, 80, 20,
-                Component.literal("Color"));
+        colorInput = new EditBox(this.font, rx, cy, 60, 18, Component.literal("Color"));
         colorInput.setValue(hexColor);
         colorInput.setMaxLength(6);
         colorInput.setFilter(s -> s.matches("[0-9a-fA-F]*"));
         addRenderableWidget(colorInput);
+        cy += 22;
 
-        // 任务路标开关按钮
-        addRenderableWidget(Button.builder(
+        // ── 任务路标开关 ──
+        markerBtn = Button.builder(
                 Component.translatable(isTaskMarker ? "screen.starrailexpress.marker_on" : "screen.starrailexpress.marker_off"),
                 btn -> {
                     isTaskMarker = !isTaskMarker;
@@ -77,16 +93,58 @@ public class MinigameQuestConfigScreen extends Screen {
                             ? "screen.starrailexpress.marker_on"
                             : "screen.starrailexpress.marker_off"));
                 })
-                .pos(panelLeft + 90, inputY)
-                .size(80, 20)
-                .build());
+                .pos(rx, cy)
+                .size(120, 18)
+                .build();
+        addRenderableWidget(markerBtn);
+        cy += 22;
 
-        // 保存按钮
+        // ── 破坏任务触发开关 ──
+        sabotageBtn = Button.builder(
+                Component.translatable(isSabotageTrigger
+                        ? "screen.starrailexpress.sabotage_trigger_on"
+                        : "screen.starrailexpress.sabotage_trigger_off"),
+                btn -> {
+                    isSabotageTrigger = !isSabotageTrigger;
+                    btn.setMessage(Component.translatable(isSabotageTrigger
+                            ? "screen.starrailexpress.sabotage_trigger_on"
+                            : "screen.starrailexpress.sabotage_trigger_off"));
+                    sabotageDurationInput.setEditable(isSabotageTrigger);
+                    sabotageDurationInput.setVisible(isSabotageTrigger);
+                    sabotageCooldownInput.setEditable(isSabotageTrigger);
+                    sabotageCooldownInput.setVisible(isSabotageTrigger);
+                })
+                .pos(rx, cy)
+                .size(120, 18)
+                .build();
+        addRenderableWidget(sabotageBtn);
+        cy += 24;
+
+        // ── 破坏任务持续 / 冷却输入 ──
+        sabotageDurationInput = new EditBox(this.font, rx, cy, 55, 18, Component.literal("Dur"));
+        sabotageDurationInput.setValue(String.valueOf(sabotageDuration));
+        sabotageDurationInput.setFilter(s -> s.matches("[0-9]*"));
+        sabotageDurationInput.setMaxLength(4);
+        sabotageDurationInput.setEditable(isSabotageTrigger);
+        sabotageDurationInput.setVisible(isSabotageTrigger);
+        addRenderableWidget(sabotageDurationInput);
+        cy += 22;
+
+        sabotageCooldownInput = new EditBox(this.font, rx, cy, 55, 18, Component.literal("Cool"));
+        sabotageCooldownInput.setValue(String.valueOf(sabotageCooldown));
+        sabotageCooldownInput.setFilter(s -> s.matches("[0-9]*"));
+        sabotageCooldownInput.setMaxLength(4);
+        sabotageCooldownInput.setEditable(isSabotageTrigger);
+        sabotageCooldownInput.setVisible(isSabotageTrigger);
+        addRenderableWidget(sabotageCooldownInput);
+        cy += 28;
+
+        // ── 保存按钮 ──
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.starrailexpress.save"),
                 btn -> saveConfig())
-                .pos(panelLeft + 180, inputY)
-                .size(60, 20)
+                .pos(rx + 30, cy)
+                .size(60, 18)
                 .build());
 
         // 计算最大滚动量
@@ -97,83 +155,84 @@ public class MinigameQuestConfigScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+        g.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
 
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
-        int panelLeft = centerX - PANEL_WIDTH / 2;
-        int panelTop = centerY - PANEL_WIDTH / 2 + 20;
-        int panelRight = centerX + PANEL_WIDTH / 2;
-        int panelBottom = centerY + PANEL_WIDTH / 2;
+        int left = panelLeft(), top = panelTop(), right = panelRight(), bottom = panelBottom();
+        int listR = left + LIST_WIDTH;
 
         // 列表背景
-        guiGraphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xEE263246);
+        g.fill(left, top, listR, bottom, 0xEE263246);
 
         // 小游戏列表
         List<QuestMinigame> allMinigames = QuestMinigames.getAll();
-        int listStartX = panelLeft + 8;
-        int listStartY = panelTop + 4;
-
+        int listStartX = left + 4;
+        int listStartY = top + 2;
         int firstVisible = scrollOffset / (ITEM_HEIGHT + ITEM_SPACING);
         int visibleCount = VISIBLE_ITEMS + 1;
 
         for (int i = firstVisible; i < Math.min(allMinigames.size(), firstVisible + visibleCount); i++) {
             QuestMinigame minigame = allMinigames.get(i);
             int itemY = listStartY + i * (ITEM_HEIGHT + ITEM_SPACING) - scrollOffset;
-            if (itemY < panelTop - ITEM_HEIGHT || itemY > panelBottom) continue;
+            if (itemY < top - ITEM_HEIGHT || itemY > bottom) continue;
 
             boolean isSelected = minigame.id().equals(selectedMinigameId);
-            boolean isHovered = mouseX >= listStartX && mouseX <= panelRight - 20
+            boolean isHovered = mouseX >= listStartX && mouseX <= listR - 4
                     && mouseY >= itemY && mouseY <= itemY + ITEM_HEIGHT;
 
             int bgColor = isSelected ? 0xFF4A6B9A : (isHovered ? 0xFF3A4B6A : 0xFF2A364A);
-            guiGraphics.fill(listStartX, itemY, panelRight - 16, itemY + ITEM_HEIGHT, bgColor);
-
+            g.fill(listStartX, itemY, listR - 4, itemY + ITEM_HEIGHT, bgColor);
             if (isSelected) {
-                guiGraphics.fill(listStartX, itemY, listStartX + 3, itemY + ITEM_HEIGHT, 0xFF66BBFF);
+                g.fill(listStartX, itemY, listStartX + 3, itemY + ITEM_HEIGHT, 0xFF66BBFF);
             }
-
-            guiGraphics.drawString(this.font, minigame.displayName(),
-                    listStartX + 10, itemY + (ITEM_HEIGHT - 8) / 2, 0xFFFFFF);
+            g.drawString(this.font, minigame.displayName(),
+                    listStartX + 8, itemY + (ITEM_HEIGHT - 8) / 2, 0xFFFFFF);
         }
 
         // 滚动条
         if (maxScroll > 0) {
-            int scrollBarX = panelRight - 12;
-            int scrollBarH = panelBottom - panelTop;
-            int thumbH = Math.max(20, (int) ((float) (VISIBLE_ITEMS * (ITEM_HEIGHT + ITEM_SPACING)) / (allMinigames.size() * (ITEM_HEIGHT + ITEM_SPACING)) * scrollBarH));
-            int thumbY = panelTop + (int) ((float) scrollOffset / maxScroll * (scrollBarH - thumbH));
-            guiGraphics.fill(scrollBarX, panelTop, scrollBarX + 4, panelBottom, 0xFF1A2430);
-            guiGraphics.fill(scrollBarX, thumbY, scrollBarX + 4, thumbY + thumbH, 0xFF6A8BAA);
+            int sbX = listR - 6;
+            int sbH = bottom - top;
+            int thumbH = Math.max(16,
+                    (int) ((float) (VISIBLE_ITEMS * (ITEM_HEIGHT + ITEM_SPACING))
+                            / (allMinigames.size() * (ITEM_HEIGHT + ITEM_SPACING)) * sbH));
+            int thumbY = top + (int) ((float) scrollOffset / maxScroll * (sbH - thumbH));
+            g.fill(sbX, top, sbX + 4, bottom, 0xFF1A2430);
+            g.fill(sbX, thumbY, sbX + 4, thumbY + thumbH, 0xFF6A8BAA);
         }
 
-        // 颜色预览
-        int previewX = panelLeft + 200;
-        int previewY = centerY + PANEL_WIDTH / 2 + 10;
-        guiGraphics.fill(previewX, previewY, previewX + 20, previewY + 20, 0xFF000000 | markerColor);
+        // 右侧控件区背景
+        int rx = rightColX();
+        g.fill(rx, top, right, bottom, 0xDD1A2A3A);
 
-        // 提示文字
-        guiGraphics.drawString(this.font,
-                Component.translatable("screen.starrailexpress.minigame_quest_hint"),
-                panelLeft, centerY + PANEL_WIDTH / 2 + 36, 0xAAAAAA);
+        // 颜色预览
+        int prevX = rx + 65;
+        g.fill(prevX, top + 4, prevX + 18, top + 22, 0xFF000000 | markerColor);
+
+        // 破坏任务标签（与输入框同一水平线）
+        if (isSabotageTrigger && sabotageDurationInput != null && sabotageCooldownInput != null) {
+            int lx = sabotageDurationInput.getX() + sabotageDurationInput.getWidth() + 4;
+            g.drawString(this.font, Component.translatable("screen.starrailexpress.sabotage_duration"),
+                    lx, sabotageDurationInput.getY() + (sabotageDurationInput.getHeight() - 8) / 2, 0xAAAAAA);
+            g.drawString(this.font, Component.translatable("screen.starrailexpress.sabotage_cooldown"),
+                    lx, sabotageCooldownInput.getY() + (sabotageCooldownInput.getHeight() - 8) / 2, 0xAAAAAA);
+        }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            int panelLeft = this.width / 2 - PANEL_WIDTH / 2;
-            int panelTop = this.height / 2 - PANEL_WIDTH / 2 + 20;
-            int panelRight = this.width / 2 + PANEL_WIDTH / 2;
-            int listStartX = panelLeft + 8;
-            int listStartY = panelTop + 4;
+            int left = panelLeft(), top = panelTop();
+            int listR = left + LIST_WIDTH;
+            int listStartX = left + 4;
+            int listStartY = top + 2;
 
             List<QuestMinigame> allMinigames = QuestMinigames.getAll();
             for (int i = 0; i < allMinigames.size(); i++) {
                 int itemY = listStartY + i * (ITEM_HEIGHT + ITEM_SPACING) - scrollOffset;
-                if (mouseX >= listStartX && mouseX <= panelRight - 20
+                if (mouseX >= listStartX && mouseX <= listR - 4
                         && mouseY >= itemY && mouseY <= itemY + ITEM_HEIGHT) {
                     selectedMinigameId = allMinigames.get(i).id();
                     return true;
@@ -207,7 +266,6 @@ public class MinigameQuestConfigScreen extends Screen {
     }
 
     private void saveConfig() {
-        // 解析颜色值
         try {
             markerColor = Integer.parseInt(colorInput.getValue(), 16);
         } catch (NumberFormatException ignored) {
@@ -218,7 +276,17 @@ public class MinigameQuestConfigScreen extends Screen {
         data.putString("MinigameId", selectedMinigameId != null ? selectedMinigameId : QuestMinigames.getDefaultId());
         data.putInt("MarkerColor", markerColor);
         data.putBoolean("IsTaskMarker", isTaskMarker);
-
+        data.putBoolean("IsSabotageTrigger", isSabotageTrigger);
+        if (sabotageDurationInput != null) {
+            try { sabotageDuration = Integer.parseInt(sabotageDurationInput.getValue()); }
+            catch (NumberFormatException ignored) { sabotageDuration = 60; }
+        }
+        data.putInt("SabotageDuration", sabotageDuration);
+        if (sabotageCooldownInput != null) {
+            try { sabotageCooldown = Integer.parseInt(sabotageCooldownInput.getValue()); }
+            catch (NumberFormatException ignored) { sabotageCooldown = 300; }
+        }
+        data.putInt("SabotageCooldown", sabotageCooldown);
         ClientPlayNetworking.send(new MinigameQuestPayload.SaveConfig(pos, data));
     }
 }

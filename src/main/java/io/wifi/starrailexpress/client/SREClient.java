@@ -9,6 +9,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -353,17 +354,59 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(
                 new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE, player -> gameComponent.isPsychoActive(), 20));
 
+        // ───── 场景背景音效系统 ─────
+        // 列车内部（看不到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_INSIDE,
                 SoundSource.AMBIENT,
                 (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
-                        && !SRE.isSkyVisible(player),
+                        && !SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("train"),
                 0.25f, 20, 10));
+        // 列车外部（能看到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_OUTSIDE,
                 SoundSource.AMBIENT,
                 (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
-                        && SRE.isSkyVisible(player),
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("train"),
+                0.6f, 20, 10));
+
+        // 风声（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.WIND,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("wind"),
+                0.6f, 20, 10));
+        // 沙尘暴（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.SAND_STORM,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("sand_storm"),
+                0.6f, 20, 10));
+        // 暴风雪（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.SNOW_STORM,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("snow_storm"),
+                0.6f, 20, 10));
+        // 马戏团背景音（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.CIRCUS_BACKGROUND,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("circus"),
                 0.6f, 20, 10));
 
         // Caching components
@@ -907,6 +950,7 @@ public class SREClient implements ClientModInitializer {
 
             // 滞时雷引爆倒计时 HUD
             io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+            org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
 
             // RoleUnlockHudRenderer.render(guiGraphics);
 
@@ -1215,16 +1259,16 @@ public class SREClient implements ClientModInitializer {
             canRender = false;
         }
         if (player != null && !isInLobby && gameComponent.isRunning()) {
-            if (SRE.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
+            if (ChatHudRules.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
                 canRender = false;
                 cachedRenderVanillaHud = false;
             } else if (!cachedPlayerAliveAndInSurvival) {
                 canRender = true;
                 cachedRenderVanillaHud = true;
             } else {
-                canRender = SRE.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
+                canRender = ChatHudRules.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
                         || (cachedPlayerRole != null
-                                && SRE.canUseChatHud.stream().anyMatch(predicate -> predicate.test(cachedPlayerRole)));
+                                && ChatHudRules.canUseChatHud.stream().anyMatch(predicate -> predicate.test(cachedPlayerRole)));
             }
         }
         cachedCanRenderChatHud = canRender;

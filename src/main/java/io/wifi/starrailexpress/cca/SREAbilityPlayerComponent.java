@@ -82,6 +82,10 @@ public class SREAbilityPlayerComponent
      */
     @Override
     public void init() {
+        init(true);
+    }
+
+    public void init(boolean sync) {
         this.cooldown = 0;
         this.charges = -1;
         this.maxCharges = -1;
@@ -90,7 +94,8 @@ public class SREAbilityPlayerComponent
         this.selectedSkill = 0;
         this.castingSkill = null;
         this.lastHoldTick = Long.MIN_VALUE;
-        this.sync();
+        if (sync)
+            this.sync();
     }
 
     @Override
@@ -317,6 +322,8 @@ public class SREAbilityPlayerComponent
 
     @Override
     public void clientTick() {
+        if (this.cooldown > 1)
+            this.cooldown--;
         for (SkillState state : skillStates.values()) {
             if (state.cooldown > 1) {
                 state.cooldown--;

@@ -71,7 +71,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     public boolean imitRecallerPlaced = false;
     public double imitRecallerX = 0, imitRecallerY = 0, imitRecallerZ = 0;
 
-    // ==================== 拳击手无敌状态 ====================
+    // ==================== 斗士无敌状态 ====================
     public int imitBoxerInvulnTicks = 0;
 
     public ImitatorPlayerComponent(Player player) {
@@ -583,7 +583,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
             }
         }
 
-        // 拳击手无敌
+        // 斗士无敌
         if (imitBoxerInvulnTicks > 0) {
             imitBoxerInvulnTicks--;
             if (imitBoxerInvulnTicks == 0) {
@@ -666,7 +666,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         tag.putDouble("imitRecY", imitRecallerY);
         tag.putDouble("imitRecZ", imitRecallerZ);
 
-        // 拳击手状态
+        // 斗士状态
         tag.putInt("imitBoxerInvuln", imitBoxerInvulnTicks);
     }
 

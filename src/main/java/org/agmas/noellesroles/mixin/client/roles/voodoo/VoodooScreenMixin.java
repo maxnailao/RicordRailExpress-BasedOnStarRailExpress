@@ -57,7 +57,6 @@ public abstract class VoodooScreenMixin extends LimitedHandledScreen<InventoryMe
         super(handler, inventory, title);
     }
 
-
     @Unique
     private RoleScreenHelper<UUID> getRoleScreenHelper() {
         if (roleScreenHelper == null) {

@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 私家侦探审查界面的客户端屏幕
+ * 探员审查界面的客户端屏幕
  * 
  * 只读界面，显示目标玩家的物品栏内容。
  * 玩家无法与物品进行交互。

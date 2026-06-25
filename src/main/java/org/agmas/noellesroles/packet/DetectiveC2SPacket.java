@@ -10,7 +10,7 @@ import org.agmas.noellesroles.Noellesroles;
 import java.util.UUID;
 
 /**
- * 私家侦探审查玩家网络包
+ * 探员审查玩家网络包
  * 
  * 从客户端发送到服务端，包含：
  * - 要审查的目标玩家UUID

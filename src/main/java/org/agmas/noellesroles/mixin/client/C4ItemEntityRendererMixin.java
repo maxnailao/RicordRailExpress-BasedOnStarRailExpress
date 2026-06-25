@@ -37,11 +37,10 @@ public abstract class C4ItemEntityRendererMixin {
 
         matrices.pushPose();
         if (entity.isNoGravity()) {
-            C4ModelTransforms.rotateToSurface(matrices, entity.getViewYRot(tickDelta), entity.getViewXRot(tickDelta));
+            C4ModelTransforms.rotateFrontToSurface(matrices, entity.getViewYRot(tickDelta), entity.getViewXRot(tickDelta));
         } else {
             rotateToVelocity(matrices, entity, tickDelta);
         }
-        int presetIndex = C4PlacementPreset.indexFor(entity.getUUID(), 1);
         if (entity.isNoGravity()) {
             C4ModelTransforms.applySurfacePlacement(matrices, C4PlacementPreset.DEFAULT);
         } else {

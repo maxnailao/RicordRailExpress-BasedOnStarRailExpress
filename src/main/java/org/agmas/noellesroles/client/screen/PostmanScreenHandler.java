@@ -11,14 +11,14 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
 
 import java.util.UUID;
 
 /**
- * 邮差传递界面的 ScreenHandler
+ * 射命丸文传递界面的 ScreenHandler
  *
  * 功能：
  * - 显示玩家快捷栏（1排9格）
@@ -55,15 +55,15 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
         this.tradeInventory = new SimpleContainer(1); // 只有一个交换槽
 
         // 从组件加载物品
-        PostmanPlayerComponent component = ModComponents.POSTMAN.get(player);
+        AyayayaPlayerComponent component = ModComponents.AYAYAYA.get(player);
         if (component.isDeliveryActive()) {
             // 根据玩家身份加载对应的物品
             if (component.isReceiver) {
                 // 接收方显示自己放入的物品
                 this.tradeInventory.setItem(TRADE_SLOT_INDEX, component.targetItem.copy());
             } else {
-                // 邮差显示自己放入的物品
-                this.tradeInventory.setItem(TRADE_SLOT_INDEX, component.postmanItem.copy());
+                // 射命丸文显示自己放入的物品
+                this.tradeInventory.setItem(TRADE_SLOT_INDEX, component.putItem.copy());
             }
         }
 
@@ -133,7 +133,7 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        PostmanPlayerComponent component = ModComponents.POSTMAN.get(player);
+        AyayayaPlayerComponent component = ModComponents.AYAYAYA.get(player);
         return component.isDeliveryActive();
     }
 
@@ -145,7 +145,7 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
         if (player.level().isClientSide)
             return;
 
-        PostmanPlayerComponent component = ModComponents.POSTMAN.get(player);
+        AyayayaPlayerComponent component = ModComponents.AYAYAYA.get(player);
 
         // 如果传递已完成（被重置），不需要处理槽位物品（已在交换时给予）
         if (!component.isDeliveryActive()) {
@@ -168,7 +168,7 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
         if (targetUuid != null) {
             Player target = player.level().getPlayerByUUID(targetUuid);
             if (target != null) {
-                PostmanPlayerComponent targetComp = ModComponents.POSTMAN.get(target);
+                AyayayaPlayerComponent targetComp = ModComponents.AYAYAYA.get(target);
                 // 检查对方是否仍在与我传递（避免重复处理）
                 if (targetComp.isDeliveryActive() && player.getUUID().equals(targetComp.deliveryTarget)) {
                     // 先关闭对方界面（让对方返还自己的物品）
@@ -267,22 +267,22 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
                 return;
 
             // 当槽位内容改变时，更新双方组件
-            PostmanPlayerComponent component = ModComponents.POSTMAN.get(player);
+            AyayayaPlayerComponent component = ModComponents.AYAYAYA.get(player);
             if (component.isDeliveryActive() && component.deliveryTarget != null) {
                 ItemStack stack = this.getItem().copy();
                 boolean isPostman = !component.isReceiver;
 
                 // 获取对方组件
                 Player target = player.level().getPlayerByUUID(component.deliveryTarget);
-                PostmanPlayerComponent targetComp = target != null ? ModComponents.POSTMAN.get(target) : null;
+                AyayayaPlayerComponent targetComp = target != null ? ModComponents.AYAYAYA.get(target) : null;
 
                 // 更新双方组件的物品和确认状态
                 if (isPostman) {
-                    component.postmanItem = stack;
-                    component.postmanConfirmed = false;
+                    component.putItem = stack;
+                    component.senderConfirmed = false;
                     if (targetComp != null) {
-                        targetComp.postmanItem = stack;
-                        targetComp.postmanConfirmed = false;
+                        targetComp.putItem = stack;
+                        targetComp.senderConfirmed = false;
                     }
                 } else {
                     component.targetItem = stack;

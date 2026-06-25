@@ -9,15 +9,26 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.UUID;
 
+/**
+ * 被操控者组件（附身的目标侧）。
+ *
+ * <p>被操控期间：目标被施加 失明 / 禁止移动 / 禁止使用 / 禁止打开背包 / 禁止使用技能 等效果，
+ * 移动改由操纵师通过 {@link ManipulatorControlInputC2SPacket} 远程驱动；
+ * 当被驱动到游戏区域之外（主要是虚空 Y 轴判定）时，会被弹回上一个安全落点以避免自杀。
+ */
 public class InControlCCA implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<InControlCCA> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "in_control"),
@@ -27,6 +38,17 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
     public Player player;
     public boolean isControlling = false;
     public int controlTimer;
+
+    // ==================== 远程移动输入 ====================
+    private int inputBits = 0;
+    private float inputYaw;
+    private float inputPitch;
+    private int inputFreshTicks = 0;
+    private double verticalVelocity = 0;
+
+    // ==================== 防虚空：最近安全落点 ====================
+    private boolean hasSafePos = false;
+    private double safeX, safeY, safeZ;
 
     public InControlCCA(Player player) {
         this.player = player;
@@ -51,11 +73,25 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
         this.controller = null;
         isControlling = false;
         controlTimer = 0;
+        inputBits = 0;
+        inputFreshTicks = 0;
+        verticalVelocity = 0;
+        hasSafePos = false;
     }
 
     @Override
     public void clear() {
         this.init();
+    }
+
+    /**
+     * 接收操纵师下发的移动输入（在服务端网络线程→服务端主线程后调用）。
+     */
+    public void applyControlInput(int bits, float yaw, float pitch) {
+        this.inputBits = bits;
+        this.inputYaw = yaw;
+        this.inputPitch = pitch;
+        this.inputFreshTicks = 5;
     }
 
     @Override
@@ -113,15 +149,20 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
         }
         if (isControlling) {
             if (controlTimer > 0) {
-                //if (!player.hasEffect(ModEffects.BLACK_MONITOR)) {
-                    player.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, 10, 0, true, false, true));
-                    player.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, true, false, true));
-                    player.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 10, 0, true, false, true));
-                //}
-                --controlTimer;
-                if (player.isShiftKeyDown()) {
-                    --controlTimer;
+                // 失明 + 禁止移动/使用/打开背包/使用技能/转视角（每 tick 续期，短时长）
+                player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, true, false, true));
+                player.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 10, 0, true, false, true));
+
+                if (player instanceof ServerPlayer sp) {
+                    driveMovement(sp);
                 }
+
+                --controlTimer;
                 if (controlTimer % 20 == 0) {
                     sync();
                 }
@@ -132,7 +173,79 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
             }
         }
     }
-    
+
+    /**
+     * 由操纵师输入驱动目标移动；包含重力/跳跃与防虚空弹回。
+     */
+    private void driveMovement(ServerPlayer sp) {
+        // 记录最近安全落点（在地面且高于虚空阈值）
+        if (sp.onGround() && sp.getY() > sp.level().getMinBuildHeight() + 1) {
+            hasSafePos = true;
+            safeX = sp.getX();
+            safeY = sp.getY();
+            safeZ = sp.getZ();
+        }
+
+        boolean fresh = inputFreshTicks > 0;
+        if (fresh) {
+            sp.setYRot(inputYaw);
+            sp.setYHeadRot(inputYaw);
+            sp.setXRot(inputPitch);
+        }
+
+        // 水平方向（基于操纵师朝向）
+        double f = 0, l = 0;
+        if (fresh) {
+            if ((inputBits & ManipulatorControlInputC2SPacket.BIT_FORWARD) != 0) f += 1;
+            if ((inputBits & ManipulatorControlInputC2SPacket.BIT_BACK) != 0) f -= 1;
+            if ((inputBits & ManipulatorControlInputC2SPacket.BIT_LEFT) != 0) l += 1;
+            if ((inputBits & ManipulatorControlInputC2SPacket.BIT_RIGHT) != 0) l -= 1;
+        }
+        boolean sprint = fresh && (inputBits & ManipulatorControlInputC2SPacket.BIT_SPRINT) != 0;
+        double speed = sprint ? 0.26 : 0.20;
+
+        double rad = Math.toRadians(inputYaw);
+        double sin = Math.sin(rad), cos = Math.cos(rad);
+        Vec3 fwd = new Vec3(-sin, 0, cos);   // W
+        Vec3 left = new Vec3(cos, 0, sin);   // A
+        Vec3 horizontal = fwd.scale(f).add(left.scale(l));
+        if (horizontal.lengthSqr() > 1.0e-4) {
+            horizontal = horizontal.normalize().scale(speed);
+        } else {
+            horizontal = Vec3.ZERO;
+        }
+
+        // 垂直方向：重力 / 跳跃
+        if (sp.onGround()) {
+            verticalVelocity = 0;
+            if (fresh && (inputBits & ManipulatorControlInputC2SPacket.BIT_JUMP) != 0) {
+                verticalVelocity = 0.42;
+            }
+        } else {
+            verticalVelocity -= 0.08;
+            verticalVelocity *= 0.98;
+            if (verticalVelocity < -3.0) verticalVelocity = -3.0;
+        }
+
+        Vec3 delta = new Vec3(horizontal.x, verticalVelocity, horizontal.z);
+        sp.move(MoverType.SELF, delta);
+        sp.setDeltaMovement(horizontal.x, verticalVelocity, horizontal.z);
+
+        // 防虚空：越界则弹回上一个安全落点
+        if (sp.getY() < sp.level().getMinBuildHeight() + 1 && hasSafePos) {
+            verticalVelocity = 0;
+            sp.setDeltaMovement(0, 0, 0);
+            sp.teleportTo(safeX, safeY, safeZ);
+            sp.connection.teleport(safeX, safeY, safeZ, sp.getYRot(), sp.getXRot());
+        } else if (delta.lengthSqr() > 1.0e-5) {
+            // 推送权威位置到目标客户端（目标处于 MOVE_BANED，不会与之争抢）
+            sp.connection.teleport(sp.getX(), sp.getY(), sp.getZ(), sp.getYRot(), sp.getXRot());
+        }
+        sp.hasImpulse = true;
+
+        if (inputFreshTicks > 0) inputFreshTicks--;
+    }
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }

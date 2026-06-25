@@ -75,7 +75,7 @@ public class ImitatorSkillRegistry {
         ALLOWED_ROLES.add(ModRoles.TELEGRAPHER_ID);
         ALLOWED_ROLES.add(ModRoles.BROADCASTER_ID);
         ALLOWED_ROLES.add(ModRoles.ATHLETE_ID);
-        ALLOWED_ROLES.add(ModRoles.BOXER_ID);
+        ALLOWED_ROLES.add(ModRoles.FIGHTER_ID);
         ALLOWED_ROLES.add(ModRoles.GHOST_ID);
         ALLOWED_ROLES.add(ModRoles.NOISEMAKER_ID);
         ALLOWED_ROLES.add(ModRoles.SINGER_ID);
@@ -94,7 +94,7 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.TELEGRAPHER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.BROADCASTER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.ATHLETE_ID, 90 * 20); // 90秒
-        SKILL_COOLDOWNS.put(ModRoles.BOXER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.FIGHTER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.GHOST_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.NOISEMAKER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.SINGER_ID, 90 * 20); // 90秒
@@ -131,7 +131,7 @@ public class ImitatorSkillRegistry {
         } else if (roleId.equals(ModRoles.ATHLETE_ID)) {
             executeAthlete(player);
             return SkillResult.SUCCESS;
-        } else if (roleId.equals(ModRoles.BOXER_ID)) {
+        } else if (roleId.equals(ModRoles.FIGHTER_ID)) {
             executeBoxer(player, comp);
             return SkillResult.SUCCESS;
         } else if (roleId.equals(ModRoles.GHOST_ID)) {
@@ -313,7 +313,7 @@ public class ImitatorSkillRegistry {
     }
 
     /**
-     * 拳击手：1.5秒无敌不死
+     * 斗士：1.5秒无敌不死
      */
     private static void executeBoxer(ServerPlayer player, ImitatorPlayerComponent comp) {
         comp.imitBoxerInvulnTicks = 30; // 1.5秒

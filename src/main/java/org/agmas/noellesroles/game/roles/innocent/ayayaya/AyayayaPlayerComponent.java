@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocent.postman;
+package org.agmas.noellesroles.game.roles.innocent.ayayaya;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import net.minecraft.core.HolderLookup;
@@ -14,34 +14,34 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import java.util.UUID;
 
 /**
- * 邮差组件
+ * 射命丸文组件
  *
  * 功能：
  * - 存储传递盒的交互状态
  * - 管理双方的物品交换
  * - 同步传递数据到客户端
  */
-public class PostmanPlayerComponent implements RoleComponent {
+public class AyayayaPlayerComponent implements RoleComponent {
     @Override
     public Player getPlayer() {
         return player;
     }
     /** 组件键 - 用于从玩家获取此组件 */
-    public static final ComponentKey<PostmanPlayerComponent> KEY = ModComponents.POSTMAN;
+    public static final ComponentKey<AyayayaPlayerComponent> KEY = ModComponents.AYAYAYA;
     
     private final Player player;
     
     // 当前正在传递的目标玩家 UUID
     public UUID deliveryTarget = null;
     
-    // 邮差放入的物品
-    public ItemStack postmanItem = ItemStack.EMPTY;
+    // 射命丸文放入的物品
+    public ItemStack putItem = ItemStack.EMPTY;
     
     // 目标玩家放入的物品
     public ItemStack targetItem = ItemStack.EMPTY;
     
-    // 邮差是否确认交换
-    public boolean postmanConfirmed = false;
+    // 射命丸文是否确认交换
+    public boolean senderConfirmed = false;
     
     // 目标是否确认交换
     public boolean targetConfirmed = false;
@@ -49,10 +49,10 @@ public class PostmanPlayerComponent implements RoleComponent {
     // 目标玩家名字（用于显示）
     public String targetName = "";
     
-    // 是否是接收方（true = 被邮差选中的目标，false = 邮差本人）
+    // 是否是接收方（true = 被射命丸文选中的目标，false = 射命丸文本人）
     public boolean isReceiver = false;
     
-    public PostmanPlayerComponent(Player player) {
+    public AyayayaPlayerComponent(Player player) {
         this.player = player;
     }
     
@@ -62,9 +62,9 @@ public class PostmanPlayerComponent implements RoleComponent {
     @Override
     public void init() {
         this.deliveryTarget = null;
-        this.postmanItem = ItemStack.EMPTY;
+        this.putItem = ItemStack.EMPTY;
         this.targetItem = ItemStack.EMPTY;
-        this.postmanConfirmed = false;
+        this.senderConfirmed = false;
         this.targetConfirmed = false;
         this.targetName = "";
         this.isReceiver = false;
@@ -77,7 +77,7 @@ public class PostmanPlayerComponent implements RoleComponent {
     }
     
     /**
-     * 开始传递（邮差发起）
+     * 开始传递（射命丸文发起）
      * 
      * @param targetUuid 目标玩家 UUID
      * @param targetPlayerName 目标玩家名字
@@ -86,9 +86,9 @@ public class PostmanPlayerComponent implements RoleComponent {
         this.deliveryTarget = targetUuid;
         this.targetName = targetPlayerName;
         this.isReceiver = false;
-        this.postmanItem = ItemStack.EMPTY;
+        this.putItem = ItemStack.EMPTY;
         this.targetItem = ItemStack.EMPTY;
-        this.postmanConfirmed = false;
+        this.senderConfirmed = false;
         this.targetConfirmed = false;
         this.sync();
     }
@@ -96,16 +96,16 @@ public class PostmanPlayerComponent implements RoleComponent {
     /**
      * 接收传递请求（目标玩家）
      * 
-     * @param postmanUuid 邮差 UUID
-     * @param postmanName 邮差名字
+     * @param senderUuid 射命丸文 UUID
+     * @param senderName 射命丸文名字
      */
-    public void receiveDelivery(UUID postmanUuid, String postmanName) {
-        this.deliveryTarget = postmanUuid;
-        this.targetName = postmanName;
+    public void receiveDelivery(UUID senderUuid, String senderName) {
+        this.deliveryTarget = senderUuid;
+        this.targetName = senderName;
         this.isReceiver = true;
-        this.postmanItem = ItemStack.EMPTY;
+        this.putItem = ItemStack.EMPTY;
         this.targetItem = ItemStack.EMPTY;
-        this.postmanConfirmed = false;
+        this.senderConfirmed = false;
         this.targetConfirmed = false;
         this.sync();
     }
@@ -114,12 +114,12 @@ public class PostmanPlayerComponent implements RoleComponent {
      * 设置物品
      * 
      * @param item 要放入的物品
-     * @param isPostman 是否是邮差放入的
+     * @param issender 是否是射命丸文放入的
      */
-    public void setItem(ItemStack item, boolean isPostman) {
-        if (isPostman) {
-            this.postmanItem = item.copy();
-            this.postmanConfirmed = false;
+    public void setItem(ItemStack item, boolean issender) {
+        if (issender) {
+            this.putItem = item.copy();
+            this.senderConfirmed = false;
         } else {
             this.targetItem = item.copy();
             this.targetConfirmed = false;
@@ -130,13 +130,13 @@ public class PostmanPlayerComponent implements RoleComponent {
     /**
      * 确认交换
      * 
-     * @param isPostman 是否是邮差确认的
+     * @param issender 是否是射命丸文确认的
      */
-    public void confirm(boolean isPostman) {
+    public void confirm(boolean issender) {
         if (!(player instanceof ServerPlayer))return;
         ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) player);
-        if (isPostman) {
-            this.postmanConfirmed = true;
+        if (issender) {
+            this.senderConfirmed = true;
         } else {
             this.targetConfirmed = true;
         }
@@ -146,11 +146,11 @@ public class PostmanPlayerComponent implements RoleComponent {
     /**
      * 取消确认
      * 
-     * @param isPostman 是否是邮差取消的
+     * @param issender 是否是射命丸文取消的
      */
-    public void unconfirm(boolean isPostman) {
-        if (isPostman) {
-            this.postmanConfirmed = false;
+    public void unconfirm(boolean issender) {
+        if (issender) {
+            this.senderConfirmed = false;
         } else {
             this.targetConfirmed = false;
         }
@@ -161,7 +161,7 @@ public class PostmanPlayerComponent implements RoleComponent {
      * 检查是否双方都确认
      */
     public boolean isBothConfirmed() {
-        return postmanConfirmed && targetConfirmed;
+        return senderConfirmed && targetConfirmed;
     }
     
     /**
@@ -172,7 +172,7 @@ public class PostmanPlayerComponent implements RoleComponent {
     }
     
     public void sync() {
-        ModComponents.POSTMAN.sync(this.player);
+        ModComponents.AYAYAYA.sync(this.player);
     }
     
     // ==================== NBT 序列化 ====================
@@ -183,10 +183,10 @@ public class PostmanPlayerComponent implements RoleComponent {
             tag.putUUID("deliveryTarget", deliveryTarget);
         }
         
-        if (!postmanItem.isEmpty()) {
-            CompoundTag postmanItemTag = new CompoundTag();
-            postmanItem.save(registryLookup, postmanItemTag);
-            tag.put("postmanItem", postmanItemTag);
+        if (!putItem.isEmpty()) {
+            CompoundTag senderItemTag = new CompoundTag();
+            putItem.save(registryLookup, senderItemTag);
+            tag.put("senderItem", senderItemTag);
         }
         
         if (!targetItem.isEmpty()) {
@@ -195,7 +195,7 @@ public class PostmanPlayerComponent implements RoleComponent {
             tag.put("targetItem", targetItemTag);
         }
         
-        tag.putBoolean("postmanConfirmed", postmanConfirmed);
+        tag.putBoolean("senderConfirmed", senderConfirmed);
         tag.putBoolean("targetConfirmed", targetConfirmed);
         tag.putString("targetName", targetName);
         tag.putBoolean("isReceiver", isReceiver);
@@ -205,10 +205,10 @@ public class PostmanPlayerComponent implements RoleComponent {
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.deliveryTarget = tag.contains("deliveryTarget") ? tag.getUUID("deliveryTarget") : null;
         
-        if (tag.contains("postmanItem")) {
-            this.postmanItem = ItemStack.parseOptional(registryLookup, tag.getCompound("postmanItem"));
+        if (tag.contains("senderItem")) {
+            this.putItem = ItemStack.parseOptional(registryLookup, tag.getCompound("senderItem"));
         } else {
-            this.postmanItem = ItemStack.EMPTY;
+            this.putItem = ItemStack.EMPTY;
         }
         
         if (tag.contains("targetItem")) {
@@ -217,7 +217,7 @@ public class PostmanPlayerComponent implements RoleComponent {
             this.targetItem = ItemStack.EMPTY;
         }
         
-        this.postmanConfirmed = tag.getBoolean("postmanConfirmed");
+        this.senderConfirmed = tag.getBoolean("senderConfirmed");
         this.targetConfirmed = tag.getBoolean("targetConfirmed");
         this.targetName = tag.getString("targetName");
         this.isReceiver = tag.getBoolean("isReceiver");

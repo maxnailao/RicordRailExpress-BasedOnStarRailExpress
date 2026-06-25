@@ -20,7 +20,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
- * 拳击手组件
+ * 斗士组件
  *
  * 管理"钢筋铁骨"技能：
  * - 按下技能键后获得1.5秒（30 tick）无敌
@@ -33,7 +33,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 public class BoxerPlayerComponent implements RoleComponent, ServerTickingComponent {
     
     /** 组件键 - 用于从玩家获取此组件 */
-    public static final ComponentKey<BoxerPlayerComponent> KEY = ModComponents.BOXER;
+    public static final ComponentKey<BoxerPlayerComponent> KEY = ModComponents.FIGHTER;
     
     // ==================== 常量定义 ====================
     
@@ -114,9 +114,9 @@ public class BoxerPlayerComponent implements RoleComponent, ServerTickingCompone
             return false;
         }
         
-        // 验证是拳击手
+        // 验证是斗士
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, ModRoles.BOXER)) {
+        if (!gameWorld.isRole(player, ModRoles.FIGHTER)) {
             return false;
         }
         
@@ -175,7 +175,7 @@ public class BoxerPlayerComponent implements RoleComponent, ServerTickingCompone
             }
         }
         
-        // 发送消息给拳击手
+        // 发送消息给斗士
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.boxer.counter_success", attacker.getName()), true);
         }
@@ -199,7 +199,7 @@ public class BoxerPlayerComponent implements RoleComponent, ServerTickingCompone
             io.wifi.starrailexpress.index.TMMSounds.ITEM_PSYCHO_ARMOUR,
             SoundSource.MASTER, 5.0F, 1.0F);
         
-        // 发送消息给拳击手
+        // 发送消息给斗士
         if (player instanceof ServerPlayer serverPlayer) {
             // 根据死亡原因显示不同消息
             String deathType = getDeathTypeName(deathReason);
@@ -248,7 +248,7 @@ public class BoxerPlayerComponent implements RoleComponent, ServerTickingCompone
      * 同步到客户端
      */
     public void sync() {
-        ModComponents.BOXER.sync(this.player);
+        ModComponents.FIGHTER.sync(this.player);
     }
     
     // ==================== Tick 处理 ====================

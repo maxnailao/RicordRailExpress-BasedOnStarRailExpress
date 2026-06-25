@@ -9,9 +9,9 @@ import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
 /**
- * 拳击手 HUD Mixin
+ * 斗士 HUD Mixin
  * 
- * 显示拳击手的技能状态：
+ * 显示斗士的技能状态：
  * - 技能冷却时间
  * - 无敌状态激活提示
  * - 技能就绪提示
@@ -19,10 +19,10 @@ import org.agmas.noellesroles.role.ModRoles;
 public class BoxerHud {
 
     public static void register() {
-        RoleHudRenderCallback.EVENT.register(ModRoles.BOXER_ID, (context, deltaTracker) -> {
+        RoleHudRenderCallback.EVENT.register(ModRoles.FIGHTER_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
 
-            // 获取拳击手组件
+            // 获取斗士组件
             BoxerPlayerComponent boxerComponent = BoxerPlayerComponent.KEY.get(client.player);
 
             // 渲染位置 - 右下角

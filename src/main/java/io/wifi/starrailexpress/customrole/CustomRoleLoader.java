@@ -258,6 +258,8 @@ public class CustomRoleLoader {
                 } catch (NumberFormatException ignored) {}
             }
             instinctSameColor.put(data.englishId, data.instinctSameColorFrame);
+        } else {
+            role.setCanUseInstinct(false);
         }
         if (data.ableToPickUpRevolver != null) role.setAbleToPickUpRevolver(data.ableToPickUpRevolver);
         if (data.setNeutrals != null && data.setNeutrals) role.setNeutrals(true);

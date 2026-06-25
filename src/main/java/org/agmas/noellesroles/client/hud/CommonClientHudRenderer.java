@@ -56,7 +56,7 @@ import org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
 
 import java.awt.*;
@@ -1249,8 +1249,9 @@ public class CommonClientHudRenderer {
         }
 
       }
+      // 换了，以前那个和baka残月的冲突了
       var chargeText = Component
-          .translatable("hud.exampler.charges", abpc.charges)
+          .translatable("hud.exampler.charges", abpc.status)
           .withStyle(ChatFormatting.GOLD);
       guiGraphics.drawString(font, chargeText, xOffset - font.width(chargeText),
           yOffset - font.lineHeight * 2 - 8,

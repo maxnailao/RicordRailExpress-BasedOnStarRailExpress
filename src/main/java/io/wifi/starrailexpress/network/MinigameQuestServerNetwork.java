@@ -35,7 +35,7 @@ public class MinigameQuestServerNetwork {
 
     /**
      * 小游戏完成 — 统一触发标识
-     * 通过 blockEvent 发送信号，其他系统（任务检测、红石逻辑）可监听此事件
+     * 若为破坏任务触发点，则启动破坏任务而非发放代币。
      */
     private static void handleCompleteGame(MinigameQuestPayload.CompleteGame payload,
             ServerPlayNetworking.Context context) {
@@ -44,8 +44,26 @@ public class MinigameQuestServerNetwork {
             BlockPos pos = payload.pos();
             BlockEntity be = player.level().getBlockEntity(pos);
             if (be instanceof MinigameQuestBlockEntity questBe) {
+                // 破坏任务触发点：启动破坏任务（含冷却检查）
+                if (questBe.isSabotageTrigger() && player.level() instanceof net.minecraft.server.level.ServerLevel level) {
+                    long now = level.getGameTime();
+                    long cooldownTicks = (long) questBe.getSabotageCooldown() * 20;
+                    if (cooldownTicks > 0 && questBe.getLastSabotageTime() > 0
+                            && now - questBe.getLastSabotageTime() < cooldownTicks) {
+                        player.displayClientMessage(
+                                net.minecraft.network.chat.Component.translatable("message.sre.sabotage_cooldown"),
+                                true);
+                        return;
+                    }
+                    questBe.setLastSabotageTime(now);
+                    org.agmas.noellesroles.scene.SceneEventManager.startSabotage(level,
+                            questBe.getSabotageDuration() * 20);
+                    level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ELDER_GUARDIAN_CURSE,
+                            net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                    return;
+                }
+
                 // 统一完成标识：blockEvent(type=1, data=0)
-                // 后续任务检测系统可监听此事件判断任务点是否完成
                 player.level().blockEvent(pos, questBe.getBlockState().getBlock(), 1, 0);
                 questBe.setChanged();
                 // 完成反馈：在方块处显示庆祝粒子 + 音效
@@ -66,7 +84,8 @@ public class MinigameQuestServerNetwork {
                 if (io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(player.level()).minigameQuestEnabled) {
                     io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(player)
                             .onMinigameBlockCompleted(player, pos,
-                                    io.wifi.starrailexpress.game.GameConstants.MINIGAME_TASK_TOKEN_REWARD);
+                                    io.wifi.starrailexpress.game.GameConstants.MINIGAME_TASK_TOKEN_REWARD,
+                                    questBe.getMinigameId());
                 }
             }
         });
@@ -78,6 +97,9 @@ public class MinigameQuestServerNetwork {
         data.putString("MinigameId", entity.getMinigameId());
         data.putInt("MarkerColor", entity.getMarkerColor());
         data.putBoolean("IsTaskMarker", entity.isTaskMarker());
+        data.putBoolean("IsSabotageTrigger", entity.isSabotageTrigger());
+        data.putInt("SabotageDuration", entity.getSabotageDuration());
+        data.putInt("SabotageCooldown", entity.getSabotageCooldown());
         ServerPlayNetworking.send(player, new MinigameQuestPayload.OpenConfig(pos, data));
     }
 }

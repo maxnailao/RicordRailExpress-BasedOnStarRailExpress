@@ -19,6 +19,10 @@ public class MinigameQuestBlockEntity extends SyncingBlockEntity {
     private String minigameId = QuestMinigames.getDefaultId();
     private int markerColor = 0x00FF00; // 默认绿色边框
     private boolean isTaskMarker = true; // 默认作为任务路标
+    private boolean isSabotageTrigger = false; // 是否破坏任务触发点
+    private int sabotageDuration = 60; // 破坏任务持续时间（秒），默认1分钟
+    private int sabotageCooldown = 300; // 破坏任务冷却（秒），默认5分钟
+    private long lastSabotageTime = 0; // 上次触发破坏任务的游戏时间（tick）
 
     public MinigameQuestBlockEntity(BlockPos pos, BlockState state) {
         super(TMMBlockEntities.MINIGAME_QUEST, pos, state);
@@ -53,6 +57,30 @@ public class MinigameQuestBlockEntity extends SyncingBlockEntity {
         setChanged();
     }
 
+    public boolean isSabotageTrigger() { return isSabotageTrigger; }
+
+    public void setSabotageTrigger(boolean v) {
+        this.isSabotageTrigger = v;
+        setChanged();
+    }
+
+    public int getSabotageDuration() { return sabotageDuration; }
+
+    public void setSabotageDuration(int seconds) {
+        this.sabotageDuration = Math.max(1, seconds);
+        setChanged();
+    }
+
+    public int getSabotageCooldown() { return sabotageCooldown; }
+
+    public void setSabotageCooldown(int seconds) {
+        this.sabotageCooldown = Math.max(0, seconds);
+        setChanged();
+    }
+
+    public long getLastSabotageTime() { return lastSabotageTime; }
+    public void setLastSabotageTime(long time) { this.lastSabotageTime = time; setChanged(); }
+
     /** 从网络包加载配置 */
     public void loadConfigFromTag(CompoundTag tag) {
         if (tag.contains("MinigameId")) {
@@ -63,6 +91,15 @@ public class MinigameQuestBlockEntity extends SyncingBlockEntity {
         }
         if (tag.contains("IsTaskMarker")) {
             this.isTaskMarker = tag.getBoolean("IsTaskMarker");
+        }
+        if (tag.contains("IsSabotageTrigger")) {
+            this.isSabotageTrigger = tag.getBoolean("IsSabotageTrigger");
+        }
+        if (tag.contains("SabotageDuration")) {
+            this.sabotageDuration = tag.getInt("SabotageDuration");
+        }
+        if (tag.contains("SabotageCooldown")) {
+            this.sabotageCooldown = tag.getInt("SabotageCooldown");
         }
         setChanged();
     }
@@ -82,6 +119,10 @@ public class MinigameQuestBlockEntity extends SyncingBlockEntity {
         tag.putString("MinigameId", minigameId);
         tag.putInt("MarkerColor", markerColor);
         tag.putBoolean("IsTaskMarker", isTaskMarker);
+        tag.putBoolean("IsSabotageTrigger", isSabotageTrigger);
+        tag.putInt("SabotageDuration", sabotageDuration);
+        tag.putInt("SabotageCooldown", sabotageCooldown);
+        tag.putLong("LastSabotageTime", lastSabotageTime);
     }
 
     @Override
@@ -95,6 +136,18 @@ public class MinigameQuestBlockEntity extends SyncingBlockEntity {
         }
         if (tag.contains("IsTaskMarker")) {
             this.isTaskMarker = tag.getBoolean("IsTaskMarker");
+        }
+        if (tag.contains("IsSabotageTrigger")) {
+            this.isSabotageTrigger = tag.getBoolean("IsSabotageTrigger");
+        }
+        if (tag.contains("SabotageDuration")) {
+            this.sabotageDuration = tag.getInt("SabotageDuration");
+        }
+        if (tag.contains("SabotageCooldown")) {
+            this.sabotageCooldown = tag.getInt("SabotageCooldown");
+        }
+        if (tag.contains("LastSabotageTime")) {
+            this.lastSabotageTime = tag.getLong("LastSabotageTime");
         }
     }
 }

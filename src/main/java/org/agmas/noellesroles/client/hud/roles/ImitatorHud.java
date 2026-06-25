@@ -64,7 +64,7 @@ public class ImitatorHud {
                 context.drawString(font, chargeText, x, y, 0xFFAA00);
             }
 
-            // ==================== 拳击手无敌 ====================
+            // ==================== 斗士无敌 ====================
             if (comp.imitBoxerInvulnTicks > 0) {
                 y += 14;
                 Component boxerText = Component.translatable("hud.noellesroles.imitator.boxer_shield",

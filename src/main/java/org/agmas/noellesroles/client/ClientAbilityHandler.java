@@ -10,7 +10,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
+import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.packet.AbilityC2SPacket;
+import org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket;
 import org.agmas.noellesroles.packet.RepairPrimarySkillC2SPacket;
 import org.agmas.noellesroles.packet.UnifiedSkillInputC2SPacket;
 
@@ -24,6 +26,13 @@ public class ClientAbilityHandler {
 
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(client.player.level());
+
+        // 操纵师附身：技能键改为以被操控目标的身份释放目标自身技能（冷却记在目标身上）
+        ManipulatorPlayerComponent manipulatorComp = ManipulatorPlayerComponent.KEY.get(client.player);
+        if (manipulatorComp.isControlling && manipulatorComp.target != null) {
+            ClientPlayNetworking.send(new ManipulatorAbilityC2SPacket());
+            return;
+        }
         // 游戏模式：自选职业
         if (gameWorldComponent.isRunning() && gameWorldComponent.getGameMode().equals(SREGameModes.CUSTOM_SELECTED_MODE)
                 && gameWorldComponent.isRole(client.player, SpecialGameModeRoles.CUSTOM_PENDING)) {

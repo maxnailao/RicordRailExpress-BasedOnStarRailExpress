@@ -127,6 +127,14 @@ public class MinigameScreenFactory {
                 SimpleQuestMinigameScreen.Mode.BALANCE_SCALE));
         FACTORY.put("klotski", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
                 SimpleQuestMinigameScreen.Mode.KLOTSKI));
+        FACTORY.put("gold_miner", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.GOLD_MINER));
+        FACTORY.put("one_stroke", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.ONE_STROKE));
+        FACTORY.put("claw_machine", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.CLAW_MACHINE));
+        FACTORY.put("balloon_sniper", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.BALLOON_SNIPER));
     }
 
     public static Screen create(String minigameId, BlockPos pos, Runnable onSuccess) {
