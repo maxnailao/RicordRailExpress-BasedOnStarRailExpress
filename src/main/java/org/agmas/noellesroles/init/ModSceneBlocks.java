@@ -36,26 +36,12 @@ import org.agmas.noellesroles.content.block.scene.MovingPlatformBlock;
 import org.agmas.noellesroles.content.block.scene.StatueBlock;
 import org.agmas.noellesroles.content.block.scene.StoveBlock;
 import org.agmas.noellesroles.content.block.scene.TransportPointBlock;
-import org.agmas.noellesroles.content.block_entity.scene.CropBlockEntity;
-import org.agmas.noellesroles.content.block.scene.ReactorBlock;
 import org.agmas.noellesroles.content.block.scene.RollingStoneTriggerPlate;
 import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
 import org.agmas.noellesroles.content.block.scene.WaterPumpBlock;
 import org.agmas.noellesroles.content.block.scene.SceneGateBlock;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
-import org.agmas.noellesroles.content.block_entity.scene.CoffinBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.FlamethrowerBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.IncineratorBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.RollingStoneTriggerPlateEntity;
-import org.agmas.noellesroles.content.block_entity.scene.WaterValveBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.WaterPumpBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.FogZoneBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.ManholeBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.PoisonZoneBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.SceneGateBlockEntity;
+import org.agmas.noellesroles.content.block_entity.scene.*;
 
 /**
  * 场景方块注册与" SRE 场景方块"创造标签栏。
@@ -107,9 +93,6 @@ public interface ModSceneBlocks {
 
     BlockEntityType<SceneGateBlockEntity> SCENE_GATE_ENTITY = blockEntityRegistrar.create("scene_gate",
             BlockEntityType.Builder.of(SceneGateBlockEntity::new, SCENE_GATE));
-    Block REACTOR = registerQuestBlock("reactor",
-            new ReactorBlock(Properties.ofFullCopy(Blocks.NETHERITE_BLOCK)
-                    .lightLevel(state -> state.getValue(ReactorBlock.ACTIVE) ? 12 : 0)));
     Block WATER_VALVE = registerQuestBlock("water_valve",
             new WaterValveBlock(Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .noOcclusion()
@@ -120,8 +103,6 @@ public interface ModSceneBlocks {
     Block ROLLING_STONE_TRIGGER = registerBlock("rolling_stone_trigger",
             new RollingStoneTriggerPlate(Properties.ofFullCopy(Blocks.STONE).noOcclusion()));
 
-    BlockEntityType<ReactorBlockEntity> REACTOR_ENTITY = blockEntityRegistrar.create("reactor",
-            BlockEntityType.Builder.of(ReactorBlockEntity::new, REACTOR));
     BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
             BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(
@@ -197,7 +178,7 @@ public interface ModSceneBlocks {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, QUEST_CREATIVE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.noellesroles.quest"))
-                .icon(() -> new ItemStack(REACTOR.asItem()))
+                .icon(() -> new ItemStack(WATER_VALVE.asItem()))
                 .build());
 
         // 将原版黑色混凝土加入 SRE 任务点方块分类

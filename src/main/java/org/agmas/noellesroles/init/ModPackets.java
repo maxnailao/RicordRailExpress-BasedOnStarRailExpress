@@ -240,15 +240,10 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
 
         // 注册移动平台配置网络包
-        PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
+        //PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
+        //ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
         PayloadTypeRegistry.playC2S().register(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket::handle);
-        // TODO: 反应堆/移动平台网络包暂时移除，后续加回
-        // PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
-        // ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
-        // PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
-        // ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
 
         // 五子棋网络包
         PayloadTypeRegistry.playC2S().register(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket.CODEC);
@@ -272,14 +267,6 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(DoudizhuJoinC2SPacket.TYPE, DoudizhuJoinC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(DoudizhuBidC2SPacket.TYPE, DoudizhuBidC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(DoudizhuPlayC2SPacket.TYPE, DoudizhuPlayC2SPacket::handle);
-
-        // 注册反应堆小游戏完成网络包
-        PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
-
-        // 注册水阀小游戏完成网络包
-        PayloadTypeRegistry.playC2S().register(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket.STREAM_CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket::handle);
 
         // 信使邮件包
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.CourierMailSendC2SPacket.TYPE, org.agmas.noellesroles.packet.CourierMailSendC2SPacket.STREAM_CODEC);

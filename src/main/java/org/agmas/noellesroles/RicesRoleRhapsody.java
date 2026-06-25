@@ -42,7 +42,6 @@ import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;

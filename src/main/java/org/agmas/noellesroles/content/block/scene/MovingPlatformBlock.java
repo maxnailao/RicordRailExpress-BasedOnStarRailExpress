@@ -2,7 +2,6 @@ package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
 
-import org.agmas.noellesroles.client.screen.MovingPlatformConfigScreen;
 import org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 
@@ -111,12 +110,8 @@ public class MovingPlatformBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         if (level.isClientSide && player.isCreative()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MovingPlatformBlockEntity mbe) {
-                Minecraft.getInstance().setScreen(new MovingPlatformConfigScreen(
-                        pos, mbe.getDistance(), mbe.getSpeed(), mbe.getCollisionSize()));
-            }
-            return InteractionResult.SUCCESS;
+            // 暂时禁用配置界面，等待实现
+            return InteractionResult.PASS;
         }
         return InteractionResult.PASS;
     }
