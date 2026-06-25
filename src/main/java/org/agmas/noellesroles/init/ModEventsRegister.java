@@ -2060,6 +2060,7 @@ public class ModEventsRegister {
             boolean hasCuckoo = false;
             boolean hasPelican = false;
             boolean hasGodfather = false;
+            boolean hasCorruptCop = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2090,6 +2091,8 @@ public class ModEventsRegister {
                     hasPelican = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.GODFATHER)) {
                     hasGodfather = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.CORRUPT_COP)){
+                    hasCorruptCop = true;
                 }
             }
             if (hasDio) {
@@ -2165,6 +2168,14 @@ public class ModEventsRegister {
                             .translatable("message.noellesroles.nianshou.firecrackers_distributed")
                             .withStyle(net.minecraft.ChatFormatting.GOLD));
                 }
+            }
+            if (hasCorruptCop) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.corrupt_cop.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
             }
         });
         // 监听玩家死亡事件 - 用于激活复仇者能力、斗士反制、跟踪者免疫和操纵师死亡判定

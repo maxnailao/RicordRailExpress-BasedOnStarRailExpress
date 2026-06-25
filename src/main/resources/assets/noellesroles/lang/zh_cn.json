@@ -1,4 +1,4 @@
-{
+﻿{
   "unknown": "未知",
   "sre.general.unknown": "未知",
   "commands.loot.error.execute_fail": "执行失败, 原因:\n %s",
@@ -3282,6 +3282,7 @@
 
 
   "==================== 黑警 ====================": "",
+  "message.noellesroles.corrupt_cop.entry": "有人的警徽上有些许泥泞",
   "announcement.star.role.corrupt_cop": "黑警",
   "announcement.star.goals.corrupt_cop": "杀光所有人，让属于你的正义得到伸张！",
   "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！\n你对观者的强制掉枪免疫\n你存活时，杀手和乘客都无法获胜。\n你可以看到当前场上存活杀手数量\n若场上无杀手阵营，则触发黑警时刻(亡命徒时刻期间不会触发)，你获得一把巡警手枪和一颗手雷，解锁黑警透视视野\n请在黑警时刻结束前处决所有人，祝你好运",
