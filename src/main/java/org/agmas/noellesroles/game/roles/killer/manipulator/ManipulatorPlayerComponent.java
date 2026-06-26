@@ -314,6 +314,13 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
             resetStare();
             return;
         }
+        
+        io.wifi.starrailexpress.cca.SREGameWorldComponent gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level());
+        if (!gameWorld.isRole(sp, org.agmas.noellesroles.role.ModRoles.MANIPULATOR)) {
+            resetStare();
+            return;
+        }
+        
         ServerPlayer candidate = findStareCandidate(sp);
         if (candidate == null) {
             resetStare();

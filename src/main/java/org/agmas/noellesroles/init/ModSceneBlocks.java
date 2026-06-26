@@ -140,8 +140,7 @@ public interface ModSceneBlocks {
 
     BlockEntityType<ReactorBlockEntity> REACTOR_ENTITY = blockEntityRegistrar.create("reactor",
             BlockEntityType.Builder.of(ReactorBlockEntity::new, REACTOR));
-    BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
-            BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
+
     BlockEntityType<DebrisPileBlockEntity> DEBRIS_PILE_ENTITY = blockEntityRegistrar.create("debris_pile",
             BlockEntityType.Builder.of(DebrisPileBlockEntity::new, DEBRIS_PILE));
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(

@@ -228,13 +228,15 @@
       "noellesroles:jade_general",
       "noellesroles:wizard",
       "noellesroles:silencer",
-      "noellesroles:diviner"
+      "noellesroles:diviner",
       "noellesroles:silencer",
       "noellesroles:embalmer",
       "noellesroles:coward",
       "noellesroles:dumb_woman",
       "noellesroles:zhizhang",
-      "noellesroles:guardian"
+      "noellesroles:guardian",
+      "noellesroles:nostalgist",
+      "noellesroles:undead_lord"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
@@ -267,9 +269,5 @@
   },
   "conflicts": {
     "customskinloader": "*"
-  },
-  "breaks": {
-    "sodiumoptionsapi": "*",
-    "sodiumextras": "*"
   }
 }
