@@ -30,6 +30,7 @@ public class OtherRolesRegister {
         MonitorHud.register();
         MorphlingHud.register();
         SilencerHud.register();
+        NostalgistHud.register();
         NianShouHud.register();
         PhantomHud.register();
         PsychologistHud.register();
@@ -61,6 +62,7 @@ public class OtherRolesRegister {
         PhantomMusicianHud.register();
         ZhizhangHud.register();
         GuardianHud.register();
+        UndeadLordHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

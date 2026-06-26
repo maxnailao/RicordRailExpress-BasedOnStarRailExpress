@@ -222,8 +222,13 @@
       "noellesroles:imitator",
       "noellesroles:mortician_bodymaker",
       "noellesroles:phantom_musician",
+      "noellesroles:cupid",
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
+      "noellesroles:jade_general",
+      "noellesroles:wizard",
+      "noellesroles:silencer",
+      "noellesroles:diviner"
       "noellesroles:silencer",
       "noellesroles:embalmer",
       "noellesroles:coward",
@@ -262,5 +267,9 @@
   },
   "conflicts": {
     "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*"
   }
 }

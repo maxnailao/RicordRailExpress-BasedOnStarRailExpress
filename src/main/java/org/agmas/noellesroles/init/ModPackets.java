@@ -89,6 +89,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(SwapperC2SPacket.ID, SwapperC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(VultureEatC2SPacket.ID, VultureEatC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(TryThrowItemPacket.ID, TryThrowItemPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.WizardShieldC2SPacket.ID,
+                org.agmas.noellesroles.packet.WizardShieldC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
@@ -240,10 +242,12 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
 
         // 注册移动平台配置网络包
-        //PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
-        //ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
         PayloadTypeRegistry.playC2S().register(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(HurricaneDeviceConfigC2SPacket.TYPE, HurricaneDeviceConfigC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(TrashCanConfigC2SPacket.TYPE, TrashCanConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(TrashCanConfigC2SPacket.TYPE, TrashCanConfigC2SPacket::handle);
 
         // 五子棋网络包
         PayloadTypeRegistry.playC2S().register(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket.CODEC);
@@ -252,6 +256,15 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(GomokuJoinC2SPacket.TYPE, GomokuJoinC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(GomokuMoveC2SPacket.TYPE, GomokuMoveC2SPacket::handle);
 
+        // 注册反应堆小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
+
+        // 注册水阀小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(WaterValveMinigameCompleteC2SPacket.TYPE, WaterValveMinigameCompleteC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(DebrisPileMinigameCompleteC2SPacket.TYPE, DebrisPileMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DebrisPileMinigameCompleteC2SPacket.TYPE, DebrisPileMinigameCompleteC2SPacket::handle);
         // 象棋网络包
         PayloadTypeRegistry.playC2S().register(XiangqiJoinC2SPacket.TYPE, XiangqiJoinC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(XiangqiMoveC2SPacket.TYPE, XiangqiMoveC2SPacket.CODEC);

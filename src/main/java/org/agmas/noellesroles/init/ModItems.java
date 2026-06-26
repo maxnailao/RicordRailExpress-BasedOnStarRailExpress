@@ -172,17 +172,20 @@ public class ModItems {
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
     public static final Item PAN = register(
-            new PanItem((new Item.Properties()).stacksTo(1)), "pan");
+            new PanItem((new Item.Properties()).stacksTo(1)), "pan",
+            CONSUMABLES_GROUP);
     public static final Item BUCKET_OF_H2SO4 = register(
-            new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4");
+            new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4",
+            CONSUMABLES_GROUP);
     public static final Item LETTER_ITEM = register(
-            new LetterItem((new Item.Properties()).stacksTo(1)), "letter");
+            new LetterItem((new Item.Properties()).stacksTo(1)), "letter",
+            ROLE_ITEMS_GROUP);
     public static final Item NINJA_KNIFE = register(
             new NinjaKnifeItem(new Item.Properties().stacksTo(1)),
-            "ninja_knife");
+            "ninja_knife", WEAPONS_GROUP);
     public static final Item NINJA_SHURIKEN = register(
             new NinjaShurikenItem(new Item.Properties().stacksTo(1)),
-            "ninja_shuriken");
+            "ninja_shuriken", WEAPONS_GROUP);
 
     /**
      * 仁之剑
@@ -191,11 +194,13 @@ public class ModItems {
      */
     public static final Item BENEVOLENCE_SWORD = register(
             new BenevolenceSwordItem(new Item.Properties().stacksTo(1)),
-            "benevolence_sword");
+            "benevolence_sword", WEAPONS_GROUP);
     public static final Item ONCE_REVOLVER = register(
-            new OnceRevolverItem((new Item.Properties()).stacksTo(1).durability(1)), "once_revolver");
+            new OnceRevolverItem((new Item.Properties()).stacksTo(1).durability(1)), "once_revolver",
+            WEAPONS_GROUP);
     public static final Item HANDCUFFS = register(
-            new HandCuffsItem((new Item.Properties()).stacksTo(1)), "handcuffs");
+            new HandCuffsItem((new Item.Properties()).stacksTo(1)), "handcuffs",
+            TOOLS_GROUP);
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
             WEAPONS_GROUP);
@@ -587,6 +592,23 @@ public class ModItems {
     public static final Item DURABILITY_BOAT = register(
             new DurabilityBoatItem(),
             "thenewboat");
+
+    /**
+     * 巫师法杖 / 魔药
+     */
+    public static final Item WIZARD_STAFF = register(
+            new org.agmas.noellesroles.content.item.WizardStaffItem(new Item.Properties().stacksTo(1)),
+            "wizard_staff", ROLE_ITEMS_GROUP);
+    public static final Item WIZARD_POTION = register(
+            new org.agmas.noellesroles.content.item.WizardPotionItem(new Item.Properties().stacksTo(16)),
+            "wizard_potion", ROLE_ITEMS_GROUP);
+
+    /**
+     * 占卜家晶球
+     */
+    public static final Item CRYSTAL_BALL = register(
+            new org.agmas.noellesroles.content.item.CrystalBallItem(new Item.Properties().stacksTo(1)),
+            "crystal_ball", ROLE_ITEMS_GROUP);
     // 新增物品：短管霰弹枪 / 防暴盾 / 警棍 / 对讲机
     public static final Item SHORT_SHOTGUN = register(
             new org.agmas.noellesroles.content.item.ShortShotgunItem(
@@ -797,7 +819,7 @@ public class ModItems {
     public static final Item ZERO_ONE_FIVE_GUN = register(
             new org.agmas.noellesroles.content.item.ZeroOneFiveGunItem(
                     new Item.Properties().stacksTo(1)),
-            "zero_one_five_gun",WEAPONS_GROUP);
+            "zero_one_five_gun", WEAPONS_GROUP);
 
     /**
      * 海盗燧发枪

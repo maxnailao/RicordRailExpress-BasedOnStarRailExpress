@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.imitator;
 
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
@@ -21,7 +22,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
@@ -365,6 +368,41 @@ public class ImitatorSkillRegistry {
             target.displayClientMessage(heard, true);
         }
 
+        // 坚守者式冲击波：击退并眩晕正前方的玩家（眩晕用药水效果实现：定身 + 反胃）
+        NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+        net.minecraft.world.phys.Vec3 lookFlat = new net.minecraft.world.phys.Vec3(
+                player.getLookAngle().x, 0, player.getLookAngle().z);
+        if (lookFlat.lengthSqr() > 1.0e-4) {
+            lookFlat = lookFlat.normalize();
+            double swRange = cfg.noisemakerShockwaveRange;
+            int stunTicks = GameConstants.getInTicks(0, cfg.noisemakerStunSeconds);
+            for (Player target : level.players()) {
+                if (target.equals(player) || !GameUtils.isPlayerAliveAndSurvival(target))
+                    continue;
+                net.minecraft.world.phys.Vec3 to = new net.minecraft.world.phys.Vec3(
+                        target.getX() - player.getX(), 0, target.getZ() - player.getZ());
+                double dist = to.length();
+                if (dist > swRange || dist < 1.0e-4)
+                    continue;
+                // 仅作用于正前方（约 ±72° 扇形）
+                if (lookFlat.dot(to.scale(1.0 / dist)) < 0.3D)
+                    continue;
+                // 击退
+                double strength = cfg.noisemakerShockwaveKnockback;
+                target.push(to.x / dist * strength, 0.42D, to.z / dist * strength);
+                if (target instanceof ServerPlayer stp) {
+                    stp.hurtMarked = true;
+                    stp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(
+                            stp.getId(), stp.getDeltaMovement()));
+                }
+                // 眩晕：定身（无法移动）+ 反胃（画面眩晕感）
+                target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, stunTicks, 0, false, true, true));
+                target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, stunTicks + 40, 0, false, false, true));
+            }
+        }
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 1.0F);
+
         player.addEffect(new MobEffectInstance(MobEffects.LUCK, 120, 0, false, false, false));
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.noisemaker_used")
                 .withStyle(ChatFormatting.AQUA), true);
@@ -561,12 +599,13 @@ public class ImitatorSkillRegistry {
     }
 
     /**
-     * 医生：自我治疗（即时回血 + 再生II + 吸收）
+     * 医生：获得一个解毒剂
      */
     private static void executeDoctor(ServerPlayer player) {
-        player.heal(6.0F); // 即时回复3颗心
-        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1, false, false, true)); // 再生II 10秒
-        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 30 * 20, 0, false, false, true)); // 吸收 30秒
+        ItemStack antidote = new ItemStack(ModItems.ANTIDOTE);
+        if (!player.getInventory().add(antidote)) {
+            player.drop(antidote, false);
+        }
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS,
                 1.0F, 1.5F);
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.doctor_heal")

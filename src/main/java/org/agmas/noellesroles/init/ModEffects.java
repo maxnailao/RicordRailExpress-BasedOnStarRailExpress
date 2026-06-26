@@ -282,6 +282,12 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7B68EE));
 
     /**
+     * 时间回溯恍惚：滞时鬼回溯时所有人短暂获得，触发客户端时空滤镜 shader。
+     */
+    public static final Holder<MobEffect> TIME_REWIND_DAZE = register("time_rewind_daze",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A6BFF));
+
+    /**
      * 聊天混乱：拥有此效果的玩家发送的聊天消息内容会被随机替换为特殊字符
      */
     public static final Holder<MobEffect> CHAT_MUDDLEDNESS = register("chat_muddledness",

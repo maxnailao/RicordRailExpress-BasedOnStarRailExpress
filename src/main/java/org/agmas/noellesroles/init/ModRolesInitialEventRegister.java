@@ -85,6 +85,9 @@ public class ModRolesInitialEventRegister {
 
     public static void register() {
 
+        // 初始化亡灵之主事件（亡者复苏 / 角色初始化）
+        org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordHandler.init();
+
         // ========== 添加：游戏结束时强制重置黑警组件 ==========
         OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
             for (var player : serverLevel.players()) {

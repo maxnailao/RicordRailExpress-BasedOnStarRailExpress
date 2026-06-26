@@ -458,6 +458,25 @@ public class ModPacketsReciever {
       if (comp != null)
         comp.useAbility();
     });
+    // 巫师“盔甲护身”：在背包选择玩家后赋予护盾
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WizardShieldC2SPacket.ID,
+        (payload, context) -> {
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))
+            return;
+          SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(context.player().level());
+          if (payload.player() == null)
+            return;
+          if (!gameWorldComponent.isRole(context.player(), ModRoles.WIZARD))
+            return;
+          var wizard = org.agmas.noellesroles.component.ModComponents.WIZARD.get(context.player());
+          if (wizard.selectedSpell != org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell.ARMOR)
+            return;
+          var target = context.player().level().getPlayerByUUID(payload.player());
+          if (target instanceof ServerPlayer stp) {
+            wizard.grantShieldTo((ServerPlayer) context.player(), stp);
+          }
+        });
+
     // 操纵师数据包处理
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MANIPULATOR_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
@@ -953,6 +972,26 @@ public class ModPacketsReciever {
           if (gameWorldComponent.isRole(player, ModRoles.CREEPER)) {
             CreeperPlayerComponent creeperComponent = CreeperPlayerComponent.KEY.get(player);
             creeperComponent.ignite();
+          }
+        });
+
+    // 交换者 G 键瞬移交换技能：与正前方目标交换位置
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SwapperFrontSwapC2SPacket.ID,
+        (payload, context) -> {
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (RoleSkill.blockForSpectator(context.player()))
+            return;
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+              .get(player.level());
+          if (!gameWorldComponent.isSkillAvailable) {
+            player.displayClientMessage(
+                Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+            return;
+          }
+          if (gameWorldComponent.isRole(player, ModRoles.SWAPPER)) {
+            ModComponents.SWAPPER.get(player).frontSwap(player);
           }
         });
 

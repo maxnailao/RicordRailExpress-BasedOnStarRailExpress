@@ -49,6 +49,7 @@ import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
@@ -63,6 +64,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
+import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
@@ -135,6 +137,14 @@ public class ModRoles {
     public static final AttachmentType<String> ENTITY_NOTE_MAKER = AttachmentRegistry.<String>builder()
             .persistent(Codec.STRING)
             .buildAndRegister(Noellesroles.id("entity_note_maker"));
+
+    /**
+     * 被玉将军飞踢“变老人”的玩家标记：为 true 时无法购买轮椅。
+     * 非持久化（不写入存档），并在每局结束时统一清除。
+     */
+    @SuppressWarnings("deprecation")
+    public static final AttachmentType<Boolean> KICKED_INTO_OLDMAN = AttachmentRegistry.<Boolean>builder()
+            .buildAndRegister(Noellesroles.id("kicked_into_oldman"));
     // ==================== 角色 ID 定义 ====================
     // 建议格式：MOD_ID:role_name
 
@@ -205,6 +215,12 @@ public class ModRoles {
     public static final ResourceLocation MORTICIAN_ID = Noellesroles.id("mortician");
     // 建筑师角色 ID
     public static final ResourceLocation BUILDER_ID = Noellesroles.id("builder");
+    // 玉将军角色 ID
+    public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
+    // 巫师角色 ID
+    public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    // 亡灵之主角色 ID
+    public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
     public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
     public static final ResourceLocation REPAIR_HUNTER_ID = Noellesroles.id("repair_hunter");
     public static final ResourceLocation REPAIR_NEUTRAL_ID = Noellesroles.id("repair_neutral");
@@ -256,6 +272,7 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
+    public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
 
     // 盗猎者角色 ID - 杀手阵营
     public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
@@ -288,6 +305,8 @@ public class ModRoles {
     public static final ResourceLocation SKINCRAWLER_ID = Noellesroles.id("skincrawler");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
+    // 占卜家角色 ID
+    public static final ResourceLocation DIVINER_ID = Noellesroles.id("diviner");
     // 疫使 ID - 杀手方中立
     public static final ResourceLocation INFECTED_ID = Noellesroles.id("infected");
 
@@ -296,6 +315,7 @@ public class ModRoles {
 
     // 幻音师 ID - 杀手方中立
     public static final ResourceLocation PHANTOM_MUSICIAN_ID = Noellesroles.id("phantom_musician");
+    public static final ResourceLocation CUPID_ID = Noellesroles.id("cupid");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
@@ -612,6 +632,58 @@ public class ModRoles {
     )).setCanSeeCoin(true).setComponentKey(ModComponents.BUILDER).setDefaultMax(1)
             .setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(12);
 
+    /**
+     * 玉将军（平民阵营）。
+     * 飞踢（X 技能）：向视线方向位移约五格，可踹开沿途任意房门；踢中目标将其击退两格，
+     * 击退撞墙眩晕 4 秒、否则 2 秒，并附加减速 5 秒；命中有概率使目标变老人（无法购买轮椅），
+     * 踢得越多概率越高（1%→2%→4%→8% 封顶）。释放后清空自身体力条。冷却 90 秒。
+     */
+    public static SRERole JADE_GENERAL = TMMRoles.registerRole(new NormalRole(
+            JADE_GENERAL_ID, // 角色 ID
+            new Color(0, 168, 107).getRGB(), // 玉绿色
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.JADE_GENERAL).setDefaultMax(1)
+            .setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(8);
+
+    /**
+     * 巫师（杀手阵营）。开局携带法杖与魔药；所有金币收入转化为魔素（bossbar）。
+     * 法杖：右键蓄力火焰箭（最多贯穿 2 名、命中即死），左键击退；魔药：大量魔素 + 60 秒一次攻击免疫。
+     * 法术池（潜行+技能键切换，技能键释放）：盔甲护身 / 冰霜震慑 / 笼罩暗影 / Explosion!。
+     */
+    public static SRERole WIZARD = TMMRoles.registerRole(new NormalRole(
+            WIZARD_ID, // 角色 ID
+            new Color(123, 104, 238).getRGB(), // 紫罗兰 - 魔法
+            false, // isInnocent = 杀手阵营
+            true, // canUseKiller = 杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺
+            true // 隐藏计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.WIZARD).setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1).setDefaultEnableChance(2500);
+
+    /**
+     * 亡灵之主（杀手阵营，控场 / 滚雪球）。
+     * 右键尸体发动【亡者复苏】将其转化为无意识亡灵（最多同时 3 个，45 秒冷却）。
+     * 亡灵追击活人并以攻击累积感染值，满值 3 秒后死亡并转化为新的亡灵。
+     * 专属商店：亡灵延命药剂 / 瘟疫之雾 / 亡者召唤符 / 感染增幅器 / 灵魂锁链 / 时之沙漏。
+     */
+    public static SRERole UNDEAD_LORD = TMMRoles.registerRole(
+            new org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordRole(
+                    UNDEAD_LORD_ID, // 角色 ID
+                    new Color(148, 0, 211).getRGB(), // 灰紫色 - 亡灵
+                    false, // isInnocent = 杀手阵营
+                    true, // canUseKiller = 有杀手能力
+                    SRERole.MoodType.FAKE, // 假心情
+                    Integer.MAX_VALUE, // 无限冲刺
+                    true // 隐藏计分板
+            )).setCanSeeCoin(true).setComponentKey(ModComponents.UNDEAD_LORD)
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500)
+            .setDefaultEnableNeededPlayerCount(12);
+
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID
             new Color(175, 245, 130).getRGB(), // 不知道啥颜色
@@ -693,6 +765,17 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanSeeTime(false);
+
+    /**
+     * 占卜家（乘客阵营）。开局携带【晶球】，右键对准尸体占卜得知死者职业与名字（60 秒冷却，每具尸体一次）。
+     * 若占卜对象为亡语杀手伪装的尸体，视为亡语杀手用刀刺死了自己。
+     */
+    public static SRERole DIVINER = TMMRoles.registerRole(
+            new NormalRole(DIVINER_ID, new Color(148, 0, 211).getRGB(), // 紫水晶色
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setComponentKey(ModComponents.DIVINER)
+            .setDefaultMax(1).setDefaultEnableChance(7000);
     // 忍者
     public static final SRERole NINJA = TMMRoles.registerRole(
             new NinjaRole(
@@ -706,6 +789,24 @@ public class ModRoles {
                     .setComponentKey(ModComponents.NINJA)
                     .setCanSeeCoin(true)
                     .setDefaultMax(1));
+
+    /**
+     * 怀旧者（杀手阵营）。
+     * - 处于「里世界」时：视角灰白，对所有阵营隐身、奔跑无声无粒子、不可被看见/听见/攻击；
+     *   但身处里世界无法击杀任何人，只能潜行/开锁/侦察。
+     * - 商店仅出售撬锁器与刀。
+     * - 当场上仅剩怀旧者一名杀手时，里世界崩塌，现身为普通杀手并可正常击杀。
+     */
+    public static SRERole NOSTALGIST = TMMRoles.registerRole(new NostalgistRole(
+            NOSTALGIST_ID, // 角色 ID
+            new Color(150, 160, 170).getRGB(), // 灰白色 - 代表里世界
+            false, // isInnocent = 杀手阵营
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺
+            true // 隐藏计分板
+    )).setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500);
 
     public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
             DELAYER_ID,
@@ -1434,6 +1535,16 @@ public class ModRoles {
             .setCanSeeCoin(true)
             .setDefaultMax(1);
 
+    public static SRERole CUPID = TMMRoles
+            .registerRole(new NormalRole(CUPID_ID, new Color(255, 105, 180).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setComponentKey(ModComponents.CUPID)
+            .setNeutralForKiller(true)
+            .setCanUseInstinct(true)
+            .setCanSeeCoin(true)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(5000).setDefaultEnableNeededPlayerCount(8);
+
     public static SRERole SPELLBREAKER = TMMRoles
             .registerRole(new NormalRole(SPELLBREAKER_ID, (new Color(132, 46, 170)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
@@ -1791,7 +1902,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
-    ));
+    ).setComponentKey(PhotographerPlayerComponent.KEY));
 
     /**
      * 画家角色

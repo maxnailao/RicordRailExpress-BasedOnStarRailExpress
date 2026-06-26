@@ -24,6 +24,7 @@ import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
+import org.agmas.noellesroles.game.roles.innocent.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
@@ -32,6 +33,8 @@ import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPla
 import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
@@ -49,7 +52,6 @@ import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPl
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.UUID;
@@ -81,101 +83,6 @@ public class AbilityHandler {
             return;
         }
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
-            return;
-        }
-        if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
-            var hmpc = HoanMeirinPlayerComponent.KEY.get(player);
-            if (player.hasEffect(MobEffects.LEVITATION)) {
-                player.removeEffect(MobEffects.LEVITATION);
-                player.displayClientMessage(
-                        Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
-                        true);
-                return;
-            } else if (hmpc.cooldown > 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED),
-                        true);
-                return;
-            } else {
-                hmpc.setCooldown(60 * 20);
-                player.displayClientMessage(
-                        Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
-                        true);
-                player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
-                        10 * 20, 1, true, false,
-                        true));
-                return;
-            }
-        }
-        if (gameWorldComponent.isRole(player, RedHouseRoles.MAID_SAKUYA)) {
-            if (abilityPlayerComponent.cooldown > 0 || player.getCooldowns().isOnCooldown(Items.CLOCK)) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                if (TimeStopEffect.tryTriggerStart(player, 20 * 5,
-                        Component.translatable("title.maid_sakuya.timestopper")
-                                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))) {
-                    abilityPlayerComponent.setCooldown(20 * 240);
-                }
-            }
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.JOJO)) {
-            if (abilityPlayerComponent.cooldown > 0 || player.getCooldowns().isOnCooldown(Items.CLOCK)) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                if (TimeStopEffect.tryTriggerStart(player, 20 * 3,
-                        Component.translatable("hud.noellesroles.jojo.the_world")
-                                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))) {
-                    abilityPlayerComponent.setCooldown(20 * 240);
-                }
-            }
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.DIO)) {
-
-            DIOPlayerComponent.KEY.get(player).tryActivateTimeStop();
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.WIND_YAOSE)) {
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                for (var p : player.level().players()) {
-                    if (p.distanceTo(player) <= 30.) {
-                        // 30s
-                        PlayerVolumeComponent.KEY.get(p).setVolume(600, 0.05f);
-                    }
-                }
-                abilityPlayerComponent.setCooldown(20 * 120);
-            }
-            return;
-        }
-
-        if (gameWorldComponent.isRole(player, ModRoles.CLEANER)) {
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(Component.translatable(
-                        "message.noellesroles.cleaner.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                var items = player.level().getEntitiesOfClass(ItemEntity.class,
-                        player.getBoundingBox().inflate(5.), (p) -> true);
-                for (var it : items) {
-                    it.discard();
-                }
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F,
-                        1.0F + player.level().random.nextFloat() * 0.1F - 0.05F);
-                player.displayClientMessage(Component.translatable(
-                        "message.noellesroles.cleaner.cleanned", items.size())
-                        .withStyle(ChatFormatting.GOLD), true);
-                abilityPlayerComponent.setCooldown(20 * 90);
-            }
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)) {
@@ -257,6 +164,46 @@ public class AbilityHandler {
                 recallerPlayerComponent.teleport();
             }
 
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.JADE_GENERAL)
+                && abilityPlayerComponent.cooldown <= 0) {
+            JadeGeneralPlayerComponent jadeGeneral = ModComponents.JADE_GENERAL.get(player);
+            if (jadeGeneral.useSkill()) {
+                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
+                        NoellesRolesConfig.HANDLER.instance().jadeGeneralKickCooldown);
+            }
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.DELAYER)
+                && abilityPlayerComponent.cooldown <= 0) {
+            DelayerPlayerComponent delayer = ModComponents.DELAYER.get(player);
+            if (delayer.isAnchored()) {
+                return; // 已锚定，等待回溯
+            }
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            int cost = NoellesRolesConfig.HANDLER.instance().delayerRewindCost;
+            if (shop.balance < cost) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.delayer.no_money", cost)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            shop.balance -= cost;
+            shop.sync();
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
+                    NoellesRolesConfig.HANDLER.instance().delayerRewindCooldown);
+            delayer.anchor();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.WIZARD)) {
+            WizardPlayerComponent wizard = ModComponents.WIZARD.get(player);
+            if (player.isShiftKeyDown()) {
+                wizard.cycleSpell();
+            } else {
+                wizard.castSelectedSpell();
+            }
+            return;
         }
 
         //回溯杀手技能
@@ -521,6 +468,11 @@ public class AbilityHandler {
             } else {
                 comp.useActiveAbility(player, null);
             }
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.NOSTALGIST)) {
+            // 里世界中按技能键：主动让里世界崩塌并现身
+            ModComponents.NOSTALGIST.get(player).tryManualCollapse(player);
             return;
         }
         // 处理超级亡命徒技能

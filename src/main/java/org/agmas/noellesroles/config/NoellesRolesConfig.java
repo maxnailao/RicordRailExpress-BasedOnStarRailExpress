@@ -313,6 +313,147 @@ public class NoellesRolesConfig implements ConfigData {
     public int recallerTeleportCooldown = 30;
 
     /**
+     * Nostalgist (怀旧者) - Interval in seconds between passive coin payouts while in the back world
+     */
+    public int nostalgistBackWorldIncomeInterval = 60;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted each passive payout while in the back world
+     */
+    public int nostalgistBackWorldIncomeAmount = 50;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted when leaving the back world (manual or forced collapse)
+     */
+    public int nostalgistCollapseReward = 100;
+
+    /**
+     * Jade General (玉将军) - Flying kick cooldown in seconds
+     */
+    public int jadeGeneralKickCooldown = 90;
+
+    /**
+     * Jade General - Flying kick displacement distance in blocks
+     */
+    public int jadeGeneralDashBlocks = 5;
+
+    /**
+     * Jade General - Knockback distance applied to a kicked target in blocks
+     */
+    public int jadeGeneralKnockbackBlocks = 2;
+
+    /**
+     * Jade General - Stun seconds when the knocked-back target hits a wall
+     */
+    public int jadeGeneralStunCollideSeconds = 4;
+
+    /**
+     * Jade General - Stun seconds when the knocked-back target does not hit a wall
+     */
+    public int jadeGeneralStunSeconds = 2;
+
+    /**
+     * Jade General - Slowness seconds applied to a kicked target
+     */
+    public int jadeGeneralSlowSeconds = 5;
+
+    // ==================== Diviner (占卜家) ====================
+    /** Diviner - Divination cooldown in seconds */
+    public int divinerCooldown = 60;
+    /** Diviner - Crystal ball targeting range in blocks */
+    public double divinerRange = 4.0;
+
+    // ==================== Photographer (摄影师) 画框传送 ====================
+    /** Photographer - 画框单价（金币） */
+    public int photographerFramePrice = 200;
+    /** Photographer - 每局最多购买画框次数 */
+    public int photographerFrameMaxBuy = 2;
+    /** Photographer - 穿越画框赋予的失明秒数 */
+    public int photographerFrameBlindSeconds = 3;
+    /** Photographer - 穿越画框后的冷却秒数 */
+    public int photographerFrameCooldownSeconds = 3;
+    /** Photographer - 触发穿越的画框碰撞箱外扩距离（方块） */
+    public double photographerFrameTriggerInflate = 0.25;
+
+    // ==================== Delayer (滞时鬼) ====================
+    /** Delayer - Rewind skill: seconds between anchoring and the automatic rewind */
+    public int delayerRewindDelaySeconds = 8;
+    /** Delayer - Rewind skill cooldown in seconds */
+    public int delayerRewindCooldown = 120;
+    /** Delayer - Rewind skill coin cost */
+    public int delayerRewindCost = 75;
+    /** Delayer - Duration (seconds) of the daze/shader filter applied to everyone on rewind */
+    public int delayerDazeSeconds = 3;
+
+    // ==================== Wizard (巫师) ====================
+    /** Wizard - Max mana (魔素) capacity */
+    public int wizardMaxMana = 100;
+    /** Wizard - Mana gained per coin of income (all coins convert to mana) */
+    public int wizardManaPerCoin = 1;
+    /** Wizard - Passive mana regen per second */
+    public int wizardPassiveManaPerSecond = 1;
+    /** Wizard - Staff left-click knockback strength */
+    public double wizardStaffKnockback = 1.2;
+    /** Wizard - Fire arrow max range in blocks */
+    public double wizardFireArrowRange = 30.0;
+    /** Wizard - Max players a single fire arrow can pierce (instant kill on hit) */
+    public int wizardFireArrowMaxPierce = 2;
+    /** Wizard - Armor (shield) spell mana cost */
+    public int wizardArmorCost = 20;
+    /** Wizard - Granted shield (armor) lifetime in seconds before it expires */
+    public int wizardShieldDurationSeconds = 30;
+    /** Wizard - Frost spell mana cost */
+    public int wizardFrostCost = 30;
+    /** Wizard - Frost spell freeze duration in seconds */
+    public int wizardFrostSeconds = 4;
+    /** Wizard - Frost spell effect range in blocks */
+    public double wizardFrostRange = 8.0;
+    /** Wizard - Shadow (blindness) spell mana cost */
+    public int wizardShadowCost = 25;
+    /** Wizard - Shadow spell blindness duration in seconds */
+    public int wizardShadowSeconds = 6;
+    /** Wizard - Extra mana drained per second to sustain shadow during a blackout */
+    public int wizardShadowBlackoutDrainPerSecond = 5;
+    /** Wizard - Explosion! spell mana cost */
+    public int wizardExplosionCost = 40;
+    /** Wizard - Nine-ring fireball max travel range in blocks */
+    public double wizardFireballRange = 25.0;
+    /** Wizard - Nine-ring fireball explosion radius in blocks */
+    public double wizardFireballRadius = 4.0;
+    /** Wizard - Max players killed by one nine-ring fireball */
+    public int wizardFireballMaxKills = 8;
+    /** Wizard - Potion cooldown in seconds */
+    public int wizardPotionCooldown = 30;
+    /** Wizard - Mana gained from drinking a potion */
+    public int wizardPotionManaGain = 50;
+    /** Wizard - Potion attack-immunity window in seconds */
+    public int wizardPotionImmuneSeconds = 60;
+
+    // ==================== Undead Lord (亡灵之主) ====================
+    /** Undead Lord - Raise-from-corpse skill cooldown in seconds */
+    public int undeadLordReviveCooldownSeconds = 45;
+    /** Undead Lord - Max undead raised from corpses that can coexist (skill cap) */
+    public int undeadLordMaxActive = 3;
+    /** Undead Lord - Absolute hard cap of simultaneous undead (incl. conversions/charm) */
+    public int undeadLordHardCap = 8;
+    /** Undead Lord - Infection decay per second (percent) */
+    public double undeadLordInfectionDecayPerSecond = 2.0;
+    /** Undead Lord - Delay (seconds) between reaching 100% infection and death */
+    public int undeadLordInfectionDeathDelaySeconds = 3;
+    /** Undead Lord - Plague Fog duration in seconds */
+    public int undeadLordFogSeconds = 10;
+    /** Undead Lord - Plague Fog radius in blocks */
+    public double undeadLordFogRadius = 4.0;
+    /** Undead Lord - Plague Fog infection added per second to players inside */
+    public double undeadLordFogInfectPerSecond = 5.0;
+    /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
+    public int undeadLordCharmLifetimeSeconds = 45;
+    /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
+    public int undeadLordAmpSeconds = 60;
+    /** Undead Lord - Soul Chain follow duration in seconds */
+    public int undeadLordSoulChainSeconds = 20;
+
+    /**
      * Phantom - Invisibility duration in seconds
      */
 
@@ -341,6 +482,19 @@ public class NoellesRolesConfig implements ConfigData {
      */
 
     public int swapperSwapCooldown = 60;
+
+    /** Swapper - G 键瞬移交换：与正前方目标交换位置的冷却（秒） */
+    public int swapperFrontSwapCooldown = 120;
+    /** Swapper - G 键瞬移交换：可作用的最大距离（格） */
+    public double swapperFrontSwapRange = 10.0;
+
+    // ==================== Noisemaker (大嗓门) 冲击波 ====================
+    /** 大嗓门 - 冲击波击退前方玩家的作用距离（格） */
+    public double noisemakerShockwaveRange = 8.0;
+    /** 大嗓门 - 冲击波水平击退强度 */
+    public double noisemakerShockwaveKnockback = 1.4;
+    /** 大嗓门 - 冲击波眩晕（定身）秒数 */
+    public int noisemakerStunSeconds = 2;
 
     /**
      * Manipulator - Control target cooldown in seconds

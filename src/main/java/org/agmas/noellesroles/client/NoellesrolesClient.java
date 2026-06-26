@@ -129,6 +129,9 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static KeyMapping roleIntroClientBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".role_intro",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "category.starrailexpress.keybinds"));
+    public static KeyMapping mapIntroClientBind = KeyBindingHelper
+            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".map_intro",
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_MINUS, "category.starrailexpress.keybinds"));
     public static KeyMapping roleGuessNoteClientBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".guess_role_note",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, "category.starrailexpress.keybinds"));
@@ -328,6 +331,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.render.EmptyEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MUMMY,
                 net.minecraft.client.renderer.entity.HuskRenderer::new);
+        EntityRendererRegistry.register(ModEntities.UNDEAD,
+                org.agmas.noellesroles.client.renderer.UndeadEntityRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
 
@@ -516,6 +521,12 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             });
         });
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroSyncPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen screen) {
+                        screen.updateFromPacket(payload);
+                    }
+                }));
 
         ClientPlayNetworking.registerGlobalReceiver(BreakArmorPayload.ID, (payload, context) -> {
             final var client = context.client();
@@ -1111,6 +1122,14 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (roleIntroClientBind.consumeClick()) {
                 client.execute(() -> {
                     client.setScreen(new RoleIntroduceScreen(client.player));
+                });
+            }
+            if (mapIntroClientBind.consumeClick()) {
+                client.execute(() -> {
+                    io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen screen =
+                            new io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen();
+                    client.setScreen(screen);
+                    ClientPlayNetworking.send(new io.wifi.starrailexpress.network.MapIntroRequestPayload());
                 });
             }
             boolean abilityPressed = abilityBind.consumeClick();

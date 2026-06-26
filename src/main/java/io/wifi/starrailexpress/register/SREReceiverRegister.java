@@ -11,7 +11,13 @@ import io.wifi.starrailexpress.network.packet.ModVersionPacket;
 import io.wifi.starrailexpress.scenery.network.SceneAssetNetwork;
 import org.agmas.noellesroles.game.modes.fourthroom.network.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 
 /**
  * 服务端网络包接收器注册，从 {@link SRE#onInitialize()} 中按类别剥离归一化而来。
@@ -50,6 +56,8 @@ public class SREReceiverRegister {
         // 实体交互方块服务端网络处理
         EntityInteractionBlockServerNetwork.register();
         MinigameQuestServerNetwork.register();
+        TicketOfficeServerNetwork.register();
+        EffectGeneratorServerNetwork.register();
         // 画板服务端网络处理
         DrawingBoardServerNetwork.register();
         ServerPlayNetworking.registerGlobalReceiver(SecurityCameraExitRequestPayload.ID,
@@ -101,6 +109,8 @@ public class SREReceiverRegister {
                         }
                     });
                 });
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroRequestPayload.ID,
+                (payload, context) -> context.server().execute(() -> sendMapIntro(context.player())));
 
         // Mailbox receivers
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
@@ -152,6 +162,53 @@ public class SREReceiverRegister {
 
                     executeDialogueCommand(context, line.command, line.runsOnServer());
                 });
+    }
+
+    private static void sendMapIntro(ServerPlayer player) {
+        ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.MapJson> maps = new ArrayList<>();
+        ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap> voteMaps = new ArrayList<>();
+        Path mapsDir = player.server.getWorldPath(LevelResource.ROOT)
+                .resolve("train_maps")
+                .toAbsolutePath()
+                .normalize();
+        for (String mapId : io.wifi.starrailexpress.game.MapManager.getAvailableMaps(player.serverLevel(), true)) {
+            try {
+                Path path = mapsDir.resolve(mapId + ".json").normalize();
+                if (!path.startsWith(mapsDir) || !Files.isRegularFile(path)) {
+                    continue;
+                }
+                maps.add(new io.wifi.starrailexpress.network.MapIntroSyncPayload.MapJson(
+                        mapId,
+                        Files.readString(path, StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                SRE.LOGGER.warn("Failed to read map intro json for {}", mapId, e);
+            }
+        }
+        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
+                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
+        if (mapConfig.getMaps() != null) {
+            for (io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry : mapConfig.getMaps()) {
+                if (entry == null || entry.id == null || entry.id.isBlank()) {
+                    continue;
+                }
+                voteMaps.add(new io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap(
+                        entry.id,
+                        entry.displayName,
+                        entry.minCount,
+                        entry.maxCount,
+                        entry.canSelect,
+                        entry.gameModes == null ? java.util.List.of() : entry.gameModes));
+            }
+        }
+        org.agmas.noellesroles.config.NoellesRolesConfig config =
+                org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance();
+        ServerPlayNetworking.send(player, new io.wifi.starrailexpress.network.MapIntroSyncPayload(
+                maps,
+                voteMaps,
+                config.maChenXuMaps,
+                config.swastMaps,
+                config.underwaterRolesMaps,
+                config.airRolesMaps));
     }
 
     private static void executeDialogueCommand(ServerPlayNetworking.Context context, String command,

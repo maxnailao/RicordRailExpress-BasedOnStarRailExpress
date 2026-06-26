@@ -213,6 +213,19 @@ public class ModEntities {
     // .build());
 
     /**
+     * 亡灵实体 - 亡灵之主召唤的无意识亡灵（玩家外观 + 追击感染 AI）
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<UndeadEntity> UNDEAD = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("undead"),
+            FabricEntityTypeBuilder.<UndeadEntity>create(MobCategory.MISC, UndeadEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 锁实体 - 保护门不被撬锁器打开
      */
     @SuppressWarnings("deprecation")
@@ -363,5 +376,6 @@ public class ModEntities {
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
         FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
+        FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());
     }
 }
