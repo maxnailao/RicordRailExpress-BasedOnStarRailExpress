@@ -622,6 +622,10 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.BatonItem(
                     new Item.Properties().stacksTo(1).durability(4)),
             "baton", WEAPONS_GROUP);
+    public static final Item BONE_STAFF = register(
+            new org.agmas.noellesroles.content.item.BoneStaffItem(
+                    new Item.Properties().stacksTo(1).durability(5)),
+            "bone_staff", WEAPONS_GROUP);
     public static final Item RADIO = register(
             new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
             "radio", TOOLS_GROUP);

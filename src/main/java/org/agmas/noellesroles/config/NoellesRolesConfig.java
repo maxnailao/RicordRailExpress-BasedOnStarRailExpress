@@ -452,6 +452,12 @@ public class NoellesRolesConfig implements ConfigData {
     public int undeadLordAmpSeconds = 60;
     /** Undead Lord - Soul Chain follow duration in seconds */
     public int undeadLordSoulChainSeconds = 20;
+    /** Undead Lord - Bone Staff durability (number of hits) */
+    public int undeadLordBoneStaffDurability = 5;
+    /** Undead Lord - Bone Staff infection added per hit (0~100) */
+    public double undeadLordBoneStaffInfection = 20.0;
+    /** Undead Lord - Bone Staff shop price */
+    public int undeadLordBoneStaffPrice = 130;
 
     /**
      * Phantom - Invisibility duration in seconds

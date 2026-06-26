@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 亡灵之主（杀手阵营，控场 / 滚雪球）。
- * 专属商店出售亡灵延命药剂、瘟疫之雾、亡者召唤符、感染增幅器、灵魂锁链、时之沙漏。
+ * 专属商店出售骨杖、亡灵延命药剂、瘟疫之雾、亡者召唤符、感染增幅器、灵魂锁链、时之沙漏。
  */
 public class UndeadLordRole extends NormalRole {
 
@@ -37,6 +37,10 @@ public class UndeadLordRole extends NormalRole {
     @Override
     public List<ShopEntry> getShopEntries() {
         List<ShopEntry> entries = new ArrayList<>();
+
+        // 骨杖：近战武器，攻击玩家时为其注入感染值（5 点耐久）
+        entries.add(new ShopEntry(org.agmas.noellesroles.init.ModItems.BONE_STAFF.getDefaultInstance(),
+                config().undeadLordBoneStaffPrice, ShopEntry.Type.WEAPON));
 
         // 亡灵延命药剂：所有现存亡灵 +30 秒
         entries.add(effectEntry(Items.GLISTERING_MELON_SLICE, 80, "life_elixir", comp -> {
