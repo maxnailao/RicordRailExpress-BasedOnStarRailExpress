@@ -1,9 +1,7 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
-import io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -50,14 +48,20 @@ public class DebrisPileBlock extends BaseEntityBlock implements TaskInstinctShow
             BlockHitResult hit) {
         if (level.isClientSide) {
             if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
-                Minecraft.getInstance().setScreen(new PhysicalQuestMinigameScreen(pos,
-                        () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                                new org.agmas.noellesroles.packet.DebrisPileMinigameCompleteC2SPacket(pos)),
-                        PhysicalQuestMinigameScreen.Kind.EXTINGUISH));
+                openDebrisPileScreen(pos);
             }
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
+    }
+
+    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    private void openDebrisPileScreen(BlockPos pos) {
+        net.minecraft.client.Minecraft.getInstance().setScreen(
+                new io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen(pos,
+                        () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                                new org.agmas.noellesroles.packet.DebrisPileMinigameCompleteC2SPacket(pos)),
+                        io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen.Kind.EXTINGUISH));
     }
 
     @Nullable
