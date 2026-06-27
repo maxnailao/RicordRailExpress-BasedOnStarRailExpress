@@ -146,7 +146,7 @@
     "client.C4ItemEntityRendererMixin",
     "client.AbstractClientPlayerSkinMixin",
     "client.SkincrawlerRoleNameRendererMixin",
-    "client.FishingBobberRendererMixin"
+    "client.FishingBobberRendererMixin",
     "client.AmonRoleNameRendererMixin",
     "game.PelicanAliveCheckMixin"
   ],

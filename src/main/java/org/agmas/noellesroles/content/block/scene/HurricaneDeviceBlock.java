@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
+import net.minecraft.client.Minecraft;
+import org.agmas.noellesroles.client.screen.HurricaneDeviceConfigScreen;
 import org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 
