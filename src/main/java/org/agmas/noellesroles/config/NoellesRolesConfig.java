@@ -409,6 +409,8 @@ public class NoellesRolesConfig implements ConfigData {
     public int wizardFireArrowHitsToKill = 2;
     /** Wizard - Fire arrow delayed death seconds after enough hits */
     public int wizardFireArrowDeathDelaySeconds = 3;
+    /** Wizard - Fire arrow (staff projectile) cooldown in seconds between shots */
+    public double wizardFireArrowCooldownSeconds = 2.0;
     /** Wizard - Armor spell minimum mana to cast */
     public int wizardArmorMinMana = 200;
     /** Wizard - Granted shield (armor) lifetime in seconds before it expires */
@@ -465,12 +467,16 @@ public class NoellesRolesConfig implements ConfigData {
     public double undeadLordFogInfectPerSecond = 5.0;
     /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
     public int undeadLordCharmLifetimeSeconds = 45;
+    /** Undead Lord - Soul Summon Charm cooldown in seconds */
+    public int undeadLordCharmCooldownSeconds = 60;
     /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
     public int undeadLordAmpSeconds = 60;
     /** Undead Lord - Coins awarded each time infection is successfully injected (bone staff / undead attack); 0 disables */
     public int undeadLordInfectionCoinReward = 100;
     /** Undead Lord - Bone Staff durability (number of hits) */
     public int undeadLordBoneStaffDurability = 5;
+    /** Undead Lord - Bone Staff recharge time in seconds after durability is depleted (refills to full, never breaks) */
+    public int undeadLordBoneStaffRechargeSeconds = 40;
     /** Undead Lord - Bone Staff infection added per hit (0~100) */
     public double undeadLordBoneStaffInfection = 20.0;
     /** Undead Lord - Bone Staff shop price */

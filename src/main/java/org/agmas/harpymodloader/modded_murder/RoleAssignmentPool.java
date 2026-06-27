@@ -64,7 +64,8 @@ public class RoleAssignmentPool {
      */
     private static RoleAssignmentPool createInternal(String poolName, Predicate<SRERole> filter,
             boolean allowUnlimitedRepeats) {
-        // 职业轮换名单启用时，由名单接管职业的启用/禁用与数量（取代 disabled 列表 / ROLE_MAX）
+        // 职业轮换名单启用时，名单只作为职业的“开关”（取代 disabled 列表决定启用/禁用），
+        // 不再接管具体名额——名额沿用职业注册时的 defaultMaxCount，权重沿用注册权重。
         boolean rosterActive = RoleRosterManager.isEnabled();
         RoleRosterState roster = rosterActive ? RoleRosterManager.getState() : null;
 
@@ -77,7 +78,7 @@ public class RoleAssignmentPool {
                 return true;
             }
             if (rosterActive) {
-                // 名单接管：忽略 harpy 的 disabled 列表，但地图限制仍然生效——
+                // 名单作为开关：忽略 harpy 的 disabled 列表，但地图限制仍然生效——
                 // 被本回合地图限制挡在当前地图之外的职业必须排除，避免地图特定职业泄漏。
                 if (MapRestrictionGate.isRoleForbidden(role.identifier())) {
                     return true;
@@ -107,8 +108,12 @@ public class RoleAssignmentPool {
                 // 无限模式：使用大数字表示无限
                 countMap.put(role.identifier(), Integer.MAX_VALUE);
             } else if (rosterActive) {
-                // 名单接管：使用名单中配置的数量
-                countMap.put(role.identifier(), Math.max(1, roster.countFor(role.identifier().toString())));
+                // 名单只作为“开关”：是否参与分配由上面的过滤决定（仅保留名单内职业）。
+                // 具体名额不再由名单接管，而是采用职业注册时的名额（defaultMaxCount），
+                // 配合注册权重（roleWeights / ModdedWeights）参与加权随机——相当于开关职业，而非直接接管分配。
+                // defaultMaxCount==-1（声明“不调整刷新数量”）或 <=0（默认关闭，如阿蒙）时，开启即给 1 个名额。
+                int registeredMax = role.defaultMaxCount;
+                countMap.put(role.identifier(), registeredMax <= 0 ? 1 : registeredMax);
             } else {
                 // 正常模式：使用ROLE_MAX配置或默认值1
                 countMap.put(role.identifier(), Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1));

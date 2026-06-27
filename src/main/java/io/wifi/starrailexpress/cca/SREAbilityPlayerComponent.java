@@ -333,8 +333,6 @@ public class SREAbilityPlayerComponent
         List<RoleSkill.Definition> definitions = RoleSkill.getDefinitions(role);
         if (!definitions.isEmpty()) {
             mirrorSelectedSkill(definitions);
-        } else if (this.cooldown > 1) {
-            this.cooldown--;
         }
 
         if (SREGameWorldComponent.KEY.get(this.player.level()).isRunning()) {

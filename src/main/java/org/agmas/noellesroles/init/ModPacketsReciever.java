@@ -523,6 +523,20 @@ public class ModPacketsReciever {
       }
     });
 
+    // 阿蒙背包点选玩家包：附身到点选的成熟宿主身上（进入附身）。校验由 setPossessTarget 内部处理。
+    ServerPlayNetworking.registerGlobalReceiver(ModPackets.AMON_SELECT_TARGET_PACKET, (payload, context) -> {
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
+        return;
+      if (payload.player() == null)
+        return;
+      SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+          .get(context.player().level());
+      if (gameWorldComponent.isRole(context.player(), ModRoles.AMON)) {
+        org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY
+            .get(context.player()).setPossessTarget(payload.player());
+      }
+    });
+
     // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {

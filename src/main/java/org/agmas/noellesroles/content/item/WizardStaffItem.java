@@ -23,7 +23,7 @@ import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
  */
 public class WizardStaffItem extends Item implements ChargeableItem, SREItemProperties.LeftClickHurtable {
 
-    private static final int MAX_CHARGE_TICKS = 20;
+    private static final int MAX_CHARGE_TICKS = 14;
 
     public WizardStaffItem(Properties properties) {
         super(properties);

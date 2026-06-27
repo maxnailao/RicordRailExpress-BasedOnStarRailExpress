@@ -11,6 +11,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
+import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
 import org.agmas.noellesroles.role.ModRoles;
@@ -56,6 +57,29 @@ public class NRModifiers {
             false))
             .setDefaultMax(1)
             .setDefaultEnableChance(2000);
+
+    /** 饥渴修饰符：可从食物盘和饮料盘各拿取至多2份食物和2份饮料 */
+    public static SREModifier HUNGRY = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("hungry"),
+            0xE05A47, // 红橙色 - 代表食欲
+            null,
+            null,
+            false,
+            false))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(5000);
+
+    /** 沙哑修饰符：嗓音十分低沉 */
+    public static SREModifier HOARSE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("hoarse"),
+            0x8B7355, // 棕灰色 - 代表沙哑
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent((p) -> HoarseModifier.serverTick(p))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(5000);
 
     /**
      * 初始化修饰符系统

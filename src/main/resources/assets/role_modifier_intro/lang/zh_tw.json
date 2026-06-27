@@ -168,6 +168,8 @@
   "info.screen.modifier.paranoid": "修飾符\n你的耳邊會時不時傳來奇怪的聲音。",
   "info.screen.modifier.introverted": "修飾符\n你討厭身處人群之中。\n如果在你周圍5格範圍內有超過2名玩家時，你的san值會下降得更快。\n如果你獨處或只有一名玩家在附近時，你的san值不會下降。",
   "info.screen.modifier.taxed": "修飾符\n你從擊殺和被動收入中獲得的金幣減少25%%。",
+  "info.screen.modifier.hungry": "修飾符\n你十分飢渴。\n可以從食物盤和飲料盤各拿取至多2份食物和2份飲料（普通玩家各只能拿1份）。",
+  "info.screen.modifier.hoarse": "修飾符\n你的嗓音十分低沉沙啞，其他玩家聽到的語音也會被壓低。",
   "info.screen.modifier.last_gasp": "修飾符\n被其他玩家擊殺時，獲得3秒無敵效果後死亡，期間你無法移動也無法幹任何事。\n（不受列車墜落和掛機死亡影響）",
   "info.screen.modifier.rebel": "修飾符\n僅在平民陣營刷新，玩家不會知道自己擁有起義軍修飾符\n被同陣營的玩家誤殺時，轉變為叛徒。\n起義軍觸發時會全場通報。\n（同一個玩家每局遊戲僅觸發一次）",
   "info.screen.modifier.desperate_faith": "修飾符\n僅在殺手陣營刷新\n當你成為唯一的殺手時，獲得：\n- +100 金幣\n- 永久的速度II和急迫V\n- 刀冷卻時間減少50%%",

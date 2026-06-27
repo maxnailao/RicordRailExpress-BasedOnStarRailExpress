@@ -20,6 +20,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -133,13 +135,19 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         if (bellyPlayerIds.contains(target.getUUID())) return false;
         if (PelicanManager.isStashed(target)) return false;
 
-        // 不能吞噬鹈鹕、亡命徒、黑白角色和双重人格
+        // 不能吞噬鹈鹕、渡鸦、亡命徒、黑白角色和双重人格
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorld.isRole(target, ModRoles.PELICAN)) return false;
+        if (gameWorld.isRole(target, ModRoles.RAVEN)) return false;
         if (gameWorld.isRole(target, ModRoles.MONOKUMA)) return false;
         if (gameWorld.isRole(target, TMMRoles.LOOSE_END)) return false;
         WorldModifierComponent worldModifier = WorldModifierComponent.KEY.get(target.level());
         if (worldModifier.isModifier(target, SEModifiers.SPLIT_PERSONALITY)) return false;
+
+        // 不能吞噬傀儡师及其操控的傀儡（参考教父 MafiaManager.isRecruitable）
+        if (gameWorld.isRole(target, ModRoles.PUPPETEER)) return false;
+        var puppeteerComp = ModComponents.PUPPETEER.get(target);
+        if (puppeteerComp != null && puppeteerComp.isControllingPuppet) return false;
 
         // 吞噬玩家
         PelicanManager.stashPlayer(sp, target);

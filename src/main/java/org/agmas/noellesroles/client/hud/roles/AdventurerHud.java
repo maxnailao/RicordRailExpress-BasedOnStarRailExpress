@@ -20,7 +20,7 @@ public final class AdventurerHud {
             var font = Minecraft.getInstance().font;
 
             context.drawString(font,
-                    Component.translatable("hud.noellesroles.adventurer.immunities", adv.immunities),
+                    Component.translatable("hud.noellesroles.adventurer.immunities"),
                     x, y, 0x55FF55);
 
             if (adv.waypointCooldown > 0) {

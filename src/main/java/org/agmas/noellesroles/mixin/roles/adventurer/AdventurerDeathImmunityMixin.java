@@ -17,13 +17,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Intercepts environmental force-kills for the Adventurer role.
  * Targets GameUtils.killPlayer — the single choke-point all forceKill paths pass through.
  */
-@Mixin(value = GameUtils.class, remap = false)
+@Mixin(GameUtils.class)
 public abstract class AdventurerDeathImmunityMixin {
 
     @Inject(method = "killPlayer(Lnet/minecraft/world/entity/player/Player;Z"
             + "Lnet/minecraft/world/entity/player/Player;"
             + "Lnet/minecraft/resources/ResourceLocation;Z)V",
-            at = @At("HEAD"), cancellable = true, remap = false)
+            at = @At("HEAD"), cancellable = true)
     private static void noellesroles$adventurerDeathImmunity(
             Player victim, boolean spawnBody, Player _killer,
             ResourceLocation deathReason, boolean forceDeath, CallbackInfo ci) {
@@ -37,7 +37,7 @@ public abstract class AdventurerDeathImmunityMixin {
         AdventurerPlayerComponent adv = ModComponents.ADVENTURER.get(sp);
         if (adv == null) return;
 
-        if (adv.consumeImmunity(deathReason)) {
+        if (adv.blockEnvironmentalDeath(deathReason)) {
             ci.cancel();
         }
     }

@@ -21,6 +21,7 @@ public class ModPackets {
     public static final CustomPacketPayload.Type<VultureEatC2SPacket> VULTURE_PACKET = VultureEatC2SPacket.ID;
     public static final CustomPacketPayload.Type<ThiefStealC2SPacket> THIEF_PACKET = ThiefStealC2SPacket.ID;
     public static final CustomPacketPayload.Type<ManipulatorC2SPacket> MANIPULATOR_PACKET = ManipulatorC2SPacket.ID;
+    public static final CustomPacketPayload.Type<AmonSelectTargetC2SPacket> AMON_SELECT_TARGET_PACKET = AmonSelectTargetC2SPacket.ID;
 
     public static final CustomPacketPayload.Type<ExecutionerSelectTargetC2SPacket> EXECUTIONER_SELECT_TARGET_PACKET = ExecutionerSelectTargetC2SPacket.ID;
     public static final CustomPacketPayload.Type<InsaneKillerAbilityC2SPacket> INSANE_KILLER_ABILITY_PACKET = InsaneKillerAbilityC2SPacket.ID;
@@ -93,6 +94,7 @@ public class ModPackets {
                 org.agmas.noellesroles.packet.WizardShieldC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WizardSwitchSpellC2SPacket.ID, WizardSwitchSpellC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(AmonSelectTargetC2SPacket.ID, AmonSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);

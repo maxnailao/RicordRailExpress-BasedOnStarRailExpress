@@ -167,6 +167,8 @@
   "info.screen.modifier.paranoid": "Modifier\nStrange sounds occasionally echo in your ears.",
   "info.screen.modifier.introverted": "Modifier\nYou dislike being in crowds.\nIf more than 2 players are within 5 blocks, sanity drains faster.\nIf alone or only one player nearby, sanity does not drain.",
   "info.screen.modifier.taxed": "Modifier\nCoins earned from kills and passive income reduced by 25%%.",
+  "info.screen.modifier.hungry": "Modifier\nYou are ravenous.\nYou may take up to 2 foods and 2 drinks from the food and drink platters (ordinary players may take only 1 each).",
+  "info.screen.modifier.hoarse": "Modifier\nYour voice is deep and hoarse; other players hear your voice lowered too.",
   "info.screen.modifier.last_gasp": "Modifier\nWhen killed by another player, you gain a 3-second invulnerability effect before dying.\n(Unaffected by train falls and AFK deaths)",
   "info.screen.modifier.rebel": "Modifier\nOnly appears in Civilian faction. Player does not know they have Rebel modifier.\nWhen killed by a teammate (Civilian/Patroller), transforms into Traitor.\nGlobal announcement on trigger.\n(Once per game per player)",
   "info.screen.modifier.desperate_faith": "Modifier\nOnly appears in Killer faction.\nWhen you become the only Killer alive, gain:\n- +100 coins\n- Permanent Speed II and Haste V\n- Knife cooldown reduced by 50%%",

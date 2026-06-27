@@ -27,8 +27,8 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
     public static final ComponentKey<AdventurerPlayerComponent> KEY =
             ComponentRegistry.getOrCreate(Noellesroles.id("adventurer"), AdventurerPlayerComponent.class);
 
-    private static final int MAX_IMMUNITIES = 3;
-    private static final int IMMUNITY_COOLDOWN_TICKS = 70; // 3.5 s
+    /** 节流提示信息的间隔（仅用于避免持续性危害刷屏，不影响免疫本身）。 */
+    private static final int MESSAGE_COOLDOWN_TICKS = 70; // 3.5 s
     private static final int WAYPOINT_COOLDOWN_TICKS = 120 * 20;
     private static final int WAYPOINT_DURATION_TICKS = 180 * 20; // 3 minutes
 
@@ -51,11 +51,10 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
     }
 
     private final Player player;
-    public int immunities;
     public int waypointCooldown;
     public int waypointTimer; // remaining ticks until auto-off, 0 = inactive
-    /** Per-death-reason cooldown remaining (ticks). */
-    public final Map<ResourceLocation, Integer> immunityCooldowns = new HashMap<>();
+    /** Per-death-reason message throttle remaining (ticks); immunity itself is unconditional. */
+    public final Map<ResourceLocation, Integer> messageCooldowns = new HashMap<>();
 
     public AdventurerPlayerComponent(Player player) {
         this.player = player;
@@ -67,10 +66,9 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
 
     @Override
     public void init() {
-        immunities = MAX_IMMUNITIES;
         waypointCooldown = 0;
         waypointTimer = 0;
-        immunityCooldowns.clear();
+        messageCooldowns.clear();
         sync();
     }
 
@@ -91,25 +89,25 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
             }
         }
 
-        immunityCooldowns.replaceAll((k, v) -> Math.max(0, v - 1));
-        immunityCooldowns.values().removeIf(v -> v <= 0);
+        messageCooldowns.replaceAll((k, v) -> Math.max(0, v - 1));
+        messageCooldowns.values().removeIf(v -> v <= 0);
 
         if (player.tickCount % 20 == 0) sync();
     }
 
     /**
-     * Attempt to consume an immunity charge.
-     * @return true if death should be blocked, false otherwise.
+     * 冒险家无条件免疫场景方块的环境致死：本方法始终返回 true（阻止该死亡）。
+     * 仅按死因节流提示信息，避免持续性危害（如喷火装置、雾区）反复触发刷屏。
+     * @return 始终为 true，表示应阻止此环境死亡。
      */
-    public boolean consumeImmunity(ResourceLocation deathReason) {
-        if (immunities <= 0 || immunityCooldowns.containsKey(deathReason)) return false;
-        immunities--;
-        immunityCooldowns.put(deathReason, IMMUNITY_COOLDOWN_TICKS);
-        sync();
-        if (player instanceof ServerPlayer sp) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.adventurer.immunity", immunities)
-                            .withStyle(ChatFormatting.GREEN), true);
+    public boolean blockEnvironmentalDeath(ResourceLocation deathReason) {
+        if (!messageCooldowns.containsKey(deathReason)) {
+            messageCooldowns.put(deathReason, MESSAGE_COOLDOWN_TICKS);
+            if (player instanceof ServerPlayer sp) {
+                sp.displayClientMessage(
+                        Component.translatable("message.noellesroles.adventurer.immunity")
+                                .withStyle(ChatFormatting.GREEN), true);
+            }
         }
         return true;
     }
@@ -164,13 +162,11 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider p) {
-        tag.putInt("immunities", immunities);
         tag.putInt("wpCd", waypointCooldown);
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider p) {
-        immunities = tag.getInt("immunities");
         waypointCooldown = tag.getInt("wpCd");
     }
 

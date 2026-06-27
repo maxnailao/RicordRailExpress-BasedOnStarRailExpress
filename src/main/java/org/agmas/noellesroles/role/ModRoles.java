@@ -2360,7 +2360,7 @@ public class ModRoles {
 
     public static SRERole RAVEN = TMMRoles.registerRole(new NormalRole(
             RAVEN_ID,
-            new Color(42, 30, 54).getRGB(),
+            new Color(130, 100, 160).getRGB(),
             false,
             false,
             SRERole.MoodType.FAKE,
@@ -2375,10 +2375,10 @@ public class ModRoles {
             false,
             false,
             SRERole.MoodType.FAKE,
-            TMMRoles.CIVILIAN.getMaxSprintTime(),
+            Integer.MAX_VALUE,
             true)).setComponentKey(ReasonerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(2500);
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(6500);
 
     /**
      * 阿蒙（诡秘之主）—— 中立独立胜利角色，核心机制「寄生」。
@@ -2394,7 +2394,14 @@ public class ModRoles {
             false,
             SRERole.MoodType.FAKE,
                     TMMRoles.CIVILIAN.getMaxSprintTime()*2,
-            true))
+            true){
+                @Override
+                public List<ItemStack> getDefaultItems() {
+                    var itemStacks = new ArrayList<ItemStack>();
+                    itemStacks.add(Items.BUNDLE.getDefaultInstance());
+                    return itemStacks;
+                }
+            })
             .setComponentKey(org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY)
             .setNeutrals(true).setNeutralForKiller(false)
             .setCanSeeTeammateKiller(false).setCanPickUpRevolver(false)
@@ -2760,6 +2767,8 @@ public class ModRoles {
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
         // 设置鹈鹕与傀儡师互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
+        // 设置鹈鹕与渡鸦互斥
+        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.RAVEN);
 
         RoleSkill.register(ModRoles.THE_FOOL, FoolPlayerComponent::useSkill);
 
@@ -2801,7 +2810,7 @@ public class ModRoles {
             false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY))
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setNeutrals(true)
-            .setCanUseInstinct(true).setCanSeeCoin(true);
+            .setCanUseInstinct(true).setCanSeeCoin(true).setDefaultEnableChance(4500);
 
     // ==================== 窃皮者 ====================
     public static SRERole SKINCRAWLER = TMMRoles.registerRole(new NormalRole(

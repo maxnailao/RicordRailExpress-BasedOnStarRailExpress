@@ -294,6 +294,7 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
         }
 
         invisibilityTicks = INVISIBILITY_DURATION_TICKS;
+        invisibilityCharges--;
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, INVISIBILITY_DURATION_TICKS, 0,
                 false, false, true));
 

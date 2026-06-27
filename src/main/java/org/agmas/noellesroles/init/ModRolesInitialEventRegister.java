@@ -562,27 +562,34 @@ public class ModRolesInitialEventRegister {
                         return false;
                     }
                     return comp.tryEat(target);
-                }).cooldownSeconds(35).announceToSelf(false).build(),
+                    // 不在此处设统一技能冷却：统一技能系统无论 handler 是否成功都会进入冷却
+                    // （见 RoleSkill.useUnified），会导致"没吃到人也进CD"。鹈鹕冷却由
+                    // PelicanPlayerComponent.eatCooldownUntil 管理，仅在成功吞噬后生效（并由 PelicanHud 显示）。
+                }).announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("pelican_release"), "skill.noellesroles.pelican.release", context -> {
                     PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(context.player());
                     return comp != null && comp.releaseLast();
                 }).announceToSelf(false).build());
 
-        // 阿蒙技能：G 键对准星玩家静默种下时之虫；Shift+G 主动夺舍最近的成熟宿主。
+        // 阿蒙技能：G 键对准星玩家静默种下时之虫；在背包点选玩家附身后（附身期间），
+        // 随时再按 G 完成夺舍（变成目标、令其死亡、本体处生成尸体）。夺舍改由背包点选附身，不再用 Shift+G。
+        // toggleable=true：让附身完成夺舍不受种虫冷却限制（「随时可按 G」）。
         RoleSkill.register(ModRoles.AMON,
                 RoleSkill.skill(SRE.id("amon_plant_seed"), "skill.noellesroles.amon.plant_seed", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     var comp = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY.get(player);
                     if (comp == null) return false;
+                    // 附身期间：随时按 G 完成夺舍（即使种虫还在冷却）。
+                    if (comp.isPossessing()) {
+                        return comp.finalizePossession();
+                    }
+                    // 非附身：种时之虫需冷却就绪。
+                    if (!context.skillReady()) return false;
                     ServerPlayer target = context.target() == null ? null
                             : (player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null);
                     return comp.plantSeed(target);
-                }).cooldownSeconds(20).announceToSelf(false).build(),
-                RoleSkill.skill(SRE.id("amon_usurp"), "skill.noellesroles.amon.usurp", context -> {
-                    var comp = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY.get(context.player());
-                    return comp != null && comp.usurpNearestMatured();
-                }).shifted(true).cooldownSeconds(45).announceToSelf(false).build());
+                }).cooldownSeconds(20).toggleable(true).announceToSelf(false).build());
 
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
@@ -1060,29 +1067,106 @@ public class ModRolesInitialEventRegister {
                         context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("seize"))
                         .announceToSelf(false).build());
 
-        // 出题人技能注册，不能注册，注册会出BUG。
-        // ：给所有人出题，冷却240秒，消耗300金币
-        RoleSkill.register(ModRoles.EXAMPLER, RoleSkill.skill(
-                SRE.id("exampler_problem_all"),
-                "skill.noellesroles.exampler.problem_all",
-                context -> {
-                    ServerPlayer player = context.player();
-                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                    if (shop.balance < 300) {
-                        player.displayClientMessage(
-                                Component.translatable("message.noellesroles.insufficient_funds_money", 300)
-                                        .withStyle(ChatFormatting.RED),
-                                true);
-                        return false;
-                    }
-                    shop.addToBalance(-300);
-                    player.serverLevel().players().forEach(sp -> {
-                        if (GameUtils.isPlayerAliveAndSurvival(sp)) {
-                            ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
-                        }
-                    });
-                    return true;
-                }).cooldownSeconds(240).build());
+        // 出题人技能注册：两个技能共用一个冷却
+        // 技能1：全员内卷 — 给所有人出题，冷却240秒，消耗300金币
+        // 技能2：强制考试 — 给目标和自己出题，冷却90秒，消耗100金币
+        RoleSkill.register(ModRoles.EXAMPLER,
+                RoleSkill.skill(
+                        SRE.id("exampler_problem_all"),
+                        "skill.noellesroles.exampler.problem_all",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                            if (shop.balance < 300) {
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.insufficient_funds_money", 300)
+                                                .withStyle(ChatFormatting.RED),
+                                        true);
+                                return false;
+                            }
+                            shop.addToBalance(-300);
+                            player.serverLevel().players().forEach(sp -> {
+                                if (GameUtils.isPlayerAliveAndSurvival(sp)) {
+                                    ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
+                                }
+                            });
+                            return true;
+                        }).cooldownSeconds(240).showOnHud(true).build(),
+                RoleSkill.skill(
+                        SRE.id("exampler_problem_target"),
+                        "skill.noellesroles.exampler.problem_target",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            UUID targetUuid = context.target();
+                            if (targetUuid == null)
+                                return false;
+                            Player target = player.level().getPlayerByUUID(targetUuid);
+                            if (!(target instanceof ServerPlayer sp))
+                                return false;
+                            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                            if (shop.balance < 100) {
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.insufficient_funds")
+                                                .withStyle(ChatFormatting.RED),
+                                        true);
+                                return false;
+                            }
+                            shop.addToBalance(-100);
+                            ServerPlayNetworking.send(player, new ProblemScreenOpenC2SPacket(true, 2));
+                            ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 2));
+                            return true;
+                        }).cooldownSeconds(90).showOnHud(true).build());
+        // 出题人技能注册：两个技能必须在同一次 register 调用中注册，
+        // 否则后一次 register 会用 put 覆盖前一次，导致先注册的技能（全员内卷）失效。
+        // 槽位顺序：0=全员内卷(problem_all)，1=单点出题(problem_target)，用 V 键切换。
+        RoleSkill.register(ModRoles.EXAMPLER,
+                // 全员内卷：给所有人出题，冷却240秒，消耗300金币
+                RoleSkill.skill(
+                        SRE.id("exampler_problem_all"),
+                        "skill.noellesroles.exampler.problem_all",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                            if (shop.balance < 300) {
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.insufficient_funds_money", 300)
+                                                .withStyle(ChatFormatting.RED),
+                                        true);
+                                return false;
+                            }
+                            shop.addToBalance(-300);
+                            player.serverLevel().players().forEach(sp -> {
+                                if (GameUtils.isPlayerAliveAndSurvival(sp)) {
+                                    ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
+                                }
+                            });
+                            return true;
+                        }).cooldownSeconds(240).build(),
+                // 单点出题：给目标和自己出题，冷却90秒，消耗100金币
+                RoleSkill.skill(
+                        SRE.id("exampler_problem_target"),
+                        "skill.noellesroles.exampler.problem_target",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            UUID targetUuid = context.target();
+                            if (targetUuid == null)
+                                return false;
+                            Player target = player.level().getPlayerByUUID(targetUuid);
+                            if (!(target instanceof ServerPlayer sp))
+                                return false;
+                            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                            if (shop.balance < 100) {
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.insufficient_funds")
+                                                .withStyle(ChatFormatting.RED),
+                                        true);
+                                return false;
+                            }
+                            shop.addToBalance(-100);
+                            ServerPlayNetworking.send(player, new ProblemScreenOpenC2SPacket(true, 2));
+                            ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 2));
+                            return true;
+                        }).cooldownSeconds(90).build());
 
         // 年兽技能注册：发送红包给目标玩家（客户端选目标）
         RoleSkill.register(ModRoles.NIAN_SHOU, RoleSkill.skill(
@@ -1118,32 +1202,6 @@ public class ModRolesInitialEventRegister {
                             true);
                     return true;
                 }).build());
-
-        // 出题人技能注册（有目标）：给目标和自己出题，冷却90秒，消耗100金币
-        RoleSkill.register(ModRoles.EXAMPLER, RoleSkill.skill(
-                SRE.id("exampler_problem_target"),
-                "skill.noellesroles.exampler.problem_target",
-                context -> {
-                    ServerPlayer player = context.player();
-                    UUID targetUuid = context.target();
-                    if (targetUuid == null)
-                        return false;
-                    Player target = player.level().getPlayerByUUID(targetUuid);
-                    if (!(target instanceof ServerPlayer sp))
-                        return false;
-                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                    if (shop.balance < 100) {
-                        player.displayClientMessage(
-                                Component.translatable("message.noellesroles.insufficient_funds")
-                                        .withStyle(ChatFormatting.RED),
-                                true);
-                        return false;
-                    }
-                    shop.addToBalance(-100);
-                    ServerPlayNetworking.send(player, new ProblemScreenOpenC2SPacket(true, 2));
-                    ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 2));
-                    return true;
-                }).cooldownSeconds(90).build());
 
         // 幸运使者技能注册：保护目标玩家，冷却120秒，消耗200金币
         RoleSkill.register(ModRoles.FORTUNETELLER, RoleSkill.skill(

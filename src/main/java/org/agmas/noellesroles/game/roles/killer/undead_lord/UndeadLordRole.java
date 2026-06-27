@@ -51,10 +51,9 @@ public class UndeadLordRole extends NormalRole {
             comp.releasePlagueFog(config().undeadLordFogSeconds * 20);
         }));
 
-        // 亡者召唤符：立即召唤 2 个临时亡灵（45 秒，无需尸体）
-        entries.add(effectEntry(Items.WITHER_SKELETON_SKULL, 150, "summon_charm", comp -> {
-            comp.summonTemporaryUndead(2, config().undeadLordCharmLifetimeSeconds * 20);
-        }));
+        // 亡者召唤符：召唤 2 个临时亡灵（无需尸体）；60 秒冷却，且不超过亡灵上限
+        entries.add(conditionalEffectEntry(Items.WITHER_SKELETON_SKULL, 150, "summon_charm", comp ->
+                comp.trySummonCharm(2, config().undeadLordCharmLifetimeSeconds * 20)));
 
         // 感染增幅器：接下来 60 秒内亡灵攻击感染翻倍
         entries.add(effectEntry(Items.BLAZE_POWDER, 100, "infection_amp", comp -> {
@@ -71,6 +70,18 @@ public class UndeadLordRole extends NormalRole {
      */
     private ShopEntry effectEntry(net.minecraft.world.item.Item icon, int price, String nameKey,
             java.util.function.Consumer<UndeadLordPlayerComponent> effect) {
+        return conditionalEffectEntry(icon, price, nameKey, comp -> {
+            effect.accept(comp);
+            return true;
+        });
+    }
+
+    /**
+     * 与 {@link #effectEntry} 相同，但效果返回是否成功：返回 false 时视为购买失败，
+     * 不扣金币、不播放音效与提示（用于受冷却 / 上限约束的道具，如亡者召唤符）。
+     */
+    private ShopEntry conditionalEffectEntry(net.minecraft.world.item.Item icon, int price, String nameKey,
+            java.util.function.Predicate<UndeadLordPlayerComponent> effect) {
         ItemStack stack = new ItemStack(icon);
         stack.set(DataComponents.CUSTOM_NAME,
                 Component.translatable("shop.noellesroles.undead_lord." + nameKey));
@@ -92,7 +103,10 @@ public class UndeadLordRole extends NormalRole {
                 if (comp == null) {
                     return false;
                 }
-                effect.accept(comp);
+                if (!effect.test(comp)) {
+                    // 条件不满足（冷却中 / 已达亡灵上限）：购买失败，不扣金币
+                    return false;
+                }
                 player.level().playSound(null, player.blockPosition(), SoundEvents.SOUL_ESCAPE.value(),
                         SoundSource.PLAYERS, 0.8f, 0.8f);
                 player.displayClientMessage(

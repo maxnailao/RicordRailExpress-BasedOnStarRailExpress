@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.network.RoleRosterSyncPayload;
@@ -188,7 +189,11 @@ public final class RoleRosterManager {
 
     private static boolean isRosterEligible(SRERole role) {
         try {
-            return role.canBeRandomed() && !role.isOtherModeRole() && role.getOccupiedRoleCount() <= 1;
+            // 与 AbstractRoleRosterScreen.isRosterEligible 保持一致：不要用 role.canBeRandomed() 过滤，
+            // 该字段由 setCanBeRandomedByOtherRoles 设置，含义是“能否进入其他职业的随机池”，与名单无关，
+            // 否则阿蒙、亡灵之主等调用了 setCanBeRandomedByOtherRoles(false) 的职业会被错误排除。
+            // 同时排除其它模式职业与修理逃脱模式的 RepairRole（如蛮徒），与谋杀模式建池口径一致。
+            return !role.isOtherModeRole() && !(role instanceof RepairRole) && role.getOccupiedRoleCount() <= 1;
         } catch (Throwable ignored) {
             return false;
         }

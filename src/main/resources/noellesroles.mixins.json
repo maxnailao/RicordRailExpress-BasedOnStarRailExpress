@@ -112,6 +112,7 @@
     "client.roles.manipulator.ManipulatorControllerInputMixin",
     "client.roles.manipulator.ManipulatorScreenMixin",
     "client.roles.manipulator.ManipulatorUseSuppressMixin",
+    "client.roles.amon.AmonScreenMixin",
     "client.roles.wizard.WizardShieldScreenMixin",
     "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.morphling.MorphlingCapeRendererMixin",

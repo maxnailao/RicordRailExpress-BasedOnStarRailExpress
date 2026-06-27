@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.SRE;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.init.ModEffects;
 import org.spongepowered.asm.mixin.Mixin;
@@ -44,10 +45,24 @@ public abstract class MobEffectKeyMixin {
             if (this.same(options.keyInventory))return true;
         }
         if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
-            if (this.same(options.keyAttack) || this.same(options.keyDrop) || this.same(options.keyUse))
+            if (this.same(options.keyAttack) || this.same(options.keyDrop))
                 return true;
+            if (this.same(options.keyUse)) {
+                // 怀旧者在里世界中「只能潜行与侦察」：放行对方块的使用键（按按钮、用钥匙开门），
+                // 仅在准星指向方块时放行；指向空气/实体时仍抑制使用物品（开枪、消耗品等）。
+                if (player.hasEffect(ModEffects.NOSTALGIST_BACKWORLD) && isLookingAtBlock(instance)) {
+                    return false;
+                }
+                return true;
+            }
         }
         return false;
+    }
+
+    @Unique
+    private boolean isLookingAtBlock(Minecraft instance) {
+        final HitResult hit = instance.hitResult;
+        return hit != null && hit.getType() == HitResult.Type.BLOCK;
     }
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))

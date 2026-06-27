@@ -34,6 +34,10 @@ public final class MapStatusBarHudRenderer {
         if (gameComponent == null || !gameComponent.isRunning()) {
             return;
         }
+        // 自由相机/观战状态下不渲染，和体力条一致
+        if (!SREClient.isPlayerAliveAndInSurvival()) {
+            return;
+        }
         MapStatusBarType type = MapStatusBarClientState.type();
         if (type == MapStatusBarType.NONE) {
             return;
@@ -45,8 +49,10 @@ public final class MapStatusBarHudRenderer {
         int iconX = barX - ICON_SIZE - ICON_GAP;
         int iconY = barY - ICON_SIZE / 2 + BAR_HEIGHT / 2;
 
-        // 绘制图标
-        graphics.blitSprite(icon(type), iconX, iconY, ICON_SIZE, ICON_SIZE);
+        // 绘制图标——和体力条一样，仅 Shift 按下时显示
+        if (client.options.keyShift.isDown()) {
+            graphics.blitSprite(icon(type), iconX, iconY, ICON_SIZE, ICON_SIZE);
+        }
 
         // 绘制背景条
         graphics.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, 0x66000000);
