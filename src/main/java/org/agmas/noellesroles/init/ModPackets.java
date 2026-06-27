@@ -91,6 +91,7 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(TryThrowItemPacket.ID, TryThrowItemPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.WizardShieldC2SPacket.ID,
                 org.agmas.noellesroles.packet.WizardShieldC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(WizardSwitchSpellC2SPacket.ID, WizardSwitchSpellC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
@@ -129,6 +130,10 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(RepairCarryStruggleC2SPacket.ID, RepairCarryStruggleC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(RepairSearchBeginC2SPacket.ID, RepairSearchBeginC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(RepairSearchCancelC2SPacket.ID, RepairSearchCancelC2SPacket::handle);
+
+        PayloadTypeRegistry.playS2C().register(ReasonerOpenScreenS2CPacket.ID, ReasonerOpenScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);
@@ -236,6 +241,14 @@ public class ModPackets {
         // 注册窃皮者网络包
         PayloadTypeRegistry.playC2S().register(SkincrawlerC2SPacket.ID, SkincrawlerC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SkincrawlerSkinS2CPacket.ID, SkincrawlerSkinS2CPacket.CODEC);
+
+        // 注册阿蒙夺舍皮肤顶替网络包
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.AmonSkinS2CPacket.ID,
+                org.agmas.noellesroles.packet.AmonSkinS2CPacket.CODEC);
+
+        // 注册阿蒙终幕状态网络包
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.AmonFinaleS2CPacket.ID,
+                org.agmas.noellesroles.packet.AmonFinaleS2CPacket.CODEC);
 
         // 注册物资箱网络包
         PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);

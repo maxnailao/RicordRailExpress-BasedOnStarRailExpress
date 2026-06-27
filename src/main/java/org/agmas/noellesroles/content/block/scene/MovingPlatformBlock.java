@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -28,6 +27,8 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Consumer;
+
 /**
  * 移动方块（底座）：放置后在其上方生成一个移动平台实体，沿 FACING 方向往返移动，玩家可站立被带动。
  * 创造模式右键打开配置GUI。底座使用原版平滑石头贴图。
@@ -39,6 +40,9 @@ public class MovingPlatformBlock extends BaseEntityBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final int DEFAULT_DISTANCE = 5;
     public static final int MAX_DISTANCE = 50;
+
+    /** 客户端回调：打开移动平台配置屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openMovingPlatformConfigCallback;
 
     public MovingPlatformBlock(Properties settings) {
         super(settings);
@@ -109,9 +113,9 @@ public class MovingPlatformBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
-        if (level.isClientSide && player.isCreative()) {
-            // 暂时禁用配置界面，等待实现
-            return InteractionResult.PASS;
+        if (level.isClientSide && player.isCreative() && openMovingPlatformConfigCallback != null) {
+            openMovingPlatformConfigCallback.accept(pos);
+            return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
     }

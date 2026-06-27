@@ -117,6 +117,7 @@ import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomStatePaylo
 import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomTableEffectsPayload;
 import org.agmas.noellesroles.game.modes.fourthroom.network.OpenFourthRoomPeekDeckPayload;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
@@ -465,6 +466,9 @@ public class SREClient implements ClientModInitializer {
                 (itemStack, tooltipContext, tooltipFlag, list) -> {
                     if (canThrowItems.contains(itemStack.getItem())) {
                         list.add(Component.translatable("starrailexpress.tip.can_thrown"));
+                    }
+                    if (TMMItems.INVISIBLE_ITEMS.contains(itemStack.getItem())){
+                        list.add(Component.translatable("starrailexpress.tip.invisible"));
                     }
                 });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {

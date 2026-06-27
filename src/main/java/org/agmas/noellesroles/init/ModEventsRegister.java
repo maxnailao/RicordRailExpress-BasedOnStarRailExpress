@@ -114,6 +114,8 @@ import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -121,7 +123,6 @@ import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComp
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
 import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
@@ -751,8 +752,37 @@ public class ModEventsRegister {
     public static List<Item> canThrowItems = new ArrayList<>();
 
     public static void registerEvents() {
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            if (world.isClientSide || !SREGameWorldComponent.KEY.get(world).isRole(player, ModRoles.CAKE_MAKER)) return InteractionResultHolder.pass(player.getItemInHand(hand));
+            if (ModComponents.CAKE_MAKER.get(player).addIngredient(player)) return InteractionResultHolder.consume(player.getItemInHand(hand));
+            return InteractionResultHolder.pass(player.getItemInHand(hand));
+        });
         // 吝啬 - 商店购买返还20%金币
         StandardRevolverItem.registerEvents();
+        AllowPlayerPunching.EVENT.register(player -> {
+            RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
+            return SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.RAVEN) && raven.isHunting();
+        });
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return true;
+            RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
+            if (!raven.isHunting()) return true;
+            if (!raven.canKill(victim)) {
+                raven.endHunt(true);
+                return false;
+            }
+            return true;
+        });
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return;
+            RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
+            if (raven.canKill(victim)) raven.onTargetKilled(victim);
+        });
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
+            if (!SREGameWorldComponent.KEY.get(victim.level()).isRole(victim, ModRoles.RAVEN)) return true;
+            RavenPlayerComponent raven = ModComponents.RAVEN.get(victim);
+            return !raven.isHunting();
+        });
         RefugeeComponent.register();
         OnShopPurchase.EVENT.register((player, entry, price) -> {
             org.agmas.noellesroles.role.ModifierEffects
@@ -789,16 +819,6 @@ public class ModEventsRegister {
 
         // 肉汁独处保护机制 - 杀手/中立只能在单独相处时击杀肉汁
         // 巫师魔药：60 秒内免疫一次致命攻击
-        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
-            if (gameWorld.isRole(victim, ModRoles.WIZARD)) {
-                WizardPlayerComponent wizard = org.agmas.noellesroles.component.ModComponents.WIZARD.get(victim);
-                if (wizard.consumeAttackImmunity()) {
-                    return false; // 取消本次死亡
-                }
-            }
-            return true;
-        });
 
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
@@ -1147,8 +1167,8 @@ public class ModEventsRegister {
         org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         // 注册警棍与防暴盾处理器
         BatonHandler.register();
-        // 注册亡灵之主骨杖处理器
-        org.agmas.noellesroles.content.item.BoneStaffHandler.register();
+
+
         RiotShieldHandler.register();
         // 注册仁之剑处理器
         BenevolenceSwordHandler.register();
@@ -1156,6 +1176,8 @@ public class ModEventsRegister {
         CuckooEggHandler.register();
         // 注册保安技能
         GuardPlayerHandler.register();
+        // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
+        org.agmas.noellesroles.content.item.GroselleJourneyManager.register();
         VoodooDeathHandler.registerEvents();
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
@@ -1165,13 +1187,7 @@ public class ModEventsRegister {
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
-            // 清除所有玩家被玉将军“变老人”的标记与长期减速
-            for (ServerPlayer player : world.players()) {
-                if (player.getAttachedOrElse(ModRoles.KICKED_INTO_OLDMAN, false)) {
-                    player.removeAttached(ModRoles.KICKED_INTO_OLDMAN);
-                    player.removeEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN);
-                }
-            }
+
             // 清除所有玩家的感染状态
             for (ServerPlayer player : world.players()) {
                 InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED
@@ -1190,6 +1206,9 @@ public class ModEventsRegister {
             }
             // 清除全局墙位置注册表
             org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions.clearAll();
+            // 清除冒险家开启的路径点
+            io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())
+                    .setWaypointsVisibility(false);
             // 清除鹈鹕状态 - 释放所有被吞噬的玩家
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.releaseAllInWorld(world);
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.clearAll();
@@ -1264,16 +1283,6 @@ public class ModEventsRegister {
         });
         OnVendingMachinesBuyItems.EVENT.register((player, itemStack) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            // 被玉将军飞踢“变老人”的玩家无法购买轮椅
-            if (itemStack.stack().is(ModItems.WHEELCHAIR)
-                    && player.getAttachedOrElse(ModRoles.KICKED_INTO_OLDMAN, false)) {
-                player.displayClientMessage(
-                        net.minecraft.network.chat.Component
-                                .translatable("message.noellesroles.jade_general.cannot_buy_wheelchair")
-                                .withStyle(net.minecraft.ChatFormatting.RED),
-                        true);
-                return false;
-            }
             if (itemStack.stack().is(ModItems.ONCE_REVOLVER)) {
                 var role = gameWorldComponent.getRole(player);
                 if (role != null) {
@@ -1692,6 +1701,9 @@ public class ModEventsRegister {
 
         OnShieldBroken.EVENT.register((victim, killer) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorldComponent.isRole(victim, ModRoles.WIZARD)) {
+                ModComponents.WIZARD.get(victim).onPotionShieldBroken();
+            }
             if (gameWorldComponent.isRole(victim, ModRoles.WATCHER)) {
                 WatcherPlayerComponent.KEY.get(victim).markShieldConsumed();
             }
@@ -2090,6 +2102,7 @@ public class ModEventsRegister {
             boolean hasDio = false;
             boolean hasRecorder = false;
             boolean hasCandlebearer = false;
+            boolean hasRaven = false;
             // 年兽除岁效果：给所有玩家分发4个鞭炮
             boolean hasNianShou = false;
             boolean hasArsonist = false;
@@ -2117,6 +2130,8 @@ public class ModEventsRegister {
                     hasRecorder = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.CANDLE_BEARER)) {
                     hasCandlebearer = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.RAVEN)) {
+                    hasRaven = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
                 } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
@@ -2153,6 +2168,15 @@ public class ModEventsRegister {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.candlebearer.entry")
+                                .withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasRaven) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.raven.entry")
                                 .withStyle(ChatFormatting.YELLOW));
                     }
                 });

@@ -1,11 +1,9 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
-import org.agmas.noellesroles.client.screen.HurricaneDeviceConfigScreen;
 import org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +17,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Consumer;
+
 public class HurricaneDeviceBlock extends BaseEntityBlock {
+
+    /** 客户端回调：打开飓风装置配置屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openHurricaneDeviceConfigCallback;
+
     public HurricaneDeviceBlock(Properties properties) {
         super(properties);
     }
@@ -37,11 +41,8 @@ public class HurricaneDeviceBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
-        if (level.isClientSide && player.isCreative()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof HurricaneDeviceBlockEntity hbe) {
-                openHurricaneDeviceScreen(pos, hbe);
-            }
+        if (level.isClientSide && player.isCreative() && openHurricaneDeviceConfigCallback != null) {
+            openHurricaneDeviceConfigCallback.accept(pos);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;

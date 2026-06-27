@@ -117,7 +117,12 @@ public final class MafiaManager {
 
     public static boolean isRecruitable(ServerPlayer p) {
         var role = SREGameWorldComponent.KEY.get(p.level()).getRole(p);
-        return role != null && role.canBeRandomed();
+        if (role == null || !role.canBeRandomed()) return false;
+        // 傀儡师及其操控的假人不可被教父改变职业
+        if (role == ModRoles.PUPPETEER) return false;
+        var puppeteer = org.agmas.noellesroles.component.ModComponents.PUPPETEER.get(p);
+        if (puppeteer != null && puppeteer.isControllingPuppet) return false;
+        return true;
     }
     public static boolean isGodfather(ServerPlayer p) {
         return SREGameWorldComponent.KEY.get(p.level()).isRole(p, ModRoles.GODFATHER);

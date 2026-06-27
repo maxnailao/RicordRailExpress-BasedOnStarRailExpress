@@ -63,7 +63,9 @@
       "noellesroles:defibrillator",
       "noellesroles:volume",
       "noellesroles:wayfarer",
+      "noellesroles:death_penalty",
       "noellesroles:morphling",
+      "noellesroles:ability",
       "noellesroles:voodoo",
       "noellesroles:panda",
       "noellesroles:config",
@@ -72,11 +74,13 @@
       "noellesroles:dio",
       "noellesroles:recaller",
       "noellesroles:vulture",
+      "noellesroles:amon",
       "noellesroles:pelican",
       "noellesroles:godfather",
       "noellesroles:broadcaster",
       "noellesroles:ghost",
       "noellesroles:thief",
+      "noellesroles:mercenary",
       "noellesroles:ninja",
       "noellesroles:candlebearer",
       "noellesroles:ability",
@@ -105,6 +109,7 @@
       "noellesroles:photographer",
       "noellesroles:better_vigilante",
       "noellesroles:recorder",
+      "noellesroles:reasoner",
       "noellesroles:bandit",
       "noellesroles:insane_killer",
       "noellesroles:bomber",
@@ -116,12 +121,15 @@
       "noellesroles:player_reset",
       "noellesroles:glitch_robot",
       "noellesroles:nianshou",
+      "noellesroles:leon",
       "noellesroles:magician",
       "noellesroles:mercenary",
+      "noellesroles:nostalgist",
       "noellesroles:party_killer",
       "noellesroles:delayer",
       "noellesroles:blood_feudist",
       "noellesroles:clockmaker",
+      "noellesroles:undead_lord",
       "noellesroles:best_vigilante",
       "noellesroles:baseball_player",
       "noellesroles:creeper",
@@ -148,6 +156,8 @@
       "noellesroles:infected",
       "noellesroles:c4_back",
       "noellesroles:warlock",
+      "noellesroles:great_detective",
+      "noellesroles:embalmer",
       "noellesroles:skincrawler",
       "starrailexpress:minigame_task",
       "noellesroles:better_killer_ghost",
@@ -157,6 +167,7 @@
       "noellesroles:child",
       "noellesroles:intelligence",
       "stupid_express:doused",
+      "stupid_express:custom_winner",
       "stupid_express:cooldown",
       "stupid_express:lovers",
       "stupid_express:necromancer",
@@ -221,7 +232,9 @@
       "noellesroles:pilot",
       "noellesroles:jade_general",
       "noellesroles:wizard",
-      "noellesroles:diviner",
+      "noellesroles:raven",
+      "noellesroles:cake_maker",
+      "noellesroles:adventurer",
       "noellesroles:silencer",
       "noellesroles:embalmer",
       "noellesroles:coward",
@@ -229,7 +242,8 @@
       "noellesroles:zhizhang",
       "noellesroles:guardian",
       "noellesroles:nostalgist",
-      "noellesroles:undead_lord"
+      "noellesroles:undead_lord",
+      "noellesroles:diviner"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
@@ -262,5 +276,9 @@
   },
   "conflicts": {
     "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*"
   }
 }

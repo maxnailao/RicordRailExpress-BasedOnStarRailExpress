@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.content.block.scene;
 
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.scene.SceneTaskManager;
 
@@ -53,6 +54,10 @@ public class TransportPointBlock extends Block {
             return ItemInteractionResult.SUCCESS;
         }
         if (player instanceof ServerPlayer sp && stack.is(ModItems.TRANSPORT_PACKAGE)) {
+            // Resync SceneTaskManager state if needed
+            if (!SceneTaskManager.hasTransportTask(sp) && hasTransportTaskInComponent(sp)) {
+                SceneTaskManager.assign(sp, SceneTaskManager.Type.TRANSPORT);
+            }
             if (SceneTaskManager.hasTransportTask(sp)) {
                 // 消耗一个运输物品
                 stack.shrink(1);
@@ -84,6 +89,11 @@ public class TransportPointBlock extends Block {
             return InteractionResult.SUCCESS;
         }
         if (player instanceof ServerPlayer sp) {
+            // Resync: if the player has a TRANSPORT task in SREPlayerTaskComponent but
+            // SceneTaskManager has lost it (e.g. after a component init / relog), auto-assign.
+            if (!SceneTaskManager.hasTransportTask(sp) && hasTransportTaskInComponent(sp)) {
+                SceneTaskManager.assign(sp, SceneTaskManager.Type.TRANSPORT);
+            }
             if (SceneTaskManager.hasTransportTask(sp)) {
                 SceneTaskManager.reportTransportPickup(sp);
                 // 给予运输物品
@@ -101,5 +111,11 @@ public class TransportPointBlock extends Block {
             }
         }
         return InteractionResult.CONSUME;
+    }
+
+    /** Returns true if the player's SREPlayerTaskComponent has an active TRANSPORT task. */
+    private static boolean hasTransportTaskInComponent(ServerPlayer sp) {
+        SREPlayerTaskComponent comp = SREPlayerTaskComponent.KEY.get(sp);
+        return comp != null && comp.tasks.containsKey(SREPlayerTaskComponent.Task.TRANSPORT);
     }
 }

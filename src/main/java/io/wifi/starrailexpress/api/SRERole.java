@@ -217,7 +217,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRole {
-        all, qiyucun, bigmap, underwater, fly
+        all, qiyucun, bigmap, underwater, fly, trap
     }
 
     public SpecialMapRole getSpecialMapRole() {

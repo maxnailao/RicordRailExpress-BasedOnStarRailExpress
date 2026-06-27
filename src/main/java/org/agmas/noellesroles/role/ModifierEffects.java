@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.init.ModEffects;
 
 import java.util.*;
 
@@ -43,6 +44,7 @@ public class ModifierEffects {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             // === 回光返照 - 游戏时间3秒后真正死亡 ===
             if (TraitorAndModifiers.LAST_GASP_TRIGGERED.contains(player.getUUID())) {
+                player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 5, 5, false, false, false));
                 Long triggerTime = TraitorAndModifiers.LAST_GASP_TRIGGER_GAME_TIME.get(player.getUUID());
                 if (triggerTime != null && gameTime - triggerTime >= 60) { // 60 ticks = 3秒游戏时间
                     if (player.isAlive()) {
@@ -59,7 +61,7 @@ public class ModifierEffects {
                         UUID killerUuid = TraitorAndModifiers.LAST_GASP_KILLER.get(player.getUUID());
                         ServerPlayer killer = killerUuid != null ? server.getPlayerList().getPlayer(killerUuid) : null;
                         var deathReason = TraitorAndModifiers.LAST_GASP_DEATH_REASON.get(player.getUUID());
-                        
+                        player.removeEffect(ModEffects.INVINCIBLE);
                         GameUtils.forceKillPlayer(player, true, killer, deathReason);
                     }
                     TraitorAndModifiers.LAST_GASP_TRIGGERED.remove(player.getUUID());

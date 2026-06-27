@@ -63,6 +63,13 @@ public class ModItems {
     public static final Item RESCUE_FLARE = register(
             new RescueFlareItem(new Item.Properties().stacksTo(4)),
             "rescue_flare", ROLE_ITEMS_GROUP);
+    // 推理之书 - 大侦探专属
+    public static final Item DEDUCTION_BOOK = register(
+            new DeductionBookItem(new Item.Properties().stacksTo(1)),
+            "deduction_book", ROLE_ITEMS_GROUP);
+    public static final Item REASONER_COMPASS = register(
+            new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
+            "reasoner_compass", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
@@ -171,6 +178,9 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
+    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)), "cake_ingredients", CONSUMABLES_GROUP);
+    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg", CONSUMABLES_GROUP);
+    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)), "cake_milk_bucket", CONSUMABLES_GROUP);
     public static final Item PAN = register(
             new PanItem((new Item.Properties()).stacksTo(1)), "pan",
             CONSUMABLES_GROUP);
@@ -626,6 +636,25 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.BoneStaffItem(
                     new Item.Properties().stacksTo(1).durability(5)),
             "bone_staff", WEAPONS_GROUP);
+    /**
+     * 格罗赛尔游记
+     * - 右键蓄力1秒将瞄准的目标玩家放逐进游记（配置坐标）
+     * - 游记内无法攻击/受伤、无法使用技能/物品，死亡改判为持有者击杀
+     * - 站上信标即可回归被放逐前的位置
+     * - 使用后进入75秒冷却
+     */
+    public static final Item GROSELL_TRAVELOG = register(
+            new org.agmas.noellesroles.content.item.GrosellTravelogItem(
+                    new Item.Properties().stacksTo(1)),
+            "grosell_travelog", ROLE_ITEMS_GROUP);
+    public static final Item LEON_BLUE_HERB = register(
+            new org.agmas.noellesroles.content.item.LeonBlueHerbItem(
+                    new Item.Properties().stacksTo(1)),
+            "leon_blue_herb", ROLE_ITEMS_GROUP);
+    public static final Item LEON_RED_HERB = register(
+            new org.agmas.noellesroles.content.item.LeonRedHerbItem(
+                    new Item.Properties().stacksTo(1)),
+            "leon_red_herb", ROLE_ITEMS_GROUP);
     public static final Item RADIO = register(
             new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
             "radio", TOOLS_GROUP);
@@ -1089,6 +1118,7 @@ public class ModItems {
         registrar.registerEntries();
         // 不再注册旧的 MISC_CREATIVE_GROUP 和 SAN_CREATIVE_GROUP，所有物品已分配到新分类标签页
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PAN);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.GROSELL_TRAVELOG);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SMOKE_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BLANK_CARTRIDGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.ALARM_TRAP);
@@ -1096,6 +1126,10 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.REINFORCEMENT);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SCREWDRIVER);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.CONSPIRACY_PAGE);
+        TMMItems.INVISIBLE_ITEMS.add(Items.BUNDLE);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.DEDUCTION_BOOK);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.REASONER_COMPASS);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.CRYSTAL_BALL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.LETTER_ITEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEFIBRILLATOR);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BOMB);

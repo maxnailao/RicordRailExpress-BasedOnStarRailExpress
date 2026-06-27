@@ -23,6 +23,9 @@ public class RicePacketTypeRegister {
         // 注册探员审查包
         PayloadTypeRegistry.playC2S().register(DetectiveC2SPacket.ID, DetectiveC2SPacket.CODEC);
 
+        // 注册大侦探"目标情况"包
+        PayloadTypeRegistry.playC2S().register(GreatDetectiveRevealC2SPacket.ID, GreatDetectiveRevealC2SPacket.CODEC);
+
         // 注册斗士技能包
         PayloadTypeRegistry.playC2S().register(BoxerAbilityC2SPacket.ID, BoxerAbilityC2SPacket.CODEC);
 
@@ -76,6 +79,8 @@ public class RicePacketTypeRegister {
         // 注册建筑师墙数据S2C包
         PayloadTypeRegistry.playS2C().register(BuilderWallS2CPacket.ID, BuilderWallS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BuilderRemoveWallS2CPacket.ID, BuilderRemoveWallS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(CakeMakerBlockS2CPacket.ID, CakeMakerBlockS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(CakeMakerEatC2SPacket.ID, CakeMakerEatC2SPacket.CODEC);
 
         // 注册撬锁小游戏完成包
         PayloadTypeRegistry.playC2S().register(LockGameC2Packet.ID, LockGameC2Packet.CODEC);

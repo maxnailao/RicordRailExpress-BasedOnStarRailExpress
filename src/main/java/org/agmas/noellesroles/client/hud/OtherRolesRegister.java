@@ -57,6 +57,10 @@ public class OtherRolesRegister {
         PelicanHud.register();
         GodfatherHud.register();
         WarlockHud.register();
+        WizardHud.register();
+        RavenHud.register();
+        org.agmas.noellesroles.client.hud.roles.AmonHud.register();
+        AdventurerHud.register();
         EmbalmerHud.register();
         SkincrawlerHud.register();
         PhantomMusicianHud.register();

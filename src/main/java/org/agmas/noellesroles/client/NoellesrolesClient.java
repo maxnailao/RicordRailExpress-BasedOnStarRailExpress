@@ -222,6 +222,12 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
+        // 阿蒙终幕「阿蒙时刻」：全屏稍偏灰滤镜。
+        org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT.register((g, dt) -> {
+            if (org.agmas.noellesroles.client.ClientAmonState.finaleActive) {
+                g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0x33707078);
+            }
+        });
         // 注册游戏结束事件，清除建筑师客户端墙
         {
             NewspaperItem.runner = (stack, hand) -> {
@@ -250,6 +256,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
+            ClientCakeMakerBlocks.clearAll();
         });
         // 注册HUD渲染
         LimitedInventoryScreen.NotAllowItemTakePredicates.add(stack -> stack.is(ModItems.BOMB));
@@ -307,6 +314,55 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             client.setScreen(new ChefStartGameScreen());
         };
+        // 场景方块客户端屏幕回调（避免服务端加载 Screen 类导致崩溃）
+        org.agmas.noellesroles.content.block.scene.ReactorBlock.openReactorScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.ReactorMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen.Mode.REACTOR_TEMPERATURE));
+        };
+        org.agmas.noellesroles.content.block.scene.WaterValveBlock.openWaterValveScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.WaterValveMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen.Mode.WATER_VALVE));
+        };
+        org.agmas.noellesroles.content.block.scene.DebrisPileBlock.openDebrisPileScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.DebrisPileMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen.Kind.EXTINGUISH));
+        };
+        org.agmas.noellesroles.content.block.scene.MovingPlatformBlock.openMovingPlatformConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity mbe) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.MovingPlatformConfigScreen(
+                        pos, mbe.getDistance(), mbe.getSpeed(), mbe.getCollisionSize()));
+            }
+        };
+        org.agmas.noellesroles.content.block.scene.HurricaneDeviceBlock.openHurricaneDeviceConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity hbe) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.HurricaneDeviceConfigScreen(pos, hbe.getRadius(),
+                        hbe.getHeight(), hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
+            }
+        };
+        org.agmas.noellesroles.content.block.scene.TrashCanBlock.openTrashCanConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.TrashCanBlockEntity trashCan) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.TrashCanConfigScreen(pos, trashCan.isWhitelistEnabled(),
+                        trashCan.getWhitelist(), trashCan.isBlacklistEnabled(), trashCan.getBlacklist()));
+            }
+        };
         // 注册钓鱼佬钓竿抛竿模型谓词
         net.minecraft.client.renderer.item.ItemProperties.register(
                 ModItems.FISHER_ROD,
@@ -333,6 +389,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 net.minecraft.client.renderer.entity.HuskRenderer::new);
         EntityRendererRegistry.register(ModEntities.UNDEAD,
                 org.agmas.noellesroles.client.renderer.UndeadEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MORPHLING_KNIFE_DUMMY,
+                org.agmas.noellesroles.client.renderer.MorphlingKnifeDummyRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
 
@@ -355,12 +413,17 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientEmbalmerState.register();
         ClientSkincrawlerState.register();
+        org.agmas.noellesroles.client.ClientAmonState.register();
         CommonClientHudRenderer.registerRenderersEvent();
         MenuScreens.register(ModMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
         });
         InstinctRenderer.registerInstinctEvents();
+
+        ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
+        });
 
         ClientPlayNetworking.registerGlobalReceiver(ShowCustomNewspaperPacket.ID, (payload, context) -> {
             context.client().setScreen(new NewspaperScreen(payload.pages(),
@@ -369,6 +432,18 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(CreateClientSmokeAreaPacket.ID, (payload, context) -> {
             ClientSmokeAreaManager.createSmokeArea(context.client().level, payload.position(), payload.radius(),
                     payload.durationTicks());
+        });
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CakeMakerBlockS2CPacket.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    if (payload.remove()) ClientCakeMakerBlocks.remove(payload.id());
+                    else ClientCakeMakerBlocks.put(payload.id(), payload.pos(), payload.cake(), payload.bites(), payload.ticks());
+                }));
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
+            if (!world.isClientSide) return net.minecraft.world.InteractionResult.PASS;
+            java.util.UUID cake = ClientCakeMakerBlocks.cakeId(hit.getBlockPos());
+            if (cake == null) return net.minecraft.world.InteractionResult.PASS;
+            ClientPlayNetworking.send(new org.agmas.noellesroles.packet.CakeMakerEatC2SPacket(cake));
+            return net.minecraft.world.InteractionResult.SUCCESS;
         });
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,
@@ -439,6 +514,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             ClientSmokeAreaManager.tick();
             ClientWallManager.tick();
+            ClientCakeMakerBlocks.tick();
         });
         ClientPlayNetworking.registerGlobalReceiver(ProblemScreenOpenC2SPacket.ID, (payload, context) -> {
             var client = context.client();
@@ -565,6 +641,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     client.player.containerMenu.setCarried(ItemStack.EMPTY);
                     // 清除窃皮者皮肤映射，确保游戏结束时皮肤能正确还原
                     ClientSkincrawlerState.clearAll();
+                    // 清除阿蒙伪装与终幕表现状态
+                    org.agmas.noellesroles.client.ClientAmonState.clearAll();
                 }
             });
         });
@@ -1015,6 +1093,9 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientVoteCache.clientTick();
             if (!hasInitStatusBar) {
                 hasInitStatusBar = true;
+                StatusInit.statusBars.put("AmonFinale", new StatusInit.StatusBar("AmonFinale",
+                        Component.translatable("hud.noellesroles.amon.finale_bar").getString(),
+                        () -> org.agmas.noellesroles.client.ClientAmonState.finaleProgress()));
                 StatusInit.statusBars.put("Time_Stop", new StatusInit.StatusBar("Time_Stop",
                         Component.translatable("mob_effect.noellesroles.time_stop").getString(), () -> {
                             LocalPlayer player = Minecraft.getInstance().player;
@@ -1072,6 +1153,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                         bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_JUMP;
                     if (client.options.keySprint.isDown())
                         bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_SPRINT;
+                    if (client.options.keyUse.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_USE;
                     ClientPlayNetworking.send(new org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket(
                             bits, client.player.getYRot(), client.player.getXRot(), false));
                 }

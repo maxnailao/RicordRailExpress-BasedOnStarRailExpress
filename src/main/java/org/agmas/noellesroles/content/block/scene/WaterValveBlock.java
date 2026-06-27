@@ -1,13 +1,12 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import java.awt.Color;
+import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
 
-import io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen;
 import io.wifi.starrailexpress.content.block.PanelBlock;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +35,9 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     public static final BooleanProperty CLOSED = BooleanProperty.create("closed");
 
+    /** 客户端回调：打开水阀小游戏屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openWaterValveScreenCallback;
+
     public WaterValveBlock(Properties settings) {
         super(settings);
         BlockState base = this.defaultBlockState();
@@ -62,21 +64,12 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         if (level.isClientSide) {
-            if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
-                openWaterValveScreen(pos);
+            if (state.getValue(ACTIVE) && !state.getValue(CLOSED) && openWaterValveScreenCallback != null) {
+                openWaterValveScreenCallback.accept(pos);
             }
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
-    }
-
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    private void openWaterValveScreen(BlockPos pos) {
-        Minecraft.getInstance().setScreen(
-                new SimpleQuestMinigameScreen(pos,
-                        () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                                new org.agmas.noellesroles.packet.WaterValveMinigameCompleteC2SPacket(pos)),
-                        SimpleQuestMinigameScreen.Mode.WATER_VALVE));
     }
 
     @Nullable

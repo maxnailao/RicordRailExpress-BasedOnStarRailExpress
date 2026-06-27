@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -35,6 +36,8 @@ import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerCo
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
@@ -54,6 +57,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
+import java.util.List;
 import java.util.UUID;
 
 public class AbilityHandler {
@@ -148,6 +152,86 @@ public class AbilityHandler {
             return;
         }
 
+        if (gameWorldComponent.isRole(player, ModRoles.LEON)
+                && abilityPlayerComponent.cooldown <= 0) {
+            // 格斗体术：向面前玩家猛踹一脚，造成较远击退与减速
+            NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+            net.minecraft.world.phys.HitResult hit = net.minecraft.world.entity.projectile.ProjectileUtil
+                    .getHitResultOnViewVector(player,
+                            e -> e instanceof ServerPlayer p
+                                    && io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(p),
+                            cfg.leonKickRange);
+            if (hit instanceof net.minecraft.world.phys.EntityHitResult ehr
+                    && ehr.getEntity() instanceof ServerPlayer victim) {
+                victim.knockback(cfg.leonKickKnockback,
+                        player.getX() - victim.getX(), player.getZ() - victim.getZ());
+                victim.hurtMarked = true;
+                // 玩家受服务端击退需主动同步速度
+                victim.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(victim));
+                int slowTicks = (int) (cfg.leonKickSlowSeconds * 20);
+                victim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, slowTicks, 2));
+                player.level().playSound(null, victim.blockPosition(),
+                        net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.leonKickCooldown);
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.leon.kick_hit")
+                                .withStyle(ChatFormatting.AQUA),
+                        true);
+            } else {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.leon.kick_miss")
+                                .withStyle(ChatFormatting.GRAY),
+                        true);
+            }
+            return;
+        }
+
+        if (gameWorldComponent.isRole(player, ModRoles.MORPHLING)
+                && abilityPlayerComponent.cooldown <= 0) {
+            // 召唤举刀假人向前突进
+            if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(player)) {
+                return;
+            }
+            NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+            net.minecraft.server.level.ServerLevel level = player.serverLevel();
+            org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent morphComp =
+                    org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent.KEY.get(player);
+            // 从所有存活玩家中随机选择一个作为皮肤（排除召唤者自身）
+            List<ServerPlayer> aliveOthers = level.players().stream()
+                    .filter(p -> GameUtils.isPlayerAliveAndSurvival(p) && !p.getUUID().equals(player.getUUID()))
+                    .toList();
+            UUID skin;
+            if (!aliveOthers.isEmpty()) {
+                skin = aliveOthers.get(level.random.nextInt(aliveOthers.size())).getUUID();
+            } else {
+                // 无人可选时 fallback 到伪装对象或自身
+                skin = (morphComp.morphTicks > 0 && morphComp.disguise != null)
+                        ? morphComp.disguise
+                        : player.getUUID();
+            }
+            float yaw = player.getYRot();
+            double rad = Math.toRadians(yaw);
+            double dx = -Math.sin(rad);
+            double dz = Math.cos(rad);
+            org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity dummy =
+                    new org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity(
+                            org.agmas.noellesroles.init.ModEntities.MORPHLING_KNIFE_DUMMY, level);
+            dummy.setPos(player.getX() + dx * 1.5D, player.getY(), player.getZ() + dz * 1.5D);
+            dummy.setup(player, skin, GameConstants.getInTicks(0, cfg.morphlingDummyLifetime), yaw);
+            level.addFreshEntity(dummy);
+            level.playSound(null, player.blockPosition(),
+                    net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.2f);
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.morphlingDummyCooldown);
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.morphling.dummy_spawned")
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
+            return;
+        }
+
         if (gameWorldComponent.isRole(player, ModRoles.RECALLER)
                 && abilityPlayerComponent.cooldown <= 0) {
             RecallerPlayerComponent recallerPlayerComponent = RecallerPlayerComponent.KEY.get(player);
@@ -198,11 +282,19 @@ public class AbilityHandler {
         }
         if (gameWorldComponent.isRole(player, ModRoles.WIZARD)) {
             WizardPlayerComponent wizard = ModComponents.WIZARD.get(player);
-            if (player.isShiftKeyDown()) {
-                wizard.cycleSpell();
-            } else {
-                wizard.castSelectedSpell();
-            }
+            wizard.castSelectedSpell();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.RAVEN)) {
+            ModComponents.RAVEN.get(player).useAbility();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.CAKE_MAKER)) {
+            ModComponents.CAKE_MAKER.get(player).useSmoker();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.ADVENTURER)) {
+            ModComponents.ADVENTURER.get(player).useWaypointAbility();
             return;
         }
 

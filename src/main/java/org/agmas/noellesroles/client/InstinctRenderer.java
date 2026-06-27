@@ -38,6 +38,7 @@ import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerCompone
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
@@ -63,6 +64,12 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN) || !ModComponents.RAVEN.get(self).isHunting()) return -1;
+            return Color.WHITE.getRGB();
+        });
         // 鬼祟效果：当目标玩家8格范围内时，禁用杀手直觉高亮
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player targetPlayer)) {
@@ -684,6 +691,9 @@ public class InstinctRenderer {
                 }
             }
             // 布谷鸟：无法透视玩家；非布谷鸟：无法透视蛋
+            if (SREClient.gameComponent.isRole(self, ModRoles.REASONER) && target instanceof Player) {
+                return -2;
+            }
             if (SREClient.gameComponent.isRole(self, ModRoles.CUCKOO)) {
                 if (target instanceof Player) {
                     return -2;

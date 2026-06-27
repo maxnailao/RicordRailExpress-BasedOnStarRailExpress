@@ -226,6 +226,19 @@ public class ModEntities {
                     .build());
 
     /**
+     * 变形者「举刀假人」实体 - 手持匕首向前突进、贴近目标即击杀的假人（玩家外观）
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<MorphlingKnifeDummyEntity> MORPHLING_KNIFE_DUMMY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("morphling_knife_dummy"),
+            FabricEntityTypeBuilder.<MorphlingKnifeDummyEntity>create(MobCategory.MISC, MorphlingKnifeDummyEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 锁实体 - 保护门不被撬锁器打开
      */
     @SuppressWarnings("deprecation")
@@ -377,5 +390,6 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
         FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
         FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(MORPHLING_KNIFE_DUMMY, MorphlingKnifeDummyEntity.createAttributes());
     }
 }

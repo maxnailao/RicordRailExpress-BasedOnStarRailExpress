@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -117,6 +118,13 @@ public class RoleInitialItems {
         }
 
         {
+            // 里昂 - 左轮手枪（死亡时掉落；草药为自定义物品，不随手枪一起掉落）
+            List<Supplier<ItemStack>> items = new ArrayList<>();
+            items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+            INITIAL_ITEMS_MAP.put(ModRoles.LEON, items);
+        }
+
+        {
             // 黑警初始物品(左轮手枪和撬棍)
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
@@ -148,6 +156,18 @@ public class RoleInitialItems {
             return item;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.CUPID, cupidItems);
+
+        List<Supplier<ItemStack>> cakeMakerItems = new ArrayList<>();
+        cakeMakerItems.add(ModItems.CAKE_INGREDIENTS::getDefaultInstance);
+        cakeMakerItems.add(Items.BUNDLE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.CAKE_MAKER, cakeMakerItems);
+
+        // 冒险家初始物品 — 格罗赛尔游记
+        {
+            List<Supplier<ItemStack>> adventurerItems = new ArrayList<>();
+            adventurerItems.add(ModItems.GROSELL_TRAVELOG::getDefaultInstance);
+            INITIAL_ITEMS_MAP.put(ModRoles.ADVENTURER, adventurerItems);
+        }
 
         // //黑白
         // List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();

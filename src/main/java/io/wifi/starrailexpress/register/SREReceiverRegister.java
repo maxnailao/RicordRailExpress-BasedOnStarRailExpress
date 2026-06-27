@@ -208,7 +208,8 @@ public class SREReceiverRegister {
                 config.maChenXuMaps,
                 config.swastMaps,
                 config.underwaterRolesMaps,
-                config.airRolesMaps));
+                config.airRolesMaps,
+                config.trapRolesMaps));
     }
 
     private static void executeDialogueCommand(ServerPlayNetworking.Context context, String command,

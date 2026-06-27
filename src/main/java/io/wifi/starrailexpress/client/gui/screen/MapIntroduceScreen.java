@@ -51,6 +51,7 @@ public class MapIntroduceScreen extends Screen {
     private final Set<String> policeMaps = new HashSet<>();
     private final Set<String> underwaterMaps = new HashSet<>();
     private final Set<String> airMaps = new HashSet<>();
+    private final Set<String> trapMaps = new HashSet<>();
     private final List<TabInfo> tabs = List.of(
             new TabInfo(Tab.MAP_PROPERTIES, "map_intro.tab.map_properties", 0xFF5EB7D8),
             new TabInfo(Tab.SCENE_BLOCKS, "map_intro.tab.scene_blocks", 0xFF72C17B),
@@ -80,10 +81,12 @@ public class MapIntroduceScreen extends Screen {
         policeMaps.clear();
         underwaterMaps.clear();
         airMaps.clear();
+        trapMaps.clear();
         bagMaps.addAll(payload.bagMaps());
         policeMaps.addAll(payload.policeMaps());
         underwaterMaps.addAll(payload.underwaterMaps());
         airMaps.addAll(payload.airMaps());
+        trapMaps.addAll(payload.trapMaps());
         for (MapIntroSyncPayload.VoteMap map : payload.voteMaps()) {
             if (map.id() != null && !map.id().isBlank()) {
                 voteMaps.put(map.id(), map);
@@ -212,6 +215,7 @@ public class MapIntroduceScreen extends Screen {
         anySpecial |= addIfContains(underwaterMaps, map.id, "map_intro.special.underwater", wrapW);
         anySpecial |= addIfContains(policeMaps, map.id, "map_intro.special.police", wrapW);
         anySpecial |= addIfContains(airMaps, map.id, "map_intro.special.air", wrapW);
+        anySpecial |= addIfContains(trapMaps, map.id, "map_intro.special.trap", wrapW);
         if (!anySpecial) {
             addWrapped(Component.translatable("map_intro.special.none").withStyle(ChatFormatting.GRAY), wrapW);
         }

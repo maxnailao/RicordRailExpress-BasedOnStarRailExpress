@@ -29,6 +29,7 @@
   "map_intro.special.underwater": "地图会刷新海王/水鬼/潜水员",
   "map_intro.special.police": "地图会刷新特警",
   "map_intro.special.air": "地图会刷新影隼/飞行员",
+  "map_intro.special.trap": "地图会刷新冒险家",
   "map_intro.property.room_count": "房间数量：%s",
   "map_intro.property.disabled_tasks": "禁用的常规任务：%s",
   "map_intro.property.scene_tasks": "启用的场景任务：%s",
@@ -131,5 +132,5 @@
   "map_intro.mechanic.conduit_core.title": "潮涌核心",
   "map_intro.mechanic.conduit_core.body": "水下地图通常会有潮涌核心机关，潮涌能量会为所有玩家提供水下夜视和水下呼吸的能力。杀手可去潮涌核心处主动通过机关关闭潮涌核心。",
   "map_intro.mechanic.special_roles.title": "特定地图刷新的职业",
-  "map_intro.mechanic.special_roles.body": "以下职业仅会出现在特定地图\n布袋鬼地图：布袋鬼、诡客\n大地图：特警\n水下地图：海王、水鬼、潜水员\n天空地图：影隼、飞行员"
+  "map_intro.mechanic.special_roles.body": "以下职业仅会出现在特定地图\n布袋鬼地图：布袋鬼、诡客\n大地图：特警\n水下地图：海王、水鬼、潜水员\n天空地图：影隼、飞行员\n机关地图：冒险家"
 }

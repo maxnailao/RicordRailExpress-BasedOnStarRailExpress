@@ -718,6 +718,17 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(ModRoles.CHEF_ID, shop);
     }
     {
+      var shop = new ArrayList<ShopEntry>();
+      shop.add(new ShopEntry(ModItems.CAKE_INGREDIENTS.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+      shop.add(new ShopEntry(Items.SMOKER.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+        @Override public boolean canBuy(Player player) {
+          for (int i = 0; i < 9; i++) if (player.getInventory().getItem(i).is(Items.SMOKER)) return false;
+          return true;
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.CAKE_MAKER_ID, shop);
+    }
+    {
       // 指挥官的商店
       var _SHOP = new ArrayList<ShopEntry>();
       _SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
@@ -1064,12 +1075,12 @@ public class RoleShopHandler {
           });
         }
       }
-      // 拍立得相纸 - 75金币
+      // 拍立得相纸 - 50
       {
         var item = ExposurePolaroid.Items.INSTANT_COLOR_SLIDE.get();
         if (item != null) {
           final var defaultInstance = item.getDefaultInstance();
-          entries.add(new ShopEntry(defaultInstance, 75, ShopEntry.Type.TOOL) {
+          entries.add(new ShopEntry(defaultInstance, 50, ShopEntry.Type.TOOL) {
             @Override
             public boolean onBuy(@NotNull Player player) {
               player.addItem(defaultInstance.copy());
@@ -1725,6 +1736,22 @@ public class RoleShopHandler {
         }
       });
       ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
+    }
+
+    {
+      var WIZARD_SHOP = new ArrayList<ShopEntry>();
+      WIZARD_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean canDisplay(@NotNull Player player) {
+          return false;
+        }
+
+        @Override
+        public boolean canBuy(@NotNull Player player) {
+          return false;
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.WIZARD_ID, WIZARD_SHOP);
     }
 
     // 疫使商店

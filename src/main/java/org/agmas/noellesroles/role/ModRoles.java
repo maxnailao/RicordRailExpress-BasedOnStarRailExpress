@@ -47,6 +47,8 @@ import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.Locksmit
 import org.agmas.noellesroles.game.roles.innocent.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
+import org.agmas.noellesroles.game.roles.innocent.great_detective.GreatDetectiveRole;
+import org.agmas.noellesroles.game.roles.innocent.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerPlayerComponent;
@@ -71,6 +73,9 @@ import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.cake_maker.CakeMakerRole;
+import org.agmas.noellesroles.game.roles.innocent.adventurer.AdventurerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.adventurer.AdventurerRole;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
@@ -80,6 +85,8 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerCompone
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -143,8 +150,7 @@ public class ModRoles {
      * 非持久化（不写入存档），并在每局结束时统一清除。
      */
     @SuppressWarnings("deprecation")
-    public static final AttachmentType<Boolean> KICKED_INTO_OLDMAN = AttachmentRegistry.<Boolean>builder()
-            .buildAndRegister(Noellesroles.id("kicked_into_oldman"));
+
     // ==================== 角色 ID 定义 ====================
     // 建议格式：MOD_ID:role_name
 
@@ -171,6 +177,7 @@ public class ModRoles {
     public static ResourceLocation CORONER_ID = Noellesroles.id("coroner");
     public static ResourceLocation PATROLLER_ID = Noellesroles.id("patroller");
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
+    public static final ResourceLocation LEON_ID = Noellesroles.id("leon");
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
@@ -213,12 +220,16 @@ public class ModRoles {
     public static final ResourceLocation MEATBALL_ID = Noellesroles.id("meatball");
     // 殡仪员角色 ID
     public static final ResourceLocation MORTICIAN_ID = Noellesroles.id("mortician");
+    // 大侦探角色 ID
+    public static final ResourceLocation GREAT_DETECTIVE_ID = Noellesroles.id("great_detective");
     // 建筑师角色 ID
     public static final ResourceLocation BUILDER_ID = Noellesroles.id("builder");
     // 玉将军角色 ID
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
     public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
+    public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
     public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
@@ -304,6 +315,9 @@ public class ModRoles {
     public static final ResourceLocation EMBALMER_ID = Noellesroles.id("embalmer");
     public static final ResourceLocation SKINCRAWLER_ID = Noellesroles.id("skincrawler");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
+    public static final ResourceLocation RAVEN_ID = Noellesroles.id("raven");
+    public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
+    public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
     // 占卜家角色 ID
     public static final ResourceLocation DIVINER_ID = Noellesroles.id("diviner");
@@ -606,6 +620,25 @@ public class ModRoles {
     )).setCanSeeCoin(true).setComponentKey(ModComponents.MORTICIAN).setDefaultMax(1);
 
     /**
+     * 大侦探角色 - 平民阵营
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 开局自带"推理之书"，右键打开界面
+     * - 技能"推理"：对着尸体右键，获取该尸体凶手的一条线索（无凶手则无法推敲）
+     * - 一具尸体只能使用一次技能
+     * - 某凶手线索 >= 3 条时，可在书上点击"目标情况"查明其与自己的距离（快照）
+     */
+    public static SRERole GREAT_DETECTIVE = TMMRoles.registerRole(new GreatDetectiveRole(
+            GREAT_DETECTIVE_ID, // 角色 ID
+            new Color(72, 61, 139).getRGB(), // 暗紫蓝 - 名侦探
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setComponentKey(GreatDetectivePlayerComponent.KEY).setDefaultMax(1);
+
+    /**
      * 建筑师角色 - 平民阵营
      * - 属于乘客阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
@@ -662,7 +695,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺
             true // 隐藏计分板
-    )).setCanSeeCoin(true).setComponentKey(ModComponents.WIZARD).setCanBeRandomedByOtherRoles(false)
+    )).setCanSeeCoin(false).setComponentKey(ModComponents.WIZARD).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1).setDefaultEnableChance(2500);
 
     /**
@@ -919,6 +952,17 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true)
             .setComponentKey(FoodDrinkGlowComponent.KEY);
+    public static SRERole CAKE_MAKER = TMMRoles.registerRole(
+            new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
+                    SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultEnableNeededPlayerCount(8);
+    // 冒险家
+    public static SRERole ADVENTURER = TMMRoles.registerRole(
+            new AdventurerRole(ADVENTURER_ID, new Color(34, 139, 34).getRGB(), true, false,
+                    SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanJumpManhole(true).setCanAcrossFog(true)
+            .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6)
+            .setSpecialMapRole(SRERole.SpecialMapRole.trap).setDefaultMax(0);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
             new NormalRole(WAYFARER_ID, new Color(255, 54, 105).getRGB(),
@@ -1029,6 +1073,23 @@ public class ModRoles {
                     .setVigilanteTeam(true).setComponentKey(PatrollerPlayerComponent.KEY))
             .setCanPickUpRevolver(true).setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(8000)
             .setRefreshableSpecialVigilante(2000, true);
+
+    /**
+     * 里昂（警长阵营）。
+     * - 警长阵营（isInnocent = true, setVigilanteTeam = true），不能使用杀手能力。
+     * - 开局拥有一把左轮手枪（{@link io.wifi.starrailexpress.index.TMMItems#REVOLVER}，死亡时掉落）。
+     * - 格斗体术（按 G 触发，见 {@link org.agmas.noellesroles.AbilityHandler}）：向面前玩家猛踹一脚，
+     *   造成较远击退与减速。
+     * - 被动「幸存之人」（见 {@link org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent}）：
+     *   场上剩 6 人时获得蓝色草药（刷新格斗体术），剩 3 人时获得红色草药（套盾，不可叠加）。
+     * - 不与远征队等任何修饰符共存（见 {@link org.agmas.noellesroles.game.modifier.NRModifiers}）。
+     */
+    public static SRERole LEON = TMMRoles
+            .registerRole(new NormalRole(LEON_ID, 0x2E6FB0, true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false)
+                    .setVigilanteTeam(true)
+                    .setComponentKey(org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.KEY))
+            .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(2000).setSpecialVigilante(true);
 
     /**
      * 更好的义警角色
@@ -2296,6 +2357,50 @@ public class ModRoles {
             true)).setComponentKey(CandleBearerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setDefaultEnableNeededPlayerCount(12);
+
+    public static SRERole RAVEN = TMMRoles.registerRole(new NormalRole(
+            RAVEN_ID,
+            new Color(42, 30, 54).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            true)).setComponentKey(RavenPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
+            .setDefaultEnableNeededPlayerCount(10);
+
+    public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
+            REASONER_ID,
+            new Color(212, 178, 92).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            TMMRoles.CIVILIAN.getMaxSprintTime(),
+            true)).setComponentKey(ReasonerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(2500);
+
+    /**
+     * 阿蒙（诡秘之主）—— 中立独立胜利角色，核心机制「寄生」。
+     * - 中立独立胜利 (setNeutrals(true)，setNeutralForKiller(false) 杀手视角为好人)
+     * - 无武器、不开杀手商店、不能捡枪、无杀手直觉
+     * - 隐秘种下时之虫同化他人，可主动夺舍 / 致命伤时自动夺舍续命
+     * - 胜利条件「夺舍并幸存」在 CustomWinnerClass 判定
+     */
+    public static SRERole AMON = TMMRoles.registerRole(new NormalRole(
+            AMON_ID,
+            new Color(120, 110, 140).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+                    TMMRoles.CIVILIAN.getMaxSprintTime()*2,
+            true))
+            .setComponentKey(org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY)
+            .setNeutrals(true).setNeutralForKiller(false)
+            .setCanSeeTeammateKiller(false).setCanPickUpRevolver(false)
+            .setCanUseInstinct(false).setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(0)
+            .setDefaultEnableNeededPlayerCount(10);
 
     /**
      * 魔术师角色 - 好人阵营（从模仿者移植）

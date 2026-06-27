@@ -7,15 +7,20 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import net.minecraft.server.level.ServerPlayer;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
+
+import java.util.OptionalInt;
 
 public class CustomWinnerClass {
 
@@ -102,6 +107,23 @@ public class CustomWinnerClass {
 
             if (CandleBearerPlayerComponent.checkCandleBearerVictory(serverLevel)) {
                 return WinStatus.CUSTOM;
+            }
+
+            for (ServerPlayer player : serverLevel.players()) {
+                if (!GameUtils.isPlayerAliveAndSurvival(player) || !gameComponent.isRole(player, ModRoles.RAVEN)) continue;
+                RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
+                if (raven.kills >= raven.requiredKills && raven.requiredKills > 0) {
+                    RoleUtils.customWinnerWin(serverLevel, WinStatus.CUSTOM, ModRoles.RAVEN_ID.getPath(), OptionalInt.of(ModRoles.RAVEN.color()));
+                    return WinStatus.CUSTOM;
+                }
+            }
+
+            // 阿蒙「终幕·寻找阿蒙」：存在持有寄宿体的存活阿蒙时进入终幕并阻止常规结算；
+            // 终幕结束（撑过 2 分钟或杀光众人）由组件自身宣布 CUSTOM 胜利。
+            WinStatus amonResult = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent
+                    .handleGameEnd(serverLevel, winStatus);
+            if (amonResult != WinStatus.NOT_MODIFY) {
+                return amonResult;
             }
 
             // 鹈鹕存活时检查独立胜利
