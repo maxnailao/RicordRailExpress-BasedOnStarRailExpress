@@ -509,8 +509,6 @@ public class CustomRoleLoader {
                 if (!allowed) {
                     // 当前地图不在允许列表中，禁用该职业
                     org.agmas.harpymodloader.Harpymodloader.setRoleMaximum(role.identifier(), 0);
-                    // 登记地图限制，使职业轮换名单接管时也排除该地图特定职业。
-                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(role.identifier());
                     SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
                             data.englishId, mapName);
                 }

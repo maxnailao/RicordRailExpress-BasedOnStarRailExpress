@@ -2,9 +2,6 @@ package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.roster.MapRestrictionGate;
-import io.wifi.starrailexpress.roster.RoleRosterManager;
-import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.WeightedUtil;
@@ -66,8 +63,6 @@ public class RoleAssignmentPool {
             boolean allowUnlimitedRepeats) {
         // 职业轮换名单启用时，名单只作为职业的“开关”（取代 disabled 列表决定启用/禁用），
         // 不再接管具体名额——名额沿用职业注册时的 defaultMaxCount，权重沿用注册权重。
-        boolean rosterActive = RoleRosterManager.isEnabled();
-        RoleRosterState roster = rosterActive ? RoleRosterManager.getState() : null;
 
         // 获取所有符合条件的角色
         ArrayList<SRERole> availableRoles = new ArrayList<>(TMMRoles.ROLES.values());
@@ -76,15 +71,6 @@ public class RoleAssignmentPool {
                     || role.identifier().equals(TMMRoles.LOOSE_END.identifier())
                     || !filter.test(role)) {
                 return true;
-            }
-            if (rosterActive) {
-                // 名单作为开关：忽略 harpy 的 disabled 列表，但地图限制仍然生效——
-                // 被本回合地图限制挡在当前地图之外的职业必须排除，避免地图特定职业泄漏。
-                if (MapRestrictionGate.isRoleForbidden(role.identifier())) {
-                    return true;
-                }
-                // 仅保留名单内（数量 > 0）的职业
-                return roster.countFor(role.identifier().toString()) <= 0;
             }
             return HarpyModLoaderConfig.HANDLER.instance().getDisabled().contains(role.identifier().toString());
         });
@@ -107,13 +93,6 @@ public class RoleAssignmentPool {
             if (allowUnlimitedRepeats) {
                 // 无限模式：使用大数字表示无限
                 countMap.put(role.identifier(), Integer.MAX_VALUE);
-            } else if (rosterActive) {
-                // 名单只作为“开关”：是否参与分配由上面的过滤决定（仅保留名单内职业）。
-                // 具体名额不再由名单接管，而是采用职业注册时的名额（defaultMaxCount），
-                // 配合注册权重（roleWeights / ModdedWeights）参与加权随机——相当于开关职业，而非直接接管分配。
-                // defaultMaxCount==-1（声明“不调整刷新数量”）或 <=0（默认关闭，如阿蒙）时，开启即给 1 个名额。
-                int registeredMax = role.defaultMaxCount;
-                countMap.put(role.identifier(), registeredMax <= 0 ? 1 : registeredMax);
             } else {
                 // 正常模式：使用ROLE_MAX配置或默认值1
                 countMap.put(role.identifier(), Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1));

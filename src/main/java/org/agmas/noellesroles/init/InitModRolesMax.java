@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
+import io.wifi.starrailexpress.roster.RoleRosterManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,10 +21,10 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.BounsRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -35,7 +36,6 @@ import java.util.Random;
 
 public class InitModRolesMax {
     public static Random random = new Random();
-
     public static void autoChangePresent() {
         // 自动切换预设：游戏结束时应用配置的预设，使其在下一局游戏中生效
         io.wifi.starrailexpress.SREConfig sreConfig = io.wifi.starrailexpress.SREConfig.instance();
@@ -320,6 +320,9 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
     }
 
+    public static void applyRosterMax(){
+        RoleRosterManager.getState();
+    }
     public static void registerDynamic() {
         GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
             // 从配置应用角色概率
@@ -425,10 +428,6 @@ public class InitModRolesMax {
                     }
                 }
             }
-            // 茴铭玲依赖可跳跃地图，非跳跃地图属于地图限制，名单接管时也不应带入。
-            if (!canJumpMap) {
-                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(RedHouseRoles.HOAN_MEIRIN.identifier());
-            }
 
             applySpecialMapRoles(currentMap, config);
             applySpecialVigilanteRoles(players_count, config, random, currentMap);
@@ -444,7 +443,6 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(role, Math.max(0, role.spawnInfo.maxSpawn));
             } else {
                 Harpymodloader.setRoleMaximum(role, 0);
-                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(role.identifier());
             }
         }
     }
@@ -466,7 +464,6 @@ public class InitModRolesMax {
         ArrayList<SRERole> selected = new ArrayList<>();
         for (var role : specialVigilantes) {
             if (!isSpecialMapRoleEnabled(role, currentMap, config)) {
-                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(role.identifier());
                 continue;
             }
             int chance = role.spawnInfo.enableChance >= 0 ? role.spawnInfo.enableChance : role.defaultEnableChance;
@@ -530,11 +527,6 @@ public class InitModRolesMax {
             if (count >= 0) {
                 Harpymodloader.setRoleMaximum(name, count);
             }
-            // 登记地图限制：仅依据声明的专属地图列表（与人数/概率门槛无关），
-            // 供职业轮换名单接管时排除地图特定职业。
-            if (!role.spawnInfo.map.isEmpty() && !role.spawnInfo.map.contains(mapName)) {
-                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(name);
-            }
         }
     }
 
@@ -547,10 +539,6 @@ public class InitModRolesMax {
             int count = modifier.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
             if (count >= 0) {
                 Harpymodloader.MODIFIER_MAX.put(modifier.identifier(), count);
-            }
-            // 登记地图限制：地图特定修饰符不应被名单接管时带到非专属地图。
-            if (!modifier.spawnInfo.map.isEmpty() && !modifier.spawnInfo.map.contains(mapName)) {
-                io.wifi.starrailexpress.roster.MapRestrictionGate.markModifier(modifier.identifier());
             }
         }
     }
@@ -574,69 +562,6 @@ public class InitModRolesMax {
             SpawnInfo spinfo = config.roleDetails.getSpawnInfo(entry.getValue());
             if (spinfo != null && entry.getValue().canSetSpawnInfoInConfig())
                 entry.getValue().setSpawnInfo(spinfo);
-        }
-        // 以下内容均已统一成新API。（上方）可分别对任何角色进行控制。也可以设置角色不受到控制影响。
-        {
-            // // 建筑师 - 从配置读取概率和最小玩家数
-            // ModRoles.BUILDER.setEnableChance(config.chanceOfBuilder).setEnableNeededPlayerCount(config.minPlayerForBuilder);
-
-        // 黑警 - 从配置读取概率和最小玩家数
-        //ModRoles.CORRUPT_COP.spawnInfo.setEnableChance(config.chanceOfCorruptCop * 100);
-        //ModRoles.CORRUPT_COP.spawnInfo.setMinEnabledPlayer(config.minPlayerForCorruptCop);
-
-        // 教父 - 从配置读取概率和最小玩家数
-        // ModRoles.GODFATHER.spawnInfo.setEnableChance(config.chanceOfGodfather * 100);
-        // ModRoles.GODFATHER.spawnInfo.setMinEnabledPlayer(config.mafiaMinimumPlayers);
-
-            // // 肉汁 - 25%概率
-            // ModRoles.MEATBALL.setEnableChance(config.chanceOfMeatball)
-            // .setEnableNeededPlayerCount(config.minPlayerForMeatball);
-
-            // // 杜鹃 - 45%概率
-            // ModRoles.CUCKOO.setEnableChance(config.chanceOfCuckoo);
-
-            // // 苦力怕 - 20%概率
-            // ModRoles.CREEPER.setEnableChance(config.chanceOfCreeper);
-
-            // // 画家 - 50%概率
-            // ModRoles.PAINTER.setEnableChance(config.chanceOfPainter);
-
-            // // 雇佣兵 - 从配置读取概率和最小玩家数
-            // ModRoles.MERCENARY.setEnableChance(config.chanceOfMercenary)
-            // .setEnableNeededPlayerCount(config.minPlayerForMercenary);
-
-            // // 愚者 - 从配置读取概率和最小玩家数
-            // ModRoles.THE_FOOL.setEnableChance(config.chanceOfTheFool)
-            // .setEnableNeededPlayerCount(config.minPlayerForTheFool);
-
-            // // 猫死灵法师 - 从配置读取概率和最小玩家数
-            // ModRoles.CAT_NECROMANCER.setEnableChance(config.chanceOfCatNecromancer)
-            // .setEnableNeededPlayerCount(config.minPlayerForCatNecromancer);
-
-            // // 更好的义警 - 小概率（基于10000）
-
-            // // 静语者 - 从配置读取概率和最大数量
-            // ModRoles.SILENCER.setEnableChance(config.chanceOfSilencer).setMax(config.silencerMax);
-
-            // // StupidExpress 角色配置
-            // // 失忆者
-            // SERoles.AMNESIAC.setEnableNeededPlayerCount(config.minPlayerForAmnesiac)
-            // .setEnableChance(config.chanceOfAmnesiac);
-
-            // // 悍匪 - 从配置读取概率和最小玩家数
-            // ModRoles.GANGSTERS.setEnableChance(config.chanceOfGangsters)
-            // .setEnableNeededPlayerCount(config.minPlayerForGangsters);
-            // // 钳工 - 与悍匪绑定，由悍匪概率控制
-            // ModRoles.FITTER.setEnableChance(config.chanceOfGangsters)
-            // .setEnableNeededPlayerCount(config.minPlayerForGangsters);
-
-            // // 鹈鹕 - 从配置读取概率和最小玩家数
-            // ModRoles.PELICAN.setEnableChance(config.chanceOfPelican)
-            // .setEnableNeededPlayerCount(config.minPlayerForPelican);
-
-            // // 教父 - 从配置读取概率和最小玩家数
-            // ModRoles.GODFATHER.setEnableChance(config.chanceOfGodfather)
-            // .setEnableNeededPlayerCount(config.mafiaMinimumPlayers);
         }
 
         // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%

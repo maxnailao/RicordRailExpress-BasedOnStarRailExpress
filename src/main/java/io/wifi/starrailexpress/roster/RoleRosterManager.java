@@ -34,7 +34,7 @@ public final class RoleRosterManager {
     public static final UUID CONFIG_UUID = new UUID(0L, 0x5_2_0_5_7_E_4_1L);
     public static final String PART = "role_roster";
 
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final long SAVE_TIMEOUT_MS = 4_000L;
     private static final Path LOCAL_FILE = FabricLoader.getInstance().getConfigDir().resolve("sre_role_roster.json");
 
@@ -48,7 +48,10 @@ public final class RoleRosterManager {
         ServerLifecycleEvents.SERVER_STARTED.register(RoleRosterManager::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> flushBlocking());
         ServerLifecycleEvents.SERVER_STOPPED.register(s -> server = null);
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> sendTo(handler.getPlayer()));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> {
+            if (SREConfig.instance().enableRoster)
+                sendTo(handler.getPlayer());
+        });
     }
 
     public static RoleRosterState getState() {
@@ -123,7 +126,7 @@ public final class RoleRosterManager {
     }
 
     public static void setEnabled(boolean enabled) {
-        
+
         if (!SREConfig.instance().enableRoster) {
             return;
         }
@@ -167,6 +170,8 @@ public final class RoleRosterManager {
     // ------------------------------------------------------------------
 
     private static void broadcast() {
+        if (!SREConfig.instance().enableRoster)
+            return;
         MinecraftServer srv = server;
         if (srv == null) {
             return;

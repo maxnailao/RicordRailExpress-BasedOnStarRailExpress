@@ -208,12 +208,6 @@ public class SREMurderGameMode extends GameMode {
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
         // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
         // 地图限制也仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
-        io.wifi.starrailexpress.roster.RoleRosterState roster = io.wifi.starrailexpress.roster.RoleRosterManager
-                .isEnabled()
-                        ? io.wifi.starrailexpress.roster.RoleRosterManager.getState()
-                        : null;
-        boolean rosterActive = SREConfig.instance().enableRoster && roster != null && roster.modifierCounts != null
-                && !roster.modifierCounts.isEmpty();
 
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
         for (var mod : allModifiers) {
@@ -243,13 +237,7 @@ public class SREMurderGameMode extends GameMode {
                 }
             }
 
-            if (rosterActive) {
-                // 名单接管：地图特定修饰符仍受地图限制约束；仅分配名单内（数量 > 0）的修饰符。
-                if (io.wifi.starrailexpress.roster.MapRestrictionGate.isModifierForbidden(mod.identifier)
-                        || roster.modifierCountFor(mod.identifier.toString()) <= 0) {
-                    continue;
-                }
-            } else if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
+            if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
                 continue;
             }
 

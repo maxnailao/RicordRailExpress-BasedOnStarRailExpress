@@ -371,9 +371,6 @@ public class GameUtils {
             player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
         }
 
-        // 清空上一回合的地图限制登记；本回合的地图限制将在下方 GameInitializeEvent 中重新登记，
-        // 供职业轮换名单接管时排除地图特定职业 / 修饰符。
-        io.wifi.starrailexpress.roster.MapRestrictionGate.reset();
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
         gameComponent.getGameMode().beforeInitializeGame(serverWorld, gameComponent, readyPlayerList);
