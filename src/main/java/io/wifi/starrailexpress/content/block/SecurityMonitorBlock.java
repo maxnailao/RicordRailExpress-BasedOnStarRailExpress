@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.content.block;
 
 import com.mojang.serialization.MapCodec;
 
+import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.SecurityMonitorBlockEntity;
 import io.wifi.starrailexpress.network.PacketTracker;
@@ -41,6 +42,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -406,7 +408,9 @@ public class SecurityMonitorBlock extends BaseEntityBlock implements TaskInstinc
 
     @Override
     public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        return true;
+        Level level = player.level();
+        var roleCCA = SRERoleWorldComponent.KEY.get(level);
+        return roleCCA.isRole(player, ModRoles.DELAYER);
     }
 
     @Override

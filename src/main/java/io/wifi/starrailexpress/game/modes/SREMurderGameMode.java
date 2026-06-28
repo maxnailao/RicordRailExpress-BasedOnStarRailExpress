@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.game.modes;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
@@ -50,7 +51,7 @@ public class SREMurderGameMode extends GameMode {
     private static final int VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS = 15 * 20;
 
     public SREMurderGameMode(ResourceLocation identifier) {
-        super(identifier, 10, 6);
+        super(identifier, SREConfig.instance().defaultStartTimeForMurder, 6);
     }
 
     @Override
@@ -207,10 +208,11 @@ public class SREMurderGameMode extends GameMode {
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
         // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
         // 地图限制也仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
-        io.wifi.starrailexpress.roster.RoleRosterState roster =
-                io.wifi.starrailexpress.roster.RoleRosterManager.isEnabled()
-                        ? io.wifi.starrailexpress.roster.RoleRosterManager.getState() : null;
-        boolean rosterActive = roster != null && roster.modifierCounts != null
+        io.wifi.starrailexpress.roster.RoleRosterState roster = io.wifi.starrailexpress.roster.RoleRosterManager
+                .isEnabled()
+                        ? io.wifi.starrailexpress.roster.RoleRosterManager.getState()
+                        : null;
+        boolean rosterActive = SREConfig.instance().enableRoster && roster != null && roster.modifierCounts != null
                 && !roster.modifierCounts.isEmpty();
 
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);

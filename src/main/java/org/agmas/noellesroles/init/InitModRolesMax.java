@@ -52,7 +52,6 @@ public class InitModRolesMax {
                     break;
                 }
             }
-            ;
             String nextPreset;
             if (selectedInfo != null) {
                 nextPreset = selectedInfo.presetName;

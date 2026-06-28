@@ -12,6 +12,11 @@ import java.util.Map;
  * 实际刷新数量沿用各职业/修饰符注册时的默认值（defaultMaxCount / MODIFIER_MAX）。
  */
 public final class RoleRosterState {
+    public static final RoleRosterState DISABLE;
+    static {
+        DISABLE = createDefault();
+        DISABLE.enabled = false;
+    }
     public boolean enabled = false;
     public Map<String, Integer> roleCounts = new LinkedHashMap<>();
     public Map<String, Integer> modifierCounts = new LinkedHashMap<>();

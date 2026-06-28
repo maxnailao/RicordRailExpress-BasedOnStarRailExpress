@@ -182,6 +182,8 @@
   "text.autoconfig.starrailexpress.option.clueBookshelfZ": "clueBookshelfZ",
   "text.autoconfig.starrailexpress.option.clueBookshelfDimension": "clueBookshelfDimension",
   "text.autoconfig.starrailexpress.option.blackoutCooldown": "停电冷却",
+  "text.autoconfig.starrailexpress.option.enableRoster": "允许轮换Roster",
+  "text.autoconfig.starrailexpress.option.defaultStartTimeForMurder": "谋杀模式：默认游戏时长（分钟）",
   "text.autoconfig.starrailexpress.option.monitorBrokenCooldown": "破坏全部监视器冷却",
   "text.autoconfig.starrailexpress.option.monitorBrokenDuration": "破坏全部监视器持续时间",
   "text.autoconfig.starrailexpress.option.monitorBrokenCooldownGlobal": "破坏全部监视器公用冷却",

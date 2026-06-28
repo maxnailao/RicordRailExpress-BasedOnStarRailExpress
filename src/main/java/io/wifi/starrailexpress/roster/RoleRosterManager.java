@@ -23,9 +23,9 @@ import java.util.UUID;
 /**
  * 职业轮换系统的服务端核心：维护一份服务器全局的职业名单，并负责
  * <ul>
- *     <li>从本地文件 / MySQL 数据库加载与持久化；</li>
- *     <li>把名单广播给所有客户端（含新加入的玩家）；</li>
- *     <li>名单启用时，由 {@code RoleAssignmentPool} 在建池时读取本配置，仅接管职业的启用/禁用（不接管数量、无概率）。</li>
+ * <li>从本地文件 / MySQL 数据库加载与持久化；</li>
+ * <li>把名单广播给所有客户端（含新加入的玩家）；</li>
+ * <li>名单启用时，由 {@code RoleAssignmentPool} 在建池时读取本配置，仅接管职业的启用/禁用（不接管数量、无概率）。</li>
  * </ul>
  * 数据库按玩家 UUID 分键存储，这里使用一个固定的“配置 UUID”表示服务器全局配置。
  */
@@ -36,8 +36,7 @@ public final class RoleRosterManager {
 
     private static final Gson GSON = new GsonBuilder().create();
     private static final long SAVE_TIMEOUT_MS = 4_000L;
-    private static final Path LOCAL_FILE =
-            FabricLoader.getInstance().getConfigDir().resolve("sre_role_roster.json");
+    private static final Path LOCAL_FILE = FabricLoader.getInstance().getConfigDir().resolve("sre_role_roster.json");
 
     private static volatile RoleRosterState state = RoleRosterState.createDefault();
     private static volatile MinecraftServer server;
@@ -53,11 +52,13 @@ public final class RoleRosterManager {
     }
 
     public static RoleRosterState getState() {
+        if (!SREConfig.instance().enableRoster)
+            return RoleRosterState.DISABLE;
         return state;
     }
 
     public static boolean isEnabled() {
-        return state.enabled;
+        return SREConfig.instance().enableRoster && state.enabled;
     }
 
     // ------------------------------------------------------------------
@@ -65,6 +66,8 @@ public final class RoleRosterManager {
     // ------------------------------------------------------------------
 
     private static void onServerStarted(MinecraftServer startedServer) {
+        if (!SREConfig.instance().enableRoster)
+            return;
         server = startedServer;
         // 先读本地文件（即使数据库不可用也有配置可用）
         RoleRosterState local = readLocalFile();
@@ -107,6 +110,9 @@ public final class RoleRosterManager {
 
     /** 用完整名单覆盖当前配置（管理员手动编辑）。 */
     public static void setFromJson(String json) {
+        if (!SREConfig.instance().enableRoster) {
+            return;
+        }
         RoleRosterState incoming = fromJson(json);
         boolean enabled = incoming.enabled;
         incoming.normalized();
@@ -117,6 +123,10 @@ public final class RoleRosterManager {
     }
 
     public static void setEnabled(boolean enabled) {
+        
+        if (!SREConfig.instance().enableRoster) {
+            return;
+        }
         if (state.enabled == enabled) {
             return;
         }
