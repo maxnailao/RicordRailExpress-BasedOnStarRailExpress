@@ -16,8 +16,8 @@ import org.agmas.noellesroles.packet.AbilityC2SPacket;
 import org.agmas.noellesroles.packet.AbilityWithTargetC2SPacket;
 import org.agmas.noellesroles.packet.VeteranDashC2SPacket;
 import org.agmas.noellesroles.packet.VultureEatC2SPacket;
-import org.agmas.noellesroles.role.BounsRoles;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.HashMap;

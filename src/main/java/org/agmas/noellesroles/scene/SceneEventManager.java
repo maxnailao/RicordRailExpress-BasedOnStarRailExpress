@@ -143,7 +143,7 @@ public final class SceneEventManager {
             var gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(level);
             var role = gameWorld.getRole(player);
             boolean shouldCooldown = !gameWorld.isKillerTeam(player)
-                    || gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.MAGICIAN);
+                    || gameWorld.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MAGICIAN);
             if (shouldCooldown && role != null) {
                 applyHotbarCooldown(player, 15 * 20);
             }

@@ -52,7 +52,7 @@ public class ManipulatorPlayerWidget extends Button {
             setDisplayText(Component.translatable("hud.general.dead").withStyle(ChatFormatting.DARK_RED));
         }else {
             if (SREClient.gameComponent!=null && SREClient.gameComponent.getRole(targetPlayer.getProfile().getId()) != null
-                    && org.agmas.noellesroles.role.ModRoles.isVisibleKillerTeammate(
+                    && org.agmas.noellesroles.game.roles.innocence.role.ModRoles.isVisibleKillerTeammate(
                         SREClient.gameComponent.getRole(targetPlayer.getProfile().getId()))){
                 setDisplayText(Component.translatable("hud.general.killer_friend").withStyle(ChatFormatting.GOLD));
             }

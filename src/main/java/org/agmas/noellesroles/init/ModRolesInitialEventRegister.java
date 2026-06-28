@@ -11,8 +11,6 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
-import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
-import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -28,14 +26,11 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.ConfigWorldComponent;
 
 import java.util.UUID;
 
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
-import org.agmas.noellesroles.ConfigWorldComponent;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.RicesRoleRhapsody;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
@@ -51,6 +46,7 @@ import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.painter.PainterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
@@ -67,15 +63,14 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerCompone
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
@@ -111,7 +106,7 @@ public class ModRolesInitialEventRegister {
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
         // 初始化熊孩子音频事件
-        org.agmas.noellesroles.game.roles.innocent.child.ChildPunchHandler.register();
+        org.agmas.noellesroles.game.roles.innocence.child.ChildPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
@@ -454,7 +449,7 @@ public class ModRolesInitialEventRegister {
             }
             // 熊孩子角色初始化
             if (role.identifier().equals(ModRoles.CHILD.identifier())) {
-                var childComp = org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent.KEY.get(player);
+                var childComp = org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent.KEY.get(player);
                 childComp.init();
                 childComp.sync();
                 return;
@@ -495,7 +490,7 @@ public class ModRolesInitialEventRegister {
 
     static {//技能注册
         //调用熊孩子技能注册
-        org.agmas.noellesroles.game.roles.innocent.child.ChildSkillRegistry.register();
+        org.agmas.noellesroles.game.roles.innocence.child.ChildSkillRegistry.register();
         RolePassive.register(ModRoles.PHANTOM_MUSICIAN,
                 RolePassive.passive(SRE.id("phantom_musician_income"),
                         "passive.noellesroles.phantom_musician.income", 30 * 20, player -> {

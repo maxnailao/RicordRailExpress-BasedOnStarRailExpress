@@ -93,7 +93,7 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
 
         // 验证是钟表匠
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.CLOCKMAKER)) {
+        if (!gameWorld.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.CLOCKMAKER)) {
             return false;
         }
 
@@ -215,7 +215,7 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
     public void serverTick() {
         // 验证是钟表匠
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.CLOCKMAKER)) {
+        if (!gameWorld.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.CLOCKMAKER)) {
             return;
         }
 

@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.CakeBlock;
 import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.scene.MapStatusBarRuntime;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;

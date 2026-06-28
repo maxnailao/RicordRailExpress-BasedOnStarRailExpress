@@ -1,13 +1,10 @@
 package org.agmas.noellesroles.register;
 
-import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
-import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -50,8 +47,8 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
-import org.agmas.noellesroles.role.BounsRoles;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 

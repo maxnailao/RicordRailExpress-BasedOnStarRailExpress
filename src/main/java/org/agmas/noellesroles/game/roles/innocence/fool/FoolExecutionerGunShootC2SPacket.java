@@ -18,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public record FoolExecutionerGunShootC2SPacket(int targetId) implements CustomPacketPayload {

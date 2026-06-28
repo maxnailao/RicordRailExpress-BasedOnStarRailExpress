@@ -13,7 +13,7 @@ import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class WizardHud {
     private static final ResourceLocation MANA_ICON = Noellesroles.id("stamina/mana_potion_icon");

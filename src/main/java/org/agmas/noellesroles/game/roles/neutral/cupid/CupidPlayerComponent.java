@@ -18,7 +18,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModifierAssigned;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;

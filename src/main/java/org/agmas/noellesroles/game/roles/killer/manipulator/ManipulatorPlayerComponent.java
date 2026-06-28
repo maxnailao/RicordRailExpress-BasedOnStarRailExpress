@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -332,7 +332,7 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         }
         
         io.wifi.starrailexpress.cca.SREGameWorldComponent gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level());
-        if (!gameWorld.isRole(sp, org.agmas.noellesroles.role.ModRoles.MANIPULATOR)) {
+        if (!gameWorld.isRole(sp, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MANIPULATOR)) {
             resetStare();
             return;
         }

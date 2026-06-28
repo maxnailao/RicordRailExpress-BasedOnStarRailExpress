@@ -18,17 +18,15 @@ import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
-import org.agmas.noellesroles.role.BounsRoles;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
-import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.util.ArrayList;
 import java.util.Collections;

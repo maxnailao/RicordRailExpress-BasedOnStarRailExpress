@@ -23,7 +23,7 @@ import net.minecraft.world.item.component.CustomData;
 import org.agmas.noellesroles.events.OnShopPurchase;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.MafiaActionC2SPacket;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.*;

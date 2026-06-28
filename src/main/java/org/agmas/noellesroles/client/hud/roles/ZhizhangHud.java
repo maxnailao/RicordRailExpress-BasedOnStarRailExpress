@@ -6,8 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class ZhizhangHud {
 

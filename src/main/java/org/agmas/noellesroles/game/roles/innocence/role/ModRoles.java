@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.role;
+package org.agmas.noellesroles.game.roles.innocence.role;
 
 import com.mojang.serialization.Codec;
 import io.wifi.starrailexpress.SRE;
@@ -27,6 +27,7 @@ import org.agmas.noellesroles.Noellesroles;
 
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
@@ -54,6 +55,7 @@ import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerCompon
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -1176,7 +1178,7 @@ public class ModRoles {
             false // 不隐藏计分板
     )).setCanSeeCoin(true)
             .setServerGameTickEvent((player, gameComponent) -> {
-                org.agmas.noellesroles.game.roles.innocent.money_lover.MoneyLoverTickHandler.serverTick(player, gameComponent);
+                org.agmas.noellesroles.game.roles.innocence.money_lover.MoneyLoverTickHandler.serverTick(player, gameComponent);
             });
 
     /**

@@ -26,7 +26,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 
@@ -83,7 +82,7 @@ public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile
                 
                 if (entity instanceof Player player) {
                     var gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
-                    if (gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.MEATBALL)) {
+                    if (gameWorld.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MEATBALL)) {
                         meatballInRange = true;
                     } else if (gameWorld.isInnocent(player)) {
                         hasInnocentInRange = true;
@@ -103,7 +102,7 @@ public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile
                     // 肉汁独处保护：范围内同时有肉汁和好人时，跳过肉汁的击杀
                     if (meatballInRange && hasInnocentInRange) {
                         var gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
-                        if (gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.MEATBALL)) {
+                        if (gameWorld.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MEATBALL)) {
                             if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
                                 sp.displayClientMessage(
                                         net.minecraft.network.chat.Component

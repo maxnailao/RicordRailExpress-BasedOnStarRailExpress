@@ -9,7 +9,7 @@ import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 /**
  * 阿蒙死亡转移事件：受致命伤（护盾后）时，若存在成熟宿主则夺舍续命并取消死亡。

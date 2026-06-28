@@ -14,7 +14,7 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
 import com.mojang.math.Transformation;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;

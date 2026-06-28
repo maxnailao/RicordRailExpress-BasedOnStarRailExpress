@@ -58,7 +58,7 @@ public class SwapperPlayerWidget extends Button {
         } else {
             if (SREClient.gameComponent != null
                     && SREClient.gameComponent.getRole(disguiseTarget.getProfile().getId()) != null
-                    && org.agmas.noellesroles.role.ModRoles.isVisibleKillerTeammate(
+                    && org.agmas.noellesroles.game.roles.innocence.role.ModRoles.isVisibleKillerTeammate(
                         SREClient.gameComponent.getRole(disguiseTarget.getProfile().getId()))) {
                 setDisplayText(Component.translatable("hud.general.killer_friend").withStyle(ChatFormatting.GOLD));
             }

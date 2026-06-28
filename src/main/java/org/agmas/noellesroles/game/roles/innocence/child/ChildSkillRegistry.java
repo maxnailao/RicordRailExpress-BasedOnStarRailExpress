@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocent.child;
+package org.agmas.noellesroles.game.roles.innocence.child;
 
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.api.RoleSkill;
@@ -8,7 +8,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.init.NRSounds;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class ChildSkillRegistry {
     //这里添加音频

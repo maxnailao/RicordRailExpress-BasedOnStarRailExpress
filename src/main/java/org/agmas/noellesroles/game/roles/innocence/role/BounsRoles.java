@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.role;
+package org.agmas.noellesroles.game.roles.innocence.role;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.EggRole;
@@ -16,9 +16,9 @@ import java.awt.Color;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
-import org.agmas.noellesroles.role.touhou.ForestRoles;
-import org.agmas.noellesroles.role.touhou.MountainRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.ForestRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.MountainRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 
 /**
  * 彩蛋角色类，受到彩蛋刷新概率影响

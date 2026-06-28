@@ -20,7 +20,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.RepairStationBlockEntity;
 import org.agmas.noellesroles.packet.RepairCoinRewardS2CPacket;
 import org.agmas.noellesroles.packet.RepairCombatFeedbackS2CPacket;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.init.ModEffects;
 
 import java.util.Map;

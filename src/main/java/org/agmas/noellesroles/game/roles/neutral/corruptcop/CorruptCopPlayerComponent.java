@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.game.roles.neutral.corruptcop;
 
-import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -12,14 +11,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
-
-import static pro.fazeclan.river.stupid_express.role.avaricious.AvariciousGoldHandler.gameStartTime;
 
 public class CorruptCopPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
 

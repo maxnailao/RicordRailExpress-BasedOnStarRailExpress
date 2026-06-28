@@ -5,6 +5,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
@@ -470,14 +473,14 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent.class);
 
   // 熊孩子组件
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent> CHILD = ComponentRegistry
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent> CHILD = ComponentRegistry
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "child"),
-                  org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent.class);
+                  org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent.class);
 
   // 情报官组件
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent> INTELLIGENCE =
-          org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent.KEY;
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent> INTELLIGENCE =
+          org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent.KEY;
   // 盗猎者组件
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent> POACHER = ComponentRegistry
           .getOrCreate(
@@ -496,20 +499,20 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   DumbWomanPlayerComponent.class);
 
   // 术士组件 - 平民阵营，术语施放技能
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent> SHUSHI =
-          org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent.KEY;
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent> SHUSHI =
+          org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent.KEY;
 
   // 智力障碍患者组件 - 平民阵营，语音禁用+聊天混乱+探查技能
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent> ZHIZHANG = ComponentRegistry
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent> ZHIZHANG = ComponentRegistry
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "zhizhang"),
-                  org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent.class);
+                  org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent.class);
 
   // 监护人组件 - 平民阵营，保护智力障碍患者+解除debuff
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent> GUARDIAN = ComponentRegistry
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent> GUARDIAN = ComponentRegistry
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "guardian"),
-                  org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent.class);
+                  org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -990,7 +993,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     // 注册熊孩子组件
     registry.beginRegistration(Player.class, CHILD)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-            .end(org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent::new);
+            .end(org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent::new);
 
     // 注册情报官组件 - 平民阵营，监视器+情报购买
     registry.beginRegistration(Player.class, INTELLIGENCE)
@@ -1015,17 +1018,17 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     // 注册术士组件 - 平民阵营，术语施放技能
     registry.beginRegistration(Player.class, SHUSHI)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-            .end(org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent::new);
+            .end(org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent::new);
 
     // 注册智力障碍患者组件 - 平民阵营，语音禁用+聊天混乱+探查技能
     registry.beginRegistration(Player.class, ZHIZHANG)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-            .end(org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent::new);
+            .end(org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent::new);
 
     // 注册监护人组件 - 平民阵营，保护智力障碍患者
     registry.beginRegistration(Player.class, GUARDIAN)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-            .end(org.agmas.noellesroles.game.roles.innocent.guardian.GuardianPlayerComponent::new);
+            .end(org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

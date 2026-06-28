@@ -14,7 +14,7 @@ import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
 import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.awt.*;
 import java.util.HashSet;

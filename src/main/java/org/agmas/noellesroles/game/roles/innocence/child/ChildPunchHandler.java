@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocent.child;
+package org.agmas.noellesroles.game.roles.innocence.child;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -12,7 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.role.touhou;
+package org.agmas.noellesroles.game.roles.innocence.role.touhou;
 
 public class ForestRoles {
     
