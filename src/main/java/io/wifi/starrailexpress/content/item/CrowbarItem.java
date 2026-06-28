@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.content.item;
 
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.TMMRoles;
