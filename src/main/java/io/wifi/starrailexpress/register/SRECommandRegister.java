@@ -71,6 +71,7 @@ public class SRECommandRegister {
             SkinsCommand.register(dispatcher);
             ProgressionCommand.register(dispatcher);
             BackpackCommand.register(dispatcher);
+            BackpackGrantCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.RoleRosterCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.PlushCommand.register(dispatcher);
             PlayerInventoryCommand.register(dispatcher);
