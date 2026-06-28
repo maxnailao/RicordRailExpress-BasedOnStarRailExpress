@@ -1,4 +1,4 @@
-﻿{
+{
   "unknown": "未知",
   "sre.general.unknown": "未知",
   "commands.loot.error.execute_fail": "執行失敗, 原因:\n %s",
@@ -974,6 +974,8 @@
   "message.noellesroles.veteran.knife_used": "你的刀已使用並消失了！",
   "message.noellesroles.veteran_dash.no_knife": "手持軍刀時才能衝刺。",
   "message.noellesroles.veteran_dash.cooldown": "軍刀衝刺冷卻中：%s秒。",
+  "hud.veteran.ready": "衝刺已就緒",
+  "hud.veteran.cooldown": "衝刺冷卻中：%ss",
   "item.noellesroles.sp_knife": "軍刀",
   "item.noellesroles.sp_knife.tooltip": "使用一次後消失。",
   "==================== 歌手角色 ====================": "",
@@ -1242,6 +1244,7 @@
   "gui.noellesroles.spellbreaker.unlocked": "破法就緒：按G鍵",
   "gui.noellesroles.infected.cooldown": "感染冷卻：%s秒",
   "gui.noellesroles.infected.ready": "感染：就緒",
+  "gui.noellesroles.infected.charges": "剩餘次數：%s/%s",
   "gui.noellesroles.infected.time.locked": "疫使時刻：未解鎖",
   "gui.noellesroles.infected.time.unlocked": "疫使時刻：已解鎖",
   "message.noellesroles.infected.time.triggered": "☠ 疫使時刻已觸發！☠",
@@ -3191,6 +3194,7 @@
   "hud.noellesroles.raven.charges": "狩獵充能：%s/%s",
   "hud.noellesroles.raven.kills": "獵殺進度：%s/%s",
   "hud.noellesroles.raven.cooldown": "冷卻：%s秒",
+  "hud.noellesroles.raven.hunt_time": "獵殺剩餘：%s秒",
   "hud.noellesroles.raven.target": "你需要擊殺：%s",
   "message.noellesroles.raven.charge": "狩獵充能：%s/%s",
   "message.noellesroles.raven.no_target": "場上沒有可供狩獵的職業。",
@@ -3215,6 +3219,7 @@
   "message.noellesroles.cake_maker.add_egg_sugar": "請依次放入 1 個雞蛋和 2 個糖。",
   "message.noellesroles.cake_maker.add_milk": "請放入 3 桶牛奶。",
   "message.noellesroles.cake_maker.complete": "蛋糕烹飪完成！",
+  "message.noellesroles.cake_maker.cake_disappeared": "蛋糕已消失。",
   "announcement.star.role.reasoner": "推理師",
   "announcement.star.goals.reasoner": "在最合適的時機回答羅盤顯現的問題，全部推理正確即可獨立勝利。",
   "announcement.star.win.reasoner": "推理師勝利！",
@@ -3242,6 +3247,9 @@
   "message.noellesroles.reasoner.correct": "推理正確。進度：%s/%s",
   "message.noellesroles.reasoner.incorrect": "羅盤搖擺不定：這個答案不正確。",
   "message.noellesroles.reasoner.unavailable": "現在無法使用羅盤。",
+  "message.noellesroles.reasoner.already_solved": "這個問題已經被你解開了。",
+  "message.noellesroles.reasoner.shop.time_not_ready": "遊戲尚未經過2分鐘，羅盤尚未顯現。",
+  "message.noellesroles.reasoner.shop.already_has_compass": "你已經擁有羅盤了。"
   "message.noellesroles.reasoner.already_solved": "這個問題已經被你解開了。"
   "message.noellesroles.cupid.linked": "已將 %s 與 %s 連接為戀人"
   "screen.noellesroles.hurricane_device.save": "保存"

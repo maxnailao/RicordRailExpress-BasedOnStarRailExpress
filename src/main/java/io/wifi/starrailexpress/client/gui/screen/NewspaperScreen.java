@@ -355,14 +355,14 @@ public class NewspaperScreen extends Screen {
                                 saveChanges(false);
                                 onClose();
                             })
-                            .bounds(startX, bottomY, actionBtnWidth, 20).build());
+                            .bounds(startX + actionBtnWidth + spacing, bottomY, actionBtnWidth, 20).build());
             this.signButton = this.addRenderableWidget(
                     Button.builder(Component.translatable("book.signButton"),
                             b -> {
                                 isSigning = true;
                                 updateButtonVisibility();
                             })
-                            .bounds(startX + actionBtnWidth + spacing, bottomY, actionBtnWidth, 20).build());
+                            .bounds(startX, bottomY, actionBtnWidth, 20).build());
             this.finalizeButton = this.addRenderableWidget(
                     Button.builder(Component.translatable("book.finalizeButton"),
                             b -> {
@@ -808,6 +808,10 @@ public class NewspaperScreen extends Screen {
                 return true;
             }
             return true;
+        }
+        if(keyCode == 256){
+            this.saveChanges(false);
+            this.onClose();
         }
         if (super.keyPressed(keyCode, scanCode, modifiers))
             return true;

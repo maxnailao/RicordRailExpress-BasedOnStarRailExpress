@@ -83,6 +83,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.KeyMapping;
@@ -118,7 +119,6 @@ import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomStatePaylo
 import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomTableEffectsPayload;
 import org.agmas.noellesroles.game.modes.fourthroom.network.OpenFourthRoomPeekDeckPayload;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem;
-import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
@@ -170,6 +170,8 @@ public class SREClient implements ClientModInitializer {
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
     public static KeyMapping skinsKeybind; // 新增皮肤管理热键
+    public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
+    public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
     public static boolean isInstinctToggleEnabled = false; // 新增变量用于跟踪切换状态
     public static boolean prevInstinctKeyDown = false; // 用于检测按键按下事件
     public static float prevInstinctLightLevel = -.04f;
@@ -469,7 +471,7 @@ public class SREClient implements ClientModInitializer {
                         list.add(Component.translatable("starrailexpress.tip.can_thrown"));
                     }
                     if (TMMItems.INVISIBLE_ITEMS.contains(itemStack.getItem())){
-                        list.add(Component.translatable("starrailexpress.tip.invisible"));
+                        list.add(Component.translatable("starrailexpress.tip.invisible").withStyle(ChatFormatting.GRAY));
                     }
                 });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
@@ -936,6 +938,20 @@ public class SREClient implements ClientModInitializer {
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_N, // 默认热键 'N'
                 "category." + SRE.MOD_ID + ".keybinds"));
+
+        // 路径点管理 GUI（默认未绑定，OP 在按键设置里自行绑定）
+        manageWaypointsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".manage_waypoints",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_UNKNOWN,
+                "category." + SRE.MOD_ID + ".keybinds"));
+
+        // 看向删除路径点（默认未绑定）
+        deleteLookedWaypointKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".delete_looked_waypoint",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_UNKNOWN,
+                "category." + SRE.MOD_ID + ".keybinds"));
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();
@@ -1009,6 +1025,31 @@ public class SREClient implements ClientModInitializer {
                     client.setScreen(null);
                 } else {
                     client.setScreen(new SkinManagementScreen());
+                }
+            }
+
+            // 路径点管理 GUI：开关式切换
+            while (manageWaypointsKeybind.consumeClick()) {
+                if (client.screen instanceof io.wifi.starrailexpress.client.gui.screen.WaypointManageScreen) {
+                    client.setScreen(null);
+                } else if (client.screen == null) {
+                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.WaypointManageScreen());
+                }
+            }
+
+            // 看向删除路径点
+            while (deleteLookedWaypointKeybind.consumeClick()) {
+                io.wifi.starrailexpress.client.gui.screen.WaypointHUD.WaypointMarker marker =
+                        io.wifi.starrailexpress.client.gui.screen.WaypointHUD.getLookedAtWaypoint();
+                if (marker != null && client.player != null) {
+                    ClientPlayNetworking.send(
+                            new io.wifi.starrailexpress.network.packet.WaypointDeleteC2SPayload(
+                                    marker.path, marker.name, false));
+                    io.wifi.starrailexpress.client.gui.screen.WaypointHUD.removeWaypoint(marker.path, marker.name);
+                    client.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    "已请求删除路径点: " + marker.path + "/" + marker.name),
+                            true);
                 }
             }
 

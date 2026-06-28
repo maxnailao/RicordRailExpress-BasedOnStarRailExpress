@@ -39,6 +39,7 @@ import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayer
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -74,13 +75,13 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         EX_ABILITY_ROLE.add(ModRoles.EXECUTIONER);
         EX_ABILITY_ROLE.add(ModRoles.BOMBER);
         EX_ABILITY_ROLE.add(SERoles.NECROMANCER);
-        EX_ABILITY_ROLE.add(ModRoles.CAT_NECROMANCER);
+        EX_ABILITY_ROLE.add(BounsRoles.CAT_NECROMANCER);
         EX_ABILITY_ROLE.add(ModRoles.BLOOD_FEUDIST);
         EX_ABILITY_ROLE.add(SERoles.AVARICIOUS);
         EX_ABILITY_ROLE.add(ModRoles.PARTY_KILLER);
         EX_ABILITY_ROLE.add(ModRoles.NINJA);
         EX_ABILITY_ROLE.add(ModRoles.POISONER);
-        EX_ABILITY_ROLE.add(ModRoles.CREEPER);
+        EX_ABILITY_ROLE.add(BounsRoles.CREEPER);
         EX_ABILITY_ROLE.add(ModRoles.STALKER);
         EX_ABILITY_ROLE.add(ModRoles.INSANE_KILLER);
     }
@@ -109,7 +110,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，dnf_killer,迷失杀手
         BANED_ROLES.add(ModRoles.WATER_GHOST);
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
-        BANED_ROLES.add(ModRoles.CAT_KILLER);
+        BANED_ROLES.add(BounsRoles.CAT_KILLER);
         BANED_ROLES.add(ModRoles.SHADOW_FALCON);
         BANED_ROLES.add(SpecialGameModeRoles.SEEKER);
         BANED_ROLES.add(ModRoles.LOST_KILLER);
@@ -282,7 +283,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             player.addItem(timeStopClock);
         }
         // 死灵法师有轮椅
-        else if (role == SERoles.NECROMANCER || role == ModRoles.CAT_NECROMANCER) {
+        else if (role == SERoles.NECROMANCER || role == BounsRoles.CAT_NECROMANCER) {
             player.addItem(new ItemStack(ModItems.WHEELCHAIR));
             player.addItem(new ItemStack(ModItems.WHEELCHAIR));
         }
@@ -509,7 +510,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
 
                 SRERole role = gameWorldComponent.getRole(player);
                 // 猫娘可以复活cd降至10s
-                if (role == ModRoles.CAT_NECROMANCER) {
+                if (role == BounsRoles.CAT_NECROMANCER) {
                     SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY.get(player);
                     abilityPlayerComponent.setCooldown(0);
                 }
@@ -591,7 +592,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
 
                 // 角色相关数据修改
                 // 苦力怕每30s获得 2 颗雷
-                if (role == ModRoles.CREEPER) {
+                if (role == BounsRoles.CREEPER) {
                     ItemStack creeperItem = TMMItems.GRENADE.getDefaultInstance();
                     creeperItem.setCount(2);
                     player.addItem(creeperItem);

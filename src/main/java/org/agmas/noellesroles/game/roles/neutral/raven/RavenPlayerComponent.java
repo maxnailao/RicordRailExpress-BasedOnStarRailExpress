@@ -100,6 +100,10 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             return;
         }
         if (!game.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+            // 渡鸦死亡时清除傀儡本体
+            if (!GameUtils.isPlayerAliveAndSurvival(player) && (isHunting() || bodyUuid != null)) {
+                endHunt(false);
+            }
             return;
         }
 
@@ -118,7 +122,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
 
     private boolean observeNearbyMood(int totalPlayers) {
         boolean changed = false;
-        float threshold = Math.max(1f, totalPlayers / 6f - 1.5f);
+        float threshold = Math.max(1f, totalPlayers / 6f - 2.3f);
         for (Player nearby : player.level().players()) {
             if (nearby == player || nearby.distanceToSqr(player) > MOOD_RADIUS_SQR || !GameUtils.isPlayerAliveAndSurvival(nearby)) continue;
             float now = SREPlayerMoodComponent.KEY.get(nearby).getMood();

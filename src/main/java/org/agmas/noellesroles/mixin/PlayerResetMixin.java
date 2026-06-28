@@ -14,17 +14,18 @@ import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
 import org.agmas.noellesroles.content.entity.CalamityMarkEntity;
 import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
-import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
+import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -188,6 +189,9 @@ public abstract class PlayerResetMixin {
         // 清除记录员组件状态
         RecorderPlayerComponent recorderComp = ModComponents.RECORDER.get(player);
         recorderComp.clear();
+
+        // 清除蛋糕师组件状态（移除烟熏炉和已放置的蛋糕，防止残留到下一局）
+        CakeMakerComponent.KEY.get(player).clear();
         // 删除modifier
         // WorldModifierComponent worldModifierComponent =
         // WorldModifierComponent.KEY.get(player.level());

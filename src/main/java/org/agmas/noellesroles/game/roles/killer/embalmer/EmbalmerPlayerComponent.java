@@ -21,7 +21,8 @@ public class EmbalmerPlayerComponent implements RoleComponent, ServerTickingComp
             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "embalmer"),
             EmbalmerPlayerComponent.class);
 
-    public static final int MASQUERADE_COOLDOWN = 110 * 20;
+    public static final int MASQUERADE_COOLDOWN = 150 * 20;
+    public static final int MASQUERADE_INITIAL_COOLDOWN = 150 * 20; // 开局2分半冷却
     public static final int MASQUERADE_DURATION = 30 * 20;
     public static final int PITCH_MIN = 70;
     public static final int PITCH_MAX = 130;
@@ -37,7 +38,7 @@ public class EmbalmerPlayerComponent implements RoleComponent, ServerTickingComp
     public EmbalmerPlayerComponent(Player player) { this.player = player; }
     @Override public Player getPlayer() { return player; }
     @Override public void init() {
-        masqueradeCooldown = 0;
+        masqueradeCooldown = MASQUERADE_INITIAL_COOLDOWN; // 开局进入2分半冷却
         masqueradeActive = false;
         masqueradeTicksLeft = 0;
         skinSwaps.clear();

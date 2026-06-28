@@ -47,6 +47,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     private final Player player;
 
     private boolean compassGiven;
+    private boolean killerQuestionPushed;
     private int activeTicks;
     private int cooldownTicks;
     private UUID roleQuestionTarget;
@@ -70,6 +71,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void init() {
         compassGiven = false;
+        killerQuestionPushed = false;
         activeTicks = 0;
         cooldownTicks = 0;
         roleQuestionTarget = null;
@@ -115,23 +117,25 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
             changed = true;
         }
 
+        // 游戏经过 3 分钟后，主动推送杀手数量问题显现
+        if (!killerQuestionPushed && !solvedKillerCount && getElapsedTicks() >= KILLER_QUESTION_TICKS && player instanceof ServerPlayer serverPlayer) {
+            killerQuestionPushed = true;
+            ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer.serverLevel()));
+            changed = true;
+        }
+
         if (changed) {
             sync();
         }
     }
 
-    public void openCompass(ServerPlayer serverPlayer) {
-        if (cooldownTicks > 0) {
-            serverPlayer.displayClientMessage(Component.translatable(
-                    "message.noellesroles.reasoner.cooldown", secondsLeft(cooldownTicks)).withStyle(ChatFormatting.YELLOW), true);
-            return;
-        }
-        refreshQuestionTargets(serverPlayer.serverLevel());
-        ServerPlayNetworking.send(serverPlayer, new ReasonerOpenScreenS2CPacket(
-                getRoleQuestionTargetName(serverPlayer.serverLevel()),
-                getBodyQuestionTargetName(serverPlayer.serverLevel()),
-                getTaskQuestionTargetName(serverPlayer.serverLevel()),
-                deadPlayerCount(serverPlayer.serverLevel()) > 3 && bodyQuestionTarget != null,
+    private ReasonerOpenScreenS2CPacket buildOpenScreenPacket(ServerLevel level) {
+        refreshQuestionTargets(level);
+        return new ReasonerOpenScreenS2CPacket(
+                getRoleQuestionTargetName(level),
+                getBodyQuestionTargetName(level),
+                getTaskQuestionTargetName(level),
+                deadPlayerCount(level) > 3 && bodyQuestionTarget != null,
                 getElapsedTicks() >= KILLER_QUESTION_TICKS,
                 allRoleIds(),
                 allDeathReasonIds(),
@@ -141,7 +145,16 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
                 solvedDeathReason,
                 solvedTask,
                 solvedKillerCount,
-                cooldownTicks));
+                cooldownTicks);
+    }
+
+    public void openCompass(ServerPlayer serverPlayer) {
+        if (cooldownTicks > 0) {
+            serverPlayer.displayClientMessage(Component.translatable(
+                    "message.noellesroles.reasoner.cooldown", secondsLeft(cooldownTicks)).withStyle(ChatFormatting.YELLOW), true);
+            return;
+        }
+        ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer.serverLevel()));
     }
 
     public void submitAnswer(ServerPlayer serverPlayer, int question, String answer) {

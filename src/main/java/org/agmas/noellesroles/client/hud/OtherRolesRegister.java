@@ -68,6 +68,8 @@ public class OtherRolesRegister {
         ZhizhangHud.register();
         GuardianHud.register();
         UndeadLordHud.register();
+        VeteranHud.register();
+        CakeMakerHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

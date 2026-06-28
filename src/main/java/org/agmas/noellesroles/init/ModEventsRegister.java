@@ -41,10 +41,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -83,17 +85,17 @@ import org.agmas.noellesroles.events.OnShopPurchase;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
-import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager;
-import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.glitch_robot.GlitchRobotPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinFistPunchHandler;
-import org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
-import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooDeathHandler;
+import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
+import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
+import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
 import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopWinChecker;
@@ -115,7 +117,6 @@ import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -374,6 +375,21 @@ public class ModEventsRegister {
 
         GlitchRobotPlayerComponent.onKnockOut(victim);
 
+    }
+
+    /**
+     * 蛋糕师死亡 - 取消进行中的烘焙并移除已部署的烟熏炉，
+     * 防止烟熏炉残留在世界上（并遗留到下一局）。
+     */
+    private static void handleCakeMakerDeath(Player victim) {
+        if (victim == null || victim.level().isClientSide())
+            return;
+
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
+        if (!gameWorldComponent.isRole(victim, ModRoles.CAKE_MAKER))
+            return;
+
+        CakeMakerComponent.KEY.get(victim).onDeath();
     }
 
     public static void handleDeathPenalty(Player victim) {
@@ -752,10 +768,31 @@ public class ModEventsRegister {
     public static List<Item> canThrowItems = new ArrayList<>();
 
     public static void registerEvents() {
-        UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (world.isClientSide || !SREGameWorldComponent.KEY.get(world).isRole(player, ModRoles.CAKE_MAKER)) return InteractionResultHolder.pass(player.getItemInHand(hand));
-            if (ModComponents.CAKE_MAKER.get(player).addIngredient(player)) return InteractionResultHolder.consume(player.getItemInHand(hand));
-            return InteractionResultHolder.pass(player.getItemInHand(hand));
+        // Cake Maker: ingredient input via right-click on smoker interaction entity
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (world.isClientSide || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            if (CakeMakerComponent.isSmokerInteractionEntity(entity)) {
+                UUID ownerId = CakeMakerComponent.getSmokerOwner(entity);
+                // Only the cake maker who owns the smoker can add ingredients
+                if (ownerId != null && ownerId.equals(player.getUUID())) {
+                    if (ModComponents.CAKE_MAKER.get(player).addIngredient(player, entity)) {
+                        return InteractionResult.SUCCESS;
+                    }
+                }
+            }
+            // Cake eating via right-click on cake interaction entity (any player)
+            if (CakeMakerComponent.isCakeInteractionEntity(entity)) {
+                UUID ownerId = CakeMakerComponent.getCakeOwner(entity);
+                if (ownerId != null) {
+                    ServerPlayer cakeOwner = world.getServer().getPlayerList().getPlayer(ownerId);
+                    if (cakeOwner != null) {
+                        if (ModComponents.CAKE_MAKER.get(cakeOwner).eat(entity, (ServerPlayer) player)) {
+                            return InteractionResult.SUCCESS;
+                        }
+                    }
+                }
+            }
+            return InteractionResult.PASS;
         });
         // 吝啬 - 商店购买返还20%金币
         StandardRevolverItem.registerEvents();
@@ -1148,14 +1185,14 @@ public class ModEventsRegister {
         });
         AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
             if (victim.level() instanceof ServerLevel serverLevel) {
-                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
+                org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
                         victim.getUUID());
             }
             return true;
         });
         AfterShieldAllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             if (victim.level() instanceof ServerLevel serverLevel) {
-                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
+                org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel,
                         victim.getUUID());
             }
             return true;
@@ -1201,12 +1238,12 @@ public class ModEventsRegister {
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
             // 清除所有建筑师的客户端墙
             for (ServerPlayer player : world.players()) {
-                org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent builderComp = org.agmas.noellesroles.component.ModComponents.BUILDER
+                org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent builderComp = org.agmas.noellesroles.component.ModComponents.BUILDER
                         .get(player);
                 builderComp.clearAllWalls();
             }
             // 清除全局墙位置注册表
-            org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions.clearAll();
+            org.agmas.noellesroles.game.roles.innocence.builder.BuilderWallPositions.clearAll();
             // 清除冒险家开启的路径点
             io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())
                     .setWaypointsVisibility(false);
@@ -1400,7 +1437,7 @@ public class ModEventsRegister {
         // 注册疫使胜利检测和加速检测
         InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
-        org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerFrameEvents.register();
+        org.agmas.noellesroles.game.roles.innocence.photographer.PhotographerFrameEvents.register();
         ReplayRules.cantSendReplay.add(player -> {
             DeathPenaltyComponent component = ModComponents.DEATH_PENALTY.get(player);
             if (component != null) {
@@ -1927,7 +1964,7 @@ public class ModEventsRegister {
             HallucinationAreaManager.tick();
             ServerLevel level = server.overworld();
             {
-                org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.serverLevelTick(level);
+                org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager.serverLevelTick(level);
             }
             {
                 if (server.getTickCount() % 10 == 0) {
@@ -2298,6 +2335,9 @@ public class ModEventsRegister {
 
             // 检查故障机器人 - 死亡时生成缓慢效果云
             handleGlitchRobotDeath(victim);
+
+            // 检查蛋糕师 - 死亡时移除烟熏炉，防止残留到下一局
+            handleCakeMakerDeath(victim);
         });
 
         // 服务器Tick事件 - 老人的猪的处理

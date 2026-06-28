@@ -26,12 +26,11 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
-import org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -221,7 +220,8 @@ public class InstinctRenderer {
             if (!WorldModifierComponent.KEY.get(self.level()).isModifier(self, SEModifiers.LOVERS))
                 return -1;
             var lc = LoversComponent.KEY.get(self);
-            if (lc.getLover().equals(target.getUUID())) {
+            var loverUuid = lc.getLover();
+            if (loverUuid != null && loverUuid.equals(target.getUUID())) {
                 return SEModifiers.LOVERS.color();
             }
             return -1;
@@ -1077,7 +1077,7 @@ public class InstinctRenderer {
                     if (SREClient.gameComponent.isRole(target_player, ModRoles.WIND_YAOSE)) {
                         return new Color(255, 255, 51).getRGB(); // 黄色
                     }
-                    
+
                 // 默认fallback
                     if (target_role == null)
                         return Color.WHITE.getRGB();

@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.role.necromancer.cca.NecromancerComponent;
@@ -48,7 +49,7 @@ public class NecromancerHud {
                 context.drawString(textRenderer, readyText, x - textRenderer.width(readyText), y, CommonColors.GREEN);
             }
         };
-        RoleHudRenderCallback.EVENT.register(ModRoles.CAT_NECROMANCER.identifier(), necoConsumer);
+        RoleHudRenderCallback.EVENT.register(BounsRoles.CAT_NECROMANCER.identifier(), necoConsumer);
         RoleHudRenderCallback.EVENT.register(SERoles.NECROMANCER.identifier(), necoConsumer);
     }
 }

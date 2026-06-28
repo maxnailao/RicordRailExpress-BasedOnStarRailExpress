@@ -8,10 +8,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -120,7 +122,8 @@ public class MapIntroduceScreen extends Screen {
     protected void init() {
         super.init();
         computeLayout();
-        search = new EditBox(font, panelX + PAD, panelY + PAD, leftW - PAD * 2, TOP_H, Component.translatable("map_intro.search"));
+        search = new EditBox(font, panelX + PAD, panelY + PAD, leftW - PAD * 2, TOP_H,
+                Component.translatable("map_intro.search"));
         search.setHint(Component.translatable("map_intro.search"));
         search.setMaxLength(64);
         addRenderableWidget(search);
@@ -213,7 +216,8 @@ public class MapIntroduceScreen extends Screen {
                             ? "map_intro.vote.no_max_count"
                             : "map_intro.vote.count_value", map.voteMap.maxCount()),
                     wrapW);
-            addLine(map.voteMap.canSelect() ? "map_intro.vote.can_select.true" : "map_intro.vote.can_select.false", wrapW);
+            addLine(map.voteMap.canSelect() ? "map_intro.vote.can_select.true" : "map_intro.vote.can_select.false",
+                    wrapW);
             addLine("map_intro.vote.game_modes", gameModesText(map.voteMap.gameModes()), wrapW);
             addBlank();
         }
@@ -233,32 +237,47 @@ public class MapIntroduceScreen extends Screen {
         addLine("map_intro.property.room_count", intValue(json, "roomCount", 1), wrapW);
         addTaskSet(json, "disabledTasks", "map_intro.property.disabled_tasks", false, wrapW);
         addTaskSet(json, "enableSceneTask", "map_intro.property.scene_tasks", true, wrapW);
-        if (boolValue(json, "minigameQuestEnabled", false)) addLine("map_intro.property.minigame_quest", wrapW);
+        if (boolValue(json, "minigameQuestEnabled", false))
+            addLine("map_intro.property.minigame_quest", wrapW);
         String status = stringValue(json, "mapStatusBar", "NONE");
-        if (!status.equalsIgnoreCase("NONE") && !status.isBlank()) addLine("map_intro.property.status_bar", statusName(status), wrapW);
-        addLine(boolValue(json, "canSwim", false) ? "map_intro.property.can_swim.true" : "map_intro.property.can_swim.false", wrapW);
-        if (boolValue(json, "enableOxygenDrowning", false)) addLine("map_intro.property.oxygen_drowning", wrapW);
-        addLine(boolValue(json, "canJump", false) ? "map_intro.property.can_jump.true" : "map_intro.property.can_jump.false", wrapW);
-        if (boolValue(json, "snowEnabled", false)) addLine("map_intro.property.snow", wrapW);
-        if (boolValue(json, "sandEnabled", false)) addLine("map_intro.property.sand", wrapW);
-        if (!boolValue(json, "fogEnabled", true)) addLine("map_intro.property.no_fog", wrapW);
+        if (!status.equalsIgnoreCase("NONE") && !status.isBlank())
+            addLine("map_intro.property.status_bar", statusName(status), wrapW);
+        addLine(boolValue(json, "canSwim", false) ? "map_intro.property.can_swim.true"
+                : "map_intro.property.can_swim.false", wrapW);
+        if (boolValue(json, "enableOxygenDrowning", false))
+            addLine("map_intro.property.oxygen_drowning", wrapW);
+        addLine(boolValue(json, "canJump", false) ? "map_intro.property.can_jump.true"
+                : "map_intro.property.can_jump.false", wrapW);
+        if (boolValue(json, "snowEnabled", false))
+            addLine("map_intro.property.snow", wrapW);
+        if (boolValue(json, "sandEnabled", false))
+            addLine("map_intro.property.sand", wrapW);
+        if (!boolValue(json, "fogEnabled", true))
+            addLine("map_intro.property.no_fog", wrapW);
         addLine("map_intro.property.fog_end", trimNumber(doubleValue(json, "fogEnd", 200.0D)), wrapW);
         String weather = stringValue(json, "weather", "clear");
-        if (!weather.equalsIgnoreCase("clear")) addLine("map_intro.property.weather", weatherName(weather), wrapW);
+        if (!weather.equalsIgnoreCase("clear"))
+            addLine("map_intro.property.weather", weatherName(weather), wrapW);
         double gravity = doubleValue(json, "gravity", 0.08D);
         if (Math.abs(gravity - 0.08D) > 0.0001D) {
-            addLine("map_intro.property.gravity", Component.translatable(gravity < 0.08D ? "map_intro.gravity.low" : "map_intro.gravity.high"), wrapW);
+            addLine("map_intro.property.gravity",
+                    Component.translatable(gravity < 0.08D ? "map_intro.gravity.low" : "map_intro.gravity.high"),
+                    wrapW);
         }
         addEffects(json, wrapW);
         addInitialItems(json, wrapW);
         long time = longValue(json, "time", 18000L);
-        if (time != 18000L) addLine("map_intro.property.time", Component.translatable(timeName(time)), wrapW);
-        if (boolValue(json, "daylightCycle", false)) addLine("map_intro.property.daylight_cycle", wrapW);
-        if (boolValue(json, "weatherCycle", false)) addLine("map_intro.property.weather_cycle", wrapW);
+        if (time != 18000L)
+            addLine("map_intro.property.time", Component.translatable(timeName(time)), wrapW);
+        if (boolValue(json, "daylightCycle", false))
+            addLine("map_intro.property.daylight_cycle", wrapW);
+        if (boolValue(json, "weatherCycle", false))
+            addLine("map_intro.property.weather_cycle", wrapW);
     }
 
     private boolean addIfContains(Set<String> set, String mapId, String key, int wrapW) {
-        if (!set.contains(mapId)) return false;
+        if (!set.contains(mapId))
+            return false;
         addWrapped(Component.translatable(key), wrapW);
         return true;
     }
@@ -280,7 +299,8 @@ public class MapIntroduceScreen extends Screen {
     }
 
     private void buildMechanicDetail(String id, int wrapW) {
-        addWrapped(Component.translatable("map_intro.mechanic." + id + ".title").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), wrapW);
+        addWrapped(Component.translatable("map_intro.mechanic." + id + ".title").withStyle(ChatFormatting.AQUA,
+                ChatFormatting.BOLD), wrapW);
         addBlank();
         String text = Language.getInstance().getOrDefault("map_intro.mechanic." + id + ".body");
         for (String part : text.split("\\\\n|\\n")) {
@@ -290,7 +310,8 @@ public class MapIntroduceScreen extends Screen {
     }
 
     private void addTaskSet(JsonObject json, String key, String labelKey, boolean scene, int wrapW) {
-        if (!json.has(key) || !json.get(key).isJsonArray() || json.getAsJsonArray(key).isEmpty()) return;
+        if (!json.has(key) || !json.get(key).isJsonArray() || json.getAsJsonArray(key).isEmpty())
+            return;
         List<String> names = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray(key)) {
             String id = element.getAsString();
@@ -305,12 +326,14 @@ public class MapIntroduceScreen extends Screen {
             return Component.translatableWithFallback("scene_task.noellesroles." + normalized,
                     Component.translatableWithFallback("task." + normalized, id).getString()).getString();
         }
-        if ("raed_book".equals(normalized)) normalized = "read_book";
+        if ("raed_book".equals(normalized))
+            normalized = "read_book";
         return Component.translatableWithFallback("task." + normalized, id).getString();
     }
 
     private void addEffects(JsonObject json, int wrapW) {
-        if (!json.has("effect") || !json.get("effect").isJsonArray() || json.getAsJsonArray("effect").isEmpty()) return;
+        if (!json.has("effect") || !json.get("effect").isJsonArray() || json.getAsJsonArray("effect").isEmpty())
+            return;
         List<String> parts = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray("effect")) {
             String[] split = element.getAsString().split(",", 2);
@@ -319,7 +342,8 @@ public class MapIntroduceScreen extends Screen {
             String name = split[0];
             if (id != null) {
                 var effect = BuiltInRegistries.MOB_EFFECT.getHolder(id).orElse(null);
-                if (effect != null) name = Component.translatable(effect.value().getDescriptionId()).getString();
+                if (effect != null)
+                    name = Component.translatable(effect.value().getDescriptionId()).getString();
             }
             parts.add(Component.translatable("map_intro.effect.entry", name, level).getString());
         }
@@ -327,19 +351,24 @@ public class MapIntroduceScreen extends Screen {
     }
 
     private void addInitialItems(JsonObject json, int wrapW) {
-        if (!json.has("initialItems") || !json.get("initialItems").isJsonArray() || json.getAsJsonArray("initialItems").isEmpty()) return;
+        if (!json.has("initialItems") || !json.get("initialItems").isJsonArray()
+                || json.getAsJsonArray("initialItems").isEmpty())
+            return;
         List<String> parts = new ArrayList<>();
         for (JsonElement element : json.getAsJsonArray("initialItems")) {
             String[] split = element.getAsString().split("[;,]", 2);
             ResourceLocation id = ResourceLocation.tryParse(split[0]);
             int count = split.length > 1 ? parseInt(split[1], 1) : 1;
-            if (id == null) continue;
+            if (id == null)
+                continue;
             Item item = BuiltInRegistries.ITEM.get(id);
-            if (item == Items.AIR) continue;
+            if (item == Items.AIR)
+                continue;
             String name = item.getDescription().getString();
             parts.add(count > 1 ? Component.translatable("map_intro.item.entry", name, count).getString() : name);
         }
-        if (!parts.isEmpty()) addLine("map_intro.property.initial_items", String.join(", ", parts), wrapW);
+        if (!parts.isEmpty())
+            addLine("map_intro.property.initial_items", String.join(", ", parts), wrapW);
     }
 
     private void addSection(String key, int wrapW) {
@@ -363,14 +392,18 @@ public class MapIntroduceScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        renderBackground(graphics, mouseX, mouseY, delta);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.renderBackground(graphics, mouseX, mouseY, delta);
+        
         computeLayout();
         drawPanelBg(graphics, panelX, panelY, leftW, panelH);
         drawPanelBg(graphics, panelX + leftW + GAP, panelY, rightW, panelH);
+    }
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
         graphics.fillGradient(0, 0, width, panelY - 4, 0xBB000000, 0x00000000);
         graphics.drawCenteredString(font, title, width / 2, 8, 0xF5E8C8);
-        super.render(graphics, mouseX, mouseY, delta);
         renderTabs(graphics, mouseX, mouseY);
         renderList(graphics, mouseX, mouseY);
         renderDetail(graphics);
@@ -427,7 +460,8 @@ public class MapIntroduceScreen extends Screen {
             if (entry.item != null) {
                 graphics.renderItem(new ItemStack(entry.item), x + 6, ry + 11);
                 graphics.drawString(font, trim(entry.name.getString(), rowW - 32), x + 28, ry + 8, TEXT, false);
-                graphics.drawString(font, trim(BuiltInRegistries.ITEM.getKey(entry.item).toString(), rowW - 32), x + 28, ry + 22, MUTED, false);
+                graphics.drawString(font, trim(BuiltInRegistries.ITEM.getKey(entry.item).toString(), rowW - 32), x + 28,
+                        ry + 22, MUTED, false);
             } else {
                 graphics.drawString(font, trim(entry.name.getString(), rowW - 12), x + 6, ry + 8, TEXT, false);
                 graphics.drawString(font, trim(entry.id, rowW - 12), x + 6, ry + 22, MUTED, false);
@@ -447,6 +481,13 @@ public class MapIntroduceScreen extends Screen {
         }
     }
 
+    private void playClickSound() {
+        if (this.minecraft != null && this.minecraft.getSoundManager() != null) {
+            this.minecraft.getSoundManager()
+                    .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+        }
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
@@ -459,8 +500,10 @@ public class MapIntroduceScreen extends Screen {
                     tab = tabs.get(i).tab;
                     listScroll = 0;
                     selected = null;
+                    playClickSound();
                     rebuildEntries();
-                    if (!entries.isEmpty()) selected = entries.get(0);
+                    if (!entries.isEmpty())
+                        selected = entries.get(0);
                     rebuildDetail();
                     return true;
                 }
@@ -469,6 +512,7 @@ public class MapIntroduceScreen extends Screen {
             int listY = panelY + PAD + TOP_H + GAP;
             int listH = panelH - TOP_H - BOTTOM_H - PAD * 2 - GAP;
             if (inside(mouseX, mouseY, listX, listY, leftW - PAD * 2, listH)) {
+                playClickSound();
                 int idx = (int) ((mouseY - listY) / ROW_H) + listScroll;
                 if (idx >= 0 && idx < entries.size()) {
                     selected = entries.get(idx);
@@ -543,11 +587,13 @@ public class MapIntroduceScreen extends Screen {
                 ModSceneBlocks.SCENE_GATE.asItem(), ModSceneBlocks.FLAMETHROWER.asItem(),
                 ModSceneBlocks.ROLLING_STONE_TRIGGER.asItem(), ModSceneBlocks.TRAIN_TARGET.asItem(),
                 ModSceneBlocks.INCINERATOR.asItem(), ModSceneBlocks.MOVING_PLATFORM.asItem(),
-                ModSceneBlocks.HURRICANE_DEVICE.asItem(), ModSceneBlocks.COFFIN.asItem(), ModSceneBlocks.WATER_PUMP.asItem(),
+                ModSceneBlocks.HURRICANE_DEVICE.asItem(), ModSceneBlocks.COFFIN.asItem(),
+                ModSceneBlocks.WATER_PUMP.asItem(),
                 ModSceneBlocks.TRASH_CAN.asItem(),
                 ModBlocks.VENDING_MACHINES_BLOCK.asItem(), ModBlocks.LOTTERY_MACHINE_BLOCK.asItem(),
                 ModBlocks.DEVIL_ROULETTE_TABLE.asItem(), ModBlocks.HOTBAR_STORAGE.asItem(),
-                ModBlocks.SUPPLY_CRATE_BLOCK.asItem(), ModBlocks.KILL_BLOCK.asItem(), ModBlocks.KILL_BLOCK_PANEL.asItem(),
+                ModBlocks.SUPPLY_CRATE_BLOCK.asItem(), ModBlocks.KILL_BLOCK.asItem(),
+                ModBlocks.KILL_BLOCK_PANEL.asItem(),
                 SREBlocks.TRAIN_LIGHT.asItem(), SREBlocks.REMOTE_REDSTONE.asItem(),
                 TMMBlocks.TRIMMED_LANTERN.asItem(), TMMBlocks.WALL_LAMP.asItem(), TMMBlocks.NEON_PILLAR.asItem(),
                 TMMBlocks.NEON_TUBE.asItem(), TMMBlocks.ENTITY_INTERACTION_BLOCK_ITEM,
@@ -557,7 +603,8 @@ public class MapIntroduceScreen extends Screen {
 
     private static List<Item> questBlockItems() {
         return List.of(
-                ModSceneBlocks.REACTOR.asItem(), ModSceneBlocks.WATER_VALVE.asItem(), ModSceneBlocks.DEBRIS_PILE.asItem(),
+                ModSceneBlocks.REACTOR.asItem(), ModSceneBlocks.WATER_VALVE.asItem(),
+                ModSceneBlocks.DEBRIS_PILE.asItem(),
                 ModSceneBlocks.STOVE.asItem(), ModSceneBlocks.DUST.asItem(), ModSceneBlocks.TRANSPORT_POINT.asItem(),
                 ModSceneBlocks.STATUE.asItem(), ModSceneBlocks.BUSH.asItem(), ModSceneBlocks.CROP.asItem(),
                 Items.BLACK_CONCRETE, Items.NOTE_BLOCK, Items.LECTERN,
@@ -581,7 +628,8 @@ public class MapIntroduceScreen extends Screen {
             }
             String path = value.contains(":") ? value.substring(value.indexOf(':') + 1) : value;
             names.add(Component.translatableWithFallback("game_mode.noellesroles." + path,
-                    Component.translatableWithFallback("game_mode.starrailexpress." + path, value).getString()).getString());
+                    Component.translatableWithFallback("game_mode.starrailexpress." + path, value).getString())
+                    .getString());
         }
         if (names.isEmpty()) {
             return Component.translatable("map_intro.vote.all_game_modes");
@@ -630,8 +678,9 @@ public class MapIntroduceScreen extends Screen {
 
     private static String timeName(long time) {
         long t = Math.floorMod(time, 24000L);
-        long[] points = {6000L, 12000L, 18000L, 23000L};
-        String[] keys = {"map_intro.time.noon", "map_intro.time.dusk", "map_intro.time.midnight", "map_intro.time.dawn"};
+        long[] points = { 6000L, 12000L, 18000L, 23000L };
+        String[] keys = { "map_intro.time.noon", "map_intro.time.dusk", "map_intro.time.midnight",
+                "map_intro.time.dawn" };
         int best = 0;
         long bestDist = Long.MAX_VALUE;
         for (int i = 0; i < points.length; i++) {
@@ -673,7 +722,8 @@ public class MapIntroduceScreen extends Screen {
     }
 
     private static String trimNumber(double value) {
-        return Math.abs(value - Math.rint(value)) < 0.0001D ? String.valueOf((int) Math.rint(value)) : String.format(Locale.ROOT, "%.2f", value);
+        return Math.abs(value - Math.rint(value)) < 0.0001D ? String.valueOf((int) Math.rint(value))
+                : String.format(Locale.ROOT, "%.2f", value);
     }
 
     private enum Tab {

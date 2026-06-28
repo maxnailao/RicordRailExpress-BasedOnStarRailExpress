@@ -11,6 +11,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -95,13 +96,13 @@ public class RoleInitialItems {
             // baseball
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> TMMItems.BAT.getDefaultInstance());
-            INITIAL_ITEMS_MAP.put(ModRoles.BASEBALL_PLAYER, items);
+            INITIAL_ITEMS_MAP.put(BounsRoles.BASEBALL_PLAYER, items);
         }
         {
             // 最好的小脑
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> TMMItems.GRENADE.getDefaultInstance());
-            INITIAL_ITEMS_MAP.put(ModRoles.BEST_VIGILANTE, items);
+            INITIAL_ITEMS_MAP.put(BounsRoles.BEST_VIGILANTE, items);
         }
         {
             // FURANDORU

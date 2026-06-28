@@ -9,6 +9,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,7 +29,7 @@ public class NecromancerHudMixin {
             return;
         }
         var p = Minecraft.getInstance().player;
-        if (SREClient.isRole(SERoles.NECROMANCER) || SREClient.isRole(ModRoles.CAT_NECROMANCER) && !SREClient.isPlayerSpectatingOrCreative()) {
+        if (SREClient.isRole(SERoles.NECROMANCER) || SREClient.isRole(BounsRoles.CAT_NECROMANCER) && !SREClient.isPlayerSpectatingOrCreative()) {
             context.pose().pushPose();
             context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
             context.pose().scale(0.6f, 0.6f, 1.0f);

@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 
 public class NoellesrolesClientAmbientSounds {
@@ -50,7 +51,7 @@ public class NoellesrolesClientAmbientSounds {
                 if (level == null)
                   return false;
                 return (level.players().stream().anyMatch((p) -> {
-                  if (SREClient.gameComponent.isRole(p, ModRoles.CAT_KILLER)) {
+                  if (SREClient.gameComponent.isRole(p, BounsRoles.CAT_KILLER)) {
                     if (SREPlayerPsychoComponent.KEY.get(p).getPsychoTicks() > 0) {
                       return true;
                     }

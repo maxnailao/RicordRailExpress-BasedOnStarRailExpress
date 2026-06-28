@@ -31,17 +31,17 @@ import org.agmas.noellesroles.client.screen.DetectiveInspectScreenHandler;
 import org.agmas.noellesroles.client.screen.PostmanScreenHandler;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.LockEntityManager;
-import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.great_detective.GreatDetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.telegrapher.TelegrapherPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.veteran.VeteranKnifeHandler;
+import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
+import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
@@ -50,6 +50,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
@@ -267,7 +268,7 @@ public class RiceReceiverRegister {
             }
 
             // 验证玩家是电报员
-            if (!gameWorld.isRole(context.player(), ModRoles.TELEGRAPHER))
+            if (!gameWorld.isRole(context.player(), BounsRoles.TELEGRAPHER))
                 return;
 
             // 获取电报员组件并发送消息

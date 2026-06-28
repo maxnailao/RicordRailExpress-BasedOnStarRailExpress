@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.api;
 
+import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -9,6 +10,8 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -26,7 +29,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-
+import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -38,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,7 +74,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
-    private SpecialMapRole specialMapRole = SpecialMapRole.all;
+    private SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.all;
     private boolean specialVigilante = false;
     private boolean refreshableSpecialVigilante = false;
     private int refreshableSpecialVigilanteChance = -1;
@@ -78,6 +82,92 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
     public HashSet<SRERole> opposingJobs = new HashSet<>();
+    
+
+    /**
+     * 添加显示FLAG
+     */
+    public SRERole addFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.add(i);
+        }
+        return this;
+    }
+
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(String... flags) {
+        for (var f : flags) {
+            if (!this.flags.contains(f))
+                return false;
+        }
+        return true;
+
+    }
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(Set<String> flags) {
+        return this.flags.containsAll(flags);
+    }
+
+    /**
+     * 是否为指定flag，带inner.的标签。
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlagWithInner(Set<String> flags) {
+        var test = new HashSet<>(flags);
+        if (test.contains("inner.enable")) {
+            test.remove("inner.enable");
+            if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)
+                    && !RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
+                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(this.identifier().toString(), false)) {
+                    return false;
+                }
+            } else {
+                var config = HarpyModLoaderConfig.HANDLER.instance();
+                if (config.getDisabled().contains(this.identifier().toString())) {
+                    return false;
+                }
+            }
+        }
+        if (test.contains("inner.disable")) {
+            test.remove("inner.disable");
+            if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)
+                    && !RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
+                if (RoleManageConfigUI.RoleEnableStatus.getOrDefault(this.identifier().toString(), false)) {
+                    return false;
+                }
+            } else {
+                var config = HarpyModLoaderConfig.HANDLER.instance();
+                if (!config.getDisabled().contains(this.identifier().toString())) {
+                    return false;
+                }
+            }
+        }
+        return this.flags.containsAll(test);
+    }
+
+    /**
+     * 删除显示FLAG
+     */
+    public SRERole removeFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.remove(i);
+        }
+        return this;
+    }
 
     public Random getRandom() {
         return random;
@@ -138,6 +228,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setMafiaTeam(boolean flag) {
         this.mafiaTeam = flag;
+        this.flags.add("mafia_team");
         return this;
     }
 
@@ -216,21 +307,21 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.occupiedRoleCount;
     }
 
-    public enum SpecialMapRole {
+    public enum SpecialMapRoleMap {
         all, qiyucun, bigmap, underwater, fly, trap
     }
 
-    public SpecialMapRole getSpecialMapRole() {
+    public SpecialMapRoleMap getSpecialMapRole() {
         return this.specialMapRole;
     }
 
-    public SRERole setSpecialMapRole(SpecialMapRole specialMapRole) {
-        this.specialMapRole = specialMapRole == null ? SpecialMapRole.all : specialMapRole;
+    public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
+        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.all : specialMapRole;
         return this;
     }
 
     public boolean isSpecialMapRole() {
-        return this.specialMapRole != SpecialMapRole.all;
+        return this.specialMapRole != SpecialMapRoleMap.all;
     }
 
     public boolean isSpecialVigilante() {
@@ -1063,7 +1154,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * <ul>
      * <li><b>{@link InteractionResult#PASS}</b> — 使用默认逻辑，正常执行物品丢弃。</li>
      * <li><b>{@link InteractionResult#CONSUME}</b> — 取消本次丢弃行为</li>
-     * <li><b>{@link InteractionResult#SUCCESS}</b> — 取消本次丢弃行为</li>
+     * <li><b>{@link InteractionResult#SUCCESS}</b> — 正常物品丢弃行为</li>
      * <li><b>{@link InteractionResult#FAIL}</b> — 取消本次丢弃行为</li>
      * </ul>
      *

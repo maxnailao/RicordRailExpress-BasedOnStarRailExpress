@@ -21,6 +21,7 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -106,7 +107,7 @@ public class InitModRolesMax {
 
         // 工程师每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ENGINEER_ID, 1);
-        Harpymodloader.setRoleMaximum(ModRoles.BASEBALL_PLAYER_ID, 1);
+        Harpymodloader.setRoleMaximum(BounsRoles.BASEBALL_PLAYER_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.LOCKSMITH_ID, 0);
         // 斗士每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.FIGHTER_ID, 1);
@@ -231,10 +232,10 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.BETTER_VIGILANTE_ID, 0);
 
         // 作家 - 默认为0，在 InitModRolesMax 中动态设置（0.5%概率刷新）
-        Harpymodloader.setRoleMaximum(ModRoles.WRITER_ID, 0);
+        Harpymodloader.setRoleMaximum(BounsRoles.WRITER_ID, 0);
 
         // 电报员 - 默认为0，在 InitModRolesMax 中动态设置（0.5%概率刷新）
-        Harpymodloader.setRoleMaximum(ModRoles.TELEGRAPHER_ID, 0);
+        Harpymodloader.setRoleMaximum(BounsRoles.TELEGRAPHER_ID, 0);
 
         // 设置角色最大数量
         Harpymodloader.setRoleMaximum(ModRoles.POISONER_ID, 0);
@@ -346,7 +347,7 @@ public class InitModRolesMax {
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
-                 for (var a : TMMRoles.ROLES.values()) {
+                for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof EggRole && a.canSetSpawnInfoInConfig()) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
                         if (max >= 0) {
@@ -569,11 +570,16 @@ public class InitModRolesMax {
                 entry.setSpawnInfo(spinfo);
         }
         for (var entry : TMMRoles.ROLES.entrySet()) {
+            if (entry.getValue() instanceof TouhouRole)
+                return;
+            if (entry.getValue() instanceof EggRole)
+                return;
             SpawnInfo spinfo = config.roleDetails.getSpawnInfo(entry.getValue());
             if (spinfo != null && entry.getValue().canSetSpawnInfoInConfig())
                 entry.getValue().setSpawnInfo(spinfo);
         }
         // 以下内容均已统一成新API。（上方）可分别对任何角色进行控制。也可以设置角色不受到控制影响。
+        {
             // // 建筑师 - 从配置读取概率和最小玩家数
             // ModRoles.BUILDER.setEnableChance(config.chanceOfBuilder).setEnableNeededPlayerCount(config.minPlayerForBuilder);
 
@@ -591,6 +597,7 @@ public class InitModRolesMax {
 
             // // 杜鹃 - 45%概率
             // ModRoles.CUCKOO.setEnableChance(config.chanceOfCuckoo);
+
             // // 苦力怕 - 20%概率
             // ModRoles.CREEPER.setEnableChance(config.chanceOfCreeper);
 
@@ -633,6 +640,7 @@ public class InitModRolesMax {
             // // 教父 - 从配置读取概率和最小玩家数
             // ModRoles.GODFATHER.setEnableChance(config.chanceOfGodfather)
             // .setEnableNeededPlayerCount(config.mafiaMinimumPlayers);
+        }
 
         // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%
         for (var entry : TMMRoles.ROLES.entrySet()) {

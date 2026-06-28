@@ -30,17 +30,16 @@ import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.client.hud.roles.BroadcasterHud;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
-import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
+import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
+import org.agmas.noellesroles.game.roles.innocence.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
@@ -55,6 +54,7 @@ import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
@@ -690,6 +690,14 @@ public class CommonClientHudRenderer {
         infectedTimeColor = 0x888888;
       }
       context.drawString(font, infectedTimeText, x - font.width(infectedTimeText), y - font.lineHeight - 2, infectedTimeColor);
+
+      // 剩余感染次数
+      if (abilityComponent.maxCharges > 0) {
+        Component chargesText = Component.translatable("gui.noellesroles.infected.charges",
+                abilityComponent.charges, abilityComponent.maxCharges)
+            .withStyle(ChatFormatting.AQUA);
+        context.drawString(font, chargesText, x - font.width(chargesText), y - font.lineHeight * 2 - 4, 0x55FFFF);
+      }
 
       // 技能冷却显示
       Component cooldownText;
@@ -1755,12 +1763,12 @@ public class CommonClientHudRenderer {
     });
 
     // 苦力怕HUD
-    RoleHudRenderCallback.EVENT.register(ModRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
+    RoleHudRenderCallback.EVENT.register(BounsRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null || SREClient.gameComponent == null) {
         return;
       }
-      if (!SREClient.gameComponent.isRole(client.player, ModRoles.CREEPER)) {
+      if (!SREClient.gameComponent.isRole(client.player, BounsRoles.CREEPER)) {
         return;
       }
 

@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
+import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
@@ -382,28 +383,26 @@ public class TraitorAndModifiers {
     }
 
     private static void registerDeathEvents() {
-        // 回光返照 - 被击杀时延后3秒死亡（不阻挡列车碾压和挂机死亡）
-        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
-            if (!(player instanceof ServerPlayer))
-                return true;
-            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorld == null || !gameWorld.isRunning())
-                return true;
 
-            // 检查死亡原因，排除列车碾压和挂机死亡
-            ResourceLocation deathReasonId = deathReason != null ? deathReason : GameConstants.DeathReasons.GENERIC;
-            ResourceLocation trainDeath = GameConstants.DeathReasons.FELL_OUT_OF_TRAIN;
-            ResourceLocation afkDeath = io.wifi.starrailexpress.SRE.id("death_afk");
-            if (deathReasonId.equals(trainDeath) || deathReasonId.equals(afkDeath)) {
-                return true; // 这些死亡原因不触发回光返照
-            }
+        // 回光返照避免重复被杀
+        AllowPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (LAST_GASP_TRIGGERED.contains(victim.getUUID()))
+                return false;
             return true;
         });
-
         // 回光返照避免受到force影响
         OnPlayerDeathWithKiller.EVENT.register((player, killer, deathReasonId) -> {
             if (!(player instanceof ServerPlayer sp))
                 return;
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorld == null || !gameWorld.isRunning())
+                return;
+
+            // 检查死亡原因，排除列车碾压和挂机死亡
+            ResourceLocation trainDeath = GameConstants.DeathReasons.FELL_OUT_OF_TRAIN;
+            if (deathReasonId.getPath().equals("death_afk") || deathReasonId.equals(trainDeath)) {
+                return; // 这些死亡原因不触发回光返照
+            }
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
             if (modifiers.isModifier(player.getUUID(), LAST_GASP) && !LAST_GASP_TRIGGERED.contains(player.getUUID())) {
                 LAST_GASP_TRIGGERED.add(player.getUUID());
@@ -444,7 +443,7 @@ public class TraitorAndModifiers {
                             player.getX(), player.getY() + 1.0, player.getZ(),
                             30, 0.8, 1.0, 0.8, 0.05);
                 }
-                
+
                 var body = GameUtils.findPlayerBodyEntity(sp);
                 if (body != null) {
                     body.discard();

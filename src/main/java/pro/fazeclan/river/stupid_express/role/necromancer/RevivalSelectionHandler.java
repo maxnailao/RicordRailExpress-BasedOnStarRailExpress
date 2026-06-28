@@ -23,6 +23,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +59,7 @@ public class RevivalSelectionHandler {
                 return InteractionResult.PASS;
             }
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (!gameWorldComponent.isRole(player, ModRoles.CAT_NECROMANCER)) {
+            if (!gameWorldComponent.isRole(player, BounsRoles.CAT_NECROMANCER)) {
                 return InteractionResult.PASS;
             }
             if (!(entity instanceof PlayerBodyEntity body)) {
@@ -108,7 +109,7 @@ public class RevivalSelectionHandler {
 
             // get random killer role
             var roles = new ArrayList<SRERole>();
-            roles.add(ModRoles.CAT_KILLER);
+            roles.add(BounsRoles.CAT_KILLER);
             Collections.shuffle(roles);
 
             // revive player and give them the role
@@ -118,7 +119,7 @@ public class RevivalSelectionHandler {
                     a -> {
                         a.playNotifySound(SoundEvents.TOTEM_USE, revived.getSoundSource(), 1.2f, 1.5f);
                         a.displayClientMessage(Component.translatable("hud.stupid_express.necromancer.revived_player",
-                                RoleUtils.getRoleOrModifierNameWithColor(ModRoles.CAT_NECROMANCER),
+                                RoleUtils.getRoleOrModifierNameWithColor(BounsRoles.CAT_NECROMANCER),
                                 RoleUtils.getRoleOrModifierNameWithColor(selectedRole))
                                 .withStyle(ChatFormatting.DARK_RED), true);
                     });

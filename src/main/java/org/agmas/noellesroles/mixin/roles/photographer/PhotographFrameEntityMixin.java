@@ -6,8 +6,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerFrameEvents;
-import org.agmas.noellesroles.game.roles.innocent.photographer.SrePhotographerFrame;
+import org.agmas.noellesroles.game.roles.innocence.photographer.PhotographerFrameEvents;
+import org.agmas.noellesroles.game.roles.innocence.photographer.SrePhotographerFrame;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,6 +27,9 @@ public class PhotographFrameEntityMixin implements SrePhotographerFrame {
     @Unique
     private boolean sre$photographerPlaced = false;
 
+    @Unique
+    private int sre$teleportCount = 0;
+
     @Override
     public boolean sre$isPhotographerPlaced() {
         return this.sre$photographerPlaced;
@@ -37,14 +40,26 @@ public class PhotographFrameEntityMixin implements SrePhotographerFrame {
         this.sre$photographerPlaced = placed;
     }
 
+    @Override
+    public int sre$getTeleportCount() {
+        return this.sre$teleportCount;
+    }
+
+    @Override
+    public void sre$setTeleportCount(int count) {
+        this.sre$teleportCount = count;
+    }
+
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     private void sre$save(CompoundTag tag, CallbackInfo ci) {
         tag.putBoolean("SrePhotographerPlaced", this.sre$photographerPlaced);
+        tag.putInt("SrePhotographerTeleportCount", this.sre$teleportCount);
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     private void sre$load(CompoundTag tag, CallbackInfo ci) {
         this.sre$photographerPlaced = tag.getBoolean("SrePhotographerPlaced");
+        this.sre$teleportCount = tag.getInt("SrePhotographerTeleportCount");
     }
 
     @Inject(method = "tick", at = @At("HEAD"))

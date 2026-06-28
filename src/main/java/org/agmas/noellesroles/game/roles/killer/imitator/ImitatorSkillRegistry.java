@@ -23,12 +23,14 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions;
+
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.game.roles.innocence.builder.BuilderWallPositions;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
 import org.agmas.noellesroles.packet.BuilderWallS2CPacket;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
@@ -75,7 +77,7 @@ public class ImitatorSkillRegistry {
         ALLOWED_ROLES.add(ModRoles.RECALLER_ID);
         ALLOWED_ROLES.add(ModRoles.SUPERSTAR_ID);
         ALLOWED_ROLES.add(ModRoles.VETERAN_ID);
-        ALLOWED_ROLES.add(ModRoles.TELEGRAPHER_ID);
+        ALLOWED_ROLES.add(BounsRoles.TELEGRAPHER_ID);
         ALLOWED_ROLES.add(ModRoles.BROADCASTER_ID);
         ALLOWED_ROLES.add(ModRoles.ATHLETE_ID);
         ALLOWED_ROLES.add(ModRoles.FIGHTER_ID);
@@ -94,7 +96,7 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.RECALLER_ID, 90 * 20); // 30秒
         SKILL_COOLDOWNS.put(ModRoles.SUPERSTAR_ID, 90 * 20); // 60秒(参考原本)
         SKILL_COOLDOWNS.put(ModRoles.VETERAN_ID, 90 * 20); // 90秒
-        SKILL_COOLDOWNS.put(ModRoles.TELEGRAPHER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(BounsRoles.TELEGRAPHER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.BROADCASTER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.ATHLETE_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.FIGHTER_ID, 90 * 20); // 90秒
@@ -110,7 +112,7 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.ACCOUNTANT_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.DOCTOR_ID, 90 * 20); // 90秒
 
-        MESSAGE_SKILLS.add(ModRoles.TELEGRAPHER_ID);
+        MESSAGE_SKILLS.add(BounsRoles.TELEGRAPHER_ID);
         MESSAGE_SKILLS.add(ModRoles.BROADCASTER_ID);
     }
 
@@ -175,7 +177,7 @@ public class ImitatorSkillRegistry {
     public static SkillResult executeMessage(ResourceLocation roleId, ServerPlayer player,
             String message, ImitatorPlayerComponent comp,
             boolean isPermanent) {
-        if (roleId.equals(ModRoles.TELEGRAPHER_ID)) {
+        if (roleId.equals(BounsRoles.TELEGRAPHER_ID)) {
             return executeTelegrapher(player, message);
         } else if (roleId.equals(ModRoles.BROADCASTER_ID)) {
             return executeBroadcaster(player, message);

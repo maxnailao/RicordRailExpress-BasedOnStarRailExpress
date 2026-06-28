@@ -4,10 +4,13 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.compat.CrosshairaddonsCompat;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.KillerKnifeDurability;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.original.KnifeStabPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -36,6 +39,20 @@ public class KnifeItem extends SkinableItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, @NotNull Player user, InteractionHand hand) {
         ItemStack itemStack = user.getItemInHand(hand);
+        if (!world.isClientSide) {
+            boolean durabilityKnife = KillerKnifeDurability.isDurabilityModeEnabled(user.level())
+                    && KillerKnifeDurability.isMarkedKnife(itemStack);
+            if (durabilityKnife && KillerKnifeDurability.isDepleted(itemStack)) {
+                user.displayClientMessage(
+                        Component.translatable("message.sre.knife.depleted").withStyle(ChatFormatting.DARK_RED), true);
+                return InteractionResultHolder.fail(itemStack);
+            }
+        } else {
+            if (itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
+                return InteractionResultHolder.fail(itemStack);
+            }
+        }
+
         user.startUsingItem(hand);
         user.playSound(TMMSounds.ITEM_KNIFE_PREPARE, 1.0f, 1.0f);
         return InteractionResultHolder.consume(itemStack);

@@ -16,6 +16,7 @@ import org.agmas.noellesroles.packet.AbilityC2SPacket;
 import org.agmas.noellesroles.packet.AbilityWithTargetC2SPacket;
 import org.agmas.noellesroles.packet.VeteranDashC2SPacket;
 import org.agmas.noellesroles.packet.VultureEatC2SPacket;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -109,7 +110,7 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new AbilityC2SPacket());
             return true;
         });
-        register(ModRoles.CREEPER, true, (client, gameWorld) -> {
+        register(BounsRoles.CREEPER, true, (client, gameWorld) -> {
             if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
                 return true;
             }
@@ -177,7 +178,7 @@ public final class GKeyRoleSkill {
             return true;
         });
 
-        register(ModRoles.TELEGRAPHER, false, (client, gameWorld) -> {
+        register(BounsRoles.TELEGRAPHER, false, (client, gameWorld) -> {
             if (!NoellesrolesClient.isPlayerInAdventureMode(client.player)) {
                 return true;
             }

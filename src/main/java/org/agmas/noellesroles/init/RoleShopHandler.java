@@ -36,9 +36,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
-import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -48,6 +46,7 @@ import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComp
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -269,6 +268,8 @@ public class RoleShopHandler {
   // ==================== 嬉命人商店 ====================
   public static ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
   public static ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
+  // ==================== 推理师商店 ====================
+  public static ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -666,7 +667,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(SERoles.NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
       ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), NECROMANCER_SHOP);
-      ShopContent.customEntries.put(ModRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
+      ShopContent.customEntries.put(BounsRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
 
       {
         var CAT_KILLER_SHOP = new ArrayList<>(NECROMANCER_SHOP);
@@ -677,7 +678,7 @@ public class RoleShopHandler {
             return SREPlayerShopComponent.usePsychoMode(player, 1.1);
           }
         });
-        ShopContent.customEntries.put(ModRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
+        ShopContent.customEntries.put(BounsRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
       }
     }
     {
@@ -721,8 +722,11 @@ public class RoleShopHandler {
       var shop = new ArrayList<ShopEntry>();
       shop.add(new ShopEntry(ModItems.CAKE_INGREDIENTS.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       shop.add(new ShopEntry(Items.SMOKER.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
-        @Override public boolean canBuy(Player player) {
-          for (int i = 0; i < 9; i++) if (player.getInventory().getItem(i).is(Items.SMOKER)) return false;
+        @Override
+        public boolean canBuy(Player player) {
+          for (int i = 0; i < 9; i++)
+            if (player.getInventory().getItem(i).is(Items.SMOKER))
+              return false;
           return true;
         }
       });
@@ -1099,7 +1103,7 @@ public class RoleShopHandler {
           entries.add(new ShopEntry(frameStack, price, ShopEntry.Type.TOOL) {
             @Override
             public boolean onBuy(@NotNull Player player) {
-              var comp = org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerPlayerComponent.KEY
+              var comp = org.agmas.noellesroles.game.roles.innocence.photographer.PhotographerPlayerComponent.KEY
                   .get(player);
               if (comp == null || !comp.canBuyFrame()) {
                 return false;
@@ -1139,7 +1143,7 @@ public class RoleShopHandler {
     }
     {
       // PACHURI 商店
-      var displayStack = Items.WRITTEN_BOOK.getDefaultInstance();
+      var displayStack = ModItems.NEWSPAPER.getDefaultInstance();
       String title = "\u00a7d\u00a7lPachuri Knowledge Book";
       displayStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
           new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "Pachuri Knowledge", 1, List.of(),
@@ -1151,7 +1155,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL) {
         @Override
         public boolean onBuy(Player player) {
-          var itemStack = Items.WRITTEN_BOOK.getDefaultInstance();
+          var itemStack = ModItems.NEWSPAPER.getDefaultInstance();
           var players = new ArrayList<>(player.level().players());
           var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
           players.removeIf((p) -> {
@@ -1160,33 +1164,41 @@ public class RoleShopHandler {
           Collections.shuffle(players);
           int count = 1;
           var contents = new ArrayList<Filterable<Component>>();
-          {
-            var fstct = Component.translatable("%s\n%s", Component.translatable("item.written_book.role_title")
-                .withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD),
-                Component.translatable("item.written_book.role_intro")
-                    .withStyle(ChatFormatting.GRAY));
-            var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
-            contents.add(fstcontent);
-          }
+          // {
+          var fstct = Component.translatable("%s\n%s\n\n", Component.translatable("item.written_book.role_title"),
+              Component.translatable("item.written_book.role_intro"));
+          // var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
+          // contents.add(fstcontent);
+          // }
           for (int i = 0; i < count; i++) {
             var p = players.get(i);
-            var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1)
-                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.GOLD),
+
+            var ct = Component.translatable("%s%s", Component.translatable("item.written_book.per_role_title", i + 1),
                 Component
                     .translatable("item.written_book.per_role_content",
-                        p.getName().copy().withStyle(ChatFormatting.DARK_GRAY),
-                        RoleUtils.getRoleOrModifierNameWithColor(gameWorldComponent.getRole(p)))
-                    .withStyle(ChatFormatting.DARK_AQUA));
+                        p.getName(),
+                        RoleUtils.getRoleOrModifierName(gameWorldComponent.getRole(p))));
+            if (i == 0) {
+              ct = fstct.append(ct);
+            }
             var content = new Filterable<Component>(ct, Optional.of(ct));
             contents.add(content);
             if (p instanceof ServerPlayer sp)
               BroadcastCommand.BroadcastMessage(sp,
                   Component.translatable("message.pachuri.be_known_role").withStyle(ChatFormatting.RED));
           }
-          String title = "\u00a7d\u00a7lPachuri Knowledge Book";
-
+          String title = "Pachuri Knowledge Book";
+          String shortTitle = title;
+          if (shortTitle.length() >= 10) {
+            shortTitle = shortTitle.substring(0, 8) + "...";
+          }
           itemStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
-              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "System", 1, contents, true));
+              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1,
+                  contents, true));
+          itemStack.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.newspaper.name",
+                  Component.translatable("item.noellesroles.newspaper.title.warp", shortTitle)
+                      .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
           return RoleUtils.insertStackInFreeSlot(player, itemStack);
         }
       });
@@ -1406,6 +1418,11 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(
           ModRoles.PHANTOM_MUSICIAN_ID, PHANTOM_MUSICIAN_SHOP);
     }
+    // 推理师商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.REASONER_ID, REASONER_SHOP);
+    }
     // 小偷商店
     {
       ShopContent.customEntries.put(
@@ -1419,7 +1436,7 @@ public class RoleShopHandler {
     // 作家商店
     {
       ShopContent.customEntries.put(
-          ModRoles.WRITER_ID, WRITER_SHOP);
+          BounsRoles.WRITER_ID, WRITER_SHOP);
     }
     // 搜救员商店
     {
@@ -2029,9 +2046,9 @@ public class RoleShopHandler {
         290,
         ShopEntry.Type.WEAPON));
     BOMBER_SHOP.add(new ShopEntry(
-            TMMItems.FIRECRACKER.getDefaultInstance(),
-            25,
-            ShopEntry.Type.TOOL));
+        TMMItems.FIRECRACKER.getDefaultInstance(),
+        25,
+        ShopEntry.Type.TOOL));
 
     // 巡警商店
     // 左轮手枪 - 325金币
@@ -2799,6 +2816,29 @@ public class RoleShopHandler {
     // ==================== 嬉命人商店 ====================
     // 开锁器 - 100金币
     EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+    // ==================== 推理师商店 ====================
+    // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
+    REASONER_SHOP.add(new ShopEntry(ModItems.REASONER_COMPASS.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
+        int elapsed = timeComp.getResetTime() - timeComp.getTime();
+        if (elapsed < 2 * 60 * 20) {
+          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
+              .withStyle(ChatFormatting.YELLOW), true);
+          return false;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+          if (stack.is(ModItems.REASONER_COMPASS)) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass")
+                .withStyle(ChatFormatting.YELLOW), true);
+            return false;
+          }
+        }
+        return true;
+      }
+    });
 
     // ==================== 幻音师商店 ====================
     // 出刀的声音 - 50金币, 冷却30秒

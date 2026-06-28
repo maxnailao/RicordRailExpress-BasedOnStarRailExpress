@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.packet.CreateCreeperBombAreaPacket;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -99,7 +100,7 @@ public class CreeperPlayerComponent implements RoleComponent, ServerTickingCompo
      */
     public boolean isActiveCreeper() {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        return gameWorld.isRole(player, ModRoles.CREEPER);
+        return gameWorld.isRole(player, BounsRoles.CREEPER);
     }
 
     /**

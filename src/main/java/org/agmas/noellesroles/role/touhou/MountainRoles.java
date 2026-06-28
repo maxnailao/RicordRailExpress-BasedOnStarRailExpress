@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 
 import io.wifi.starrailexpress.api.SRERole;
@@ -12,7 +12,10 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.util.ShopEntry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -51,7 +54,6 @@ public class MountainRoles {
                     ModItems.NEWSPAPER.getDefaultInstance(),
                     50,
                     ShopEntry.Type.TOOL));
-            SHOP.addAll(ShopContent.defaultKnifeEntries);
         }
 
         @Override
@@ -62,10 +64,22 @@ public class MountainRoles {
 
         @Override
         public List<ShopEntry> getShopEntries() {
-            return SHOP;
+            var roleSpecShop = new ArrayList<>(SHOP);
+            roleSpecShop.addAll(ShopContent.defaultKnifeEntries);
+            return roleSpecShop;
         }
 
-    }.setComponentKey(AyayayaPlayerComponent.KEY));
+        @Override
+        public InteractionResult onDropItem(Player player, ItemStack item) {
+            if (item.is(Items.BUNDLE))
+                return InteractionResult.SUCCESS;
+            if (item.is(ModItems.NEWSPAPER)) {
+                if (item.has(DataComponents.WRITTEN_BOOK_CONTENT))
+                    return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        }
+    }.setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
 
     public static SRERole HATATE = TMMRoles.registerRole(new TouhouRole(
             HATATE_ID, // 角色 ID
@@ -106,7 +120,18 @@ public class MountainRoles {
             return SHOP;
         }
 
-    }.setComponentKey(AyayayaPlayerComponent.KEY));
+        @Override
+        public InteractionResult onDropItem(Player player, ItemStack item) {
+            if (item.is(Items.BUNDLE))
+                return InteractionResult.SUCCESS;
+            if (item.is(ModItems.NEWSPAPER)) {
+                if (item.has(DataComponents.WRITTEN_BOOK_CONTENT))
+                    return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        }
+
+    }.setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
 
     public static void init() {
     }

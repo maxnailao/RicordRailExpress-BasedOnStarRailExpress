@@ -17,7 +17,6 @@ import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.network.*;
-import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.scenery.server.SceneAssetServer;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
@@ -135,6 +134,8 @@ public class SREEventRegister {
             // 同步自定义职业配置给新加入的玩家
             CustomRoleServerNetwork.syncToPlayer(server, handler.player);
             SceneAssetServer.sendCurrentManifest(handler.player);
+            // 同步当前路径点给新加入的玩家
+            io.wifi.starrailexpress.util.WaypointSync.syncTo(handler.player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             CustomRoleServerNetwork.onPlayerDisconnect(handler.player.getUUID());

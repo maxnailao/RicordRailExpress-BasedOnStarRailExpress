@@ -26,6 +26,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.item.LetterItem;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -190,7 +191,7 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
                     || role == ModRoles.BETTER_VIGILANTE
                     || role == TraitorAndModifiers.TRAITOR
                     || role == TMMRoles.KILLER
-                    || role == ModRoles.CAT_KILLER) {
+                    || role == BounsRoles.CAT_KILLER) {
                 continue;
             }
             transformablePlayers.add(player);
@@ -472,7 +473,7 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
         if (role == TMMRoles.KILLER)
             return true;
         // 猫娘杀手
-        if (role == ModRoles.CAT_KILLER)
+        if (role == BounsRoles.CAT_KILLER)
             return true;
         return false;
     }
@@ -501,7 +502,7 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
         if (role == TMMRoles.KILLER)
             return true;
         // 猫娘杀手
-        if (role == ModRoles.CAT_KILLER)
+        if (role == BounsRoles.CAT_KILLER)
             return true;
         return false;
     }

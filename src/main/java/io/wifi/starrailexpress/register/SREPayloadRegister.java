@@ -4,7 +4,6 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.replay.ReplayPayload;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
-import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
@@ -116,6 +115,9 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.network.packet.SyncSpecificWaypointVisibilityPacket.ID,
                 io.wifi.starrailexpress.network.packet.SyncSpecificWaypointVisibilityPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.network.packet.WaypointDeleteC2SPayload.ID,
+                io.wifi.starrailexpress.network.packet.WaypointDeleteC2SPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(KnifeStabPayload.ID, KnifeStabPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(GunShootPayload.ID, GunShootPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SniperShootPayload.TYPE, SniperShootPayload.STREAM_CODEC);
