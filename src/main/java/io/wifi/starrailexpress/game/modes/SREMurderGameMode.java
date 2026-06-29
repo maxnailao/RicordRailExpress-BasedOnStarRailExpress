@@ -28,6 +28,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.RoleWeightedUtil;
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
@@ -237,12 +238,12 @@ public class SREMurderGameMode extends GameMode {
                 }
             }
 
-            if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
+            if (SREDisableManager.isModifierDisabled(mod)) {
                 continue;
             }
 
             // 名单只决定修饰符是否启用（上面的过滤），数量始终沿用 MODIFIER_MAX，名单不再接管数量。
-            int m_max = Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier, 1);
+            int m_max = Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier(), 1);
             int targetAssignments = specificDesiredRoleCount;
             if (m_max != -1) {
                 targetAssignments = Math.min(targetAssignments, m_max);
@@ -357,7 +358,6 @@ public class SREMurderGameMode extends GameMode {
             int forcedRoleSize) {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
-
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
                         !role.isOtherModeRole() &&

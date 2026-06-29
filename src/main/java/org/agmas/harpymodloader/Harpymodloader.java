@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class Harpymodloader implements ModInitializer {
-
     /**
      * 支持正版，从你我做起
      * 此选项用于皮肤模组，避免私人的皮肤模组（枪、球棒等）被拿去盈利。
@@ -128,7 +127,6 @@ public class Harpymodloader implements ModInitializer {
         if (!FORCED_MODDED_ROLE.containsKey(role))
             FORCED_MODDED_ROLE.put(role, new ArrayList<>());
         FORCED_MODDED_ROLE.get(role).add(player.getUUID());
-
         FORCED_MODDED_ROLE_FLIP.put(player.getUUID(), role);
     }
 

@@ -105,7 +105,6 @@ public class FilterSelectionScreen extends Screen {
 
     @Override
     protected void init() {
-        // 清空旧组件，防止重复添加或残留
         clearWidgets();
         computeLayout();
         initSearchBox();
@@ -191,7 +190,6 @@ public class FilterSelectionScreen extends Screen {
     }
 
     private void initButtons() {
-        // 全选
         addRenderableWidget(new StyledButton(selectAllX, buttonsY, selectAllW, BUTTON_HEIGHT,
                 Component.translatable("screen.filter_selection.select_all"),
                 btn -> {
@@ -202,7 +200,6 @@ public class FilterSelectionScreen extends Screen {
                 },
                 multiSelect));
 
-        // 取消全选
         addRenderableWidget(new StyledButton(deselectAllX, buttonsY, deselectAllW, BUTTON_HEIGHT,
                 Component.translatable("screen.filter_selection.deselect_all"),
                 btn -> {
@@ -213,7 +210,6 @@ public class FilterSelectionScreen extends Screen {
                 },
                 multiSelect));
 
-        // 取消
         addRenderableWidget(new StyledButton(cancelX, buttonsY, cancelW, BUTTON_HEIGHT,
                 CommonComponents.GUI_CANCEL,
                 btn -> {
@@ -222,7 +218,6 @@ public class FilterSelectionScreen extends Screen {
                 },
                 true));
 
-        // 确认
         addRenderableWidget(new StyledButton(confirmX, buttonsY, confirmW, BUTTON_HEIGHT,
                 Component.translatable("gui.done"),
                 btn -> {
@@ -288,11 +283,20 @@ public class FilterSelectionScreen extends Screen {
         this.minecraft.updateTitle();
     }
 
+    // ========== 键盘导航修复 ==========
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256 && parent != null) {
             onClose();
             return true;
+        }
+
+        // 如果焦点在搜索框，按下导航键(↑↓Enter)时将焦点移出搜索框，以便列表可以接收导航事件
+        if (getFocused() == searchWidget) {
+            if (keyCode == 265 || keyCode == 264 || keyCode == 257 || keyCode == 335) {
+                searchWidget.setFocused(false);
+                setFocused(null);
+            }
         }
 
         // 列表键盘导航：仅当焦点不在搜索框且不在任何按钮上时
@@ -338,6 +342,11 @@ public class FilterSelectionScreen extends Screen {
     public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
         this.renderBlurredBackground(f);
         this.renderMenuBackground(guiGraphics);
+
+        int panelX = (width - panelWidth) / 2;
+        int panelY = 30;
+        drawPanelBg(guiGraphics, panelX, panelY, panelWidth, panelHeight);
+
     }
 
     @Override
@@ -347,8 +356,6 @@ public class FilterSelectionScreen extends Screen {
         int panelX = (width - panelWidth) / 2;
         int panelY = 30;
         super.render(g, mouseX, mouseY, partialTick);
-
-        drawPanelBg(g, panelX, panelY, panelWidth, panelHeight);
 
         int titleY = panelY + 4;
         g.drawCenteredString(font, titleComp, width / 2, titleY, 0xF5E8C8);

@@ -217,6 +217,7 @@ public class GameConstants {
         public static ResourceLocation THIRST = SRE.id("thirst");
         public static ResourceLocation STARVED = SRE.id("starved");
         public static ResourceLocation GOD_COMMAND = Noellesroles.id("god_command");
+        public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
         public static ResourceLocation PIRATE_FLINTLOCK = SRE.id("pirate_flintlock_shot");
         // 黑警未能击杀所有玩家
         public static ResourceLocation BLACKOUT_TIMEOUT = SRE.id("blackout_timeout");

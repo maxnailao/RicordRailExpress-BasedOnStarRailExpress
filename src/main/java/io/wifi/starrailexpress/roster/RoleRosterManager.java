@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.network.RoleRosterSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -19,6 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.agmas.harpymodloader.modifiers.SREModifier;
 
 /**
  * 职业轮换系统的服务端核心：维护一份服务器全局的职业名单，并负责
@@ -58,6 +61,18 @@ public final class RoleRosterManager {
         if (!SREConfig.instance().enableRoster)
             return RoleRosterState.DISABLE;
         return state;
+    }
+
+    public static boolean isRoleEnabled(SRERole role) {
+        if (!SREConfig.instance().enableRoster || !state.enabled)
+            return true;
+        return state.roleCounts.getOrDefault(role.identifier().toString(), 1) > 0;
+    }
+
+    public static boolean isModifierEnabled(SREModifier modifier) {
+        if (!SREConfig.instance().enableRoster || !state.enabled)
+            return true;
+        return state.modifierCounts.getOrDefault(modifier.identifier().toString(), 1) > 0;
     }
 
     public static boolean isEnabled() {

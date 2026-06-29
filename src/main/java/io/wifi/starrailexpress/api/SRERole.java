@@ -1,6 +1,5 @@
 package io.wifi.starrailexpress.api;
 
-import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -10,8 +9,6 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -29,7 +26,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -82,7 +80,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
     public HashSet<SRERole> opposingJobs = new HashSet<>();
-    
 
     /**
      * 添加显示FLAG
@@ -93,7 +90,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
         }
         return this;
     }
-
 
     /**
      * 是否为指定flag
@@ -130,31 +126,13 @@ public abstract class SRERole extends SREAbstractInfoClass {
         var test = new HashSet<>(flags);
         if (test.contains("inner.enable")) {
             test.remove("inner.enable");
-            if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)
-                    && !RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
-                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(this.identifier().toString(), false)) {
-                    return false;
-                }
-            } else {
-                var config = HarpyModLoaderConfig.HANDLER.instance();
-                if (config.getDisabled().contains(this.identifier().toString())) {
-                    return false;
-                }
-            }
+            if (SREDisableManager.isRoleDisabled(this))
+                return false;
         }
         if (test.contains("inner.disable")) {
             test.remove("inner.disable");
-            if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)
-                    && !RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
-                if (RoleManageConfigUI.RoleEnableStatus.getOrDefault(this.identifier().toString(), false)) {
-                    return false;
-                }
-            } else {
-                var config = HarpyModLoaderConfig.HANDLER.instance();
-                if (!config.getDisabled().contains(this.identifier().toString())) {
-                    return false;
-                }
-            }
+            if (!SREDisableManager.isRoleDisabled(this))
+                return false;
         }
         return this.flags.containsAll(test);
     }
@@ -570,11 +548,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     private boolean isVigilanteTeam;
 
-    @Override
-    public ResourceLocation getIdentifier() {
-        return identifier;
-    }
-
     public int getColor() {
         return color;
     }
@@ -844,6 +817,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    @Override
     public ResourceLocation identifier() {
         return identifier;
     }
@@ -924,7 +898,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players, String mapName) {
-        if (defaultMaxCount == -1)
+        if (spawnInfo.maxSpawn == -1)
             return -1;
         // 优先使用 spawnInfo（来自用户配置），若未设置则跳过
         int minPlayer = this.spawnInfo.minEnabledPlayer;

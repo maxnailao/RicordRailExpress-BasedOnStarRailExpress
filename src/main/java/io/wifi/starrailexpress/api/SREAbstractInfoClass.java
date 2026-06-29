@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 public abstract class SREAbstractInfoClass {
-    public abstract ResourceLocation getIdentifier();
 
     /**
      * 显示FLAG。用于RoleIntroduceScreen的filter
@@ -28,5 +27,11 @@ public abstract class SREAbstractInfoClass {
 
     public Component getDisplayNameWithColor() {
         return RoleUtils.getRoleOrModifierNameWithColor(this);
+    }
+
+    public abstract ResourceLocation identifier();
+
+    public ResourceLocation getIdentifier() {
+        return identifier();
     }
 }

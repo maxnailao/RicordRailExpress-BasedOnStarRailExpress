@@ -9,7 +9,7 @@ import io.wifi.starrailexpress.roster.RoleRosterState;
  */
 public final class ClientRoleRosterCache {
     private static final Gson GSON = new GsonBuilder().create();
-    private static volatile RoleRosterState state = RoleRosterState.createDefault();
+    private static volatile RoleRosterState state = RoleRosterState.DISABLE;
 
     private ClientRoleRosterCache() {
     }
@@ -34,6 +34,6 @@ public final class ClientRoleRosterCache {
     }
 
     public static void clear() {
-        state = RoleRosterState.createDefault();
+        state = RoleRosterState.DISABLE;
     }
 }

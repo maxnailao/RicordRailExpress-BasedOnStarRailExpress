@@ -2,7 +2,6 @@ package org.agmas.noellesroles.content.entity;
 
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -203,11 +202,11 @@ public class PuppeteerBodyEntity extends LivingEntity {
                 ModComponents.RAVEN.get(owner).onBodyDeath(player, deathReason);
             } else {
                 owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
-                ModEffects.pierceDeath = true;
-                GameUtils.killPlayer(owner, true, player, deathReason);
-                ModEffects.pierceDeath = false;
-                discard();
+                // ModEffects.pierceDeath = true;
+                // GameUtils.killPlayer(owner, true, player, deathReason);
+                // ModEffects.pierceDeath = false;
             }
+            discard();
         }
         return true;
     }
@@ -234,7 +233,19 @@ public class PuppeteerBodyEntity extends LivingEntity {
                     ModComponents.PUPPETEER.get(owner).onBodyDeath();
                 } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
                     ModComponents.RAVEN.get(owner).onBodyDeath(null, Noellesroles.id("raven_body_death"));
+                } else {
+                    owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
+                    // ModEffects.pierceDeath = true;
+                    // Player killer = null;
+                    // if (source.getEntity() instanceof Player k) {
+                    // killer = k;
+                    // }
+                    // GameUtils.killPlayer(owner, true, killer,
+                    // GameConstants.DeathReasons.GENERAL_ATTACK);
+                    // ModEffects.pierceDeath = false;
+                    // discard();
                 }
+                discard();
             }
         }
 

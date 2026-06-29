@@ -3,7 +3,7 @@ package org.agmas.noellesroles.game.roles.special.dirt;
 import io.wifi.starrailexpress.api.SRERole;
 import net.minecraft.resources.ResourceLocation;
 
-public class Dirt extends SRERole {
+public class DirtRole extends SRERole {
     /**
      * @param identifier    the mod id and name of the role
      * @param color         the role announcement color
@@ -14,7 +14,7 @@ public class Dirt extends SRERole {
      * @param maxSprintTime the maximum sprint time in ticks
      * @param canSeeTime    if the role can see the game timer
      */
-    public Dirt(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller, MoodType moodType, int maxSprintTime, boolean canSeeTime) {
+    public DirtRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller, MoodType moodType, int maxSprintTime, boolean canSeeTime) {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
     }
 }

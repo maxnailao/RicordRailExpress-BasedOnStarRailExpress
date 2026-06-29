@@ -63,6 +63,7 @@ public class XiaoNaoHandler {
                     // 小脑(误杀)惩罚写这里
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (deathReason.getPath().equals("revolver_shot")
+                                || deathReason.getPath().equals("general_attack")
                                 || deathReason.getPath().equals("sniper_rifle")
                                 || deathReason.getPath().equals("nunchuck_hit")
                                 || deathReason.getPath().equals("bat_hit")

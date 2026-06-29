@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client.screen;
 
-import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SREAbstractInfoClass;
@@ -30,7 +29,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -1147,37 +1147,11 @@ public class RoleIntroduceScreen extends Screen {
      * 检查列表中的职业/修饰符是否已被禁用
      */
     private boolean isItemDisabled(Object role) {
-        if (!minecraft.isLocalServer() && !minecraft.isSingleplayer() && minecraft.level != null) {
-            {
-                if (SREClient.gameComponent == null || minecraft == null
-                        || minecraft.level == null) {
-                    // 没进入游戏，也显示全部。
-                    return false;
-                }
-                if (!SREClient.gameComponent.isRunning()) {
-                    // 游戏没开始，默认显示全部。
-                    return false;
-                }
-            }
-            // 非本地从RoleConfigUI读取
-            if (role instanceof SRERole r) {
-                if (RoleManageConfigUI.RoleEnableStatus.isEmpty())
-                    return false;
-                return !RoleManageConfigUI.RoleEnableStatus.getOrDefault(r.identifier().toString(), false);
-            }
-            if (role instanceof SREModifier m) {
-                if (RoleManageConfigUI.ModifierEnableStatus.isEmpty())
-                    return false;
-                return !RoleManageConfigUI.ModifierEnableStatus.getOrDefault(m.identifier().toString(), false);
-            }
-            return false;
-        }
-        var config = HarpyModLoaderConfig.HANDLER.instance();
         if (role instanceof SRERole r) {
-            return config.getDisabled().contains(r.identifier().toString());
+            return SREDisableManager.isRoleDisabled(r);
         }
         if (role instanceof SREModifier m) {
-            return config.disabledModifiers.contains(m.identifier.toString());
+            return SREDisableManager.isModifierDisabled(m);
         }
         return false;
     }

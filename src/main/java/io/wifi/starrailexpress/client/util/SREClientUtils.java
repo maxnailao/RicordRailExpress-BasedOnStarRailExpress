@@ -1,6 +1,12 @@
 package io.wifi.starrailexpress.client.util;
 
+import net.minecraft.SharedConstants;
+import net.minecraft.client.InputType;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
@@ -8,8 +14,12 @@ import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.world.level.Level;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import java.util.UUID;
+
+import com.mojang.blaze3d.vertex.BufferUploader;
 
 public class SREClientUtils {
     public static UUID getPlayerUidByName(String name) {
@@ -74,5 +84,47 @@ public class SREClientUtils {
     public static PlayerSkin getPlayerOriginalSkin(AbstractClientPlayer localPlayer) {
         var playerInfo = getPlayerInfo(localPlayer);
         return playerInfo == null ? DefaultPlayerSkin.get(localPlayer.getUUID()) : playerInfo.getSkin();
+    }
+
+    public static void setScreenIgnoreMixins(Minecraft minecraft, Screen screen) {
+        Minecraft client = minecraft;
+        if (SharedConstants.IS_RUNNING_IN_IDE) {
+            SRE.LOGGER.error("setScreen called from non-game thread");
+        }
+
+        if (client.screen != null) {
+            client.screen.removed();
+        } else {
+            client.setLastInputType(InputType.NONE);
+        }
+        {
+            if (screen == null && client.level == null) {
+                screen = new TitleScreen();
+            } else if (screen == null && client.player.isDeadOrDying()) {
+                if (client.player.shouldShowDeathScreen()) {
+                    screen = new DeathScreen(null, client.level.getLevelData().isHardcore());
+                } else {
+                    client.player.respawn();
+                }
+            }
+
+            client.screen = screen;
+            if (client.screen != null) {
+                client.screen.added();
+            }
+
+            BufferUploader.reset();
+            if (screen != null) {
+                client.mouseHandler.releaseMouse();
+                KeyMapping.releaseAll();
+                screen.init(client, client.getWindow().getGuiScaledWidth(), client.getWindow().getGuiScaledHeight());
+                client.noRender = false;
+            } else {
+                client.getSoundManager().resume();
+                client.mouseHandler.grabMouse();
+            }
+
+            client.updateTitle();
+        }
     }
 }

@@ -10,15 +10,16 @@ import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import io.wifi.starrailexpress.roster.RoleRosterManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
+import org.agmas.harpymodloader.modifiers.EggModifier;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.harpymodloader.modifiers.TouhouModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
@@ -36,6 +37,7 @@ import java.util.Random;
 
 public class InitModRolesMax {
     public static Random random = new Random();
+
     public static void autoChangePresent() {
         // 自动切换预设：游戏结束时应用配置的预设，使其在下一局游戏中生效
         io.wifi.starrailexpress.SREConfig sreConfig = io.wifi.starrailexpress.SREConfig.instance();
@@ -320,9 +322,6 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
     }
 
-    public static void applyRosterMax(){
-        RoleRosterManager.getState();
-    }
     public static void registerDynamic() {
         GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
             // 从配置应用角色概率
@@ -343,15 +342,25 @@ public class InitModRolesMax {
             final int players_count = serverLevel.getServer().getPlayerCount();
             initModifiersCount(players_count);
 
+            // 彩蛋角色/修饰符数量
             if (players_count >= NoellesRolesConfig.instance().minPlayerForEggRoles
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof EggRole && a.canSetSpawnInfoInConfig()) {
+                    if (a instanceof EggRole) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
                         if (max >= 0) {
                             Harpymodloader.setRoleMaximum(a, max);
+                        }
+                    }
+                }
+                
+                for (var a : HMLModifiers.MODIFIERS) {
+                    if (a instanceof EggModifier) {
+                        int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
+                        if (max >= 0) {
+                            Harpymodloader.MODIFIER_MAX.put(a.identifier(), max);
                         }
                     }
                 }
@@ -403,12 +412,21 @@ public class InitModRolesMax {
             // 获取配置
             NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
 
+            // 东方角色/修饰符数量
             if (players_count >= config.minPlayerForTouhouRoles && random.nextInt(0, 100) < TOUHOU_CHANCE) {
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof TouhouRole && a.canSetSpawnInfoInConfig()) {
+                    if (a instanceof TouhouRole) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
                         if (max >= 0) {
                             Harpymodloader.setRoleMaximum(a, max);
+                        }
+                    }
+                }
+                for (var a : HMLModifiers.MODIFIERS) {
+                    if (a instanceof TouhouModifier) {
+                        int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
+                        if (max >= 0) {
+                            Harpymodloader.MODIFIER_MAX.put(a.identifier(), max);
                         }
                     }
                 }
@@ -520,9 +538,13 @@ public class InitModRolesMax {
             List<ServerPlayer> players) {
         var areacca = AreasWorldComponent.KEY.get(serverLevel);
         var mapName = areacca.mapName;
-        for (var roleInfo : TMMRoles.ROLES.entrySet()) {
-            ResourceLocation name = roleInfo.getKey();
-            SRERole role = roleInfo.getValue();
+        for (var entry : TMMRoles.ROLES.entrySet()) {
+            if (entry.getValue() instanceof TouhouRole)
+                continue;
+            if (entry.getValue() instanceof EggRole)
+                continue;
+            ResourceLocation name = entry.getKey();
+            SRERole role = entry.getValue();
             int count = role.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
             if (count >= 0) {
                 Harpymodloader.setRoleMaximum(name, count);
@@ -532,10 +554,13 @@ public class InitModRolesMax {
 
     private static void autoModifierMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
-
         var areacca = AreasWorldComponent.KEY.get(serverLevel);
         var mapName = areacca.mapName;
         for (SREModifier modifier : HMLModifiers.MODIFIERS) {
+            if (modifier instanceof TouhouModifier)
+                continue;
+            if (modifier instanceof EggModifier)
+                continue;
             int count = modifier.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
             if (count >= 0) {
                 Harpymodloader.MODIFIER_MAX.put(modifier.identifier(), count);
@@ -555,10 +580,6 @@ public class InitModRolesMax {
                 entry.setSpawnInfo(spinfo);
         }
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if (entry.getValue() instanceof TouhouRole)
-                return;
-            if (entry.getValue() instanceof EggRole)
-                return;
             SpawnInfo spinfo = config.roleDetails.getSpawnInfo(entry.getValue());
             if (spinfo != null && entry.getValue().canSetSpawnInfoInConfig())
                 entry.getValue().setSpawnInfo(spinfo);
@@ -608,7 +629,7 @@ public class InitModRolesMax {
         }
 
         /// SPLIT_PERSONALITY
-        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier) > 0) {
+        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier()) > 0) {
         } else {
             if (players >= config.minPlayerForLovers
                     && random.nextInt(0, 100) <= config.chanceOfModifierLovers) {

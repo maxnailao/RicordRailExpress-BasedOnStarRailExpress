@@ -104,7 +104,7 @@ public class ListRolesCommand {
           .withStyle(ChatFormatting.GOLD).withStyle(st -> {
             st = st.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
                 "/tmm:config spawn_info modifier "
-                    + modifier.identifier.toString()));
+                    + modifier.identifier().toString()));
             return st;
           }));
     }

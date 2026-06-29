@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.WeightedUtil;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 
@@ -61,9 +62,6 @@ public class RoleAssignmentPool {
      */
     private static RoleAssignmentPool createInternal(String poolName, Predicate<SRERole> filter,
             boolean allowUnlimitedRepeats) {
-        // 职业轮换名单启用时，名单只作为职业的“开关”（取代 disabled 列表决定启用/禁用），
-        // 不再接管具体名额——名额沿用职业注册时的 defaultMaxCount，权重沿用注册权重。
-
         // 获取所有符合条件的角色
         ArrayList<SRERole> availableRoles = new ArrayList<>(TMMRoles.ROLES.values());
         availableRoles.removeIf(role -> {
@@ -72,7 +70,8 @@ public class RoleAssignmentPool {
                     || !filter.test(role)) {
                 return true;
             }
-            return HarpyModLoaderConfig.HANDLER.instance().getDisabled().contains(role.identifier().toString());
+            // 统一API处理
+            return SREDisableManager.isRoleDisabled(role);
         });
 
         // 构建权重映射
