@@ -188,7 +188,9 @@ public final class RoleRosterManager {
 
     private static boolean isRosterEligible(SRERole role) {
         try {
-            return role.canBeRandomed() && !role.isOtherModeRole() && role.getOccupiedRoleCount() <= 1;
+            // 随机抽选时保留 canBeRandomed 检查，避免自动抽中绑定生成角色；
+            // 移除 occupiedRoleCount <= 1 限制，允许占用多名额的角色被随机抽中。
+            return role.canBeRandomed() && !role.isOtherModeRole();
         } catch (Throwable ignored) {
             return false;
         }

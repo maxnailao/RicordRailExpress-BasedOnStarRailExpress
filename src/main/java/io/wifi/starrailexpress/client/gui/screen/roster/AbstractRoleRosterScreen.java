@@ -130,7 +130,10 @@ abstract class AbstractRoleRosterScreen extends Screen {
 
     protected static boolean isRosterEligible(SRERole role) {
         try {
-            return role.canBeRandomed() && !role.isOtherModeRole() && role.getOccupiedRoleCount() <= 1;
+            // 仅排除特殊模式角色（如躲猫猫、自选职业等），
+            // 允许绑定生成角色（监护人/智力障碍患者/迪奥/承太郎/水鬼等）出现在轮换名单中，
+            // 由 expandWithCompanionRoles 在分配阶段自动处理绑定展开。
+            return !role.isOtherModeRole();
         } catch (Throwable ignored) {
             return false;
         }

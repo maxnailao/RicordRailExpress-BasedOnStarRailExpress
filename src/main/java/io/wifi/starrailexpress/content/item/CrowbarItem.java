@@ -66,7 +66,8 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
             if (!world.isClientSide && SRE.REPLAY_MANAGER != null) {
                 SRE.REPLAY_MANAGER.recordDoorPry(player.getUUID(), context.getClickedPos());
             }
+            return InteractionResult.sidedSuccess(world.isClientSide);
         }
-        return super.useOn(context);
+        return InteractionResult.PASS;
     }
 }

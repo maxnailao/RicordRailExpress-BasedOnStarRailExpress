@@ -44,7 +44,7 @@ public class TrainDoorBlock extends SmallDoorBlock {
                 return InteractionResult.FAIL;
             }
             if (entity.isBlasted()) {
-                return InteractionResult.PASS;
+                return InteractionResult.FAIL;
             }
             boolean requiresKey = !entity.getKeyName().isEmpty();
             if (requiresKey) {
