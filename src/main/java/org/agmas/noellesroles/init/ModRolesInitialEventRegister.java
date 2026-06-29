@@ -500,6 +500,37 @@ public class ModRolesInitialEventRegister {
                             }
                         }));
 
+        // 智力障碍患者技能注册：探查周围3.5格内有刀的玩家，5秒后高亮3秒，CD60秒
+        RoleSkill.register(ModRoles.ZHIZHANG, RoleSkill.skill(
+                SRE.id("zhizhang_detect"),
+                "skill.noellesroles.zhizhang.detect",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = org.agmas.noellesroles.component.ModComponents.ZHIZHANG.get(player);
+                    if (comp == null) return false;
+                    return comp.useSkill();
+                }).cooldownSeconds(60).build());
+
+        // 监护人技能注册：花费125金币，解除智力障碍患者的debuff 12秒并给予2秒无敌，CD30秒
+        RoleSkill.register(ModRoles.GUARDIAN, RoleSkill.skill(
+                SRE.id("guardian_protect"),
+                "skill.noellesroles.guardian.protect",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = org.agmas.noellesroles.component.ModComponents.GUARDIAN.get(player);
+                    if (comp == null) return false;
+                    return comp.useSkill();
+                }).cooldownSeconds(30).build());
+
+        RolePassive.register(ModRoles.PHANTOM_MUSICIAN,
+                RolePassive.passive(SRE.id("phantom_musician_income"),
+                        "passive.noellesroles.phantom_musician.income", 30 * 20, player -> {
+                            var gameWorld = SREGameWorldComponent.KEY.get(player.level());
+                            if (gameWorld.isRunning() && GameUtils.isPlayerAliveAndSurvival(player)) {
+                                SREPlayerShopComponent.KEY.get(player).addToBalance(50);
+                            }
+                        }));
+
         // 疫使技能注册：按技能键感染目标玩家
         RoleSkill.register(ModRoles.INFECTED, RoleSkill.skill(
                 SRE.id("infected_infect"),
