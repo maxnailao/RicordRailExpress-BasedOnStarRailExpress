@@ -425,6 +425,8 @@
   "effect.noellesroles.move_baned": "Movement Sealed",
   "mob_effect.noellesroles.turn_baned": "Turning Sealed",
   "effect.noellesroles.turn_baned": "Turning Sealed",
+  "mob_effect.noellesroles.turn_weak": "Turning Restricted",
+  "effect.noellesroles.turn_weak": "Turning Restricted",
   "effect.noellesroles.voice_echo": "Voice Echo",
   "effect.noellesroles.monokuma_frenzy": "Monokuma Frenzy",
   "effect.noellesroles.voice_silence": "Voice Silence",

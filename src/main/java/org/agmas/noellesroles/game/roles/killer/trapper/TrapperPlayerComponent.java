@@ -359,11 +359,9 @@ public class TrapperPlayerComponent implements RoleComponent, ServerTickingCompo
         victim.addEffect(new MobEffectInstance(
                 MobEffects.MOVEMENT_SLOWDOWN, prisonTime, 255, false, false, false));
         victim.addEffect(new MobEffectInstance(
-                ModEffects.TURN_BANED, prisonTime, 255, false, false, false));
+                ModEffects.TURN_WEAK, prisonTime, 255, false, false, false));
         victim.addEffect(new MobEffectInstance(
                 ModEffects.MOVE_BANED, prisonTime, 255, false, false, false));
-        victim.addEffect(new MobEffectInstance(
-                ModEffects.USED_BANED, prisonTime, 255, false, false, false));
         victim.addEffect(new MobEffectInstance(
                 MobEffects.DIG_SLOWDOWN, prisonTime, 255, false, false, false));
         victim.addEffect(new MobEffectInstance(

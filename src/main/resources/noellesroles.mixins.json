@@ -87,6 +87,7 @@
     "client.general.InventoryIntroductionRenderer",
     "client.general.MobEffectKeyMixin",
     "client.general.MobEffectMouseHandleSuppressMixin",
+    "client.general.TurnWeakMouseMixin",
     "client.general.PlayerIsolationClientMixin",
     "client.general.PlayerIsolationSoundMixin",
     "client.general.ThrowItemMixin",

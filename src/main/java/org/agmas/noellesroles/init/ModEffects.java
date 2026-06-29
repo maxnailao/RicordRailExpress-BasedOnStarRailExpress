@@ -75,6 +75,15 @@ public class ModEffects {
             });
     public static final Holder<MobEffect> TURN_BANED = register("turn_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+
+    /**
+     * 转向受限效果
+     * - 有害效果
+     * - 拥有此效果的玩家鼠标转向速度会被大幅降低
+     * - 客户端 Mixin 会在 turnPlayer 中临时降低灵敏度
+     */
+    public static final Holder<MobEffect> TURN_WEAK = register("turn_weak",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xCC8800));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> ONLY_NO_COLLIDE = register("only_no_collide",
@@ -326,6 +335,19 @@ public class ModEffects {
     private static int getAmplifier(LivingEntity entity, Holder<MobEffect> effect) {
         MobEffectInstance instance = entity.getEffect(effect);
         return instance != null ? instance.getAmplifier() : -1;
+    }
+
+    /**
+     * 获取转向受限灵敏度乘数
+     * @param entity 实体
+     * @return 灵敏度乘数（无效果时返回 1.0，有效果时返回一个较低值）
+     */
+    public static float getTurnWeakSensitivityFactor(LivingEntity entity) {
+        if (!entity.hasEffect(TURN_WEAK)) {
+            return 1.0f;
+        }
+        // 0.05 = 原始灵敏度的 5%，后续可根据测试调整
+        return 0.05f;
     }
 
     public static float getMoodDrainMultiplier(LivingEntity entity) {

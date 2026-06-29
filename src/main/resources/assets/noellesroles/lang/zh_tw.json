@@ -437,6 +437,8 @@
   "effect.noellesroles.move_baned": "移動封印",
   "mob_effect.noellesroles.turn_baned": "轉向封印",
   "effect.noellesroles.turn_baned": "轉向封印",
+  "mob_effect.noellesroles.turn_weak": "轉向受限",
+  "effect.noellesroles.turn_weak": "轉向受限",
   "effect.noellesroles.voice_echo": "迴響語音",
   "effect.noellesroles.monokuma_frenzy": "黑白熊狂熱",
   "effect.noellesroles.voice_silence": "沉默語音",
