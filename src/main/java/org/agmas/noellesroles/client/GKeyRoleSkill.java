@@ -16,7 +16,8 @@ import org.agmas.noellesroles.packet.AbilityC2SPacket;
 import org.agmas.noellesroles.packet.AbilityWithTargetC2SPacket;
 import org.agmas.noellesroles.packet.VeteranDashC2SPacket;
 import org.agmas.noellesroles.packet.VultureEatC2SPacket;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.HashMap;
@@ -109,7 +110,7 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new AbilityC2SPacket());
             return true;
         });
-        register(ModRoles.CREEPER, true, (client, gameWorld) -> {
+        register(BounsRoles.CREEPER, true, (client, gameWorld) -> {
             if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
                 return true;
             }
@@ -121,6 +122,14 @@ public final class GKeyRoleSkill {
                 return true;
             }
             ClientPlayNetworking.send(new VeteranDashC2SPacket());
+            return true;
+        });
+        // 交换者：按技能键与正前方目标瞬移交换位置
+        register(ModRoles.SWAPPER, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                return true;
+            }
+            ClientPlayNetworking.send(new org.agmas.noellesroles.packet.SwapperFrontSwapC2SPacket());
             return true;
         });
         register(ModRoles.VULTURE, false, (client, gameWorld) -> {
@@ -169,7 +178,7 @@ public final class GKeyRoleSkill {
             return true;
         });
 
-        register(ModRoles.TELEGRAPHER, false, (client, gameWorld) -> {
+        register(BounsRoles.TELEGRAPHER, false, (client, gameWorld) -> {
             if (!NoellesrolesClient.isPlayerInAdventureMode(client.player)) {
                 return true;
             }

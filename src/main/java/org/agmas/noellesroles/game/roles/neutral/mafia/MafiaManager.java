@@ -23,7 +23,7 @@ import net.minecraft.world.item.component.CustomData;
 import org.agmas.noellesroles.events.OnShopPurchase;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.MafiaActionC2SPacket;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.*;
@@ -112,12 +112,27 @@ public final class MafiaManager {
             RoleUtils.changeRole(tgt, newRole);
             comp.recruitCooldownUntil = now + comp.recruitCooldownSeconds * 20L;
             comp.sync();
+
+            // 被招募者：发送欢迎报幕
+            RoleUtils.sendWelcomeAnnouncement(tgt, newRole);
+            // 教父：确认提示
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.translatable("message.noellesroles.godfather.recruit_success",
+                            tgt.getDisplayName(),
+                            net.minecraft.network.chat.Component.translatable("announcement.star.role.noellesroles." + newRole.getIdentifier().getPath()))
+                            .withStyle(net.minecraft.ChatFormatting.GREEN),
+                    true);
         }
     }
 
     public static boolean isRecruitable(ServerPlayer p) {
         var role = SREGameWorldComponent.KEY.get(p.level()).getRole(p);
-        return role != null && role.canBeRandomed();
+        if (role == null || !role.canBeRandomed()) return false;
+        // 傀儡师及其操控的假人不可被教父改变职业
+        if (role == ModRoles.PUPPETEER) return false;
+        var puppeteer = org.agmas.noellesroles.component.ModComponents.PUPPETEER.get(p);
+        if (puppeteer != null && puppeteer.isControllingPuppet) return false;
+        return true;
     }
     public static boolean isGodfather(ServerPlayer p) {
         return SREGameWorldComponent.KEY.get(p.level()).isRole(p, ModRoles.GODFATHER);
@@ -135,7 +150,9 @@ public final class MafiaManager {
         for (UUID memberId : new ArrayList<>(godfatherByMember.keySet())) {
             if (gfId.equals(godfatherByMember.get(memberId))) {
                 ServerPlayer member = godfather.server.getPlayerList().getPlayer(memberId);
-                if (member != null && previousRoleByMember.containsKey(memberId)) {
+                // 只有当前仍然是家族成员，才变回原来的职业
+                if (member != null && isMafiaMember(member)
+                        && previousRoleByMember.containsKey(memberId)) {
                     RoleUtils.changeRole(member, previousRoleByMember.get(memberId));
                     // 清除从家族商店购买的标记物品
                     clearMafiaShopItems(member);

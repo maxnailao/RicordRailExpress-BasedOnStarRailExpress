@@ -10,9 +10,13 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
+import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.packet.AbilityC2SPacket;
+import org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket;
 import org.agmas.noellesroles.packet.RepairPrimarySkillC2SPacket;
 import org.agmas.noellesroles.packet.UnifiedSkillInputC2SPacket;
+import org.agmas.noellesroles.packet.WizardSwitchSpellC2SPacket;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.util.UUID;
 
@@ -24,6 +28,13 @@ public class ClientAbilityHandler {
 
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(client.player.level());
+
+        // 操纵师附身：技能键改为以被操控目标的身份释放目标自身技能（冷却记在目标身上）
+        ManipulatorPlayerComponent manipulatorComp = ManipulatorPlayerComponent.KEY.get(client.player);
+        if (manipulatorComp.isControlling && manipulatorComp.target != null) {
+            ClientPlayNetworking.send(new ManipulatorAbilityC2SPacket());
+            return;
+        }
         // 游戏模式：自选职业
         if (gameWorldComponent.isRunning() && gameWorldComponent.getGameMode().equals(SREGameModes.CUSTOM_SELECTED_MODE)
                 && gameWorldComponent.isRole(client.player, SpecialGameModeRoles.CUSTOM_PENDING)) {
@@ -43,7 +54,7 @@ public class ClientAbilityHandler {
         var currentRole = gameWorldComponent.getRole(client.player);
 
         // 模仿者客户端前置逻辑：复制模式无目标→提示，消息技能→打开界面
-        if (currentRole != null && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.role.ModRoles.IMITATOR)) {
+        if (currentRole != null && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.IMITATOR)) {
             var comp = org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent.KEY.get(client.player);
             if (comp.isCopyMode) {
                 var hitResult = client.hitResult;
@@ -74,9 +85,9 @@ public class ClientAbilityHandler {
                             .withStyle(net.minecraft.ChatFormatting.RED), true);
                     return;
                 }
-                if (currentAbility.equals(org.agmas.noellesroles.role.ModRoles.TELEGRAPHER_ID)) {
+                if (currentAbility.equals(org.agmas.noellesroles.game.roles.innocence.role.BounsRoles.TELEGRAPHER_ID)) {
                     client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.TelegrapherScreen()));
-                } else if (currentAbility.equals(org.agmas.noellesroles.role.ModRoles.BROADCASTER_ID)) {
+                } else if (currentAbility.equals(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.BROADCASTER_ID)) {
                     client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.BroadcasterScreen()));
                 }
                 return;
@@ -122,6 +133,7 @@ public class ClientAbilityHandler {
         }
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
         var role = gameWorld.getRole(client.player);
+
         if (!RoleSkill.hasUnifiedSkills(role)) {
             unifiedSkillHeld = false;
             heldSlot = -1;
@@ -147,6 +159,11 @@ public class ClientAbilityHandler {
         var role = gameWorld.getRole(client.player);
 
         // 处理统一技能体系中的模式切换角色（会计、小偷、药剂师、建筑师、葬仪、设陷者、模仿者等）
+        if (gameWorld.isRole(client.player, ModRoles.WIZARD)) {
+            ClientPlayNetworking.send(new WizardSwitchSpellC2SPacket());
+            return;
+        }
+
         var definitions = RoleSkill.getDefinitions(role);
         if (!definitions.isEmpty()) {
             var shiftedDefs = definitions.stream().filter(RoleSkill.Definition::shifted).toList();

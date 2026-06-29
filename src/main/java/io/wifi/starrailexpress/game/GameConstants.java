@@ -6,6 +6,8 @@ import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 
 import java.util.HashMap;
@@ -129,6 +131,7 @@ public class GameConstants {
     public static int CHAIR_TASK_DURATION = getInTicks(0, 8);
     public static int BATHE_TASK_DURATION = getInTicks(0, 10); // 洗澡任务持续时间
     public static int BREATHE_TASK_DURATION = getInTicks(0, 8); // 呼吸任务持续时间
+    public static int BE_ALONE_TASK_DURATION = getInTicks(0, 10); // 一个人静静任务持续时间（与冥想一致）
     public static float MID_MOOD_THRESHOLD = 0.55f;
     public static float DEPRESSIVE_MOOD_THRESHOLD = 0.2f;
     public static float ANGRY_MOOD_THRESHOLD = 0.75f;
@@ -184,6 +187,7 @@ public class GameConstants {
     public static class DeathReasons {
         public static ResourceLocation DISCONNECT = SRE.id("disconnected");
         public static ResourceLocation BLACK_WHITE_TIMEOUT = SRE.id("black_white");
+        public static ResourceLocation AMON_USURP = SRE.id("amon_usurp");
         public static ResourceLocation BACKFIRE = SRE.id("backfire");
         public static ResourceLocation EXECUTE = SRE.id("execute");
         public static ResourceLocation GENERIC = SRE.id("generic");
@@ -207,6 +211,13 @@ public class GameConstants {
         public static ResourceLocation FLAMETHROWER_BURNED = SRE.id("flamethrower_burned");
         public static ResourceLocation BOULDER_CRUSH = SRE.id("boulder_crush");
         public static ResourceLocation INCINERATOR_PUSHED = SRE.id("incinerator_pushed");
+        public static ResourceLocation ANCIENT_BITE = SRE.id("ancient_bite");
+        public static ResourceLocation DROWNED = SRE.id("drowned");
+        public static ResourceLocation FROZEN = SRE.id("frozen");
+        public static ResourceLocation THIRST = SRE.id("thirst");
+        public static ResourceLocation STARVED = SRE.id("starved");
+        public static ResourceLocation GOD_COMMAND = Noellesroles.id("god_command");
+        public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
         public static ResourceLocation PIRATE_FLINTLOCK = SRE.id("pirate_flintlock_shot");
         // 黑警未能击杀所有玩家
         public static ResourceLocation BLACKOUT_TIMEOUT = SRE.id("blackout_timeout");

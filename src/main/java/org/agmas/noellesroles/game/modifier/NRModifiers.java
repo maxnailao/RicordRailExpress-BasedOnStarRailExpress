@@ -11,9 +11,10 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
+import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -57,6 +58,29 @@ public class NRModifiers {
             .setDefaultMax(1)
             .setDefaultEnableChance(2000);
 
+    /** 饥渴修饰符：可从食物盘和饮料盘各拿取至多2份食物和2份饮料 */
+    public static SREModifier HUNGRY = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("hungry"),
+            0xE05A47, // 红橙色 - 代表食欲
+            null,
+            null,
+            false,
+            false))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(5000);
+
+    /** 沙哑修饰符：嗓音十分低沉 */
+    public static SREModifier HOARSE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("hoarse"),
+            0x8B7355, // 棕灰色 - 代表沙哑
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent((p) -> HoarseModifier.serverTick(p))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(5000);
+
     /**
      * 初始化修饰符系统
      */
@@ -64,9 +88,27 @@ public class NRModifiers {
         EXPEDITION.civilianOnly = true;
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;
-        INTROVERTED.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.COWARD));
+        excludeLeonFromAllModifiers();
         assignModifierComponents();
         TaxedModifier.init();
+    }
+
+    /**
+     * 里昂不与远征队等任何修饰符共存于一人身上。
+     *
+     * <p>由于本模组（Noellesroles）入口先于其它模组（如 stupid_express）的修饰符注册执行，
+     * 此处在服务器启动时（所有模组修饰符均已注册到 {@link HMLModifiers#MODIFIERS}）统一把里昂
+     * 加入每个修饰符的 {@code cannotBeAppliedTo} 排除名单。
+     */
+    private static void excludeLeonFromAllModifiers() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            for (SREModifier modifier : HMLModifiers.MODIFIERS) {
+                if (modifier.cannotBeAppliedTo == null) {
+                    modifier.cannotBeAppliedTo = new HashSet<>();
+                }
+                modifier.cannotBeAppliedTo.add(ModRoles.LEON);
+            }
+        });
     }
 
     /**

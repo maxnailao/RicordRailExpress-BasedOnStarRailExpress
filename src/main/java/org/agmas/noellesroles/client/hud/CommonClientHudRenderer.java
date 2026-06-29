@@ -30,17 +30,17 @@ import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.client.hud.roles.BroadcasterHud;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
-import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
+import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
+import org.agmas.noellesroles.game.roles.innocence.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
@@ -52,11 +52,12 @@ import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerCompon
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.child.ChildPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
 
 import java.awt.*;
@@ -691,6 +692,14 @@ public class CommonClientHudRenderer {
       }
       context.drawString(font, infectedTimeText, x - font.width(infectedTimeText), y - font.lineHeight - 2, infectedTimeColor);
 
+      // 剩余感染次数
+      if (abilityComponent.maxCharges > 0) {
+        Component chargesText = Component.translatable("gui.noellesroles.infected.charges",
+                abilityComponent.charges, abilityComponent.maxCharges)
+            .withStyle(ChatFormatting.AQUA);
+        context.drawString(font, chargesText, x - font.width(chargesText), y - font.lineHeight * 2 - 4, 0x55FFFF);
+      }
+
       // 技能冷却显示
       Component cooldownText;
       int cooldownColor;
@@ -1210,6 +1219,27 @@ public class CommonClientHudRenderer {
       }
       return;
     });
+    RoleHudRenderCallback.EVENT.register(ModRoles.JADE_GENERAL_ID, (guiGraphics, deltaTracker) -> {
+      // 渲染玉将军的飞踢技能状态
+      var client = Minecraft.getInstance();
+      if (client.player == null) return;
+      var ability = SREAbilityPlayerComponent.KEY.get(client.player);
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int x = screenWidth - 10;
+      int y = screenHeight - 10 - font.lineHeight;
+      if (ability.cooldown > 0) {
+        double seconds = ability.cooldown / 20.0;
+        var text = Component.translatable("hud.jade_general.cooldown", String.format("%.1f", seconds))
+            .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, text, x - font.width(text), y, Color.WHITE.getRGB());
+      } else {
+        var text = Component.translatable("hud.jade_general.ready")
+            .withStyle(ChatFormatting.GREEN);
+        guiGraphics.drawString(font, text, x - font.width(text), y, Color.WHITE.getRGB());
+      }
+    });
     RoleHudRenderCallback.EVENT.register(ModRoles.EXAMPLER_ID, (guiGraphics, deltaTracker) -> {
       // 渲染小镇做题家的提示
       var client = Minecraft.getInstance();
@@ -1249,8 +1279,9 @@ public class CommonClientHudRenderer {
         }
 
       }
+      // 换了，以前那个和baka残月的冲突了
       var chargeText = Component
-          .translatable("hud.exampler.charges", abpc.charges)
+          .translatable("hud.exampler.charges", abpc.status)
           .withStyle(ChatFormatting.GOLD);
       guiGraphics.drawString(font, chargeText, xOffset - font.width(chargeText),
           yOffset - font.lineHeight * 2 - 8,
@@ -1733,12 +1764,12 @@ public class CommonClientHudRenderer {
     });
 
     // 苦力怕HUD
-    RoleHudRenderCallback.EVENT.register(ModRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
+    RoleHudRenderCallback.EVENT.register(BounsRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null || SREClient.gameComponent == null) {
         return;
       }
-      if (!SREClient.gameComponent.isRole(client.player, ModRoles.CREEPER)) {
+      if (!SREClient.gameComponent.isRole(client.player, BounsRoles.CREEPER)) {
         return;
       }
 

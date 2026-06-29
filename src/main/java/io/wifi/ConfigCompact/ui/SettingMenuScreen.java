@@ -2,6 +2,7 @@ package io.wifi.ConfigCompact.ui;
 
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.client.util.SREClientUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,6 +11,7 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -22,6 +24,12 @@ import pro.fazeclan.river.stupid_express.StupidExpressConfig;
 
 public class SettingMenuScreen extends Screen {
     Screen parent;
+    boolean isFromPausingScreen = false;
+
+    public SettingMenuScreen(Screen parent, boolean isFromPausingScreen) {
+        this(parent);
+        this.isFromPausingScreen = isFromPausingScreen;
+    }
 
     public SettingMenuScreen(Screen parent) {
         super(Component.translatable("screen.starrailexpress.settings"));
@@ -84,13 +92,13 @@ public class SettingMenuScreen extends Screen {
         GridLayout.RowHelper rowHelper = gridLayout.createRowHelper(COLUMN_COUNT);
         // 客户端设置
         // rowHelper.addChild()
-        
+
         // 角色介绍
         rowHelper.addChild(
                 Button.builder(Component.translatable("screen.starrailexpress.settings.introduction"), (button) -> {
                     this.minecraft.setScreen(new RoleIntroduceScreen(this));
                 }).width(WIDTH_BUTTON_WIDTH).build(), COLUMN_COUNT, gridLayout.newCellSettings().paddingTop(50));
-                
+
         rowHelper.addChild(
                 this.openScreenButton(Component.translatable("screen.starrailexpress.settings.client"),
                         () -> (SREClientConfig.HANDLER.generateGui().generateScreen(this))));
@@ -176,7 +184,13 @@ public class SettingMenuScreen extends Screen {
             }
             rowHelper.addChild(btn);
         }
-
+        if (isFromPausingScreen) {
+            // 返回原版菜单
+            rowHelper.addChild(
+                    Button.builder(Component.translatable("screen.starrailexpress.settings.backpausing"), (button) -> {
+                        SREClientUtils.setScreenIgnoreMixins(this.minecraft, new PauseScreen(true));
+                    }).width(WIDTH_BUTTON_WIDTH).build(), COLUMN_COUNT);
+        }
         // 返回
         rowHelper.addChild(Button.builder(Component.translatable("gui.back"), (button) -> {
             this.minecraft.setScreen((Screen) parent);
@@ -186,4 +200,5 @@ public class SettingMenuScreen extends Screen {
         FrameLayout.alignInRectangle(gridLayout, 0, 0, this.width, this.height, 0.5F, 0.25F);
         gridLayout.visitWidgets(this::addRenderableWidget);
     }
+
 }

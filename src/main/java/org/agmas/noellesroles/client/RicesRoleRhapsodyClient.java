@@ -28,12 +28,13 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.client.renderer.*;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.content.item.ConspiracyPageItem;
+import org.agmas.noellesroles.content.item.DeductionBookItem;
 import org.agmas.noellesroles.content.item.WrittenNoteItem;
-import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
@@ -44,7 +45,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.*;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import static org.agmas.noellesroles.client.NoellesrolesClient.abilityBind;
 
@@ -149,6 +150,12 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             if (client.player == null)
                 return;
             client.setScreen(new ConspiratorScreen());
+        };
+        DeductionBookItem.openScreenCallback = () -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null)
+                return;
+            client.setScreen(new DeductionBookScreen());
         };
         WrittenNoteItem.openScreenCallback = () -> {
             Minecraft client = Minecraft.getInstance();
@@ -256,8 +263,8 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             ClientPlayNetworking.send(new PuppeteerC2SPacket(PuppeteerC2SPacket.Action.RETURN_TO_BODY));
             return true;
         }
-        // ==================== 拳击手：激活钢筋铁骨技能 ====================
-        if (gameWorld.isRole(client.player, ModRoles.BOXER)) {
+        // ==================== 斗士：激活钢筋铁骨技能 ====================
+        if (gameWorld.isRole(client.player, ModRoles.FIGHTER)) {
             // 检查玩家是否存活
             if (!GameUtils.isPlayerAliveAndSurvival(client.player))
                 return true;
@@ -350,8 +357,8 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             return true;
         }
 
-        // ==================== 私家侦探：审查玩家物品栏 ====================
-        if (gameWorld.isRole(client.player, ModRoles.DETECTIVE)) {
+        // ==================== 探员：审查玩家物品栏 ====================
+        if (gameWorld.isRole(client.player, ModRoles.AGENT)) {
             // 使用准星检测目标玩家
             net.minecraft.world.phys.HitResult hitResult = client.hitResult;
             if (hitResult != null && hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
@@ -730,10 +737,10 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      * 注册Screen
      */
     public static void registerScreens() {
-        // 注册邮差传递界面
+        // 注册射命丸文传递界面
         MenuScreens.register(ModScreenHandlers.POSTMAN_SCREEN_HANDLER, PostmanHandledScreen::new);
 
-        // 注册私家侦探审查界面
+        // 注册探员审查界面
         MenuScreens.register(ModScreenHandlers.DETECTIVE_INSPECT_SCREEN_HANDLER, DetectiveInspectScreen::new);
     }
 

@@ -28,6 +28,7 @@
   "noReset": false,
   "mustCopy": false,
   "haveOutsideSound": false,
+  "sceneOutsideSound": "train",
   "snowEnabled": false,
   "sandEnabled": false,
   "weather": "clear",
@@ -118,7 +119,8 @@
     "2": { "x": 10, "y": 100, "z": 0 }
   },
 
-  "disabledTasks": ["BREATHE"],
+  "disabledTasks": [],
+  "enableSceneTask": [],
 
   "gameModes": []
 }

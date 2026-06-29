@@ -66,12 +66,12 @@ import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.content.item.LetterItem;
 import org.agmas.noellesroles.content.item.RadioItem;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinFistPunchHandler;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
@@ -371,9 +371,6 @@ public class GameUtils {
             player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
         }
 
-        // 清空上一回合的地图限制登记；本回合的地图限制将在下方 GameInitializeEvent 中重新登记，
-        // 供职业轮换名单接管时排除地图特定职业 / 修饰符。
-        io.wifi.starrailexpress.roster.MapRestrictionGate.reset();
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
         gameComponent.getGameMode().beforeInitializeGame(serverWorld, gameComponent, readyPlayerList);
@@ -644,6 +641,7 @@ public class GameUtils {
             SREPlayerPsychoComponent.KEY.get(serverPlayerEntity).init();
             SREPlayerNoteComponent.KEY.get(serverPlayerEntity).init();
             SREPlayerShopComponent.KEY.get(serverPlayerEntity).init();
+            io.wifi.starrailexpress.cca.DynamicShopComponent.KEY.get(serverPlayerEntity).init();
             io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(serverPlayerEntity).init();
             if (!TrainVoicePlugin.isVoiceChatMissing()) {
                 TrainVoicePlugin.resetPlayer(serverPlayerEntity.getUUID());
@@ -741,6 +739,7 @@ public class GameUtils {
 
         gameComponent.setJumpAvailable(areas.canJump);
         gameComponent.setOutsideSoundsAvailable(areas.haveOutsideSound);
+        gameComponent.setSceneOutsideSoundType(areas.sceneOutsideSound);
 
         // 应用地图重力配置
         for (ServerPlayer player : players) {
@@ -1079,6 +1078,7 @@ public class GameUtils {
         SREItemUtils.clearItem(player, (item) -> true, -1);
         SREPlayerMoodComponent.KEY.get(player).clear();
         SREPlayerShopComponent.KEY.get(player).clear();
+        io.wifi.starrailexpress.cca.DynamicShopComponent.KEY.get(player).clear();
         SREPlayerPoisonComponent.KEY.get(player).clear();
         SREPlayerPsychoComponent.KEY.get(player).clear();
         SREPlayerNoteComponent.KEY.get(player).clear();

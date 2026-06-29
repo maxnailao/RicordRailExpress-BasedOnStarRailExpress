@@ -18,7 +18,7 @@ import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPla
 
 /**
  * 空包弹物品
- * - 滑头鬼专属道具
+ * - 捣蛋鬼专属道具
  * - 右键对目标玩家使用
  * - 使目标手中的枪进入30秒冷却
  * - 使用后消耗
@@ -45,7 +45,7 @@ public class BlankCartridgeItem extends Item {
         }
 
         // 检查冷却
-        SlipperyGhostPlayerComponent ghostComp = ModComponents.SLIPPERY_GHOST.get(user);
+        SlipperyGhostPlayerComponent ghostComp = ModComponents.PRANKSTER.get(user);
         if (ghostComp.isBlankCartridgeOnCooldown()) {
             user.displayClientMessage(
                     Component

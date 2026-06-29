@@ -3,7 +3,7 @@ package org.agmas.noellesroles.mixin.modifier;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

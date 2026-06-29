@@ -133,6 +133,24 @@ public class QuestMinigames {
     /** 华容道 */
     public static final QuestMinigame KLOTSKI = register(
             QuestMinigame.of("klotski", "minigame.starrailexpress.klotski"));
+    public static final QuestMinigame GOLD_MINER = register(
+            QuestMinigame.of("gold_miner", "minigame.starrailexpress.gold_miner"));
+    public static final QuestMinigame ONE_STROKE = register(
+            QuestMinigame.of("one_stroke", "minigame.starrailexpress.one_stroke"));
+    public static final QuestMinigame CLAW_MACHINE = register(
+            QuestMinigame.of("claw_machine", "minigame.starrailexpress.claw_machine"));
+    public static final QuestMinigame BALLOON_SNIPER = register(
+            QuestMinigame.of("balloon_sniper", "minigame.starrailexpress.balloon_sniper"));
+    public static final QuestMinigame EXTINGUISH_FIRE = register(
+            QuestMinigame.of("extinguish_fire", "minigame.starrailexpress.extinguish_fire"));
+    public static final QuestMinigame PACHINKO = register(
+            QuestMinigame.of("pachinko", "minigame.starrailexpress.pachinko"));
+    public static final QuestMinigame MIX_DRINK = register(
+            QuestMinigame.of("mix_drink", "minigame.starrailexpress.mix_drink"));
+    public static final QuestMinigame BALLOON_PUMP = register(
+            QuestMinigame.of("balloon_pump", "minigame.starrailexpress.balloon_pump"));
+    public static final QuestMinigame THROW_BALL = register(
+            QuestMinigame.of("throw_ball", "minigame.starrailexpress.throw_ball"));
 
     // ══════════════════════════════════════════════
     // 注册方法

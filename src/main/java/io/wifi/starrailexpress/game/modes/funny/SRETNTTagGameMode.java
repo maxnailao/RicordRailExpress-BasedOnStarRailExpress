@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -324,7 +325,7 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
     }
 
     static {
-        SRE.canSendReplay.add((p) -> {
+        ReplayRules.canSendReplay.add((p) -> {
             if (p == null)
                 return false;
             if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
@@ -333,7 +334,7 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
             }
             return false;
         });
-        SRE.canUseChatHudPlayer.add((p) -> {
+        ChatHudRules.canUseChatHudPlayer.add((p) -> {
             if (p == null)
                 return false;
             if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier

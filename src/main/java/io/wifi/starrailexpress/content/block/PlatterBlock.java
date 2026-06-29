@@ -16,6 +16,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BundleItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -39,8 +40,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
+
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
 import java.util.function.Function;
 
 public abstract class PlatterBlock extends BaseEntityBlock {
@@ -151,34 +156,37 @@ public abstract class PlatterBlock extends BaseEntityBlock {
                 return InteractionResult.SUCCESS;
             }
 
-            AtomicBoolean hasPlatterItem = new AtomicBoolean(false);
+            // 统计玩家身上已持有的“本盘食材”数量（含背包槽位与收纳袋内）。
+            Set<Item> platterTypes = new HashSet<>();
             for (ItemStack platterItem : platter) {
-                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                    ItemStack invItem = player.getInventory().getItem(i);
-                    if (invItem.getItem() instanceof BundleItem) {
-                        BundleContents bundleContents = invItem.get(DataComponents.BUNDLE_CONTENTS);
-                        if (bundleContents != null) {
-                            bundleContents.items().forEach(
-                                    itemStack -> {
-                                        if (itemStack.getItem() == platterItem.getItem()) {
-                                            hasPlatterItem.set(true);
-                                            return;
-                                        }
-                                    }
-
-                            );
+                platterTypes.add(platterItem.getItem());
+            }
+            int heldFromPlatter = 0;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack invItem = player.getInventory().getItem(i);
+                if (invItem.getItem() instanceof BundleItem) {
+                    BundleContents bundleContents = invItem.get(DataComponents.BUNDLE_CONTENTS);
+                    if (bundleContents != null) {
+                        for (ItemStack itemStack : bundleContents.items()) {
+                            if (platterTypes.contains(itemStack.getItem())) {
+                                heldFromPlatter += itemStack.getCount();
+                            }
                         }
                     }
-                    if (invItem.getItem() == platterItem.getItem()) {
-                        hasPlatterItem.set(true);
-                        break;
-                    }
                 }
-                if (hasPlatterItem.get())
-                    break;
+                if (platterTypes.contains(invItem.getItem())) {
+                    heldFromPlatter += invItem.getCount();
+                }
             }
 
-            if (!hasPlatterItem.get()) {
+            // 默认每个盘子每人只能拿1份；“饥渴”修饰符放宽到2份。
+            int takeLimit = 1;
+            WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(world);
+            if (modifierComponent != null && modifierComponent.isModifier(player, NRModifiers.HUNGRY)) {
+                takeLimit = 2;
+            }
+
+            if (heldFromPlatter < takeLimit) {
                 ItemStack randomItem = platter.get(world.random.nextInt(platter.size())).copy();
                 randomItem.setCount(1);
                 randomItem.set(DataComponents.MAX_STACK_SIZE, 1);

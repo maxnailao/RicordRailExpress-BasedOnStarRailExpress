@@ -201,14 +201,22 @@ public class LotteryMachineGui extends AbstractPixelScreen {
     }
 
     private void renderControls(GuiGraphics g, int mouseX, int mouseY) {
-        Component cost = Component.translatable("screen.noellesroles.lottery.cost",
-                Component.translatable(this.drawCurrency.priceTranslationKey(), this.drawCost));
-        g.drawString(this.font, cost, this.left + 196, this.top + 124, 0xFFD9E6F5, false);
+        ItemStack currencyIcon = this.drawCurrency.iconStack();
 
+        // 费用行：图标 + 金额
+        int costIconX = this.left + 196;
+        int costIconY = this.top + 122;
+        g.renderItem(currencyIcon, costIconX, costIconY);
+        Component costAmount = Component.translatable("screen.noellesroles.lottery.cost_amount", this.drawCost);
+        g.drawString(this.font, costAmount, costIconX + 18, this.top + 124, 0xFFD9E6F5, false);
+
+        // 余额行：图标 + 金额
         int balance = Minecraft.getInstance().player == null ? 0 : this.drawCurrency.getBalance(Minecraft.getInstance().player);
-        Component balanceText = Component.translatable("screen.noellesroles.lottery.balance",
-                Component.translatable(this.drawCurrency.priceTranslationKey(), balance));
-        g.drawString(this.font, balanceText, this.left + 196, this.top + 139, this.drawCurrency.color(), false);
+        int balIconX = this.left + 196;
+        int balIconY = this.top + 137;
+        g.renderItem(currencyIcon, balIconX, balIconY);
+        Component balanceAmount = Component.translatable("screen.noellesroles.lottery.balance_amount", balance);
+        g.drawString(this.font, balanceAmount, balIconX + 18, this.top + 139, this.drawCurrency.color(), false);
 
         boolean active = isInside(mouseX, mouseY, this.drawButtonX, this.drawButtonY, this.drawButtonW, this.drawButtonH);
         boolean busy = this.state == SpinState.SPINNING || this.state == SpinState.WAITING;

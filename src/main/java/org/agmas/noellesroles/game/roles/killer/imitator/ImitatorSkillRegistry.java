@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.imitator;
 
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
@@ -21,12 +22,16 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions;
+import net.minecraft.world.item.ItemStack;
+
+import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.game.roles.innocence.builder.BuilderWallPositions;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
 import org.agmas.noellesroles.packet.BuilderWallS2CPacket;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,10 +77,10 @@ public class ImitatorSkillRegistry {
         ALLOWED_ROLES.add(ModRoles.RECALLER_ID);
         ALLOWED_ROLES.add(ModRoles.SUPERSTAR_ID);
         ALLOWED_ROLES.add(ModRoles.VETERAN_ID);
-        ALLOWED_ROLES.add(ModRoles.TELEGRAPHER_ID);
+        ALLOWED_ROLES.add(BounsRoles.TELEGRAPHER_ID);
         ALLOWED_ROLES.add(ModRoles.BROADCASTER_ID);
         ALLOWED_ROLES.add(ModRoles.ATHLETE_ID);
-        ALLOWED_ROLES.add(ModRoles.BOXER_ID);
+        ALLOWED_ROLES.add(ModRoles.FIGHTER_ID);
         ALLOWED_ROLES.add(ModRoles.GHOST_ID);
         ALLOWED_ROLES.add(ModRoles.NOISEMAKER_ID);
         ALLOWED_ROLES.add(ModRoles.SINGER_ID);
@@ -91,10 +96,10 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.RECALLER_ID, 90 * 20); // 30秒
         SKILL_COOLDOWNS.put(ModRoles.SUPERSTAR_ID, 90 * 20); // 60秒(参考原本)
         SKILL_COOLDOWNS.put(ModRoles.VETERAN_ID, 90 * 20); // 90秒
-        SKILL_COOLDOWNS.put(ModRoles.TELEGRAPHER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(BounsRoles.TELEGRAPHER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.BROADCASTER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.ATHLETE_ID, 90 * 20); // 90秒
-        SKILL_COOLDOWNS.put(ModRoles.BOXER_ID, 90 * 20); // 90秒
+        SKILL_COOLDOWNS.put(ModRoles.FIGHTER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.GHOST_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.NOISEMAKER_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.SINGER_ID, 90 * 20); // 90秒
@@ -107,7 +112,7 @@ public class ImitatorSkillRegistry {
         SKILL_COOLDOWNS.put(ModRoles.ACCOUNTANT_ID, 90 * 20); // 90秒
         SKILL_COOLDOWNS.put(ModRoles.DOCTOR_ID, 90 * 20); // 90秒
 
-        MESSAGE_SKILLS.add(ModRoles.TELEGRAPHER_ID);
+        MESSAGE_SKILLS.add(BounsRoles.TELEGRAPHER_ID);
         MESSAGE_SKILLS.add(ModRoles.BROADCASTER_ID);
     }
 
@@ -131,7 +136,7 @@ public class ImitatorSkillRegistry {
         } else if (roleId.equals(ModRoles.ATHLETE_ID)) {
             executeAthlete(player);
             return SkillResult.SUCCESS;
-        } else if (roleId.equals(ModRoles.BOXER_ID)) {
+        } else if (roleId.equals(ModRoles.FIGHTER_ID)) {
             executeBoxer(player, comp);
             return SkillResult.SUCCESS;
         } else if (roleId.equals(ModRoles.GHOST_ID)) {
@@ -172,7 +177,7 @@ public class ImitatorSkillRegistry {
     public static SkillResult executeMessage(ResourceLocation roleId, ServerPlayer player,
             String message, ImitatorPlayerComponent comp,
             boolean isPermanent) {
-        if (roleId.equals(ModRoles.TELEGRAPHER_ID)) {
+        if (roleId.equals(BounsRoles.TELEGRAPHER_ID)) {
             return executeTelegrapher(player, message);
         } else if (roleId.equals(ModRoles.BROADCASTER_ID)) {
             return executeBroadcaster(player, message);
@@ -313,7 +318,7 @@ public class ImitatorSkillRegistry {
     }
 
     /**
-     * 拳击手：1.5秒无敌不死
+     * 斗士：1.5秒无敌不死
      */
     private static void executeBoxer(ServerPlayer player, ImitatorPlayerComponent comp) {
         comp.imitBoxerInvulnTicks = 30; // 1.5秒
@@ -364,6 +369,41 @@ public class ImitatorSkillRegistry {
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 120, 0, false, false, false));
             target.displayClientMessage(heard, true);
         }
+
+        // 坚守者式冲击波：击退并眩晕正前方的玩家（眩晕用药水效果实现：定身 + 反胃）
+        NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+        net.minecraft.world.phys.Vec3 lookFlat = new net.minecraft.world.phys.Vec3(
+                player.getLookAngle().x, 0, player.getLookAngle().z);
+        if (lookFlat.lengthSqr() > 1.0e-4) {
+            lookFlat = lookFlat.normalize();
+            double swRange = cfg.noisemakerShockwaveRange;
+            int stunTicks = GameConstants.getInTicks(0, cfg.noisemakerStunSeconds);
+            for (Player target : level.players()) {
+                if (target.equals(player) || !GameUtils.isPlayerAliveAndSurvival(target))
+                    continue;
+                net.minecraft.world.phys.Vec3 to = new net.minecraft.world.phys.Vec3(
+                        target.getX() - player.getX(), 0, target.getZ() - player.getZ());
+                double dist = to.length();
+                if (dist > swRange || dist < 1.0e-4)
+                    continue;
+                // 仅作用于正前方（约 ±72° 扇形）
+                if (lookFlat.dot(to.scale(1.0 / dist)) < 0.3D)
+                    continue;
+                // 击退
+                double strength = cfg.noisemakerShockwaveKnockback;
+                target.push(to.x / dist * strength, 0.42D, to.z / dist * strength);
+                if (target instanceof ServerPlayer stp) {
+                    stp.hurtMarked = true;
+                    stp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(
+                            stp.getId(), stp.getDeltaMovement()));
+                }
+                // 眩晕：定身（无法移动）+ 反胃（画面眩晕感）
+                target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, stunTicks, 0, false, true, true));
+                target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, stunTicks + 40, 0, false, false, true));
+            }
+        }
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 1.0F);
 
         player.addEffect(new MobEffectInstance(MobEffects.LUCK, 120, 0, false, false, false));
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.noisemaker_used")
@@ -561,12 +601,13 @@ public class ImitatorSkillRegistry {
     }
 
     /**
-     * 医生：自我治疗（即时回血 + 再生II + 吸收）
+     * 医生：获得一个解毒剂
      */
     private static void executeDoctor(ServerPlayer player) {
-        player.heal(6.0F); // 即时回复3颗心
-        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1, false, false, true)); // 再生II 10秒
-        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 30 * 20, 0, false, false, true)); // 吸收 30秒
+        ItemStack antidote = new ItemStack(ModItems.ANTIDOTE);
+        if (!player.getInventory().add(antidote)) {
+            player.drop(antidote, false);
+        }
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS,
                 1.0F, 1.5F);
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.doctor_heal")

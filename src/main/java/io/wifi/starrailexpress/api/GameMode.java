@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.DeathInfo;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
@@ -66,7 +67,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class GameMode {
@@ -458,7 +459,7 @@ public abstract class GameMode {
                 SREArmorPlayerComponent bartenderPlayerComponent = SREArmorPlayerComponent.KEY.get(victim);
                 if (bartenderPlayerComponent != null) {
                     if (bartenderPlayerComponent.getArmor() > 0) {
-                        boolean cantDefend = SRE.canStickArmor.stream().anyMatch((pre) -> {
+                        boolean cantDefend = ArmorRules.canStickArmor.stream().anyMatch((pre) -> {
                             return pre.test(new DeathInfo(victim, killer, deathReason));
                         });
                         if (!cantDefend) {
@@ -699,7 +700,7 @@ public abstract class GameMode {
                 OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
                 OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
                 
-                var cantSend = SRE.cantSendReplay.stream().anyMatch((pre) -> {
+                var cantSend = ReplayRules.cantSendReplay.stream().anyMatch((pre) -> {
                     return pre.test(serverPlayerEntity);
                 });
                 if (!cantSend) {

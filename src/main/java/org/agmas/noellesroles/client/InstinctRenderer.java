@@ -26,12 +26,12 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
-import org.agmas.noellesroles.game.roles.innocent.zhizhang.ZhizhangPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -46,9 +46,9 @@ import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponen
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -63,6 +63,12 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN) || !ModComponents.RAVEN.get(self).isHunting()) return -1;
+            return Color.WHITE.getRGB();
+        });
         // 鬼祟效果：当目标玩家8格范围内时，禁用杀手直觉高亮
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player targetPlayer)) {
@@ -214,7 +220,8 @@ public class InstinctRenderer {
             if (!WorldModifierComponent.KEY.get(self.level()).isModifier(self, SEModifiers.LOVERS))
                 return -1;
             var lc = LoversComponent.KEY.get(self);
-            if (lc.getLover().equals(target.getUUID())) {
+            var loverUuid = lc.getLover();
+            if (loverUuid != null && loverUuid.equals(target.getUUID())) {
                 return SEModifiers.LOVERS.color();
             }
             return -1;
@@ -246,6 +253,21 @@ public class InstinctRenderer {
             var self = Minecraft.getInstance().player;
             if (self == null)
                 return -1;
+            if (SREClient.gameComponent != null && SREClient.gameComponent.isRole(self, ModRoles.CUPID)) {
+                if (!GameUtils.isPlayerAliveAndSurvival(self))
+                    return -1;
+                if (!hasInstinct)
+                    return -1;
+                if (!(target instanceof Player targetPlayer))
+                    return -1;
+                if (targetPlayer.isSpectator())
+                    return -2;
+                if (WorldModifierComponent.KEY.get(targetPlayer.level()).isModifier(targetPlayer, SEModifiers.LOVERS)
+                        || LoversComponent.KEY.get(targetPlayer).isLover()) {
+                    return Color.ORANGE.getRGB();
+                }
+                return ModRoles.CUPID.color();
+            }
             if (!(self.isSpectator()))
                 return -1;
             if (hasInstinct) {
@@ -296,7 +318,7 @@ public class InstinctRenderer {
             if (target instanceof Player targetPlayer) {
                 if (targetPlayer.distanceToSqr(self) > 40 * 40)
                     return -2;
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -325,7 +347,7 @@ public class InstinctRenderer {
                 return -1;
 
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -366,7 +388,7 @@ public class InstinctRenderer {
 
             // 所有玩家都显示葬仪的颜色（无法透视的职业除外）
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -613,13 +635,13 @@ public class InstinctRenderer {
             if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.CONSPIRATOR)) {
                 return -1;
             }
-            if (!SREClient.gameComponent.isRole(self, ModRoles.DETECTIVE)) {
+            if (!SREClient.gameComponent.isRole(self, ModRoles.AGENT)) {
                 return -1;
             }
             var awpc = DetectivePlayerComponent.KEY.get(self);
             if (awpc.conspiratorInstinctTime <= 0)
                 return -1;
-            return ModRoles.DETECTIVE.color();
+            return ModRoles.AGENT.color();
         });
         // 失忆
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
@@ -669,6 +691,9 @@ public class InstinctRenderer {
                 }
             }
             // 布谷鸟：无法透视玩家；非布谷鸟：无法透视蛋
+            if (SREClient.gameComponent.isRole(self, ModRoles.REASONER) && target instanceof Player) {
+                return -2;
+            }
             if (SREClient.gameComponent.isRole(self, ModRoles.CUCKOO)) {
                 if (target instanceof Player) {
                     return -2;
@@ -1013,7 +1038,7 @@ public class InstinctRenderer {
                     if (RoleUtils.compareRole(target_role, ModRoles.LOST_KILLER)) {
                         return TMMRoles.CIVILIAN.color();
                     }
-                    if (RoleUtils.compareRole(target_role, ModRoles.SLIPPERY_GHOST)) {
+                    if (RoleUtils.compareRole(target_role, ModRoles.PRANKSTER)) {
                         return -2;
                     }
                     if (RoleUtils.compareRole(target_role, SERoles.AMNESIAC)) {
@@ -1048,7 +1073,11 @@ public class InstinctRenderer {
                             return new Color(0, 0, 180).getRGB(); // 深蓝色
                         }
                     }
-                    
+                    // 风精灵：杀手本能中透视的框为浅青色
+                    if (SREClient.gameComponent.isRole(target_player, ModRoles.WIND_YAOSE)) {
+                        return new Color(255, 255, 51).getRGB(); // 黄色
+                    }
+
                 // 默认fallback
                     if (target_role == null)
                         return Color.WHITE.getRGB();
@@ -1165,14 +1194,14 @@ public class InstinctRenderer {
 
     /**
      * 检查目标玩家是否属于「无法被任何本能透视」的职业。
-     * 包含：小透明、秉烛人、雇佣兵、滑头鬼、赌徒。
+     * 包含：小透明、秉烛人、雇佣兵、捣蛋鬼、赌徒。
      */
     private static boolean isTargetInvisibleToInstinct(Player target) {
         if (SREClient.gameComponent == null || target == null) return false;
         return SREClient.gameComponent.isRole(target, ModRoles.GHOST)
             || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
             || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
-            || SREClient.gameComponent.isRole(target, ModRoles.SLIPPERY_GHOST)
+            || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
             || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
     }
 

@@ -15,13 +15,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Consumer;
 
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 
 public class SREModifier extends SREAbstractInfoClass {
     private final Random random = new Random();
-    public ResourceLocation identifier;
+    private ResourceLocation identifier;
     public boolean canSetSpawnInfoInConfig = true;
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo;
@@ -38,6 +40,79 @@ public class SREModifier extends SREAbstractInfoClass {
     public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+
+    /**
+     * 添加显示FLAG
+     */
+    public SREModifier addFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(String... flags) {
+        for (var f : flags) {
+            if (!this.flags.contains(f))
+                return false;
+        }
+        return true;
+
+    }
+
+    /**
+     * 是否为指定flag，带inner.的标签。
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlagWithInner(Set<String> flags) {
+        var test = new HashSet<>(flags);
+        if (test.contains("inner.enable")) {
+            test.remove("inner.enable");
+            if (SREDisableManager.isModifierDisabled(this))
+                return false;
+        }
+        if (test.contains("inner.disable")) {
+            test.remove("inner.disable");
+            if (!SREDisableManager.isModifierDisabled(this))
+                return false;
+        }
+        return this.flags.containsAll(test);
+    }
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(HashSet<String> flags) {
+        return this.flags.containsAll(flags);
+    }
+
+    /**
+     * 获取显示FLAG
+     */
+    public HashSet<String> getFlags() {
+        return this.flags;
+    }
+
+    /**
+     * 删除显示FLAG
+     */
+    public SREModifier removeFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.remove(i);
+        }
+        return this;
+    }
 
     public SREModifier setCanSetSpawnInfoInConfig(boolean flag) {
         this.canSetSpawnInfoInConfig = flag;
@@ -151,11 +226,8 @@ public class SREModifier extends SREAbstractInfoClass {
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
     }
-
-    public ResourceLocation getIdentifier() {
-        return this.identifier;
-    }
-
+    
+    @Override
     public ResourceLocation identifier() {
         return this.identifier;
     }

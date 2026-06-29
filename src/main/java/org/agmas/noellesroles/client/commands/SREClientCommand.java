@@ -3,11 +3,16 @@ package org.agmas.noellesroles.client.commands;
 import io.wifi.ConfigCompact.ui.SettingMenuScreen;
 import io.wifi.ConfigCompact.ui.TestScreen;
 import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.util.ClientScheduler;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 
 public class SREClientCommand {
@@ -63,7 +68,7 @@ public class SREClientCommand {
                         }, 1);
                         return 1;
                       }))
-                    .then(ClientCommandManager.literal("test")
+                  .then(ClientCommandManager.literal("test")
                       .executes(context -> {
                         ClientScheduler.schedule(() -> {
                           context.getSource().getClient()
@@ -71,7 +76,24 @@ public class SREClientCommand {
                         }, 1);
                         return 1;
                       }))
-                    ));
+
+                  .then(ClientCommandManager.literal("newspaper_test")
+                      .then(ClientCommandManager.literal("editing").executes(context -> {
+                        ClientScheduler.schedule(() -> {
+                          context.getSource().getClient()
+                              .setScreen(new NewspaperScreen(new ArrayList<>(List.of("这是报纸测试页面"))));
+                        }, 1);
+                        return 1;
+                      })).then(ClientCommandManager.literal("view").executes(context -> {
+                        ClientScheduler.schedule(() -> {
+                          var msg = new ArrayList<Component>();
+                          msg.add(Component.translatable("Hello %s from %s", 1, 2).withStyle(ChatFormatting.RED));
+                          context.getSource().getClient()
+                              .setScreen(
+                                  new NewspaperScreen(msg, Component.literal("hello"), Component.literal("author")));
+                        }, 1);
+                        return 1;
+                      })))));
         });
   }
 }

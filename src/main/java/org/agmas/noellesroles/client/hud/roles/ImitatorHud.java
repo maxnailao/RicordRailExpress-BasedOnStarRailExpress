@@ -10,7 +10,7 @@ import net.minecraft.util.CommonColors;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class ImitatorHud {
 
@@ -64,7 +64,7 @@ public class ImitatorHud {
                 context.drawString(font, chargeText, x, y, 0xFFAA00);
             }
 
-            // ==================== 拳击手无敌 ====================
+            // ==================== 斗士无敌 ====================
             if (comp.imitBoxerInvulnTicks > 0) {
                 y += 14;
                 Component boxerText = Component.translatable("hud.noellesroles.imitator.boxer_shield",

@@ -6,8 +6,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
-import org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 /**
  * 建筑师 HUD

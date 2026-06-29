@@ -5,59 +5,53 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
-import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.hoan_meirin.HoanMeirinPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.shushi.ShuShiPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
-import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
+import java.util.List;
 import java.util.UUID;
 
 public class AbilityHandler {
 
     public static void handler(ServerPlayer player) {
-        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player))
+        handler(player, false);
+    }
+
+    /**
+     * 通用技能服务端处理。
+     *
+     * @param possessed 若为 true，则跳过 {@link ModEffects#SKILL_BANED} 拦截
+     *                  （用于操纵师附身时以目标身份释放目标技能）。
+     */
+    public static void handler(ServerPlayer player, boolean possessed) {
+        // 通用技能服务端处理
+        if (player.isSpectator())
             return;
         SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                 .get(player);
@@ -69,102 +63,7 @@ public class AbilityHandler {
         if (SpellbreakerPlayerComponent.consumePendingSkillFail(player)) {
             return;
         }
-        if (player.hasEffect(ModEffects.SKILL_BANED)) {
-            return;
-        }
-        if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
-            var hmpc = HoanMeirinPlayerComponent.KEY.get(player);
-            if (player.hasEffect(MobEffects.LEVITATION)) {
-                player.removeEffect(MobEffects.LEVITATION);
-                player.displayClientMessage(
-                        Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
-                        true);
-                return;
-            } else if (hmpc.cooldown > 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED),
-                        true);
-                return;
-            } else {
-                hmpc.setCooldown(60 * 20);
-                player.displayClientMessage(
-                        Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
-                        true);
-                player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
-                        10 * 20, 1, true, false,
-                        true));
-                return;
-            }
-        }
-        if (gameWorldComponent.isRole(player, RedHouseRoles.MAID_SAKUYA)) {
-            if (abilityPlayerComponent.cooldown > 0 || player.getCooldowns().isOnCooldown(Items.CLOCK)) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                if (TimeStopEffect.tryTriggerStart(player, 20 * 5,
-                        Component.translatable("title.maid_sakuya.timestopper")
-                                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))) {
-                    abilityPlayerComponent.setCooldown(20 * 240);
-                }
-            }
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.JOJO)) {
-            if (abilityPlayerComponent.cooldown > 0 || player.getCooldowns().isOnCooldown(Items.CLOCK)) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                if (TimeStopEffect.tryTriggerStart(player, 20 * 3,
-                        Component.translatable("hud.noellesroles.jojo.the_world")
-                                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))) {
-                    abilityPlayerComponent.setCooldown(20 * 240);
-                }
-            }
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.DIO)) {
-
-            DIOPlayerComponent.KEY.get(player).tryActivateTimeStop();
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.WIND_YAOSE)) {
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(Component.translatable(
-                        "tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                for (var p : player.level().players()) {
-                    if (p.distanceTo(player) <= 30.) {
-                        // 30s
-                        PlayerVolumeComponent.KEY.get(p).setVolume(600, 0.05f);
-                    }
-                }
-                abilityPlayerComponent.setCooldown(20 * 120);
-            }
-            return;
-        }
-
-        if (gameWorldComponent.isRole(player, ModRoles.CLEANER)) {
-            if (abilityPlayerComponent.cooldown > 0) {
-                player.displayClientMessage(Component.translatable(
-                        "message.noellesroles.cleaner.cooldown", abilityPlayerComponent.cooldown / 20)
-                        .withStyle(ChatFormatting.RED), true);
-            } else {
-                var items = player.level().getEntitiesOfClass(ItemEntity.class,
-                        player.getBoundingBox().inflate(5.), (p) -> true);
-                for (var it : items) {
-                    it.discard();
-                }
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F,
-                        1.0F + player.level().random.nextFloat() * 0.1F - 0.05F);
-                player.displayClientMessage(Component.translatable(
-                        "message.noellesroles.cleaner.cleanned", items.size())
-                        .withStyle(ChatFormatting.GOLD), true);
-                abilityPlayerComponent.setCooldown(20 * 90);
-            }
+        if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)) {
@@ -230,6 +129,86 @@ public class AbilityHandler {
             return;
         }
 
+        if (gameWorldComponent.isRole(player, ModRoles.LEON)
+                && abilityPlayerComponent.cooldown <= 0) {
+            // 格斗体术：向面前玩家猛踹一脚，造成较远击退与减速
+            NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+            net.minecraft.world.phys.HitResult hit = net.minecraft.world.entity.projectile.ProjectileUtil
+                    .getHitResultOnViewVector(player,
+                            e -> e instanceof ServerPlayer p
+                                    && io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(p),
+                            cfg.leonKickRange);
+            if (hit instanceof net.minecraft.world.phys.EntityHitResult ehr
+                    && ehr.getEntity() instanceof ServerPlayer victim) {
+                victim.knockback(cfg.leonKickKnockback,
+                        player.getX() - victim.getX(), player.getZ() - victim.getZ());
+                victim.hurtMarked = true;
+                // 玩家受服务端击退需主动同步速度
+                victim.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(victim));
+                int slowTicks = (int) (cfg.leonKickSlowSeconds * 20);
+                victim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN, slowTicks, 2));
+                player.level().playSound(null, victim.blockPosition(),
+                        net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.leonKickCooldown);
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.leon.kick_hit")
+                                .withStyle(ChatFormatting.AQUA),
+                        true);
+            } else {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.leon.kick_miss")
+                                .withStyle(ChatFormatting.GRAY),
+                        true);
+            }
+            return;
+        }
+
+        if (gameWorldComponent.isRole(player, ModRoles.MORPHLING)
+                && abilityPlayerComponent.cooldown <= 0) {
+            // 召唤举刀假人向前突进
+            if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(player)) {
+                return;
+            }
+            NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+            net.minecraft.server.level.ServerLevel level = player.serverLevel();
+            org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent morphComp =
+                    org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent.KEY.get(player);
+            // 从所有存活玩家中随机选择一个作为皮肤（排除召唤者自身）
+            List<ServerPlayer> aliveOthers = level.players().stream()
+                    .filter(p -> GameUtils.isPlayerAliveAndSurvival(p) && !p.getUUID().equals(player.getUUID()))
+                    .toList();
+            UUID skin;
+            if (!aliveOthers.isEmpty()) {
+                skin = aliveOthers.get(level.random.nextInt(aliveOthers.size())).getUUID();
+            } else {
+                // 无人可选时 fallback 到伪装对象或自身
+                skin = (morphComp.morphTicks > 0 && morphComp.disguise != null)
+                        ? morphComp.disguise
+                        : player.getUUID();
+            }
+            float yaw = player.getYRot();
+            double rad = Math.toRadians(yaw);
+            double dx = -Math.sin(rad);
+            double dz = Math.cos(rad);
+            org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity dummy =
+                    new org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity(
+                            org.agmas.noellesroles.init.ModEntities.MORPHLING_KNIFE_DUMMY, level);
+            dummy.setPos(player.getX() + dx * 1.5D, player.getY(), player.getZ() + dz * 1.5D);
+            dummy.setup(player, skin, GameConstants.getInTicks(0, cfg.morphlingDummyLifetime), yaw);
+            level.addFreshEntity(dummy);
+            level.playSound(null, player.blockPosition(),
+                    net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.2f);
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.morphlingDummyCooldown);
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.morphling.dummy_spawned")
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
+            return;
+        }
+
         if (gameWorldComponent.isRole(player, ModRoles.RECALLER)
                 && abilityPlayerComponent.cooldown <= 0) {
             RecallerPlayerComponent recallerPlayerComponent = RecallerPlayerComponent.KEY.get(player);
@@ -246,6 +225,55 @@ public class AbilityHandler {
                 recallerPlayerComponent.teleport();
             }
 
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.JADE_GENERAL)
+                && abilityPlayerComponent.cooldown <= 0) {
+            JadeGeneralPlayerComponent jadeGeneral = ModComponents.JADE_GENERAL.get(player);
+            if (jadeGeneral.useSkill()) {
+                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
+                        NoellesRolesConfig.HANDLER.instance().jadeGeneralKickCooldown);
+                abilityPlayerComponent.sync();
+            }
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.DELAYER)
+                && abilityPlayerComponent.cooldown <= 0) {
+            DelayerPlayerComponent delayer = ModComponents.DELAYER.get(player);
+            if (delayer.isAnchored()) {
+                return; // 已锚定，等待回溯
+            }
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            int cost = NoellesRolesConfig.HANDLER.instance().delayerRewindCost;
+            if (shop.balance < cost) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.delayer.no_money", cost)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            shop.balance -= cost;
+            shop.sync();
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
+                    NoellesRolesConfig.HANDLER.instance().delayerRewindCooldown);
+            delayer.anchor();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.WIZARD)) {
+            WizardPlayerComponent wizard = ModComponents.WIZARD.get(player);
+            wizard.castSelectedSpell();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.RAVEN)) {
+            ModComponents.RAVEN.get(player).useAbility();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.CAKE_MAKER)) {
+            ModComponents.CAKE_MAKER.get(player).useSmoker();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.ADVENTURER)) {
+            ModComponents.ADVENTURER.get(player).useWaypointAbility();
+            return;
         }
 
         //回溯杀手技能
@@ -292,7 +320,7 @@ public class AbilityHandler {
                 player.displayClientMessage(
                         Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
                                 .withStyle(ChatFormatting.RED),
-                        true);
+                                true);
                 return;
             }
 
@@ -325,7 +353,7 @@ public class AbilityHandler {
                 player.displayClientMessage(
                         Component.translatable("tip.noellesroles.cooldown", abilityPlayerComponent.cooldown / 20)
                                 .withStyle(ChatFormatting.RED),
-                        true);
+                                true);
                 return;
             }
 
@@ -512,10 +540,19 @@ public class AbilityHandler {
             }
             return;
         }
+        if (gameWorldComponent.isRole(player, ModRoles.NOSTALGIST)) {
+            // 里世界中按技能键：主动让里世界崩塌并现身
+            ModComponents.NOSTALGIST.get(player).tryManualCollapse(player);
+            return;
+        }
         // 处理超级亡命徒技能
     }
 
     public static void handlerWithTarget(ServerPlayer player, UUID targetUUID) {
+        handlerWithTarget(player, targetUUID, false);
+    }
+
+    public static void handlerWithTarget(ServerPlayer player, UUID targetUUID, boolean possessed) {
         if (player.isSpectator())
             return;
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
@@ -526,7 +563,7 @@ public class AbilityHandler {
         if (SpellbreakerPlayerComponent.consumePendingSkillFail(player)) {
             return;
         }
-        if (player.hasEffect(ModEffects.SKILL_BANED)) {
+        if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.IMITATOR)) {

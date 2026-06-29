@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -36,13 +37,13 @@ import java.util.function.Supplier;
 public class SREDevilRouletteGameMode extends SREBaseCustomizationGameMode {
     // 轮盘赌模式允许聊天
     static {
-        SRE.canSendReplay.add((p) -> {
+        ReplayRules.canSendReplay.add((p) -> {
             if (p == null)
                 return false;
             return SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
                     .equals(SREGameModes.DEVIL_ROULETTE_ID);
         });
-        SRE.canUseChatHudPlayer.add((p) -> {
+        ChatHudRules.canUseChatHudPlayer.add((p) -> {
             if (p == null)
                 return false;
             return SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier

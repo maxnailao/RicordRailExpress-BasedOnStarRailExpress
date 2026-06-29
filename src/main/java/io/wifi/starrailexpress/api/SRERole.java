@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,10 +72,80 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
+    private SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.all;
+    private boolean specialVigilante = false;
+    private boolean refreshableSpecialVigilante = false;
+    private int refreshableSpecialVigilanteChance = -1;
     private int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
     public HashSet<SRERole> opposingJobs = new HashSet<>();
+
+    /**
+     * 添加显示FLAG
+     */
+    public SRERole addFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(String... flags) {
+        for (var f : flags) {
+            if (!this.flags.contains(f))
+                return false;
+        }
+        return true;
+
+    }
+
+    /**
+     * 是否为指定flag
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlag(Set<String> flags) {
+        return this.flags.containsAll(flags);
+    }
+
+    /**
+     * 是否为指定flag，带inner.的标签。
+     * 
+     * @param flags
+     * @return
+     */
+    public boolean isFlagWithInner(Set<String> flags) {
+        var test = new HashSet<>(flags);
+        if (test.contains("inner.enable")) {
+            test.remove("inner.enable");
+            if (SREDisableManager.isRoleDisabled(this))
+                return false;
+        }
+        if (test.contains("inner.disable")) {
+            test.remove("inner.disable");
+            if (!SREDisableManager.isRoleDisabled(this))
+                return false;
+        }
+        return this.flags.containsAll(test);
+    }
+
+    /**
+     * 删除显示FLAG
+     */
+    public SRERole removeFlag(String... flag) {
+        for (var i : flag) {
+            this.flags.remove(i);
+        }
+        return this;
+    }
 
     public Random getRandom() {
         return random;
@@ -134,6 +206,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setMafiaTeam(boolean flag) {
         this.mafiaTeam = flag;
+        this.flags.add("mafia_team");
         return this;
     }
 
@@ -210,6 +283,50 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public int getOccupiedRoleCount() {
         return this.occupiedRoleCount;
+    }
+
+    public enum SpecialMapRoleMap {
+        all, qiyucun, bigmap, underwater, fly, trap
+    }
+
+    public SpecialMapRoleMap getSpecialMapRole() {
+        return this.specialMapRole;
+    }
+
+    public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
+        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.all : specialMapRole;
+        return this;
+    }
+
+    public boolean isSpecialMapRole() {
+        return this.specialMapRole != SpecialMapRoleMap.all;
+    }
+
+    public boolean isSpecialVigilante() {
+        return this.specialVigilante && this.isVigilanteTeam();
+    }
+
+    public SRERole setSpecialVigilante(boolean specialVigilante) {
+        this.specialVigilante = specialVigilante;
+        return this;
+    }
+
+    public SRERole setSpecialPolice(boolean specialVigilante) {
+        return setSpecialVigilante(specialVigilante);
+    }
+
+    public boolean canRefreshableSpecialVigilante() {
+        return this.isSpecialVigilante() && this.refreshableSpecialVigilante;
+    }
+
+    public int getRefreshableSpecialVigilanteChance() {
+        return this.refreshableSpecialVigilanteChance;
+    }
+
+    public SRERole setRefreshableSpecialVigilante(int chance, boolean refreshable) {
+        this.refreshableSpecialVigilanteChance = chance;
+        this.refreshableSpecialVigilante = refreshable;
+        return this;
     }
 
     /**
@@ -335,6 +452,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
     private boolean ableToPickUpRevolver;
     private boolean isNeutralForKiller = false;
     private boolean canSeeTeammateKiller = true;
+    private boolean canUseSabotage = false;
+    private boolean canJumpManhole = false;
+    private boolean canAcrossFog = false;
 
     public boolean isNeutrals() {
         return this.isNeutrals;
@@ -358,6 +478,33 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setCanSeeTeammateKiller(boolean canSeeKiller) {
         this.canSeeTeammateKiller = canSeeKiller;
+        return this;
+    }
+
+    public boolean canUseSabotage() {
+        return this.canUseSabotage;
+    }
+
+    public SRERole setCanUseSabotage(boolean v) {
+        this.canUseSabotage = v;
+        return this;
+    }
+
+    public boolean canJumpManhole() {
+        return this.canJumpManhole;
+    }
+
+    public SRERole setCanJumpManhole(boolean v) {
+        this.canJumpManhole = v;
+        return this;
+    }
+
+    public boolean canAcrossFog() {
+        return this.canAcrossFog;
+    }
+
+    public SRERole setCanAcrossFog(boolean v) {
+        this.canAcrossFog = v;
         return this;
     }
 
@@ -400,11 +547,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     private boolean isVigilanteTeam;
-
-    @Override
-    public ResourceLocation getIdentifier() {
-        return identifier;
-    }
 
     public int getColor() {
         return color;
@@ -675,6 +817,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    @Override
     public ResourceLocation identifier() {
         return identifier;
     }
@@ -755,7 +898,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players, String mapName) {
-        if (defaultMaxCount == -1)
+        if (spawnInfo.maxSpawn == -1)
             return -1;
         // 优先使用 spawnInfo（来自用户配置），若未设置则跳过
         int minPlayer = this.spawnInfo.minEnabledPlayer;
@@ -985,7 +1128,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * <ul>
      * <li><b>{@link InteractionResult#PASS}</b> — 使用默认逻辑，正常执行物品丢弃。</li>
      * <li><b>{@link InteractionResult#CONSUME}</b> — 取消本次丢弃行为</li>
-     * <li><b>{@link InteractionResult#SUCCESS}</b> — 取消本次丢弃行为</li>
+     * <li><b>{@link InteractionResult#SUCCESS}</b> — 正常物品丢弃行为</li>
      * <li><b>{@link InteractionResult#FAIL}</b> — 取消本次丢弃行为</li>
      * </ul>
      *

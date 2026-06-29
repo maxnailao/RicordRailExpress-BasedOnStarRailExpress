@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
@@ -12,11 +13,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 
 import java.util.List;
 import java.util.Map;
@@ -93,14 +92,9 @@ public final class ProgressionDataManager {
         grantExperience(player, 1);
     }
 
+    // 阵营卡牌已迁移至场外背包系统（BackpackManager）；以下方法保留签名并委托，调用方无需改动。
     public static void addFactionCard(ServerPlayer player, ProgressionState.FactionCardType type, int count) {
-        if (type == ProgressionState.FactionCardType.NONE || count == 0) {
-            return;
-        }
-        Entry entry = getEntry(player.getUUID());
-        int current = entry.state.factionCards.getOrDefault(type, 0);
-        entry.state.factionCards.put(type, Math.max(0, current + count));
-        markDirty(player, entry);
+        BackpackManager.addCard(player, type, count);
     }
 
     public static void addFactionCard(Player player, ProgressionState.FactionCardType type, int count) {
@@ -110,20 +104,18 @@ public final class ProgressionDataManager {
     }
 
     public static boolean activateFactionCard(ServerPlayer player, ProgressionState.FactionCardType type) {
-        Entry entry = getEntry(player.getUUID());
-        int current = entry.state.factionCards.getOrDefault(type, 0);
-        if (type == ProgressionState.FactionCardType.NONE || current < 1
-                || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
-            return false;
-        }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), type.getTypeId());
-        entry.state.factionCards.put(type, current - 1);
-        markDirty(player, entry);
-        Component message = Component.translatable("message.sre.progression.faction_card_activated",
-                Component.translatable(type.displayName));
-        player.sendSystemMessage(message);
-        player.displayClientMessage(message, true);
-        return true;
+        return BackpackManager.activateCard(player, type);
+    }
+
+    /** 迁移后由 {@link BackpackManager#migrateIfNeeded} 调用，标记通行证卡牌已清零、需要同步与持久化。 */
+    public static void markFactionCardsCleared(ServerPlayer player) {
+        markDirty(player, getEntry(player.getUUID()));
+    }
+
+    /** 供迁移协调：本玩家的通行证数据是否已从 DB 加载完成。 */
+    public static boolean isLoaded(UUID playerUuid) {
+        Entry entry = ENTRIES.get(playerUuid);
+        return entry != null && entry.loaded;
     }
 
     public static boolean flushBlocking(UUID playerUuid) {
@@ -168,6 +160,8 @@ public final class ProgressionDataManager {
         entry.online = true;
         send(player, entry);
         if (!isDatabaseEnabled()) {
+            entry.loaded = true;
+            BackpackManager.migrateIfNeeded(player);
             return;
         }
         reloadFromDatabase(player, entry);
@@ -199,7 +193,9 @@ public final class ProgressionDataManager {
                             entry.updatedAt = Math.max(entry.updatedAt, record.updatedAt());
                             entry.dirty = false;
                         }
+                        entry.loaded = true;
                         send(player, entry);
+                        BackpackManager.migrateIfNeeded(player);
                     });
                 });
     }
@@ -290,6 +286,7 @@ public final class ProgressionDataManager {
         private ProgressionState state = ProgressionState.createDefault();
         private volatile boolean online;
         private volatile boolean dirty;
+        private volatile boolean loaded;
         private volatile boolean loadInFlight;
         private volatile boolean saveInFlight;
         private volatile long updatedAt;

@@ -24,10 +24,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
-import org.agmas.noellesroles.content.item.FlareItem;
 import org.agmas.noellesroles.content.item.charge_item.*;
 import org.agmas.noellesroles.utils.LocalDateData;
-import org.agmas.noellesroles.content.item.JetpackItem;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -65,6 +63,13 @@ public class ModItems {
     public static final Item RESCUE_FLARE = register(
             new RescueFlareItem(new Item.Properties().stacksTo(4)),
             "rescue_flare", ROLE_ITEMS_GROUP);
+    // 推理之书 - 大侦探专属
+    public static final Item DEDUCTION_BOOK = register(
+            new DeductionBookItem(new Item.Properties().stacksTo(1)),
+            "deduction_book", ROLE_ITEMS_GROUP);
+    public static final Item REASONER_COMPASS = register(
+            new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
+            "reasoner_compass", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
@@ -173,18 +178,24 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
+    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)), "cake_ingredients", CONSUMABLES_GROUP);
+    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg", CONSUMABLES_GROUP);
+    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)), "cake_milk_bucket", CONSUMABLES_GROUP);
     public static final Item PAN = register(
-            new PanItem((new Item.Properties()).stacksTo(1)), "pan");
+            new PanItem((new Item.Properties()).stacksTo(1)), "pan",
+            CONSUMABLES_GROUP);
     public static final Item BUCKET_OF_H2SO4 = register(
-            new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4");
+            new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4",
+            CONSUMABLES_GROUP);
     public static final Item LETTER_ITEM = register(
-            new LetterItem((new Item.Properties()).stacksTo(1)), "letter");
+            new LetterItem((new Item.Properties()).stacksTo(1)), "letter",
+            ROLE_ITEMS_GROUP);
     public static final Item NINJA_KNIFE = register(
             new NinjaKnifeItem(new Item.Properties().stacksTo(1)),
-            "ninja_knife");
+            "ninja_knife", WEAPONS_GROUP);
     public static final Item NINJA_SHURIKEN = register(
             new NinjaShurikenItem(new Item.Properties().stacksTo(1)),
-            "ninja_shuriken");
+            "ninja_shuriken", WEAPONS_GROUP);
 
     /**
      * 仁之剑
@@ -193,11 +204,13 @@ public class ModItems {
      */
     public static final Item BENEVOLENCE_SWORD = register(
             new BenevolenceSwordItem(new Item.Properties().stacksTo(1)),
-            "benevolence_sword");
+            "benevolence_sword", WEAPONS_GROUP);
     public static final Item ONCE_REVOLVER = register(
-            new OnceRevolverItem((new Item.Properties()).stacksTo(1).durability(1)), "once_revolver");
+            new OnceRevolverItem((new Item.Properties()).stacksTo(1).durability(1)), "once_revolver",
+            WEAPONS_GROUP);
     public static final Item HANDCUFFS = register(
-            new HandCuffsItem((new Item.Properties()).stacksTo(1)), "handcuffs");
+            new HandCuffsItem((new Item.Properties()).stacksTo(1)), "handcuffs",
+            TOOLS_GROUP);
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
             WEAPONS_GROUP);
@@ -352,7 +365,7 @@ public class ModItems {
 
     /**
      * 空包弹
-     * - 滑头鬼专属物品
+     * - 捣蛋鬼专属物品
      * - 在商店以100金币购买
      * - 右键对目标玩家使用，使其手中枪械进入30秒冷却
      */
@@ -362,7 +375,7 @@ public class ModItems {
 
     /**
      * 烟雾弹
-     * - 滑头鬼专属物品
+     * - 捣蛋鬼专属物品
      * - 在商店以300金币购买
      * - 右键投掷，形成烟雾区域
      * - 进入烟雾的玩家获得失明效果
@@ -468,8 +481,8 @@ public class ModItems {
             "alarm_trap", ROLE_ITEMS_GROUP);
 
     /**
-     * 传递盒
-     * - 邮差专属物品
+     * 快递包裹盒子
+     * - 射命丸文专属物品
      * - 在商店以150金币购买
      * - 指针对准玩家并右键使用，打开传递界面
      * - 双方可以放入一样物品并交换
@@ -477,6 +490,16 @@ public class ModItems {
     public static final Item DELIVERY_BOX = register(
             new DeliveryBoxItem(new Item.Properties().stacksTo(8)),
             "delivery_box", ROLE_ITEMS_GROUP);
+ /**
+     * 快递包裹盒子
+     * - 射命丸文专属物品
+     * - 在商店以150金币购买
+     * - 指针对准玩家并右键使用，打开传递界面
+     * - 双方可以放入一样物品并交换
+     */
+    public static final Item NEWSPAPER = register(
+            new NewspaperItem(new Item.Properties().stacksTo(8)),
+            "newspaper", ROLE_ITEMS_GROUP);
 
     /**
      * 迷幻瓶
@@ -579,6 +602,23 @@ public class ModItems {
     public static final Item DURABILITY_BOAT = register(
             new DurabilityBoatItem(),
             "thenewboat");
+
+    /**
+     * 巫师法杖 / 魔药
+     */
+    public static final Item WIZARD_STAFF = register(
+            new org.agmas.noellesroles.content.item.WizardStaffItem(new Item.Properties().stacksTo(1)),
+            "wizard_staff", ROLE_ITEMS_GROUP);
+    public static final Item WIZARD_POTION = register(
+            new org.agmas.noellesroles.content.item.WizardPotionItem(new Item.Properties().stacksTo(16)),
+            "wizard_potion", ROLE_ITEMS_GROUP);
+
+    /**
+     * 占卜家晶球
+     */
+    public static final Item CRYSTAL_BALL = register(
+            new org.agmas.noellesroles.content.item.CrystalBallItem(new Item.Properties().stacksTo(1)),
+            "crystal_ball", ROLE_ITEMS_GROUP);
     // 新增物品：短管霰弹枪 / 防暴盾 / 警棍 / 对讲机
     public static final Item SHORT_SHOTGUN = register(
             new org.agmas.noellesroles.content.item.ShortShotgunItem(
@@ -592,6 +632,29 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.BatonItem(
                     new Item.Properties().stacksTo(1).durability(4)),
             "baton", WEAPONS_GROUP);
+    public static final Item BONE_STAFF = register(
+            new org.agmas.noellesroles.content.item.BoneStaffItem(
+                    new Item.Properties().stacksTo(1).durability(5)),
+            "bone_staff", WEAPONS_GROUP);
+    /**
+     * 格罗赛尔游记
+     * - 右键蓄力1秒将瞄准的目标玩家放逐进游记（配置坐标）
+     * - 游记内无法攻击/受伤、无法使用技能/物品，死亡改判为持有者击杀
+     * - 站上信标即可回归被放逐前的位置
+     * - 使用后进入75秒冷却
+     */
+    public static final Item GROSELL_TRAVELOG = register(
+            new org.agmas.noellesroles.content.item.GrosellTravelogItem(
+                    new Item.Properties().stacksTo(1)),
+            "grosell_travelog", ROLE_ITEMS_GROUP);
+    public static final Item LEON_BLUE_HERB = register(
+            new org.agmas.noellesroles.content.item.LeonBlueHerbItem(
+                    new Item.Properties().stacksTo(1)),
+            "leon_blue_herb", ROLE_ITEMS_GROUP);
+    public static final Item LEON_RED_HERB = register(
+            new org.agmas.noellesroles.content.item.LeonRedHerbItem(
+                    new Item.Properties().stacksTo(1)),
+            "leon_red_herb", ROLE_ITEMS_GROUP);
     public static final Item RADIO = register(
             new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
             "radio", TOOLS_GROUP);
@@ -748,6 +811,16 @@ public class ModItems {
             new MercenaryContractItem(new Item.Properties().stacksTo(1)),
             "mercenary_contract", ROLE_ITEMS_GROUP);
 
+    /** 信使信封（发送用） */
+    public static final Item COURIER_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "courier_mail", ROLE_ITEMS_GROUP);
+
+    /** 信使信封（接收用） */
+    public static final Item RECEIVED_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "received_mail", ROLE_ITEMS_GROUP);
+
     /**
      * 时停钟
      */
@@ -763,7 +836,7 @@ public class ModItems {
      * - 初始子弹数1，只能通过塔罗会补充
      */
     public static final Item EXECUTIONER_GUN = register(
-            new org.agmas.noellesroles.game.roles.innocent.fool.ExecutionerGunItem(
+            new org.agmas.noellesroles.game.roles.innocence.fool.ExecutionerGunItem(
                     new Item.Properties().stacksTo(1)),
             "executioner_gun", WEAPONS_GROUP);
 
@@ -779,7 +852,7 @@ public class ModItems {
     public static final Item ZERO_ONE_FIVE_GUN = register(
             new org.agmas.noellesroles.content.item.ZeroOneFiveGunItem(
                     new Item.Properties().stacksTo(1)),
-            "zero_one_five_gun",WEAPONS_GROUP);
+            "zero_one_five_gun", WEAPONS_GROUP);
 
     /**
      * 海盗燧发枪
@@ -799,7 +872,7 @@ public class ModItems {
      * - 玩家对着纸条按V键祷告，获得"塔罗会成员"标签
      */
     public static final Item HONORED_NOTE = register(
-            new org.agmas.noellesroles.game.roles.innocent.fool.HonoredNoteItem(
+            new org.agmas.noellesroles.game.roles.innocence.fool.HonoredNoteItem(
                     new Item.Properties().stacksTo(16)),
             "honored_note", ROLE_ITEMS_GROUP);
 
@@ -810,7 +883,7 @@ public class ModItems {
      * - 冷却90秒
      */
     public static final Item SPIRIT_CLOAK = register(
-            new org.agmas.noellesroles.game.roles.innocent.fool.SpiritCloakItem(
+            new org.agmas.noellesroles.game.roles.innocence.fool.SpiritCloakItem(
                     new Item.Properties().stacksTo(1)),
             "spirit_cloak", ROLE_ITEMS_GROUP);
 
@@ -992,6 +1065,15 @@ public class ModItems {
             new MagnetItem(new Item.Properties().stacksTo(1)),
             "magnet", TOOLS_GROUP);
 
+    /**
+     * 运输物品（场景任务「运输点任务」）
+     * - 在运输点起点右键获得此物品
+     * - 手持此物品右键运输点终点即可完成运输任务
+     */
+    public static final Item TRANSPORT_PACKAGE = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "transport_package", MISC_ITEMS_GROUP);
+
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     public static List<ShopEntry> POISONER_SHOP_ENTRIES = new ArrayList<>();
@@ -1036,6 +1118,7 @@ public class ModItems {
         registrar.registerEntries();
         // 不再注册旧的 MISC_CREATIVE_GROUP 和 SAN_CREATIVE_GROUP，所有物品已分配到新分类标签页
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PAN);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.GROSELL_TRAVELOG);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SMOKE_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BLANK_CARTRIDGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.ALARM_TRAP);
@@ -1043,9 +1126,15 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.REINFORCEMENT);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SCREWDRIVER);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.CONSPIRACY_PAGE);
+        TMMItems.INVISIBLE_ITEMS.add(Items.BUNDLE);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.DEDUCTION_BOOK);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.REASONER_COMPASS);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.CRYSTAL_BALL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.LETTER_ITEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEFIBRILLATOR);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BOMB);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.COURIER_MAIL);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.RECEIVED_MAIL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.WRITTEN_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.FLASH_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DECOY_GRENADE);

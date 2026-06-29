@@ -5,7 +5,6 @@ import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -38,8 +37,8 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocent.intelligence.IntelligencePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -49,9 +48,10 @@ import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComp
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
-import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -189,16 +189,14 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> CONSPIRATOR_SHOP = new ArrayList<>();
   // ==================== 柜子区商店 ====================
   public static ArrayList<ShopEntry> 柜子区的商店 = new ArrayList<>();
-  // ==================== 滑头鬼商店 ====================
+  // ==================== 捣蛋鬼商店 ====================
   public static ArrayList<ShopEntry> SLIPPERY_GHOST_SHOP = new ArrayList<>();
   // ==================== 工程师商店 ====================
   public static ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
-  // ==================== 拳击手商店 ====================
+  // ==================== 斗士商店 ====================
   public static ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
   // ==================== 工人商店 ====================
   public static ArrayList<ShopEntry> WORKER_SHOP = new ArrayList<>();
-  // ==================== 邮差商店 ====================
-  public static ArrayList<ShopEntry> POSTMAN_SHOP = new ArrayList<>();
   // ==================== 心理学家商店 ====================
   public static ArrayList<ShopEntry> PSYCHOLOGIST_SHOP = new ArrayList<>();
   // ==================== 炸弹客商店 ====================
@@ -272,6 +270,8 @@ public class RoleShopHandler {
   // ==================== 嬉命人商店 ====================
   public static ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
   public static ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
+  // ==================== 推理师商店 ====================
+  public static ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -669,7 +669,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(SERoles.NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
       ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), NECROMANCER_SHOP);
-      ShopContent.customEntries.put(ModRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
+      ShopContent.customEntries.put(BounsRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
 
       {
         var CAT_KILLER_SHOP = new ArrayList<>(NECROMANCER_SHOP);
@@ -680,7 +680,7 @@ public class RoleShopHandler {
             return SREPlayerShopComponent.usePsychoMode(player, 1.1);
           }
         });
-        ShopContent.customEntries.put(ModRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
+        ShopContent.customEntries.put(BounsRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
       }
     }
     {
@@ -719,6 +719,20 @@ public class RoleShopHandler {
       shop.add(new ShopEntry(ModItems.LINGSHI.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
       shop.add(new ShopEntry(ModItems.PAN.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.CHEF_ID, shop);
+    }
+    {
+      var shop = new ArrayList<ShopEntry>();
+      shop.add(new ShopEntry(ModItems.CAKE_INGREDIENTS.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+      shop.add(new ShopEntry(Items.SMOKER.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean canBuy(Player player) {
+          for (int i = 0; i < 9; i++)
+            if (player.getInventory().getItem(i).is(Items.SMOKER))
+              return false;
+          return true;
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.CAKE_MAKER_ID, shop);
     }
     {
       // 指挥官的商店
@@ -815,6 +829,23 @@ public class RoleShopHandler {
       });
       ShopContent.customEntries.put(
           ModRoles.ELF_ID, shopEntries);
+    }
+    {
+      var shopEntries = new ArrayList<ShopEntry>();
+      final var RegenerationArrow = Items.TIPPED_ARROW.getDefaultInstance();
+      RegenerationArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.regeneration_arrow.name"));
+      RegenerationArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.REGENERATION));
+      RegenerationArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+      shopEntries.add(new ShopEntry(RegenerationArrow, 100, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          int itemCount = SREItemUtils.countItem(player, Items.TIPPED_ARROW);
+          if (itemCount >= 2)
+            return false;
+          return RoleUtils.insertStackInFreeSlot(player, RegenerationArrow.copy());
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.CUPID_ID, shopEntries);
     }
     {
       ShopContent.customEntries.put(
@@ -1050,15 +1081,37 @@ public class RoleShopHandler {
           });
         }
       }
-      // 拍立得相纸 - 75金币
+      // 拍立得相纸 - 50
       {
         var item = ExposurePolaroid.Items.INSTANT_COLOR_SLIDE.get();
         if (item != null) {
           final var defaultInstance = item.getDefaultInstance();
-          entries.add(new ShopEntry(defaultInstance, 75, ShopEntry.Type.TOOL) {
+          entries.add(new ShopEntry(defaultInstance, 50, ShopEntry.Type.TOOL) {
             @Override
             public boolean onBuy(@NotNull Player player) {
               player.addItem(defaultInstance.copy());
+              return true;
+            }
+          });
+        }
+      }
+      // 画框（照片框） - 默认200金币，一局最多购买两次
+      {
+        var frameItem = BuiltInRegistries.ITEM
+            .get(ResourceLocation.fromNamespaceAndPath("exposure", "photograph_frame"));
+        if (frameItem != null && frameItem != Items.AIR) {
+          final var frameStack = frameItem.getDefaultInstance();
+          int price = org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().photographerFramePrice;
+          entries.add(new ShopEntry(frameStack, price, ShopEntry.Type.TOOL) {
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+              var comp = org.agmas.noellesroles.game.roles.innocence.photographer.PhotographerPlayerComponent.KEY
+                  .get(player);
+              if (comp == null || !comp.canBuyFrame()) {
+                return false;
+              }
+              player.addItem(frameStack.copy());
+              comp.recordFrameBought();
               return true;
             }
           });
@@ -1088,11 +1141,11 @@ public class RoleShopHandler {
     }
     {
       ShopContent.customEntries.put(
-          ModRoles.SLIPPERY_GHOST_ID, SLIPPERY_GHOST_SHOP);
+          ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);
     }
     {
       // PACHURI 商店
-      var displayStack = Items.WRITTEN_BOOK.getDefaultInstance();
+      var displayStack = ModItems.NEWSPAPER.getDefaultInstance();
       String title = "\u00a7d\u00a7lPachuri Knowledge Book";
       displayStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
           new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "Pachuri Knowledge", 1, List.of(),
@@ -1104,7 +1157,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL) {
         @Override
         public boolean onBuy(Player player) {
-          var itemStack = Items.WRITTEN_BOOK.getDefaultInstance();
+          var itemStack = ModItems.NEWSPAPER.getDefaultInstance();
           var players = new ArrayList<>(player.level().players());
           var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
           players.removeIf((p) -> {
@@ -1113,33 +1166,41 @@ public class RoleShopHandler {
           Collections.shuffle(players);
           int count = 1;
           var contents = new ArrayList<Filterable<Component>>();
-          {
-            var fstct = Component.translatable("%s\n%s", Component.translatable("item.written_book.role_title")
-                .withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD),
-                Component.translatable("item.written_book.role_intro")
-                    .withStyle(ChatFormatting.GRAY));
-            var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
-            contents.add(fstcontent);
-          }
+          // {
+          var fstct = Component.translatable("%s\n%s\n\n", Component.translatable("item.written_book.role_title"),
+              Component.translatable("item.written_book.role_intro"));
+          // var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
+          // contents.add(fstcontent);
+          // }
           for (int i = 0; i < count; i++) {
             var p = players.get(i);
-            var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1)
-                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.GOLD),
+
+            var ct = Component.translatable("%s%s", Component.translatable("item.written_book.per_role_title", i + 1),
                 Component
                     .translatable("item.written_book.per_role_content",
-                        p.getName().copy().withStyle(ChatFormatting.DARK_GRAY),
-                        RoleUtils.getRoleOrModifierNameWithColor(gameWorldComponent.getRole(p)))
-                    .withStyle(ChatFormatting.DARK_AQUA));
+                        p.getName(),
+                        RoleUtils.getRoleOrModifierName(gameWorldComponent.getRole(p))));
+            if (i == 0) {
+              ct = fstct.append(ct);
+            }
             var content = new Filterable<Component>(ct, Optional.of(ct));
             contents.add(content);
             if (p instanceof ServerPlayer sp)
               BroadcastCommand.BroadcastMessage(sp,
                   Component.translatable("message.pachuri.be_known_role").withStyle(ChatFormatting.RED));
           }
-          String title = "\u00a7d\u00a7lPachuri Knowledge Book";
-
+          String title = "Pachuri Knowledge Book";
+          String shortTitle = title;
+          if (shortTitle.length() >= 10) {
+            shortTitle = shortTitle.substring(0, 8) + "...";
+          }
           itemStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
-              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "System", 1, contents, true));
+              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1,
+                  contents, true));
+          itemStack.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.newspaper.name",
+                  Component.translatable("item.noellesroles.newspaper.title.warp", shortTitle)
+                      .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
           return RoleUtils.insertStackInFreeSlot(player, itemStack);
         }
       });
@@ -1184,7 +1245,7 @@ public class RoleShopHandler {
     }
     {
       ShopContent.customEntries.put(
-          ModRoles.BOXER_ID, BOXER_SHOP);
+          ModRoles.FIGHTER_ID, BOXER_SHOP);
     }
     {
       ShopContent.customEntries.put(
@@ -1215,10 +1276,6 @@ public class RoleShopHandler {
           ModRoles.ADMIRER_ID,
           List.of(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 150,
               ShopEntry.Type.TOOL)));
-    }
-    {
-      ShopContent.customEntries.put(
-          ModRoles.POSTMAN_ID, POSTMAN_SHOP);
     }
 
     ShopContent.customEntries.put(
@@ -1363,6 +1420,11 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(
           ModRoles.PHANTOM_MUSICIAN_ID, PHANTOM_MUSICIAN_SHOP);
     }
+    // 推理师商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.REASONER_ID, REASONER_SHOP);
+    }
     // 小偷商店
     {
       ShopContent.customEntries.put(
@@ -1376,7 +1438,7 @@ public class RoleShopHandler {
     // 作家商店
     {
       ShopContent.customEntries.put(
-          ModRoles.WRITER_ID, WRITER_SHOP);
+          BounsRoles.WRITER_ID, WRITER_SHOP);
     }
     // 搜救员商店
     {
@@ -1695,6 +1757,22 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
     }
 
+    {
+      var WIZARD_SHOP = new ArrayList<ShopEntry>();
+      WIZARD_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean canDisplay(@NotNull Player player) {
+          return false;
+        }
+
+        @Override
+        public boolean canBuy(@NotNull Player player) {
+          return false;
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.WIZARD_ID, WIZARD_SHOP);
+    }
+
     // 疫使商店
     {
       var INFECTED_SHOP_LIST = new ArrayList<ShopEntry>();
@@ -1723,7 +1801,6 @@ public class RoleShopHandler {
     ENGINEER_SHOP.clear();
     BOXER_SHOP.clear();
     WORKER_SHOP.clear();
-    POSTMAN_SHOP.clear();
     PSYCHOLOGIST_SHOP.clear();
     BOMBER_SHOP.clear();
     DOCTOR_SHOP.clear();
@@ -1855,7 +1932,7 @@ public class RoleShopHandler {
         50,
         ShopEntry.Type.TOOL));
 
-    // 滑头鬼商店
+    // 捣蛋鬼商店
     // 空包弹 - 150金币
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(
         ModItems.BLANK_CARTRIDGE.getDefaultInstance(),
@@ -1874,7 +1951,7 @@ public class RoleShopHandler {
         50,
         ShopEntry.Type.TOOL));
 
-    // 闪光弹 - 175金币（滑头鬼专用）
+    // 闪光弹 - 175金币（捣蛋鬼专用）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
       @Override
       public boolean canBuy(@NotNull Player player) {
@@ -1882,10 +1959,10 @@ public class RoleShopHandler {
       }
     });
 
-    // 诱饵弹 - 25金币（滑头鬼专用）
+    // 诱饵弹 - 25金币（捣蛋鬼专用）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
 
-    // 监控失灵 - 50金币（滑头鬼专属）
+    // 监控失灵 - 50金币（捣蛋鬼专属）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
       @Override
       public boolean onBuy(@NotNull Player player) {
@@ -1934,7 +2011,7 @@ public class RoleShopHandler {
           }
         });
 
-    // 拳击手商店
+    // 斗士商店
     BOXER_SHOP.add(new ShopEntry(
         ModItems.BOXING_GLOVE.getDefaultInstance(),
         150,
@@ -1946,18 +2023,6 @@ public class RoleShopHandler {
         ModItems.HAMMER.getDefaultInstance(),
         200,
         ShopEntry.Type.WEAPON));
-
-    // 邮差商店
-    // 传递盒 - 100金币
-    POSTMAN_SHOP.add(new ShopEntry(
-        ModItems.DELIVERY_BOX.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-    // 收纳袋 - 150金币
-    POSTMAN_SHOP.add(new ShopEntry(
-        Items.BUNDLE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
 
     // 心理学家商店
     // 薄荷糖 - 75金币
@@ -1983,9 +2048,9 @@ public class RoleShopHandler {
         290,
         ShopEntry.Type.WEAPON));
     BOMBER_SHOP.add(new ShopEntry(
-            TMMItems.FIRECRACKER.getDefaultInstance(),
-            25,
-            ShopEntry.Type.TOOL));
+        TMMItems.FIRECRACKER.getDefaultInstance(),
+        25,
+        ShopEntry.Type.TOOL));
 
     // 巡警商店
     // 左轮手枪 - 325金币
@@ -2325,6 +2390,29 @@ public class RoleShopHandler {
         75,
         ShopEntry.Type.TOOL));
 
+    // 狙击枪 - 400金币（已拥有狙击枪时无法购买）
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.SNIPER_RIFLE.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.SNIPER_RIFLE);
+      }
+    });
+
+    // 武术教官商店
+    // 双节棍 - 400金币（已拥有双节棍时无法购买）
+    MARTIAL_ARTS_INSTRUCTOR_SHOP.add(new ShopEntry(
+        TMMItems.NUNCHUCK.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.NUNCHUCK);
+      }
+    });
+
     // 海王商店
     // 普通三叉戟 - 150金币
     var trident = Items.TRIDENT.getDefaultInstance();
@@ -2553,8 +2641,8 @@ public class RoleShopHandler {
     });
 
     // ==================== 钳工商店 ====================
-    // 开灯 - 175金币（购买后立即结束关灯时间并清除全场黑暗与失明药水效果，未处于关灯时间无法购买）
-    FITTER_SHOP.add(new ShopEntry(ModItems.LIGHTUP.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
+    // 开灯 - 225金币（购买后立即结束关灯时间并清除全场黑暗与失明药水效果，未处于关灯时间无法购买）
+    FITTER_SHOP.add(new ShopEntry(ModItems.LIGHTUP.getDefaultInstance(), 225, ShopEntry.Type.TOOL) {
       @Override
       public boolean onBuy(@NotNull Player player) {
         SREWorldBlackoutComponent blackCCA = SREWorldBlackoutComponent.KEY.get(player.level());
@@ -2730,6 +2818,29 @@ public class RoleShopHandler {
     // ==================== 嬉命人商店 ====================
     // 开锁器 - 100金币
     EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+    // ==================== 推理师商店 ====================
+    // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
+    REASONER_SHOP.add(new ShopEntry(ModItems.REASONER_COMPASS.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
+        int elapsed = timeComp.getResetTime() - timeComp.getTime();
+        if (elapsed < 2 * 60 * 20) {
+          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
+              .withStyle(ChatFormatting.YELLOW), true);
+          return false;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+          if (stack.is(ModItems.REASONER_COMPASS)) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass")
+                .withStyle(ChatFormatting.YELLOW), true);
+            return false;
+          }
+        }
+        return true;
+      }
+    });
 
     // ==================== 幻音师商店 ====================
     // 出刀的声音 - 50金币, 冷却30秒

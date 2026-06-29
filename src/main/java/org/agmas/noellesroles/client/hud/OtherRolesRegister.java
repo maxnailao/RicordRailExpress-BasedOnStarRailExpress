@@ -30,6 +30,7 @@ public class OtherRolesRegister {
         MonitorHud.register();
         MorphlingHud.register();
         SilencerHud.register();
+        NostalgistHud.register();
         NianShouHud.register();
         PhantomHud.register();
         PsychologistHud.register();
@@ -56,11 +57,19 @@ public class OtherRolesRegister {
         PelicanHud.register();
         GodfatherHud.register();
         WarlockHud.register();
+        WizardHud.register();
+        RavenHud.register();
+        org.agmas.noellesroles.client.hud.roles.AmonHud.register();
+        AdventurerHud.register();
+        ReasonerHud.register();
         EmbalmerHud.register();
         SkincrawlerHud.register();
         PhantomMusicianHud.register();
         ZhizhangHud.register();
         GuardianHud.register();
+        UndeadLordHud.register();
+        VeteranHud.register();
+        CakeMakerHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

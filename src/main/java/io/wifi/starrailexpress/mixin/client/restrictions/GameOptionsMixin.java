@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.mixin.client.restrictions;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.RoleVisibilityRules;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -44,7 +44,7 @@ public class GameOptionsMixin {
             if (SREClient.gameComponent != null) {
                 final var role = SREClient.gameComponent.getRole(Minecraft.getInstance().player);
 
-                if (role != null && SRE.canUseOtherPerson.stream().anyMatch(predicate -> predicate.test(role))) {
+                if (role != null && RoleVisibilityRules.canUseOtherPerson.stream().anyMatch(predicate -> predicate.test(role))) {
                     return original;
                 }
             }

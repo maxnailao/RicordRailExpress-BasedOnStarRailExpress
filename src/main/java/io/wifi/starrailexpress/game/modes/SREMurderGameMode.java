@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.game.modes;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
@@ -27,6 +28,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.RoleWeightedUtil;
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
@@ -40,7 +42,7 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.commands.BroadcastCommand;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,7 +52,7 @@ public class SREMurderGameMode extends GameMode {
     private static final int VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS = 15 * 20;
 
     public SREMurderGameMode(ResourceLocation identifier) {
-        super(identifier, 10, 6);
+        super(identifier, SREConfig.instance().defaultStartTimeForMurder, 6);
     }
 
     @Override
@@ -205,13 +207,8 @@ public class SREMurderGameMode extends GameMode {
         Collections.shuffle(allModifiers);
 
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
-        // 才由名单决定修饰符的启用/禁用与数量（取代 disabledModifiers / MODIFIER_MAX），
-        // 但地图限制仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
-        io.wifi.starrailexpress.roster.RoleRosterState roster =
-                io.wifi.starrailexpress.roster.RoleRosterManager.isEnabled()
-                        ? io.wifi.starrailexpress.roster.RoleRosterManager.getState() : null;
-        boolean rosterActive = roster != null && roster.modifierCounts != null
-                && !roster.modifierCounts.isEmpty();
+        // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
+        // 地图限制也仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
 
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
         for (var mod : allModifiers) {
@@ -241,19 +238,12 @@ public class SREMurderGameMode extends GameMode {
                 }
             }
 
-            if (rosterActive) {
-                // 名单接管：地图特定修饰符仍受地图限制约束；仅分配名单内（数量 > 0）的修饰符。
-                if (io.wifi.starrailexpress.roster.MapRestrictionGate.isModifierForbidden(mod.identifier)
-                        || roster.modifierCountFor(mod.identifier.toString()) <= 0) {
-                    continue;
-                }
-            } else if (HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.contains(mod.identifier.toString())) {
+            if (SREDisableManager.isModifierDisabled(mod)) {
                 continue;
             }
 
-            int m_max = rosterActive
-                    ? roster.modifierCountFor(mod.identifier.toString())
-                    : Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier, 1);
+            // 名单只决定修饰符是否启用（上面的过滤），数量始终沿用 MODIFIER_MAX，名单不再接管数量。
+            int m_max = Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier(), 1);
             int targetAssignments = specificDesiredRoleCount;
             if (m_max != -1) {
                 targetAssignments = Math.min(targetAssignments, m_max);
@@ -368,7 +358,6 @@ public class SREMurderGameMode extends GameMode {
             int forcedRoleSize) {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
-
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
                         !role.isOtherModeRole() &&

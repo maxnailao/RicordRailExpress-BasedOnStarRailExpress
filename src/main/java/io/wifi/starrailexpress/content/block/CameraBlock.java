@@ -35,7 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.awt.Color;
 
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
 public class CameraBlock extends BaseEntityBlock implements TaskInstinctShowableInterface, AutoResetBlockInterface {

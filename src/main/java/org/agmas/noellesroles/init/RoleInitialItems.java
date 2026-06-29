@@ -2,17 +2,16 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
-import org.agmas.noellesroles.content.item.SheriffRevolverItem;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.RedHouseRoles;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class RoleInitialItems {
      * 为玩家添加指定角色的初始物品
      * 优先从 INITIAL_ITEMS_MAP 获取，若没有则回退到 role.getDefaultItems()
      * （自定义职业的初始物品通过 getDefaultItems() 返回）
-     *
+     * 
      * @param player 玩家
      * @param role   角色
      */
@@ -94,13 +93,13 @@ public class RoleInitialItems {
             // baseball
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> TMMItems.BAT.getDefaultInstance());
-            INITIAL_ITEMS_MAP.put(ModRoles.BASEBALL_PLAYER, items);
+            INITIAL_ITEMS_MAP.put(BounsRoles.BASEBALL_PLAYER, items);
         }
         {
             // 最好的小脑
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> TMMItems.GRENADE.getDefaultInstance());
-            INITIAL_ITEMS_MAP.put(ModRoles.BEST_VIGILANTE, items);
+            INITIAL_ITEMS_MAP.put(BounsRoles.BEST_VIGILANTE, items);
         }
         {
             // FURANDORU
@@ -114,6 +113,13 @@ public class RoleInitialItems {
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> FunnyItems.BOWEN_BADGE.getDefaultInstance());
             INITIAL_ITEMS_MAP.put(ModRoles.JOJO, items);
+        }
+
+        {
+            // 里昂 - 左轮手枪（死亡时掉落；草药为自定义物品，不随手枪一起掉落）
+            List<Supplier<ItemStack>> items = new ArrayList<>();
+            items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+            INITIAL_ITEMS_MAP.put(ModRoles.LEON, items);
         }
 
         {
@@ -141,6 +147,30 @@ public class RoleInitialItems {
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
 
+        List<Supplier<ItemStack>> cupidItems = new ArrayList<>();
+        cupidItems.add(() -> {
+            var item = Items.BOW.getDefaultInstance();
+            item.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            return item;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.CUPID, cupidItems);
+
+        List<Supplier<ItemStack>> cakeMakerItems = new ArrayList<>();
+        cakeMakerItems.add(ModItems.CAKE_INGREDIENTS::getDefaultInstance);
+        cakeMakerItems.add(Items.BUNDLE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.CAKE_MAKER, cakeMakerItems);
+
+        // 冒险家初始物品 — 格罗赛尔游记
+        {
+            List<Supplier<ItemStack>> adventurerItems = new ArrayList<>();
+            adventurerItems.add(ModItems.GROSELL_TRAVELOG::getDefaultInstance);
+            INITIAL_ITEMS_MAP.put(ModRoles.ADVENTURER, adventurerItems);
+        }
+
+        // //黑白
+        // List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();
+        // elfItems.add(TMMItems.REVOLVER::getDefaultInstance);
+        // INITIAL_ITEMS_MAP.put(ModRoles.MONOKUMA, monokuma_items);
         // 盗猎者初始物品 - 弓
         List<Supplier<ItemStack>> poacherItems = new ArrayList<>();
         poacherItems.add(() -> {
@@ -328,6 +358,11 @@ public class RoleInitialItems {
             return pliers;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.FITTER, fitterItems);
+
+        // 信使初始物品 - 信封
+        List<Supplier<ItemStack>> courierItems = new ArrayList<>();
+        courierItems.add(() -> ModItems.COURIER_MAIL.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.COURIER, courierItems);
 
         // 休假警员初始物品 - 一次性手枪
         List<Supplier<ItemStack>> restingPoliceItems = new ArrayList<>();

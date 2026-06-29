@@ -7,8 +7,6 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -16,15 +14,10 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.SpectralArrow;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
-import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.killer.poacher.PoacherPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -65,7 +58,7 @@ public class ArrowMixin {
                 // 检查是否是盗猎者的箭矢(通过射击者角色判断)
                 if (arrow.getOwner() instanceof ServerPlayer serverPlayer) {
                     SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.serverLevel());
-                    
+
                     // 检查是否是盗猎者
                     if (gameWorld.isRole(serverPlayer, ModRoles.POACHER)) {
                         // 盗猎者的普通箭/毒箭 - 直接击杀玩家，并立即销毁箭矢防止多杀
@@ -75,7 +68,7 @@ public class ArrowMixin {
                         ci.cancel();
                         return;
                     }
-                    
+
                     // 游侠毒箭 - 击杀玩家
                     if (gameWorld.isRole(serverPlayer, ModRoles.ELF)) {
                         isHit = true;
@@ -114,7 +107,7 @@ public class ArrowMixin {
         if (SRE.isLobby)
             return;
         AbstractArrow arrow = (AbstractArrow) (Object) this;
-        
+
         // 检查是否是盗猎者的缓慢箭(通过射击者角色和箭矢类型判断)
         if (arrow instanceof SpectralArrow && arrow.getOwner() instanceof ServerPlayer shooter) {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(shooter.serverLevel());
@@ -123,7 +116,7 @@ public class ArrowMixin {
                 return;
             }
         }
-                
+
         if (arrow instanceof SpectralArrow arrow1) {
             if (arrow.getOwner() instanceof ServerPlayer serverPlayer) {
                 if (SREGameWorldComponent.KEY.get(serverPlayer.serverLevel()).isRole(serverPlayer, ModRoles.ELF)) {
@@ -144,7 +137,7 @@ public class ArrowMixin {
             arrow.discard();
         }
     }
-    
+
     /**
      * 处理缓慢箭命中实体
      */
@@ -152,41 +145,41 @@ public class ArrowMixin {
         // 立即生成半径5格的缓慢1区域，持续10秒
         BlockPos hitPos = target.blockPosition();
         applySlowArea(target.serverLevel(), hitPos, 5, 1, 200); // 10秒 = 200tick
-        
+
         // 被命中的玩家获得缓慢3和反胃效果5秒
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 2, false, false, true)); // 缓慢3 (等级2)
         target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, true)); // 反胃
-        
+
         // 区域内的所有玩家获得持续3秒的缓慢1效果
         List<ServerPlayer> nearbyPlayers = target.serverLevel().getEntitiesOfClass(ServerPlayer.class,
                 new AABB(hitPos).inflate(5));
         for (ServerPlayer player : nearbyPlayers) {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0, false, false, true)); // 缓慢1, 3秒
         }
-        
+
         arrow.discard();
     }
-    
+
     /**
      * 处理缓慢箭命中方块
      */
     private void handleSlowArrowHitBlock(BlockHitResult blockHitResult, AbstractArrow arrow) {
         BlockPos hitPos = blockHitResult.getBlockPos();
-        
+
         if (arrow.getOwner() instanceof ServerPlayer shooter) {
             // 第一阶段：初始半径2格，缓慢1，持续2秒
             applySlowArea(shooter.serverLevel(), hitPos, 2, 1, 40); // 2秒 = 40tick
-            
+
             // 第二阶段：2秒后扩展到半径5格，缓慢1，持续8秒（总共10秒）
             // 使用Scheduler延迟40tick(2秒)后执行
             Scheduler.schedule(() -> {
                 applySlowArea(shooter.serverLevel(), hitPos, 5, 1, 160); // 8秒 = 160tick
             }, 40);
         }
-        
+
         arrow.discard();
     }
-    
+
     /**
      * 应用缓慢区域效果
      * @param level 世界
@@ -201,7 +194,7 @@ public class ArrowMixin {
         for (ServerPlayer player : nearbyPlayers) {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, false, true));
         }
-        
+
         // 显示灰色药水粒子(稀疏密度)
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
             // 在区域中心生成稀疏的灰色药水粒子
@@ -210,14 +203,14 @@ public class ArrowMixin {
                 double offsetX = (level.random.nextDouble() - 0.5) * 2 * radius;
                 double offsetY = level.random.nextDouble() * 2;
                 double offsetZ = (level.random.nextDouble() - 0.5) * 2 * radius;
-                
+
                 // 创建灰色粒子选项(RGB: 128, 128, 128 = 0x808080)
                 int grayColor = 0x808080; // 灰色
                 var particleOption = net.minecraft.core.particles.ColorParticleOption.create(
                     net.minecraft.core.particles.ParticleTypes.ENTITY_EFFECT,
                     grayColor
                 );
-                
+
                 serverLevel.sendParticles(
                     particleOption,
                     center.getX() + 0.5 + offsetX,

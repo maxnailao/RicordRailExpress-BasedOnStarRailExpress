@@ -1,7 +1,9 @@
 {
-  "variants": {
-    "": {
+  "multipart": [
+    {
+      "apply": {
       "model": "noellesroles:block/moving_platform"
+      }
     }
-  }
+  ]
 }

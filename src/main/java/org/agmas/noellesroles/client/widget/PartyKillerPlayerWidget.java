@@ -57,7 +57,7 @@ public class PartyKillerPlayerWidget extends Button {
         } else {
             if (SREClient.gameComponent != null
                     && SREClient.gameComponent.getRole(targetInfo.getProfile().getId()) != null) {
-                if (org.agmas.noellesroles.role.ModRoles.isVisibleKillerTeammate(
+                if (org.agmas.noellesroles.game.roles.innocence.role.ModRoles.isVisibleKillerTeammate(
                         SREClient.gameComponent.getRole(targetInfo.getProfile().getId()))) {
                     setDisplayText(Component.translatable("hud.general.killer_friend").withStyle(ChatFormatting.GOLD));
                 }

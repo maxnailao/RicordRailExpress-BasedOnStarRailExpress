@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.network.RoleRosterSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -14,22 +13,22 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.agmas.noellesroles.Noellesroles;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
+
+import org.agmas.harpymodloader.modifiers.SREModifier;
 
 /**
  * 职业轮换系统的服务端核心：维护一份服务器全局的职业名单，并负责
  * <ul>
- *     <li>从本地文件 / MySQL 数据库加载与持久化；</li>
- *     <li>把名单广播给所有客户端（含新加入的玩家）；</li>
- *     <li>名单启用时，由 {@code RoleAssignmentPool} 在建池时读取本配置，接管职业的启用/禁用与数量。</li>
+ * <li>从本地文件 / MySQL 数据库加载与持久化；</li>
+ * <li>把名单广播给所有客户端（含新加入的玩家）；</li>
+ * <li>名单启用时，由 {@code RoleAssignmentPool} 在建池时读取本配置，仅接管职业的启用/禁用（不接管数量、无概率）。</li>
  * </ul>
  * 数据库按玩家 UUID 分键存储，这里使用一个固定的“配置 UUID”表示服务器全局配置。
  */
@@ -38,10 +37,9 @@ public final class RoleRosterManager {
     public static final UUID CONFIG_UUID = new UUID(0L, 0x5_2_0_5_7_E_4_1L);
     public static final String PART = "role_roster";
 
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final long SAVE_TIMEOUT_MS = 4_000L;
-    private static final Path LOCAL_FILE =
-            FabricLoader.getInstance().getConfigDir().resolve("sre_role_roster.json");
+    private static final Path LOCAL_FILE = FabricLoader.getInstance().getConfigDir().resolve("sre_role_roster.json");
 
     private static volatile RoleRosterState state = RoleRosterState.createDefault();
     private static volatile MinecraftServer server;
@@ -53,15 +51,32 @@ public final class RoleRosterManager {
         ServerLifecycleEvents.SERVER_STARTED.register(RoleRosterManager::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> flushBlocking());
         ServerLifecycleEvents.SERVER_STOPPED.register(s -> server = null);
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> sendTo(handler.getPlayer()));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> {
+            if (SREConfig.instance().enableRoster)
+                sendTo(handler.getPlayer());
+        });
     }
 
     public static RoleRosterState getState() {
+        if (!SREConfig.instance().enableRoster)
+            return RoleRosterState.DISABLE;
         return state;
     }
 
+    public static boolean isRoleEnabled(SRERole role) {
+        if (!SREConfig.instance().enableRoster || !state.enabled)
+            return true;
+        return state.roleCounts.getOrDefault(role.identifier().toString(), 1) > 0;
+    }
+
+    public static boolean isModifierEnabled(SREModifier modifier) {
+        if (!SREConfig.instance().enableRoster || !state.enabled)
+            return true;
+        return state.modifierCounts.getOrDefault(modifier.identifier().toString(), 1) > 0;
+    }
+
     public static boolean isEnabled() {
-        return state.enabled;
+        return SREConfig.instance().enableRoster && state.enabled;
     }
 
     // ------------------------------------------------------------------
@@ -69,6 +84,8 @@ public final class RoleRosterManager {
     // ------------------------------------------------------------------
 
     private static void onServerStarted(MinecraftServer startedServer) {
+        if (!SREConfig.instance().enableRoster)
+            return;
         server = startedServer;
         // 先读本地文件（即使数据库不可用也有配置可用）
         RoleRosterState local = readLocalFile();
@@ -111,6 +128,9 @@ public final class RoleRosterManager {
 
     /** 用完整名单覆盖当前配置（管理员手动编辑）。 */
     public static void setFromJson(String json) {
+        if (!SREConfig.instance().enableRoster) {
+            return;
+        }
         RoleRosterState incoming = fromJson(json);
         boolean enabled = incoming.enabled;
         incoming.normalized();
@@ -121,6 +141,10 @@ public final class RoleRosterManager {
     }
 
     public static void setEnabled(boolean enabled) {
+
+        if (!SREConfig.instance().enableRoster) {
+            return;
+        }
         if (state.enabled == enabled) {
             return;
         }
@@ -143,36 +167,6 @@ public final class RoleRosterManager {
         afterMutated();
     }
 
-    /** 随机抽选生成一份名单。targetPlayers 用于决定基础平民数量。 */
-    public static void randomize(int targetPlayers) {
-        Random random = new Random();
-        state.roleCounts.clear();
-        boolean hasKiller = false;
-        for (SRERole role : Noellesroles.getAllRolesSorted()) {
-            if (!isRosterEligible(role)) {
-                continue;
-            }
-            String id = role.identifier().toString();
-            if (role == TMMRoles.CIVILIAN) {
-                state.roleCounts.put(id, Math.max(2, targetPlayers));
-                continue;
-            }
-            float chance = role.canUseKiller() ? 0.5f : (role.isInnocent() ? 0.4f : 0.5f);
-            if (random.nextFloat() < chance) {
-                state.roleCounts.put(id, 1);
-                if (role.canUseKiller()) {
-                    hasKiller = true;
-                }
-            }
-        }
-        // 至少保证存在一个杀手职业
-        if (!hasKiller) {
-            state.roleCounts.put(TMMRoles.KILLER.identifier().toString(), 1);
-        }
-        state.roleCounts.putIfAbsent(TMMRoles.CIVILIAN.identifier().toString(), Math.max(2, targetPlayers));
-        afterMutated();
-    }
-
     private static void afterMutated() {
         state.version = Math.max(System.currentTimeMillis(), state.version + 1L);
         state.normalized();
@@ -182,25 +176,17 @@ public final class RoleRosterManager {
     }
 
     // ------------------------------------------------------------------
-    // 职业分配接入：名单的启用/禁用与数量由 RoleAssignmentPool 在建池时直接读取
-    // （见 RoleAssignmentPool#createInternal），此处不再改动全局状态。
+    // 职业分配接入：名单的启用/禁用由 RoleAssignmentPool 在建池时直接读取
+    // （见 RoleAssignmentPool#createInternal），名单只决定职业是否参与，不接管数量，也没有概率。
     // ------------------------------------------------------------------
-
-    private static boolean isRosterEligible(SRERole role) {
-        try {
-            // 随机抽选时保留 canBeRandomed 检查，避免自动抽中绑定生成角色；
-            // 移除 occupiedRoleCount <= 1 限制，允许占用多名额的角色被随机抽中。
-            return role.canBeRandomed() && !role.isOtherModeRole();
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
 
     // ------------------------------------------------------------------
     // 网络同步
     // ------------------------------------------------------------------
 
     private static void broadcast() {
+        if (!SREConfig.instance().enableRoster)
+            return;
         MinecraftServer srv = server;
         if (srv == null) {
             return;

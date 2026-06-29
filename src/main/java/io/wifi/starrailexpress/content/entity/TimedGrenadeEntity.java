@@ -123,7 +123,7 @@ public class TimedGrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProje
         for (var entity : hitted) {
             if (entity instanceof Player player) {
                 var gw = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
-                if (gw.isRole(player, org.agmas.noellesroles.role.ModRoles.MEATBALL)) {
+                if (gw.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MEATBALL)) {
                     meatballInRange = true;
                 } else if (gw.isInnocent(player)) {
                     hasInnocentInRange = true;
@@ -136,7 +136,7 @@ public class TimedGrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProje
             if (entity instanceof Player player) {
                 if (meatballInRange && hasInnocentInRange) {
                     var gw = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
-                    if (gw.isRole(player, org.agmas.noellesroles.role.ModRoles.MEATBALL)) {
+                    if (gw.isRole(player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MEATBALL)) {
                         if (player instanceof ServerPlayer sp) {
                             sp.displayClientMessage(
                                     net.minecraft.network.chat.Component

@@ -10,7 +10,7 @@ import org.agmas.noellesroles.Noellesroles;
 import java.util.UUID;
 
 /**
- * 邮差传递网络包
+ * 射命丸文传递网络包
  * 
  * 从客户端发送到服务端，包含：
  * - 操作类型（打开界面、放入物品、确认交换、取消）

@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.CommonTickingComponent;
@@ -225,7 +225,7 @@ public class BloodFeudistPlayerComponent implements RoleComponent, CommonTicking
      */
     public static void registerEvents() {
         ModdedRoleAssigned.EVENT.register((player, role) -> {
-            if (role.identifier().equals(ModRoles.BLOOD_FEUDIST_ID)) {
+            if (role != null && role.identifier().equals(ModRoles.BLOOD_FEUDIST_ID)) {
                 // 初始化时确保有负面效果免疫
                 BloodFeudistPlayerComponent comp = org.agmas.noellesroles.component.ModComponents.BLOOD_FEUDIST
                         .get(player);

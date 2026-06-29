@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.mixin.client.restrictions;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.DropRules;
 import io.wifi.starrailexpress.api.RoleMethodDispatcher;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.KeyMapping;
@@ -40,9 +40,9 @@ public abstract class KeyBindingMixin {
             } else if (result == InteractionResult.SUCCESS || result == InteractionResult.SUCCESS_NO_ITEM_USED) {
                 return false;
             }
-            if (SRE.canDropItem
+            if (DropRules.canDropItem
                     .contains(BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem()).toString())
-                    || SRE.canDrop.stream().anyMatch((p) -> {
+                    || DropRules.canDrop.stream().anyMatch((p) -> {
                         return p.test(player);
                     })) {
                 if (instance.screen == null) {

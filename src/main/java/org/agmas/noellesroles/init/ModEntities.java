@@ -100,6 +100,26 @@ public class ModEntities {
                     .trackedUpdateRate(1)
                     .build());
 
+    @SuppressWarnings("deprecation")
+    public static final EntityType<HurricaneEntity> HURRICANE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("hurricane"),
+            FabricEntityTypeBuilder.<HurricaneEntity>create(MobCategory.MISC, HurricaneEntity::new)
+                    .dimensions(EntityDimensions.fixed(2.5F, 6.0F))
+                    .trackRangeBlocks(96)
+                    .trackedUpdateRate(1)
+                    .build());
+
+    @SuppressWarnings("deprecation")
+    public static final EntityType<MummyEntity> MUMMY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("mummy"),
+            FabricEntityTypeBuilder.<MummyEntity>create(MobCategory.CREATURE, MummyEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.95F))
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
     /**
      * 净化弹实体 - 可投掷物品，落地时取消范围内玩家中毒状态
      */
@@ -137,6 +157,17 @@ public class ModEntities {
                     .dimensions(EntityDimensions.fixed(0.5F, 0.1F))
                     .trackRangeBlocks(32)
                     .trackedUpdateRate(20)
+                    .build());
+
+    /** 信鸽实体 - 信使快递邮件 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<PigeonEntity> PIGEON = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pigeon"),
+            FabricEntityTypeBuilder.<PigeonEntity>create(MobCategory.MISC, PigeonEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.5F, 0.9F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
                     .build());
 
     /**
@@ -180,6 +211,32 @@ public class ModEntities {
     // .trackRangeBlocks(64)
     // .trackedUpdateRate(2)
     // .build());
+
+    /**
+     * 亡灵实体 - 亡灵之主召唤的无意识亡灵（玩家外观 + 追击感染 AI）
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<UndeadEntity> UNDEAD = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("undead"),
+            FabricEntityTypeBuilder.<UndeadEntity>create(MobCategory.MISC, UndeadEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
+     * 变形者「举刀假人」实体 - 手持匕首向前突进、贴近目标即击杀的假人（玩家外观）
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<MorphlingKnifeDummyEntity> MORPHLING_KNIFE_DUMMY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("morphling_knife_dummy"),
+            FabricEntityTypeBuilder.<MorphlingKnifeDummyEntity>create(MobCategory.MISC, MorphlingKnifeDummyEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
 
     /**
      * 锁实体 - 保护门不被撬锁器打开
@@ -327,8 +384,12 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(WHEELCHAIR, WheelchairEntity.createAttributes());
         // 注册傀儡本体实体属性（LivingEntity 必须注册属性才能生成）
         FabricDefaultAttributeRegistry.register(PUPPETEER_BODY, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(PIGEON, PigeonEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
+        FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(MORPHLING_KNIFE_DUMMY, MorphlingKnifeDummyEntity.createAttributes());
     }
 }

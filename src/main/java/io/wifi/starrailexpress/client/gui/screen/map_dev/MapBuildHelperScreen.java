@@ -180,11 +180,12 @@ public class MapBuildHelperScreen extends Screen {
         }
 
         // ---------- Tab 2: Settings ----------
-        String[] boolFields = { "canJump", "canSwim", "noReset", "haveOutsideSound", "sceneOffsetEnabled", "mustCopy",
+        String[] boolFields = { "canJump", "canSwim", "enableOxygenDrowning", "noReset", "haveOutsideSound", "sceneOffsetEnabled", "mustCopy",
                 "minigameQuestEnabled" };
         String[] boolFieldKeys = {
                 "sre.field.canJump",
                 "sre.field.canSwim",
+                "sre.field.enableOxygenDrowning",
                 "sre.field.noReset",
                 "sre.field.haveOutsideSound",
                 "sre.field.sceneOffsetEnabled",

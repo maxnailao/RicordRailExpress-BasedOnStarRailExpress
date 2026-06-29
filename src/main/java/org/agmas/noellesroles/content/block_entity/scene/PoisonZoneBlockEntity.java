@@ -6,8 +6,7 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.scene.SceneEventManager;
 import org.agmas.noellesroles.scene.SceneParticles;
 
-import io.wifi.starrailexpress.game.GameConstants;
-import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.index.TMMParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -18,12 +17,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
- * 有毒区域方块实体：每 tick 统计驻留玩家，连续停留达 {@link #DEATH_TICKS} 即死亡。
+ * 有毒区域方块实体：持续停留在毒区中 400 tick 后获得 30 秒中毒（potionTicks），
+ * 已中毒的玩家在毒区中加速计时器衰减。
  */
 public class PoisonZoneBlockEntity extends BlockEntity {
 
-    /** 20 秒 = 400 tick。 */
-    public static final int DEATH_TICKS = 400;
+    /** 获得毒药效果的停留时间（20 秒 = 400 tick）。 */
+    public static final int DWELL_TICKS = 400;
+    /** 中毒持续时间（30 秒 = 600 tick）。 */
+    public static final int POISON_TICKS = 600;
+    /** 在毒区中中毒计时器的额外衰减速度（每 tick 额外减 N）。 */
+    public static final int ZONE_ACCELERATION = 2;
     private static final String CHANNEL = "poison";
 
     public PoisonZoneBlockEntity(BlockPos pos, BlockState state) {
@@ -42,12 +46,27 @@ public class PoisonZoneBlockEntity extends BlockEntity {
         List<Player> players = serverLevel.getEntitiesOfClass(Player.class, box,
                 p -> p.isAlive() && !p.isCreative() && !p.isSpectator());
         for (Player player : players) {
+            // 已中毒的玩家在毒区中加速衰减
+            SREPlayerPoisonComponent poison = SREPlayerPoisonComponent.KEY.get(player);
+            if (poison.getPoisonTicks() > 0) {
+                // 加速中毒计时器（每 tick 额外减 ZONE_ACCELERATION）
+                poison.poisonTicks = Math.max(0, poison.poisonTicks - ZONE_ACCELERATION);
+                poison.sync();
+                // 加速提示粒子
+                if (serverLevel.getGameTime() % 10 == 0) {
+                    SceneParticles.burst(serverLevel, player.position().add(0, 1, 0), TMMParticles.POISON,
+                            6, 0.3, 0.02);
+                }
+                continue;
+            }
+            // 未中毒的玩家统计停留时间
             int dwell = SceneEventManager.reportDwell(serverLevel, player, CHANNEL);
-            if (dwell >= DEATH_TICKS) {
+            if (dwell >= DWELL_TICKS) {
                 SceneParticles.burst(serverLevel, player.position().add(0, 1, 0), TMMParticles.POISON,
                         30, 0.5, 0.05);
                 SceneEventManager.resetDwell(serverLevel, player, CHANNEL);
-                GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.POISON);
+                // 施加 30 秒中毒（potionTicks），而非直接杀死
+                poison.setPoisonTicks(POISON_TICKS, null);
             } else if (dwell % 20 == 0) {
                 // 每秒一次轻微的中毒提示粒子
                 SceneParticles.burst(serverLevel, player.position().add(0, 1, 0), TMMParticles.POISON,

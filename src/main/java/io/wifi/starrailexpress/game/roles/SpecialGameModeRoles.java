@@ -8,7 +8,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEnd;
-import org.agmas.noellesroles.game.roles.special.dirt.Dirt;
+import org.agmas.noellesroles.game.roles.special.dirt.DirtRole;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import java.awt.Color;
 
@@ -53,7 +53,7 @@ public class SpecialGameModeRoles {
    *  - 轮盘赌模式特殊职业
    * </p>
    */
-  public static SRERole DIRT = TMMRoles.registerRole(new Dirt(
+  public static SRERole DIRT = TMMRoles.registerRole(new DirtRole(
       SRE.xiaoheihandId("dirt_id"),
       new Color(180, 0, 255).getRGB(),
       false,

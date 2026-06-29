@@ -21,7 +21,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,6 +47,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     public SRERoleWorldComponent roleWorldComponent = null;
     private boolean canJump = false;
     private boolean haveOutsideSounds = false;
+    /** 背景音效类型，默认 train。 */
+    private String sceneOutsideSoundType = "train";
     private boolean lockedToSupporters = false;
     private boolean enableWeights = false;
     private int playerCount = 0;
@@ -255,6 +257,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     public void setOutsideSoundsAvailable(boolean bl) {
         haveOutsideSounds = bl;
+    }
+
+    public String getSceneOutsideSoundType() {
+        return sceneOutsideSoundType;
+    }
+
+    public void setSceneOutsideSoundType(String type) {
+        sceneOutsideSoundType = (type != null && !type.isBlank()) ? type : "train";
     }
 
     /**黑警时刻 */
@@ -634,6 +644,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         this.canJump = nbtCompound.contains("canJump") ? nbtCompound.getBoolean("canJump") : false;
         this.haveOutsideSounds = nbtCompound.contains("haveOutsideSounds") ? nbtCompound.getBoolean("haveOutsideSounds")
                 : false;
+        this.sceneOutsideSoundType = nbtCompound.contains("sceneOutsideSoundType")
+                && !nbtCompound.getString("sceneOutsideSoundType").isBlank()
+                ? nbtCompound.getString("sceneOutsideSoundType") : "train";
         // this.syncRole = nbtCompound.getBoolean("SyncRole");
         // if (!syncRole) {
         if (nbtCompound.contains("StartingPlayerCount")) {
@@ -718,6 +731,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         // nbtCompound.putBoolean("SyncRole", syncRole);
         if (haveOutsideSounds)
             nbtCompound.putBoolean("haveOutsideSounds", haveOutsideSounds);
+        if (!sceneOutsideSoundType.equals("train"))
+            nbtCompound.putString("sceneOutsideSoundType", sceneOutsideSoundType);
         if (canJump)
             nbtCompound.putBoolean("canJump", canJump);
         if (isSkillAvailable)
@@ -728,7 +743,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             nbtCompound.putInt("CorruptCopBlackoutRemainingSeconds", corruptCopBlackoutRemainingSeconds);
         nbtCompound.putString("GameStatus", this.gameStatus.name());
         nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
+        // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
+        // 保存画板已画出物品类别
         if (!drawnCategories.isEmpty()) {
             ListTag drawnList = new ListTag();
             for (Integer category : drawnCategories) {

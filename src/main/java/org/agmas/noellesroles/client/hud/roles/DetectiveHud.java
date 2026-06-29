@@ -5,22 +5,22 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 /**
- * 私家侦探 HUD Mixin
+ * 探员 HUD Mixin
  * 
- * 显示私家侦探的技能状态：
+ * 显示探员的技能状态：
  * - 审查技能冷却时间
  * - 技能就绪提示
  */
 public class DetectiveHud {
     public static void register() {
-        RoleHudRenderCallback.EVENT.register(ModRoles.DETECTIVE_ID, (context, deltaTracker) -> {
+        RoleHudRenderCallback.EVENT.register(ModRoles.AGENT_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
 
-            // 获取私家侦探组件
+            // 获取探员组件
             DetectivePlayerComponent detectiveComponent = DetectivePlayerComponent.KEY.get(client.player);
 
             // 渲染位置 - 右下角

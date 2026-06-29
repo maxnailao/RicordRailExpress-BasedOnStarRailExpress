@@ -185,13 +185,13 @@ public class NoellesRolesConfig implements ConfigData {
     public boolean insanePlayersSeeMorphs = true;
 
     /**
-     * Areas that will spawn Swast. Use | to split maps
+     * Areas that will spawn Ma Chen Xu and Guest Ghost. Use | to split maps
      */
 
     public ArrayList<String> maChenXuMaps = new ArrayList<>(List.of("areas_qiyucun"));
 
     /**
-     * Areas that will spawn Swast. Use | to split maps
+     * Areas that will spawn big-map roles (for example Swast). Use | to split maps
      */
 
     public ArrayList<String> swastMaps = new ArrayList<>(
@@ -207,6 +207,11 @@ public class NoellesRolesConfig implements ConfigData {
      * Areas that will spawn Konggang roles (Pilot, Shadow Falcon)
      */
     public ArrayList<String> airRolesMaps = new ArrayList<>(List.of("areas_konggang"));
+
+    /**
+     * Areas that will spawn trap-map roles (Adventurer)
+     */
+    public ArrayList<String> trapRolesMaps = new ArrayList<>(List.of("areas_shamo"));
 
     /**
      * Role - The chance of egg roles
@@ -230,21 +235,6 @@ public class NoellesRolesConfig implements ConfigData {
     /**
      * 特殊警卫配置
      */
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfPatroller = 80;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfMartialArtsInstructor = 60;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfElf = 70;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfSwast = 70;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfDoublePatroller = 20;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfDoubleElf = 10;
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfBestVigilante = 10;
-
     /**
      * 特殊警卫刷新最小玩家数
      */
@@ -328,6 +318,208 @@ public class NoellesRolesConfig implements ConfigData {
     public int recallerTeleportCooldown = 30;
 
     /**
+     * Nostalgist (怀旧者) - Interval in seconds between passive coin payouts while in the back world
+     */
+    public int nostalgistBackWorldIncomeInterval = 60;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted each passive payout while in the back world
+     */
+    public int nostalgistBackWorldIncomeAmount = 35;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted when leaving the back world (manual or forced collapse)
+     */
+    public int nostalgistCollapseReward = 100;
+
+    /**
+     * Nostalgist (怀旧者) - Wind-up time in ticks before manually leaving the back world (20 ticks = 1s, default 1.5s)
+     */
+    public int nostalgistCollapseWindupTicks = 30;
+
+    /**
+     * Jade General (玉将军) - Flying kick cooldown in seconds
+     */
+    public int jadeGeneralKickCooldown = 90;
+
+    /**
+     * Jade General - Flying kick displacement distance in blocks
+     */
+    public int jadeGeneralDashBlocks = 5;
+
+    /**
+     * Jade General - Knockback distance applied to a kicked target in blocks
+     */
+    public int jadeGeneralKnockbackBlocks = 2;
+
+    /**
+     * Jade General - Stun seconds when the knocked-back target hits a wall
+     */
+    public int jadeGeneralStunCollideSeconds = 4;
+
+    /**
+     * Jade General - Stun seconds when the knocked-back target does not hit a wall
+     */
+    public int jadeGeneralStunSeconds = 2;
+
+
+
+    // ==================== Diviner (占卜家) ====================
+    /** Diviner - Divination cooldown in seconds */
+    public int divinerCooldown = 60;
+    /** Diviner - Crystal ball targeting range in blocks */
+    public double divinerRange = 4.0;
+
+    // ==================== Photographer (摄影师) 画框传送 ====================
+    /** Photographer - 画框单价（金币） */
+    public int photographerFramePrice = 150;
+    /** Photographer - 每局最多购买画框次数 */
+    public int photographerFrameMaxBuy = 2;
+    /** Photographer - 穿越画框赋予的失明秒数 */
+    public int photographerFrameBlindSeconds = 3;
+    /** Photographer - 穿越画框后的冷却秒数 */
+    public int photographerFrameCooldownSeconds = 3;
+    /** Photographer - 触发穿越的画框碰撞箱外扩距离（方块） */
+    public double photographerFrameTriggerInflate = 0.25;
+    /** Photographer - 单个画框最多可传送玩家的次数（用尽后画框失效） */
+    public int photographerFrameMaxTeleports = 8;
+
+    // ==================== Delayer (滞时鬼) ====================
+    /** Delayer - Rewind skill: seconds between anchoring and the automatic rewind */
+    public int delayerRewindDelaySeconds = 8;
+    /** Delayer - Rewind skill cooldown in seconds */
+    public int delayerRewindCooldown = 120;
+    /** Delayer - Rewind skill coin cost */
+    public int delayerRewindCost = 75;
+    /** Delayer - Duration (seconds) of the daze/shader filter applied to everyone on rewind */
+    public int delayerDazeSeconds = 1;
+
+    // ==================== Wizard (巫师) ====================
+    /** Wizard - Max mana (魔素) capacity */
+    public int wizardMaxMana = 500;
+    public int wizardStartingMana = 120;
+    /** Wizard - Mana gained per coin of income (all coins convert to mana) */
+    public int wizardManaPerCoin = 1;
+    /** Wizard - Passive mana regen per second */
+    /** Wizard - Staff left-click knockback strength */
+    public double wizardStaffKnockback = 1.2;
+    /** Wizard - Fire arrow max range in blocks */
+    public double wizardFireArrowRange = 30.0;
+    /** Wizard - Max players a single fire arrow can pierce */
+    public int wizardFireArrowMaxPierce = 2;
+    /** Wizard - Fire arrow hits required on one target before delayed death */
+    public int wizardFireArrowHitsToKill = 2;
+    /** Wizard - Fire arrow delayed death seconds after enough hits */
+    public int wizardFireArrowDeathDelaySeconds = 3;
+    /** Wizard - Fire arrow (staff projectile) cooldown in seconds between shots */
+    public double wizardFireArrowCooldownSeconds = 2.0;
+    /** Wizard - Armor spell minimum mana to cast */
+    public int wizardArmorMinMana = 200;
+    /** Wizard - Granted shield (armor) lifetime in seconds before it expires */
+    public int wizardShieldDurationSeconds = 120;
+    /** Wizard - Frost spell minimum mana to cast */
+    public int wizardFrostMinMana = 200;
+    /** Wizard - Frost spell freeze duration in seconds */
+    public int wizardFrostSeconds = 4;
+    /** Wizard - Frost spell cooldown in seconds */
+    public int wizardFrostCooldownSeconds = 90;
+    /** Wizard - Frost spell effect range in blocks */
+    public double wizardFrostRange = 8.0;
+    /** Wizard - Shadow spell mana cost */
+    public int wizardShadowCost = 150;
+    /** Wizard - Shadow spell blindness duration in seconds */
+    public int wizardShadowSeconds = 6;
+    /** Wizard - Shadow spell cooldown in seconds */
+    public int wizardShadowCooldownSeconds = 90;
+    /** Wizard - Explosion! spell minimum mana to cast */
+    public int wizardExplosionMinMana = 350;
+    /** Wizard - Percent of current mana spent by Explosion! */
+    public int wizardExplosionManaPercentCost = 80;
+    /** Wizard - Explosion! spell cooldown in seconds */
+    public int wizardExplosionCooldownSeconds = 150;
+    /** Wizard - Nine-ring fireball max travel range in blocks */
+    public double wizardFireballRange = 25.0;
+    /** Wizard - Nine-ring fireball explosion radius in blocks */
+    public double wizardFireballRadius = 4.0;
+    /** Wizard - Max players killed by one nine-ring fireball */
+    public int wizardFireballMaxKills = 8;
+    /** Wizard - Potion cooldown in seconds */
+    public int wizardPotionCooldown = 120;
+    /** Wizard - Mana gained from drinking a potion */
+    public int wizardPotionManaGain = 150;
+    /** Wizard - Potion attack-immunity window in seconds */
+    public int wizardPotionImmuneSeconds = 60;
+
+    // ==================== Undead Lord (亡灵之主) ====================
+    /** Undead Lord - Raise-from-corpse skill cooldown in seconds */
+    public int undeadLordReviveCooldownSeconds = 45;
+    /** Undead Lord - Max undead raised from corpses that can coexist (skill cap) */
+    public int undeadLordMaxActive = 3;
+    /** Undead Lord - Absolute hard cap of simultaneous undead (incl. conversions/charm) */
+    public int undeadLordHardCap = 8;
+    /** Undead Lord - Infection decay per second (percent) */
+    public double undeadLordInfectionDecayPerSecond = 2.0;
+    /** Undead Lord - Delay (seconds) between reaching 100% infection and death */
+    public int undeadLordInfectionDeathDelaySeconds = 3;
+    /** Undead Lord - Plague Fog duration in seconds */
+    public int undeadLordFogSeconds = 10;
+    /** Undead Lord - Plague Fog radius in blocks */
+    public double undeadLordFogRadius = 4.0;
+    /** Undead Lord - Plague Fog infection added per second to players inside */
+    public double undeadLordFogInfectPerSecond = 5.0;
+    /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
+    public int undeadLordCharmLifetimeSeconds = 45;
+    /** Undead Lord - Soul Summon Charm cooldown in seconds */
+    public int undeadLordCharmCooldownSeconds = 60;
+    /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
+    public int undeadLordAmpSeconds = 60;
+    /** Undead Lord - Coins awarded each time infection is successfully injected (bone staff / undead attack); 0 disables */
+    public int undeadLordInfectionCoinReward = 100;
+    /** Undead Lord - Bone Staff durability (number of hits) */
+    public int undeadLordBoneStaffDurability = 5;
+    /** Undead Lord - Bone Staff recharge time in seconds after durability is depleted (refills to full, never breaks) */
+    public int undeadLordBoneStaffRechargeSeconds = 40;
+    /** Undead Lord - Bone Staff infection added per hit (0~100) */
+    public double undeadLordBoneStaffInfection = 20.0;
+    /** Undead Lord - Bone Staff shop price */
+    public int undeadLordBoneStaffPrice = 130;
+    /** Undead Lord - Real damage each undead deals to a player per attack (HP, 0=disabled) */
+    public double undeadLordUndeadAttackDamage = 1.0;
+
+    /** 格罗赛尔游记 (Groselle Travelog) - 放逐目标坐标 X */
+    public int grosellTravelogBanishX = -100;
+    /** 格罗赛尔游记 (Groselle Travelog) - 放逐目标坐标 Y */
+    public int grosellTravelogBanishY = 50;
+    /** 格罗赛尔游记 (Groselle Travelog) - 放逐目标坐标 Z */
+    public int grosellTravelogBanishZ = 21000;
+    /** 格罗赛尔游记 - 蓄力时间（秒），蓄满后才会放逐/召回目标 */
+    public double grosellTravelogChargeSeconds = 1.0;
+    /** 格罗赛尔游记 - 自动回归时间（秒），放逐后多久被放逐者自动回归 */
+    public int grosellTravelogAutoReturnSeconds = 60;
+    /** 格罗赛尔游记 - 冷却（秒），被放逐者释放后进入冷却 */
+    public int grosellTravelogCooldownSeconds = 75;
+    /** 格罗赛尔游记 - 瞄准放逐目标的最大距离（格） */
+    public double grosellTravelogRange = 6;
+
+    /** Leon (里昂) - Combat skill (kick) cooldown in seconds */
+    public int leonKickCooldown = 12;
+    /** Leon (里昂) - Combat skill (kick) knockback strength (larger = farther) */
+    public double leonKickKnockback = 1.5;
+    /** Leon (里昂) - Combat skill (kick) slowdown duration in seconds */
+    public double leonKickSlowSeconds = 2.5;
+    /** Leon (里昂) - Combat skill (kick) reach in blocks */
+    public double leonKickRange = 3.5;
+    /** Leon (里昂) - Alive player count threshold to grant the blue herb */
+    public int leonBlueHerbAtPlayers = 6;
+    /** Leon (里昂) - Alive player count threshold to grant the red herb */
+    public int leonRedHerbAtPlayers = 3;
+
+    /** Morphling (变形者) - Knife dummy skill cooldown in seconds */
+    public int morphlingDummyCooldown = 90;
+    /** Morphling (变形者) - Knife dummy max lifetime / forward-rush time in seconds */
+    public int morphlingDummyLifetime = 10;
+
+    /**
      * Phantom - Invisibility duration in seconds
      */
 
@@ -357,11 +549,59 @@ public class NoellesRolesConfig implements ConfigData {
 
     public int swapperSwapCooldown = 60;
 
+    /** Swapper - G 键瞬移交换：与正前方目标交换位置的冷却（秒） */
+    public int swapperFrontSwapCooldown = 120;
+    /** Swapper - G 键瞬移交换：可作用的最大距离（格） */
+    public double swapperFrontSwapRange = 10.0;
+
+    // ==================== Noisemaker (大嗓门) 冲击波 ====================
+    /** 大嗓门 - 冲击波击退前方玩家的作用距离（格） */
+    public double noisemakerShockwaveRange = 8.0;
+    /** 大嗓门 - 冲击波水平击退强度 */
+    public double noisemakerShockwaveKnockback = 1.4;
+    /** 大嗓门 - 冲击波眩晕（定身）秒数 */
+    public int noisemakerStunSeconds = 2;
+
     /**
      * Manipulator - Control target cooldown in seconds
      */
 
-    public int manipulatorCooldown = 60;
+    public int manipulatorCooldown = 80;
+
+    /**
+     * Manipulator - Max distance (blocks) allowed to start controlling a marked target
+     */
+    public int manipulatorMaxControlRange = 100;
+
+    /**
+     * Manipulator - Total control duration in seconds
+     */
+    public int manipulatorControlSeconds = 30;
+
+    /**
+     * Manipulator - Seconds of uninterrupted staring required to mark a target
+     */
+    public int manipulatorMarkSeconds = 4;
+
+    /**
+     * Manipulator - Max distance (blocks) to stare-mark a target
+     */
+    public int manipulatorMarkRange = 20;
+
+    /**
+     * Manipulator - Nausea duration (seconds) applied to the target on a successful mark
+     */
+    public int manipulatorMarkNauseaSeconds = 4;
+
+    /**
+     * Manipulator - Coins rewarded for a successful mark
+     */
+    public int manipulatorMarkReward = 15;
+
+    /**
+     * Manipulator - Coins rewarded when the controlled target dies during control
+     */
+    public int manipulatorTargetDeathReward = 75;
 
     /**
      * Skill Echo Event - global switch (default off)

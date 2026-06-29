@@ -66,10 +66,16 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     }
 
     public void addToBalance(int amount) {
+        if (tryConvertWizardBalance(amount)) {
+            return;
+        }
         this.setBalance(this.balance + amount);
     }
 
     public void setBalance(int amount) {
+        if (tryConvertWizardBalance(amount)) {
+            return;
+        }
         if (this.balance != amount) {
             this.balance = amount;
             // try{
@@ -79,6 +85,25 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             // }
             this.sync();
         }
+    }
+
+    private boolean tryConvertWizardBalance(int amount) {
+        if (this.player.level().isClientSide) {
+            return false;
+        }
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(this.player.level());
+        if (gameWorld == null || !gameWorld.isRole(this.player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.WIZARD)) {
+            return false;
+        }
+        if (amount > 0) {
+            org.agmas.noellesroles.component.ModComponents.WIZARD.get(this.player).addMana(
+                    amount * org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().wizardManaPerCoin);
+        }
+        if (this.balance != 0) {
+            this.balance = 0;
+            this.sync();
+        }
+        return true;
     }
 
     public void tryBuy(int index) {
@@ -104,12 +129,16 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                 return;
             }
         }
-        if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < entry.price())
-            this.balance = entry.price() * 10;
-        if (this.balance >= entry.price() && !this.player.getCooldowns().isOnCooldown(entry.stack().getItem())
+        // 动态价格：实际价格由玩家的 DynamicShopComponent 决定（折扣/减价等），默认等于基础价格。
+        // Dynamic price: the effective price is resolved by the player's DynamicShopComponent
+        // (discounts/reductions/etc.); it defaults to the base price when no modifier exists.
+        final int price = DynamicShopComponent.KEY.get(this.player).effectivePrice(entry);
+        if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < price)
+            this.balance = price * 10;
+        if (this.balance >= price && !this.player.getCooldowns().isOnCooldown(entry.stack().getItem())
                 && entry.canDisplay(this.player) && entry.canBuy(this.player) && !entry.isSafeTime(this.player)
                 && entry.onBuy(this.player)) {
-            this.balance -= entry.price();
+            this.balance -= price;
             // 手榴弹购买后记录购买时间
             if (entry.stack().is(TMMItems.GRENADE)) {
                 this.grenadeLastPurchaseTime = player.level().getGameTime();
@@ -121,7 +150,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                                 0.9f + this.player.getRandom().nextFloat() * 0.2f, player.getRandom().nextLong()));
                 SRE.REPLAY_MANAGER.recordStoreBuy(player.getUUID(),
                         BuiltInRegistries.ITEM.getKey(entry.stack().getItem()), entry.stack().getCount(),
-                        entry.price());
+                        price);
             }
         } else {
             this.player.displayClientMessage(

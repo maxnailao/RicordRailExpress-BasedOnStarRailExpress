@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.cca;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.content.minigame.QuestMinigame;
+import io.wifi.starrailexpress.content.minigame.QuestMinigames;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -15,18 +17,23 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * 小游戏任务 / 游戏代币组件（当局制，每局清零）。
  * <p>
  * 小游戏任务与 Mood 任务<b>解耦</b>：本组件每 {@link SREConfig#minigameTaskIntervalSeconds} 秒
- * 独立派发一个「小游戏任务」，待办数上限为 1（不积压）。玩家可前往地图中<b>任意</b>小游戏任务点方块
+ * 独立派发一个「小游戏任务」，待办数上限为 1（不积压）。玩家可前往地图中<b>指定</b>小游戏任务点方块
  * 完成小游戏来兑现该任务并获得游戏代币；每个任务点完成后对该玩家进入复用冷却
  * （{@link SREConfig#minigameBlockCooldownSeconds} 秒），冷却到期后可再次使用，
  * 冷却到期时间记录在 {@link #blockCooldownUntil} 中。
  * 组件随 CCA 自动同步到本人客户端，因此金色标记与 HUD 无需额外网络包。
+ * <p>
+ * 刷新任务时会随机选取地图中实际存在的小游戏类型（{@link #targetMinigameId}），
+ * 玩家必须前往<b>对应类型</b>的小游戏任务点方块才能完成该任务。
  */
 public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<SREPlayerMinigameTaskComponent> KEY = ComponentRegistry.getOrCreate(
@@ -40,6 +47,8 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     public int minigameTaskTimer = 0;
     /** 已派发但尚未兑现的小游戏任务数。 */
     public int pendingMinigameTasks = 0;
+    /** 当前指派的小游戏目标类型 ID（null 或空字符串表示任意）。只有同类型任务点才能完成任务。 */
+    public String targetMinigameId = null;
     /** 本局各小游戏任务点对该玩家的复用冷却到期游戏刻（key 为 {@link BlockPos#asLong()}）。 */
     public final Map<Long, Long> blockCooldownUntil = new HashMap<>();
 
@@ -61,6 +70,7 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
         this.tokens = 0;
         this.minigameTaskTimer = SREConfig.instance().minigameTaskIntervalSeconds * 20;
         this.pendingMinigameTasks = 0;
+        this.targetMinigameId = null;
         this.blockCooldownUntil.clear();
         this.sync();
     }
@@ -80,6 +90,12 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
 
     public boolean hasPendingTask() {
         return this.pendingMinigameTasks > 0;
+    }
+
+    /** 获取当前指派的目标小游戏（HUD 显示用），可能为 null。 */
+    public QuestMinigame getTargetMinigame() {
+        if (this.targetMinigameId == null || this.targetMinigameId.isEmpty()) return null;
+        return QuestMinigames.get(this.targetMinigameId);
     }
 
     /** 该任务点当前是否对本玩家处于复用冷却中（冷却未到期）。 */
@@ -113,6 +129,7 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
      * 独立计时派发小游戏任务（与 Mood 任务解耦）：
      * 仅在游戏运行中、玩家存活生存、且地图开启小游戏任务时计时，
      * 倒计时归零且当前无待办时派发一个（待办上限 1）。
+     * 刷新时从地图实际存在的小游戏种类中随机选取一个作为目标类型。
      */
     @Override
     public void serverTick() {
@@ -128,6 +145,15 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
         if (this.minigameTaskTimer <= 0) {
             if (this.pendingMinigameTasks < 1) {
                 this.pendingMinigameTasks++;
+                // 从地图中存在的小游戏种类中随机选取一个
+                var areas = AreasWorldComponent.KEY.get(serverLevel);
+                if (!areas.availableMinigameIds.isEmpty()) {
+                    List<String> ids = new ArrayList<>(areas.availableMinigameIds);
+                    this.targetMinigameId = ids.get(sp.getRandom().nextInt(ids.size()));
+                } else {
+                    // 兜底：没有可用小游戏种类则不指派特定种类
+                    this.targetMinigameId = null;
+                }
                 this.sync();
             }
             this.minigameTaskTimer = SREConfig.instance().minigameTaskIntervalSeconds * 20;
@@ -137,14 +163,26 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     /**
      * 完成某个小游戏方块时调用：若玩家有待办小游戏任务则兑现一个任务并发放代币。
      * 复用冷却已在打开任务点（{@link #startBlockCooldown}）时开始，此处不再处理。
+     * <p>
+     * 仅当该任务点的 minigameId 与 {@link #targetMinigameId} 匹配（或 targetMinigameId 为空/任意）时才发放奖励。
      *
+     * @param sp           玩家
+     * @param pos          任务点位置
+     * @param reward       基础奖励
+     * @param blockMinigameId 该任务点方块的 minigameId
      * @return 是否发放了奖励
      */
-    public boolean onMinigameBlockCompleted(ServerPlayer sp, BlockPos pos, int reward) {
+    public boolean onMinigameBlockCompleted(ServerPlayer sp, BlockPos pos, int reward, String blockMinigameId) {
         if (this.pendingMinigameTasks <= 0) {
             return false;
         }
+        // 校验小游戏类型匹配：若有指定目标，必须匹配
+        if (this.targetMinigameId != null && !this.targetMinigameId.isEmpty()
+                && !this.targetMinigameId.equals(blockMinigameId)) {
+            return false;
+        }
         this.pendingMinigameTasks--;
+        this.targetMinigameId = null; // 完成后清除目标，等待下次刷新
         addTokens(reward);
         this.sync();
         return true;
@@ -154,6 +192,9 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putInt("Tokens", this.tokens);
         tag.putInt("Pending", this.pendingMinigameTasks);
+        if (this.targetMinigameId != null) {
+            tag.putString("TargetMinigameId", this.targetMinigameId);
+        }
         long[] keys = new long[this.blockCooldownUntil.size()];
         long[] until = new long[this.blockCooldownUntil.size()];
         int i = 0;
@@ -170,6 +211,10 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.tokens = tag.getInt("Tokens");
         this.pendingMinigameTasks = tag.getInt("Pending");
+        this.targetMinigameId = tag.contains("TargetMinigameId") ? tag.getString("TargetMinigameId") : null;
+        if (this.targetMinigameId != null && this.targetMinigameId.isEmpty()) {
+            this.targetMinigameId = null;
+        }
         this.blockCooldownUntil.clear();
         long[] keys = tag.getLongArray("CdKeys");
         long[] until = tag.getLongArray("CdUntil");

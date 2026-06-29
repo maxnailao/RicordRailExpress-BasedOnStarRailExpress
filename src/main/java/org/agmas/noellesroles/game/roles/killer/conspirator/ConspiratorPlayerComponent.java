@@ -21,8 +21,8 @@ import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -193,8 +193,8 @@ public class ConspiratorPlayerComponent implements RoleComponent, ServerTickingC
                         Component.translatable("message.noellesroles.conspirator.cursed")
                                 .withStyle(ChatFormatting.DARK_PURPLE),
                         true);
-                // 触发私家侦探被动
-                if (gameWorld.isRole(target, ModRoles.DETECTIVE)) {
+                // 触发探员被动
+                if (gameWorld.isRole(target, ModRoles.AGENT)) {
                     target.displayClientMessage(
                             Component
                                     .translatable("message.noellesroles.conspirator.cursed.known",

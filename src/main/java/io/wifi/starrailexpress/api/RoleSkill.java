@@ -270,7 +270,19 @@ public final class RoleSkill {
         return beginUse(player, target, requestedSlot, phase, false);
     }
 
+    /**
+     * 以"被附身"方式释放该玩家技能：合法绕过 {@code SKILL_BANED} 拦截。
+     * 用于操纵师附身期间，以目标身份释放目标自身的技能（冷却记在目标身上）。
+     */
+    public static boolean beginUsePossessed(ServerPlayer player) {
+        return beginUse(player, null, -1, Phase.PRESS, player.isShiftKeyDown(), true);
+    }
+
     public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted) {
+        return beginUse(player, target, requestedSlot, phase, shifted, false);
+    }
+
+    public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted, boolean possessed) {
         if (player == null) {
             return false;
         }
@@ -301,9 +313,9 @@ public final class RoleSkill {
         if (consumer != null) {
             consumer.accept(new RoleSkillContext(player, target));
         } else if (target != null) {
-            AbilityHandler.handlerWithTarget(player, target);
+            AbilityHandler.handlerWithTarget(player, target, possessed);
         } else if (!RoleMethodDispatcher.callOnAbilityUse(player)) {
-            AbilityHandler.handler(player);
+            AbilityHandler.handler(player, possessed);
         }
         afterUse(player, role);
         return true;
@@ -357,17 +369,16 @@ public final class RoleSkill {
         boolean used = definition.handler().use(
                 new RoleSkillContext(player, target, definition.id(), phase, skillReady));
 
-        // 计数始终 +1（不依赖 handler 返回值），新职业不用特地判断
-        // announceToSelf 默认 false，不会显示播报
+        if (!used) {
+            return false;
+        }
+
+        // 只有 handler 真正执行成功时才消耗冷却/充能
         if (skillReady) {
             ability.markSkillUsed(definition);
         } else {
             // Toggleable deactivation: just stop casting if applicable
             ability.stopCasting(definition.id());
-        }
-
-        if (!used) {
-            return false;
         }
         if (definition.announceToSelf()) {
             MutableComponent stateLabel;

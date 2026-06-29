@@ -9,6 +9,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -82,10 +83,12 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -167,6 +170,8 @@ public class SREClient implements ClientModInitializer {
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
     public static KeyMapping skinsKeybind; // 新增皮肤管理热键
+    public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
+    public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
     public static boolean isInstinctToggleEnabled = false; // 新增变量用于跟踪切换状态
     public static boolean prevInstinctKeyDown = false; // 用于检测按键按下事件
     public static float prevInstinctLightLevel = -.04f;
@@ -353,17 +358,68 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(
                 new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE, player -> gameComponent.isPsychoActive(), 20));
 
+        // ───── 场景背景音效系统 ─────
+        // 列车内部（看不到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_INSIDE,
                 SoundSource.AMBIENT,
                 (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
-                        && !SRE.isSkyVisible(player),
+                        && !SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("train"),
                 0.25f, 20, 10));
+        // 列车外部（能看到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_OUTSIDE,
                 SoundSource.AMBIENT,
                 (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
-                        && SRE.isSkyVisible(player),
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("train"),
+                0.6f, 20, 10));
+
+        // 风声（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.WIND,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("wind"),
+                0.6f, 20, 10));
+        // 沙尘暴（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.SAND_STORM,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("sand_storm"),
+                0.6f, 20, 10));
+        // 暴风雪（仅室外，列车移动时）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.SNOW_STORM,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("snow_storm"),
+                0.6f, 20, 10));
+        // 马戏团内部（看不到天空时，仅 circus 类型生效）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.CIRCUS_INDOOR,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && !SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("circus"),
+                0.25f, 20, 10));
+        // 马戏团外部（能看到天空时，仅 circus 类型生效）
+        AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
+                org.agmas.noellesroles.init.NRSounds.CIRCUS_BACKGROUND,
+                SoundSource.AMBIENT,
+                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
+                        && SRE.isSkyVisible(player)
+                        && gameComponent.getSceneOutsideSoundType().equals("circus"),
                 0.6f, 20, 10));
 
         // Caching components
@@ -422,6 +478,10 @@ public class SREClient implements ClientModInitializer {
                 (itemStack, tooltipContext, tooltipFlag, list) -> {
                     if (canThrowItems.contains(itemStack.getItem())) {
                         list.add(Component.translatable("starrailexpress.tip.can_thrown"));
+                    }
+                    if (TMMItems.INVISIBLE_ITEMS.contains(itemStack.getItem())) {
+                        list.add(
+                                Component.translatable("starrailexpress.tip.invisible").withStyle(ChatFormatting.GRAY));
                     }
                 });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
@@ -733,6 +793,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OpenProgressionScreenPayload.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.OpenBackpackScreenPayload.ID,
+                (payload, context) -> context.client().execute(() -> context.client()
+                        .setScreen(new io.wifi.starrailexpress.client.gui.screen.BackpackScreen((Screen) null))));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterSyncPayload.ID,
                 (payload, context) -> io.wifi.starrailexpress.client.data.ClientRoleRosterCache.update(payload.json()));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.sponsor.SponsorListPayload.ID,
@@ -776,6 +839,8 @@ public class SREClient implements ClientModInitializer {
         io.wifi.starrailexpress.client.network.EntityInteractionBlockClientNetwork.register();
         // 注册小游戏任务点的客户端网络接收器
         io.wifi.starrailexpress.client.network.MinigameQuestClientNetwork.register();
+        io.wifi.starrailexpress.client.network.TicketOfficeClientNetwork.register();
+        io.wifi.starrailexpress.client.network.EffectGeneratorClientNetwork.register();
 
         // 注册五子棋状态同步接收器
         ClientPlayNetworking.registerGlobalReceiver(
@@ -883,6 +948,20 @@ public class SREClient implements ClientModInitializer {
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_N, // 默认热键 'N'
                 "category." + SRE.MOD_ID + ".keybinds"));
+
+        // 路径点管理 GUI（默认未绑定，OP 在按键设置里自行绑定）
+        manageWaypointsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".manage_waypoints",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_UNKNOWN,
+                "category." + SRE.MOD_ID + ".keybinds"));
+
+        // 看向删除路径点（默认未绑定）
+        deleteLookedWaypointKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".delete_looked_waypoint",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_UNKNOWN,
+                "category." + SRE.MOD_ID + ".keybinds"));
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();
@@ -907,6 +986,7 @@ public class SREClient implements ClientModInitializer {
 
             // 滞时雷引爆倒计时 HUD
             io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+            org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
 
             // RoleUnlockHudRenderer.render(guiGraphics);
 
@@ -958,8 +1038,34 @@ public class SREClient implements ClientModInitializer {
                 }
             }
 
-            // 职业轮选GUI - 按N键打开
-            if (RoleRotationCache.canReOpen()) {
+            // 路径点管理 GUI：开关式切换
+            while (manageWaypointsKeybind.consumeClick()) {
+                if (client.screen instanceof io.wifi.starrailexpress.client.gui.screen.WaypointManageScreen) {
+                    client.setScreen(null);
+                } else if (client.screen == null) {
+                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.WaypointManageScreen());
+                }
+            }
+
+            // 看向删除路径点
+            while (deleteLookedWaypointKeybind.consumeClick()) {
+                io.wifi.starrailexpress.client.gui.screen.WaypointHUD.WaypointMarker marker = io.wifi.starrailexpress.client.gui.screen.WaypointHUD
+                        .getLookedAtWaypoint();
+                if (marker != null && client.player != null) {
+                    ClientPlayNetworking.send(
+                            new io.wifi.starrailexpress.network.packet.WaypointDeleteC2SPayload(
+                                    marker.path, marker.name, false));
+                    io.wifi.starrailexpress.client.gui.screen.WaypointHUD.removeWaypoint(marker.path, marker.name);
+                    client.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    "已请求删除路径点: " + marker.path + "/" + marker.name),
+                            true);
+                }
+            }
+
+            // 职业轮选GUI - 若无UI则5tick强制打开一次
+            if (client.screen == null && client.level != null && client.level.getGameTime() % 5 == 0
+                    && RoleRotationCache.canReOpen()) {
                 // 排除职业介绍页面，查看职业介绍时不应该强制跳转回轮选页面
                 boolean isViewingRoleIntro = client.screen instanceof org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
                 if (!isViewingRoleIntro && (client.screen == null || !(client.screen instanceof RoleRotationScreen))) {
@@ -1215,16 +1321,17 @@ public class SREClient implements ClientModInitializer {
             canRender = false;
         }
         if (player != null && !isInLobby && gameComponent.isRunning()) {
-            if (SRE.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
+            if (ChatHudRules.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
                 canRender = false;
                 cachedRenderVanillaHud = false;
             } else if (!cachedPlayerAliveAndInSurvival) {
                 canRender = true;
                 cachedRenderVanillaHud = true;
             } else {
-                canRender = SRE.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
+                canRender = ChatHudRules.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
                         || (cachedPlayerRole != null
-                                && SRE.canUseChatHud.stream().anyMatch(predicate -> predicate.test(cachedPlayerRole)));
+                                && ChatHudRules.canUseChatHud.stream()
+                                        .anyMatch(predicate -> predicate.test(cachedPlayerRole)));
             }
         }
         cachedCanRenderChatHud = canRender;

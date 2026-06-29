@@ -20,7 +20,11 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
+
     // 游戏模式设置
+    @ConfigEntry.Category(value = "gamemodes")
+    public int defaultStartTimeForMurder = 10;
+
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableRepairMode = false;
     @ConfigEntry.Category(value = "gamemodes")
@@ -75,6 +79,12 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "shop")
     @ConfigSync(shouldSync = true)
     public int knifePrice = 130;
+    // 杀手刀「有限耐久」模式：开启后 murder（及继承 murder）模式下，商店购买的刀仅 3 点耐久，
+    // 耗尽后不消失但无法使用，需重新购买替换。关闭则恢复为无耐久的普通刀。
+    @ConfigEntry.Category(value = "shop")
+    @ConfigSync(shouldSync = true)
+    @Tooltip(count = 2)
+    public boolean knifeDurabilityMode = true;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int revolverPrice = 285;
@@ -134,8 +144,6 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "cooldowns")
     public int revolverCooldown = 15;
     @ConfigEntry.Category(value = "cooldowns")
-    public int sheriffCooldown = 10;
-    @ConfigEntry.Category(value = "cooldowns")
     public int derringerCooldown = 1;
     @ConfigEntry.Category(value = "cooldowns")
     public int grenadeCooldown = 300;
@@ -190,7 +198,7 @@ public class SREConfig implements ConfigData {
     // 小游戏任务独立刷新间隔（秒），与 Mood 任务解耦
     public int minigameTaskIntervalSeconds = 75;
     public int moneyPerKill = 100;
-    public int grenadeMoneyPerKill = 75;
+    public int grenadeMoneyPerKill = 80;
     public int grenadeMaxMoneyReward = 375;
     public int grenadeMaxHurtPlayers = 8;
     public int psychoModeArmor = 1;
@@ -353,6 +361,8 @@ public class SREConfig implements ConfigData {
     public int teamKillViolationWindowSeconds = 60; // 检测时间窗口（秒）
     @ConfigEntry.Category(value = "friendly_teammate_kill")
     public String teamKillViolationMcFunction = "starrailexpress:teamkill_violation"; // 触发后执行的 mcfunction
+
+    public boolean enableRoster = true;
 
     public static boolean isUltraPerfMode() {
         return SREClientConfig.instance().ultraPerfMode;

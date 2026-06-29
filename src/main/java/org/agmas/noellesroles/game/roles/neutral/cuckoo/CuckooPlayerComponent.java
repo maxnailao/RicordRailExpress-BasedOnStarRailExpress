@@ -14,7 +14,7 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
 import com.mojang.math.Transformation;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
@@ -139,7 +139,6 @@ public class CuckooPlayerComponent implements RoleComponent, ServerTickingCompon
         var gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
         for (var p : serverLevel.players()) {
             if (!gameWorld.isRole(p, ModRoles.CUCKOO)) continue;
-            if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
             CuckooPlayerComponent comp = KEY.get(p);
             if (comp != null && comp.survivingEggs >= comp.requiredEggs && comp.requiredEggs > 0) {
                 RoleUtils.customWinnerWin(serverLevel, GameUtils.WinStatus.CUSTOM, ModRoles.CUCKOO_ID.getPath(), java.util.OptionalInt.of(ModRoles.CUCKOO.color()));

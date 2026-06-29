@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.client.gui.screen.roster;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.minecraft.client.gui.GuiGraphics;
@@ -130,10 +131,13 @@ abstract class AbstractRoleRosterScreen extends Screen {
 
     protected static boolean isRosterEligible(SRERole role) {
         try {
-            // 仅排除特殊模式角色（如躲猫猫、自选职业等），
-            // 允许绑定生成角色（监护人/智力障碍患者/迪奥/承太郎/水鬼等）出现在轮换名单中，
-            // 由 expandWithCompanionRoles 在分配阶段自动处理绑定展开。
-            return !role.isOtherModeRole();
+            // 注意：不要用 role.canBeRandomed() 过滤。该字段实际由 setCanBeRandomedByOtherRoles 设置，
+            // 含义是“能否进入其他职业（如赌徒）的随机池”，与名单可选性无关。阿蒙、亡灵之主等 ~40 个职业
+            // 都调用了 setCanBeRandomedByOtherRoles(false)，若以此过滤会被错误地排除在名单之外。
+            //
+            // 过滤口径与谋杀模式 SREMurderGameMode.getAllRoles 的池构建保持一致：排除其它模式职业
+            // （isOtherModeRole）以及修理逃脱模式的 RepairRole（如蛮徒/狱卒/追踪者等），避免它们泄漏进名单。
+            return !role.isOtherModeRole() && !(role instanceof RepairRole) && role.getOccupiedRoleCount() <= 1;
         } catch (Throwable ignored) {
             return false;
         }

@@ -84,6 +84,14 @@ public class MinigameQuestBlock extends BaseEntityBlock
                 // 创造模式：打开配置界面
                 questBe.openConfigUI(sp);
             } else if (player instanceof ServerPlayer sp) {
+                // 破坏任务触发点：杀手 + canUseSabotage 角色可右键
+                if (questBe.isSabotageTrigger()) {
+                    var role = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level())
+                            .getRole(sp);
+                    if (role == null || (!role.isKiller() && !role.canUseSabotage())) {
+                        return InteractionResult.SUCCESS;
+                    }
+                }
                 // 冒险/生存模式：打开小游戏
                 String minigameId = questBe.getMinigameId();
                 if (minigameId != null && !minigameId.isEmpty()) {
@@ -102,6 +110,16 @@ public class MinigameQuestBlock extends BaseEntityBlock
                             // 该任务点对本玩家仍在复用冷却中：拒绝使用并提示（各玩家独立）
                             sp.displayClientMessage(
                                     net.minecraft.network.chat.Component.translatable("message.sre.minigame_cooldown"),
+                                    true);
+                            return InteractionResult.SUCCESS;
+                        }
+                        // 校验小游戏类型匹配：若有指定目标类型，必须匹配
+                        if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
+                                && !mgComp.targetMinigameId.equals(minigameId)) {
+                            sp.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.sre.minigame_wrong_type",
+                                            net.minecraft.network.chat.Component.translatable(
+                                                    "minigame.starrailexpress." + mgComp.targetMinigameId)),
                                     true);
                             return InteractionResult.SUCCESS;
                         }
@@ -168,6 +186,12 @@ public class MinigameQuestBlock extends BaseEntityBlock
         if (level != null) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MinigameQuestBlockEntity questBe) {
+                // 破坏任务触发点：杀手 + canUseSabotage 角色可见
+                if (questBe.isSabotageTrigger()) {
+                    var role = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(level)
+                            .getRole(player);
+                    return role != null && (role.isKiller() || role.canUseSabotage());
+                }
                 return questBe.isTaskMarker();
             }
         }
@@ -180,7 +204,12 @@ public class MinigameQuestBlock extends BaseEntityBlock
         if (level != null) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MinigameQuestBlockEntity questBe) {
-                return new Color(questBe.getMarkerColor());
+                int c = questBe.getMarkerColor();
+                // 破坏任务触发点：若颜色为默认绿色则改为红色
+                if (questBe.isSabotageTrigger() && c == 0x00FF00) {
+                    return Color.RED;
+                }
+                return new Color(c);
             }
         }
         return Color.GREEN;

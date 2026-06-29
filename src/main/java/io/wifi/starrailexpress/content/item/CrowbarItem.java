@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress.content.item;
 
+import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -10,6 +12,7 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.util.AdventureUsable;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -21,8 +24,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import org.agmas.noellesroles.role.RedHouseRoles;
-
 public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpenItem {
     public CrowbarItem(Properties settings) {
         super(settings);
@@ -31,10 +32,17 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level world = context.getLevel();
-        BlockState state = world.getBlockState(context.getClickedPos());
-        BlockEntity entity = world.getBlockEntity(context.getClickedPos());
-        if (!(entity instanceof SmallDoorBlockEntity))
-            entity = world.getBlockEntity(context.getClickedPos().below());
+        BlockPos lowerPos = context.getClickedPos();
+        BlockEntity entity = world.getBlockEntity(lowerPos);
+        if (!(entity instanceof SmallDoorBlockEntity)) {
+            lowerPos = lowerPos.below();
+            entity = world.getBlockEntity(lowerPos);
+            if (!(entity instanceof SmallDoorBlockEntity)) {
+                throw new RuntimeException(
+                        String.format("Cannot find lowerPos for SmallDoorBlockEntity at %s", context.getClickedPos()));
+            }
+        }
+        BlockState state = world.getBlockState(lowerPos);
         Player player = context.getPlayer();
         var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         if (entity instanceof SmallDoorBlockEntity door && !door.isBlasted() && player != null) {
@@ -48,18 +56,16 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
                 if (gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
                     player.getCooldowns().addCooldown(this,
                             GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20) / 4);
-                }
-                else if (gameWorldComponent.isRole(player, RedHouseRoles.FURANDORU)) {
+                } else if (gameWorldComponent.isRole(player, RedHouseRoles.FURANDORU)) {
                     player.getCooldowns().addCooldown(this,
                             GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20) / 6);
-                }
-                else {
+                } else {
                     player.getCooldowns().addCooldown(this,
                             GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20));
                 }
             }
-            if(state.getBlock() instanceof SmallDoorBlock sb){
-                sb.open(state, world, door, null);
+            if (state.getBlock() instanceof SmallDoorBlock sb) {
+                sb.open(state, world, door, context.getClickedPos());
             }
             door.blast();
             // 记录撬门事件（低频关键事件）

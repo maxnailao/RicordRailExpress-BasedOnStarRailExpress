@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.api.replay;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -456,13 +457,13 @@ public class GameReplayManager implements IGameReplayRecorder {
         SRE.SERVER.getPlayerList().getPlayers().forEach(
             player -> {
               if (gameWorldComponent != null && gameWorldComponent.isRunning()
-                  && (!GameUtils.isPlayerAliveAndSurvival(player) || SRE.canSendReplay.stream().anyMatch((pre) -> {
+                  && (!GameUtils.isPlayerAliveAndSurvival(player) || ReplayRules.canSendReplay.stream().anyMatch((pre) -> {
                       return pre.test(player);
                     }))) {
                 try {
 
                   {
-                    var cantSend = SRE.cantSendReplay.stream().anyMatch((pre) -> {
+                    var cantSend = ReplayRules.cantSendReplay.stream().anyMatch((pre) -> {
                       return pre.test(player);
                     });
                     if (!cantSend) {

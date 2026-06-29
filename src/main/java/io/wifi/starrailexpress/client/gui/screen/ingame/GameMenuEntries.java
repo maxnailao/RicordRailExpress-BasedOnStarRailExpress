@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.client.gui.screen.ingame;
 import io.wifi.ConfigCompact.ui.SettingMenuScreen;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.client.gui.screen.BackpackScreen;
+import io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen;
 import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
@@ -89,6 +91,11 @@ public class GameMenuEntries {
             minecraft.setScreen(new RoleIntroduceScreen(parent, role));
             toggleViewMenu.accept(false);
         }));
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.map_introduction"), (btn) -> {
+
+            minecraft.setScreen(new MapIntroduceScreen(parent));
+            toggleViewMenu.accept(false);
+        }));
         // 战绩页面
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.records"), (btn) -> {
 
@@ -104,6 +111,11 @@ public class GameMenuEntries {
         // 皮肤管理
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.skin_manage"), (btn) -> {
             minecraft.setScreen(new SkinManagementScreen(parent));
+            toggleViewMenu.accept(false);
+        }));
+        // 库存管理
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
+            minecraft.setScreen(new BackpackScreen(parent));
             toggleViewMenu.accept(false);
         }));
         // 邮箱管理

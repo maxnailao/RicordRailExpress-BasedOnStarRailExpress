@@ -1,23 +1,26 @@
 package org.agmas.noellesroles.client.screen;
 
-import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RepairRole;
+import io.wifi.starrailexpress.api.SREAbstractInfoClass;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
+import io.wifi.starrailexpress.customrole.CustomNormalRole;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -26,7 +29,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -35,6 +39,8 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -47,7 +53,8 @@ public class RoleIntroduceScreen extends Screen {
     public enum IntroductionGameMode {
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
         REPAIR("screen.roleintroduce.mode.repair", 0xFF44AACC),
-        OTHER("screen.roleintroduce.mode.other", 0xFFAA88CC);
+        OTHER("screen.roleintroduce.mode.other", 0xFFAA88CC),
+        FILTER("screen.roleintroduce.mode.flag", 0xFF11AA33);
 
         public final String labelKey;
         public final int color;
@@ -58,7 +65,9 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
-    private IntroductionGameMode currentMode = IntroductionGameMode.MURDER;
+    private IntroductionGameMode currentMode = IntroductionGameMode.FILTER;
+    // FILTER 选项
+    public static HashSet<String> filterFlags = new HashSet<>();
 
     // 模式按钮布局缓存
     private int modeButtonX = 0;
@@ -91,7 +100,7 @@ public class RoleIntroduceScreen extends Screen {
 
     static {
         CATEGORIES.add(new RoleCategory(
-                "screen.roleintroduce.category.all", 0xFF5577CC, item -> true));
+                "screen.roleintroduce.category.all", 0xFFEEEEEE, item -> true));
 
         CATEGORIES.add(new RoleCategory(
                 "display.type.role.innocent", 0xFF44BB66,
@@ -200,8 +209,8 @@ public class RoleIntroduceScreen extends Screen {
     private final int[] tabW = new int[64];
 
     // 模式按钮预计算坐标与宽度（仿照分类标签）
-    private final int[] modeBtnX = new int[IntroductionGameMode.values().length + 1];
-    private final int[] modeBtnW = new int[IntroductionGameMode.values().length + 1];
+    private final int[] modeBtnX = new int[IntroductionGameMode.values().length + 2];
+    private final int[] modeBtnW = new int[IntroductionGameMode.values().length + 2];
 
     // 左侧列表滚动
     private int listScrollOffset = 0;
@@ -246,6 +255,7 @@ public class RoleIntroduceScreen extends Screen {
     public RoleIntroduceScreen() {
         super(Component.translatable("gui.roleintroduce.select_role.title"));
         availableRoles.addAll(Noellesroles.getAllRolesSorted(true));
+        filterFlags.clear();
     }
 
     public RoleIntroduceScreen(Screen parent) {
@@ -299,12 +309,17 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private void computeLayout() {
+        boolean isSmall = this.height <= 300;
         usableWidth = Math.min((int) (width * USABLE_RATIO), MAX_USABLE_WIDTH);
         leftW = (int) (usableWidth * LEFT_RATIO);
         rightW = usableWidth - leftW;
         panelX = (width - usableWidth) / 2;
         panelY = 48;
-        panelH = height - panelY - 42;
+        if (isSmall) {
+            panelH = height - panelY - 20;
+        } else {
+            panelH = height - panelY - 42;
+        }
         leftX = panelX;
         rightX = panelX + leftW;
         // 顶部行紧贴 panelY 上方
@@ -445,6 +460,8 @@ public class RoleIntroduceScreen extends Screen {
             case OTHER:
                 // 其它模式：只显示标记为isOtherModeRole()的职业
                 return role.isOtherModeRole();
+            case FILTER:
+                return role.isFlagWithInner(filterFlags);
             default:
                 return true;
         }
@@ -472,6 +489,8 @@ public class RoleIntroduceScreen extends Screen {
             case OTHER:
                 // 其它模式：只显示标记为isOtherModeRole()的修饰符
                 return mod.isOtherModeRole();
+            case FILTER:
+                return mod.isFlagWithInner(filterFlags);
             default:
                 return true;
         }
@@ -495,6 +514,10 @@ public class RoleIntroduceScreen extends Screen {
             case OTHER:
                 // 其它模式：只显示其他模式的物品
                 return isOtherModeItem(path);
+            case FILTER:
+                if (filterFlags.isEmpty())
+                    return true;
+                return false;
             default:
                 return true;
         }
@@ -558,7 +581,7 @@ public class RoleIntroduceScreen extends Screen {
         detailLines.add(FormattedCharSequence.EMPTY);
         if (selectedRole instanceof SRERole role) {
             var rid = role.identifier();
-            if ("customrole".equals(rid.getNamespace())) {
+            if (selectedRole instanceof CustomNormalRole) {
                 var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(rid.getPath());
                 // 客户端回退到网络同步的数据
                 if (cd == null) {
@@ -567,7 +590,8 @@ public class RoleIntroduceScreen extends Screen {
                 if (cd != null && !cd.goals.isEmpty()) {
                     detailLines.addAll(font.split(Component.literal(cd.goals), textW));
                 } else {
-                    detailLines.addAll(font.split(Component.translatable("announcement.star.goals." + rid.getPath()), textW));
+                    detailLines.addAll(
+                            font.split(Component.translatable("announcement.star.goals." + rid.getPath()), textW));
                 }
             } else {
                 detailLines.addAll(font.split(
@@ -591,21 +615,37 @@ public class RoleIntroduceScreen extends Screen {
 
             detailLines.add(FormattedCharSequence.EMPTY);
         }
-        detailLines.addAll(font.split(
-                Component.translatable("screen.roleintroduce.detail.description")
-                        .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD),
-                textW));
-
         int dashCount = textW / Math.max(1, font.width("─"));
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < dashCount; i++)
             sb.append("─");
-        detailLines.addAll(font.split(
-                Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
-        detailLines.addAll(font.split(
-                RoleUtils.getRoleOrModifierOrItemDescription(selectedRole)
-                        .copy().withStyle(ChatFormatting.WHITE),
-                textW));
+        {
+            detailLines.addAll(font.split(
+                    Component.translatable("screen.roleintroduce.detail.description")
+                            .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD),
+                    textW));
+            detailLines.addAll(font.split(
+                    Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
+            detailLines.addAll(font.split(
+                    RoleUtils.getRoleOrModifierOrItemDescription(selectedRole)
+                            .copy().withStyle(ChatFormatting.WHITE),
+                    textW));
+        }
+
+        if (selectedRole instanceof SREAbstractInfoClass flagInfoable && !flagInfoable.getFlags().isEmpty()) {
+            detailLines.add(FormattedCharSequence.EMPTY);
+            detailLines.addAll(font.split(
+                    Component.translatable("screen.roleintroduce.detail.flags")
+                            .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD),
+                    textW));
+
+            detailLines.addAll(font.split(
+                    Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
+            detailLines.addAll(font.split(
+                    getFlagText(flagInfoable).withStyle(ChatFormatting.WHITE),
+                    textW));
+        }
         {
             // 商店显示
             if (selectedRole instanceof SRERole sreRole) {
@@ -714,6 +754,11 @@ public class RoleIntroduceScreen extends Screen {
         detailScrollOffset = 0;
     }
 
+    public static MutableComponent getFlagText(SREAbstractInfoClass flagInfoable) {
+        return ComponentUtils.formatList(flagInfoable.getFlags(), Component.literal(", "),
+                (t) -> Component.translatable("screen.roleintroduce.flag." + t));
+    }
+
     private String getObjectPath(Object it) {
         if (it instanceof Item) {
             return RoleUtils.getRoleOrModifierOrItemIdentifier(it).toLanguageKey();
@@ -749,6 +794,7 @@ public class RoleIntroduceScreen extends Screen {
         // 其余代码
         renderLeftPanel(g, mouseX, mouseY);
         renderRightPanel(g, mouseX, mouseY);
+        boolean isSmall = this.height <= 300;
 
         // ── 分类标签：紧接搜索框右侧，与搜索框同高同 Y ────────────
         int catBarX = rightX + TOP_BAR_GAP;
@@ -758,8 +804,15 @@ public class RoleIntroduceScreen extends Screen {
         g.fillGradient(0, 0, width, topBarY - 4, 0xBB000000, 0x00000000);
         g.drawCenteredString(font, this.title, width / 2, 8, 0xF5E8C8);
         // 底部提示上移，为模式按钮留空间
-        g.drawCenteredString(font, Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
-                width / 2, height - 24, 0x9E8B6E);
+        if (isSmall) {
+            g.drawCenteredString(font,
+                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
+                    width / 2, height - 15, 0x9E8B6E);
+        } else {
+            g.drawCenteredString(font,
+                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
+                    width / 2, height - 24, 0x9E8B6E);
+        }
 
         // ── 左下角模式切换按钮 ──────────────────────────────────
         renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 4);
@@ -1094,37 +1147,11 @@ public class RoleIntroduceScreen extends Screen {
      * 检查列表中的职业/修饰符是否已被禁用
      */
     private boolean isItemDisabled(Object role) {
-        if (!minecraft.isLocalServer() && !minecraft.isSingleplayer() && minecraft.level != null) {
-            {
-                if (SREClient.gameComponent == null || minecraft == null
-                        || minecraft.level == null) {
-                    // 没进入游戏，也显示全部。
-                    return false;
-                }
-                if (!SREClient.gameComponent.isRunning()) {
-                    // 游戏没开始，默认显示全部。
-                    return false;
-                }
-            }
-            // 非本地从RoleConfigUI读取
-            if (role instanceof SRERole r) {
-                if (RoleManageConfigUI.RoleEnableStatus.isEmpty())
-                    return false;
-                return !RoleManageConfigUI.RoleEnableStatus.getOrDefault(r.identifier().toString(), false);
-            }
-            if (role instanceof SREModifier m) {
-                if (RoleManageConfigUI.ModifierEnableStatus.isEmpty())
-                    return false;
-                return !RoleManageConfigUI.ModifierEnableStatus.getOrDefault(m.identifier().toString(), false);
-            }
-            return false;
-        }
-        var config = HarpyModLoaderConfig.HANDLER.instance();
         if (role instanceof SRERole r) {
-            return config.getDisabled().contains(r.identifier().toString());
+            return SREDisableManager.isRoleDisabled(r);
         }
         if (role instanceof SREModifier m) {
-            return config.disabledModifiers.contains(m.identifier.toString());
+            return SREDisableManager.isModifierDisabled(m);
         }
         return false;
     }
@@ -1293,16 +1320,13 @@ public class RoleIntroduceScreen extends Screen {
                     if (btnW > 0 && isInRect((int) mx, (int) my,
                             btnX, modeButtonY, btnW, modeButtonH)) {
                         IntroductionGameMode clickedMode = IntroductionGameMode.values()[i];
-                        if (currentMode != clickedMode) {
-                            currentMode = clickedMode;
-                            listScrollOffset = 0;
-                            this.minecraft.getSoundManager()
-                                    .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
-                            refreshFilter();
-                            if (selectedRole != null && !filteredItems.contains(selectedRole)) {
-                                selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
-                                rebuildDetailLines();
-                            }
+
+                        this.minecraft.getSoundManager()
+                                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                        if (clickedMode == IntroductionGameMode.FILTER) {
+                            openFilterScreen();
+                        } else if (currentMode != clickedMode) {
+                            refreshFilter(clickedMode);
                         }
                         return true;
                     }
@@ -1372,6 +1396,54 @@ public class RoleIntroduceScreen extends Screen {
             }
         }
         return super.mouseClicked(mx, my, button);
+    }
+
+    private void openFilterScreen() {
+        LinkedHashMap<String, Component> optionMap = new LinkedHashMap<>();
+        optionMap.put("inner.enable", Component.translatable("screen.roleintroduce.flag.inner.enable"));
+        optionMap.put("inner.disable", Component.translatable("screen.roleintroduce.flag.inner.disable"));
+        {
+            HashSet<String> flags = TMMRoles.getAllFlags();
+            for (var it : flags) {
+                if (it != null) {
+                    optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
+                            it.toUpperCase().replaceAll("_", " ")));
+                }
+            }
+        }
+        {
+            HashSet<String> flags = HMLModifiers.getAllFlags();
+            for (var it : flags) {
+                if (it != null) {
+                    optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
+                            it.toUpperCase().replaceAll("_", " ")));
+                }
+            }
+        }
+        FilterSelectionScreen screen = FilterSelectionScreen.builder(this)
+                .title(Component.translatable("screen.filter_selection.title"))
+                .subtitle(Component.translatable("screen.filter_selection.tip"))
+                .options(optionMap)
+                .multiSelect(true)
+                .defaultSelections(filterFlags)
+                .callback(selected -> {
+                    // 处理选择结果
+                    filterFlags.clear();
+                    filterFlags.addAll(selected);
+                    refreshFilter(IntroductionGameMode.FILTER);
+                })
+                .build();
+        screen.show(this.minecraft);
+    }
+
+    public void refreshFilter(IntroductionGameMode clickedMode) {
+        currentMode = clickedMode;
+        listScrollOffset = 0;
+        refreshFilter();
+        if (selectedRole != null && !filteredItems.contains(selectedRole)) {
+            selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
+            rebuildDetailLines();
+        }
     }
 
     @Override

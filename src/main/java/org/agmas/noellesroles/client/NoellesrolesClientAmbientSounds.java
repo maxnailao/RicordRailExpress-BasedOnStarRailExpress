@@ -9,11 +9,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class NoellesrolesClientAmbientSounds {
 
   public static void register() {
+    // 阿蒙终幕「阿蒙时刻」：使用 A_MENG 音乐，于终幕全程循环播放。
+    AmbienceUtil.registerBackgroundAmbience(
+        new BackgroundAmbience(NRSounds.A_MENG,
+            player -> org.agmas.noellesroles.client.ClientAmonState.finaleActive,
+            1));
     AmbienceUtil.registerBackgroundAmbience(
         new BackgroundAmbience(NRSounds.JESTER_AMBIENT,
             player -> {
@@ -45,7 +51,7 @@ public class NoellesrolesClientAmbientSounds {
                 if (level == null)
                   return false;
                 return (level.players().stream().anyMatch((p) -> {
-                  if (SREClient.gameComponent.isRole(p, ModRoles.CAT_KILLER)) {
+                  if (SREClient.gameComponent.isRole(p, BounsRoles.CAT_KILLER)) {
                     if (SREPlayerPsychoComponent.KEY.get(p).getPsychoTicks() > 0) {
                       return true;
                     }

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
@@ -48,12 +49,22 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     private String sceneAssetRemoteUrl = "";
     private boolean sceneAssetTrusted = false;
     private Vec3 sceneDisplayOffset = Vec3.ZERO;
+    /** 禁用非场景任务列表（仅可填非场景任务名）。 */
     public HashSet<String> disabledTasks = new HashSet<>();
 
     public HashSet<String> getDisabledTasks() {
         if (this.disabledTasks == null)
             return new HashSet<>();
         return new HashSet<>(this.disabledTasks);
+    }
+
+    /** 启用场景任务列表（仅可填场景任务名）。为空表示不启用任何场景任务。 */
+    public HashSet<String> enableSceneTask = new HashSet<>();
+
+    public HashSet<String> getEnabledSceneTasks() {
+        if (this.enableSceneTask == null)
+            return new HashSet<>();
+        return new HashSet<>(this.enableSceneTask);
     }
 
     public static class PosWithOrientation {
@@ -159,9 +170,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     Map<Integer, Vec3> roomPositions = new HashMap<>();
     public boolean canJump = false;
     public boolean canSwim = false;
+    public boolean enableOxygenDrowning = false;
+    public MapStatusBarType mapStatusBar = MapStatusBarType.NONE;
     public boolean noReset = false;
     public String mapName = null;
     public boolean haveOutsideSound = false;
+    /** 背景音效类型：train/wind/sand_storm/snow_storm/circus。空字符串或未设置时默认 train。 */
+    public String sceneOutsideSound = "train";
 
     // 场景偏移配置 - 将sceneArea内的区块渲染到偏移位置（默认关闭）
     public boolean sceneOffsetEnabled = false;
@@ -206,6 +221,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
 
     // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
     public boolean minigameQuestEnabled = false;
+    /** 当前地图中存在的小游戏种类 ID 集合（由 MapScanner 扫描填充），用于小游戏任务刷新时随机选取。 */
+    public final HashSet<String> availableMinigameIds = new HashSet<>();
 
     // 支持的游戏模式列表，为空表示支持所有模式
     public java.util.List<String> gameModes = new java.util.ArrayList<>();
@@ -473,7 +490,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
                 : null;
         this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
+        this.enableOxygenDrowning = tag.contains("enableOxygenDrowning") && tag.getBoolean("enableOxygenDrowning");
+        this.mapStatusBar = tag.contains("mapStatusBar")
+                ? MapStatusBarType.byName(tag.getString("mapStatusBar"))
+                : MapStatusBarType.NONE;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
+        this.sceneOutsideSound = tag.contains("sceneOutsideSound") && !tag.getString("sceneOutsideSound").isBlank()
+                ? tag.getString("sceneOutsideSound") : "train";
         this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
         this.sandEnabled = tag.contains("sandEnabled") ? tag.getBoolean("sandEnabled") : false;
         this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") : true;
@@ -496,6 +519,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
         this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
         this.minigameQuestEnabled = tag.contains("minigameQuestEnabled") && tag.getBoolean("minigameQuestEnabled");
+        this.availableMinigameIds.clear();
+        if (tag.contains("AvailableMinigameIds")) {
+            var mgList = tag.getList("AvailableMinigameIds", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < mgList.size(); i++) {
+                this.availableMinigameIds.add(mgList.getString(i));
+            }
+        }
         this.initialItems = new ArrayList<>();
         if (tag.contains("initialItems")) {
             var iiList = tag.getList("initialItems", net.minecraft.nbt.Tag.TAG_STRING);
@@ -566,7 +596,10 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putInt("roomCount", this.roomCount);
         tag.putBoolean("canJump", this.canJump);
         tag.putBoolean("canSwim", this.canSwim);
+        tag.putBoolean("enableOxygenDrowning", this.enableOxygenDrowning);
+        tag.putString("mapStatusBar", (this.mapStatusBar == null ? MapStatusBarType.NONE : this.mapStatusBar).name());
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
+        tag.putString("sceneOutsideSound", this.sceneOutsideSound);
         tag.putBoolean("snowEnabled", this.snowEnabled);
         tag.putBoolean("sandEnabled", this.sandEnabled);
         tag.putBoolean("fogEnabled", this.fogEnabled);
@@ -587,6 +620,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("daylightCycle", this.daylightCycle);
         tag.putBoolean("weatherCycle", this.weatherCycle);
         tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
+
+        // 序列化 availableMinigameIds
+        var minigameIdsList = new net.minecraft.nbt.ListTag();
+        for (String id : this.availableMinigameIds) {
+            minigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
+        }
+        tag.put("AvailableMinigameIds", minigameIdsList);
 
         var initialItemsList = new net.minecraft.nbt.ListTag();
         for (String item : this.initialItems) {

@@ -16,7 +16,7 @@ import java.util.UUID;
 public class ModScreenHandlers {
     
     /**
-     * 邮差传递界面的 ScreenHandler 类型
+     * 射命丸文传递界面的 ScreenHandler 类型
      * 使用 ExtendedScreenHandlerType 来传递目标玩家的 UUID
      */
     public static final ExtendedScreenHandlerType<PostmanScreenHandler, UUID> POSTMAN_SCREEN_HANDLER =
@@ -30,7 +30,7 @@ public class ModScreenHandlers {
         );
     
     /**
-     * 私家侦探审查界面的 ScreenHandler 类型
+     * 探员审查界面的 ScreenHandler 类型
      * 使用 ExtendedScreenHandlerType 来传递目标玩家的 UUID
      */
     public static final ExtendedScreenHandlerType<DetectiveInspectScreenHandler, UUID> DETECTIVE_INSPECT_SCREEN_HANDLER =

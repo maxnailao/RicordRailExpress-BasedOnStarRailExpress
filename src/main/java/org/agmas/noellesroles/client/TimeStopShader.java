@@ -7,7 +7,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 import java.util.function.BooleanSupplier;
 
@@ -28,6 +28,12 @@ public class TimeStopShader {
 
     // 水墨风状态
     private float inkStrength = 0.0f; // 水墨风强度 (0~1)
+
+    // 时间回溯恍惚滤镜强度 (0~1)
+    private float rewindStrength = 0.0f;
+
+    // 怀旧者里世界灰白滤镜强度 (0~1)
+    private float nostalgistGray = 0.0f;
 
     // 上一次的状态（用于检测效果开始或刷新）
     private boolean lastHasTimeStop = false;
@@ -247,6 +253,65 @@ public class TimeStopShader {
 
             return true;
         }));
+
+        // 时间回溯恍惚滤镜（滞时鬼回溯时全场触发）
+        m_post.addSinglePassEntry("time_rewind", pass -> processPlayer(mc.player, () -> {
+            if (mc.player == null)
+                return false;
+
+            totalTime += 0.016f;
+
+            boolean isActive = mc.player.hasEffect(ModEffects.TIME_REWIND_DAZE);
+            if (isActive) {
+                rewindStrength = Math.min(1.0f, rewindStrength + 0.08f); // 快速淡入
+            } else {
+                rewindStrength = Math.max(0.0f, rewindStrength - 0.04f); // 缓慢淡出
+            }
+            if (rewindStrength <= 0.01f)
+                return false;
+
+            var effect = pass.getEffect();
+            if (effect == null)
+                return false;
+
+            var strengthUniform = effect.safeGetUniform("Strength");
+            if (strengthUniform != null) {
+                strengthUniform.set(rewindStrength);
+            }
+            var timeUniform = effect.safeGetUniform("Time");
+            if (timeUniform != null) {
+                timeUniform.set(totalTime);
+            }
+            return true;
+        }));
+
+        // 怀旧者里世界灰白滤镜（由 NOSTALGIST_BACKWORLD 药水效果驱动的独立着色器）
+        m_post.addSinglePassEntry("nostalgist_gray", pass -> processPlayer(mc.player, () -> {
+            totalTime += 0.016f;
+
+            boolean active = mc.player.hasEffect(ModEffects.NOSTALGIST_BACKWORLD);
+            if (active) {
+                nostalgistGray = Math.min(1.0f, nostalgistGray + 0.05f);
+            } else {
+                nostalgistGray = Math.max(0.0f, nostalgistGray - 0.08f);
+            }
+            if (nostalgistGray <= 0.01f)
+                return false;
+
+            var effect = pass.getEffect();
+            if (effect == null)
+                return false;
+
+            var strengthUniform = effect.safeGetUniform("Strength");
+            if (strengthUniform != null) {
+                strengthUniform.set(nostalgistGray);
+            }
+            var timeTotalUniform = effect.safeGetUniform("TimeTotal");
+            if (timeTotalUniform != null) {
+                timeTotalUniform.set(totalTime);
+            }
+            return true;
+        }));
     }
 
     public void renderPostProcess(float partialTicks) {
@@ -266,6 +331,8 @@ public class TimeStopShader {
         hasBlackMonitorEffect = false;
         lastHasBlackMonitor = false;
         inkStrength = 0.0f;
+        rewindStrength = 0.0f;
+        nostalgistGray = 0.0f;
     }
 
     public void forceStart() {

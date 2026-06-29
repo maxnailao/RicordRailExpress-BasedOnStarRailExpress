@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +34,7 @@ public class C4BackFeatureRenderer extends RenderLayer<AbstractClientPlayer, Pla
         matrices.pushPose();
         this.getParentModel().body.translateAndRotate(matrices);
         C4PlacementPreset preset = C4PlacementPreset.DEFAULT;
-        C4ModelTransforms.applyPlacement(matrices, preset);
+        C4ModelTransforms.applyChestPlacement(matrices, preset);
 
         Minecraft mc = Minecraft.getInstance();
         ItemRenderer ir = mc.getItemRenderer();
