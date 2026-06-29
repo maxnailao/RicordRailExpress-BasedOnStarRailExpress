@@ -3469,12 +3469,18 @@
 
   "==================== 哑女 ====================": "",
   "announcement.star.role.dumb_woman": "哑女",
+  "announcement.star.goals.dumb_woman": "利用你的夜视在黑暗中抓住凶手",
+  "info.screen.roleid.dumb_woman": "平民阵营\n你无法说活，也无法使用聊天栏与他人进行交流\n商店可以购买纸条，利用纸条进行交流\n你免疫黑暗，自带夜视效果",
+
 
   "==================== 休假警员 ====================": "",
   "announcement.star.role.resting_police": "休假警员",
+  "announcement.star.goals.resting_police": "即使是假期，你也需维护正义",
+  "info.screen.roleid.resting_police":"平民阵营\n你初始拥有一把一次性手枪\n商店可花费325购买一次性手枪",
 
-  "==================== 情报官 ====================": "",
+  "==================== 情报官 ====================":"",
   "announcement.star.role.intelligence": "情报官",
+
   "message.noellesroles.intelligence.monitor_triggered": "§c§l监视器触发！检测到玩家死亡！",
   "message.noellesroles.intelligence.monitor_placed": "§a监视器已部署",
   "message.noellesroles.intelligence.max_monitors": "§c已达到最大监视器数量 (2个)",
