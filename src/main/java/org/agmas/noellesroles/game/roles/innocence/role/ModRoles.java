@@ -2778,7 +2778,7 @@ public class ModRoles {
                     io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
             return entries;
         }
-    }).setCanSeeCoin(true);
+    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
 
     /**
      * 水手角色 - 平民阵营
@@ -2809,7 +2809,7 @@ public class ModRoles {
                     io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
             return entries;
         }
-    }).setCanSeeCoin(true);
+    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
 
     public static SRERole PHANTOM_MUSICIAN = TMMRoles
             .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(),
@@ -2835,7 +2835,7 @@ public class ModRoles {
      * - 商店：海盗弯刀(80)、海盗燧发枪(180)、耐久橡木船(50)、撬棍(30)
      * - 登车标语：抢！抢！抢！！！
      */
-    public static SRERole JIALIEBIADAO = TMMRoles.registerRole(new NormalRole(
+    public static SRERole JIALEBIHAIDAO = TMMRoles.registerRole(new NormalRole(
             JIALIEBIADAO_ID,
             new Color(178, 34, 34).getRGB(), // 红棕色
             false,  // 非乘客阵营（杀手）
@@ -2876,7 +2876,7 @@ public class ModRoles {
                     new ItemStack(org.agmas.noellesroles.init.ModItems.DURABILITY_BOAT)
             );
         }
-    }).setCanSeeCoin(true).setCanSeeTime(true);
+    }).setCanSeeCoin(true).setCanSeeTime(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
 
     /**
      * 初始化并注册所有角色
