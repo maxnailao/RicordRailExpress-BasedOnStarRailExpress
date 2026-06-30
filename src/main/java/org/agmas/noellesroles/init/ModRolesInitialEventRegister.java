@@ -1051,6 +1051,21 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).toggleable(true).build());
 
+        // 操纵师技能注册：切换凝视模式
+        RoleSkill.register(ModRoles.MANIPULATOR, RoleSkill.skill(
+                SRE.id("manipulator_toggle_gaze"),
+                "skill.noellesroles.manipulator.toggle_gaze",
+                context -> {
+                    boolean active = ManipulatorPlayerComponent.KEY.get(context.player()).toggleGazeMode();
+                    context.player().displayClientMessage(
+                            Component.translatable(active
+                                    ? "message.noellesroles.manipulator.gaze_on"
+                                    : "message.noellesroles.manipulator.gaze_off")
+                                    .withStyle(active ? ChatFormatting.GREEN : ChatFormatting.RED),
+                            true);
+                    return true;
+                }).toggleable(true).build());
+
         // 钟表匠技能注册：削减他人回合时间
         RoleSkill.register(ModRoles.CLOCKMAKER, RoleSkill.skill(
                 SRE.id("clockmaker_use_skill"),

@@ -838,8 +838,10 @@ public class ModEventsRegister {
                     if (inControlCCA.isControlling && inControlCCA.controller != null) {
                         var controllerPlayer = level.getPlayerByUUID(inControlCCA.controller);
                         if (controllerPlayer != null) {
-                            io.wifi.starrailexpress.data.PlayerEconomyManager.addCoinNum(controllerPlayer,
-                                    NoellesRolesConfig.HANDLER.instance().manipulatorTargetDeathReward);
+                            // 修复：使用游戏内余额而非持久化经济
+                            io.wifi.starrailexpress.cca.SREPlayerShopComponent shop =
+                                    io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(controllerPlayer);
+                            shop.addToBalance(NoellesRolesConfig.HANDLER.instance().manipulatorTargetDeathReward);
                             controllerPlayer.displayClientMessage(Component.translatable(
                                     "message.noellesroles.manipulator.target_died", victim.getName())
                                     .withStyle(ChatFormatting.GOLD), true);

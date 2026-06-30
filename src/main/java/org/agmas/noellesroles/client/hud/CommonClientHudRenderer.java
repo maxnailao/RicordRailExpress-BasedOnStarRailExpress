@@ -44,6 +44,7 @@ import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
@@ -1913,6 +1914,72 @@ public class CommonClientHudRenderer {
               NoellesrolesClient.nextAbilityBind.getTranslatedKeyMessage())
           .withStyle(ChatFormatting.GRAY);
       guiGraphics.drawString(font, toggleText, xOffset - font.width(toggleText), yOffset, 0xFFFFFF);
+    });
+
+    // 操纵师 HUD：凝视模式状态 + 标记进度条
+    RoleHudRenderCallback.EVENT.register(ModRoles.MANIPULATOR_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null || client.player == null) return;
+      if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+
+      ManipulatorPlayerComponent comp = ManipulatorPlayerComponent.KEY.get(client.player);
+
+      Font font = client.font;
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      int x = screenWidth / 2; // 屏幕中央
+      int y = screenHeight - 60; // 准心下方
+
+      // 操控中显示状态（优先显示）
+      if (comp.isControlling && comp.target != null) {
+        var targetPlayer = client.level != null ? client.level.getPlayerByUUID(comp.target) : null;
+        if (targetPlayer != null) {
+          float remain = comp.getControlSeconds();
+          Component controlText = Component.translatable("hud.noellesroles.manipulator.controlling",
+                  targetPlayer.getName().getString(), String.format("%.0f", remain))
+                  .withStyle(ChatFormatting.LIGHT_PURPLE);
+          guiGraphics.drawCenteredString(font, controlText, x, y, 0xFFFFFF);
+          y += 14;
+        }
+        return; // 操控中不显示其他信息
+      }
+
+      // 凝视模式状态显示
+      if (comp.gazeModeActive) {
+        // 凝视模式开启提示
+        Component gazeOnText = Component.translatable("hud.noellesroles.manipulator.gaze_active")
+                .withStyle(ChatFormatting.YELLOW);
+        guiGraphics.drawCenteredString(font, gazeOnText, x, y, 0xFFFFFF);
+        y += 14;
+
+        if (comp.clientStaringTargetName != null && !comp.clientStaringTargetName.isEmpty()) {
+          // 构建进度条：20 格，每 1 秒（20tick）一格变绿
+          int progressSeconds = comp.clientStaringProgressTicks / 20;
+          int totalBars = 20;
+          int greenBars = Math.min(progressSeconds, totalBars);
+
+          StringBuilder bar = new StringBuilder();
+          for (int i = 0; i < totalBars; i++) {
+            bar.append(i < greenBars ? "█" : "░"); // 实心块 vs 浅色块
+          }
+
+          // 显示目标名和进度条
+          String progressStr = "玩家" + comp.clientStaringTargetName + " 操纵进度:" + bar.toString();
+          Component progressText = Component.literal(progressStr).withStyle(ChatFormatting.WHITE);
+          guiGraphics.drawCenteredString(font, progressText, x, y, 0xFFFFFF);
+        } else {
+          // 准心未锚准玩家
+          Component noTargetText = Component.translatable("hud.noellesroles.manipulator.no_target")
+                  .withStyle(ChatFormatting.GRAY);
+          guiGraphics.drawCenteredString(font, noTargetText, x, y, 0xFFFFFF);
+        }
+      } else if (!comp.isControlling) {
+        // 凝视模式关闭时显示技能提示
+        var abilityKey = NoellesrolesClient.abilityBind.getTranslatedKeyMessage();
+        Component gazeOffText = Component.translatable("hud.noellesroles.manipulator.gaze_hint", abilityKey)
+                .withStyle(ChatFormatting.GRAY);
+        guiGraphics.drawCenteredString(font, gazeOffText, x, y, 0xFFFFFF);
+      }
     });
 
   }

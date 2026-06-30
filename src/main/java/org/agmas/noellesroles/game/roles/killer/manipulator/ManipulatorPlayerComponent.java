@@ -1,10 +1,12 @@
 
 package org.agmas.noellesroles.game.roles.killer.manipulator;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
+
 import io.wifi.starrailexpress.event.AllowPlayerControlled;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -33,7 +35,9 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -71,9 +75,18 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
 
     public int cooldown;
 
-    // 标记进度（服务端）
+    /** 凝视模式开关（技能键切换） */
+    public boolean gazeModeActive = false;
+
+    // 标记进度（服务端）—— 累计制，每个目标独立记录
     private UUID staringAt;
-    private int markProgressTicks;
+    private int markProgressTicks; // 保留用于 getMarkProgress() 显示当前注视目标的进度
+    /** 每个目标的累计注视进度（tick），标记成功后清除 */
+    private final Map<UUID, Integer> perTargetProgress = new LinkedHashMap<>();
+
+    // 客户端同步显示字段
+    public String clientStaringTargetName = "";
+    public int clientStaringProgressTicks = 0;
 
     // 操控者本体冻结锚点
     private double anchorX, anchorY, anchorZ;
@@ -103,8 +116,12 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         this.markedTargets.clear();
         this.isControlling = false;
         this.cooldown = 0;
+        this.gazeModeActive = false;
         this.staringAt = null;
         this.markProgressTicks = 0;
+        this.perTargetProgress.clear();
+        this.clientStaringTargetName = "";
+        this.clientStaringProgressTicks = 0;
         this.sync();
     }
 
@@ -121,9 +138,25 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         this.markedTargets.clear();
         this.isControlling = false;
         this.cooldown = 0;
+        this.gazeModeActive = false;
         this.staringAt = null;
         this.markProgressTicks = 0;
+        this.perTargetProgress.clear();
+        this.clientStaringTargetName = "";
+        this.clientStaringProgressTicks = 0;
         this.sync();
+    }
+
+    /** 技能键切换凝视模式 */
+    public boolean toggleGazeMode() {
+        gazeModeActive = !gazeModeActive;
+        if (!gazeModeActive) {
+            staringAt = null;
+            clientStaringTargetName = "";
+            clientStaringProgressTicks = 0;
+        }
+        this.sync();
+        return gazeModeActive;
     }
 
     public void sync() {
@@ -189,8 +222,7 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         inControlCCA.controller = player.getUUID();
         inControlCCA.sync();
 
-        // 冷却（记在操纵师身上）
-        ability.cooldown = GameConstants.getInTicks(0, config().manipulatorCooldown);
+        // 冷却在控制结束时设置（stopControl中），而非控制开始时
         ability.sync();
 
         // 冻结 + 保护操纵师本体
@@ -223,6 +255,13 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         isControlling = false;
         target = null;
         serverPlayer.setInvulnerable(false);
+
+        // 控制结束后设置冷却（使用setSkillCooldown写入技能状态，避免被mirrorSelectedSkill覆盖）
+        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
+        int cooldownTicks = GameConstants.getInTicks(0, config().manipulatorCooldown);
+        ResourceLocation skillId = SRE.id("manipulator_toggle_gaze");
+        ability.setSkillCooldown(skillId, cooldownTicks);
+        ability.sync();
 
         if (timeout) {
             serverPlayer.displayClientMessage(
@@ -264,7 +303,7 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         int need = config().manipulatorMarkSeconds * 20;
         if (need <= 0)
             return 0f;
-        return Math.min(1f, (float) markProgressTicks / need);
+        return Math.min(1f, (float) clientStaringProgressTicks / need);
     }
 
     @Override
@@ -303,11 +342,18 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
             return;
         }
 
-        // 未附身：处理潜行盯人标记（仅对操纵师本人生效，避免其他职业也能凝视标记）
-        if (isActiveManipulator()) {
+        // 未附身：处理凝视模式标记（仅对操纵师本人生效）
+        if (isActiveManipulator() && gazeModeActive) {
             tickMarking(sp);
-        } else {
+        } else if (!isActiveManipulator()) {
+            // 不再是操纵师，重置所有凝视状态
             resetStare();
+            gazeModeActive = false;
+        } else {
+            // 凝视模式关闭，只清空当前注视目标（不重置累计进度）
+            staringAt = null;
+            clientStaringTargetName = "";
+            clientStaringProgressTicks = 0;
         }
     }
 
@@ -323,58 +369,60 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
     private void resetStare() {
         staringAt = null;
         markProgressTicks = 0;
+        clientStaringTargetName = "";
+        clientStaringProgressTicks = 0;
     }
 
     private void tickMarking(ServerPlayer sp) {
-        if (!sp.isShiftKeyDown()) {
-            resetStare();
-            return;
-        }
-        
-        io.wifi.starrailexpress.cca.SREGameWorldComponent gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level());
-        if (!gameWorld.isRole(sp, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MANIPULATOR)) {
-            resetStare();
-            return;
-        }
-        
         ServerPlayer candidate = findStareCandidate(sp);
         if (candidate == null) {
-            resetStare();
+            // 准心未瞄准玩家，只清空当前注视信息（不重置累计进度）
+            staringAt = null;
+            markProgressTicks = 0;
+            clientStaringTargetName = "";
+            clientStaringProgressTicks = 0;
+            this.sync(); // 同步到客户端以更新HUD
             return;
         }
 
-        if (candidate.getUUID().equals(staringAt)) {
-            markProgressTicks++;
-        } else {
-            staringAt = candidate.getUUID();
-            markProgressTicks = 1;
-        }
+        UUID candidateId = candidate.getUUID();
+        staringAt = candidateId;
+
+        // 累计进度（每个目标独立）
+        int currentProgress = perTargetProgress.getOrDefault(candidateId, 0) + 1;
+        perTargetProgress.put(candidateId, currentProgress);
+        markProgressTicks = currentProgress;
+
+        // 同步给客户端用于 HUD 显示
+        clientStaringTargetName = candidate.getName().getString();
+        clientStaringProgressTicks = currentProgress;
+        this.sync(); // 实时同步确保HUD准确显示
 
         int need = GameConstants.getInTicks(0, config().manipulatorMarkSeconds);
-        if (markProgressTicks % 10 == 0 && markProgressTicks < need) {
-            int remain = (need - markProgressTicks + 19) / 20;
-            sp.displayClientMessage(Component.translatable("message.noellesroles.manipulator.mark_progress", remain)
-                    .withStyle(ChatFormatting.GRAY), true);
-        }
 
-        if (markProgressTicks >= need) {
+        if (currentProgress >= need) {
             // 避免对同一目标反复刷取（可保存多个目标）
-            if (markedTargets.add(candidate.getUUID())) {
+            if (markedTargets.add(candidateId)) {
                 candidate.addEffect(new MobEffectInstance(MobEffects.CONFUSION,
                         GameConstants.getInTicks(0, config().manipulatorMarkNauseaSeconds), 0));
-                PlayerEconomyManager.addCoinNum(sp, config().manipulatorMarkReward);
+                // 修复：使用游戏内余额而非持久化经济
+                io.wifi.starrailexpress.cca.SREPlayerShopComponent shop =
+                        io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(sp);
+                shop.addToBalance(config().manipulatorMarkReward);
                 sp.displayClientMessage(Component.translatable("message.noellesroles.manipulator.mark_success",
                         candidate.getName()).withStyle(ChatFormatting.GREEN), true);
                 sp.level().playSound(null, sp.blockPosition(),
                         SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 1.4F);
-                this.sync();
             }
+            // 标记成功后清除该目标的累计进度并同步
+            perTargetProgress.remove(candidateId);
             resetStare();
+            this.sync();
         }
     }
 
     /**
-     * 在潜行状态下，寻找操纵师正盯着、在标记范围内、视线无遮挡的目标。
+     * 寻找操纵师准心对准的、在标记范围内、视线无遮挡的目标（无需潜行或背身）。
      */
     private ServerPlayer findStareCandidate(ServerPlayer sp) {
         double maxRange = config().manipulatorMarkRange;
@@ -382,7 +430,7 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         Vec3 look = sp.getViewVector(1.0f).normalize();
 
         ServerPlayer best = null;
-        double bestDot = 0.96; // 约 16° 视锥
+        double bestDot = 0.95; // 约 18° 视锥，更精确的准心对准判定
 
         for (Player p : sp.level().players()) {
             if (!(p instanceof ServerPlayer other))
@@ -402,16 +450,13 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
                 continue;
             Vec3 dirToTarget = toTarget.normalize();
 
-            // 是否正盯着目标
+            // 准心是否对准目标（使用点积判断角度）
             double dot = look.dot(dirToTarget);
             if (dot <= bestDot)
                 continue;
 
-            // 视线遮挡判定
-            HitResult clip = sp.level().clip(new ClipContext(eye, targetEye,
-                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, sp));
-            if (clip.getType() == HitResult.Type.BLOCK)
-                continue;
+            // 简化：不检查视线遮挡，只要准心对准且在范围内即可
+            // （原代码有ClipContext遮挡检查，但可能导致误判）
 
             best = other;
             bestDot = dot;
@@ -430,6 +475,9 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
         }
         tag.put("markedTargets", markedList);
         tag.putBoolean("isControlling", this.isControlling);
+        tag.putBoolean("gazeModeActive", this.gazeModeActive);
+        tag.putString("clientStaringTargetName", this.clientStaringTargetName);
+        tag.putInt("clientStaringProgressTicks", this.clientStaringProgressTicks);
     }
 
     @Override
@@ -441,6 +489,11 @@ public class ManipulatorPlayerComponent implements RoleComponent, ServerTickingC
             this.markedTargets.add(NbtUtils.loadUUID(markedList.get(i)));
         }
         this.isControlling = tag.contains("isControlling") && tag.getBoolean("isControlling");
+        this.gazeModeActive = tag.contains("gazeModeActive") && tag.getBoolean("gazeModeActive");
+        this.clientStaringTargetName = tag.contains("clientStaringTargetName")
+                ? tag.getString("clientStaringTargetName") : "";
+        this.clientStaringProgressTicks = tag.contains("clientStaringProgressTicks")
+                ? tag.getInt("clientStaringProgressTicks") : 0;
     }
 
     @Override

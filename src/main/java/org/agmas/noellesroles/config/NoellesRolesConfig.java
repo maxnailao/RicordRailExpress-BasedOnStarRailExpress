@@ -566,7 +566,7 @@ public class NoellesRolesConfig implements ConfigData {
      * Manipulator - Control target cooldown in seconds
      */
 
-    public int manipulatorCooldown = 80;
+    public int manipulatorCooldown = 600;
 
     /**
      * Manipulator - Max distance (blocks) allowed to start controlling a marked target
@@ -579,9 +579,9 @@ public class NoellesRolesConfig implements ConfigData {
     public int manipulatorControlSeconds = 30;
 
     /**
-     * Manipulator - Seconds of uninterrupted staring required to mark a target
+     * Manipulator - Total cumulative staring seconds required to mark a target
      */
-    public int manipulatorMarkSeconds = 4;
+    public int manipulatorMarkSeconds = 20;
 
     /**
      * Manipulator - Max distance (blocks) to stare-mark a target
