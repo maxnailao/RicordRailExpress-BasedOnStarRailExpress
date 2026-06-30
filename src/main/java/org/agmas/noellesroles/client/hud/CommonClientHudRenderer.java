@@ -48,6 +48,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHudRender;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
@@ -1688,6 +1689,75 @@ public class CommonClientHudRenderer {
       // 显示切换药剂提示
       var toggleText = Component
           .translatable("hud.alchemist.switch_potion",
+              NoellesrolesClient.nextAbilityBind.getTranslatedKeyMessage())
+          .withStyle(ChatFormatting.GRAY);
+      guiGraphics.drawString(font, toggleText, xOffset - font.width(toggleText), dy, Color.WHITE.getRGB());
+    });
+
+    // 女巫HUD
+    RoleHudRenderCallback.EVENT.register(ModRoles.WITCH_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null)
+        return;
+      if (client.player == null)
+        return;
+      if (SREClient.gameComponent == null
+          || !SREClient.gameComponent.isRole(client.player, ModRoles.WITCH)) {
+        return;
+      }
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int yOffset = screenHeight - 10 - font.lineHeight;
+      int xOffset = screenWidth - 10;
+
+      var witchComponent = WitchPlayerComponent.KEY
+          .maybeGet(client.player).orElse(null);
+      if (witchComponent == null)
+        return;
+
+      int dy = yOffset;
+
+      // 显示当前选择的药水
+      int currentPotionIndex = witchComponent.getCurrentPotionIndex();
+      Component potionName = Component.translatable("potion.noellesroles.witch_"
+          + WitchPlayerComponent.getPotionKey(currentPotionIndex));
+      Component potionLabel = Component.translatable("hud.witch.current_potion")
+          .withStyle(ChatFormatting.WHITE);
+      guiGraphics.drawString(font, potionLabel, xOffset - font.width(potionLabel) - font.width(potionName), dy,
+          Color.WHITE.getRGB());
+      guiGraphics.drawString(font, potionName, xOffset - font.width(potionName), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      // 显示调制花费
+      int goldCost = WitchPlayerComponent.getPotionCost(currentPotionIndex);
+      int materialCost = WitchPlayerComponent.getMaterialCost(currentPotionIndex);
+      Component costText = Component.translatable("hud.witch.craft_cost", goldCost, materialCost)
+          .withStyle(ChatFormatting.GOLD);
+      guiGraphics.drawString(font, costText, xOffset - font.width(costText), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      // 显示当前药水的炼制次数
+      int craftCount = witchComponent.getCurrentPotionCraftCount();
+      int maxCraftCount = WitchPlayerComponent.MAX_CRAFT_COUNT;
+      Component countText = Component.translatable("hud.witch.craft_count", craftCount, maxCraftCount)
+          .withStyle(ChatFormatting.LIGHT_PURPLE);
+      guiGraphics.drawString(font, countText, xOffset - font.width(countText), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      // 显示蹲下获取素材倒计时
+      if (client.player.isShiftKeyDown()) {
+        int remainingSeconds = witchComponent.getMaterialGatherRemainingSeconds();
+        Component gatherText = Component.translatable("hud.witch.gather_countdown", remainingSeconds)
+            .withStyle(ChatFormatting.YELLOW);
+        guiGraphics.drawString(font, gatherText, xOffset - font.width(gatherText), dy, Color.WHITE.getRGB());
+        dy -= font.lineHeight + 4;
+      }
+
+      // 显示切换药水提示
+      var toggleText = Component
+          .translatable("hud.witch.switch_potion",
               NoellesrolesClient.nextAbilityBind.getTranslatedKeyMessage())
           .withStyle(ChatFormatting.GRAY);
       guiGraphics.drawString(font, toggleText, xOffset - font.width(toggleText), dy, Color.WHITE.getRGB());

@@ -1274,6 +1274,12 @@ public class ModEventsRegister {
             }
             // 清除全局墙位置注册表
             org.agmas.noellesroles.game.roles.innocence.builder.BuilderWallPositions.clearAll();
+            // 清除所有管家的临时家具
+            for (ServerPlayer player : world.players()) {
+                org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComp = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER
+                        .get(player);
+                housekeeperComp.clearAllFurniture();
+            }
             // 清除冒险家开启的路径点
             io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())
                     .setWaypointsVisibility(false);

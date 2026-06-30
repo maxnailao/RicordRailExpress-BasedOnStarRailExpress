@@ -34,6 +34,7 @@ import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerCo
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerRole;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
@@ -167,6 +168,7 @@ public class ModRoles {
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
+    public static final ResourceLocation WITCH_ID = Noellesroles.id("witch");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
     public static final ResourceLocation FIGHTER_ID = Noellesroles.id("fighter");
     public static final ResourceLocation WORKER_ID = Noellesroles.id("worker");
@@ -208,6 +210,8 @@ public class ModRoles {
     public static final ResourceLocation GREAT_DETECTIVE_ID = Noellesroles.id("great_detective");
     // 建筑师角色 ID
     public static final ResourceLocation BUILDER_ID = Noellesroles.id("builder");
+    // 管家角色 ID
+    public static final ResourceLocation HOUSEKEEPER_ID = Noellesroles.id("housekeeper");
     // 玉将军角色 ID
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
@@ -647,6 +651,24 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setComponentKey(ModComponents.BUILDER).setDefaultMax(1)
+            .setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(12);
+
+    /**
+     * 管家（平民阵营）。
+     * 技能：花费100金币在原地放置临时功能方块（床/沙发/马桶/音符盒），方块30秒后消失。
+     * 按 G 放置当前选中的家具，按 Shift+G 循环切换家具类型。
+     * 必须在落地时才能放置（空中不可使用）。
+     * 床为双格方块，其他为单格方块。
+     */
+    public static SRERole HOUSEKEEPER = TMMRoles.registerRole(new NormalRole(
+            HOUSEKEEPER_ID, // 角色 ID
+            new Color(80, 80, 80).getRGB(), // 深灰色 - 代表管家
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.HOUSEKEEPER).setDefaultMax(1)
             .setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(12);
 
     /**
@@ -1616,6 +1638,39 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             true // 隐藏计分板
     )).setNeutralForKiller(true).setCanSeeTeammateKiller(false);;
+
+    /**
+     * 女巫角色
+     * - 中立阵营（偏狼） (isInnocent = false)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 假心情系统
+     * - 无限体力
+     * - 隐藏计分板
+     * - 透视：所有玩家显示为浅红色边框
+     * - 被动：每20秒获取50金币
+     * - 技能：蹲下15秒获取素材（无声音），蹲下+技能键切换药水，技能键炼制药水
+     * - 药水清单（均为喷溅型）：
+     *   1. 速度1 15s  150金币 2素材
+     *   2. 缓慢2 10s  100金币 1素材
+     *   3. 急迫2 10s  200金币 1素材
+     *   4. 隐身1 5s   200金币 2素材
+     *   5. 失明1+黑暗1 8s  150金币 2素材
+     *   6. 转向受限 8s  150金币 1素材
+     *   7. 按键禁用 3s  150金币 1素材
+     * - 限制：每种药水只能炼两次
+     * - 胜利条件：跟随杀手阵营一同胜利
+     */
+    public static SRERole WITCH = TMMRoles.registerRole(new NormalRole(
+            WITCH_ID, // 角色 ID
+            new Color(200, 160, 230).getRGB(), // 浅紫色 - 代表女巫
+            false, // isInnocent = 非乘客阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺时间
+            true // 隐藏计分板
+    )).setComponentKey(WitchPlayerComponent.KEY)
+            .setNeutralForKiller(true).setCanSeeTeammateKiller(false)
+            .setCanUseInstinct(true).setCanSeeCoin(true);
 
     /**
      * 工程师角色

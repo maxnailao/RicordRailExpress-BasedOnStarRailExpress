@@ -81,6 +81,9 @@ public class RicesRoleRhapsody implements ModInitializer {
     // 建筑师技能包
     public static final CustomPacketPayload.Type<BuilderAbilityC2SPacket> BUILDER_ABILITY_PACKET = BuilderAbilityC2SPacket.ID;
 
+    // 管家技能包
+    public static final CustomPacketPayload.Type<HousekeeperAbilityC2SPacket> HOUSEKEEPER_ABILITY_PACKET = HousekeeperAbilityC2SPacket.ID;
+
     public static final CustomPacketPayload.Type<LockGameC2Packet> LOCK_GAME_PACKET = LockGameC2Packet.ID;
     public static final CustomPacketPayload.Type<KeyForgeGameC2Packet> KEY_FORGE_GAME_PACKET = KeyForgeGameC2Packet.ID;
     public static final CustomPacketPayload.Type<LootRequestC2SPacket> LOOT_REQUIRE_PACKET = LootRequestC2SPacket.ID;
@@ -298,6 +301,14 @@ public class RicesRoleRhapsody implements ModInitializer {
             slipperyGhostComponent.init();
         }
 
+        // ==================== 女巫角色处理 ====================
+        if (role.equals(ModRoles.WITCH)) {
+            // 重置女巫组件
+            org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent witchComponent =
+                org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(player);
+            witchComponent.init();
+        }
+
         // ==================== 工程师角色处理 ====================
         if (role.equals(ModRoles.ENGINEER)) {
             // 工程师不需要特殊组件，只需要商店访问权限
@@ -410,6 +421,12 @@ public class RicesRoleRhapsody implements ModInitializer {
         if (role.equals(ModRoles.BUILDER)) {
             org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent builderComponent = org.agmas.noellesroles.component.ModComponents.BUILDER.get(player);
             builderComponent.init();
+        }
+
+        // ==================== 管家角色处理 ====================
+        if (role.equals(ModRoles.HOUSEKEEPER)) {
+            org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComponent = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(player);
+            housekeeperComponent.init();
         }
         // if (role.equals(ModRoles.EXAMPLE_ROLE)) {
         // // 给予物品

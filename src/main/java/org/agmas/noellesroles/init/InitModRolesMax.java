@@ -101,6 +101,9 @@ public class InitModRolesMax {
         // 捣蛋鬼每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.PRANKSTER_ID, 1);
 
+        // 女巫每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.WITCH_ID, 1);
+
         // 不应该刷新
         Harpymodloader.setRoleMaximum(SpecialGameModeRoles.CUSTOM_PENDING, 0);
 

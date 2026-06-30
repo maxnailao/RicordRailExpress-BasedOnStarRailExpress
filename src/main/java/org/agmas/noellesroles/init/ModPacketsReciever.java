@@ -1254,6 +1254,38 @@ public class ModPacketsReciever {
           }
         });
 
+    // 管家技能包处理
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.HOUSEKEEPER_ABILITY_PACKET,
+        (payload, context) -> {
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (RoleSkill.blockForSpectator(context.player()))
+            return;
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+
+          if (!gameWorldComponent.isSkillAvailable) {
+            player.displayClientMessage(
+                Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+            return;
+          }
+
+          if (gameWorldComponent.isRole(player, ModRoles.HOUSEKEEPER)) {
+            org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComponent = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER
+                .get(player);
+
+            // 蹲下按技能键切换家具类型
+            if (payload.shiftDown()) {
+              housekeeperComponent.cycleType();
+              return;
+            }
+
+            // 放置家具
+            housekeeperComponent.placeFurniture();
+            ConfigWorldComponent.onPlayerUsedSkill(player);
+          }
+        });
+
     // 葬仪模式切换包处理
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORTICIAN_TOGGLE_MODE_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))

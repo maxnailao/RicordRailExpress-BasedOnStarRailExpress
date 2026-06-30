@@ -523,6 +523,35 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 女巫：始终透视所有玩家（浅红色边框）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.WITCH))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (targetPlayer.isSpectator())
+                    return -1;
+                if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                    return -1;
+                if (isTargetInvisibleToInstinct(targetPlayer))
+                    return -2;
+                // 浅红色边框
+                return new java.awt.Color(255, 128, 128).getRGB();
+            }
+            return -1;
+        });
+
 
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (SREClient.gameComponent == null) {

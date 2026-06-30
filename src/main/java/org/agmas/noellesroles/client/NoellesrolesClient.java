@@ -448,6 +448,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 (payload, context) -> {
                     ClientWallManager.removeWall(payload.wallId());
                 });
+
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
             final var p = context.player();
             final var level = context.client().level;

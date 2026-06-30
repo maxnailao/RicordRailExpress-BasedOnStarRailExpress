@@ -213,6 +213,12 @@ public class ModRolesInitialEventRegister {
                 alchemistComponent.init();
                 return;
             }
+            if (role.identifier().equals(ModRoles.WITCH.identifier())) {
+                // 女巫角色初始化
+                var witchComponent = org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(player);
+                witchComponent.init();
+                return;
+            }
             if (role.identifier().equals(ModRoles.SHUSHI.identifier())) {
                 // 术士角色初始化
                 var shushiComponent = ShuShiPlayerComponent.KEY.get(player);
@@ -933,6 +939,21 @@ public class ModRolesInitialEventRegister {
                             return true;
                         }).shifted(true).announceToSelf(false).showOnHud(false).build());
 
+        // 女巫技能注册：普通按 G 炼制药水，蹲下+ G 切换药水
+        RoleSkill.register(ModRoles.WITCH,
+                RoleSkill.skill(SRE.id("witch_craft"),
+                        "skill.noellesroles.witch.craft",
+                        context -> {
+                            org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(context.player()).craftPotion();
+                            return true;
+                        }).build(),
+                RoleSkill.skill(SRE.id("witch_switch_potion"),
+                        "skill.noellesroles.witch.switch_potion",
+                        context -> {
+                            org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(context.player()).switchPotion();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
         // ==================== 建筑师技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式 ====================
         RoleSkill.register(ModRoles.BUILDER,
                 RoleSkill.skill(SRE.id("builder_ability"),
@@ -949,6 +970,21 @@ public class ModRolesInitialEventRegister {
                         "skill.noellesroles.builder.toggle_mode",
                         context -> {
                             org.agmas.noellesroles.component.ModComponents.BUILDER.get(context.player()).switchMode();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 管家技能注册：普通按 G 放置家具，按 Shift+G 切换家具类型 ====================
+        RoleSkill.register(ModRoles.HOUSEKEEPER,
+                RoleSkill.skill(SRE.id("housekeeper_ability"),
+                        "skill.noellesroles.housekeeper.ability",
+                        context -> {
+                            var comp = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(context.player());
+                            return comp.placeFurniture();
+                        }).build(),
+                RoleSkill.skill(SRE.id("housekeeper_cycle_type"),
+                        "skill.noellesroles.housekeeper.cycle_type",
+                        context -> {
+                            org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(context.player()).cycleType();
                             return true;
                         }).shifted(true).announceToSelf(false).showOnHud(false).build());
 

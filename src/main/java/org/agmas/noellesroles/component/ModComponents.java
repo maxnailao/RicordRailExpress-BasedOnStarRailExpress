@@ -12,6 +12,7 @@ import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
@@ -29,6 +30,7 @@ import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
@@ -145,6 +147,8 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<SlipperyGhostPlayerComponent> PRANKSTER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "prankster"),
       SlipperyGhostPlayerComponent.class);
+
+  public static final ComponentKey<WitchPlayerComponent> WITCH = WitchPlayerComponent.KEY;
 
   public static final ComponentKey<BroadcasterPlayerComponent> BROADCASTER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "broadcaster"),
@@ -398,6 +402,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 画家组件 - 平民阵营，绘画灵感、求索、挚友技能
   public static final ComponentKey<PainterPlayerComponent> PAINTER = PainterPlayerComponent.KEY;
 
+  // 管家组件 - 平民阵营，放置临时功能家具方块
+  public static final ComponentKey<HousekeeperPlayerComponent> HOUSEKEEPER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "housekeeper"),
+      HousekeeperPlayerComponent.class);
+
   // 建筑师组件 - 平民阵营，建造/拆除客户端墙
   public static final ComponentKey<BuilderPlayerComponent> BUILDER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "builder"),
@@ -574,6 +583,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, PRANKSTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SlipperyGhostPlayerComponent::new);
+
+    // 注册女巫组件 - 存蹲下素材获取、被动收入、药剂选择、调制次数
+    registry.beginRegistration(Player.class, WITCH)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(WitchPlayerComponent::new);
 
     registry.beginRegistration(Player.class, panda)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -897,6 +911,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, PAINTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(PainterPlayerComponent::new);
+
+    // 注册管家组件 - 存储当前家具类型
+    registry.beginRegistration(Player.class, HOUSEKEEPER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(HousekeeperPlayerComponent::new);
 
     // 注册建筑师组件 - 存储建造/拆除模式、冷却时间
     registry.beginRegistration(Player.class, BUILDER)
