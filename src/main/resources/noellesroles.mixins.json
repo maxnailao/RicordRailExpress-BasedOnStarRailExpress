@@ -6,6 +6,7 @@
   "plugin": "org.agmas.noellesroles.client.NRMixinPlugin",
   "mixins": [
     "AbstractContainerMenuMixin",
+    "AttackCooldownCancelMixin",
     "DecServerJoinPlayer",
     "FishingHookShouldStopMixin",
     "FishingHookAccessor",
@@ -69,6 +70,7 @@
     "roles.thief.ThiefsHonorMixin",
     "roles.veteran.VeteranKnifeLeftClickMixin",
     "roles.writter.WrittenBookMixin",
+    "roles.wushujia.WushujiaHurtMixin",
     "time_stop.PlayerMixin",
     "time_stop.ServerPacketBlocker"
   ],
@@ -130,6 +132,7 @@
     "client.roles.swapper.KeyBindingMixin",
     "client.roles.swapper.SwapperScreenMixin",
     "client.roles.voodoo.VoodooScreenMixin",
+    "client.roles.blackke.BlackkeScreenMixin",
     "client.roles.voodoo.LengxiaoScreenMixin",
     "client.roles.vulture.VultureEatenBodyMixin",
     "client.roles.wayfarer.TargetEntityHudmixin",

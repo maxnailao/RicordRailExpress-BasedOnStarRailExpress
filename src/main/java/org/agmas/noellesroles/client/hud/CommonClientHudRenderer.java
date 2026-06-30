@@ -38,6 +38,7 @@ import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerC
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
@@ -1193,6 +1194,48 @@ public class CommonClientHudRenderer {
             .withStyle(ChatFormatting.GREEN);
 
         guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+            Color.WHITE.getRGB());
+      }
+      return;
+    });
+    RoleHudRenderCallback.EVENT.register(ModRoles.WUSHUJIA_ID, (guiGraphics, deltaTracker) -> {
+      // 渲染武术家的提示
+      var client = Minecraft.getInstance();
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int yOffset = screenHeight - 10 - font.lineHeight;
+      int xOffset = screenWidth - 10;
+      var comp = WushujiaPlayerComponent.KEY.get(client.player);
+
+      if (comp.isInFlow()) {
+        // 心流状态激活中
+        var flowText = Component
+            .translatable("hud.wushujia.flow_active", comp.getFlowRemainingSeconds())
+            .withStyle(ChatFormatting.GOLD);
+        guiGraphics.drawString(font, flowText, xOffset - font.width(flowText), yOffset - font.lineHeight * 2 - 8,
+            Color.WHITE.getRGB());
+
+        if (comp.comboCount > 0) {
+          var comboText = Component
+              .translatable("hud.wushujia.combo", comp.comboCount)
+              .withStyle(ChatFormatting.YELLOW);
+          guiGraphics.drawString(font, comboText, xOffset - font.width(comboText), yOffset - font.lineHeight - 4,
+              Color.WHITE.getRGB());
+        }
+      } else if (comp.cooldown > 0) {
+        // 冷却中
+        var cdText = Component
+            .translatable("hud.wushujia.cooldown", comp.cooldown / 20)
+            .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, cdText, xOffset - font.width(cdText), yOffset - font.lineHeight - 4,
+            Color.WHITE.getRGB());
+      } else {
+        // 可以使用技能
+        var readyText = Component
+            .translatable("hud.wushujia.ready", NoellesrolesClient.abilityBind.getTranslatedKeyMessage())
+            .withStyle(ChatFormatting.GREEN);
+        guiGraphics.drawString(font, readyText, xOffset - font.width(readyText), yOffset - font.lineHeight - 4,
             Color.WHITE.getRGB());
       }
       return;

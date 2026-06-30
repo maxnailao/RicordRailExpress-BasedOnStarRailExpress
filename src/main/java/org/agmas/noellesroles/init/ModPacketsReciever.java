@@ -368,6 +368,24 @@ public class ModPacketsReciever {
         morphlingPlayerComponent.startMorph(payload.player());
       }
     });
+    // Hacker target selection packet handler
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.ID, (payload, context) -> {
+      var hacker = context.player();
+      context.server().execute(() -> {
+        if (hacker.hasEffect(ModEffects.SAFE_TIME)) return; // Safe time
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(hacker.level());
+        if (!gameWorldComponent.isRunning()) return;
+        if (!gameWorldComponent.isRole(hacker, ModRoles.BLACKKE)) return;
+
+        if (payload.target() == null) return;
+        var target = hacker.level().getPlayerByUUID(payload.target());
+        if (target == null) return;
+        if (!(target instanceof ServerPlayer targetServerPlayer)) return;
+
+        var blackkeComponent = org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY.get(hacker);
+        blackkeComponent.useSkillOnTarget(targetServerPlayer);
+      });
+    });
     // newspaperHandler
     ServerPlayNetworking.registerGlobalReceiver(EditNewspaperPacket.ID, (payload, context) -> {
       var player = context.player();

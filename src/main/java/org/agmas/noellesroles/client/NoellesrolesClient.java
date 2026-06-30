@@ -222,6 +222,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
+        // 视觉干扰花屏覆盖渲染
+        org.agmas.noellesroles.client.hud.VisualInterferenceOverlay.register();
         // 阿蒙终幕「阿蒙时刻」：全屏稍偏灰滤镜。
         org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT.register((g, dt) -> {
             if (org.agmas.noellesroles.client.ClientAmonState.finaleActive) {

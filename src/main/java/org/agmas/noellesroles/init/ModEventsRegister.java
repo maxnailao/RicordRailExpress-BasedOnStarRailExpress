@@ -95,6 +95,7 @@ import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
+import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPunchHandler;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooDeathHandler;
@@ -1253,6 +1254,7 @@ public class ModEventsRegister {
         OnGameEnd.EVENT.register((world, gameWorldComponent) -> {
             nianShouFirecrackersDistributedThisGame = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
+            WushujiaPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
 
@@ -2115,6 +2117,7 @@ public class ModEventsRegister {
         OnGameStarted.EVENT.register((serverLevel) -> {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
+            WushujiaPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
 
             // 黑警击杀数和黑警时刻状态重置

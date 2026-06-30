@@ -82,6 +82,8 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
@@ -168,6 +170,7 @@ public class ModRoles {
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
+    public static final ResourceLocation BLACKKE_ID = Noellesroles.id("blackke");
     public static final ResourceLocation WITCH_ID = Noellesroles.id("witch");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
     public static final ResourceLocation FIGHTER_ID = Noellesroles.id("fighter");
@@ -264,6 +267,8 @@ public class ModRoles {
     public static final ResourceLocation LOST_KILLER_ID = Noellesroles.id("lost_killer");
     // 鬼魅角色 ID - 杀手阵营
     public static final ResourceLocation BETTER_KILLER_GHOST_ID = Noellesroles.id("betterkillerghost");
+    // 暗影角色 ID - 杀手阵营
+    public static final ResourceLocation GHOSTOFANYING_ID = Noellesroles.id("ghostofanying");
     public static final ResourceLocation MANIPULATOR_ID = Noellesroles.id("manipulator");
     public static final ResourceLocation BANDIT_ID = Noellesroles.id("bandit");
     public static final ResourceLocation BLOOD_FEUDIST_ID = Noellesroles.id("blood_feudist");
@@ -828,6 +833,24 @@ public class ModRoles {
                     true)
                     .setComponentKey(ModComponents.NINJA)
                     .setCanSeeCoin(true)
+                    .setDefaultMax(1));
+
+    // 暗影（杀手阵营）
+    // 技能：暗影步 - 隐身+自动位移，最多存储3次，每次回转CD30秒，开局1次
+    // 商店同普通杀手
+    public static SRERole GHOSTOFANYING = TMMRoles.registerRole(
+            new NormalRole(
+                    GHOSTOFANYING_ID,
+                    new Color(130, 40, 100).getRGB(), // 紫色中带红
+                    false,  // 非乘客阵营（杀手）
+                    true,   // 有杀手能力
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    Integer.MAX_VALUE, // 无限冲刺
+                    true    // 隐藏计分板
+            )
+                    .setComponentKey(ModComponents.GHOSTOFANYING)
+                    .setCanSeeCoin(true)
+                    .setCanSeeTime(true)
                     .setDefaultMax(1));
 
     /**
@@ -1671,6 +1694,27 @@ public class ModRoles {
     )).setComponentKey(WitchPlayerComponent.KEY)
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false)
             .setCanUseInstinct(true).setCanSeeCoin(true);
+
+    /**
+     * Hacker role
+     * - Civilian faction (isInnocent = true)
+     * - Cannot use killer abilities (canUseKiller = false)
+     * - Real mood system
+     * - Limited sprint time
+     * - Skill: Spend 125 coins to select a player in inventory, apply Audio and Visual Interference for 30s each, 60s cooldown
+     * - When target is Commander, force switch to normal channel for 30 seconds
+     * - When target is spectator, effects are not applied but coins and cooldown are still consumed
+     */
+    public static SRERole BLACKKE = TMMRoles.registerRole(new NormalRole(
+            BLACKKE_ID, // Role ID
+            new Color(0, 200, 83).getRGB(), // Hacker green
+            true, // isInnocent = Civilian faction
+            false, // canUseKiller = No killer ability
+            SRERole.MoodType.REAL, // Real mood
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // Limited sprint time
+            false // Show scoreboard
+    )).setComponentKey(org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY)
+            .setCanSeeCoin(true);
 
     /**
      * 工程师角色
@@ -2932,6 +2976,28 @@ public class ModRoles {
             );
         }
     }).setCanSeeCoin(true).setCanSeeTime(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
+
+    /**
+     * 武术家角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限体力
+     * - 显示计分板
+     * - 技能：心流状态（10s速度I+连击debuff）
+     * - 被动：空手左键击打其他玩家
+     */
+    public static final ResourceLocation WUSHUJIA_ID = Noellesroles.id("wushujia");
+
+    public static SRERole WUSHUJIA = TMMRoles.registerRole(new NormalRole(
+            WUSHUJIA_ID,
+            new Color(255, 179, 0).getRGB(), // 橙黄色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),  // 有限体力
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(true).setComponentKey(ModComponents.WUSHUJIA);
 
     /**
      * 初始化并注册所有角色

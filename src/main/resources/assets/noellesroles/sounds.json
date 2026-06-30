@@ -158,5 +158,13 @@
         "stream": false
       }
     ]
+  },
+  "noellesroles.oppoafive": {
+    "sounds": [
+      {
+        "name": "noellesroles:oppoafive",
+        "stream": false
+      }
+    ]
   }
 }

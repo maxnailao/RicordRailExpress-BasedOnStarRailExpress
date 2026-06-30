@@ -325,6 +325,32 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B4513));
 
     /**
+     * 听觉干扰
+     * - 有害效果，橘红色
+     * - 受影响的玩家耳边会循环播放干扰音频，无法通过调节游戏音量屏蔽
+     * - 使用 SoundSource.MASTER 确保音频始终播放
+     */
+    public static final Holder<MobEffect> TINGJUEGANRAO = register("tingjueganrao",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFF6600));
+
+    /**
+     * 视觉干扰
+     * - 有害效果，紫灰色
+     * - 受影响的玩家屏幕会出现随机分布的白色、灰色、黑色像素点，造成花屏效果
+     * - 客户端 HUD overlay 渲染，见 {@code VisualInterferenceOverlay}
+     */
+    public static final Holder<MobEffect> SHIJUEGANRAO = register("shijueganrao",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x9966CC));
+
+    /**
+     * 攻击间隔取消
+     * - 有益效果，金色
+     * - 拥有此效果的玩家在效果持续时间内左键攻击间隔取消
+     */
+    public static final Holder<MobEffect> GONGJIJIANGEOFF = register("gongjijiangeoff",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFD700));
+
+    /**
      * 注册药水效果到注册表
      */
 

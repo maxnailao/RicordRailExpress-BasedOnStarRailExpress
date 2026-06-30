@@ -51,6 +51,7 @@
         "noellesroles:psychologist",
         "noellesroles:prankster",
         "noellesroles:witch",
+        "noellesroles:blackke",
         "noellesroles:admirer",
         "noellesroles:gambler",
         "noellesroles:recorder",
@@ -94,7 +95,8 @@
         "noellesroles:sea_king",
         "noellesroles:shooting_frenzy",
         "noellesroles:watcher",
-        "noellesroles:water_ghost"
+        "noellesroles:water_ghost",
+        "noellesroles:wushujia"
       ]
     },
     "modifiers": {
@@ -208,9 +210,11 @@
         "noellesroles:pachuri",
         "noellesroles:jojo",
         "noellesroles:hoan_meirin",
+        "noellesroles:wushujia",
         "noellesroles:accountant",
         "noellesroles:alchemist",
         "noellesroles:witch",
+        "noellesroles:blackke",
         "noellesroles:candlebearer",
         "noellesroles:diver",
         "noellesroles:guest_ghost",
@@ -328,9 +332,11 @@
         "noellesroles:pachuri",
         "noellesroles:jojo",
         "noellesroles:hoan_meirin",
+        "noellesroles:wushujia",
         "noellesroles:accountant",
         "noellesroles:alchemist",
         "noellesroles:witch",
+        "noellesroles:blackke",
         "noellesroles:candlebearer",
         "starrailexpress:discovery_civilian",
         "noellesroles:diver",

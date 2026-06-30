@@ -72,6 +72,9 @@ public class NRSounds {
     //黑警
     public static final SoundEvent CORRUPT_COP_TIME = registrar.create("noellesroles.corruptcoptime");
 
+    // 听觉干扰
+    public static final SoundEvent OPPOAFIVE = registrar.create("noellesroles.oppoafive");
+
     public static void initialize() {
         registrar.registerEntries();
     }

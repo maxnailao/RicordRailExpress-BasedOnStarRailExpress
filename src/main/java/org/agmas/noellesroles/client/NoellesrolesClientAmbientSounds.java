@@ -73,5 +73,15 @@ public class NoellesrolesClientAmbientSounds {
               return false;
             },
             0.8f, 10, 10));
+    // 听觉干扰：受影响的玩家耳边循环播放干扰音频，使用 MASTER 声道确保无法被音量设置屏蔽
+    AmbienceUtil.registerBackgroundAmbience(
+        new MyBackgroundAmbience(NRSounds.OPPOAFIVE, SoundSource.MASTER,
+            player -> {
+              var client = Minecraft.getInstance();
+              if (client == null || client.player == null)
+                return false;
+              return client.player.hasEffect(ModEffects.TINGJUEGANRAO);
+            },
+            1.0f, 2, 2));
   }
 }

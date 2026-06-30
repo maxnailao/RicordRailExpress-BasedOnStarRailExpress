@@ -309,6 +309,14 @@ public class RicesRoleRhapsody implements ModInitializer {
             witchComponent.init();
         }
 
+        // ==================== Hacker role handling ====================
+        if (role.equals(ModRoles.BLACKKE)) {
+            // Reset hacker component
+            org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent blackkeComponent =
+                org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY.get(player);
+            blackkeComponent.init();
+        }
+
         // ==================== 工程师角色处理 ====================
         if (role.equals(ModRoles.ENGINEER)) {
             // 工程师不需要特殊组件，只需要商店访问权限
@@ -427,6 +435,12 @@ public class RicesRoleRhapsody implements ModInitializer {
         if (role.equals(ModRoles.HOUSEKEEPER)) {
             org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComponent = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(player);
             housekeeperComponent.init();
+        }
+
+        // ==================== 暗影角色处理 ====================
+        if (role.equals(ModRoles.GHOSTOFANYING)) {
+            org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent ghostofanyingComponent = org.agmas.noellesroles.component.ModComponents.GHOSTOFANYING.get(player);
+            ghostofanyingComponent.init();
         }
         // if (role.equals(ModRoles.EXAMPLE_ROLE)) {
         // // 给予物品

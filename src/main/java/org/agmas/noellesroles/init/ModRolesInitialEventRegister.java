@@ -107,6 +107,8 @@ public class ModRolesInitialEventRegister {
         BloodFeudistPlayerComponent.registerEvents();
         // 初始化熊孩子音频事件
         org.agmas.noellesroles.game.roles.innocence.child.ChildPunchHandler.register();
+        // 初始化武术家击打事件
+        org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPunchHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
@@ -217,6 +219,12 @@ public class ModRolesInitialEventRegister {
                 // 女巫角色初始化
                 var witchComponent = org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(player);
                 witchComponent.init();
+                return;
+            }
+            if (role.identifier().equals(ModRoles.BLACKKE.identifier())) {
+                // Hacker role initialization
+                var blackkeComponent = org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY.get(player);
+                blackkeComponent.init();
                 return;
             }
             if (role.identifier().equals(ModRoles.SHUSHI.identifier())) {
@@ -1338,6 +1346,27 @@ public class ModRolesInitialEventRegister {
                     DIOPlayerComponent.KEY.get(context.player()).tryActivateTimeStop();
                     return true;
                 }).build());
+
+        // 武术家技能注册：心流状态，10s持续，冷却60s
+        RoleSkill.register(ModRoles.WUSHUJIA, RoleSkill.skill(
+                SRE.id("wushujia_flow"),
+                "skill.noellesroles.wushujia.flow",
+                context -> {
+                    var comp = ModComponents.WUSHUJIA.get(context.player());
+                    return comp.activateFlow();
+                }).cooldownSeconds(60).build());
+
+        // 暗影技能注册：暗影步（隐身+自动位移+粒子）
+        // 次数和回转冷却由 GhostofanyingPlayerComponent 内部管理
+        RoleSkill.register(ModRoles.GHOSTOFANYING, RoleSkill.skill(
+                SRE.id("ghostofanying_shadow_step"),
+                "skill.noellesroles.ghostofanying.shadow_step",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = ModComponents.GHOSTOFANYING.get(player);
+                    if (comp == null) return false;
+                    return comp.useShadowStep();
+                }).toggleable(true).announceToSelf(false).showOnHud(true).build());
     }
 
 }

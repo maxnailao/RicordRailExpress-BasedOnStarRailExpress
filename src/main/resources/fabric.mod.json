@@ -144,6 +144,7 @@
       "noellesroles:water_ghost",
       "noellesroles:alchemist",
       "noellesroles:witch",
+      "noellesroles:blackke",
       "noellesroles:shushi",
       "noellesroles:food_drink",
       "noellesroles:diver",
@@ -243,9 +244,11 @@
       "noellesroles:dumb_woman",
       "noellesroles:zhizhang",
       "noellesroles:guardian",
+      "noellesroles:wushujia",
       "noellesroles:nostalgist",
       "noellesroles:undead_lord",
-      "noellesroles:diviner"
+      "noellesroles:diviner",
+      "noellesroles:ghostofanying"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

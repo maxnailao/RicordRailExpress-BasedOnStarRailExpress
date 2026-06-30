@@ -30,6 +30,8 @@ import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
@@ -149,6 +151,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       SlipperyGhostPlayerComponent.class);
 
   public static final ComponentKey<WitchPlayerComponent> WITCH = WitchPlayerComponent.KEY;
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent> BLACKKE =
+      org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY;
 
   public static final ComponentKey<BroadcasterPlayerComponent> BROADCASTER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "broadcaster"),
@@ -523,6 +528,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "guardian"),
                   org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent.class);
 
+  // 武术家组件 - 平民阵营，心流状态+连击debuff
+  public static final ComponentKey<WushujiaPlayerComponent> WUSHUJIA = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "wushujia"),
+                  WushujiaPlayerComponent.class);
+
+  // 暗影组件 - 杀手阵营，暗影步技能（隐身+自动位移+粒子）
+  public static final ComponentKey<GhostofanyingPlayerComponent> GHOSTOFANYING = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghostofanying"),
+                  GhostofanyingPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -588,6 +605,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, WITCH)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(WitchPlayerComponent::new);
+
+    // Register hacker component - stores commander channel restore countdown
+    registry.beginRegistration(Player.class, BLACKKE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent::new);
 
     registry.beginRegistration(Player.class, panda)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1048,6 +1070,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, GUARDIAN)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent::new);
+
+    // 注册武术家组件 - 平民阵营，心流状态+连击debuff
+    registry.beginRegistration(Player.class, WUSHUJIA)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(WushujiaPlayerComponent::new);
+
+    // 注册暗影组件 - 杀手阵营，暗影步技能
+    registry.beginRegistration(Player.class, GHOSTOFANYING)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(GhostofanyingPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //
