@@ -431,6 +431,11 @@ public class NoellesrolesClient implements ClientModInitializer {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(DoomedSinnerFateRevealS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> context.client()
+                    .setScreen(new org.agmas.noellesroles.client.screen.DoomedSinnerFateScreen(payload)));
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(ShowCustomNewspaperPacket.ID, (payload, context) -> {
             context.client().setScreen(new NewspaperScreen(payload.pages(),
                     (payload.title().orElse(Component.literal(""))), (payload.author().orElse(Component.literal("")))));
@@ -1048,7 +1053,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     });
                 });
 
-        DetectiveListenStepHandler.registerEvents();
+        AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
         // 注册零一五第二枪客户端处理器
         // ClientPlayNetworking.registerGlobalReceiver(
@@ -1368,7 +1373,6 @@ public class NoellesrolesClient implements ClientModInitializer {
             tooltipHelper(TMMItems.DEFENSE_VIAL, itemStack, list);
             tooltipHelper(ModItems.DELUSION_VIAL, itemStack, list);
             tooltipHelper(ModItems.ONCE_REVOLVER, itemStack, list);
-            tooltipHelper(ModItems.SHORT_SHOTGUN, itemStack, list);
             tooltipHelper(FunnyItems.PROBLEM_SET, itemStack, list);
             tooltipHelper(FunnyItems.SHISIYE, itemStack, list);
             tooltipHelper(FunnyItems.BOWEN_BADGE, itemStack, list);

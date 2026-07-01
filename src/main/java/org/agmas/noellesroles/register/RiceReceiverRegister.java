@@ -31,7 +31,7 @@ import org.agmas.noellesroles.content.entity.LockEntityManager;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
@@ -448,7 +448,7 @@ public class RiceReceiverRegister {
                 return;
 
             // 获取探员组件
-            DetectivePlayerComponent component = ModComponents.AGENT.get(context.player());
+            AgentPlayerComponent component = ModComponents.AGENT.get(context.player());
 
             // 检查技能冷却
             if (!component.canUseAbility()) {
@@ -460,7 +460,7 @@ public class RiceReceiverRegister {
 
             // 获取玩家商店组件，检查金币
             SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(context.player());
-            if (shopComponent.balance < DetectivePlayerComponent.INSPECT_COST) {
+            if (shopComponent.balance < AgentPlayerComponent.INSPECT_COST) {
                 context.player().displayClientMessage(
                         Component.translatable("message.noellesroles.detective.insufficient_funds"), true);
                 return;
@@ -482,10 +482,10 @@ public class RiceReceiverRegister {
             }
 
             // 扣除金币
-            shopComponent.addToBalance(-DetectivePlayerComponent.INSPECT_COST);
+            shopComponent.addToBalance(-AgentPlayerComponent.INSPECT_COST);
 
             // 设置冷却
-            component.setCooldown(DetectivePlayerComponent.INSPECT_COOLDOWN);
+            component.setCooldown(AgentPlayerComponent.INSPECT_COOLDOWN);
 
             // 开始审查
             component.startInspecting((ServerPlayer) target);

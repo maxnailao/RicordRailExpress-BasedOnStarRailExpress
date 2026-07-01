@@ -5,8 +5,8 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 探员 HUD Mixin
@@ -15,13 +15,13 @@ import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
  * - 审查技能冷却时间
  * - 技能就绪提示
  */
-public class DetectiveHud {
+public class AgentHud {
     public static void register() {
         RoleHudRenderCallback.EVENT.register(ModRoles.AGENT_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
 
             // 获取探员组件
-            DetectivePlayerComponent detectiveComponent = DetectivePlayerComponent.KEY.get(client.player);
+            AgentPlayerComponent detectiveComponent = AgentPlayerComponent.KEY.get(client.player);
 
             // 渲染位置 - 右下角
             int screenWidth = client.getWindow().getGuiScaledWidth();

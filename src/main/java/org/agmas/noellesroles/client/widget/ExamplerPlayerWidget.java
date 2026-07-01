@@ -38,7 +38,7 @@ public class ExamplerPlayerWidget extends Button {
         super(x, y, 16, 16, Component.nullToEmpty(target.getProfile().getName()), (a) -> {
             AbstractClientPlayer player = Minecraft.getInstance().player;
             if (player != null && (SREAbilityPlayerComponent.KEY.get(player)).cooldown <= 0
-                    && (SREPlayerShopComponent.KEY.get(player)).balance >= 50) {
+                    && (SREPlayerShopComponent.KEY.get(player)).balance >= 100) {
                 ClientPlayNetworking.send(new AbilityWithTargetC2SPacket(target.getProfile().getId()));
             }
         }, DEFAULT_NARRATION);
@@ -64,7 +64,7 @@ public class ExamplerPlayerWidget extends Button {
         SREAbilityPlayerComponent component = SREAbilityPlayerComponent.KEY.get(player);
         SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(player);
 
-        if (component.cooldown <= 0 && !player.hasEffect(ModEffects.SAFE_TIME) && shopComponent.balance >= 50) {
+        if (component.cooldown <= 0 && !player.hasEffect(ModEffects.SAFE_TIME) && shopComponent.balance >= 100) {
             super.renderWidget(context, mouseX, mouseY, delta);
             context.blitSprite(ShopEntry.Type.POISON.getTexture(), this.getX() - 7, this.getY() - 7, 30, 30);
             PlayerFaceRenderer.draw(context, target.getSkin().texture(), this.getX(), this.getY(), 16);
@@ -90,7 +90,7 @@ public class ExamplerPlayerWidget extends Button {
             context.setColor(1f, 1f, 1f, 1f);
             context.drawString(Minecraft.getInstance().font, String.valueOf(component.cooldown / 20),
                     this.getX(), this.getY(), Color.RED.getRGB(), true);
-        } else if (shopComponent.balance < 50) {
+        } else if (shopComponent.balance < 100) {
             super.renderWidget(context, mouseX, mouseY, delta);
             context.setColor(0.25f, 0.25f, 0.25f, 0.5f);
             context.blitSprite(ShopEntry.Type.POISON.getTexture(), this.getX() - 7, this.getY() - 7, 30, 30);
@@ -103,7 +103,7 @@ public class ExamplerPlayerWidget extends Button {
                         this.getY() - 9);
             }
             context.setColor(1f, 1f, 1f, 1f);
-            context.drawString(Minecraft.getInstance().font, String.valueOf(50 - shopComponent.balance),
+            context.drawString(Minecraft.getInstance().font, String.valueOf(100 - shopComponent.balance),
                     this.getX(), this.getY(), Color.YELLOW.getRGB(), true);
         }
 

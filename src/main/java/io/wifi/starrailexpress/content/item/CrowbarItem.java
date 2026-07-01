@@ -38,8 +38,8 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
             lowerPos = lowerPos.below();
             entity = world.getBlockEntity(lowerPos);
             if (!(entity instanceof SmallDoorBlockEntity)) {
-                throw new RuntimeException(
-                        String.format("Cannot find lowerPos for SmallDoorBlockEntity at %s", context.getClickedPos()));
+                // 不是门，跳过
+                return InteractionResult.PASS;
             }
         }
         BlockState state = world.getBlockState(lowerPos);

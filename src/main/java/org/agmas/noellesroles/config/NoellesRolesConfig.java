@@ -362,6 +362,26 @@ public class NoellesRolesConfig implements ConfigData {
      */
     public int jadeGeneralStunSeconds = 2;
 
+    /**
+     * Ghost Eye / 杨间 (鬼眼·杨间) - Passive scan interval in seconds
+     */
+    public int ghostEyeScanInterval = 16;
+
+    /**
+     * Ghost Eye - Domain (诡域) skill cooldown in seconds
+     */
+    public int ghostEyeDomainCooldown = 70;
+
+    /**
+     * Ghost Eye - Domain duration in seconds
+     */
+    public int ghostEyeDomainDuration = 6;
+
+    /**
+     * Ghost Eye - Domain radius in blocks
+     */
+    public int ghostEyeDomainRadius = 12;
+
 
 
     // ==================== Diviner (占卜家) ====================
@@ -369,10 +389,10 @@ public class NoellesRolesConfig implements ConfigData {
     public int divinerCooldown = 60;
     /** Diviner - Crystal ball targeting range in blocks */
     public double divinerRange = 4.0;
+    /** Diviner - Crystal ball shop price (coins) */
+    public int divinerCrystalBallPrice = 100;
 
     // ==================== Photographer (摄影师) 画框传送 ====================
-    /** Photographer - 画框单价（金币） */
-    public int photographerFramePrice = 150;
     /** Photographer - 每局最多购买画框次数 */
     public int photographerFrameMaxBuy = 2;
     /** Photographer - 穿越画框赋予的失明秒数 */
@@ -383,6 +403,10 @@ public class NoellesRolesConfig implements ConfigData {
     public double photographerFrameTriggerInflate = 0.25;
     /** Photographer - 单个画框最多可传送玩家的次数（用尽后画框失效） */
     public int photographerFrameMaxTeleports = 8;
+    /** Photographer - 画框传送的最大水平距离（方块，<=0 表示不限制） */
+    public double photographerFrameMaxDistance = 256.0;
+    /** Photographer - 画框传送的最大垂直(Y轴)距离（方块，<=0 表示不限制） */
+    public double photographerFrameMaxYDistance = 12.0;
 
     // ==================== Delayer (滞时鬼) ====================
     /** Delayer - Rewind skill: seconds between anchoring and the automatic rewind */
@@ -407,8 +431,6 @@ public class NoellesRolesConfig implements ConfigData {
     public double wizardFireArrowRange = 30.0;
     /** Wizard - Max players a single fire arrow can pierce */
     public int wizardFireArrowMaxPierce = 2;
-    /** Wizard - Fire arrow hits required on one target before delayed death */
-    public int wizardFireArrowHitsToKill = 2;
     /** Wizard - Fire arrow delayed death seconds after enough hits */
     public int wizardFireArrowDeathDelaySeconds = 3;
     /** Wizard - Fire arrow (staff projectile) cooldown in seconds between shots */
@@ -443,8 +465,6 @@ public class NoellesRolesConfig implements ConfigData {
     public double wizardFireballRadius = 4.0;
     /** Wizard - Max players killed by one nine-ring fireball */
     public int wizardFireballMaxKills = 8;
-    /** Wizard - Potion cooldown in seconds */
-    public int wizardPotionCooldown = 120;
     /** Wizard - Mana gained from drinking a potion */
     public int wizardPotionManaGain = 150;
     /** Wizard - Potion attack-immunity window in seconds */
@@ -513,6 +533,19 @@ public class NoellesRolesConfig implements ConfigData {
     public int leonBlueHerbAtPlayers = 6;
     /** Leon (里昂) - Alive player count threshold to grant the red herb */
     public int leonRedHerbAtPlayers = 3;
+
+    /** 宿命的罪人 - 不同死因数量下限（&lt;=16 人时） */
+    public int doomedSinnerMinReasons = 5;
+    /** 宿命的罪人 - 不同死因数量上限（&gt;=32 人时） */
+    public int doomedSinnerMaxReasons = 10;
+    /** 宿命的罪人 - 同一死因死亡多少次后彻底死亡 */
+    public int doomedSinnerSamePermanentCount = 3;
+    /** 宿命的罪人 - 复活后留下的尸体多少秒后消失 */
+    public int doomedSinnerCorpseDespawnSeconds = 15;
+    /** 宿命的罪人 - 命运的启示技能的近距离接触范围（格） */
+    public double doomedSinnerRevealRange = 4.0;
+    /** 宿命的罪人 - 复活 / 重启后的短暂无敌时间（秒） */
+    public int doomedSinnerReviveInvincibleSeconds = 3;
 
     /** Morphling (变形者) - Knife dummy skill cooldown in seconds */
     public int morphlingDummyCooldown = 90;

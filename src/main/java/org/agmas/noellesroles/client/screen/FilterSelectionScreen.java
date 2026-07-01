@@ -393,7 +393,10 @@ public class FilterSelectionScreen extends Screen {
 
     private void drawRow(GuiGraphics g, String id, int y, boolean selected, boolean hovered, boolean highlighted) {
         int bgColor;
-        if (selected)
+
+        if (selected && hovered)
+            bgColor = 0xFF7B7540;
+        else if (selected)
             bgColor = 0xFF5A4520;
         else if (highlighted)
             bgColor = 0xFF4A3A20;
@@ -405,7 +408,7 @@ public class FilterSelectionScreen extends Screen {
         g.fill(listX, y, listX + listW, y + ROW_HEIGHT, bgColor);
         g.fill(listX, y + ROW_HEIGHT - 1, listX + listW, y + ROW_HEIGHT, 0x228B6914);
 
-        if (highlighted) {
+        if (highlighted || hovered) {
             g.renderOutline(listX, y, listW, ROW_HEIGHT, 0xCCD4AF37);
         }
 

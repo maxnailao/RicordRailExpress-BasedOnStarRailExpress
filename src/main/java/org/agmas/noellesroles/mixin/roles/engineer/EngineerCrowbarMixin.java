@@ -1,9 +1,12 @@
 package org.agmas.noellesroles.mixin.roles.engineer;
 
+import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
 import io.wifi.starrailexpress.content.item.CrowbarItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.index.TMMItems;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -61,10 +64,20 @@ public class EngineerCrowbarMixin {
                             true);
                 }
 
-                // 仍然消耗冷却时间
+                // 仍然消耗冷却时间——与普通门一致按角色折算冷却，避免亡命徒撬加固门 45s、撬普通门仅 11s 的失衡。
+                // 加固门本身已需两次撬动（先破加固、再开门），按同样折算后总耗时自然高于普通门。
                 if (!player.isCreative()) {
-                    player.getCooldowns().addCooldown(context.getItemInHand().getItem(),
-                            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20));
+                    int baseCooldown = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20);
+                    SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(world);
+                    int cooldown;
+                    if (gameWorldComponent != null && gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
+                        cooldown = baseCooldown / 4;
+                    } else if (gameWorldComponent != null && gameWorldComponent.isRole(player, RedHouseRoles.FURANDORU)) {
+                        cooldown = baseCooldown / 6;
+                    } else {
+                        cooldown = baseCooldown;
+                    }
+                    player.getCooldowns().addCooldown(context.getItemInHand().getItem(), cooldown);
                 }
 
                 // 取消原版行为（门不会被破坏）

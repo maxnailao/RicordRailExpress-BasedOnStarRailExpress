@@ -226,32 +226,31 @@ public class SREModifier extends SREAbstractInfoClass {
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
     }
-    
+
     @Override
     public ResourceLocation identifier() {
         return this.identifier;
     }
 
-    public MutableComponent getName() {
+    @Override
+    public Component getName() {
         return getName(false);
     }
 
     public MutableComponent getName(boolean color) {
-        // Log.info(LogCategory.GENERAL,
-        // Language.getInstance().hasTranslation("announcement.star.modifier." +
-        // identifier().getPath())+"");
-        if (!Language.getInstance().has("announcement.star.modifier." + identifier().toLanguageKey())
-                && Language.getInstance().has("announcement.star.modifier." + identifier().getPath())) {
-            return Component.translatable("announcement.star.modifier." + identifier().getPath());
-        }
+        String key = "announcement.star.modifier." + identifier().toLanguageKey();
+        // if (!Language.getInstance().has(key)) {
+        // return Component.translatable("info.screen.role.name.error", key);
+        // }
         final MutableComponent text = Component
-                .translatable("announcement.star.modifier." + identifier().toLanguageKey());
+                .translatable(key);
         if (color) {
             return text.withColor(color());
         }
         return text;
     }
 
+    @Override
     public int color() {
         return this.color;
     }
@@ -337,6 +336,36 @@ public class SREModifier extends SREAbstractInfoClass {
         this.isOtherModeRole = isOtherModeRole;
         if (isOtherModeRole)
             this.canSetSpawnInfoInConfig = false;
+        this.addFlag("other_gamemode");
         return this;
+    }
+
+    @Override
+    public Component getDescription() {
+        String key = "info.screen.modifier." + this.identifier().getPath();
+        if (!Language.getInstance().has(key)) {
+            return Component.translatable("info.screen.role.desc.error", key);
+        }
+        return Component.translatable(key);
+    }
+
+    @Override
+    public Component getSimpleDescription() {
+        String key = "info.screen.modifier." + this.identifier().getPath() + ".simple";
+        if (!Language.getInstance().has(key) || Language.getInstance().getOrDefault(key, "").isEmpty()) {
+            return getDescription();
+        }
+        return Component
+                .translatable("info.screen.modifier." + this.identifier().getPath() + ".simple");
+    }
+
+    @Override
+    public boolean hasSimpleDescription() {
+        var id = this.identifier();
+        String path = "info.screen.modifier." + id.getPath() + ".simple";
+        if (!Language.getInstance().has(path)) {
+            return false;
+        }
+        return true;
     }
 }

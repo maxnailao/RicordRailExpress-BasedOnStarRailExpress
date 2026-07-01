@@ -10,7 +10,8 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.game_spec.RepairRoles;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class DetectiveListenStepHandler {
+public class AgentListenStepHandler {
     public static final List<SoundInfo> soundInfos = new ArrayList<>();
 
     // 缓存
@@ -84,7 +85,7 @@ public class DetectiveListenStepHandler {
         if (SREClient.gameComponent.isRole(player, ModRoles.AGENT)) {
             return true;
         }
-        if (SREClient.gameComponent.isRole(player, ModRoles.REPAIR_HUNTER)) {
+        if (SREClient.gameComponent.isRole(player, RepairRoles.REPAIR_HUNTER)) {
             return true;
         }
         var component = ModComponents.REPAIR_ROLES.get(player);

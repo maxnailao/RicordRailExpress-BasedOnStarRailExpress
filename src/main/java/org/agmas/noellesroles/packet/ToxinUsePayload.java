@@ -38,7 +38,12 @@ public record ToxinUsePayload(int target) implements CustomPacketPayload {
                     player.playSound(NRSounds.SYRINGE_STAB, 0.15F, 1.0F);
                     player.swing(InteractionHand.MAIN_HAND);
                     if (!player.isCreative()) {
-                        player.getMainHandItem().shrink(1);
+                        // 消耗 1 点耐久而非整支毒针（与 ToxinItem 一致）。/ consume one durability, not the whole toxin.
+                        if (org.agmas.noellesroles.content.item.ToxinDurability.consumeOne(player.getMainHandItem())) {
+                            player.displayClientMessage(net.minecraft.network.chat.Component
+                                    .translatable("message.noellesroles.toxin.depleted")
+                                    .withStyle(net.minecraft.ChatFormatting.DARK_RED), true);
+                        }
                         player.getCooldowns().addCooldown(ModItems.TOXIN, (Integer) ModItems.ITEM_COOLDOWNS.get(ModItems.TOXIN));
                     }
 

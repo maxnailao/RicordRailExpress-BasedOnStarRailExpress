@@ -72,6 +72,12 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
     public boolean shouldSyncWith(ServerPlayer sp) {
         return true;
     }
+    public void clear(){
+        this.pendingRevivals.clear();
+        this.pendingWho = null;
+        this.isPendingRestore = false;
+        this.players_stats.clear();
+    }
 
     public List<RefugeeData> getPendingRevivals() {
         return pendingRevivals;

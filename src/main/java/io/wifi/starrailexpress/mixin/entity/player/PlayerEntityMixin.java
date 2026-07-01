@@ -169,7 +169,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             // 在攻击实体之前调用角色的左键点击实体方法
             if (this.getMainHandItem().getItem() instanceof SREItemProperties.LeftClickHurtable itt) {
                 var result = itt.onTryHurt(self, target, this.getMainHandItem());
-                if (result == InteractionResult.CONSUME) {
+                if (result == InteractionResult.CONSUME || result == InteractionResult.FAIL) {
                     return;
                 }
             }

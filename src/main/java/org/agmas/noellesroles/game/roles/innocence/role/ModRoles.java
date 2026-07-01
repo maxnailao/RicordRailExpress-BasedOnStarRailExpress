@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocence.role;
+package org.agmas.noellesroles.role;
 
 import com.mojang.serialization.Codec;
 import io.wifi.starrailexpress.SRE;
@@ -40,7 +40,7 @@ import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerRole;
 import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
@@ -166,6 +166,8 @@ public class ModRoles {
     public static ResourceLocation CORONER_ID = Noellesroles.id("coroner");
     public static ResourceLocation PATROLLER_ID = Noellesroles.id("patroller");
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
+    // 鬼眼·杨间角色 ID - 警长阵营
+    public static final ResourceLocation GHOST_EYE_ID = Noellesroles.id("ghost_eye");
     public static final ResourceLocation LEON_ID = Noellesroles.id("leon");
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
@@ -223,18 +225,6 @@ public class ModRoles {
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
-    public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
-    public static final ResourceLocation REPAIR_HUNTER_ID = Noellesroles.id("repair_hunter");
-    public static final ResourceLocation REPAIR_NEUTRAL_ID = Noellesroles.id("repair_neutral");
-    public static final ResourceLocation REPAIR_MECHANIC_ID = Noellesroles.id("repair_mechanic");
-    public static final ResourceLocation REPAIR_MEDIC_ID = Noellesroles.id("repair_medic");
-    public static final ResourceLocation REPAIR_RUNNER_ID = Noellesroles.id("repair_runner");
-    public static final ResourceLocation REPAIR_WARDEN_ID = Noellesroles.id("repair_warden");
-    public static final ResourceLocation REPAIR_BRUTE_ID = Noellesroles.id("repair_brute");
-    public static final ResourceLocation REPAIR_TRACKER_ID = Noellesroles.id("repair_tracker");
-    public static final ResourceLocation REPAIR_ARCHIVIST_ID = Noellesroles.id("repair_archivist");
-    public static final ResourceLocation REPAIR_SABOTEUR_ID = Noellesroles.id("repair_saboteur");
-    public static final ResourceLocation REPAIR_COLLECTOR_ID = Noellesroles.id("repair_collector");
 
     // 悍匪角色 ID
     public static final ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
@@ -311,6 +301,7 @@ public class ModRoles {
     public static final ResourceLocation RAVEN_ID = Noellesroles.id("raven");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
+    public static final ResourceLocation DOOMED_SINNER_ID = Noellesroles.id("doomed_sinner");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
     // 占卜家角色 ID
     public static final ResourceLocation DIVINER_ID = Noellesroles.id("diviner");
@@ -575,7 +566,7 @@ public class ModRoles {
                     .addEffect(
                             new MobEffectInstance(
                                     ModEffects.NO_COLLIDE,
-                                    30 * 20, // 持续时间 30s（tick），ambient=true时自动续期
+                                    60 * 20, // 持续时间 60s（tick），ambient=true时自动续期
                                     0,
                                     true, // ambient（环境效果，如信标）
                                     false, // showParticles（显示粒子）
@@ -868,7 +859,8 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺
             true // 隐藏计分板
-    ).addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 99999,0,false,false,false))).setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
+    ).addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 99999, 0, false, false, false)))
+            .setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500);
 
     public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
@@ -962,8 +954,81 @@ public class ModRoles {
                     sheriffTaskCounts.remove(player.getUUID());
                     sheriffHasReceivedRevolver.remove(player.getUUID());
                 }
+
+                @Override
+                public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
+                        net.minecraft.resources.ResourceLocation deathReason) {
+                    // 未解锁左轮手枪前死亡：在死亡位置掉落一把左轮手枪
+                    dropUnearnedRevolverOnDeath(victim, sheriffHasReceivedRevolver);
+                    super.onDeath(victim, spawnBody, killer, deathReason);
+                }
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true);
+
+    /**
+     * 鬼眼·杨间（警长阵营）。完成两个任务后获得左轮手枪。
+     * - 被动·鬼眼：每隔 16 秒自动扫描周身 20 格，短暂（2 秒）以白色直觉显示所有玩家轮廓。
+     * - 主动·诡域（冷却 70 秒）：在脚下展开半径 12 格、持续 6 秒的领域。领域内所有人减速（缓慢 II）；
+     *   领域内杀手无法开启透视；除杨间外所有人失明并陷入黑暗。
+     */
+    public static SRERole GHOST_EYE = TMMRoles.registerRole(
+            new NormalRole(GHOST_EYE_ID, new Color(132, 196, 200).getRGB(),
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                private final java.util.Map<java.util.UUID, Integer> taskCounts = new java.util.HashMap<>();
+                private final java.util.Set<java.util.UUID> hasReceivedRevolver = new java.util.HashSet<>();
+
+                @Override
+                public void onFinishQuest(Player player, String quest) {
+                    java.util.UUID playerUuid = player.getUUID();
+                    // 如果已经获得过左轮手枪，不再处理
+                    if (hasReceivedRevolver.contains(playerUuid))
+                        return;
+                    int count = taskCounts.getOrDefault(playerUuid, 0) + 1;
+                    taskCounts.put(playerUuid, count);
+                    if (count >= 2) {
+                        hasReceivedRevolver.add(playerUuid);
+                        player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER
+                                .getDefaultInstance().copy());
+                        player.displayClientMessage(
+                                net.minecraft.network.chat.Component.translatable(
+                                        "message.noellesroles.ghost_eye.revolver_received")
+                                        .withStyle(net.minecraft.ChatFormatting.GOLD),
+                                true);
+                    }
+                }
+
+                @Override
+                public void onInit(net.minecraft.server.MinecraftServer server, ServerPlayer player) {
+                    // 每局开始时重置任务计数
+                    taskCounts.remove(player.getUUID());
+                    hasReceivedRevolver.remove(player.getUUID());
+                }
+
+                @Override
+                public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
+                        net.minecraft.resources.ResourceLocation deathReason) {
+                    // 未解锁左轮手枪前死亡：在死亡位置掉落一把左轮手枪
+                    dropUnearnedRevolverOnDeath(victim, hasReceivedRevolver);
+                    super.onDeath(victim, spawnBody, killer, deathReason);
+                }
+            })
+            .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
+            .setComponentKey(ModComponents.GHOST_EYE)
+            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(8);
+
+    /**
+     * 警长 / 鬼眼·杨间 共用：在尚未通过完成两个任务解锁左轮手枪、且身上也没有左轮手枪时死亡，
+     * 于死亡位置掉落一把左轮手枪。
+     */
+    private static void dropUnearnedRevolverOnDeath(Player victim, java.util.Set<java.util.UUID> received) {
+        if (!(victim instanceof ServerPlayer sp)) return;
+        if (received.contains(sp.getUUID())) return;
+        for (ItemStack stack : sp.getInventory().items) {
+            if (stack.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER)) return;
+        }
+        sp.drop(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance().copy(), false);
+    }
 
     public static SRERole WIND_YAOSE = TMMRoles.registerRole(
             new ExtraEffectRole(WIND_YAOSE_ID, new Color(127, 231, 255).getRGB(),
@@ -1127,12 +1192,6 @@ public class ModRoles {
                             org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.KEY))
             .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(2000)
             .setSpecialVigilante(true);
-
-
-
-
-
-
 
     /**
      * 搜救员角色
@@ -1593,7 +1652,7 @@ public class ModRoles {
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setCanSeeCoin(true).setOccupiedRoleCount(3).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
-            .setMafiaTeam(true).setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(2500);
+            .setMafiaTeam(true).setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
     public static SRERole MAFIOSO = TMMRoles
             .registerRole(new NormalRole(MAFIOSO_ID, new Color(218, 112, 214).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
@@ -1615,6 +1674,7 @@ public class ModRoles {
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
 
+    // 验尸官
     public static SRERole CORONER = TMMRoles
             .registerRole(new NormalRole(CORONER_ID, new Color(122, 122, 122).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -1821,7 +1881,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
-    ).setComponentKey(DetectivePlayerComponent.KEY));;
+    ).setComponentKey(AgentPlayerComponent.KEY));;
 
     /**
      * 运动员角色
@@ -2398,6 +2458,28 @@ public class ModRoles {
             .setDefaultEnableNeededPlayerCount(10);
 
     /**
+     * 宿命的罪人 —— 中立独立胜利角色。
+     * - 中立独立胜利（setNeutrals(true)，杀手视角不视为队友）
+     * - 通过以不同死因死去累积胜利进度（人数越多需要越多，最低 5 最高 10）
+     * - 每次非彻底死亡后在自己的房间复活，尸体数秒后消失
+     * - 同一死因死去 3 次则彻底死亡
+     * - 技能 1「命运的启示」近距离查看目标杀人方式；技能 2「重启」死亡脱离
+     * 胜利条件在 CustomWinnerClass 判定，技能在 ModRolesInitialEventRegister 注册。
+     */
+    public static SRERole DOOMED_SINNER = TMMRoles.registerRole(new NormalRole(
+            DOOMED_SINNER_ID,
+            new Color(126, 36, 84).getRGB(), // 暗紫红 - 宿命与罪
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            true))
+            .setComponentKey(org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent.KEY)
+            .setNeutrals(true).setCanSeeTeammateKiller(false)
+            .setCanUseInstinct(true).setCanSeeCoin(true)
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(12);
+
+    /**
      * 魔术师角色 - 好人阵营（从模仿者移植）
      * - 好人阵营 (isInnocent = true)
      * - 能捡枪 (setCanPickUpRevolver(true))
@@ -2582,7 +2664,10 @@ public class ModRoles {
             .setCanUseSkillWhileSpectator(true)
             .setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(3000).setDefaultEnableNeededPlayerCount(12);
+            // 划分到警长阵营（isVigilanteTeam 为权威的警长归属判定）
+            .setVigilanteTeam(true)
+            // 出现概率下调一半（3000 -> 1500）
+            .setDefaultEnableChance(1500).setDefaultEnableNeededPlayerCount(12);
 
     /**
      * 黑白角色 - 中立阵营（伪装义警）
@@ -2594,60 +2679,6 @@ public class ModRoles {
      * - 黑白熊形态无敌+光环效果
      * - 获胜条件：游戏结束时6格内最近玩家的阵营
      */
-    public static SRERole REPAIR_SURVIVOR = TMMRoles.registerRole(new RepairRole(
-            REPAIR_SURVIVOR_ID, new Color(60, 210, 230).getRGB(), true, false,
-            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
-    public static SRERole REPAIR_HUNTER = TMMRoles.registerRole(new RepairRole(
-            REPAIR_HUNTER_ID, new Color(140, 20, 20).getRGB(), false, true,
-            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
-    public static SRERole REPAIR_NEUTRAL = TMMRoles.registerRole(new RepairRole(
-            REPAIR_NEUTRAL_ID, new Color(210, 180, 60).getRGB(), false, false,
-            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
-    public static SRERole REPAIR_MECHANIC = TMMRoles.registerRole(new RepairRole(
-            REPAIR_MECHANIC_ID, new Color(65, 220, 230).getRGB(), true, false,
-            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_MEDIC = TMMRoles.registerRole(new RepairRole(
-            REPAIR_MEDIC_ID, new Color(90, 245, 180).getRGB(), true, false,
-            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_RUNNER = TMMRoles.registerRole(new RepairRole(
-            REPAIR_RUNNER_ID, new Color(90, 150, 255).getRGB(), true, false,
-            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() + 40, false))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
-    public static SRERole REPAIR_WARDEN = TMMRoles.registerRole(new RepairRole(
-            REPAIR_WARDEN_ID, new Color(130, 25, 25).getRGB(), false, true,
-            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_BRUTE = TMMRoles.registerRole(new RepairRole(
-            REPAIR_BRUTE_ID, new Color(180, 45, 35).getRGB(), false, true,
-            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_TRACKER = TMMRoles.registerRole(new RepairRole(
-            REPAIR_TRACKER_ID, new Color(115, 35, 160).getRGB(), false, true,
-            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
-    public static SRERole REPAIR_ARCHIVIST = TMMRoles.registerRole(new RepairRole(
-            REPAIR_ARCHIVIST_ID, new Color(210, 180, 60).getRGB(), false, false,
-            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_SABOTEUR = TMMRoles.registerRole(new RepairRole(
-            REPAIR_SABOTEUR_ID, new Color(195, 130, 35).getRGB(), false, false,
-            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-    public static SRERole REPAIR_COLLECTOR = TMMRoles.registerRole(new RepairRole(
-            REPAIR_COLLECTOR_ID, new Color(190, 190, 70).getRGB(), false, false,
-            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
-
     public static SRERole MONOKUMA = TMMRoles.registerRole(new MonokumaRole())
             .setNeutralForKiller(false) // 杀手视角为好人
             .setCanSeeTeammateKiller(false)
@@ -2657,7 +2688,6 @@ public class ModRoles {
             .setCanSeeCoin(true)
             .setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false);
-
 
     // ─────────────────────── 信使 Courier ───────────────────────
     public static final ResourceLocation COURIER_ID = Noellesroles.id("courier");
@@ -2670,8 +2700,6 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 冲刺时间
             false // 不能看时间
     )).setDefaultMax(1).setCanSeeCoin(true);
-
-
 
     // ==================== 其他变量定义 ====================
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();

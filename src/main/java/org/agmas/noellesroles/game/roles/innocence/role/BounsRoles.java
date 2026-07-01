@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocence.role;
+package org.agmas.noellesroles.role;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.EggRole;
@@ -16,9 +16,11 @@ import java.awt.Color;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.ForestRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.MountainRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.modifier.BounsModifiers;
+import org.agmas.noellesroles.role.touhou.ForestRoles;
+import org.agmas.noellesroles.role.touhou.MountainRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 
 /**
  * 彩蛋角色类，受到彩蛋刷新概率影响
@@ -55,7 +57,7 @@ public class BounsRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 显示计分板
     )).setVigilanteTeam(true).setCanPickUpRevolver(true).setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(200).setCanSetSpawnInfoInConfig(true);
+            .setSpecialVigilante(true).setDefaultEnableChance(200).setCanSetSpawnInfoInConfig(true);
 
     /**
      * 苦力怕角色
@@ -199,7 +201,8 @@ public class BounsRoles {
         RedHouseRoles.init();
         MountainRoles.init();
         ForestRoles.init();
-
+        THMiscRoles.init();
+        BounsModifiers.init();
         registerEvents();
     }
 

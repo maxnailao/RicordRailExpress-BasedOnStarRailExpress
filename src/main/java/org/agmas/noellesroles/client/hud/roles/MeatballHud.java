@@ -2,8 +2,6 @@ package org.agmas.noellesroles.client.hud.roles;
 
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -16,8 +14,6 @@ import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
 
 public class MeatballHud {
 
-    private static final double ALONE_RANGE = 4.0;
-    private static final double ALONE_HEIGHT = 3.0;
     private static final double DOOR_CHECK_RANGE = 1.5;
 
     public static void register() {
@@ -41,31 +37,15 @@ public class MeatballHud {
 
             int bountyY = screenHeight - 25;
             int bountyX = screenWidth - 120;
+            int statusX = screenWidth - 160;
             int statusY = bountyY - 12;
 
             Player player = client.player;
-            var gameWorld = SREGameWorldComponent.KEY.get(player.level());
 
-            // 检测是否靠近门框
-            boolean nearDoor = isNearModDoor(player);
-
-            if (nearDoor) {
+            if (isNearModDoor(player)) {
                 Component nearDoorText = Component.translatable("hud.noellesroles.meatball.near_door")
                         .withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
-                guiGraphics.drawString(client.font, nearDoorText, bountyX, statusY, 0xFF5555);
-            } else {
-                // 检测独处状态
-                boolean isAlone = isAlone(player, gameWorld);
-
-                if (isAlone) {
-                    Component aloneText = Component.translatable("hud.noellesroles.meatball.alone")
-                            .withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
-                    guiGraphics.drawString(client.font, aloneText, bountyX, statusY, 0xFF5555);
-                } else {
-                    Component notAloneText = Component.translatable("hud.noellesroles.meatball.not_alone")
-                            .withStyle(ChatFormatting.GREEN);
-                    guiGraphics.drawString(client.font, notAloneText, bountyX, statusY, 0x55FF55);
-                }
+                guiGraphics.drawString(client.font, nearDoorText, statusX, statusY, 0xFF5555);
             }
 
             // 赏金显示
@@ -101,28 +81,5 @@ public class MeatballHud {
             }
         }
         return false;
-    }
-
-    private static boolean isAlone(Player player, SREGameWorldComponent gameWorld) {
-        double safeDistanceSq = ALONE_RANGE * ALONE_RANGE;
-        double safeHeightSq = ALONE_HEIGHT * ALONE_HEIGHT;
-
-        for (Player nearbyPlayer : player.level().players()) {
-            if (nearbyPlayer == player) continue;
-            if (!GameUtils.isPlayerAliveAndSurvival(nearbyPlayer)) continue;
-
-            double dx = nearbyPlayer.getX() - player.getX();
-            double dy = nearbyPlayer.getY() - player.getY();
-            double dz = nearbyPlayer.getZ() - player.getZ();
-            double horizontalDistSq = dx * dx + dz * dz;
-
-            if (horizontalDistSq <= safeDistanceSq && dy * dy <= safeHeightSq) {
-                // 范围内有好人 → 不独处
-                if (gameWorld.isInnocent(nearbyPlayer)) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 }

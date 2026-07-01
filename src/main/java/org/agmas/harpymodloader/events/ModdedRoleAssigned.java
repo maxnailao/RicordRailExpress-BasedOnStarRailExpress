@@ -7,9 +7,14 @@ import net.minecraft.server.level.ServerPlayer;
 
 import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
 
+import org.agmas.noellesroles.init.RoleInitialItems;
+
 public interface ModdedRoleAssigned {
 
     Event<ModdedRoleAssigned> EVENT = createArrayBacked(ModdedRoleAssigned.class, listeners -> (player, role) -> {
+        // 使用映射表添加初始物品（包括映射表和职业里的getDefaultItems）
+        RoleInitialItems.addInitialItemsForRole(player, role);
+
         for (ModdedRoleAssigned listener : listeners) {
             listener.assignModdedRole(player, role);
         }

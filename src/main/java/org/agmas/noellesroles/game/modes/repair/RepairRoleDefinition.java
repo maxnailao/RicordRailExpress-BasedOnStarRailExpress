@@ -3,7 +3,9 @@ package org.agmas.noellesroles.game.modes.repair;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.game_spec.RepairRoles;
+
 import io.wifi.starrailexpress.api.SRERole;
 
 import java.util.Arrays;
@@ -47,15 +49,15 @@ public enum RepairRoleDefinition {
 
     public SRERole sreRole() {
         return switch (this) {
-            case MECHANIC -> ModRoles.REPAIR_MECHANIC;
-            case MEDIC -> ModRoles.REPAIR_MEDIC;
-            case RUNNER -> ModRoles.REPAIR_RUNNER;
-            case WARDEN -> ModRoles.REPAIR_WARDEN;
-            case BRUTE -> ModRoles.REPAIR_BRUTE;
-            case TRACKER -> ModRoles.REPAIR_TRACKER;
-            case ARCHIVIST -> ModRoles.REPAIR_ARCHIVIST;
-            case SABOTEUR -> ModRoles.REPAIR_SABOTEUR;
-            case COLLECTOR -> ModRoles.REPAIR_COLLECTOR;
+            case MECHANIC -> RepairRoles.REPAIR_MECHANIC;
+            case MEDIC -> RepairRoles.REPAIR_MEDIC;
+            case RUNNER -> RepairRoles.REPAIR_RUNNER;
+            case WARDEN -> RepairRoles.REPAIR_WARDEN;
+            case BRUTE -> RepairRoles.REPAIR_BRUTE;
+            case TRACKER -> RepairRoles.REPAIR_TRACKER;
+            case ARCHIVIST -> RepairRoles.REPAIR_ARCHIVIST;
+            case SABOTEUR -> RepairRoles.REPAIR_SABOTEUR;
+            case COLLECTOR -> RepairRoles.REPAIR_COLLECTOR;
         };
     }
 

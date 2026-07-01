@@ -10,7 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 
 import java.util.UUID;
 
@@ -98,7 +98,7 @@ public class DetectiveInspectScreenHandler extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         // 检查查看者是否还在审查状态
-        DetectivePlayerComponent component = ModComponents.AGENT.get(player);
+        AgentPlayerComponent component = ModComponents.AGENT.get(player);
         return component.isInspecting();
     }
     
@@ -107,7 +107,7 @@ public class DetectiveInspectScreenHandler extends AbstractContainerMenu {
         super.removed(player);
         
         // 清除审查状态
-        DetectivePlayerComponent component = ModComponents.AGENT.get(player);
+        AgentPlayerComponent component = ModComponents.AGENT.get(player);
         component.stopInspecting();
     }
     

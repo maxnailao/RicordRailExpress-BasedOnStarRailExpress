@@ -20,7 +20,8 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.RepairStationBlockEntity;
 import org.agmas.noellesroles.packet.RepairCoinRewardS2CPacket;
 import org.agmas.noellesroles.packet.RepairCombatFeedbackS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.game_spec.RepairRoles;
 import org.agmas.noellesroles.init.ModEffects;
 
 import java.util.Map;
@@ -196,7 +197,7 @@ public final class RepairModeState {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
         var role = ModComponents.REPAIR_ROLES.get(player).activeRole;
         return RepairRoleDefinition.byId(role).map(def -> def.faction == RepairRoleDefinition.Faction.HUNTER)
-                .orElse(game != null && game.isRole(player, ModRoles.REPAIR_HUNTER));
+                .orElse(game != null && game.isRole(player, RepairRoles.REPAIR_HUNTER));
     }
 
     public static boolean isNonHunterRepairPlayer(ServerPlayer player) {
@@ -207,7 +208,7 @@ public final class RepairModeState {
         var component = ModComponents.REPAIR_ROLES.get(player);
         return RepairRoleDefinition.byId(component.activeRole)
                 .map(def -> def.faction != RepairRoleDefinition.Faction.HUNTER)
-                .orElse(game.isRole(player, ModRoles.REPAIR_SURVIVOR) || game.isRole(player, ModRoles.REPAIR_NEUTRAL));
+                .orElse(game.isRole(player, RepairRoles.REPAIR_SURVIVOR) || game.isRole(player, RepairRoles.REPAIR_NEUTRAL));
     }
 
     public static boolean canRepair(ServerPlayer player) {

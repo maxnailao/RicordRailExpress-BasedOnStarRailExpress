@@ -10,6 +10,8 @@ import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.core.NonNullList;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +36,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -822,6 +824,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return identifier;
     }
 
+    @Override
     public int color() {
         return color;
     }
@@ -1051,6 +1054,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
+        this.addFlag("other_gamemode");
         return this;
     }
 
@@ -1138,5 +1142,43 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public InteractionResult onDropItem(Player player, ItemStack item) {
         return InteractionResult.PASS;
+    }
+
+    @Override
+    public Component getName() {
+        String translationKey = "announcement.star.role." + this.identifier().getPath();
+        // if (!Language.getInstance().has(translationKey)) {
+        //     return Component.translatable("info.screen.role.name.error", translationKey);
+        // }
+        return Component.translatable(translationKey);
+    }
+
+    @Override
+    public Component getDescription() {
+        var id = this.identifier();
+        String path = "info.screen.roleid." + id.getPath();
+        if (!Language.getInstance().has(path)) {
+            return Component.translatable("info.screen.role.desc.error", path);
+        }
+        return Component.translatable(path);
+    }
+
+    @Override
+    public boolean hasSimpleDescription() {
+        var id = this.identifier();
+        String path = "info.screen.roleid." + id.getPath() + ".simple";
+        if (!Language.getInstance().has(path)) {
+            return false;
+        }
+        return true;
+    }
+
+    public Component getSimpleDescription() {
+        var id = this.identifier();
+        String path = "info.screen.roleid." + id.getPath() + ".simple";
+        if (!Language.getInstance().has(path) || Language.getInstance().getOrDefault(path, "").isEmpty()) {
+            return getDescription();
+        }
+        return Component.translatable(path);
     }
 }

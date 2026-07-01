@@ -20,6 +20,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -154,8 +156,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
      * 凶手击杀后开始"滴血跟随"：在案发处落一滴，并标记凶手在 bleedTicks 内边走边沿途留血迹。
      * 仅服务端状态，靠粒子广播可见。
      */
-    public void startKillerBleed(net.minecraft.server.level.ServerPlayer killer,
-            net.minecraft.world.phys.Vec3 site, long now, int bleedTicks) {
+    public void startKillerBleed(ServerPlayer killer,
+            Vec3 site, long now, int bleedTicks) {
         if (!(world instanceof ServerLevel) || killer == null) {
             return;
         }

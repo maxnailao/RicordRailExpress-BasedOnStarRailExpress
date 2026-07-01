@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
@@ -23,6 +24,7 @@ public class XiaoNaoHandler {
         TeamKillViolationHandler.registerEvent();
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
+
                 if (isInnocent) {
                     SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
@@ -61,38 +63,10 @@ public class XiaoNaoHandler {
                         return;
                     }
                     // 小脑(误杀)惩罚写这里
+                    TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
-                        if (deathReason.getPath().equals("revolver_shot")
-                                || deathReason.getPath().equals("general_attack")
-                                || deathReason.getPath().equals("sniper_rifle")
-                                || deathReason.getPath().equals("nunchuck_hit")
-                                || deathReason.getPath().equals("bat_hit")
-                                || deathReason.getPath().equals("gun_shot")
-                                || deathReason.getPath().equals("hoan_meirin_attack")
-                                || deathReason.getPath().equals("arrow")
-                                || deathReason.getPath().equals("trident")
-                                || deathReason.getPath().equals("knife_stab")
-                                || deathReason.getPath().equals("stalker_knife")
-                                || deathReason.getPath().equals("knife")
-                                || deathReason.getPath().equals("fell_out_of_train")
-                                || deathReason.getPath().equals("poison")
-                                || deathReason.getPath().equals("throwing_knife_hit")
-                                || deathReason.getPath().equals("throwing_knife")
-                                || deathReason.getPath().equals("bowen")
-                                || deathReason.getPath().equals("baton_kill")
-                                || deathReason.getPath().equals("fire_axe")
-                                || deathReason.getPath().equals("ninja_knife")
-                                || deathReason.getPath().equals("ninja_shuriken")
-                                || deathReason.getPath().equals("short_shotgun")
-                                || deathReason.getPath().equals("grenade")
-                                || deathReason.getPath().equals("zero_one_five_shot")
-                                || deathReason.getPath().equals("incinerator_pushed")
-                                || deathReason.getPath().equals("manhole_suffocation")
-                                || deathReason.getPath().equals("stalactite_impale")
-                                || deathReason.getPath().equals("flamethrower_burned")
-                                || deathReason.getPath().equals("boulder_crush")) {
+                        if (isXiaoNaoReason(deathReason)) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
-                            TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                             // 仇杀客事件：误杀发生时强化仇杀客
                             for (ServerPlayer player : victim.serverLevel().players()) {
                                 if (gameWorldComponent.isRole(player, ModRoles.BLOOD_FEUDIST)) {
@@ -107,6 +81,39 @@ public class XiaoNaoHandler {
                 }
             }
         });
+    }
+
+    public static boolean isXiaoNaoReason(ResourceLocation deathReason) {
+        return deathReason.getPath().equals("revolver_shot")
+                || deathReason.getPath().equals("general_attack")
+                || deathReason.getPath().equals("sniper_rifle")
+                || deathReason.getPath().equals("nunchuck_hit")
+                || deathReason.getPath().equals("bat_hit")
+                || deathReason.getPath().equals("scarlet_perception_sword")
+                || deathReason.getPath().equals("gun_shot")
+                || deathReason.getPath().equals("hoan_meirin_attack")
+                || deathReason.getPath().equals("arrow")
+                || deathReason.getPath().equals("trident")
+                || deathReason.getPath().equals("knife_stab")
+                || deathReason.getPath().equals("stalker_knife")
+                || deathReason.getPath().equals("knife")
+                || deathReason.getPath().equals("fell_out_of_train")
+                || deathReason.getPath().equals("poison")
+                || deathReason.getPath().equals("throwing_knife_hit")
+                || deathReason.getPath().equals("throwing_knife")
+                || deathReason.getPath().equals("bowen")
+                || deathReason.getPath().equals("baton_kill")
+                || deathReason.getPath().equals("fire_axe")
+                || deathReason.getPath().equals("ninja_knife")
+                || deathReason.getPath().equals("ninja_shuriken")
+                || deathReason.getPath().equals("short_shotgun")
+                || deathReason.getPath().equals("grenade")
+                || deathReason.getPath().equals("zero_one_five_shot")
+                || deathReason.getPath().equals("incinerator_pushed")
+                || deathReason.getPath().equals("manhole_suffocation")
+                || deathReason.getPath().equals("stalactite_impale")
+                || deathReason.getPath().equals("flamethrower_burned")
+                || deathReason.getPath().equals("boulder_crush");
     }
 
 }

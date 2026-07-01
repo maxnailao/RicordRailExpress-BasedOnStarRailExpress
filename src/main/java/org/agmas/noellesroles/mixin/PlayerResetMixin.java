@@ -21,7 +21,7 @@ import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
@@ -157,7 +157,7 @@ public abstract class PlayerResetMixin {
         AyayayaPlayerComponent postmanComp = ModComponents.AYAYAYA.get(player);
         postmanComp.clear();
 
-        DetectivePlayerComponent detectiveComp = ModComponents.AGENT.get(player);
+        AgentPlayerComponent detectiveComp = ModComponents.AGENT.get(player);
         detectiveComp.clear();
 
         BoxerPlayerComponent boxerComp = ModComponents.FIGHTER.get(player);

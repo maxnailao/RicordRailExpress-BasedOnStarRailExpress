@@ -13,6 +13,8 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.item.StandardRevolverItem;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropRevolverWhenDead;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropWhenDead;
 import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -53,6 +55,7 @@ import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.Item;
@@ -769,11 +772,13 @@ public class ModEventsRegister {
 
     public static boolean isMJVerifyEnabled = false;
     public static List<Item> canThrowItems = new ArrayList<>();
+    public static final int TRACK_DISTANCE = 8;
 
     public static void registerEvents() {
         // Cake Maker: ingredient input via right-click on smoker interaction entity
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClientSide || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            if (world.isClientSide || hand != InteractionHand.MAIN_HAND)
+                return InteractionResult.PASS;
             if (CakeMakerComponent.isSmokerInteractionEntity(entity)) {
                 UUID ownerId = CakeMakerComponent.getSmokerOwner(entity);
                 // Only the cake maker who owns the smoker can add ingredients
@@ -804,9 +809,11 @@ public class ModEventsRegister {
             return SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.RAVEN) && raven.isHunting();
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return true;
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN))
+                return true;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
-            if (!raven.isHunting()) return true;
+            if (!raven.isHunting())
+                return true;
             if (!raven.canKill(victim)) {
                 raven.endHunt(true);
                 return false;
@@ -814,12 +821,15 @@ public class ModEventsRegister {
             return true;
         });
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return;
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN))
+                return;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
-            if (raven.canKill(victim)) raven.onTargetKilled(victim);
+            if (raven.canKill(victim))
+                raven.onTargetKilled(victim);
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (!SREGameWorldComponent.KEY.get(victim.level()).isRole(victim, ModRoles.RAVEN)) return true;
+            if (!SREGameWorldComponent.KEY.get(victim.level()).isRole(victim, ModRoles.RAVEN))
+                return true;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(victim);
             return !raven.isHunting();
         });
@@ -910,8 +920,11 @@ public class ModEventsRegister {
                         BlockPos checkPos = meatballPos.offset(dx, dy, dz);
                         double dist = Math.sqrt(
                                 (checkPos.getX() + 0.5 - victim.getX()) * (checkPos.getX() + 0.5 - victim.getX()) +
-                                (checkPos.getY() + 0.5 - victim.getY()) * (checkPos.getY() + 0.5 - victim.getY()) +
-                                (checkPos.getZ() + 0.5 - victim.getZ()) * (checkPos.getZ() + 0.5 - victim.getZ()));
+                                        (checkPos.getY() + 0.5 - victim.getY())
+                                                * (checkPos.getY() + 0.5 - victim.getY())
+                                        +
+                                        (checkPos.getZ() + 0.5 - victim.getZ())
+                                                * (checkPos.getZ() + 0.5 - victim.getZ()));
                         if (dist <= doorCheckRange) {
                             if (victim.level().getBlockState(checkPos).getBlock() instanceof SmallDoorBlock) {
                                 if (victim instanceof ServerPlayer sp) {
@@ -1438,6 +1451,10 @@ public class ModEventsRegister {
         });
         DropRules.canDrop.add((player) -> {
             var mainHandItem = player.getMainHandItem();
+            if (mainHandItem.is(ModItems.NEWSPAPER)) {
+                if (mainHandItem.has(DataComponents.WRITTEN_BOOK_CONTENT))
+                    return true;
+            }
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorldComponent.isRole(player, RedHouseRoles.BAKA)) {
                 if (mainHandItem.is(FunnyItems.PROBLEM_SET)) {
@@ -1520,13 +1537,24 @@ public class ModEventsRegister {
             SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(victim.level());
             if (gw == null || !gw.isRunning())
                 return;
-            io.wifi.starrailexpress.game.forensic.ForensicCategory cat =
-                    io.wifi.starrailexpress.game.forensic.ForensicCategory.fromDeathReason(deathReason);
-            // 凶器大类决定滴血持续时长（枪/穿刺出血久=血迹更长，刀较短）
+            io.wifi.starrailexpress.game.forensic.ForensicCategory cat = io.wifi.starrailexpress.game.forensic.ForensicCategory
+                    .fromDeathReason(deathReason);
+            // 仅常见杀人凶器（刀/枪/球棒）触发流血滴血，其它死因（毒/爆炸/坠落/碾压等）不触发。
+            if (cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLADE
+                    && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.FIREARM
+                    && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLUNT)
+                return;
+            // 仅一定距离内才会有血迹（鼓励远距离射击）
+            int track_distance= GameConstants.getBloodTrackWetDistance();
+            if (killer.distanceToSqr(victim) <= track_distance) {
+                return;
+            }
+            // 凶器大类决定滴血持续时长（整体缩短：枪较长，刀较短，球棒居中）
             int bleedTicks = switch (cat) {
-                case FIREARM, PROJECTILE -> 14 * 20;
-                case BLADE -> 8 * 20;
-                default -> 10 * 20;
+                case FIREARM -> 7 * 20;
+                case BLADE -> 4 * 20;
+                case BLUNT -> 5 * 20;
+                default -> 5 * 20;
             };
             gw.startKillerBleed(killerSp, victim.position(), victim.level().getGameTime(), bleedTicks);
         });
@@ -1803,96 +1831,126 @@ public class ModEventsRegister {
         });
 
         WayfarerPlayerComponent.registerEvents();
-        OnPlayerDeath.EVENT.register((playerEntity, reason) -> {
-            ServerPlayNetworking.send((ServerPlayer) playerEntity, new CloseUiPayload());
-            FortunetellerPlayerComponent.KEY.get(playerEntity).init();
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(playerEntity.level());
-            if (!RefugeeComponent.KEY.get(playerEntity.level()).isAnyRevivals) {
-                PuppeteerPlayerComponent.KEY.get(playerEntity).clear();
-                if (gameWorldComponent.isRole(playerEntity,
+        OnPlayerDeath.EVENT.register((p, reason) -> {
+            if (!(p instanceof ServerPlayer player))
+                return;
+            /**
+             * 掉落枪 接口：DropRevolverWhenDead
+             */
+            {
+                int dropCount = 1 + MCItemsUtils.clearItem(player, (t) -> {
+                    return t.getItem() instanceof DropRevolverWhenDead || t.is(TMMItemTags.GUNS);
+                });
+                while (dropCount > 0) {
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    dropCount--;
+                }
+            }
+            /**
+             * 自定义掉落 接口：DropWhenDead
+             */
+            {
+                Inventory container = player.getInventory();
+                for (int k = 0; k < container.getContainerSize(); ++k) {
+                    ItemStack itemStack = container.getItem(k);
+                    if (itemStack.getItem() instanceof DropWhenDead dwd) {
+                        var it = dwd.onDrop(player, itemStack);
+                        if (it != null && !it.isEmpty()) {
+                            player.drop(it, false);
+                        }
+                        container.setItem(k, ItemStack.EMPTY);
+                    }
+                }
+            }
+            ServerPlayNetworking.send((ServerPlayer) player, new CloseUiPayload());
+            FortunetellerPlayerComponent.KEY.get(player).init();
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (!RefugeeComponent.KEY.get(player.level()).isAnyRevivals) {
+                PuppeteerPlayerComponent.KEY.get(player).clear();
+                if (gameWorldComponent.isRole(player,
                         ModRoles.INSANE_KILLER)) {
-                    final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(playerEntity);
+                    final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
                     insaneKillerPlayerComponent.init();
                 }
             }
-            RoleUtils.removeAllEffects(playerEntity);
+            RoleUtils.removeAllEffects(player);
             // 葬仪死亡时清除拖动状态
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.MORTICIAN_BODYMAKER)) {
+            if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
                 var morticianComponent = org.agmas.noellesroles.component.ModComponents.MORTICIAN_BODYMAKER
-                        .get(playerEntity);
+                        .get(player);
                 if (morticianComponent != null && morticianComponent.draggedBodyUuid != null) {
                     morticianComponent.draggedBodyUuid = null;
                     morticianComponent.sync();
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.JOJO)) {
-                int dropCount = 1 + MCItemsUtils.countItem(playerEntity, TMMItemTags.GUNS);
+            if (gameWorldComponent.isRole(player, ModRoles.JOJO)) {
+                int dropCount = 1 + MCItemsUtils.clearItem(player, TMMItemTags.GUNS);
                 while (dropCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     dropCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.ELF)) {
-                int bowcount = SREItemUtils.clearItem(playerEntity, Items.BOW);
-                int crossbowcount = SREItemUtils.clearItem(playerEntity, Items.CROSSBOW);
+            if (gameWorldComponent.isRole(player, ModRoles.ELF)) {
+                int bowcount = SREItemUtils.clearItem(player, Items.BOW);
+                int crossbowcount = SREItemUtils.clearItem(player, Items.CROSSBOW);
                 int dropCount = bowcount + crossbowcount;
                 while (dropCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     dropCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
-                int nunchuckCount = SREItemUtils.clearItem(playerEntity, TMMItems.NUNCHUCK);
+            if (gameWorldComponent.isRole(player, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
+                int nunchuckCount = SREItemUtils.clearItem(player, TMMItems.NUNCHUCK);
                 while (nunchuckCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     nunchuckCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.GUARD)) {
-                int batonCount = SREItemUtils.clearItem(playerEntity, org.agmas.noellesroles.init.ModItems.BATON);
+            if (gameWorldComponent.isRole(player, ModRoles.GUARD)) {
+                int batonCount = SREItemUtils.clearItem(player, org.agmas.noellesroles.init.ModItems.BATON);
                 while (batonCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     batonCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.SEA_KING)) {
-                if (playerEntity.level() instanceof ServerLevel level) {
+            if (gameWorldComponent.isRole(player, ModRoles.SEA_KING)) {
+                if (player.level() instanceof ServerLevel level) {
                     for (var e : level.getAllEntities()) {
                         if (e instanceof ThrownTrident te)
-                            if (te.getOwner().getUUID().equals(playerEntity.getUUID())) {
-                                playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                            if (te.getOwner().getUUID().equals(player.getUUID())) {
+                                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                                 te.discard();
                             }
                     }
                 }
             }
             {
-                int tridentCount = SREItemUtils.clearItem(playerEntity, net.minecraft.world.item.Items.TRIDENT);
+                int tridentCount = SREItemUtils.clearItem(player, net.minecraft.world.item.Items.TRIDENT);
                 while (tridentCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     tridentCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.WATER_GHOST)) {
-                int tridentCount = SREItemUtils.clearItem(playerEntity, net.minecraft.world.item.Items.TRIDENT);
+            if (gameWorldComponent.isRole(player, ModRoles.WATER_GHOST)) {
+                int tridentCount = SREItemUtils.clearItem(player, net.minecraft.world.item.Items.TRIDENT);
                 while (tridentCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     tridentCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.SWAST)) {
-                int sniperRifleCount = SREItemUtils.clearItem(playerEntity, TMMItems.SNIPER_RIFLE);
+            if (gameWorldComponent.isRole(player, ModRoles.SWAST)) {
+                int sniperRifleCount = SREItemUtils.clearItem(player, TMMItems.SNIPER_RIFLE);
                 while (sniperRifleCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     sniperRifleCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.BETTER_VIGILANTE)) {
-                final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(playerEntity);
+            if (gameWorldComponent.isRole(player, ModRoles.BETTER_VIGILANTE)) {
+                final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(player);
                 betterVigilantePlayerComponent.init();
             }
         });

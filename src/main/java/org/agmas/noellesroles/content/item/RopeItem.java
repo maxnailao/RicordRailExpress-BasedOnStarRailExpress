@@ -243,6 +243,12 @@ public class RopeItem extends Item implements AdventureUsable {
      * @param target 被拉取的目标玩家
      */
     private void pullPlayer(Player player, Player target) {
+        // 记录拉拽者为最近攻击者，使被搜救绳拉入列车碾压区的死亡能归属到拉人者（拉拽本身不造成伤害）。
+        target.setLastHurtByMob(player);
+        if (player instanceof ServerPlayer) {
+            target.setLastHurtByPlayer(player);
+        }
+
         var viewVector = player.getViewVector(1.0f);
         double maxDistance = 1.5; // 最远距离（玩家前方）
         double step = 0.2; // 步长

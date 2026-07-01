@@ -14,7 +14,7 @@ import org.agmas.noellesroles.client.screen.ModScreenHandlers;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
@@ -31,11 +31,9 @@ import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.register.RiceEventRegister;
 import org.agmas.noellesroles.register.RicePacketTypeRegister;
 import org.agmas.noellesroles.register.RiceReceiverRegister;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-
+import org.agmas.noellesroles.role.BounsRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import java.util.ArrayList;
-
 import static org.agmas.noellesroles.Noellesroles.LOGGER;
 import static org.agmas.noellesroles.Noellesroles.MOD_ID;
 
@@ -80,9 +78,6 @@ public class RicesRoleRhapsody implements ModInitializer {
 
     // 建筑师技能包
     public static final CustomPacketPayload.Type<BuilderAbilityC2SPacket> BUILDER_ABILITY_PACKET = BuilderAbilityC2SPacket.ID;
-
-    // 管家技能包
-    public static final CustomPacketPayload.Type<HousekeeperAbilityC2SPacket> HOUSEKEEPER_ABILITY_PACKET = HousekeeperAbilityC2SPacket.ID;
 
     public static final CustomPacketPayload.Type<LockGameC2Packet> LOCK_GAME_PACKET = LockGameC2Packet.ID;
     public static final CustomPacketPayload.Type<KeyForgeGameC2Packet> KEY_FORGE_GAME_PACKET = KeyForgeGameC2Packet.ID;
@@ -301,22 +296,6 @@ public class RicesRoleRhapsody implements ModInitializer {
             slipperyGhostComponent.init();
         }
 
-        // ==================== 女巫角色处理 ====================
-        if (role.equals(ModRoles.WITCH)) {
-            // 重置女巫组件
-            org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent witchComponent =
-                org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent.KEY.get(player);
-            witchComponent.init();
-        }
-
-        // ==================== Hacker role handling ====================
-        if (role.equals(ModRoles.BLACKKE)) {
-            // Reset hacker component
-            org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent blackkeComponent =
-                org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY.get(player);
-            blackkeComponent.init();
-        }
-
         // ==================== 工程师角色处理 ====================
         if (role.equals(ModRoles.ENGINEER)) {
             // 工程师不需要特殊组件，只需要商店访问权限
@@ -340,7 +319,7 @@ public class RicesRoleRhapsody implements ModInitializer {
         // ==================== 探员角色处理 ====================
         if (role.equals(ModRoles.AGENT)) {
             // 重置探员组件
-            DetectivePlayerComponent detectiveComponent = ModComponents.AGENT.get(player);
+            AgentPlayerComponent detectiveComponent = ModComponents.AGENT.get(player);
             detectiveComponent.init();
         }
 
@@ -429,18 +408,6 @@ public class RicesRoleRhapsody implements ModInitializer {
         if (role.equals(ModRoles.BUILDER)) {
             org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent builderComponent = org.agmas.noellesroles.component.ModComponents.BUILDER.get(player);
             builderComponent.init();
-        }
-
-        // ==================== 管家角色处理 ====================
-        if (role.equals(ModRoles.HOUSEKEEPER)) {
-            org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComponent = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(player);
-            housekeeperComponent.init();
-        }
-
-        // ==================== 暗影角色处理 ====================
-        if (role.equals(ModRoles.GHOSTOFANYING)) {
-            org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent ghostofanyingComponent = org.agmas.noellesroles.component.ModComponents.GHOSTOFANYING.get(player);
-            ghostofanyingComponent.init();
         }
         // if (role.equals(ModRoles.EXAMPLE_ROLE)) {
         // // 给予物品

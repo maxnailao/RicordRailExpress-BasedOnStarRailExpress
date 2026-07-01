@@ -19,14 +19,14 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * - 当前正在查看的目标玩家
  * - 目标玩家移动检测
  */
-public class DetectivePlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
+public class AgentPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     @Override
     public Player getPlayer() {
         return player;
     }
 
     /** 组件键 - 用于从玩家获取此组件 */
-    public static final ComponentKey<DetectivePlayerComponent> KEY = ModComponents.AGENT;
+    public static final ComponentKey<AgentPlayerComponent> KEY = ModComponents.AGENT;
 
     // 审查技能冷却时间（单位：tick，20 tick = 1秒）
     public static final int INSPECT_COOLDOWN = 60 * 20; // 60秒
@@ -56,7 +56,7 @@ public class DetectivePlayerComponent implements RoleComponent, ServerTickingCom
     /**
      * 构造函数
      */
-    public DetectivePlayerComponent(Player player) {
+    public AgentPlayerComponent(Player player) {
         this.player = player;
     }
 

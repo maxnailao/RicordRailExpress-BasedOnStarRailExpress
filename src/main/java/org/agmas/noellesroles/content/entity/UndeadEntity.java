@@ -57,8 +57,8 @@ public class UndeadEntity extends PathfinderMob {
     private static final double PERCEPTION_RANGE = 15.0D;
     private static final int ATTACK_INTERVAL = 30; // 1.5 秒
     private static final double TOUCH_RANGE = 1.6D;
-    /** 亡灵每次攻击注入的感染值（已减半）。 */
-    private static final float INFECTION_PER_HIT = 7.5f;
+    /** 亡灵每次攻击注入的感染值（已减半后再 +15% 感染速度）。 */
+    private static final float INFECTION_PER_HIT = 8.625f;
     private static final double BASE_SPEED = 0.22D;
     /** 幽灵直线穿墙时的移动速度系数（相对 MOVEMENT_SPEED，避免无视墙壁后追击过强）。 */
     private static final double GHOST_SPEED_FACTOR = 0.55;
@@ -337,14 +337,14 @@ public class UndeadEntity extends PathfinderMob {
 
     @Override
     public boolean hurt(DamageSource damageSource, float amount) {
-        // 亡灵免疫常规伤害（仅随时间消散 / 被枪摧毁），但虚空伤害正常致死。
-        if (damageSource.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD)) {
-            if (level() instanceof ServerLevel serverLevel) {
-                disappear(serverLevel, false);
-            }
-            return true;
+        // 亡灵可被任意攻击方式摧毁（此前仅手枪可击杀），与开枪一致：受到任何伤害即消散。虚空伤害同样致死。
+        if (level() instanceof ServerLevel serverLevel) {
+            boolean voidDamage = damageSource.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD);
+            serverLevel.playSound(null, blockPosition(), SoundEvents.ZOMBIE_DEATH,
+                    SoundSource.HOSTILE, 1.0f, voidDamage ? 0.6f : 0.7f);
+            disappear(serverLevel, false);
         }
-        return false;
+        return true;
     }
 
     /** 亡灵永远发光（描边轮廓），便于辨识。 */

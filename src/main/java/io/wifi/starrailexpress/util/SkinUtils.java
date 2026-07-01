@@ -70,6 +70,15 @@ public class SkinUtils {
     }
     
     /**
+     * 从物品获取物品类型名称
+     * @param item 物品
+     * @return 物品类型名称
+     */
+    public static ResourceLocation getItemTypeResourceLocation(Item item) {
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        return itemId;
+    }
+    /**
      * 从物品堆栈获取物品类型名称
      * @param itemStack 物品堆栈
      * @return 物品类型名称

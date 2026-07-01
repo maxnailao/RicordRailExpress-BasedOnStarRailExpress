@@ -28,6 +28,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
+import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.ArrayList;
@@ -37,15 +38,19 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.UUID;
 
-/** Independent neutral role: gains hunting charges from nearby mood recovery. */
-public final class RavenPlayerComponent implements RoleComponent, ServerTickingComponent {
+/**
+ * Independent neutral role: gains hunting charges from nearby mood recovery.
+ */
+public final class RavenPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     public static final ComponentKey<RavenPlayerComponent> KEY = ComponentRegistry.getOrCreate(
             Noellesroles.id("raven"), RavenPlayerComponent.class);
 
     public static final int MAX_CHARGES = 5;
     private static final int HUNT_TICKS = 120 * 20;
     private static final int COOLDOWN_TICKS = 60 * 20;
-    private static final double MOOD_RADIUS_SQR = 8 * 8;
+    public static final double CHARGE_RADIUS = 8.0;
+    public static final float TASK_COMPLETE_PROGRESS = 0.35f;
+    private static final double MOOD_RADIUS_SQR = CHARGE_RADIUS * CHARGE_RADIUS;
 
     private final Player player;
     private final Map<UUID, Float> observedMood = new HashMap<>();
@@ -55,6 +60,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     public int kills;
     public int requiredKills;
     public float moodProgress;
+    public float moodProgressThreshold;
     public ResourceLocation targetRoleId;
     public UUID bodyUuid;
     private Vec3 bodyPosition = Vec3.ZERO;
@@ -65,9 +71,19 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         this.player = player;
     }
 
-    @Override public Player getPlayer() { return player; }
-    @Override public boolean shouldSyncWith(ServerPlayer target) { return true; }
-    public void sync() { KEY.sync(player); }
+    @Override
+    public Player getPlayer() {
+        return player;
+    }
+
+    @Override
+    public boolean shouldSyncWith(ServerPlayer target) {
+        return true;
+    }
+
+    public void sync() {
+        KEY.sync(player);
+    }
 
     @Override
     public void init() {
@@ -77,15 +93,31 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         kills = 0;
         requiredKills = 0;
         moodProgress = 0;
+        moodProgressThreshold = 1f;
         targetRoleId = null;
         bodyUuid = null;
         observedMood.clear();
         sync();
     }
 
-    @Override public void clear() { endHunt(false); init(); }
+    @Override
+    public void clear() {
+        endHunt(false);
+        init();
+    }
 
-    public boolean isHunting() { return huntTicks > 0; }
+    public boolean isHunting() {
+        return huntTicks > 0;
+    }
+
+    @Override
+    public void clientTick() {
+        if (cooldownTicks > 0)
+            cooldownTicks--;
+        if (huntTicks > 0) {
+            huntTicks--;
+        }
+    }
 
     @Override
     public void serverTick() {
@@ -109,47 +141,80 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
 
         int totalPlayers = game.getPlayerCount();
         requiredKills = Math.max(2, (totalPlayers + 11) / 8);
+        moodProgressThreshold = getChargeThreshold(totalPlayers);
         boolean changed = observeNearbyMood(totalPlayers);
-        if (cooldownTicks > 0) cooldownTicks--;
+        if (cooldownTicks > 0)
+            cooldownTicks--;
         if (huntTicks > 0) {
             huntTicks--;
-            if (!hasLivingTargetRole(game)) chooseTargetRole(game);
-            if (huntTicks <= 0) endHunt(true);
+            if (!hasLivingTargetRole(game))
+                chooseTargetRole(game);
+            if (huntTicks <= 0)
+                endHunt(true);
             changed = true;
         }
-        if (changed || player.tickCount % 20 == 0) sync();
+        if (changed || player.tickCount % 200 == 0)
+            sync();
     }
 
     private boolean observeNearbyMood(int totalPlayers) {
         boolean changed = false;
-        float threshold = Math.max(1f, totalPlayers / 6f - 2.3f);
+        float threshold = getChargeThreshold(totalPlayers);
         for (Player nearby : player.level().players()) {
-            if (nearby == player || nearby.distanceToSqr(player) > MOOD_RADIUS_SQR || !GameUtils.isPlayerAliveAndSurvival(nearby)) continue;
+            if (nearby == player || nearby.distanceToSqr(player) > MOOD_RADIUS_SQR
+                    || !GameUtils.isPlayerAliveAndSurvival(nearby))
+                continue;
             float now = SREPlayerMoodComponent.KEY.get(nearby).getMood();
             Float before = observedMood.put(nearby.getUUID(), now);
             if (before != null && now > before && charges < MAX_CHARGES) {
-                moodProgress += now - before;
-                while (moodProgress >= threshold && charges < MAX_CHARGES) {
-                    moodProgress -= threshold;
-                    charges++;
-                    if (player instanceof ServerPlayer serverPlayer) {
-                        serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.raven.charge", charges, MAX_CHARGES)
-                                .withStyle(ChatFormatting.DARK_PURPLE), true);
-                    }
-                }
-                changed = true;
+                changed |= addChargeProgress(now - before, threshold);
             }
         }
         observedMood.keySet().removeIf(id -> player.level().getPlayerByUUID(id) == null);
         return changed;
     }
 
-    public boolean useAbility() {
-        if (!(player instanceof ServerPlayer serverPlayer) || isHunting() || cooldownTicks > 0 || charges <= 0) return false;
+    private float getChargeThreshold(int totalPlayers) {
+        return Math.max(1f, totalPlayers / 6f - 1.75f);
+    }
+
+    private boolean addChargeProgress(float amount, float threshold) {
+        if (amount <= 0 || charges >= MAX_CHARGES)
+            return false;
+        moodProgress += amount;
+        while (moodProgress >= threshold && charges < MAX_CHARGES) {
+            moodProgress -= threshold;
+            charges++;
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.displayClientMessage(
+                        Component.translatable("message.noellesroles.raven.charge", charges, MAX_CHARGES)
+                                .withStyle(ChatFormatting.DARK_PURPLE),
+                        true);
+            }
+        }
+        return true;
+    }
+
+    public void onNearbyTaskComplete() {
+        if (!(player instanceof ServerPlayer))
+            return;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-        if (!game.isSkillAvailable || !game.isRunning()) return false;
+        if (!game.isRunning() || !game.isRole(player, ModRoles.RAVEN))
+            return;
+        moodProgressThreshold = getChargeThreshold(game.getPlayerCount());
+        if (addChargeProgress(TASK_COMPLETE_PROGRESS, moodProgressThreshold))
+            sync();
+    }
+
+    public boolean useAbility() {
+        if (!(player instanceof ServerPlayer serverPlayer) || isHunting() || cooldownTicks > 0 || charges <= 0)
+            return false;
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        if (!game.isSkillAvailable || !game.isRunning())
+            return false;
         if (!chooseTargetRole(game)) {
-            serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.raven.no_target").withStyle(ChatFormatting.RED), true);
+            serverPlayer.displayClientMessage(
+                    Component.translatable("message.noellesroles.raven.no_target").withStyle(ChatFormatting.RED), true);
             return false;
         }
         charges--;
@@ -167,17 +232,21 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     private boolean chooseTargetRole(SREGameWorldComponent game) {
         List<SRERole> roles = new ArrayList<>();
         for (Player candidate : player.level().players()) {
-            if (candidate == player || !GameUtils.isPlayerAliveAndSurvival(candidate)) continue;
+            if (candidate == player || !GameUtils.isPlayerAliveAndSurvival(candidate))
+                continue;
             SRERole role = game.getRole(candidate);
-            if (role != null && roles.stream().noneMatch(existing -> existing.identifier().equals(role.identifier()))) roles.add(role);
+            if (role != null && roles.stream().noneMatch(existing -> existing.identifier().equals(role.identifier())))
+                roles.add(role);
         }
-        if (roles.isEmpty()) return false;
+        if (roles.isEmpty())
+            return false;
         targetRoleId = roles.get(player.getRandom().nextInt(roles.size())).identifier();
         return true;
     }
 
     private boolean hasLivingTargetRole(SREGameWorldComponent game) {
-        if (targetRoleId == null) return false;
+        if (targetRoleId == null)
+            return false;
         return player.level().players().stream().anyMatch(candidate -> {
             SRERole role = game.getRole(candidate);
             return candidate != player && GameUtils.isPlayerAliveAndSurvival(candidate)
@@ -208,30 +277,35 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     public boolean canKill(Player victim) {
-        if (!isHunting() || targetRoleId == null) return false;
+        if (!isHunting() || targetRoleId == null)
+            return false;
         SRERole role = SREGameWorldComponent.KEY.get(player.level()).getRole(victim);
         return role != null && targetRoleId.equals(role.identifier());
     }
 
     public void onTargetKilled(Player victim) {
-        if (!canKill(victim)) return;
+        if (!canKill(victim))
+            return;
         kills++;
         if (kills >= requiredKills && player.level() instanceof ServerLevel level) {
-            RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM, ModRoles.RAVEN_ID.getPath(), OptionalInt.of(ModRoles.RAVEN.color()));
+            RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM, ModRoles.RAVEN_ID.getPath(),
+                    OptionalInt.of(ModRoles.RAVEN.color()));
         }
         sync();
     }
 
     public void onBodyDeath(Player killer, ResourceLocation reason) {
-        if (!isHunting() || !(player instanceof ServerPlayer serverPlayer)) return;
+        if (!isHunting() || !(player instanceof ServerPlayer serverPlayer))
+            return;
         bodyUuid = null;
         endHunt(false);
         GameUtils.killPlayer(serverPlayer, true, killer, reason);
     }
 
     public void endHunt(boolean applyCooldown) {
-        if (player instanceof ServerPlayer serverPlayer && isHunting()) {
-            // Clear effects before teleport so the client never sees disguised skin at body pos
+        if (player instanceof ServerPlayer serverPlayer && bodyUuid != null) {
+            // Clear effects before teleport so the client never sees disguised skin at body
+            // pos
             serverPlayer.removeEffect(ModEffects.DISGUISE);
             serverPlayer.removeEffect(ModEffects.VOICE_SILENCE);
             serverPlayer.removeEffect(ModEffects.NO_COLLIDE);
@@ -245,10 +319,12 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             // 如果游戏已结束，不要传送到本体傀儡位置——正常游戏结束流程会统一传送到大厅
             SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
             if (game.isRunning()) {
-                serverPlayer.teleportTo(serverPlayer.serverLevel(), bodyPosition.x, bodyPosition.y, bodyPosition.z, bodyYaw, bodyPitch);
+                serverPlayer.teleportTo(serverPlayer.serverLevel(), bodyPosition.x, bodyPosition.y, bodyPosition.z,
+                        bodyYaw, bodyPitch);
             }
         }
-        if (applyCooldown) cooldownTicks = COOLDOWN_TICKS;
+        if (applyCooldown)
+            cooldownTicks = COOLDOWN_TICKS;
         huntTicks = 0;
         targetRoleId = null;
         bodyUuid = null;
@@ -266,23 +342,43 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     private void removeBody(ServerLevel level) {
-        if (bodyUuid == null) return;
+        if (bodyUuid == null)
+            return;
         Entity entity = level.getEntity(bodyUuid);
-        if (entity != null) entity.discard();
+        if (entity != null)
+            entity.discard();
     }
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        tag.putInt("Charges", charges); tag.putInt("Cooldown", cooldownTicks); tag.putInt("Hunt", huntTicks);
-        tag.putInt("Kills", kills); tag.putInt("RequiredKills", requiredKills); tag.putFloat("Mood", moodProgress);
-        if (targetRoleId != null) tag.putString("TargetRole", targetRoleId.toString());
+        tag.putInt("Charges", charges);
+        tag.putInt("Cooldown", cooldownTicks);
+        tag.putInt("Hunt", huntTicks);
+        tag.putInt("Kills", kills);
+        tag.putInt("RequiredKills", requiredKills);
+        tag.putFloat("Mood", moodProgress);
+        tag.putFloat("MoodThreshold", moodProgressThreshold);
+        if (targetRoleId != null)
+            tag.putString("TargetRole", targetRoleId.toString());
     }
+
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        charges = tag.getInt("Charges"); cooldownTicks = tag.getInt("Cooldown"); huntTicks = tag.getInt("Hunt");
-        kills = tag.getInt("Kills"); requiredKills = tag.getInt("RequiredKills"); moodProgress = tag.getFloat("Mood");
+        charges = tag.getInt("Charges");
+        cooldownTicks = tag.getInt("Cooldown");
+        huntTicks = tag.getInt("Hunt");
+        kills = tag.getInt("Kills");
+        requiredKills = tag.getInt("RequiredKills");
+        moodProgress = tag.getFloat("Mood");
+        moodProgressThreshold = tag.contains("MoodThreshold") ? tag.getFloat("MoodThreshold") : 1f;
         targetRoleId = tag.contains("TargetRole") ? ResourceLocation.tryParse(tag.getString("TargetRole")) : null;
     }
-    @Override public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) { }
-    @Override public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) { }
+
+    @Override
+    public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
+    }
+
+    @Override
+    public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
+    }
 }

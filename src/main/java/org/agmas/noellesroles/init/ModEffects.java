@@ -319,6 +319,30 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A6BFF));
 
     /**
+     * 诡域标记（鬼眼·杨间）。
+     * - 有害效果，幽蓝色
+     * - 标记处于诡域内的玩家；拥有此效果的玩家无法开启杀手透视
+     *   （客户端拦截见 {@code org.agmas.noellesroles.mixin.client.InstinctMixin}）。
+     */
+    public static final Holder<MobEffect> EERIE_DOMAIN = register("eerie_domain",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
+
+    /**
+     * 视野迷雾
+     * - 有害效果，灰蓝色
+     * - 拥有者视野被浓雾笼罩；等级越高雾的距离越远（看得越远）。
+     *   1 级（amplifier 0）时雾仅 2 格。雾的渲染见
+     *   {@code org.agmas.noellesroles.mixin.client.VisionFogMixin}（注入 FogRenderer.setupFog）。
+     */
+    public static final Holder<MobEffect> VISION_FOG = register("vision_fog",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
+
+    /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
+    public static float getVisionFogDistance(int amplifier) {
+        return 2.0f + Math.max(0, amplifier) * 3.0f;
+    }
+
+    /**
      * 聊天混乱：拥有此效果的玩家发送的聊天消息内容会被随机替换为特殊字符
      */
     public static final Holder<MobEffect> CHAT_MUDDLEDNESS = register("chat_muddledness",
@@ -461,6 +485,9 @@ public class ModEffects {
         io.wifi.starrailexpress.content.item.DisguiseEffectSync.init();
         // 把“脚步消失”效果同步给所有客户端，否则其它玩家侧的脚步声/疾跑粒子拦截查不到该效果。
         org.agmas.noellesroles.init.FootstepVanishEffectSync.init();
+        // 把怀旧者“里世界标记”效果同步给所有客户端，否则其它客户端查不到怀旧者的里世界状态，
+        // 导致手持物品仍显示 / 仍能被杀手透视。
+        org.agmas.noellesroles.init.NostalgistBackworldEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

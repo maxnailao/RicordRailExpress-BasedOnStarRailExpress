@@ -19,6 +19,7 @@ public class SeekerRole extends NormalRole {
     public SeekerRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller,
             MoodType moodType, int maxSprintTime, boolean canSeeTime) {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
+        addFlag("other_gamemode");
     }
 
     @Override

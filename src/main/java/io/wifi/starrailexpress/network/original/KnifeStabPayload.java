@@ -118,7 +118,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
             // 成功捅人后消耗 1 点耐久；耗尽时提示重新购买。
             // Consume one durability after a successful stab; warn when it becomes depleted.
-            if (durabilityKnife && KillerKnifeDurability.consumeOne(knife)) {
+            if (durabilityKnife && KillerKnifeDurability.consumeOne(knife,player)) {
                 player.displayClientMessage(
                         Component.translatable("message.sre.knife.broken").withStyle(ChatFormatting.DARK_RED), true);
             }
