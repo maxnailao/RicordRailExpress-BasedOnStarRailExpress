@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.*;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.util.DeathReasonHelper;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;

@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocence.role.touhou;
+package org.agmas.noellesroles.role.touhou;
 
 import net.minecraft.resources.ResourceLocation;
 

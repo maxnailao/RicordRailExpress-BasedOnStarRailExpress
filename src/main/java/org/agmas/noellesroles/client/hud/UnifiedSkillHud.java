@@ -52,11 +52,11 @@ public final class UnifiedSkillHud {
             }
             var role = SREClient.getCachedPlayerRole();
             // 布袋鬼有自绘的鬼术 HUD，跳过
-            if (role != null && role.identifier().equals(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.MA_CHEN_XU_ID)) {
+            if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.MA_CHEN_XU_ID)) {
                 return;
             }
             // 小镇做题家有自绘的 HUD，跳过
-            if (role != null && role.identifier().equals(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.EXAMPLER_ID)) {
+            if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.EXAMPLER_ID)) {
                 return;
             }
             List<RoleSkill.Definition> skills = RoleSkill.getDefinitions(role);

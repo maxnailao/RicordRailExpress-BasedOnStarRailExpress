@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.role.touhou.roles;
+package org.agmas.noellesroles.role.touhou;
 
 import java.util.ArrayList;
 import java.util.List;

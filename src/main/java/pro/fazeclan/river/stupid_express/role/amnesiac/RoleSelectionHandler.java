@@ -15,7 +15,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.utils.StupidRoleUtils;
 
@@ -94,7 +95,7 @@ public class RoleSelectionHandler {
                         true);
                 return InteractionResult.PASS;
             }
-            if (role.identifier().equals(org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers.TRAITOR.identifier())) {
+            if (role.identifier().equals(TraitorAndModifiers.TRAITOR.identifier())) {
                 player.displayClientMessage(
                         Component.translatable("msg.amnesiac.change_role.failed_not_support")
                                 .withStyle(ChatFormatting.RED),

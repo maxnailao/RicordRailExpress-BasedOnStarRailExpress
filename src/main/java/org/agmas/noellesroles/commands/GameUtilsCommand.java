@@ -52,7 +52,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.scene.SceneTaskManager;
 import org.agmas.noellesroles.utils.MapScannerManager;
 import org.agmas.noellesroles.utils.RoleUtils;

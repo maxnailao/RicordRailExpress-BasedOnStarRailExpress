@@ -18,7 +18,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 骨杖攻击回调：亡灵之主手持骨杖左键攻击玩家时，为目标增加感染值并消耗 1 点耐久。

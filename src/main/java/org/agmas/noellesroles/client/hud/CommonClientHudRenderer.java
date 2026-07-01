@@ -58,9 +58,9 @@ import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.BounsRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
 
 import java.awt.*;

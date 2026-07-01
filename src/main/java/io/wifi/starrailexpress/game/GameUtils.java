@@ -71,7 +71,7 @@ import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerCompon
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;

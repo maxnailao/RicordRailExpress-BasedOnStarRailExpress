@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.innocence.role.touhou;
+package org.agmas.noellesroles.role.touhou;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;

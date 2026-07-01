@@ -79,6 +79,9 @@ public class RicesRoleRhapsody implements ModInitializer {
     // 建筑师技能包
     public static final CustomPacketPayload.Type<BuilderAbilityC2SPacket> BUILDER_ABILITY_PACKET = BuilderAbilityC2SPacket.ID;
 
+    // 管家技能包
+    public static final CustomPacketPayload.Type<HousekeeperAbilityC2SPacket> HOUSEKEEPER_ABILITY_PACKET = HousekeeperAbilityC2SPacket.ID;
+
     public static final CustomPacketPayload.Type<LockGameC2Packet> LOCK_GAME_PACKET = LockGameC2Packet.ID;
     public static final CustomPacketPayload.Type<KeyForgeGameC2Packet> KEY_FORGE_GAME_PACKET = KeyForgeGameC2Packet.ID;
     public static final CustomPacketPayload.Type<LootRequestC2SPacket> LOOT_REQUIRE_PACKET = LootRequestC2SPacket.ID;

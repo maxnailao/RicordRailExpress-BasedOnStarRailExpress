@@ -1,7 +1,5 @@
 package org.agmas.noellesroles.role.touhou;
 
-import org.agmas.noellesroles.role.touhou.roles.THTenshiRole;
-
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.resources.ResourceLocation;

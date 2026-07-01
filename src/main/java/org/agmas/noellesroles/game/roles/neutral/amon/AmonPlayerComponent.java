@@ -35,7 +35,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;

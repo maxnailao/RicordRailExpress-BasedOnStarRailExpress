@@ -22,8 +22,8 @@ import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.CanMoveInTimeStopS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 

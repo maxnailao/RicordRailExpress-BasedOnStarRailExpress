@@ -242,16 +242,12 @@
       "noellesroles:silencer",
       "noellesroles:diviner",
       "noellesroles:doomed_sinner",
-      "noellesroles:ghost_eye"
-      "noellesroles:embalmer",
+      "noellesroles:ghost_eye",
       "noellesroles:coward",
       "noellesroles:dumb_woman",
       "noellesroles:zhizhang",
       "noellesroles:guardian",
       "noellesroles:wushujia",
-      "noellesroles:nostalgist",
-      "noellesroles:undead_lord",
-      "noellesroles:diviner",
       "noellesroles:ghostofanying"
     ],
     "loom:injected_interfaces": {

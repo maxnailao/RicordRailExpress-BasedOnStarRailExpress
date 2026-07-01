@@ -129,9 +129,10 @@ import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilant
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
 import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.ModifierEffects;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.MapScanner;
@@ -835,7 +836,7 @@ public class ModEventsRegister {
         });
         RefugeeComponent.register();
         OnShopPurchase.EVENT.register((player, entry, price) -> {
-            org.agmas.noellesroles.game.roles.innocence.role.ModifierEffects
+            ModifierEffects
                     .onStingyPurchase((net.minecraft.server.level.ServerPlayer) player, price);
         });
 

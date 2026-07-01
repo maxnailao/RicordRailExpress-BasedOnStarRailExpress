@@ -67,7 +67,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class GameMode {
