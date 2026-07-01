@@ -67,8 +67,13 @@ public class InstinctRenderer {
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) return -1;
             var self = Minecraft.getInstance().player;
-            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN) || !ModComponents.RAVEN.get(self).isHunting()) return -1;
-            return Color.WHITE.getRGB();
+            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN)) return -1;
+            var raven = ModComponents.RAVEN.get(self);
+            if (raven.isHunting())
+                return Color.WHITE.getRGB();
+            if (self.distanceTo(target) <= 10.0)
+                return Color.WHITE.getRGB();
+            return -2;
         });
         // 鬼眼·杨间 被动：扫描期间，周身范围内的所有玩家显示白色直觉轮廓
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {

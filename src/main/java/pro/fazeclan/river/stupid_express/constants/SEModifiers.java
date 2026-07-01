@@ -58,8 +58,8 @@ public class SEModifiers {
             null,
             false,
             false))
-            .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(12);
+            .setDefaultEnableChance(500)
+            .setDefaultEnableNeededPlayerCount(12).setHidden(true);
 
     public static SREModifier TINY = HMLModifiers.registerModifier(new SREModifier(
             StupidExpress.id("tiny"),
@@ -178,7 +178,7 @@ public class SEModifiers {
             null,
             false,
             false))
-            .setDefaultEnableChance(8000).setDefaultMax(2);
+            .setDefaultEnableChance(8000).setDefaultMax(2).setHidden(true);
 
     public static SREModifier BLACK_WHITE = HMLModifiers.registerModifier(new SREModifier(
             StupidExpress.id("black_white"),
@@ -189,7 +189,7 @@ public class SEModifiers {
             true))
             .setDefaultMax(1)
             .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(10);
+            .setDefaultEnableNeededPlayerCount(10).setHidden(true).addRelatedRole(ModRoles.MONOKUMA);
 
     // 标记不屈的一次性免疫是否已被消耗（基于 UUID 的运行时集合）
     public static Set<UUID> UNYIELDING_IMMUNITY_USED = ConcurrentHashMap.newKeySet();

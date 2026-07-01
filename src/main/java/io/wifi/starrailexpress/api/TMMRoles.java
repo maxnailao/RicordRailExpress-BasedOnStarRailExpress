@@ -140,4 +140,8 @@ public class TMMRoles {
         }
         return filters;
     }
+
+    public static SRERole getRole(ResourceLocation id) {
+        return ROLES.getOrDefault(id, null);
+    }
 }

@@ -31,6 +31,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -81,7 +83,120 @@ public abstract class SRERole extends SREAbstractInfoClass {
     private int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
-    public HashSet<SRERole> opposingJobs = new HashSet<>();
+
+    public ArrayList<SRERole> occupationRoles = new ArrayList<>();
+    public HashSet<SRERole> opposingRoles = new HashSet<>();
+
+    /**
+     * 删除关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole clearOccupationRole() {
+        for (var i : occupationRoles) {
+            removeOccupationRole(i);
+            i.removeRelatedRole(this);
+        }
+        return this;
+    }
+
+    /**
+     * 删除关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole removeOccupationRole(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.remove(i);
+            i.removeRelatedRole(this);
+
+        }
+        return this;
+    }
+
+    /**
+     * 添加关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole addOccupationRoleOnce(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.add(i);
+            i.addRelatedRole(this);
+        }
+        // 去重。
+        occupationRoles = new ArrayList<>(new LinkedHashSet<>(occupationRoles));
+        return this;
+    }
+
+    /**
+     * 添加关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole addOccupationRole(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.add(i);
+            i.addRelatedRole(this);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole removeRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null)
+                this.relatedModifiers.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole removeRelatedModifier(SREModifier... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedModifiers.remove(i);
+        }
+        return this;
+    }
 
     /**
      * 添加显示FLAG
@@ -337,9 +452,15 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole removeOpposingJobs(SRERole role) {
-        this.opposingJobs.remove(role);
+    public SRERole removeOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.opposingRoles.remove(r);
+        }
         return this;
+    }
+
+    public Set<SRERole> getOpposingRoles() {
+        return new HashSet<>(this.opposingRoles);
     }
 
     /**
@@ -348,9 +469,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole addTwoWayOpposingJobs(SRERole role) {
-        this.opposingJobs.add(role);
-        role.opposingJobs.add(this);
+    public SRERole addTwoWayOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.addOpposingRole(role);
+            r.addOpposingRole(this);
+        }
         return this;
     }
 
@@ -360,8 +483,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole addOpposingJobs(SRERole role) {
-        this.opposingJobs.add(role);
+    public SRERole addOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.opposingRoles.add(r);
+        }
         return this;
     }
 
@@ -371,9 +496,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param roles
      * @return
      */
-    public SRERole setOpposingJobs(List<SRERole> roles) {
-        this.opposingJobs.clear();
-        this.opposingJobs.addAll(roles);
+    public SRERole setOpposingRoles(List<SRERole> roles) {
+        this.opposingRoles.clear();
+        this.opposingRoles.addAll(roles);
         return this;
     }
 
@@ -1148,7 +1273,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public Component getName() {
         String translationKey = "announcement.star.role." + this.identifier().getPath();
         // if (!Language.getInstance().has(translationKey)) {
-        //     return Component.translatable("info.screen.role.name.error", translationKey);
+        // return Component.translatable("info.screen.role.name.error", translationKey);
         // }
         return Component.translatable(translationKey);
     }
@@ -1180,5 +1305,17 @@ public abstract class SRERole extends SREAbstractInfoClass {
             return getDescription();
         }
         return Component.translatable(path);
+    }
+
+    public boolean hasOccupationRole() {
+        return this.occupationRoles.isEmpty();
+    }
+
+    public ArrayList<SRERole> getoccupationRoles() {
+        return new ArrayList<>(this.occupationRoles);
+    }
+
+    public Component getGoal() {
+        return Component.translatable("announcement.star.goals." + this.identifier().getPath());
     }
 }

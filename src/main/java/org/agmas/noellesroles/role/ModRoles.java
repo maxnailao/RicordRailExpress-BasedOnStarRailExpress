@@ -72,6 +72,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
+import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
@@ -2471,7 +2472,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
             true))
-            .setComponentKey(org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent.KEY)
+            .setComponentKey(DoomedSinnerPlayerComponent.KEY)
             .setNeutrals(true).setCanSeeTeammateKiller(false)
             .setCanUseInstinct(true).setCanSeeCoin(true)
             .setDefaultMax(1).setDefaultEnableNeededPlayerCount(12);
@@ -2661,6 +2662,7 @@ public class ModRoles {
             .setCanUseSkillWhileSpectator(true)
             .setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
+            .setSpecialVigilante(true)
             // 划分到警长阵营（isVigilanteTeam 为权威的警长归属判定）
             .setVigilanteTeam(true)
             // 出现概率下调一半（3000 -> 1500）
@@ -3037,27 +3039,27 @@ public class ModRoles {
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
 
         // 设置疫使与毒师互斥
-        ModRoles.INFECTED.addTwoWayOpposingJobs(ModRoles.POISONER);
+        ModRoles.INFECTED.addTwoWayOpposingRole(ModRoles.POISONER);
 
         // 设置迷失杀手与魔术师互斥
-        ModRoles.LOST_KILLER.addTwoWayOpposingJobs(ModRoles.MAGICIAN);
+        ModRoles.LOST_KILLER.addTwoWayOpposingRole(ModRoles.MAGICIAN);
 
         // 设置鹈鹕与纵火犯互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(SERoles.ARSONIST);
+        ModRoles.PELICAN.addTwoWayOpposingRole(SERoles.ARSONIST);
         // 设置鹈鹕与秉烛人互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.CANDLE_BEARER);
-        ModRoles.PELICAN.addTwoWayOpposingJobs(SERoles.INITIATE);
+        ModRoles.PELICAN.addTwoWayOpposingRole(ModRoles.CANDLE_BEARER);
+        ModRoles.PELICAN.addTwoWayOpposingRole(SERoles.INITIATE);
 
         // 设置教父与初学者互斥
-        ModRoles.GODFATHER.addTwoWayOpposingJobs(SERoles.INITIATE);
+        ModRoles.GODFATHER.addTwoWayOpposingRole(SERoles.INITIATE);
         // 设置鹈鹕与教父互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.GODFATHER);
+        ModRoles.PELICAN.addTwoWayOpposingRole(ModRoles.GODFATHER);
         // 设置鹈鹕与刽子手互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
+        ModRoles.PELICAN.addTwoWayOpposingRole(ModRoles.EXECUTIONER);
         // 设置鹈鹕与傀儡师互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
+        ModRoles.PELICAN.addTwoWayOpposingRole(ModRoles.PUPPETEER);
         // 设置鹈鹕与渡鸦互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.RAVEN);
+        ModRoles.PELICAN.addTwoWayOpposingRole(ModRoles.RAVEN);
 
         RoleSkill.register(ModRoles.THE_FOOL, FoolPlayerComponent::useSkill);
 

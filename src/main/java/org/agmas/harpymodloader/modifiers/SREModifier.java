@@ -33,13 +33,65 @@ public class SREModifier extends SREAbstractInfoClass {
     public boolean notVigilante;
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
-    public int defaultMaxCount = -1;
+    public int defaultMaxCount = 1;
     public SpawnInfo spawnInfo = new SpawnInfo();
     public int defaultEnableChance = 10000;
     public int defaultNeedPlayerCount = 6;
     public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+
+    /**
+     * 添加与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null)
+                this.relatedModifiers.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedModifier(SREModifier... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedModifiers.remove(i);
+        }
+        return this;
+    }
 
     /**
      * 添加显示FLAG
@@ -154,7 +206,7 @@ public class SREModifier extends SREAbstractInfoClass {
     /**
      * 在启用的状态下，默认的最大分配数量。
      * 
-     * @param count 最大数量
+     * @param count 最大数量。-2代表不限制
      * @return
      */
     public SREModifier setDefaultMax(int count) {
@@ -216,6 +268,20 @@ public class SREModifier extends SREAbstractInfoClass {
         this.spawnInfo = spinfo;
         return this;
     };
+
+    /**
+     * 修饰符普通玩家不可视
+     * 隐藏修饰符
+     * 
+     * @return
+     */
+    public SREModifier setHidden(boolean flag) {
+        if (flag)
+            this.addFlag("inner.hidden");
+        else
+            this.removeFlag("inner.hidden");
+        return this;
+    }
 
     public SREModifier(ResourceLocation identifier, int color, HashSet<SRERole> cannotBeAppliedTo,
             HashSet<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
@@ -281,7 +347,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players, String mapName) {
-        if (defaultMaxCount == -1)
+        if (spawnInfo.maxSpawn == -1)
             return -1;
         // 优先使用 spawnInfo（来自用户配置），若未设置则不回退。如果要设置默认的请设置canSetSpawnInfoInConfig为false
         int chance = this.spawnInfo.enableChance;

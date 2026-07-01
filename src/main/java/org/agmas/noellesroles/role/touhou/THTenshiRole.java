@@ -36,6 +36,7 @@ public class THTenshiRole extends TouhouRole {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
         addFlag("th_misc");
         setVigilanteTeam(true);
+        setSpecialVigilante(true);
     }
 
     @Override

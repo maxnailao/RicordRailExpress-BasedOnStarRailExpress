@@ -132,7 +132,7 @@ public class TraitorAndModifiers {
             null, null, false, true))
             .setDefaultEnableChance(1000);
 
-    // 狂躁症 - 任务乱码，无法完成，附近完成任务恢复san和金币
+    // 狂躁症 - 任务乱码，无法完成，附近完成任务恢复san
     public static SREModifier MANIC = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("manic"),
             new Color(220, 20, 60).getRGB(), // 深红色
@@ -151,7 +151,7 @@ public class TraitorAndModifiers {
             Noellesroles.id("rebel"),
             new Color(0, 100, 0).getRGB(), // 暗绿色
             null, null, false, true))
-            .setDefaultEnableChance(2500);
+            .setDefaultEnableChance(2500).setHidden(true);
 
     // 晕血症 - 看到死亡获得缓慢和反胃
     public static SREModifier HEMOPHOBIA = HMLModifiers.registerModifier(new SREModifier(
@@ -241,6 +241,9 @@ public class TraitorAndModifiers {
 
     // 起义军 - 被触发的玩家集合（每游戏一次）
     public static final Set<UUID> REBEL_TRIGGERED = ConcurrentHashMap.newKeySet();
+
+    // 起义军 - 正在执行惩罚的玩家集合（防止递归StackOverflow）
+    public static final Set<UUID> REBEL_PUNISHING = ConcurrentHashMap.newKeySet();
 
     // 绝境信徒 - 被触发的玩家集合（每游戏一次）
     public static final Set<UUID> DESPERATE_FAITH_ACTIVATED = ConcurrentHashMap.newKeySet();
@@ -574,6 +577,10 @@ public class TraitorAndModifiers {
             if (victim.level().isClientSide)
                 return;
 
+            // 防止递归惩罚：如果victim正在被起义军逻辑惩罚中，跳过
+            if (REBEL_PUNISHING.contains(victim.getUUID()))
+                return;
+
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorld == null || !gameWorld.isRunning())
                 return;
@@ -590,8 +597,14 @@ public class TraitorAndModifiers {
 
                 // 检查击杀者是否是平民阵营
                 if (gameWorld.isInnocent(killer)) {
-                    // 使用误杀平民的死亡原因
-                    GameUtils.killPlayer(killer, true, victim, Noellesroles.id("shot_innocent"));
+                    // 标记killer正在接受惩罚，防止递归
+                    REBEL_PUNISHING.add(killer.getUUID());
+                    try {
+                        // 使用误杀平民的死亡原因
+                        GameUtils.killPlayer(killer, true, victim, Noellesroles.id("shot_innocent"));
+                    } finally {
+                        REBEL_PUNISHING.remove(killer.getUUID());
+                    }
                 }
             }
         });
@@ -605,6 +618,7 @@ public class TraitorAndModifiers {
             LAST_GASP_KILLER.clear();
             LAST_GASP_DEATH_REASON.clear();
             REBEL_TRIGGERED.clear();
+            REBEL_PUNISHING.clear();
             DESPERATE_FAITH_ACTIVATED.clear();
             LAST_GIVE_COIN_TIME.clear();
             LAST_APPLE_TIME.clear();

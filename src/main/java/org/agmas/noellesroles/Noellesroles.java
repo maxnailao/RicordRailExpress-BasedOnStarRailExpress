@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
-import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.text.Collator;
 import java.util.ArrayList;
@@ -169,9 +168,6 @@ public class Noellesroles implements ModInitializer {
                 SingletonArgumentInfo.contextFree(ModColorArgument::color) // 工厂方法
         );
         HSRConstants.init();
-        Harpymodloader.HIDDEN_MODIFIERS.add(SEModifiers.REFUGEE.identifier().getPath());
-        Harpymodloader.HIDDEN_MODIFIERS.add(SEModifiers.BLACK_WHITE.identifier().getPath());
-        Harpymodloader.HIDDEN_MODIFIERS.add("rebel");
         // 初始化模组角色列表
         ModRoles.init();
         // 初始化修饰符

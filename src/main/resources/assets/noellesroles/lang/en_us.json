@@ -723,7 +723,7 @@
   "message.noellesroles.antidote_reagent.infected_only": "%s is infected!",
   "message.noellesroles.doctor.penalty": "Since the Doctor is alive, you cannot use Killer Instinct and have restricted vision for 45 seconds after death!",
   "message.noellesroles.doctor.about_to_revive": "You will revive in %ss.",
-  "==================== Post-Death Restrictions ====================": "",
+  "==================== 死亡后限制 ====================": "",
   "message.noellesroles.penalty.limit.god_job_couple": "Since the Conspirator is alive, you cannot use Killer Instinct and have restricted vision while they live!",
   "message.noellesroles.penalty.limit.loose_end": "You may revive during Outlaw Moment, so Killer Instinct and vision are restricted.",
   "message.noellesroles.penalty.limit": "Your Killer Instinct is restricted!",
@@ -3544,6 +3544,8 @@
   "message.noellesroles.reasoner.unavailable": "You cannot use the compass right now.",
   "message.noellesroles.reasoner.already_solved": "You have already solved this question.",
   "message.noellesroles.reasoner.shop.time_not_ready": "The compass has not yet manifested. 2 minutes must pass first.",
+  "message.noellesroles.reasoner.shop.already_has_compass": "You already have a compass.",
+  "cmd.config.noellesroles.spawn.info": "\n※ %s %s 的生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s"
   "message.noellesroles.reasoner.shop.already_has_compass": "You already have a compass."
   "message.noellesroles.reasoner.already_solved": "You have already solved this question."
   "message.noellesroles.cupid.linked": "Linked %s and %s as Lovers"

@@ -433,7 +433,7 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(DoomedSinnerFateRevealS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client()
-                    .setScreen(new org.agmas.noellesroles.client.screen.DoomedSinnerFateScreen(payload)));
+                    .setScreen(new DoomedSinnerFateScreen(payload)));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ShowCustomNewspaperPacket.ID, (payload, context) -> {
