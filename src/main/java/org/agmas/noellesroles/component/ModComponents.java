@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.component;
 
+import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -8,6 +9,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
+import org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
@@ -71,6 +73,7 @@ import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cupid.CupidPlayerComponent;
@@ -307,6 +310,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<NostalgistPlayerComponent> NOSTALGIST = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "nostalgist"),
       NostalgistPlayerComponent.class);
+
+  public static final ComponentKey<WraithAssassinPlayerComponent> WRAITH_ASSASSIN = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "wraith_assassin"),
+      WraithAssassinPlayerComponent.class);
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent> LEON = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "leon"),
@@ -557,6 +564,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   @Override
   public void registerEntityComponentFactories(@NotNull EntityComponentFactoryRegistry registry) {
+    registry.beginRegistration(DoomedSinnerBodyEntity.class, PlayerBodyEntityComponent.KEY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PlayerBodyEntityComponent::new);
 
     // 注册通用技能组件 - 附加到玩家实体
     // RespawnCopyStrategy.NEVER_COPY 表示玩家重生时不保留数据（游戏开始时会重新初始化）
@@ -586,6 +596,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, NOSTALGIST)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(NostalgistPlayerComponent::new);
+
+    registry.beginRegistration(Player.class, WRAITH_ASSASSIN)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(WraithAssassinPlayerComponent::new);
 
     // 注册里昂组件 - 「幸存之人」被动草药发放
     registry.beginRegistration(Player.class, LEON)

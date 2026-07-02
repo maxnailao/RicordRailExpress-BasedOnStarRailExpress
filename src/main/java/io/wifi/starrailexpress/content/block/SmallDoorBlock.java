@@ -537,4 +537,8 @@ public class SmallDoorBlock extends DoorPartBlock {
         InteractionResult apply(BlockState state, Level world, SmallDoorBlockEntity entity,
                 BlockPos lowerPos);
     }
+
+    public boolean isOpen(BlockState state) {
+        return state.getValue(OPEN).equals(true);
+    }
 }

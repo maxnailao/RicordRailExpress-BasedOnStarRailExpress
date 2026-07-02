@@ -17,7 +17,7 @@ public final class RavenHud {
             var player = Minecraft.getInstance().player;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
             int x = context.guiWidth() - 180;
-            int y = context.guiHeight() - 40;
+            int y = context.guiHeight() - 55;
 
             context.drawString(Minecraft.getInstance().font,
                     Component.translatable("hud.noellesroles.raven.charge_progress",
@@ -57,6 +57,13 @@ public final class RavenHud {
                         Component.translatable("hud.noellesroles.raven.target",
                                 Component.translatable("announcement.star.role." + raven.targetRoleId.getPath())),
                         x, y - 22, 0xFF5555);
+            }
+
+            // Return hint during hunt
+            if (raven.isHunting()) {
+                context.drawString(Minecraft.getInstance().font,
+                        Component.translatable("hud.noellesroles.raven.return_hint"),
+                        x, y - 33, 0xFFD700);
             }
         });
     }

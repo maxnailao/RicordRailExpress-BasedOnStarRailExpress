@@ -67,6 +67,7 @@ import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinRole;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
@@ -75,6 +76,7 @@ import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
 import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
+import org.agmas.noellesroles.game.roles.neutral.jester.JesterHandler;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaRole;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
@@ -89,6 +91,8 @@ import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilant
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.utils.RandomColorUtil;
 import org.jetbrains.annotations.Nullable;
+
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -265,6 +269,7 @@ public class ModRoles {
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
     public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
+    public static final ResourceLocation WRAITH_ASSASSIN_ID = Noellesroles.id("wraith_assassin");
 
     // 盗猎者角色 ID - 杀手阵营
     public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
@@ -740,7 +745,7 @@ public class ModRoles {
             .setDefaultMax(1);
 
     // DIO 迪奥
-    public static SRERole DIO = TMMRoles.registerRole(new NormalRole(
+    public static SRERole DIO = TMMRoles.registerRole(new EggRole(
             DIO_ID, // 角色 ID
             new Color(255, 215, 0).getRGB(), // 黄色 - 代表 DIO 的金色气场
             false, // isInnocent = 非乘客阵营（杀手）
@@ -751,7 +756,7 @@ public class ModRoles {
     )).setCanSeeCoin(true).setComponentKey(ModComponents.DIO).setOccupiedRoleCount(2).setCanSeeBodyDeathReason(true)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(0);
     // JOJO 承太郎
-    public static SRERole JOJO = TMMRoles.registerRole(new NormalRole(
+    public static SRERole JOJO = TMMRoles.registerRole(new EggRole(
             JOJO_ID, // 角色 ID
             Color.YELLOW.getRGB(),
             true, // isInnocent = 非乘客阵营（杀手）
@@ -769,7 +774,7 @@ public class ModRoles {
                     false, true, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
             .setCanSeeCoin(true).setCanSeeTeammateKiller(true)
-            .setCanUseInstinct(true).setDefaultMax(0);
+            .setCanUseInstinct(true).setDefaultMax(1).setDefaultEnableNeededPlayerCount(12).setDefaultEnableChance(400);
 
     // 好人：锁匠
     public static SRERole LOCKSMITH = TMMRoles.registerRole(
@@ -860,6 +865,23 @@ public class ModRoles {
     ).addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 99999, 0, false, false, false)))
             .setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500);
+
+    public static SRERole WRAITH_ASSASSIN = TMMRoles.registerRole(new WraithAssassinRole(
+            WRAITH_ASSASSIN_ID,
+            new Color(49, 91, 124).getRGB(),
+            false,
+            true,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            true))
+            .setComponentKey(ModComponents.WRAITH_ASSASSIN)
+            .setCanSeeCoin(true)
+            .setCanUseInstinct(true)
+            .setCanSeeTeammateKiller(true)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2500)
+            .setDefaultEnableNeededPlayerCount(12);
 
     public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
             DELAYER_ID,
@@ -967,7 +989,7 @@ public class ModRoles {
      * 鬼眼·杨间（警长阵营）。完成两个任务后获得左轮手枪。
      * - 被动·鬼眼：每隔 16 秒自动扫描周身 20 格，短暂（2 秒）以白色直觉显示所有玩家轮廓。
      * - 主动·诡域（冷却 70 秒）：在脚下展开半径 12 格、持续 6 秒的领域。领域内所有人减速（缓慢 II）；
-     *   领域内杀手无法开启透视；除杨间外所有人失明并陷入黑暗。
+     * 领域内杀手无法开启透视；除杨间外所有人失明并陷入黑暗。
      */
     public static SRERole GHOST_EYE = TMMRoles.registerRole(
             new NormalRole(GHOST_EYE_ID, new Color(132, 196, 200).getRGB(),
@@ -1013,17 +1035,21 @@ public class ModRoles {
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
             .setComponentKey(ModComponents.GHOST_EYE)
-            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(8);
+            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(7000)
+            .setDefaultEnableNeededPlayerCount(8);
 
     /**
      * 警长 / 鬼眼·杨间 共用：在尚未通过完成两个任务解锁左轮手枪、且身上也没有左轮手枪时死亡，
      * 于死亡位置掉落一把左轮手枪。
      */
     private static void dropUnearnedRevolverOnDeath(Player victim, java.util.Set<java.util.UUID> received) {
-        if (!(victim instanceof ServerPlayer sp)) return;
-        if (received.contains(sp.getUUID())) return;
+        if (!(victim instanceof ServerPlayer sp))
+            return;
+        if (received.contains(sp.getUUID()))
+            return;
         for (ItemStack stack : sp.getInventory().items) {
-            if (stack.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER)) return;
+            if (stack.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER))
+                return;
         }
         sp.drop(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance().copy(), false);
     }
@@ -1085,6 +1111,7 @@ public class ModRoles {
             })
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setPassiveIncome(true)
+            .setServerGameTickEvent((sp, cca) -> JesterHandler.handler(sp, cca))
             .setDefaultMax(1);
     public static SRERole CONDUCTOR = TMMRoles
             .registerRole(new NormalRole(CONDUCTOR_ID, new Color(184, 134, 11).getRGB(), true,
@@ -2118,6 +2145,7 @@ public class ModRoles {
     )).setOccupiedRoleCount(0) // 不占用杀手位
             .setCanUseInstinct(false) // 没有杀手透视
             .setCanSeeTeammateKiller(false) // 杀手本能看不到队友，对杀手的框显示如平民
+            .setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1).setDefaultEnableChance(2000).setDefaultEnableNeededPlayerCount(12);
 
     /**
@@ -2686,7 +2714,7 @@ public class ModRoles {
             .setCanUseInstinct(false) // 不能使用杀手直觉
             .setCanSeeCoin(true)
             .setDefaultMax(0)
-            .setCanBeRandomedByOtherRoles(false);
+            .setCanBeRandomedByOtherRoles(false).addRelatedModifier(SEModifiers.BLACK_WHITE);
 
     // ─────────────────────── 信使 Courier ───────────────────────
     public static final ResourceLocation COURIER_ID = Noellesroles.id("courier");
@@ -3036,6 +3064,7 @@ public class ModRoles {
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREArmorPlayerComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.WRAITH_ASSASSIN_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
 
         // 设置疫使与毒师互斥

@@ -117,9 +117,11 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.cupid.CupidPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerHandler;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
+import org.agmas.noellesroles.game.roles.neutral.mafia.GodfatherComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
@@ -803,6 +805,8 @@ public class ModEventsRegister {
             }
             return InteractionResult.PASS;
         });
+        DoomedSinnerPlayerComponent.registerEvents();
+        GodfatherComponent.registerEvents();
         // 吝啬 - 商店购买返还20%金币
         StandardRevolverItem.registerEvents();
         AllowPlayerPunching.EVENT.register(player -> {
@@ -983,6 +987,7 @@ public class ModEventsRegister {
         THEventHandler.registerEvents();
         NinjaPlayerComponent.registerEvents();
         org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistPlayerComponent.registerEvents();
+        org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent.registerEvents();
         OnPlayerUsedSkill.EVENT.register((player) -> {
             NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
             if (!config.skillEchoEventEnabled) {
@@ -1840,11 +1845,8 @@ public class ModEventsRegister {
              */
             {
                 // 只按玩家实际持有的枪械 / DropRevolverWhenDead 物品数量掉落左轮，
-                // 不能用 1 + ...，否则任何没有枪的玩家死亡也会凭空掉一把枪。
-                // 警长 / 鬼眼·杨间 未解锁时的补偿掉枪由各自角色 onDeath 的
-                // dropUnearnedRevolverOnDeath 单独处理。
                 int dropCount = MCItemsUtils.clearItem(player, (t) -> {
-                    return t.getItem() instanceof DropRevolverWhenDead || t.is(TMMItemTags.GUNS);
+                    return t.getItem() instanceof DropRevolverWhenDead || t.is(TMMItems.REVOLVER) || t.is(ModItems.BANDIT_REVOLVER);
                 });
                 while (dropCount > 0) {
                     player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);

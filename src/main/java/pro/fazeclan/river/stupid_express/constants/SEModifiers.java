@@ -58,7 +58,7 @@ public class SEModifiers {
             null,
             false,
             false))
-            .setDefaultEnableChance(500)
+            .setDefaultEnableChance(1000)
             .setDefaultEnableNeededPlayerCount(12).setHidden(true);
 
     public static SREModifier TINY = HMLModifiers.registerModifier(new SREModifier(
@@ -184,7 +184,7 @@ public class SEModifiers {
             StupidExpress.id("black_white"),
             Color.BLACK.getRGB(),
             null,
-            new HashSet<>(List.of(TMMRoles.VIGILANTE)),
+            new HashSet<>(List.of(ModRoles.SHERIFF, TMMRoles.VIGILANTE)),
             false,
             true))
             .setDefaultMax(1)

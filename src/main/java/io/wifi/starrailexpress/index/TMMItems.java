@@ -76,8 +76,6 @@ public interface TMMItems {
             new BatItem(new Item.Properties().stacksTo(1)
                     .attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
             WEAPONS_GROUP, SRE_ALL_GROUP);
-    Item CROWBAR = registrar.create("crowbar", new CrowbarItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
-            SRE_ALL_GROUP);
     Item GRENADE = registrar.create("grenade", new GrenadeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
             SRE_ALL_GROUP);
     Item STICKY_GRENADE = registrar.create("sticky_grenade", new StickyGrenadeItem(new Item.Properties().stacksTo(1)),
@@ -104,6 +102,8 @@ public interface TMMItems {
             new IronDoorKeyItem(new Item.Properties().stacksTo(1).durability(3)), TOOLS_GROUP, SRE_ALL_GROUP);
     Item LOCKPICK = registrar.create("lockpick", new LockpickItem(new Item.Properties().stacksTo(1)),
             TOOLS_GROUP, SRE_ALL_GROUP);
+    Item CROWBAR = registrar.create("crowbar", new CrowbarItem(new Item.Properties().stacksTo(1)), TOOLS_GROUP,
+            SRE_ALL_GROUP);
     Item DEFENSE_VIAL = registrar.create("defense_vial",
             new DefenseItem(new Item.Properties().stacksTo(1)),
             TOOLS_GROUP, SRE_ALL_GROUP);
@@ -158,7 +158,7 @@ public interface TMMItems {
             new net.minecraft.resources.ResourceKey[] { net.minecraft.world.item.CreativeModeTabs.OP_BLOCKS });
 
     // === 杂项 (MISC) ===
-    Item BLACKOUT = registrar.create("blackout", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
+    Item BLACKOUT = registrar.create("blackout", new BlackoutItem(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
     Item MONITOR_BROKEN = registrar.create("monitor_broken", new Item(new Item.Properties().stacksTo(1)),
             SRE_ALL_GROUP);
     Item PSYCHO_MODE = registrar.create("psycho_mode", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);

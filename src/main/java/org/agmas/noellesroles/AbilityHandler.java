@@ -29,6 +29,7 @@ import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
@@ -299,7 +300,12 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.RAVEN)) {
-            ModComponents.RAVEN.get(player).useAbility();
+            RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
+            if (raven.isHunting()) {
+                raven.returnFromHunt();
+            } else {
+                raven.useAbility();
+            }
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.CAKE_MAKER)) {

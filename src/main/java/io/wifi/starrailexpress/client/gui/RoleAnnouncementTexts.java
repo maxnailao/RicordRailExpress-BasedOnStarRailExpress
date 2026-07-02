@@ -173,5 +173,5 @@ public class RoleAnnouncementTexts {
     public static final Component NEUTRAL_TITLE_TEXT = Component.translatable("announcement.star.title.neutral")
             .withColor(Color.YELLOW.getRGB());
     public static final Component VIGILANTE_TITLE_TEXT = Component.translatable("announcement.star.title.vigilante")
-            .withColor(Color.CYAN.getRGB());
+            .withColor(0x1B8AE5);
 }

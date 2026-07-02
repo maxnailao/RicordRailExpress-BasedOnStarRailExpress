@@ -113,7 +113,10 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("manhole_suffocation")
                 || deathReason.getPath().equals("stalactite_impale")
                 || deathReason.getPath().equals("flamethrower_burned")
-                || deathReason.getPath().equals("boulder_crush");
+                || deathReason.getPath().equals("boulder_crush")
+                || deathReason.getPath().equals("wizard_fire_arrow")
+                || deathReason.getPath().equals("wizard_fireball")
+                || deathReason.getPath().equals("undead_infection");
     }
 
 }

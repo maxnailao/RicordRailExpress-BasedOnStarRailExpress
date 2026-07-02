@@ -21,7 +21,9 @@ import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.SREItemUtils;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
+import net.exmo.sre.subtitle.SubtitleS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -118,11 +120,15 @@ public class GameUtils {
 
     /**
      * 把玩家传送到一个随机房间（在所有已配置坐标的房间中随机挑选）。
-     * Teleport the player into a random room (chosen among all rooms that have a configured anchor).
+     * Teleport the player into a random room (chosen among all rooms that have a
+     * configured anchor).
      *
-     * <p>若存在多个可用房间，会尽量避开玩家自己的房间，以保证"随机"确实换了房间；
-     * 没有任何可用房间时退回旁观模式。 / When more than one room is available it avoids the player's own
-     * room so the teleport actually changes rooms; falls back to spectator if no room is configured.
+     * <p>
+     * 若存在多个可用房间，会尽量避开玩家自己的房间，以保证"随机"确实换了房间；
+     * 没有任何可用房间时退回旁观模式。 / When more than one room is available it avoids the
+     * player's own
+     * room so the teleport actually changes rooms; falls back to spectator if no
+     * room is configured.
      */
     public static void teleportToRandomRoom(Player player) {
         if (player == null)
@@ -449,7 +455,8 @@ public class GameUtils {
         }
         for (String entry : areas.initialItems) {
             String[] parts = entry.split(";");
-            if (parts.length < 2) continue;
+            if (parts.length < 2)
+                continue;
             String itemId = parts[0];
             int count;
             try {
@@ -457,17 +464,21 @@ public class GameUtils {
             } catch (NumberFormatException e) {
                 continue;
             }
-            if (count <= 0) continue;
+            if (count <= 0)
+                continue;
 
             ResourceLocation itemLocation = ResourceLocation.tryParse(itemId);
-            if (itemLocation == null) continue;
+            if (itemLocation == null)
+                continue;
             Item item = BuiltInRegistries.ITEM.get(itemLocation);
-            if (item == Items.AIR) continue;
+            if (item == Items.AIR)
+                continue;
 
             for (ServerPlayer player : players) {
                 player.addItem(new ItemStack(item, count));
             }
-            SRE.LOGGER.info("Distributed map initial item: " + itemId + " x" + count + " to " + players.size() + " players");
+            SRE.LOGGER.info(
+                    "Distributed map initial item: " + itemId + " x" + count + " to " + players.size() + " players");
         }
     }
 
@@ -792,7 +803,8 @@ public class GameUtils {
 
         // 应用全局药水效果
         for (String effectStr : areas.effect) {
-            if (effectStr.isEmpty()) continue;
+            if (effectStr.isEmpty())
+                continue;
             try {
                 String[] parts = effectStr.split(",");
                 if (parts.length >= 1) {
@@ -880,7 +892,7 @@ public class GameUtils {
         SRE.REPLAY_MANAGER.finalizeReplay(roundEnd.getWinStatus(), roundEnd);
         // 对局结束后把完整回放时间线作为全局战绩异步保存到远端数据库（未开启 MySQL 同步时自动跳过）。
         net.exmo.sre.record.MatchRecordService.recordFinishedMatch(world);
-        
+
         isGameStarted = false;
 
         gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
@@ -912,7 +924,8 @@ public class GameUtils {
             // 清除全局药水效果
             AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
             for (String effectStr : areas.effect) {
-                if (effectStr.isEmpty()) continue;
+                if (effectStr.isEmpty())
+                    continue;
                 try {
                     String[] parts = effectStr.split(",");
                     if (parts.length >= 1) {
@@ -947,6 +960,10 @@ public class GameUtils {
                     Component.translatable("\n\n\n\n%s\n",
                             Component.translatable("sre.shutdown.waring", 30).withStyle(ChatFormatting.YELLOW)),
                     false);
+            SRENetworkMessageUtils.sendCODSubtitleToAll(
+                    Component.translatable("sre.shutdown.waring", 30).withStyle(ChatFormatting.YELLOW),
+                    Component.translatable("sre.shutdown.waring", 30).withStyle(ChatFormatting.YELLOW), 30 * 20,
+                    java.awt.Color.GREEN.getRGB(), false, SubtitleS2CPayload.POS_CENTER);
             AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning = false;
             serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(30 * 20, () -> {
                 world.getServer().halt(false);
@@ -1368,7 +1385,14 @@ public class GameUtils {
     public static long getAlivePlayerCount(Level level) {
         return level.players().stream().filter((p) -> isPlayerAliveAndSurvivalIgnoreShitSplit(p)).count();
     }
-
+ public static void revivePlayerToItsRoom(ServerPlayer player) {
+        DeathPenaltyComponent.KEY.get(player).clear();
+        DefibrillatorComponent.KEY.get(player).clear();
+        GameUtils.teleportBackToRoom(player);
+        player.setGameMode(GameType.ADVENTURE);
+        TrainVoicePlugin.resetPlayer(player.getUUID());
+        SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
+    }
     public static void revivePlayer(ServerPlayer player, double x, double y, double z) {
         DeathPenaltyComponent.KEY.get(player).clear();
         DefibrillatorComponent.KEY.get(player).clear();

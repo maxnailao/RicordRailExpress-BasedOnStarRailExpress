@@ -4,12 +4,16 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.replay.ReplayEvent;
 import io.wifi.starrailexpress.api.replay.ReplayEventTypes;
+import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.item.DisguiseVariants;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.ShouldGiveKillerBalance;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -24,11 +28,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.packet.DoomedSinnerFateRevealS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -50,14 +57,16 @@ import java.util.UUID;
 /**
  * 宿命的罪人（Doomed Sinner）—— 中立独立胜利角色。
  *
- * <p>核心机制「轮回」：罪人通过以 <b>不同</b> 的死亡原因死去来累积胜利进度，
+ * <p>
+ * 核心机制「轮回」：罪人通过以 <b>不同</b> 的死亡原因死去来累积胜利进度，
  * 需要的不同死因数量随人数变化（最低 5，最高 10）。每次非彻底死亡后会在自己的
- * 房间复活，留下的尸体在数秒后消失。若以 <b>同一种</b> 死因死去达到 3 次，则彻底死亡。</p>
+ * 房间复活，留下的尸体在数秒后消失。若以 <b>同一种</b> 死因死去达到 3 次，则彻底死亡。
+ * </p>
  *
  * <ul>
- *   <li>技能 1「命运的启示」：近距离查看目标最近 3 次的杀人方式（GUI）。</li>
- *   <li>技能 2「重启」：随机挑选一种死因进行死亡脱离（回到房间、短暂无敌），
- *       不计入死亡记录、不触发死亡判定。</li>
+ * <li>技能 1「命运的启示」：近距离查看目标最近 3 次的杀人方式（GUI）。</li>
+ * <li>技能 2「重启」：随机挑选一种死因进行死亡脱离（回到房间、短暂无敌），
+ * 不计入死亡记录、不触发死亡判定。</li>
  * </ul>
  *
  * 胜利判定参见 {@link org.agmas.noellesroles.CustomWinnerClass}，
@@ -152,7 +161,7 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
     public static int computeRequiredReasons(int totalPlayers) {
         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
         int min = Math.max(1, config.doomedSinnerMinReasons);
-        int max = Math.max(min, config.doomedSinnerMaxReasons);
+        int max = Math.max(min, Math.min(config.doomedSinnerMaxReasons, 8));
         if (totalPlayers <= 16) {
             return min;
         }
@@ -218,8 +227,47 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
         int despawnTicks = Math.max(20, NoellesRolesConfig.HANDLER.instance().doomedSinnerCorpseDespawnSeconds * 20);
         for (PlayerBodyEntity body : serverLevel.getEntities(TMMEntities.PLAYER_BODY,
                 b -> player.getUUID().equals(b.getPlayerUuid()))) {
-            corpseTimers.putIfAbsent(body.getUUID(), despawnTicks);
+            PlayerBodyEntity trackedBody = ensureDoomedSinnerBody(body);
+            corpseTimers.putIfAbsent(trackedBody.getUUID(), despawnTicks);
         }
+    }
+
+    private PlayerBodyEntity ensureDoomedSinnerBody(PlayerBodyEntity body) {
+        if (body instanceof DoomedSinnerBodyEntity) {
+            PlayerBodyEntityComponent.KEY.get(body).isFakeBody = true;
+            PlayerBodyEntityComponent.KEY.get(body).sync();
+            return body;
+        }
+        if (!(body.level() instanceof ServerLevel serverLevel)) {
+            return body;
+        }
+        DoomedSinnerBodyEntity doomedBody = ModEntities.DOOMED_SINNER_BODY.create(serverLevel);
+        if (doomedBody == null) {
+            return body;
+        }
+
+        doomedBody.setPlayerUuid(body.getPlayerUuid());
+        doomedBody.moveTo(body.getX(), body.getY(), body.getZ(), body.getYRot(), body.getXRot());
+        doomedBody.setYRot(body.getYRot());
+        doomedBody.setYHeadRot(body.getYHeadRot());
+        doomedBody.yBodyRot = body.yBodyRot;
+        doomedBody.yBodyRotO = body.yBodyRotO;
+        if (body.getAttribute(Attributes.SCALE) != null && doomedBody.getAttribute(Attributes.SCALE) != null) {
+            doomedBody.getAttribute(Attributes.SCALE).setBaseValue(body.getAttributeValue(Attributes.SCALE));
+        }
+        doomedBody.setCorrupted(body.isCorrupted());
+
+        CompoundTag bodyTag = new CompoundTag();
+        PlayerBodyEntityComponent.KEY.get(body).writeToNbtFromBody(bodyTag, serverLevel.registryAccess());
+        PlayerBodyEntityComponent doomedComponent = PlayerBodyEntityComponent.KEY.get(doomedBody);
+        doomedComponent.readFromNbtFromBody(bodyTag, serverLevel.registryAccess());
+        doomedComponent.isFakeBody = true;
+        doomedComponent.playerRole = ModRoles.DOOMED_SINNER_ID;
+
+        serverLevel.addFreshEntity(doomedBody);
+        doomedComponent.sync();
+        body.discard();
+        return doomedBody;
     }
 
     // ── 每 tick ───────────────────────────────────────────────────
@@ -300,10 +348,13 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
         double y = roomCaptured ? roomY : serverPlayer.getY();
         double z = roomCaptured ? roomZ : serverPlayer.getZ();
         GameUtils.revivePlayer(serverPlayer, x, y, z);
+        GameUtils.teleportToRandomRoom(serverPlayer);
+        applyRandomDisguise(serverPlayer);
         int invincibleTicks = Math.max(0,
                 NoellesRolesConfig.HANDLER.instance().doomedSinnerReviveInvincibleSeconds * 20);
         if (invincibleTicks > 0) {
-            serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, invincibleTicks, 0, false, false, false));
+            serverPlayer
+                    .addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, invincibleTicks, 0, false, false, false));
         }
         serverPlayer.playNotifySound(SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 0.8f, 1.4f);
         sync();
@@ -334,6 +385,16 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
                 new DoomedSinnerFateRevealS2CPacket(target.getGameProfile().getName(), methods));
         caster.playNotifySound(SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.8f, 1.2f);
         return true;
+    }
+
+    private static void applyRandomDisguise(ServerPlayer player) {
+        int variantCount = DisguiseVariants.VARIANTS.size();
+        if (variantCount <= 0) {
+            return;
+        }
+        int amplifier = player.getRandom().nextInt(variantCount);
+        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, GameConstants.getInTicks(10, 0), amplifier,
+                false, false, false));
     }
 
     /** 从回放记录中读取目标最近 N 次的杀人方式（死因 ResourceLocation 字符串）。 */
@@ -491,5 +552,23 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
 
     public boolean isPermanentlyDead() {
         return permanentlyDead;
+    }
+
+    public boolean shouldSuppressKillerReward() {
+        return !permanentlyDead;
+    }
+
+    public static void registerEvents() {
+        ShouldGiveKillerBalance.EVENT.register((victim, killer, deathReason) -> {
+            if (victim instanceof ServerPlayer serverVictim) {
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverVictim.level());
+                if (gameWorld.isRole(serverVictim, ModRoles.DOOMED_SINNER)) {
+                    if (DoomedSinnerPlayerComponent.KEY.get(serverVictim).shouldSuppressKillerReward()) {
+                        return TrueFalseResult.FALSE;
+                    }
+                }
+            }
+            return TrueFalseResult.PASS;
+        });
     }
 }

@@ -195,7 +195,8 @@ public class BounsRoles {
                     return texture;
                 }
             }, "creator_team")
-            .setDefaultEnableChance(10);
+            .setDefaultEnableChance(10)
+            .addRelatedRole(ModRoles.VOODOO);
 
     public static void init() {
         RedHouseRoles.init();

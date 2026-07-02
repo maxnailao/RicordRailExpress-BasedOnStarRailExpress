@@ -94,6 +94,7 @@
     "client.general.TurnWeakMouseMixin",
     "client.general.PlayerIsolationClientMixin",
     "client.general.PlayerIsolationSoundMixin",
+    "client.general.WraithVisibilityMixin",
     "client.general.ThrowItemMixin",
     "client.roles.bartender.DefenseVialViewMixin",
     "client.roles.builder.BuilderBlockUpdateMixin",

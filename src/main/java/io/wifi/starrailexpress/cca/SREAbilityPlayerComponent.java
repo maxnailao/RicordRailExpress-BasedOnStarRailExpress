@@ -270,6 +270,18 @@ public class SREAbilityPlayerComponent
     }
 
     /**
+     * 重置所有技能冷却（包括统一冷却和独立技能状态冷却）
+     * 用于外部（如疫使时刻触发时）立即刷新冷却
+     */
+    public void resetAllCooldowns() {
+        this.cooldown = 0;
+        for (SkillState state : skillStates.values()) {
+            state.cooldown = 0;
+        }
+        this.sync();
+    }
+
+    /**
      * 获取冷却时间（秒）
      */
     public float getCooldownSeconds() {
