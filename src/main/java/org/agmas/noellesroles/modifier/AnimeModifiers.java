@@ -1,24 +1,22 @@
 package org.agmas.noellesroles.modifier;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
+import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import net.exmo.sre.subtitle.SubtitleS2CPayload;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modifiers.EggModifier;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 
-import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.event.OnPlayerDeath;
-import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
-
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
-
-import net.exmo.sre.subtitle.SubtitleS2CPayload;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 
 public class AnimeModifiers {
     public static final String NAMESPACE = "anime";
@@ -32,7 +30,7 @@ public class AnimeModifiers {
             .register(new EggModifier(RE0_486_ID, new Color(243, 207, 180).getRGB(), null, null, false, false),
                     "anime")
             .setHidden(true)
-            .setDefaultEnableChance(2000)
+            .setDefaultEnableChance(200)
             .setDefaultEnableNeededPlayerCount(12);
 
     public static void init() {
@@ -57,19 +55,19 @@ public class AnimeModifiers {
             // 触发回溯
             for (var p : players) {
                 GameUtils.teleportBackToRoom(p);
-                SRENetworkMessageUtils
-                        .sendCODSubtitleToAll(
-                                Component.translatable("message.anime.re0_486.trigger.title")
-                                        .withStyle(ChatFormatting.GOLD),
-                                Component.translatable("message.anime.re0_486.trigger.subtitle"), 100, RE0_486.color(),
-                                false, SubtitleS2CPayload.POS_CENTER);
-                SRE.REPLAY_MANAGER.recordCustomEvent(
-                        Component.translatable("message.anime.re0_486.trigger.title").withStyle(ChatFormatting.YELLOW),
-                        false);
             }
+            SRENetworkMessageUtils
+                    .sendCODSubtitleToAll(
+                            Component.translatable("message.anime.re0_486.trigger.title")
+                                    .withStyle(ChatFormatting.GOLD),
+                            Component.translatable("message.anime.re0_486.trigger.subtitle"), 100, RE0_486.color(),
+                            false, SubtitleS2CPayload.POS_CENTER);
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("message.anime.re0_486.trigger.text",player.getScoreboardName()).withStyle(ChatFormatting.YELLOW),
+                    false);
             // 时停，让其像时间回溯
             TimeStopEffect.tryTriggerStart(player, 20 * 2,
-                    Component.translatable("message.anime.re0_486.trigger.text"));
+                    Component.translatable("message.anime.re0_486.trigger.time_stop"));
         });
     }
 }

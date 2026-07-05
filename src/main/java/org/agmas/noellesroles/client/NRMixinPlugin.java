@@ -25,7 +25,7 @@ public class NRMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.endsWith("LamBugFix") && !IS_LAMBDYNLIGHTS_LOADED) {
             return false;
         }
-        return !"dpm.harpysimpleroles.mixin.client.LimitedInventoryScreen".equals(mixinClassName) && !"dpm.harpysimpleroles.mixin.PurchaseMixin".equals(mixinClassName) && !"dev.doctor4t.ratatouille.mixin.client.armor.PlayerEntityRendererMixin".equals(mixinClassName) && !"dev.doctor4t.ratatouille.mixin.client.armor.LivingEntityRendererMixin".equals(mixinClassName);
+        return true;
     }
 
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {

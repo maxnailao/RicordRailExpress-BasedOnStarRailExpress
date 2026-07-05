@@ -17,51 +17,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
-
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.content.block.scene.BreakingBridgeBlock;
-import org.agmas.noellesroles.content.block.scene.CellarBlock;
-import org.agmas.noellesroles.content.block.scene.CoffinBlock;
-import org.agmas.noellesroles.content.block.scene.DrippingStalactiteBlock;
-import org.agmas.noellesroles.content.block.scene.DebrisPileBlock;
-import org.agmas.noellesroles.content.block.scene.FlamethrowerBlock;
-import org.agmas.noellesroles.content.block.scene.FogZoneBlock;
-import org.agmas.noellesroles.content.block.scene.HurricaneDeviceBlock;
-import org.agmas.noellesroles.content.block.scene.ManholeBlock;
-import org.agmas.noellesroles.content.block.scene.PoisonZoneBlock;
-import org.agmas.noellesroles.content.block.scene.BushBlock;
-import org.agmas.noellesroles.content.block.scene.CropBlock;
-import org.agmas.noellesroles.content.block.scene.DustBlock;
-import org.agmas.noellesroles.content.block.scene.IncineratorBlock;
-import org.agmas.noellesroles.content.block.scene.MovingPlatformBlock;
-import org.agmas.noellesroles.content.block.scene.StatueBlock;
-import org.agmas.noellesroles.content.block.scene.StoveBlock;
-import org.agmas.noellesroles.content.block.scene.TransportPointBlock;
-import org.agmas.noellesroles.content.block_entity.scene.CropBlockEntity;
-import org.agmas.noellesroles.content.block.scene.ReactorBlock;
-import org.agmas.noellesroles.content.block.scene.RollingStoneTriggerPlate;
-import org.agmas.noellesroles.content.block.scene.SabotageBridgeBlock;
-import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
-import org.agmas.noellesroles.content.block.scene.WaterPumpBlock;
-import org.agmas.noellesroles.content.block.scene.SceneGateBlock;
-import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
-import org.agmas.noellesroles.content.block.scene.TrashCanBlock;
-import org.agmas.noellesroles.content.block_entity.scene.CoffinBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.DebrisPileBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.FlamethrowerBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.IncineratorBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.RollingStoneTriggerPlateEntity;
-import org.agmas.noellesroles.content.block_entity.scene.SabotageBridgeBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.WaterValveBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.WaterPumpBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.FogZoneBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.ManholeBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.PoisonZoneBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.SceneGateBlockEntity;
-import org.agmas.noellesroles.content.block_entity.scene.TrashCanBlockEntity;
+import org.agmas.noellesroles.content.block.scene.*;
 import org.agmas.noellesroles.content.block_entity.scene.*;
 
 /**
@@ -130,9 +87,6 @@ public interface ModSceneBlocks {
                     .noOcclusion()
                     .lightLevel(state -> state.getValue(DebrisPileBlock.ACTIVE) ? 10 : 0)));
 
-    BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
-            BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
-
     BlockEntityType<FlamethrowerBlockEntity> FLAMETHROWER_ENTITY = blockEntityRegistrar.create("flamethrower",
             BlockEntityType.Builder.of(FlamethrowerBlockEntity::new, FLAMETHROWER));
     Block ROLLING_STONE_TRIGGER = registerBlock("rolling_stone_trigger",
@@ -140,7 +94,8 @@ public interface ModSceneBlocks {
 
     BlockEntityType<ReactorBlockEntity> REACTOR_ENTITY = blockEntityRegistrar.create("reactor",
             BlockEntityType.Builder.of(ReactorBlockEntity::new, REACTOR));
-
+    BlockEntityType<WaterValveBlockEntity> WATER_VALVE_ENTITY = blockEntityRegistrar.create("water_valve",
+            BlockEntityType.Builder.of(WaterValveBlockEntity::new, WATER_VALVE));
     BlockEntityType<DebrisPileBlockEntity> DEBRIS_PILE_ENTITY = blockEntityRegistrar.create("debris_pile",
             BlockEntityType.Builder.of(DebrisPileBlockEntity::new, DEBRIS_PILE));
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(
@@ -220,7 +175,7 @@ public interface ModSceneBlocks {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, QUEST_CREATIVE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.noellesroles.quest"))
-                .icon(() -> new ItemStack(STOVE.asItem()))
+                .icon(() -> new ItemStack(REACTOR.asItem()))
                 .build());
 
         // 将原版黑色混凝土加入 SRE 任务点方块分类

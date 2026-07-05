@@ -22,14 +22,15 @@ import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComp
 import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
-import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.recall_killer.RecallKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
@@ -252,13 +253,12 @@ public class AbilityHandler {
                 && abilityPlayerComponent.cooldown <= 0) {
             JadeGeneralPlayerComponent jadeGeneral = ModComponents.JADE_GENERAL.get(player);
             if (jadeGeneral.useSkill()) {
-                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
-                        NoellesRolesConfig.HANDLER.instance().jadeGeneralKickCooldown);
+                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, 35);
                 abilityPlayerComponent.sync();
             }
             return;
         }
-        if (gameWorldComponent.isRole(player, ModRoles.GHOST_EYE)
+        if (isGhostEyeRole(gameWorldComponent, player)
                 && abilityPlayerComponent.cooldown <= 0) {
             GhostEyePlayerComponent ghostEye = ModComponents.GHOST_EYE.get(player);
             if (ghostEye.deployDomain()) {
@@ -639,5 +639,11 @@ public class AbilityHandler {
             }
             return;
         }
+    }
+
+    private static boolean isGhostEyeRole(SREGameWorldComponent gameWorldComponent, Player player) {
+        if (gameWorldComponent == null || player == null) return false;
+        var role = gameWorldComponent.getRole(player);
+        return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
     }
 }

@@ -27,11 +27,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class AreasWorldComponent implements AutoSyncedComponent {
     public static final ComponentKey<AreasWorldComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("areas"),
@@ -56,6 +52,15 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         if (this.disabledTasks == null)
             return new HashSet<>();
         return new HashSet<>(this.disabledTasks);
+    }
+
+    /** 此地图禁用的职业 ID。可填完整 ID 或职业 path。 */
+    public HashSet<String> disabledRoles = new HashSet<>();
+
+    public HashSet<String> getDisabledRoles() {
+        if (this.disabledRoles == null)
+            return new HashSet<>();
+        return new HashSet<>(this.disabledRoles);
     }
 
     /** 启用场景任务列表（仅可填场景任务名）。为空表示不启用任何场景任务。 */
@@ -202,8 +207,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     // 天气配置（默认晴天）
     public String weather = "clear"; // clear, rain, thunder
     
-    // 重力配置（默认0.08）
-    public double gravity = 0.08;
+    // 重力modifier（默认0）
+    public double gravity = 0;
     
     // 药水效果配置（格式：["namespace:effect_id,level", ...]，为空数组则无效果）
     public List<String> effect = new ArrayList<>();
@@ -223,12 +228,15 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public boolean minigameQuestEnabled = false;
     /** 当前地图中存在的小游戏种类 ID 集合（由 MapScanner 扫描填充），用于小游戏任务刷新时随机选取。 */
     public final HashSet<String> availableMinigameIds = new HashSet<>();
+    public final HashSet<String> sabotageMinigameIds = new HashSet<>();
 
     // 支持的游戏模式列表，为空表示支持所有模式
     public java.util.List<String> gameModes = new java.util.ArrayList<>();
 
     // 地图初始物品（格式：["itemId;count", ...]，所有玩家进入地图时获得）
     public java.util.List<String> initialItems = new java.util.ArrayList<>();
+    // 0为禁用
+    public int fallToDeathHeight = 0;
 
     public PosWithOrientation getSpawnPos() {
         return spawnPos;
@@ -519,11 +527,25 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
         this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
         this.minigameQuestEnabled = tag.contains("minigameQuestEnabled") && tag.getBoolean("minigameQuestEnabled");
+        this.disabledRoles = new HashSet<>();
+        if (tag.contains("disabledRoles")) {
+            var disabledRolesList = tag.getList("disabledRoles", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < disabledRolesList.size(); i++) {
+                this.disabledRoles.add(disabledRolesList.getString(i));
+            }
+        }
         this.availableMinigameIds.clear();
         if (tag.contains("AvailableMinigameIds")) {
             var mgList = tag.getList("AvailableMinigameIds", net.minecraft.nbt.Tag.TAG_STRING);
             for (int i = 0; i < mgList.size(); i++) {
                 this.availableMinigameIds.add(mgList.getString(i));
+            }
+        }
+        this.sabotageMinigameIds.clear();
+        if (tag.contains("SabotageMinigameIds")) {
+            var sabotageMgList = tag.getList("SabotageMinigameIds", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < sabotageMgList.size(); i++) {
+                this.sabotageMinigameIds.add(sabotageMgList.getString(i));
             }
         }
         this.initialItems = new ArrayList<>();
@@ -621,12 +643,26 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("weatherCycle", this.weatherCycle);
         tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
 
+        var disabledRolesList = new net.minecraft.nbt.ListTag();
+        if (this.disabledRoles != null) {
+            for (String role : this.disabledRoles) {
+                disabledRolesList.add(net.minecraft.nbt.StringTag.valueOf(role));
+            }
+        }
+        tag.put("disabledRoles", disabledRolesList);
+
         // 序列化 availableMinigameIds
         var minigameIdsList = new net.minecraft.nbt.ListTag();
         for (String id : this.availableMinigameIds) {
             minigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
         }
         tag.put("AvailableMinigameIds", minigameIdsList);
+
+        var sabotageMinigameIdsList = new net.minecraft.nbt.ListTag();
+        for (String id : this.sabotageMinigameIds) {
+            sabotageMinigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
+        }
+        tag.put("SabotageMinigameIds", sabotageMinigameIdsList);
 
         var initialItemsList = new net.minecraft.nbt.ListTag();
         for (String item : this.initialItems) {

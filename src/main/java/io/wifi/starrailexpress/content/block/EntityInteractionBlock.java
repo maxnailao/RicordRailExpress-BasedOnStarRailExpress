@@ -32,7 +32,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 
 /**
  * 实体交互方块 - 普通版本（占满1格的方块）
@@ -208,10 +208,9 @@ public class EntityInteractionBlock extends BaseEntityBlock implements TaskInsti
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
         // 只有在BlockEntity中标记为任务路标时才渲染
         if (state.getBlock() instanceof EntityInteractionBlock) {
-            Level level = player.level();
             if (level != null) {
                 if (level.getBlockEntity(pos) instanceof EntityInteractionBlockEntity entity) {
                     if (!entity.isTaskMarker()) {

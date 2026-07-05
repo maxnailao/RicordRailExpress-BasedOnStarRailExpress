@@ -1,6 +1,8 @@
 package io.wifi.starrailexpress.content.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -11,7 +13,8 @@ import org.jetbrains.annotations.NotNull;
 public class StopCommand {
     public static void register(@NotNull CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tmm:stop")
-                .requires(source -> Harpymodloader.officialVerify && source.hasPermission(2))
+                .requires(source -> Harpymodloader.officialVerify
+                        && source.hasPermission(SREConfig.instance().stopGameRequiredPermission))
                 .then(Commands.literal("force").executes(context -> {
                     GameUtils.finalizeGame(context.getSource().getLevel());
                     return 1;

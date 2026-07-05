@@ -1,17 +1,19 @@
 package io.wifi.starrailexpress.customrole;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.customrole.CustomRoleData.EffectEntry;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.util.ShopEntry;
-import io.wifi.starrailexpress.customrole.CustomRoleData.EffectEntry;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -20,16 +22,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.fabricmc.loader.api.FabricLoader;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.agmas.harpymodloader.Harpymodloader;
+
+import java.util.*;
 
 /**
  * 自定义职业加载器
@@ -51,8 +46,6 @@ public class CustomRoleLoader {
 
     // 游戏结束时自动执行的指令：englishRoleId -> 指令列表
     private static final Map<String, List<String>> gameEndCommandsByRoleId = new HashMap<>();
-    // 跟踪每世界游戏状态，检测 ACTIVE → STOPPING 转换
-    private static final Map<ResourceLocation, Boolean> worldWasActive = new HashMap<>();
 
     /**
      * 重新加载所有自定义职业
@@ -322,6 +315,16 @@ public class CustomRoleLoader {
             customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);
         if (role.defaultEnableChance >= 0)
             customSpawn.setEnableChance(role.defaultEnableChance);
+        if (data.mapRestrictedTo != null) {
+            for (String mapId : data.mapRestrictedTo) {
+                if (mapId == null)
+                    continue;
+                String trimmed = mapId.trim();
+                if (!trimmed.isEmpty()) {
+                    customSpawn.map.add(trimmed);
+                }
+            }
+        }
         role.setSpawnInfo(customSpawn);
 
         // 互斥和绑定生成（需要在所有角色注册完成后处理，这里只存储引用）
@@ -382,13 +385,7 @@ public class CustomRoleLoader {
 
                         // 执行即时指令（支持 @a @p @r @s 选择器）
                         for (String cmd : commands) {
-                            String processed = processCommandSelectors(cmd
-                                    .replace("<player>", player.getGameProfile().getName())
-                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                            player.getX(), player.getY(), player.getZ())),
-                                    player);
-                            player.getServer().getCommands().performPrefixedCommand(
-                                    player.createCommandSourceStack(), processed);
+                            executeConfiguredCommand(cmd, player);
                         }
 
                         // 延迟执行指令
@@ -402,13 +399,7 @@ public class CustomRoleLoader {
                                                 || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target))
                                             return;
                                         for (String cmd : delayedCommands) {
-                                            String processed = processCommandSelectors(cmd
-                                                    .replace("<player>", target.getGameProfile().getName())
-                                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                                            target.getX(), target.getY(), target.getZ())),
-                                                    target);
-                                            target.getServer().getCommands().performPrefixedCommand(
-                                                    target.createCommandSourceStack(), processed);
+                                            executeConfiguredCommand(cmd, target);
                                         }
                                     }));
                         }
@@ -438,26 +429,15 @@ public class CustomRoleLoader {
             return;
         gameEndHandlerRegistered = true;
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            for (ServerLevel level : server.getAllLevels()) {
-                var comp = SREGameWorldComponent.KEY.get(level);
-                var status = comp.getGameStatus();
-                var dim = level.dimension().location();
-                Boolean wasActive = worldWasActive.getOrDefault(dim, false);
-
-                // 检测 ACTIVE → STOPPING 转换
-                if (wasActive && status == SREGameWorldComponent.GameStatus.STOPPING) {
-                    executeGameEndCommands(level, comp);
-                }
-                worldWasActive.put(dim, status == SREGameWorldComponent.GameStatus.ACTIVE);
+        OnGameEnd.EVENT.register((level, comp) -> {
+            if (!gameEndCommandsByRoleId.isEmpty()) {
+                executeGameEndCommands(level, comp);
             }
         });
     }
 
     private static void executeGameEndCommands(ServerLevel level, SREGameWorldComponent comp) {
         for (ServerPlayer player : level.players()) {
-            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player))
-                continue;
             var role = comp.getRole(player);
             if (role == null)
                 continue;
@@ -470,13 +450,7 @@ public class CustomRoleLoader {
             if (cmds == null)
                 continue;
             for (String cmd : cmds) {
-                String processed = processCommandSelectors(cmd
-                        .replace("<player>", player.getGameProfile().getName())
-                        .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                player.getX(), player.getY(), player.getZ())),
-                        player);
-                player.getServer().getCommands().performPrefixedCommand(
-                        player.createCommandSourceStack(), processed);
+                executeConfiguredCommand(cmd, player);
             }
         }
     }
@@ -552,9 +526,11 @@ public class CustomRoleLoader {
                         if (role == null)
                             continue;
 
-                        final String mapName = currentMap;
+                        final String mapName = currentMap == null ? "" : currentMap.trim();
                         boolean allowed = data.mapRestrictedTo.stream()
-                                .anyMatch(mapId -> mapId.trim().equalsIgnoreCase(mapName));
+                                .filter(Objects::nonNull)
+                                .map(String::trim)
+                                .anyMatch(mapId -> mapId.equalsIgnoreCase(mapName));
 
                         if (!allowed) {
                             // 当前地图不在允许列表中，禁用该职业
@@ -760,16 +736,8 @@ public class CustomRoleLoader {
                             entries.add(new ShopEntry(display, entry.price, ShopEntry.Type.TOOL) {
                                 @Override
                                 public boolean onBuy(net.minecraft.world.entity.player.Player player) {
-                                    if (player.getServer() != null) {
-                                        for (String cmd : cmds) {
-                                            String processed = processCommandSelectors(cmd
-                                                    .replace("<player>", player.getGameProfile().getName())
-                                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                                            player.getX(), player.getY(), player.getZ())),
-                                                    player);
-                                            player.getServer().getCommands().performPrefixedCommand(
-                                                    player.createCommandSourceStack(), processed);
-                                        }
+                                    for (String cmd : cmds) {
+                                        executeConfiguredCommand(cmd, player);
                                     }
                                     // 冷却
                                     if (cooldownTicks > 0 && !display.isEmpty()
@@ -787,6 +755,32 @@ public class CustomRoleLoader {
             }
         }
         return entries;
+    }
+
+    private static void executeConfiguredCommand(String cmd, net.minecraft.world.entity.player.Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null || cmd == null
+                || cmd.isBlank()) {
+            return;
+        }
+
+        String processed = processCommandSelectors(cmd
+                .replace("<player>", serverPlayer.getGameProfile().getName())
+                .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
+                        serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ())),
+                serverPlayer);
+        try {
+            serverPlayer.getServer().getCommands().performPrefixedCommand(
+                    serverPlayer.getServer().createCommandSourceStack()
+                            .withPermission(SREConfig.instance().customRolePermission)
+                            .withSuppressedOutput()
+                            .withEntity(serverPlayer)
+                            .withLevel(serverPlayer.serverLevel())
+                            .withPosition(serverPlayer.position())
+                            .withRotation(serverPlayer.getRotationVector()),
+                    processed);
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[CustomRole] Failed to execute configured command '{}': {}", processed, e.getMessage());
+        }
     }
 
     /**

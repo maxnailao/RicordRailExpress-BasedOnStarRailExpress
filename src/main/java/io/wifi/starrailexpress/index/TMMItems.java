@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.item.LetterItem;
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModItems;
 
@@ -120,7 +121,7 @@ public interface TMMItems {
             TOOLS_GROUP, SRE_ALL_GROUP);
     Item BODY_BAG = registrar.create("body_bag", new BodyBagItem(new Item.Properties().stacksTo(1)),
             TOOLS_GROUP, SRE_ALL_GROUP);
-    Item LETTER = registrar.create("letter", new Item(new Item.Properties().stacksTo(1)), TOOLS_GROUP, SRE_ALL_GROUP);
+    Item LETTER = registrar.create("letter", new LetterItem(new Item.Properties().stacksTo(1)), TOOLS_GROUP, SRE_ALL_GROUP);
     Item NOTE = registrar.create("note", new NoteItem(new Item.Properties().stacksTo(4)), TOOLS_GROUP, SRE_ALL_GROUP);
     Item ADMISSION_TICKET = sreRegistrar.create("admission_ticket",
             new AdmissionTicketItem(new Item.Properties().stacksTo(16)), TOOLS_GROUP, SRE_ALL_GROUP);
@@ -235,8 +236,6 @@ public interface TMMItems {
                 .title(Component.translatable("itemGroup.noellesroles.all"))
                 .icon(() -> new ItemStack(ModItems.BLANK_CARTRIDGE))
                 .build());
-        if (INIT_ITEMS.LETTER == null)
-            INIT_ITEMS.LETTER = LETTER;
 
         SkinableItem.add(TMMItems.KNIFE);
         SkinableItem.add(TMMItems.REVOLVER);
@@ -251,5 +250,6 @@ public interface TMMItems {
         ChargeableItemRegistry.register(TMMItems.STICKY_GRENADE, new GrenadeChargeableItem());
         WatheBridgerItems.initialize();
         sreRegistrar.registerEntries();
+        SREItems.init();
     }
 }

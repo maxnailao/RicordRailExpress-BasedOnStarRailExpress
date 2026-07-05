@@ -1,12 +1,7 @@
 package io.wifi.starrailexpress.mixin.client.ui;
 
-import java.util.Collection;
-
-import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-
+import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.StatusEffectRenderer;
 import net.exmo.sre.camera.client.AdvancedCameraDirector;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -16,37 +11,47 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-
+import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.client.StatusEffectRenderer;
+import java.util.Collection;
 
 @Mixin(value = Gui.class, priority = 1100)
 public class RenderEffectMixin {
     @Shadow
     @Final
     private Minecraft minecraft;
+    @Unique
+    private boolean sre$pushed = false;
 
-    @Inject(method = "renderEffects", at = @At("HEAD"))
+    @Inject(method = "renderEffects", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;enableBlend()V", shift = At.Shift.AFTER))
     private void sre$moveEffectPostion_head(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         customRenderEffect(guiGraphics, deltaTracker);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0, CommonClientHudRenderer.effectStartY, 0);
+        // 标记已推入
+        sre$pushed = true;
     }
 
     @Inject(method = "renderEffects", at = @At(value = "RETURN"))
     private void sre$moveEffectPostion_tail(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        guiGraphics.pose().popPose();
+        if (sre$pushed) {
+            guiGraphics.pose().popPose();
+            sre$pushed = false; // 重置以备下次调用
+        }
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
     private void tmm$hideStatusEffectWhenCameraEvent(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         // 运镜动画期间与原版 F1 一致，完全隐藏状态效果。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             ci.cancel();
             return;
         }

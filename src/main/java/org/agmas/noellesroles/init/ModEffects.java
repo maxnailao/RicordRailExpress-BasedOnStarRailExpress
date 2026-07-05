@@ -22,6 +22,8 @@ import org.agmas.noellesroles.component.GhostStateComponent;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
+import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
@@ -343,6 +345,23 @@ public class ModEffects {
     public static final Holder<MobEffect> VISION_FOG = register("vision_fog",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
 
+    /**
+     * 2D 视角
+     * - 中性效果
+     * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方。
+     *   行为见 {@code TwoDimensionalCameraClientHandle}，最终通过 AdvancedCameraDirector 接管相机。
+     */
+    public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA = register("two_dimensional_camera",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
+
+    /**
+     * 指针视角
+     * - 中性效果
+     * - 客户端显示鼠标指针，并让玩家朝向指针射线命中的方块/实体。
+     */
+    public static final Holder<MobEffect> POINTER = register("pointer",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFE082));
+
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
         return 2.0f + Math.max(0, amplifier) * 3.0f;
@@ -493,8 +512,8 @@ public class ModEffects {
         org.agmas.noellesroles.init.FootstepVanishEffectSync.init();
         // 把怀旧者“里世界标记”效果同步给所有客户端，否则其它客户端查不到怀旧者的里世界状态，
         // 导致手持物品仍显示 / 仍能被杀手透视。
-        org.agmas.noellesroles.init.NostalgistBackworldEffectSync.init();
-        org.agmas.noellesroles.init.WraithDimensionEffectSync.init();
+        NostalgistBackworldEffectSync.init();
+        WraithDimensionEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

@@ -26,10 +26,6 @@ public final class MapStatusBarHudRenderer {
         if (client.player == null || client.options.hideGui) {
             return;
         }
-        // 与体力条同步：仅在游戏运行时渲染
-        if (!SREClient.shouldUseTrainHud()) {
-            return;
-        }
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(client.player.level());
         if (gameComponent == null || !gameComponent.isRunning()) {
             return;
@@ -49,10 +45,8 @@ public final class MapStatusBarHudRenderer {
         int iconX = barX - ICON_SIZE - ICON_GAP;
         int iconY = barY - ICON_SIZE / 2 + BAR_HEIGHT / 2;
 
-        // 绘制图标——和体力条一样，仅 Shift 按下时显示
-        if (client.options.keyShift.isDown()) {
-            graphics.blitSprite(icon(type), iconX, iconY, ICON_SIZE, ICON_SIZE);
-        }
+        // 绘制图标——默认常驻显示
+        graphics.blitSprite(icon(type), iconX, iconY, ICON_SIZE, ICON_SIZE);
 
         // 绘制背景条
         graphics.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, 0x66000000);

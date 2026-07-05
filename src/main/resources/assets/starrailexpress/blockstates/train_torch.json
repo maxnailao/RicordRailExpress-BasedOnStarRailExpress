@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "lit=false,active=false": {
+      "model": "starrailexpress:block/train_torch_off"
+    },
+    "lit=false,active=true": {
+      "model": "starrailexpress:block/train_torch_off"
+    },
+    "lit=true,active=false": {
+      "model": "starrailexpress:block/train_torch_off"
+    },
+    "lit=true,active=true": {
+      "model": "starrailexpress:block/train_torch"
+    }
+  }
+}

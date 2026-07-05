@@ -4,15 +4,14 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
-import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.item.CocktailItem;
+import io.wifi.starrailexpress.content.item.component.SREWritableBookContent;
+import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.packet.EditNewspaperPacket;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -36,8 +35,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.WritableBookContent;
-import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import org.agmas.harpymodloader.Harpymodloader;
@@ -48,8 +45,8 @@ import org.agmas.noellesroles.ModDataComponentTypes;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
+import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.entity.ThrowingKnifeEntity;
 import org.agmas.noellesroles.content.item.ChefFoodItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -67,11 +64,11 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.party.PartyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
@@ -81,6 +78,7 @@ import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class ModPacketsReciever {
   public static void registerPackets() {
@@ -315,19 +313,14 @@ public class ModPacketsReciever {
     });
     ServerPlayNetworking.registerGlobalReceiver(ChefCookC2SPacket.ID, (payload, context) -> {
       final var player = context.player();
-      int foodT = SREItemUtils.clearItem(player, (food) -> {
-        if (food.getItem() instanceof CocktailItem)
-          return false;
-        if (food.has(ModDataComponentTypes.COOKED))
-          return false;
-        return food.has(DataComponents.FOOD);
-      }, 1);
-      int stuffT = SREItemUtils.clearItem(player, ModItems.FOOD_STUFF, 2);
-      if (!(foodT >= 1 && stuffT >= 2)) {
+      if (SREItemUtils.countItem(player, ModPacketsReciever::isChefCookableFood) < 1
+          || SREItemUtils.countItem(player, ModItems.FOOD_STUFF) < 2) {
         player.displayClientMessage(Component.translatable("screen.noellesroles.chef.not_enough_food_stuff")
             .withStyle(ChatFormatting.RED), true);
         return;
       }
+      shrinkMatchingItems(player, ModPacketsReciever::isChefCookableFood, 1);
+      shrinkMatchingItems(player, foodStuff -> foodStuff.is(ModItems.FOOD_STUFF), 2);
       var cooked_food = ModItems.COOKED_FOOD.getDefaultInstance();
       cooked_food.set(ModDataComponentTypes.COOKED, ModDataComponentTypes.cookedFood(payload.cookInfo()));
       ChefFoodItem.randomModel(cooked_food);
@@ -398,19 +391,22 @@ public class ModPacketsReciever {
             list.add(Filterable.passThrough(Component.literal(p)));
           }
           String title = titOpt.get();
+          if (title.length() >= SREWrittenBookContent.TITLE_MAX_LENGTH) {
+            title = title.substring(0, SREWrittenBookContent.TITLE_MAX_LENGTH);
+          }
           String shortTitle = title;
           if (shortTitle.length() >= 10) {
             shortTitle = shortTitle.substring(0, 8) + "...";
           }
-          mainHandItem.set(DataComponents.WRITTEN_BOOK_CONTENT,
-              new WrittenBookContent(Filterable.passThrough(title), player.getScoreboardName(), 1, list, true));
+          mainHandItem.set(SREDataComponentTypes.WRITTEN_BOOK_CONTENT,
+              new SREWrittenBookContent(Filterable.passThrough(title), player.getScoreboardName(), list, true));
           mainHandItem.set(DataComponents.ITEM_NAME,
               Component.translatable("item.noellesroles.newspaper.name",
                   Component.translatable("item.noellesroles.newspaper.title.warp", shortTitle)
                       .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
 
-          if (mainHandItem.has(DataComponents.WRITABLE_BOOK_CONTENT)) {
-            mainHandItem.remove(DataComponents.WRITABLE_BOOK_CONTENT);
+          if (mainHandItem.has(SREDataComponentTypes.WRITABLE_BOOK_CONTENT)) {
+            mainHandItem.remove(SREDataComponentTypes.WRITABLE_BOOK_CONTENT);
           }
         } else {
           var list = new ArrayList<Filterable<String>>();
@@ -421,7 +417,7 @@ public class ModPacketsReciever {
               Component.translatable("item.noellesroles.newspaper.draft",
                   Component.translatable("item.noellesroles.newspaper.draft.warp", player.getName()).withStyle(
                       ChatFormatting.ITALIC, ChatFormatting.GRAY)));
-          mainHandItem.set(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(list));
+          mainHandItem.set(SREDataComponentTypes.WRITABLE_BOOK_CONTENT, new SREWritableBookContent(list));
         }
       }
     });
@@ -555,8 +551,8 @@ public class ModPacketsReciever {
     // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {
-          ManipulatorPlayerComponent manipulatorPlayerComponent =
-              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          ManipulatorPlayerComponent manipulatorPlayerComponent = (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY
+              .get(context.player());
           if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
             return;
           if (payload.stop()) {
@@ -576,8 +572,8 @@ public class ModPacketsReciever {
     // 操纵师附身期间：以目标身份释放目标自身技能（冷却记在目标身上）
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket.ID, (payload, context) -> {
-          ManipulatorPlayerComponent manipulatorPlayerComponent =
-              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          ManipulatorPlayerComponent manipulatorPlayerComponent = (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY
+              .get(context.player());
           if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
             return;
           var targetPlayer = context.player().level().getPlayerByUUID(manipulatorPlayerComponent.target);
@@ -1548,6 +1544,34 @@ public class ModPacketsReciever {
                 Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
           }
         });
+  }
+
+  private static boolean isChefCookableFood(ItemStack food) {
+    if (food.is(ModItems.FOOD_STUFF))
+      return false;
+    if (food.getItem() instanceof CocktailItem)
+      return false;
+    if (food.has(ModDataComponentTypes.COOKED))
+      return false;
+    return food.has(DataComponents.FOOD);
+  }
+
+  private static int shrinkMatchingItems(Player player, Predicate<ItemStack> predicate, int count) {
+    int remaining = count;
+    for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
+      ItemStack stack = player.getInventory().getItem(i);
+      if (stack.isEmpty() || !predicate.test(stack))
+        continue;
+      int toShrink = Math.min(remaining, stack.getCount());
+      stack.shrink(toShrink);
+      remaining -= toShrink;
+      if (stack.isEmpty()) {
+        player.getInventory().setItem(i, ItemStack.EMPTY);
+      }
+    }
+    player.containerMenu.broadcastChanges();
+    player.inventoryMenu.slotsChanged(player.getInventory());
+    return count - remaining;
   }
 
   private static void sendLotteryResult(ServerPlayer player, BlockPos blockPos, boolean success, String messageKey,

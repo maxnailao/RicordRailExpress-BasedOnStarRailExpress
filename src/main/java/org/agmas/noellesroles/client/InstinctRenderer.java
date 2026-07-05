@@ -26,6 +26,7 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.content.entity.SaltedFishBodyEntity;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
 import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
@@ -33,6 +34,7 @@ import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -44,9 +46,9 @@ import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
-import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
+import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -65,10 +67,33 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        TouhouInstincts.registerEvents();
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) return -1;
+            if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {
+                return -1;
+            }
+            Player self = Minecraft.getInstance().player;
+            if (!isKillerTeam(SREClient.gameComponent.getRole(self))) {
+                return -1;
+            }
+            if (target instanceof SaltedFishBodyEntity) {
+                return -2;
+            }
+            if (target instanceof Player targetPlayer) {
+                SaltedFishPlayerComponent component = SaltedFishPlayerComponent.KEY.maybeGet(targetPlayer).orElse(null);
+                if (component != null && component.isActive()) {
+                    return -2;
+                }
+            }
+            return -1;
+        });
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null
+                    || SREClient.gameComponent == null)
+                return -1;
             var self = Minecraft.getInstance().player;
-            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN)) return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN))
+                return -1;
             var raven = ModComponents.RAVEN.get(self);
             if (raven.isHunting())
                 return Color.WHITE.getRGB();
@@ -79,13 +104,19 @@ public class InstinctRenderer {
         // 鬼眼·杨间 被动：扫描期间，周身范围内的所有玩家显示白色直觉轮廓
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player targetPlayer) || Minecraft.getInstance().player == null
-                    || SREClient.gameComponent == null) return -1;
+                    || SREClient.gameComponent == null)
+                return -1;
             var self = Minecraft.getInstance().player;
-            if (!SREClient.gameComponent.isRole(self, ModRoles.GHOST_EYE)) return -1;
-            if (!isGhostEyeScanActive(self)) return -1;
-            if (targetPlayer == self || targetPlayer.isSpectator()) return -1;
-            if (targetPlayer.distanceToSqr(self) > GhostEyePlayerComponent.SCAN_RADIUS * GhostEyePlayerComponent.SCAN_RADIUS)
-                return -2;
+            if (!isGhostEyeRole(self))
+                return -1;
+            if (!isGhostEyeScanActive(self))
+                return -1;
+            if (targetPlayer == self || targetPlayer.isSpectator())
+                return -1;
+            // 超出扫描范围的玩家不由此处理器控制，透传给后续处理器
+            if (targetPlayer.distanceToSqr(self) > GhostEyePlayerComponent.SCAN_RADIUS
+                    * GhostEyePlayerComponent.SCAN_RADIUS)
+                return -1;
             return Color.WHITE.getRGB();
         });
         // 鬼祟效果：当目标玩家8格范围内时，禁用杀手直觉高亮
@@ -102,9 +133,9 @@ public class InstinctRenderer {
             if (!SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
                 return -1;
             }
-            
+
             Player localPlayer = Minecraft.getInstance().player;
-            
+
             // 检查目标玩家是否有鬼祟修饰符
             try {
                 WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(targetPlayer.level());
@@ -119,7 +150,7 @@ public class InstinctRenderer {
             } catch (Exception e) {
                 // 静默处理错误
             }
-            
+
             return -1;
         });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
@@ -739,10 +770,11 @@ public class InstinctRenderer {
                 }
             }
             // 布谷鸟：无法透视玩家；非布谷鸟：无法透视蛋
-            if (SREClient.gameComponent.isRole(self, ModRoles.REASONER) && target instanceof Player) {
+            boolean selfAlive = GameUtils.isPlayerAliveAndSurvival(self);
+            if (selfAlive && SREClient.gameComponent.isRole(self, ModRoles.REASONER) && target instanceof Player) {
                 return -2;
             }
-            if (SREClient.gameComponent.isRole(self, ModRoles.CUCKOO)) {
+            if (selfAlive && SREClient.gameComponent.isRole(self, ModRoles.CUCKOO)) {
                 if (target instanceof Player) {
                     return -2;
                 }
@@ -923,6 +955,11 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.WIND_YAOSE)) {
                     return ModRoles.WIND_YAOSE.getColor();
                 }
+                if (SREClient.gameComponent.isRole(target_player, ModRoles.SALTED_FISH)) {
+                    if (target_player.isInvisible()) {
+                        return -2;
+                    }
+                }
 
                 if (SREClient.gameComponent.isRole(self, RedHouseRoles.FURANDORU)) {
                     if (target_role != null) {
@@ -986,6 +1023,19 @@ public class InstinctRenderer {
                         return 0xFFD84A;
                     }
                 }
+                // 低 SAN 玩家可见冤魂高亮
+                if (target instanceof Player targetPlayer && targetPlayer != self
+                        && SREClient.isPlayerAliveAndInSurvival()) {
+                    SRERole selfRole = SREClient.gameComponent.getRole(self);
+                    if (selfRole != null && !selfRole.isKiller()) {
+                        int viewerSan = Math.round(
+                                SREPlayerMoodComponent.KEY.get(self).getMood() * 100.0f);
+                        if (viewerSan < 40
+) {
+                            return 0xAA66FF;
+                        }
+                    }
+                }
                 // 记录员
                 if (SREClient.gameComponent.isRole(self, ModRoles.RECORDER)) {
                     if (target instanceof Player targetPlayer) {
@@ -1021,7 +1071,7 @@ public class InstinctRenderer {
                     }
                     // 超级亡命徒无法看到隐身的人
                     if (SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END) &&
-                        target_player.isInvisible()) {
+                            target_player.isInvisible()) {
                         return -2;
                     }
                     return (Color.PINK.getRGB());
@@ -1250,23 +1300,35 @@ public class InstinctRenderer {
         return target_role.color();
     }
 
+    /** 检查鬼眼·杨间的被动扫描是否激活。 */
     private static boolean isGhostEyeScanActive(Player self) {
         if (self == null || self.level() == null) {
             return false;
         }
-        int intervalTicks = Math.max(GhostEyePlayerComponent.REVEAL_TICKS,
-                GameConstants.getInTicks(0, NoellesRolesConfig.HANDLER.instance().ghostEyeScanInterval));
+        GhostEyePlayerComponent comp = GhostEyePlayerComponent.KEY.maybeGet(self).orElse(null);
+        if (comp != null && comp.revealTicks > 0) {
+            return true;
+        }
+
+        int intervalTicks = GameConstants.getInTicks(0, NoellesRolesConfig.HANDLER.instance().ghostEyeScanInterval);
+        if (intervalTicks <= 0) {
+            return false;
+        }
         return self.level().getGameTime() % intervalTicks < GhostEyePlayerComponent.REVEAL_TICKS;
     }
 
-    private static boolean isKillerTeam(SRERole role) {
-        if (role == null)
+    private static boolean isGhostEyeRole(Player self) {
+        if (self == null || SREClient.gameComponent == null)
             return false;
-        if (role.canUseKiller())
-            return true;
-        if (role.canUseInstinct() && role.isNeutralForKiller())
-            return true;
-        return false;
+        SRERole role = SREClient.gameComponent.getRole(self);
+        return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
+    }
+
+    private static boolean isKillerTeam(SRERole role) {
+        if (SREClient.gameComponent == null) {
+            return false;
+        }
+        return SREClient.gameComponent.isKillerTeamRole(role);
     }
 
     /**
@@ -1274,12 +1336,13 @@ public class InstinctRenderer {
      * 包含：小透明、秉烛人、雇佣兵、捣蛋鬼、赌徒。
      */
     private static boolean isTargetInvisibleToInstinct(Player target) {
-        if (SREClient.gameComponent == null || target == null) return false;
+        if (SREClient.gameComponent == null || target == null)
+            return false;
         return SREClient.gameComponent.isRole(target, ModRoles.GHOST)
-            || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
-            || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
-            || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
-            || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
+                || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
+                || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
+                || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
+                || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
     }
 
     private static final int[] GRADIENT_COLORS = {

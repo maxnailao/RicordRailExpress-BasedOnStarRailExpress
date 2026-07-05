@@ -10,16 +10,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 public class SREModifier extends SREAbstractInfoClass {
     private final Random random = new Random();
@@ -28,9 +23,9 @@ public class SREModifier extends SREAbstractInfoClass {
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo;
     public HashSet<SRERole> canOnlyBeAppliedTo;
-    public boolean killerOnly;
-    public boolean civilianOnly;
-    public boolean notVigilante;
+    public boolean killerOnly = false;
+    public boolean civilianOnly = false;
+    public boolean notVigilante = false;
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
     public int defaultMaxCount = 1;
@@ -40,6 +35,21 @@ public class SREModifier extends SREAbstractInfoClass {
     public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+
+    /**
+     * 添加与此相关的职业。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addBothRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null) {
+                this.relatedRoles.add(i);
+                i.addRelatedModifier(this);
+            }
+        }
+        return this;
+    }
 
     /**
      * 添加与此相关的职业。用于职业介绍。
@@ -63,6 +73,21 @@ public class SREModifier extends SREAbstractInfoClass {
         for (var i : role) {
             if (i != null)
                 this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addBothRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null) {
+                this.relatedModifiers.add(i);
+                i.addRelatedModifier(this);
+            }
         }
         return this;
     }
@@ -211,6 +236,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = defaultMaxCount;
         return this;
     };
 
@@ -222,6 +248,7 @@ public class SREModifier extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
@@ -233,6 +260,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultMaxPlayerCount(int count) {
         defaultMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
@@ -244,6 +272,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableNeededPlayerCount(int count) {
         defaultNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
+
         return this;
     };
 
@@ -255,6 +285,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableChance(int chance) {
         defaultEnableChance = chance;
+        this.spawnInfo.enableChance = chance;
+
         return this;
     };
 
@@ -291,13 +323,6 @@ public class SREModifier extends SREAbstractInfoClass {
         this.canOnlyBeAppliedTo = canOnlyBeAppliedTo;
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
-        if (this.cannotBeAppliedTo == null) {
-            this.cannotBeAppliedTo = new HashSet<>();
-        }
-
-        if (this.canOnlyBeAppliedTo == null) {
-            this.canOnlyBeAppliedTo = new HashSet<>();
-        }
     }
 
     @Override
@@ -409,7 +434,7 @@ public class SREModifier extends SREAbstractInfoClass {
         this.isOtherModeRole = isOtherModeRole;
         if (isOtherModeRole)
             this.canSetSpawnInfoInConfig = false;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 

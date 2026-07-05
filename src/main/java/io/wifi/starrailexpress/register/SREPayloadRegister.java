@@ -54,6 +54,7 @@ public class SREPayloadRegister {
 
         PayloadTypeRegistry.playS2C().register(SyncRoomToPlayerPayload.ID, SyncRoomToPlayerPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SyncRoomToPlayerPayload.ID, SyncRoomToPlayerPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(StreamingSpectatorPayload.ID, StreamingSpectatorPayload.CODEC);
 
         PayloadTypeRegistry.playS2C().register(IsLobbyConfigPayload.ID, IsLobbyConfigPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(IsLobbyConfigPayload.ID, IsLobbyConfigPayload.CODEC);

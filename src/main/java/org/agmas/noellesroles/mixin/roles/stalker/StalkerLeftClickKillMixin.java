@@ -132,23 +132,4 @@ public abstract class StalkerLeftClickKillMixin {
             }
         }
     }
-//    @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
-//    private void on_dnf_abyss_kill(Entity target, CallbackInfo ci) {
-//        ServerPlayer attacker = (ServerPlayer) (Object) this;
-//
-//        // 检查目标是否是玩家
-//        if (!(target instanceof Player targetPlayer))
-//            return;
-//        if (!SREGameWorldComponent.KEY.get(attacker.level()).isRole(attacker, DNFRoles.DNF_ABYSS))
-//            return;
-//        // 检查攻击者是否存活
-//        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(attacker))
-//            return;
-//        // 检查目标是否存活
-//        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(targetPlayer))
-//            return;
-//
-//        DNFRoles.DNF_ABYSS.leftClickEntity(attacker, targetPlayer);
-//        ci.cancel();
-//    }
 }

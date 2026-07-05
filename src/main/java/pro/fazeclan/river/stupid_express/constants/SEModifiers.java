@@ -1,11 +1,11 @@
 package pro.fazeclan.river.stupid_express.constants;
 
-import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.rules.CollisionRules;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -20,13 +20,13 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.modifier.allergist.cca.AllergistComponent;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SkinSplitPersonalityComponent;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
 
 import java.awt.*;
 import java.util.*;
@@ -59,7 +59,8 @@ public class SEModifiers {
             false,
             false))
             .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(12).setHidden(true);
+            .setDefaultEnableNeededPlayerCount(12)
+            .setHidden(true);
 
     public static SREModifier TINY = HMLModifiers.registerModifier(new SREModifier(
             StupidExpress.id("tiny"),
@@ -189,7 +190,7 @@ public class SEModifiers {
             true))
             .setDefaultMax(1)
             .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(10).setHidden(true).addRelatedRole(ModRoles.MONOKUMA);
+            .setDefaultEnableNeededPlayerCount(10).setHidden(true);
 
     // 标记不屈的一次性免疫是否已被消耗（基于 UUID 的运行时集合）
     public static Set<UUID> UNYIELDING_IMMUNITY_USED = ConcurrentHashMap.newKeySet();
@@ -226,7 +227,7 @@ public class SEModifiers {
                     .get(player);
             skinSplitPersonalityComponent2.clear();
         });
-        CollisionRules.canCollide.add(p -> {
+        CollisionRules.cantCollide.add(p -> {
             var modifiers = WorldModifierComponent.KEY.get(p.level());
             if (modifiers.isModifier(p.getUUID(), FEATHER)) {
                 return true;
@@ -436,7 +437,6 @@ public class SEModifiers {
                     player.getAttribute(Attributes.SCALE).removeModifier(TraitorAndModifiers.DWARF_MODIFIER);
                 }
                 player.getAttribute(Attributes.SCALE).removeModifier(TINY_MODIFIER);
-                player.getAttribute(Attributes.SCALE).addPermanentModifier(TINY_MODIFIER);
             }
             if (modifier.equals(TALL)) {
                 // Cannot assign TINY if player has TALL

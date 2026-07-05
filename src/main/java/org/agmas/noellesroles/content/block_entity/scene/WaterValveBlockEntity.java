@@ -1,10 +1,5 @@
 package org.agmas.noellesroles.content.block_entity.scene;
 
-import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
-import org.agmas.noellesroles.init.ModSceneBlocks;
-import org.agmas.noellesroles.scene.WaterValveRegistry;
-import org.agmas.noellesroles.scene.SceneEventManager;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -16,6 +11,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
+import org.agmas.noellesroles.init.ModSceneBlocks;
+import org.agmas.noellesroles.scene.SceneEventManager;
+import org.agmas.noellesroles.scene.WaterValveRegistry;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -119,25 +118,21 @@ public class WaterValveBlockEntity extends BlockEntity {
     /** 本水阀关闭后，检查配对的两个水阀是否都已关闭。 */
     public void onSelfClosed() {
         if (!(this.level instanceof ServerLevel serverLevel)) return;
-        boolean selfClosed = serverLevel.getBlockState(this.worldPosition).getValue(WaterValveBlock.CLOSED);
-        if (!selfClosed) return;
-
-        if (partnerPos != null) {
-            if (serverLevel.isLoaded(partnerPos)) {
-                BlockEntity be = serverLevel.getBlockEntity(partnerPos);
-                if (be instanceof WaterValveBlockEntity) {
-                    boolean partnerClosed = serverLevel.getBlockState(partnerPos).getValue(WaterValveBlock.CLOSED);
-                    if (!partnerClosed) return;
-                } else {
-                    return;
-                }
-            } else {
-                return;
-            }
-        }
+        if (!isClosed()) return;
+        if (!isPartnerClosed(serverLevel)) return;
+        if (!WaterValveRegistry.allClosed(serverLevel)) return;
         SceneEventManager.stopSabotage(serverLevel);
         for (var player : serverLevel.players()) {
             player.displayClientMessage(Component.translatable("message.noellesroles.water_valve.all_closed"), false);
         }
+    }
+
+    private boolean isPartnerClosed(ServerLevel level) {
+        if (partnerPos == null) return true;
+        if (!level.isLoaded(partnerPos)) return false;
+        BlockState state = level.getBlockState(partnerPos);
+        return state.getBlock() instanceof WaterValveBlock
+                && state.hasProperty(WaterValveBlock.CLOSED)
+                && state.getValue(WaterValveBlock.CLOSED);
     }
 }

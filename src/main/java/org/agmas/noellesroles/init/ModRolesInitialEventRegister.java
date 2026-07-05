@@ -25,11 +25,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
-import org.agmas.noellesroles.ConfigWorldComponent;
-
-import java.util.UUID;
-
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
+import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.RicesRoleRhapsody;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
@@ -45,35 +42,38 @@ import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.painter.PainterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
+
+import java.util.UUID;
 
 public class ModRolesInitialEventRegister {
 
@@ -264,6 +264,7 @@ public class ModRolesInitialEventRegister {
             }
             SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                     .get(player);
+            abilityPlayerComponent.init(false);
             abilityPlayerComponent.cooldown = NoellesRolesConfig.HANDLER.instance().generalCooldownTicks;
 
             if (role.equals(ModRoles.BROADCASTER)) {
@@ -271,8 +272,6 @@ public class ModRolesInitialEventRegister {
                 SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
                 playerShopComponent.setBalance(200);
                 playerShopComponent.sync();
-            } else {
-                abilityPlayerComponent.cooldown = NoellesRolesConfig.HANDLER.instance().generalCooldownTicks;
             }
             if (role.equals(ModRoles.EXECUTIONER)) {
                 ExecutionerPlayerComponent executionerPlayerComponent = (ExecutionerPlayerComponent) ExecutionerPlayerComponent.KEY
@@ -495,6 +494,8 @@ public class ModRolesInitialEventRegister {
                 moodComp.sync();
                 return;
             }
+            // 如果不拦截就同步
+            abilityPlayerComponent.sync();
         });
 
 
@@ -635,11 +636,11 @@ public class ModRolesInitialEventRegister {
                 RoleSkill.skill(SRE.id("pelican_release"), "skill.noellesroles.pelican.release", context -> {
                     PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(context.player());
                     return comp != null && comp.releaseLast();
-                }).announceToSelf(false).build());
+                }).shifted(true).announceToSelf(false).build());
 
-        // 阿蒙技能：G 键对准星玩家静默种下时之虫；在背包点选玩家附身后（附身期间），
-        // 随时再按 G 完成夺舍（变成目标、令其死亡、本体处生成尸体）。夺舍改由背包点选附身，不再用 Shift+G。
-        // toggleable=true：让附身完成夺舍不受种虫冷却限制（「随时可按 G」）。
+        // 阿蒙技能：
+        // - G 键：对准星玩家静默种下时之虫（附身期间也可为其他人种虫）
+        // - Shift+G 键：附身期间完成夺舍（变成目标、令其死亡、本体处生成尸体）
         RoleSkill.register(ModRoles.AMON,
                 RoleSkill.skill(SRE.id("amon_plant_seed"), "skill.noellesroles.amon.plant_seed", context -> {
                     ServerPlayer player = context.player();
@@ -648,17 +649,26 @@ public class ModRolesInitialEventRegister {
                     var comp = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY.get(player);
                     if (comp == null)
                         return false;
-                    // 附身期间：随时按 G 完成夺舍（即使种虫还在冷却）。
-                    if (comp.isPossessing()) {
-                        return comp.finalizePossession();
-                    }
-                    // 非附身：种时之虫需冷却就绪。
+                    // G 键始终执行种时之虫（附身期间不夺舍，夺舍改用 Shift+G）
                     if (!context.skillReady())
                         return false;
                     ServerPlayer target = context.target() == null ? null
                             : (player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null);
                     return comp.plantSeed(target);
-                }).cooldownSeconds(20).toggleable(true).announceToSelf(false).build());
+                }).cooldownSeconds(20).toggleable(true).announceToSelf(false).build(),
+
+                // Shift+G：附身期间完成夺舍
+                RoleSkill.skill(SRE.id("amon_usurp"), "skill.noellesroles.amon.usurp", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    var comp = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY.get(player);
+                    if (comp == null)
+                        return false;
+                    if (!comp.isPossessing())
+                        return false;
+                    return comp.finalizePossession();
+                }).shifted(true).announceToSelf(false).build());
 
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
@@ -1189,8 +1199,14 @@ public class ModRolesInitialEventRegister {
                         context -> WraithAssassinPlayerComponent.KEY.get(context.player()).useWail(context.player()))
                         .cooldownSeconds(50).showOnHud(true).announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("wraith_manifest"), "skill.noellesroles.wraith_assassin.manifest",
-                        context -> WraithAssassinPlayerComponent.KEY.get(context.player()).useManifest(context.player()))
+                        context -> WraithAssassinPlayerComponent.KEY.get(context.player())
+                                .useManifest(context.player()))
                         .cooldownSeconds(110).showOnHud(true).announceToSelf(false).build());
+
+        RoleSkill.register(ModRoles.SALTED_FISH,
+                RoleSkill.skill(SaltedFishPlayerComponent.SKILL_ID, "skill.noellesroles.salted_fish.sunbathe",
+                        context -> SaltedFishPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
+                        .showOnHud(true).announceToSelf(false).build());
 
         // 出题人不适用于统一的技能注册：其需要不同的触发方式但这个api不兼容。
         // 年兽技能注册：发送红包给目标玩家（客户端选目标）

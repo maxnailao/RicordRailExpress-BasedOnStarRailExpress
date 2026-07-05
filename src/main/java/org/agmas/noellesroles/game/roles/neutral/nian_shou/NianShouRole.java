@@ -1,10 +1,10 @@
 package org.agmas.noellesroles.game.roles.neutral.nian_shou;
 
-import io.wifi.starrailexpress.api.NormalRole;
+import io.wifi.starrailexpress.api.EggRole;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
-public class NianShouRole extends NormalRole {
+public class NianShouRole extends EggRole {
 
 
     public NianShouRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller,

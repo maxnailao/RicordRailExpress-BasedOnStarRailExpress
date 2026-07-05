@@ -3,7 +3,6 @@ package io.wifi.starrailexpress.api.replay;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -11,6 +10,7 @@ import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.rules.ReplayRules;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -27,26 +27,22 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static net.fabricmc.loader.api.FabricLoader.getInstance;
 
 public class GameReplayManager implements IGameReplayRecorder {
-  private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-  private static final String REPLAY_FILE_NAME = "game_replay.json";
+  protected static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+  protected static final String REPLAY_FILE_NAME = "game_replay.json";
 
   public GameReplayData currentReplayData;
-  private final MinecraftServer server;
+  protected final MinecraftServer server;
   public static final Map<UUID, String> playerNames = new HashMap<>();
-  private GameReplay currentReplay;
-  private ReplaySession session;
-  private ReplayRecorder recorder;
-  private ReplayFormatter formatter;
-  private ReplayStorage storage;
+  protected GameReplay currentReplay;
+  protected ReplaySession session;
+  protected ReplayRecorder recorder;
+  protected ReplayFormatter formatter;
+  protected ReplayStorage storage;
 
   public GameReplayManager(MinecraftServer server) {
     this.server = server;
@@ -60,6 +56,17 @@ public class GameReplayManager implements IGameReplayRecorder {
     this.storage = new ReplayStorage(server);
   }
 
+  public GameReplayManager() {
+    this.server = null;
+    this.currentReplayData = null;
+    // this.playerNames = new HashMap<>();
+    this.currentReplay = null;
+    this.session = null;
+    this.recorder = null;
+    this.formatter = null;
+    this.storage = null;
+  }
+
   public void resetReplay() {
     this.currentReplayData = new GameReplayData();
     // this.playerNames.clear();
@@ -68,7 +75,7 @@ public class GameReplayManager implements IGameReplayRecorder {
     this.session.reset(this.currentReplayData);
   }
 
-  private ReplayEventTypes.EventType mapEventType(GameReplayData.EventType dataEventType) {
+  protected ReplayEventTypes.EventType mapEventType(GameReplayData.EventType dataEventType) {
     return switch (dataEventType) {
       // 主要事件
       case PLAYER_REVIVAL -> ReplayEventTypes.EventType.PLAYER_REVIVAL;
@@ -111,7 +118,7 @@ public class GameReplayManager implements IGameReplayRecorder {
     };
   }
 
-  private ReplayEvent convertReplayEvent(GameReplayData.ReplayEvent dataEvent, HolderLookup.Provider provider) {
+  protected ReplayEvent convertReplayEvent(GameReplayData.ReplayEvent dataEvent, HolderLookup.Provider provider) {
     if (dataEvent == null) {
       return new ReplayEvent(ReplayEventTypes.EventType.GAME_START, 0, new ReplayEventTypes.EventDetails() {
       });
@@ -457,9 +464,10 @@ public class GameReplayManager implements IGameReplayRecorder {
         SRE.SERVER.getPlayerList().getPlayers().forEach(
             player -> {
               if (gameWorldComponent != null && gameWorldComponent.isRunning()
-                  && (!GameUtils.isPlayerAliveAndSurvival(player) || ReplayRules.canSendReplay.stream().anyMatch((pre) -> {
-                      return pre.test(player);
-                    }))) {
+                  && (!GameUtils.isPlayerAliveAndSurvival(player)
+                      || ReplayRules.canSendReplay.stream().anyMatch((pre) -> {
+                        return pre.test(player);
+                      }))) {
                 try {
 
                   {
@@ -489,14 +497,15 @@ public class GameReplayManager implements IGameReplayRecorder {
     return null;
   }
 
-  private void recordTimelineEvent(GameReplayData.ReplayEvent dataEvent, ReplayEvent replayEvent, Component eventText) {
+  protected void recordTimelineEvent(GameReplayData.ReplayEvent dataEvent, ReplayEvent replayEvent,
+      Component eventText) {
     if (dataEvent == null || replayEvent == null || recorder == null || session == null) {
       return;
     }
     recorder.record(buildTimelineEvent(dataEvent, replayEvent, eventText));
   }
 
-  private ReplayTimelineEvent buildTimelineEvent(GameReplayData.ReplayEvent dataEvent, ReplayEvent replayEvent,
+  protected ReplayTimelineEvent buildTimelineEvent(GameReplayData.ReplayEvent dataEvent, ReplayEvent replayEvent,
       Component eventText) {
     Component text = eventText != null ? eventText
         : Component.literal(dataEvent.getType().name()).withStyle(ChatFormatting.DARK_GRAY);
@@ -706,7 +715,8 @@ public class GameReplayManager implements IGameReplayRecorder {
     if (events.isEmpty() && currentReplayData != null && !currentReplayData.getTimeline().isEmpty()) {
       events = currentReplayData.getTimeline().stream()
           .map(event -> {
-            ReplayEvent replayEvent = convertReplayEvent(event, SRE.SERVER == null ? null : SRE.SERVER.registryAccess());
+            ReplayEvent replayEvent = convertReplayEvent(event,
+                SRE.SERVER == null ? null : SRE.SERVER.registryAccess());
             Component text = null;
             try {
               text = currentReplayData.toText(this, currentReplayData, replayEvent);
@@ -764,18 +774,20 @@ public class GameReplayManager implements IGameReplayRecorder {
   public void recordCustomEvent(ResourceLocation customEventTypeId, UUID playerUuid, String message) {
     Component component = Component.literal("[" + customEventTypeId + "] " + (message == null ? "" : message));
     addEvent(GameReplayData.EventType.CUSTOM_MESSAGE, playerUuid, null, null,
-        SRE.SERVER == null ? component.getString() : Component.Serializer.toJson(component, SRE.SERVER.registryAccess()),
+        SRE.SERVER == null ? component.getString()
+            : Component.Serializer.toJson(component, SRE.SERVER.registryAccess()),
         SRE.SERVER == null ? null : SRE.SERVER.registryAccess(), false);
   }
 
   public void recordCustomEvent(ResourceLocation customEventTypeId, UUID playerUuid, String message, boolean hidden) {
     Component component = Component.literal("[" + customEventTypeId + "] " + (message == null ? "" : message));
     addEvent(GameReplayData.EventType.CUSTOM_MESSAGE, playerUuid, null, null,
-        SRE.SERVER == null ? component.getString() : Component.Serializer.toJson(component, SRE.SERVER.registryAccess()),
+        SRE.SERVER == null ? component.getString()
+            : Component.Serializer.toJson(component, SRE.SERVER.registryAccess()),
         SRE.SERVER == null ? null : SRE.SERVER.registryAccess(), hidden);
   }
 
-  private GameReplayData.EventType toLegacyEventType(ReplayEventTypes.EventType eventType) {
+  protected GameReplayData.EventType toLegacyEventType(ReplayEventTypes.EventType eventType) {
     return switch (eventType) {
       case GAME_START -> GameReplayData.EventType.GAME_START;
       case GAME_END -> GameReplayData.EventType.GAME_END;
@@ -894,7 +906,7 @@ public class GameReplayManager implements IGameReplayRecorder {
     return generateReplayFromData(replayData, includeHidden);
   }
 
-  Component generateReplayFromData(GameReplayData replayData, boolean includeHidden) {
+  protected Component generateReplayFromData(GameReplayData replayData, boolean includeHidden) {
     if (replayData == null) {
       return Component.translatable("sre.replay.error.no_data").withStyle(ChatFormatting.RED);
     }
@@ -1071,7 +1083,7 @@ public class GameReplayManager implements IGameReplayRecorder {
     return text;
   }
 
-  private List<UUID> getDeadPlayers(GameReplayData replayData) {
+  protected List<UUID> getDeadPlayers(GameReplayData replayData) {
     List<UUID> dead = new java.util.ArrayList<>();
     for (GameReplayData.ReplayEvent event : replayData.getTimeline()) {
       if (event.getType() == GameReplayData.EventType.PLAYER_KILL) {

@@ -69,7 +69,7 @@ public interface ModBlocks {
                     BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(0.6F).noOcclusion()));
     Block FLARE_BLOCK = registerBlock("flare_block",
             new FlareBlock());
-    Block HOTBAR_STORAGE = registerBlockMultiTab("dnf_hotbar_storage",
+    Block HOTBAR_STORAGE = registerBlockMultiTab("repair_hotbar_storage",
             new HotbarStorageBlock(Block.Properties.ofFullCopy(Blocks.CHEST)
                     .strength(2.5F)
                     .sound(SoundType.WOOD)),
@@ -96,14 +96,16 @@ public interface ModBlocks {
     public static final BlockEntityType<HotbarStorageBlockEntity> HOTBAR_STORAGE_BLOCK_ENTITY_BLOCK_ENTITY_TYPE = Registry
             .register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
-                    Noellesroles.id("dnf_hotbar_storage"),
+                    Noellesroles.id("repair_hotbar_storage"),
                     BlockEntityType.Builder.of(HotbarStorageBlockEntity::new, HOTBAR_STORAGE)
                             .build(null));
 
     // Kill blocks (OP utilities)
+    @SuppressWarnings("unchecked")
     Block KILL_BLOCK = blockRegistrar.createWithItem("kill_block",
             new KillBlock(BlockBehaviour.Properties.of().strength(-1.0f, 3600000.0f).noOcclusion()),
             CreativeModeTabs.OP_BLOCKS, ModSceneBlocks.SCENE_CREATIVE_GROUP);
+    @SuppressWarnings("unchecked")
     Block KILL_BLOCK_PANEL = blockRegistrar.createWithItem("kill_block_panel",
             new KillBlockPanel(BlockBehaviour.Properties.of().strength(-1.0f, 3600000.0f).noOcclusion()),
             CreativeModeTabs.OP_BLOCKS, ModSceneBlocks.SCENE_CREATIVE_GROUP);

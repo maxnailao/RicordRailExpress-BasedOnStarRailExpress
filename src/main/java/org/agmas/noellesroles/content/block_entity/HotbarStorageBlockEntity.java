@@ -3,6 +3,7 @@ package org.agmas.noellesroles.content.block_entity;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,7 +15,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.core.NonNullList;
 import org.agmas.noellesroles.client.HotbarStorageMenu;
 import org.agmas.noellesroles.init.ModBlocks;
 
@@ -83,7 +83,7 @@ public class HotbarStorageBlockEntity extends BlockEntity implements Container, 
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.starrailexpress.dnf_hotbar_storage");
+        return Component.translatable("container.starrailexpress.repair_hotbar_storage");
     }
 
     @Override

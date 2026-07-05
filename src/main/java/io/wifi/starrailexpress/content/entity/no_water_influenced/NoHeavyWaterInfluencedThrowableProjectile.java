@@ -8,8 +8,8 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
+import net.minecraft.world.phys.Vec3;
 
 public abstract class NoHeavyWaterInfluencedThrowableProjectile extends Projectile {
    protected NoHeavyWaterInfluencedThrowableProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableProjectile> entityType,
@@ -59,7 +59,7 @@ public abstract class NoHeavyWaterInfluencedThrowableProjectile extends Projecti
       float h;
       if (this.isInWater()) {
          for (int i = 0; i < 4; ++i) {
-            float g = 0.25F;
+            // float g = 0.25F;
             this.level().addParticle(ParticleTypes.BUBBLE, d - vec3.x * (double) 0.25F, e - vec3.y * (double) 0.25F,
                   f - vec3.z * (double) 0.25F, vec3.x, vec3.y, vec3.z);
          }

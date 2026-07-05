@@ -3,6 +3,8 @@ package org.agmas.harpymodloader.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -17,7 +19,7 @@ import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
 public class ForceRoleCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("forceRole")
-                .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
+                .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().forceRoleRequiredPermission))
                 .then(Commands.argument("player", EntityArgument.player())
                         .executes(ForceRoleCommand::query)
                         .then(Commands.argument("role", RoleArgumentType.create())

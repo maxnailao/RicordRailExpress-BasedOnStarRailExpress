@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.config;
 
+import com.google.gson.annotations.JsonAdapter;
 import io.wifi.ConfigCompact.ConfigClassHandler;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
 import io.wifi.starrailexpress.api.SRERole;
@@ -7,16 +8,15 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.GameConstants;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
+import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 import net.minecraft.resources.ResourceLocation;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import org.agmas.harpymodloader.modifiers.HMLModifiers;
-import org.agmas.harpymodloader.modifiers.SREModifier;
-import com.google.gson.annotations.JsonAdapter;
 
 @Config(name = "noellesroles")
 public class NoellesRolesConfig implements ConfigData {
@@ -217,8 +217,10 @@ public class NoellesRolesConfig implements ConfigData {
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")
+    @ConfigEntry.Gui.Excluded
     public RoleSpawnInfoEntries roleDetails = RoleSpawnInfoEntries.createDefaultRoleInfo();
     @ConfigEntry.Category(value = "detail")
+    @ConfigEntry.Gui.Excluded
     public RoleSpawnInfoEntries modifierDetails = RoleSpawnInfoEntries.createDefaultModifierInfo();
 
     @ConfigEntry.Category(value = "detail")
@@ -338,11 +340,6 @@ public class NoellesRolesConfig implements ConfigData {
     public int nostalgistCollapseWindupTicks = 30;
 
     /**
-     * Jade General (玉将军) - Flying kick cooldown in seconds
-     */
-    public int jadeGeneralKickCooldown = 90;
-
-    /**
      * Jade General - Flying kick displacement distance in blocks
      */
     public int jadeGeneralDashBlocks = 5;
@@ -390,7 +387,7 @@ public class NoellesRolesConfig implements ConfigData {
     /** Diviner - Crystal ball targeting range in blocks */
     public double divinerRange = 4.0;
     /** Diviner - Crystal ball shop price (coins) */
-    public int divinerCrystalBallPrice = 100;
+    public int divinerCrystalBallPrice = 300;
 
     // ==================== Photographer (摄影师) 画框传送 ====================
     /** Photographer - 每局最多购买画框次数 */
@@ -500,7 +497,7 @@ public class NoellesRolesConfig implements ConfigData {
     /** Undead Lord - Bone Staff recharge time in seconds after durability is depleted (refills to full, never breaks) */
     public int undeadLordBoneStaffRechargeSeconds = 40;
     /** Undead Lord - Bone Staff infection added per hit (0~100) */
-    public double undeadLordBoneStaffInfection = 20.0;
+    public double undeadLordBoneStaffInfection = 24.0;
     /** Undead Lord - Bone Staff shop price */
     public int undeadLordBoneStaffPrice = 130;
     /** Undead Lord - Real damage each undead deals to a player per attack (HP, 0=disabled) */
@@ -535,9 +532,9 @@ public class NoellesRolesConfig implements ConfigData {
     public int leonRedHerbAtPlayers = 3;
 
     /** 宿命的罪人 - 不同死因数量下限（&lt;=16 人时） */
-    public int doomedSinnerMinReasons = 5;
+    public int doomedSinnerMinReasons = 4;
     /** 宿命的罪人 - 不同死因数量上限（&gt;=32 人时） */
-    public int doomedSinnerMaxReasons = 8;
+    public int doomedSinnerMaxReasons = 6;
     /** 宿命的罪人 - 同一死因死亡多少次后彻底死亡 */
     public int doomedSinnerSamePermanentCount = 3;
     /** 宿命的罪人 - 复活后留下的尸体多少秒后消失 */

@@ -107,7 +107,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
 
     protected void addBanedRoles() {
-        // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，dnf_killer,迷失杀手
+        // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，迷失杀手
         BANED_ROLES.add(ModRoles.WATER_GHOST);
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
         BANED_ROLES.add(BounsRoles.CAT_KILLER);
@@ -212,8 +212,15 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         }
 
         // 生成杀手池
-        RoleAssignmentPool killerPool = createEvilWarRolePool();
-        List<SRERole> assignedKillers = killerPool.selectRoles(playersWithoutForcedRoles.size() - superLooseEndCount);
+        final int killerRolesToSelect = playersWithoutForcedRoles.size() - superLooseEndCount;
+        final Set<String> disabledRoles = players.isEmpty()
+                ? Set.of()
+                : AreasWorldComponent.KEY.get(players.get(0).serverLevel()).getDisabledRoles();
+        List<SRERole> assignedKillers = RoleAssignmentPool.withMapDisabledRoles(
+                disabledRoles, () -> {
+                    RoleAssignmentPool killerPool = createEvilWarRolePool();
+                    return killerPool.selectRoles(killerRolesToSelect);
+                });
         // 打乱需要分配的玩家列表
         Collections.shuffle(playersWithoutForcedRoles);
         // 前 superLooseEndeCount 个是亡命徒，剩下的为普通杀手，优先分配亡命徒，然后再分配杀手

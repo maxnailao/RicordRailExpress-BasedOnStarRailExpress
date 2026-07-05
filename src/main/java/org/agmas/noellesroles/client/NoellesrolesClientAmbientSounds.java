@@ -18,7 +18,7 @@ public class NoellesrolesClientAmbientSounds {
     // 阿蒙终幕「阿蒙时刻」：使用 A_MENG 音乐，于终幕全程循环播放。
     AmbienceUtil.registerBackgroundAmbience(
         new BackgroundAmbience(NRSounds.A_MENG,
-            player -> org.agmas.noellesroles.client.ClientAmonState.finaleActive,
+            player -> SREClient.gameComponent != null && org.agmas.noellesroles.client.ClientAmonState.finaleActive,
             1));
     AmbienceUtil.registerBackgroundAmbience(
         new BackgroundAmbience(NRSounds.JESTER_AMBIENT,

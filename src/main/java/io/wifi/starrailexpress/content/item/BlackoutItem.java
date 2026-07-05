@@ -20,7 +20,7 @@ public class BlackoutItem extends Item {
         if (user.getCooldowns().isOnCooldown(this)) {
             InteractionResultHolder.pass(item);
         }
-        if (!user.isSpectator())
+        if (!user.isSpectator() && !world.isClientSide())
             SREPlayerShopComponent.useBlackout(user);
         if (user.isCreative()) {
             return InteractionResultHolder.consume(item);

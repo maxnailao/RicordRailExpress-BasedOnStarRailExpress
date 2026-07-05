@@ -1,10 +1,6 @@
 package io.wifi.starrailexpress.game;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.game.data.MapConfig;
@@ -17,14 +13,9 @@ import net.minecraft.world.phys.Vec3;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -242,12 +233,15 @@ public class MapManager {
         }
         jsonObject.add("roomPositions", roomPositionsObj);
         jsonObject.addProperty("canJump", areas.canJump);
+        jsonObject.addProperty("fallToDeathHeight", areas.fallToDeathHeight);
+
         jsonObject.addProperty("canSwim", areas.canSwim);
         jsonObject.addProperty("enableOxygenDrowning", areas.enableOxygenDrowning);
         jsonObject.addProperty("mapStatusBar", (areas.mapStatusBar == null
                 ? io.wifi.starrailexpress.game.data.MapStatusBarType.NONE
                 : areas.mapStatusBar).name());
         jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
+        jsonObject.add("disabledRoles", gson.toJsonTree(areas.disabledRoles));
         jsonObject.add("enableSceneTask", gson.toJsonTree(areas.enableSceneTask));
         jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
         jsonObject.addProperty("sceneOutsideSound", areas.sceneOutsideSound);
@@ -277,7 +271,7 @@ public class MapManager {
         jsonObject.addProperty("weather", areas.weather);
 
         // 保存重力配置
-        jsonObject.addProperty("gravity", areas.gravity);
+        jsonObject.addProperty("gravityModifier", areas.gravity);
 
         // 保存药水效果配置
         jsonObject.add("effect", gson.toJsonTree(areas.effect));
@@ -366,6 +360,13 @@ public class MapManager {
             } else {
                 areas.sceneOutsideSound = "train";
             }
+
+            if (jsonObject.has("fallToDeathHeight")) {
+                areas.fallToDeathHeight = jsonObject.get("fallToDeathHeight").getAsInt();
+            } else {
+                areas.fallToDeathHeight = 0;
+            }
+
             if (jsonObject.has("canJump")) {
                 areas.canJump = jsonObject.get("canJump").getAsBoolean();
             } else {
@@ -381,7 +382,8 @@ public class MapManager {
             areas.enableOxygenDrowning = jsonObject.has("enableOxygenDrowning")
                     && jsonObject.get("enableOxygenDrowning").getAsBoolean();
             areas.mapStatusBar = jsonObject.has("mapStatusBar")
-                    ? io.wifi.starrailexpress.game.data.MapStatusBarType.byName(jsonObject.get("mapStatusBar").getAsString())
+                    ? io.wifi.starrailexpress.game.data.MapStatusBarType
+                            .byName(jsonObject.get("mapStatusBar").getAsString())
                     : io.wifi.starrailexpress.game.data.MapStatusBarType.NONE;
 
             // 加载雪花效果配置（默认关闭）
@@ -438,11 +440,16 @@ public class MapManager {
             }
 
             // 加载重力配置（默认0.08）
-            if (jsonObject.has("gravity")) {
-                areas.gravity = jsonObject.get("gravity").getAsDouble();
-                SRE.LOGGER.info("Loaded gravity: " + areas.gravity);
+            if (jsonObject.has("gravityModifier")) {
+                areas.gravity = jsonObject.get("gravityModifier").getAsDouble();
+                SRE.LOGGER.info("Loaded gravity modifier: " + areas.gravity);
             } else {
-                areas.gravity = 0.08;
+                if (jsonObject.has("gravity")) {
+                    areas.gravity = jsonObject.get("gravityModifier").getAsDouble() - 0.08;
+                    SRE.LOGGER.info("Loaded gravity modifier: " + areas.gravity);
+                } else {
+                    areas.gravity = 0;
+                }
             }
 
             // 加载药水效果配置（默认空数组）
@@ -701,6 +708,14 @@ public class MapManager {
                 var jsonArr = jsonObject.get("disabledTasks").getAsJsonArray();
                 for (JsonElement data : jsonArr.asList()) {
                     areas.disabledTasks.add(data.getAsString());
+                }
+            }
+
+            areas.disabledRoles.clear();
+            if (jsonObject.has("disabledRoles")) {
+                var jsonArr = jsonObject.get("disabledRoles").getAsJsonArray();
+                for (JsonElement data : jsonArr.asList()) {
+                    areas.disabledRoles.add(data.getAsString());
                 }
             }
 

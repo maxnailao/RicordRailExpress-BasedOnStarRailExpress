@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -13,26 +14,23 @@ import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
-
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
@@ -48,6 +46,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.util.CheckEnvironment;
+
 import java.util.*;
 
 public class RoleRotationWorldComponent implements AutoSyncedComponent {
@@ -224,52 +223,48 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
 
-        RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        !(role instanceof RepairRole) &&
-                        role.canUseKiller() &&
-                        !role.isInnocent() &&
-                        !RoleUtils.compareRole(role, ModRoles.PUPPETEER) &&
-                        // 添加筛选逻辑
-                        role != TMMRoles.CIVILIAN);
-        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        role.isVigilanteTeam() &&
-                        // 添加筛选逻辑
-                        !role.isOtherModeRole() && !(role instanceof RepairRole));
-        // 中立池
-        RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
-                role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        // 添加筛选逻辑
-                        !(role instanceof RepairRole) &&
-                        ((!role.canUseKiller() &&
-                                !role.isInnocent()) || role.isNeutrals())
-                        &&
-                        role != TMMRoles.CIVILIAN));
-        // 平民池（只包含真正的"平民"角色，例如医生等）
-        // 当 enableCivilianInPool 开启时，允许 sre:civilian 进入池中
-        RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        !(role instanceof RepairRole) &&
-                        !role.isVigilanteTeam() &&
-                        !role.canUseKiller() &&
-                        // 添加筛选逻辑
-                        !role.isNeutrals() &&
-                        role.isInnocent() &&
-                        (enableCivilianInPool || role != TMMRoles.CIVILIAN));
-        // 如果开启 civilian 进池，设置最大数量为 1
-        if (enableCivilianInPool) {
-            Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
-        }
-
-        // 使用阳光自选模式的RoleAssignmentPool方法来抽取职业池
-        // getAllRoles会正确处理地图限制、解锁状态和角色占用数量
-        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(killerCount, vigilanteCount, neutralsCount,
-                totalPlayerCount + 5, 0, killerPool,
-                neutralsPool, vigilantePool, civilianPool, true);
+        final int finalKillerCount = killerCount;
+        final int finalVigilanteCount = vigilanteCount;
+        final int finalNeutralsCount = neutralsCount;
+        final int finalTotalPlayerCount = totalPlayerCount;
+        List<RoleInstance> baseRoles = RoleAssignmentPool.withMapDisabledRoles(
+                AreasWorldComponent.KEY.get(serverWorld).getDisabledRoles(), () -> {
+                    RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
+                            role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                                    !role.isOtherModeRole() &&
+                                    !(role instanceof RepairRole) &&
+                                    role.canUseKiller() &&
+                                    !role.isInnocent() &&
+                                    !RoleUtils.compareRole(role, ModRoles.PUPPETEER) &&
+                                    role != TMMRoles.CIVILIAN);
+                    RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
+                            role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                                    role.isVigilanteTeam() &&
+                                    !role.isOtherModeRole() && !(role instanceof RepairRole));
+                    RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
+                            role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
+                                    !role.isOtherModeRole() &&
+                                    !(role instanceof RepairRole) &&
+                                    ((!role.canUseKiller() &&
+                                            !role.isInnocent()) || role.isNeutrals())
+                                    &&
+                                    role != TMMRoles.CIVILIAN));
+                    RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
+                            role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                                    !role.isOtherModeRole() &&
+                                    !(role instanceof RepairRole) &&
+                                    !role.isVigilanteTeam() &&
+                                    !role.canUseKiller() &&
+                                    !role.isNeutrals() &&
+                                    role.isInnocent() &&
+                                    (enableCivilianInPool || role != TMMRoles.CIVILIAN));
+                    if (enableCivilianInPool) {
+                        Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
+                    }
+                    return SREMurderGameMode.getAllRoles(finalKillerCount, finalVigilanteCount, finalNeutralsCount,
+                            finalTotalPlayerCount + 5, 0, killerPool,
+                            neutralsPool, vigilantePool, civilianPool, true);
+                });
 
         // 将基础角色添加到职业池
         for (RoleInstance inst : baseRoles) {
@@ -989,27 +984,95 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
 
     @Override
     public void writeSyncPacket(RegistryFriendlyByteBuf buf, ServerPlayer recipient) {
-        CompoundTag tag = new CompoundTag();
-        writeToSyncNbt(tag, buf.registryAccess());
-        buf.writeNbt(tag);
+        // 基础状态字段
+        buf.writeBoolean(isSelecting);
+        buf.writeVarInt(currentRotationIndex);
+        buf.writeVarInt(totalPlayerCount);
+        buf.writeVarInt(confirmCountdown);
+        buf.writeVarInt(selectionTimeLimit);
+        buf.writeLong(currentPlayerSelectionStart);
+
+        // 玩家轮选序号 (UUID -> index)
+        buf.writeVarInt(playerRotationOrder.size());
+        for (Map.Entry<UUID, Integer> entry : playerRotationOrder.entrySet()) {
+            buf.writeUUID(entry.getKey());
+            buf.writeVarInt(entry.getValue());
+        }
+
+        // 已选职业 (UUID -> role identifier string)
+        buf.writeVarInt(selectedRoles.size());
+        for (Map.Entry<UUID, SRERole> entry : selectedRoles.entrySet()) {
+            buf.writeUUID(entry.getKey());
+            buf.writeUtf(entry.getValue().identifier().toString());
+        }
+
+        // 当前候选职业
+        buf.writeVarInt(currentCandidates.size());
+        for (SRERole role : currentCandidates) {
+            buf.writeUtf(role.identifier().toString());
+        }
+
+        // 随机选择玩家集合
+        buf.writeVarInt(randomChoosers.size());
+        for (UUID uuid : randomChoosers) {
+            buf.writeUUID(uuid);
+        }
     }
 
     @Override
     @CheckEnvironment(EnvType.CLIENT)
     public void applySyncPacket(RegistryFriendlyByteBuf buf) {
-        CompoundTag tag = buf.readNbt();
-        if (tag != null) {
-            readFromSyncNbt(tag, buf.registryAccess());
+        isSelecting = buf.readBoolean();
+        currentRotationIndex = buf.readVarInt();
+        totalPlayerCount = buf.readVarInt();
+        confirmCountdown = buf.readVarInt();
+        selectionTimeLimit = buf.readVarInt();
+        currentPlayerSelectionStart = buf.readLong();
 
-            // 同时更新 RoleRotationCache
-            updateRoleRotationCache();
+        playerRotationOrder.clear();
+        int orderSize = buf.readVarInt();
+        for (int i = 0; i < orderSize; i++) {
+            playerRotationOrder.put(buf.readUUID(), buf.readVarInt());
         }
+
+        selectedRoles.clear();
+        int selectedSize = buf.readVarInt();
+        for (int i = 0; i < selectedSize; i++) {
+            UUID uuid = buf.readUUID();
+            String rolePath = buf.readUtf();
+            SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
+            if (role != null) {
+                selectedRoles.put(uuid, role);
+            }
+        }
+
+        currentCandidates.clear();
+        int candidatesSize = buf.readVarInt();
+        for (int i = 0; i < candidatesSize; i++) {
+            String rolePath = buf.readUtf();
+            SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
+            if (role != null) {
+                currentCandidates.add(role);
+            }
+        }
+
+        randomChoosers.clear();
+        int randomSize = buf.readVarInt();
+        for (int i = 0; i < randomSize; i++) {
+            randomChoosers.add(buf.readUUID());
+        }
+
+        // 更新客户端缓存
+        updateRoleRotationCache();
     }
 
     @Environment(EnvType.CLIENT)
     private void updateRoleRotationCache() {
         // 更新基础状态
         RoleRotationCache.updateBaseState(isSelecting, currentRotationIndex, totalPlayerCount, confirmCountdown);
+
+        // 更新剩余时间（使用 selectionTimeLimit 作为剩余时间，与原 RoleRotationSyncS2CPacket 行为一致）
+        RoleRotationCache.setRemainingTime(selectionTimeLimit);
 
         // 更新 rotationOrder
         HashMap<UUID, Integer> orderMap = new HashMap<>();
@@ -1037,6 +1100,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         if (mc.player != null) {
             int myIndex = playerRotationOrder.getOrDefault(mc.player.getUUID(), -1);
             RoleRotationCache.setMyRotationIndex(myIndex);
+            // 更新 wasMyTurn 状态（用于客户端声音和 UI 逻辑）
+            RoleRotationCache.setWasMyTurn(isSelecting && RoleRotationCache.isMyTurn(mc.player.getUUID()));
         }
 
         // 更新随机选择玩家
@@ -1053,49 +1118,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         tag.putInt("currentIndex", currentRotationIndex);
         tag.putInt("totalPlayers", totalPlayerCount);
         tag.putInt("confirmCountdown", confirmCountdown);
-        tag.putInt("finalPhaseThreshold", finalPhaseThreshold);
-
-        // 卡片使用统计
-        tag.putInt("killerCardCount", cardUsedCount.getOrDefault(4, 0));
-        tag.putInt("neutralCardCount", cardUsedCount.getOrDefault(2, 0));
-        tag.putInt("civilianCardCount", cardUsedCount.getOrDefault(1, 0));
-        tag.putInt("killerCardMax", cardMaxPerType.getOrDefault(4, 0));
-        tag.putInt("neutralCardMax", cardMaxPerType.getOrDefault(2, 0));
-        tag.putInt("civilianCardMax", cardMaxPerType.getOrDefault(1, 0));
-
-        // 序列化玩家序号
-        ListTag orderList = new ListTag();
-        for (Map.Entry<UUID, Integer> entry : playerRotationOrder.entrySet()) {
-            CompoundTag playerTag = new CompoundTag();
-            playerTag.putUUID("uuid", entry.getKey());
-            playerTag.putInt("index", entry.getValue());
-            orderList.add(playerTag);
-        }
-        tag.put("rotationOrder", orderList);
-
-        // 序列化已选职业
-        ListTag selectedList = new ListTag();
-        for (Map.Entry<UUID, SRERole> entry : selectedRoles.entrySet()) {
-            CompoundTag selTag = new CompoundTag();
-            selTag.putUUID("uuid", entry.getKey());
-            selTag.putString("role", entry.getValue().identifier().toString());
-            selectedList.add(selTag);
-        }
-        tag.put("selectedRoles", selectedList);
-
-        // 序列化当前候选职业
-        ListTag candidateList = new ListTag();
-        for (SRERole role : currentCandidates) {
-            candidateList.add(StringTag.valueOf(role.identifier().toString()));
-        }
-        tag.put("candidates", candidateList);
-
-        // 序列化随机选择玩家
-        ListTag randomChooserList = new ListTag();
-        for (UUID uuid : randomChoosers) {
-            randomChooserList.add(StringTag.valueOf(uuid.toString()));
-        }
-        tag.put("randomChoosers", randomChooserList);
+        // card tracking 仅服务端使用，不同步
     }
 
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
@@ -1103,61 +1126,5 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         currentRotationIndex = tag.getInt("currentIndex");
         totalPlayerCount = tag.getInt("totalPlayers");
         confirmCountdown = tag.getInt("confirmCountdown");
-        finalPhaseThreshold = tag.getInt("finalPhaseThreshold");
-
-        cardUsedCount.put(4, tag.getInt("killerCardCount"));
-        cardUsedCount.put(2, tag.getInt("neutralCardCount"));
-        cardUsedCount.put(1, tag.getInt("civilianCardCount"));
-        cardMaxPerType.put(4, tag.getInt("killerCardMax"));
-        cardMaxPerType.put(2, tag.getInt("neutralCardMax"));
-        cardMaxPerType.put(1, tag.getInt("civilianCardMax"));
-
-        playerRotationOrder.clear();
-        if (tag.contains("rotationOrder", CompoundTag.TAG_LIST)) {
-            ListTag orderList = tag.getList("rotationOrder", CompoundTag.TAG_COMPOUND);
-            for (int i = 0; i < orderList.size(); i++) {
-                CompoundTag playerTag = orderList.getCompound(i);
-                UUID uuid = playerTag.getUUID("uuid");
-                int index = playerTag.getInt("index");
-                playerRotationOrder.put(uuid, index);
-            }
-        }
-
-        selectedRoles.clear();
-        if (tag.contains("selectedRoles", CompoundTag.TAG_LIST)) {
-            ListTag selectedList = tag.getList("selectedRoles", CompoundTag.TAG_COMPOUND);
-            for (int i = 0; i < selectedList.size(); i++) {
-                CompoundTag selTag = selectedList.getCompound(i);
-                UUID uuid = selTag.getUUID("uuid");
-                String rolePath = selTag.getString("role");
-                SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
-                if (role != null) {
-                    selectedRoles.put(uuid, role);
-                }
-            }
-        }
-
-        currentCandidates.clear();
-        if (tag.contains("candidates", CompoundTag.TAG_LIST)) {
-            ListTag candidateList = tag.getList("candidates", CompoundTag.TAG_STRING);
-            for (int i = 0; i < candidateList.size(); i++) {
-                String rolePath = candidateList.getString(i);
-                SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
-                if (role != null) {
-                    currentCandidates.add(role);
-                }
-            }
-        }
-
-        randomChoosers.clear();
-        if (tag.contains("randomChoosers", CompoundTag.TAG_LIST)) {
-            ListTag randomChooserList = tag.getList("randomChoosers", CompoundTag.TAG_STRING);
-            for (int i = 0; i < randomChooserList.size(); i++) {
-                try {
-                    randomChoosers.add(UUID.fromString(randomChooserList.getString(i)));
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-        }
     }
 }

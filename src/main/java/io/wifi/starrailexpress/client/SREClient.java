@@ -2,27 +2,23 @@ package io.wifi.starrailexpress.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.text2speech.Narrator;
-
 import dev.doctor4t.ratatouille.client.util.OptionLocker;
 import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
-
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
-
+import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
+import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomTableHud;
-
-import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
-import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.client.gui.screen.*;
+import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRotationScreen;
 import io.wifi.starrailexpress.client.model.GeneralModelLoadingPlugin;
 import io.wifi.starrailexpress.client.model.TMMModelLayers;
 import io.wifi.starrailexpress.client.render.block_entity.*;
@@ -41,10 +37,9 @@ import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.item.GrenadeItem;
 import io.wifi.starrailexpress.content.item.KnifeItem;
-import io.wifi.starrailexpress.content.vote.client.VoteClientReceiver;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationClientReceiver;
-import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRotationScreen;
+import io.wifi.starrailexpress.content.vote.client.VoteClientReceiver;
 import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.ClientHeldItemSwitchEvent;
@@ -57,11 +52,8 @@ import io.wifi.starrailexpress.game.data.MapConfig;
 import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
-import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
-import io.wifi.starrailexpress.network.packet.SyncRoomToPlayerPayload;
-import io.wifi.starrailexpress.network.packet.SyncSpecificWaypointVisibilityPacket;
-import io.wifi.starrailexpress.network.packet.SyncWaypointVisibilityPacket;
-import io.wifi.starrailexpress.network.packet.SyncWaypointsPacket;
+import io.wifi.starrailexpress.network.packet.*;
+import io.wifi.starrailexpress.rules.ChatHudRules;
 import io.wifi.starrailexpress.scenery.client.SceneAssetClient;
 import io.wifi.starrailexpress.scenery.network.SceneAssetNetwork;
 import io.wifi.starrailexpress.util.HPManager;
@@ -100,6 +92,7 @@ import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Display;
@@ -110,7 +103,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
-
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.client.ClientSkincrawlerState;
 import org.agmas.noellesroles.client.NoellesrolesClient;
@@ -138,6 +130,7 @@ public class SREClient implements ClientModInitializer {
     public static HPManager handParticleManager;
     public static Map<Player, Vec3> particleMap;
     public static Map<UUID, Integer> cachedHighLightMap = new HashMap<>();
+    private static boolean previousMyTurn = false;
     private static boolean prevGameRunning;
     public static SREGameWorldComponent gameComponent;
     public static WorldModifierComponent modifierComponent;
@@ -244,6 +237,7 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.STICKY_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.ZIPLINE_RIDER, NoopRenderer::new);
 
         // Register entity model layers
         TMMModelLayers.initialize();
@@ -354,16 +348,18 @@ public class SREClient implements ClientModInitializer {
                 ctx -> new UpSmallDoorBlockEntityRenderer(SRE.id("textures/item/doors/up_steel_door.png"), ctx));
         // OTHERS
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
+        BlockEntityRenderers.register(TMMBlockEntities.ZIPLINE, ZiplineBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
 
         AmbienceUtil.registerBackgroundAmbience(
-                new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE, player -> gameComponent.isPsychoActive(), 20));
+                new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE,
+                        player -> gameComponent != null && gameComponent.isPsychoActive(), 20));
 
         // ───── 场景背景音效系统 ─────
         // 列车内部（看不到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_INSIDE,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && !SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("train"),
@@ -371,7 +367,7 @@ public class SREClient implements ClientModInitializer {
         // 列车外部（能看到天空时，仅 train 类型生效）
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(TMMSounds.AMBIENT_TRAIN_OUTSIDE,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("train"),
@@ -381,7 +377,7 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
                 org.agmas.noellesroles.init.NRSounds.WIND,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("wind"),
@@ -390,7 +386,7 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
                 org.agmas.noellesroles.init.NRSounds.SAND_STORM,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("sand_storm"),
@@ -399,7 +395,7 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
                 org.agmas.noellesroles.init.NRSounds.SNOW_STORM,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("snow_storm"),
@@ -408,7 +404,7 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
                 org.agmas.noellesroles.init.NRSounds.CIRCUS_INDOOR,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && !SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("circus"),
@@ -417,7 +413,7 @@ public class SREClient implements ClientModInitializer {
         AmbienceUtil.registerBackgroundAmbience(new MyBackgroundAmbience(
                 org.agmas.noellesroles.init.NRSounds.CIRCUS_BACKGROUND,
                 SoundSource.AMBIENT,
-                (player) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                (player) -> gameComponent != null && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                         && gameComponent.isOutsideSoundsAvailable() && isTrainMoving()
                         && SRE.isSkyVisible(player)
                         && gameComponent.getSceneOutsideSoundType().equals("circus"),
@@ -431,7 +427,13 @@ public class SREClient implements ClientModInitializer {
             trainComponent = SRETrainWorldComponent.KEY.get(clientWorld);
             moodComponent = SREPlayerMoodComponent.KEY.get(Minecraft.getInstance().player);
         });
-
+        ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> {
+            gameComponent = null;
+            modifierComponent = null;
+            areaComponent = null;
+            trainComponent = null;
+            moodComponent = null;
+        });
         // Lock options
         OptionLocker.overrideOption("gamma", 0d);
         if (getLockedRenderDistance(SREConfig.isUltraPerfMode()) != null) {
@@ -453,6 +455,7 @@ public class SREClient implements ClientModInitializer {
 
         // 客户端接收器 (在客户端初始化中调用)
         VoteClientReceiver.register();
+        StreamingSpectatorClient.register();
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
 
@@ -486,7 +489,8 @@ public class SREClient implements ClientModInitializer {
                     }
                 });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
-            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null) {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null
+                    || SREClient.gameComponent == null) {
                 return;
             }
             final LocalPlayer player = Minecraft.getInstance().player;
@@ -557,6 +561,8 @@ public class SREClient implements ClientModInitializer {
         });
         intervalTime = new Random().nextInt(0, 200);
         ClientTickEvents.END_CLIENT_TICK.register((client) -> {
+            if (client.level == null || gameComponent == null)
+                return;
             FrameAnimationRenderer.setInWorld(client != null && client.level != null);
             LocalPlayer player = client.player;
             cached_player = player;
@@ -674,8 +680,10 @@ public class SREClient implements ClientModInitializer {
                     client.setScreen(new io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen(
                             client.screen));
                 }));
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomClientState.clear());
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomCameraDirector.clear());
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            FourthRoomClientState.clear();
+            FourthRoomCameraDirector.clear();
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
@@ -1000,6 +1008,7 @@ public class SREClient implements ClientModInitializer {
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
+            StreamingSpectatorClient.renderHud(guiGraphics);
 
             // Subtitle 字幕报幕
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
@@ -1023,6 +1032,8 @@ public class SREClient implements ClientModInitializer {
 
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (gameComponent == null || client.level == null)
+                return;
             FourthRoomCameraDirector.tick(client);
             net.exmo.sre.camera.client.AdvancedCameraDirector.tick(client);
             if (SREClient.gameComponent == null)
@@ -1073,9 +1084,26 @@ public class SREClient implements ClientModInitializer {
                 }
             }
 
+            // 职业轮选GUI - 综合管理：声音、关闭、重新打开
+            boolean currentMyTurn = RoleRotationCache.getWasMyTurn();
+            boolean isRotationActive = RoleRotationCache.canReOpen();
+
+            // 检测轮到自己选职业的音效
+            if (!previousMyTurn && currentMyTurn && client.player != null) {
+                client.player.playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
+            }
+            previousMyTurn = currentMyTurn;
+
+            // 轮选结束，关闭界面
+            if (!isRotationActive) {
+                if (client.screen instanceof RoleRotationScreen) {
+                    client.setScreen(null);
+                }
+            }
+
             // 职业轮选GUI - 若无UI则5tick强制打开一次
             if (client.screen == null && client.level != null && client.level.getGameTime() % 5 == 0
-                    && RoleRotationCache.canReOpen()) {
+                    && isRotationActive) {
                 // 排除职业介绍页面，查看职业介绍时不应该强制跳转回轮选页面
                 boolean isViewingRoleIntro = client.screen instanceof org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
                 if (!isViewingRoleIntro && (client.screen == null || !(client.screen instanceof RoleRotationScreen))) {
@@ -1369,5 +1397,16 @@ public class SREClient implements ClientModInitializer {
         if (isInLobby)
             return true;
         return false;
+    }
+
+    public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
+        if (player == null)
+            return null;
+        return SREAbilityPlayerComponent.KEY.get(player);
+    }
+
+    public static SREAbilityPlayerComponent getAbilityComponent() {
+        var player = Minecraft.getInstance().player;
+        return getAbilityComponent(player);
     }
 }

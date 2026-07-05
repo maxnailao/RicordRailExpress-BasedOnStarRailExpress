@@ -18,7 +18,8 @@ import org.agmas.noellesroles.scene.SceneEventManager;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 反应堆方块实体：破坏任务激活时过热，玩家右键完成小游戏后关闭。
+ * 反应堆方块实体：破坏任务激活时过载，玩家右键打开温度调节小游戏，完成后关闭。
+ * 两个反应堆通过绑定工具配对，全部关闭后结束破坏任务。
  */
 public class ReactorBlockEntity extends BlockEntity {
 
@@ -89,19 +90,25 @@ public class ReactorBlockEntity extends BlockEntity {
         ReactorRegistry.add(serverLevel, pos);
         boolean sabotage = SceneEventManager.isSabotageActive(serverLevel);
 
+        // 检查破坏任务是否已自然超时（提前结束不触发）
+        SceneEventManager.checkAndHandleSabotageTimeout(serverLevel);
+
+        // 破坏任务激活时循环播放警报音效
+        if (sabotage) {
+            SceneEventManager.tickSabotageAlarm(serverLevel);
+        }
+
         if (sabotage) {
             if (!state.getValue(ReactorBlock.CLOSED) && !state.getValue(ReactorBlock.ACTIVE)) {
                 serverLevel.setBlock(pos, state.setValue(ReactorBlock.ACTIVE, true), Block.UPDATE_ALL);
             }
             if (state.getValue(ReactorBlock.ACTIVE)) {
-                if (serverLevel.getGameTime() % 4 == 0) {
-                    serverLevel.sendParticles(ParticleTypes.FLAME,
-                            pos.getX() + 0.5, pos.getY() + 0.8, pos.getZ() + 0.5, 3, 0.3, 0.2, 0.3, 0.02);
-                    serverLevel.sendParticles(ParticleTypes.SMOKE,
-                            pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 2, 0.25, 0.15, 0.25, 0.01);
+                if (serverLevel.getGameTime() % 6 == 0) {
+                    serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                            pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 4, 0.3, 0.3, 0.3, 0.05);
                 }
-                if (serverLevel.getGameTime() % 30 == 0) {
-                    serverLevel.playSound(null, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 0.5F, 0.8F);
+                if (serverLevel.getGameTime() % 40 == 0) {
+                    serverLevel.playSound(null, pos, SoundEvents.CONDUIT_AMBIENT, SoundSource.BLOCKS, 0.6F, 0.8F);
                 }
             }
         } else {
@@ -113,28 +120,34 @@ public class ReactorBlockEntity extends BlockEntity {
         }
     }
 
-    /** 反应堆关闭后，检查配对的两个反应堆是否都已关闭。 */
-    public void onSelfClosed() {
-        if (!(this.level instanceof ServerLevel serverLevel)) return;
-        if (!serverLevel.getBlockState(this.worldPosition).getValue(ReactorBlock.CLOSED)) return;
-
-        if (partnerPos != null) {
-            if (serverLevel.isLoaded(partnerPos)) {
-                BlockEntity be = serverLevel.getBlockEntity(partnerPos);
-                if (be instanceof ReactorBlockEntity) {
-                    boolean partnerClosed = serverLevel.getBlockState(partnerPos).getValue(ReactorBlock.CLOSED);
-                    if (!partnerClosed) return;
-                } else {
-                    return;
-                }
-            } else {
-                return;
+    /** 在一个反应堆被小游戏关闭后调用：检查其配对的反应堆是否也已关闭。 */
+    public static void onReactorClosed(ServerLevel level) {
+        if (ReactorRegistry.allClosed(level)) {
+            SceneEventManager.stopSabotage(level);
+            for (var player : level.players()) {
+                player.displayClientMessage(Component.translatable("message.noellesroles.reactor.all_closed"), false);
             }
         }
+    }
 
+    /** 本反应堆关闭后，检查配对的两个反应堆是否都已关闭（直接从 Chunk 读块状态，不依赖全局注册表）。 */
+    public void onSelfClosed() {
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+        if (!isClosed()) return;
+        if (!isPartnerClosed(serverLevel)) return;
+        if (!ReactorRegistry.allClosed(serverLevel)) return;
         SceneEventManager.stopSabotage(serverLevel);
         for (var player : serverLevel.players()) {
             player.displayClientMessage(Component.translatable("message.noellesroles.reactor.all_closed"), false);
         }
+    }
+
+    private boolean isPartnerClosed(ServerLevel level) {
+        if (partnerPos == null) return true;
+        if (!level.isLoaded(partnerPos)) return false;
+        BlockState state = level.getBlockState(partnerPos);
+        return state.getBlock() instanceof ReactorBlock
+                && state.hasProperty(ReactorBlock.CLOSED)
+                && state.getValue(ReactorBlock.CLOSED);
     }
 }

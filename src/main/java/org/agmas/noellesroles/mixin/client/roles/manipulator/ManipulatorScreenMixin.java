@@ -2,6 +2,7 @@ package org.agmas.noellesroles.mixin.client.roles.manipulator;
 
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedHandledScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -11,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.GameType;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.ManipulatorPlayerWidget;
@@ -107,24 +107,21 @@ public abstract class ManipulatorScreenMixin extends LimitedHandledScreen<Invent
             return List.of();
         }
 
-        // 只显示已标记的目标（需先潜行盯人 4 秒完成标记，可保存多个）
-        ManipulatorPlayerComponent comp = ManipulatorPlayerComponent.KEY.get(player);
-        java.util.Set<java.util.UUID> marked = comp.markedTargets;
-        if (marked.isEmpty()) {
-            return List.of();
-        }
         return client.getConnection().getOnlinePlayers().stream()
-                .filter(a -> marked.contains(a.getProfile().getId())
-                        && a.getProfile().getId() != player.getUUID()
-                        && a.getGameMode() == GameType.ADVENTURE)
+                .filter(a -> isEligibleControlTarget(client, a))
                 .collect(Collectors.toList());
     }
 
     @Unique
-    private boolean isPlayerInAdventureMode(AbstractClientPlayer targetPlayer) {
-        Minecraft client = Minecraft.getInstance();
-        var entry = client.player.connection.getPlayerInfo(targetPlayer.getUUID());
-        return entry != null && entry.getGameMode() == GameType.ADVENTURE;
+    private boolean isEligibleControlTarget(Minecraft client, PlayerInfo info) {
+        if (info.getProfile().getId().equals(player.getUUID()) || info.getGameMode() != GameType.ADVENTURE) {
+            return false;
+        }
+        if (client.level == null) {
+            return false;
+        }
+        return client.level.getPlayerByUUID(info.getProfile().getId()) instanceof AbstractClientPlayer targetPlayer
+                && player.distanceTo(targetPlayer) <= ManipulatorPlayerComponent.DIRECT_CONTROL_RANGE;
     }
 
     @Inject(method = "render", at = @At("HEAD"))

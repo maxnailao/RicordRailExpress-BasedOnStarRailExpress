@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
@@ -28,7 +30,7 @@ import java.util.ArrayList;
 public class ChangeRoleCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("changeRole")
-        .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
+        .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().changeRoleRequiredPermission))
         .then(Commands.argument("player", EntityArgument.player())
             .then(Commands.literal("reset")
                 .executes((ctx) -> executeClear(ctx, false))

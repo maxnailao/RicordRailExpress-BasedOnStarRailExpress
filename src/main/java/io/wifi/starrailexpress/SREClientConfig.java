@@ -4,6 +4,7 @@ import io.wifi.ConfigCompact.ConfigClassHandler;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 
 /**
  * 写翻译键 at config_translations/lang/zh_cn.json
@@ -20,10 +21,28 @@ public class SREClientConfig implements ConfigData {
 
     @ConfigEntry.Gui.Tooltip
     public boolean ultraPerfMode = false;
+
     // Skills configuration
     /**
      * Broadcaster - Broadcast message display duration in seconds
      */
+    public enum StaminaStyle {
+        DEFAULT,
+        OLD_STYLE,
+        SPLIT_STYLE,
+        MINECRAFT_STYLE,
+        NONE
+    }
+
+    // 样式
+    @Category("style")
+    public StaminaStyle staminaStyle = StaminaStyle.DEFAULT;
+    @Category("style")
+    public int moodTopOffset = 0;
+    @Category("style")
+    public int moodLeftOffset = 0;
+
+    // 通用
     public int broadcasterMessageDuration = 10;
     public boolean disableTitleScreenSound = false;
     public boolean disableTitleScreenVideoBackground = false;
@@ -39,6 +58,8 @@ public class SREClientConfig implements ConfigData {
     public boolean disableStaminaBarSmoothing = false;
 
     public boolean enableSecurityCameraHUD = true; // 启用安全摄像头HUD显示
+    public boolean showItemCooldownOverlay = false; // 物品栏物品上显示冷却数字
+    public boolean showHotbarCooldown = true; // 快捷栏上方显示冷却时间
     public boolean welcome_voice = false;
 
     public boolean autoSortVotes = false;

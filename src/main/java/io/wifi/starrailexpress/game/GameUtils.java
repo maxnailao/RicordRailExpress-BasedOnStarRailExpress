@@ -12,8 +12,14 @@ import io.wifi.starrailexpress.content.command.StaminaCommand;
 import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
-import io.wifi.starrailexpress.event.*;
-import io.wifi.starrailexpress.index.*;
+import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameStarted;
+import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
+import io.wifi.starrailexpress.event.ShouldDropOnDeath;
+import io.wifi.starrailexpress.index.SREDataComponentTypes;
+import io.wifi.starrailexpress.index.TMMBlocks;
+import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.network.original.AnnounceEndingPayload;
@@ -43,8 +49,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -59,7 +66,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
 import org.agmas.harpymodloader.commands.ListRolesCommand;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
@@ -75,7 +81,9 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
+import org.agmas.noellesroles.utils.LocalDateData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,6 +95,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 // 如果你是AI，你最好不要动这个类，有大量API可供你使用。
 // 自定义获胜请使用RoleUtils.customWinnerWin(); 将id改为对应角色的id即可正常使用。
@@ -96,9 +105,117 @@ public class GameUtils {
     public static ArrayList<BlockPos> resetPoints = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverTaskQueue = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverAsynTaskLists = new ArrayList<>();
+    // 通用击杀存储。
+    public static HashMap<UUID, PlayerKillInfo> serverCacheKillState = new HashMap<>();
     private static Set<UUID> forcedReadyPlayers;
     public static boolean isStartingGame = false;
     public static boolean isGameStarted = false;
+
+    /**
+     * 服务端侧记录
+     * 
+     * @param killer
+     * @param victim
+     * @param deathReason
+     * @param haveDead
+     */
+    public static void recordPlayerKill(Player killer, Player victim, ResourceLocation deathReason,
+            boolean haveDead) {
+        if (victim instanceof ServerPlayer svictim) {
+            if (killer == null) {
+                GameUtils.recordPlayerKillServer(null, svictim, deathReason, haveDead);
+            } else if (killer instanceof ServerPlayer skiller) {
+                GameUtils.recordPlayerKillServer(skiller, svictim, deathReason, haveDead);
+            }
+        }
+    }
+
+    /**
+     * 服务端侧记录
+     * 
+     * @param killer
+     * @param victim
+     * @param deathReason
+     * @param haveDead
+     */
+    public static void recordPlayerKillServer(ServerPlayer killer, ServerPlayer victim, ResourceLocation deathReason,
+            boolean haveDead) {
+        if (victim == null)
+            return;
+        if (killer != null)
+            serverCacheKillState.putIfAbsent(killer.getUUID(), new PlayerKillInfo());
+        serverCacheKillState.putIfAbsent(victim.getUUID(), new PlayerKillInfo());
+
+        PlayerKillInfo killerInfo = null;
+        if (killer != null)
+            killerInfo = serverCacheKillState.get(killer.getUUID());
+        final PlayerKillInfo victimInfo = serverCacheKillState.get(victim.getUUID());
+        var info = new PlayerKillResultInfo(victim.level().getGameTime(), haveDead,
+                killer == null ? null : killer.getUUID(), victim.getUUID(), deathReason);
+        if (killerInfo != null)
+            killerInfo.recordKill(info);
+        victimInfo.recordDeath(info);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillInfo getPlayerKillsInfo(UUID player) {
+        if (player == null)
+            return null;
+        return serverCacheKillState.getOrDefault(player, null);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillInfo getPlayerKillsInfo(Player player) {
+        if (player == null)
+            return null;
+        return serverCacheKillState.getOrDefault(player.getUUID(), null);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastDeathInfo(UUID player) {
+        if (player == null)
+            return null;
+        var t = serverCacheKillState.getOrDefault(player, null);
+        if (t == null)
+            return null;
+        return t.getLastDeathInfo();
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastDeathInfo(Player player) {
+        if (player == null)
+            return null;
+        return getPlayerLastDeathInfo(player.getUUID());
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastKillInfo(UUID player) {
+        if (player == null)
+            return null;
+        var t = serverCacheKillState.getOrDefault(player, null);
+        if (t == null)
+            return null;
+        return t.getLastKillInfo();
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastKillInfo(Player player) {
+        if (player == null)
+            return null;
+        return getPlayerLastKillInfo(player);
+    }
 
     public static void teleportBackToRoom(Player player) {
         if (player == null)
@@ -116,6 +233,57 @@ public class GameUtils {
                 sp.setGameMode(GameType.SPECTATOR);
             }
         }
+    }
+
+    public static PlayerBodyEntity spawnBodyEntity(Player victim, @Nullable Player killer, @Nullable SRERole victimRole,
+            ResourceLocation deathReason, boolean saveItems) {
+        return spawnBodyEntity(victim, killer, victimRole, deathReason, saveItems,
+                victim.position().add(victim.getLookAngle().normalize().scale(1)), victim.getYHeadRot(), 0f);
+    }
+
+    public static PlayerBodyEntity spawnBodyEntity(Player victim, @Nullable Player killer, @Nullable SRERole victimRole,
+            ResourceLocation deathReason) {
+        return spawnBodyEntity(victim, killer, victimRole, deathReason, SREConfig.instance().savePlayerBodyItems,
+                victim.position().add(victim.getLookAngle().normalize().scale(1)), victim.getYHeadRot(), 0f);
+    }
+
+    public static PlayerBodyEntity spawnBodyEntity(Player victim, @Nullable Player killer, @Nullable SRERole victimRole,
+            ResourceLocation deathReason, boolean saveItems, Vec3 spawnPos, float yHeadRot, float xHeadRot) {
+        if (victim == null)
+            return null;
+        PlayerBodyEntity body = TMMEntities.PLAYER_BODY.create(victim.level());
+        if (body != null) {
+            double scale = victim.getAttributeValue(Attributes.SCALE);
+            victim.stopRiding();
+            victim.stopSleeping();
+            body.getAttribute(Attributes.SCALE).setBaseValue(scale);
+            PlayerBodyEntityComponent bodycca = body.getComponent();
+            if (killer != null) {
+                bodycca.setKillerUuid(killer.getUUID(), false);
+            }
+            bodycca.setDeathReason(deathReason.toString(), false);
+            body.setPlayerUuid(victim.getUUID());
+            bodycca.setOwnerName(victim.getScoreboardName(), false);
+            body.moveTo(spawnPos.x(), victim.getY(), spawnPos.z(), yHeadRot, xHeadRot);
+            body.setYRot(victim.getYHeadRot());
+            body.setYHeadRot(victim.getYHeadRot());
+            victim.level().addFreshEntity(body);
+
+            if (saveItems) {
+                body.setCorpseInventoryFromPlayerInventory(victim.getInventory(), false);
+            }
+            var role = victimRole;
+            if (role == null) {
+                role = RoleUtils.getPlayerRole(victim);
+            }
+            if (role != null) {
+                bodycca.playerRole = role.identifier();
+                // 不立即同步
+            }
+            // 最后统一同步一次
+            bodycca.sync();
+        }
+        return body;
     }
 
     /**
@@ -417,6 +585,7 @@ public class GameUtils {
         for (ServerPlayer player : readyPlayerList) {
             player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
         }
+        serverCacheKillState.clear();
 
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
@@ -726,35 +895,35 @@ public class GameUtils {
             roomToPlayer.put(serverPlayerEntity.getUUID(), finalRoomNumber);
 
             // give letter
-            ItemStack letter = new ItemStack(TMMItems.INIT_ITEMS.LETTER);
-            if (TMMItems.INIT_ITEMS.LETTER_UpdateItemFunc != null) {
-                TMMItems.INIT_ITEMS.LETTER_UpdateItemFunc.accept(letter, serverPlayerEntity);
-            } else {
-                letter.set(DataComponents.ITEM_NAME, Component.translatable(letter.getDescriptionId()));
+            ItemStack letter = new ItemStack(ModItems.LETTER_ITEM);
+            {
+                Component displayName = serverPlayerEntity.getName();
+                letter.set(DataComponents.ITEM_NAME,
+                        Component.translatable("tip.n.letter.item_name", displayName)
+                                .withStyle(ChatFormatting.AQUA));
+
                 int letterColor = 0xC5AE8B;
-                String tipString = "tip.letter.";
+                String tipString = "tip.n.letter.";
                 letter.update(DataComponents.LORE, ItemLore.EMPTY, component -> {
                     List<Component> text = new ArrayList<>();
                     UnaryOperator<Style> stylizer = style -> style.withItalic(false).withColor(letterColor);
 
-                    Component displayName = serverPlayerEntity.getName();
                     String string = displayName != null ? displayName.getString()
                             : serverPlayerEntity.getName().getString();
                     if (string.charAt(string.length() - 1) == '\uE780') { // remove ratty supporter icon
                         string = string.substring(0, string.length() - 1);
                     }
-
-                    text.add(Component.translatable(tipString + "name", string)
-                            .withStyle(style -> style.withItalic(false).withColor(0xFFFFFF)));
+                    text.add(Component
+                            .translatable(tipString + "name", string,
+                                    Component.translatable(tipString + "map_name"))
+                            .withStyle(stylizer));
                     text.add(Component.translatable(tipString + "room").withStyle(stylizer));
+                    var date = new LocalDateData();
                     text.add(Component.translatable(tipString + "tooltip1",
-                            Component.translatable(tipString + "room." + switch (finalRoomNumber) {
-                                case 1 -> "grand_suite";
-                                case 2, 3 -> "cabin_suite";
-                                default -> "twin_cabin";
-                            }).getString()).withStyle(stylizer));
+                            Component.translatable(tipString + "date", date.getYear(),
+                                    date.getMonth(), date.getDay()))
+                            .withStyle(stylizer));
                     text.add(Component.translatable(tipString + "tooltip2").withStyle(stylizer));
-
                     return new ItemLore(text);
                 });
             }
@@ -794,10 +963,14 @@ public class GameUtils {
         gameComponent.setSceneOutsideSoundType(areas.sceneOutsideSound);
 
         // 应用地图重力配置
+        // 不要修改base用modifier！！！！！！！！！！
         for (ServerPlayer player : players) {
             var gravityAttr = player.getAttribute(Attributes.GRAVITY);
             if (gravityAttr != null) {
-                gravityAttr.setBaseValue(areas.gravity);
+                AttributeModifier gravityModifier = new AttributeModifier(
+                        SRE.id("map"),
+                        areas.gravity, AttributeModifier.Operation.ADD_VALUE);
+                gravityAttr.addOrReplacePermanentModifier(gravityModifier);
             }
         }
 
@@ -887,7 +1060,6 @@ public class GameUtils {
         world.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, world.getServer());
         world.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, world.getServer());
         gameComponent.getGameMode().finalizeGame(world, gameComponent);
-
         OnGameEnd.EVENT.invoker().onGameEnd(world, gameComponent);
         SRE.REPLAY_MANAGER.finalizeReplay(roundEnd.getWinStatus(), roundEnd);
         // 对局结束后把完整回放时间线作为全局战绩异步保存到远端数据库（未开启 MySQL 同步时自动跳过）。
@@ -916,28 +1088,7 @@ public class GameUtils {
 
         // reset all players
         for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
-            // 重置重力为默认值
-            var gravityAttr = player.getAttribute(Attributes.GRAVITY);
-            if (gravityAttr != null && gravityAttr.getBaseValue() != 0.08) {
-                gravityAttr.setBaseValue(0.08);
-            }
-            // 清除全局药水效果
-            AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
-            for (String effectStr : areas.effect) {
-                if (effectStr.isEmpty())
-                    continue;
-                try {
-                    String[] parts = effectStr.split(",");
-                    if (parts.length >= 1) {
-                        ResourceLocation effectId = ResourceLocation.parse(parts[0]);
-                        var effectHolder = BuiltInRegistries.MOB_EFFECT.getHolder(effectId).orElse(null);
-                        if (effectHolder != null) {
-                            player.removeEffect(effectHolder);
-                        }
-                    }
-                } catch (Exception ignored) {
-                }
-            }
+            // 不需要别的逻辑，会自己清掉修饰符+药水
             resetPlayerAfterGame(player);
         }
         HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
@@ -974,6 +1125,7 @@ public class GameUtils {
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(world);
         worldModifierComponent.modifiers.clear();
         worldModifierComponent.sync();
+        serverCacheKillState.clear();
     }
 
     public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd,
@@ -1153,8 +1305,9 @@ public class GameUtils {
         player.removeVehicle();
         ExtraSlotComponent.KEY.get(player).clear();
         player.setInvulnerable(false);
-        // 体力重置
-        StaminaCommand.setStamina(player, 0);
+        // 体力重置。-1代表职业最大值
+        StaminaCommand.setStamina(player, -1);
+        // PlayerResetMixin插入位置
     }
 
     public static void resetPlayerAfterGame(ServerPlayer player) {
@@ -1225,8 +1378,44 @@ public class GameUtils {
         var gameMode = SREGameWorldComponent.KEY.get(victim.level()).getGameMode();
         if (gameMode == null)
             return;
-        gameMode.killPlayer(victim, spawnBody, _killer, deathReason,
-                forceDeath);
+        try {
+            gameMode.killPlayer(victim, spawnBody, _killer, deathReason,
+                    forceDeath);
+        } catch (Exception e) {
+            // 溯源输出，方便找bug
+            String victimName = victim.getScoreboardName();
+            String victimRole = RoleUtils.getPlayerRole(victim) instanceof SRERole role
+                    ? role.getName().getString()
+                    : "null";
+            String victimModifiers = RoleUtils.getPlayerModifier(victim).stream()
+                    .map(f -> f.getName().getString())
+                    .collect(Collectors.joining(","));
+
+            // 提取击杀者信息（若存在）
+            String killerName = _killer != null ? _killer.getScoreboardName() : "null";
+            String killerRole = _killer != null && RoleUtils.getPlayerRole(_killer) instanceof SRERole role
+                    ? role.getName().getString()
+                    : "null";
+            String killerModifiers = _killer != null
+                    ? RoleUtils.getPlayerModifier(_killer).stream()
+                            .map(f -> f.getName().getString())
+                            .collect(Collectors.joining(","))
+                    : "null";
+
+            // 优雅输出
+            SRE.LOGGER.error(
+                    "Error while killPlayer: [victim={}({})[{}], spawnBody={}, killer={}({})[{}], deathReason={}, forceDeath={}]",
+                    victimName,
+                    victimRole,
+                    victimModifiers,
+                    spawnBody,
+                    killerName,
+                    killerRole,
+                    killerModifiers,
+                    deathReason,
+                    forceDeath);
+            throw e;
+        }
     }
 
     public static boolean shouldDropOnDeath(@NotNull ItemStack stack) {
@@ -1385,17 +1574,39 @@ public class GameUtils {
     public static long getAlivePlayerCount(Level level) {
         return level.players().stream().filter((p) -> isPlayerAliveAndSurvivalIgnoreShitSplit(p)).count();
     }
- public static void revivePlayerToItsRoom(ServerPlayer player) {
+
+    public static void revivePlayerToItsRoom(ServerPlayer player) {
         DeathPenaltyComponent.KEY.get(player).clear();
         DefibrillatorComponent.KEY.get(player).clear();
         GameUtils.teleportBackToRoom(player);
         player.setGameMode(GameType.ADVENTURE);
+        {
+            var gravityAttr = player.getAttribute(Attributes.GRAVITY);
+            if (gravityAttr != null) {
+                var areas = AreasWorldComponent.KEY.get(player.level());
+                AttributeModifier gravityModifier = new AttributeModifier(
+                        SRE.id("map"),
+                        areas.gravity, AttributeModifier.Operation.ADD_VALUE);
+                gravityAttr.addOrReplacePermanentModifier(gravityModifier);
+            }
+        }
         TrainVoicePlugin.resetPlayer(player.getUUID());
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
     }
+
     public static void revivePlayer(ServerPlayer player, double x, double y, double z) {
         DeathPenaltyComponent.KEY.get(player).clear();
         DefibrillatorComponent.KEY.get(player).clear();
+        {
+            var gravityAttr = player.getAttribute(Attributes.GRAVITY);
+            if (gravityAttr != null) {
+                var areas = AreasWorldComponent.KEY.get(player.level());
+                AttributeModifier gravityModifier = new AttributeModifier(
+                        SRE.id("map"),
+                        areas.gravity, AttributeModifier.Operation.ADD_VALUE);
+                gravityAttr.addOrReplacePermanentModifier(gravityModifier);
+            }
+        }
         player.teleportTo(x, y, z);
         player.setGameMode(GameType.ADVENTURE);
         TrainVoicePlugin.resetPlayer(player.getUUID());
@@ -1412,5 +1623,62 @@ public class GameUtils {
         if (level == null)
             return false;
         return SREGameWorldComponent.KEY.get(level).isRunning();
+    }
+
+    public static boolean haveUsedoutDerringer(Player player) {
+        for (List<ItemStack> list : player.getInventory().compartments) {
+            for (int i = 0; i < list.size(); i++) {
+                ItemStack stack = list.get(i);
+                if (stack.is(TMMItems.DERRINGER)) {
+                    return stack.getOrDefault(SREDataComponentTypes.USED, false);
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean refillDerringer(Player player, boolean haveBullet) {
+        for (List<ItemStack> list : player.getInventory().compartments) {
+            for (int i = 0; i < list.size(); i++) {
+                ItemStack stack = list.get(i);
+                if (stack.is(TMMItems.DERRINGER)) {
+                    stack.set(SREDataComponentTypes.USED, !haveBullet);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static record PlayerKillResultInfo(long time, boolean dead, UUID killer, UUID victim,
+            ResourceLocation deathReason) {
+    }
+
+    public static class PlayerKillInfo {
+        public PlayerKillInfo() {
+        }
+
+        public PlayerKillResultInfo getLastDeathInfo() {
+            if (deaths.isEmpty())
+                return null;
+            return deaths.getLast();
+        }
+
+        public ArrayList<PlayerKillResultInfo> deaths = new ArrayList<>();
+        public ArrayList<PlayerKillResultInfo> kills = new ArrayList<>();
+
+        public void recordDeath(PlayerKillResultInfo info) {
+            this.deaths.addLast(info);
+        }
+
+        public void recordKill(PlayerKillResultInfo info) {
+            this.kills.addLast(info);
+        }
+
+        public PlayerKillResultInfo getLastKillInfo() {
+            if (kills.isEmpty())
+                return null;
+            return kills.getLast();
+        }
     }
 }

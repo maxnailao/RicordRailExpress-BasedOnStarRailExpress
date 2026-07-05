@@ -10,7 +10,7 @@ import org.agmas.noellesroles.client.HotbarStorageMenu;
 public class ModMenus {
     public static final ExtendedScreenHandlerType<HotbarStorageMenu, BlockPos> HOTBAR_STORAGE = Registry.register(
             BuiltInRegistries.MENU,
-            SRE.id("dnf_hotbar_storage"),
+            SRE.id("repair_hotbar_storage"),
             new ExtendedScreenHandlerType<>(HotbarStorageMenu::new, BlockPos.STREAM_CODEC.cast()));
 
     private ModMenus() {

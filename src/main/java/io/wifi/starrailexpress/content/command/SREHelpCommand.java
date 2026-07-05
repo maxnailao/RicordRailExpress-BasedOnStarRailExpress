@@ -3,7 +3,6 @@ package io.wifi.starrailexpress.content.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.CommandNode;
-
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -17,12 +16,7 @@ import net.minecraft.network.chat.MutableComponent;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * /sre:help — 读取 assets/sre_commands/lang 下的语言键, 在游戏内列出本 Mod 注册的全部指令。
@@ -137,11 +131,11 @@ public class SREHelpCommand {
                 new Entry("/goods:add", "goods.add"),
                 new Entry("/goods:remove", "goods.remove"),
                 new Entry("/goods:list", "goods.list"),
-                new Entry("/repairshop", "repairshop"),
-                new Entry("/repair start", "repair"),
-                new Entry("/repairrole", "repairrole"),
-                new Entry("/repairmap", "repairmap"),
-                new Entry("/repairpreset", "repairpreset")));
+                new Entry("/cy:repairshop", "repairshop"),
+                new Entry("/cy:repair start", "repair"),
+                new Entry("/cy:repairrole", "repairrole"),
+                new Entry("/cy:repairmap", "repairmap"),
+                new Entry("/cy:repairpreset", "repairpreset")));
 
         CATEGORIES.put("misc", List.of(
                 new Entry("/nametag:add", "nametag.add"),

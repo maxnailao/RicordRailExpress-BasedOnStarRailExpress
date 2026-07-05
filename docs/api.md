@@ -1182,10 +1182,6 @@ OnGetInstinctHighlight.EVENT.register((player) -> {
 
 **类型:** 可拦截。
 
-#### `OnKillerCohortDisplay` — 杀手同伙显示
-
-**类型:** 通知型。控制杀手同伙的显示方式。
-
 #### `EntityInteractionHandler` — 实体交互处理
 
 提供与地图命令方块类似的占位符替换功能：  

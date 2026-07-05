@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.commands.CommandSourceStack;
@@ -21,7 +23,7 @@ public class SetEnabledRoleCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setEnabledRole")
-                .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+                .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission))
                 .then(Commands.literal("enableAll").executes(SetEnabledRoleCommand::enableAll))
                 .then(Commands.literal("disableAll").executes(SetEnabledRoleCommand::disableAll))
                 .then(Commands.argument("role", RoleArgumentType.create())

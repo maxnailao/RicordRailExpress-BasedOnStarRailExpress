@@ -10,6 +10,7 @@ public interface TMMDescItems {
 
    public static void register() {
       introItems.add(TMMItems.BAT);
+      introItems.add(TMMItems.LETTER);
       introItems.add(TMMItems.KNIFE);
       introItems.add(TMMItems.BODY_BAG);
       introItems.add(TMMItems.CROWBAR);
@@ -39,5 +40,7 @@ public interface TMMDescItems {
       introItems.add(TMMItems.SCORPION);
       introItems.add(TMMItems.EMOJI_HELMET);
       introItems.add(TMMItems.DRAWING_BOARD);
+      introItems.add(SREBlocks.REMOTE_REDSTONE.asItem());
+      introItems.add(SREBlocks.TRAIN_LIGHT.asItem());
    }
 }

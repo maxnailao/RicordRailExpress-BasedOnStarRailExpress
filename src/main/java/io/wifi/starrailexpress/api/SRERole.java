@@ -28,7 +28,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -36,19 +35,11 @@ import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
-
+//只要Color别的都不要
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.function.*;
 
 public abstract class SRERole extends SREAbstractInfoClass {
     protected final Random random = new Random();
@@ -76,7 +67,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
-    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.all;
+    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.ALL;
     protected boolean specialVigilante = false;
     protected boolean refreshableSpecialVigilante = false;
     protected int refreshableSpecialVigilanteChance = -1;
@@ -111,9 +102,16 @@ public abstract class SRERole extends SREAbstractInfoClass {
         for (var i : role) {
             this.occupationRoles.remove(i);
             i.removeRelatedRole(this);
-
         }
         return this;
+    }
+
+    public boolean isOccupationRole(SRERole... role) {
+        for (var i : role) {
+            if (!this.occupationRoles.contains(i))
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -147,6 +145,21 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     /**
+     * 添加与此相关的职业。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addBothRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null) {
+                this.relatedRoles.add(i);
+                i.addRelatedRole(this);
+            }
+        }
+        return this;
+    }
+
+    /**
      * 添加与此相关的职业。用于职业介绍。
      * 
      * @return
@@ -168,6 +181,21 @@ public abstract class SRERole extends SREAbstractInfoClass {
         for (var i : role) {
             if (i != null)
                 this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符，并且给修饰符添加此。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addBothRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null) {
+                this.relatedModifiers.add(i);
+                i.addRelatedRole(this);
+            }
         }
         return this;
     }
@@ -403,7 +431,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        all, qiyucun, bigmap, underwater, fly, trap
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
@@ -411,12 +439,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
-        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.all : specialMapRole;
+        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.ALL : specialMapRole;
         return this;
     }
 
     public boolean isSpecialMapRole() {
-        return this.specialMapRole != SpecialMapRoleMap.all;
+        return this.specialMapRole != SpecialMapRoleMap.ALL;
     }
 
     public boolean isSpecialVigilante() {
@@ -780,8 +808,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return InteractionResult.PASS;
     }
 
+    @Nullable
     public List<ShopEntry> getShopEntries() {
-        return new ArrayList<>();
+        return null;
     }
 
     /**
@@ -843,7 +872,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     }
 
-    public static SREAbilityPlayerComponent getCooldownComponent(Player player) {
+    public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
         return SREAbilityPlayerComponent.KEY.get(player);
     }
 
@@ -885,6 +914,18 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canAutoAddMoney = false;
     protected boolean bodyKillerVisibility = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+    protected boolean bodyNameVisibility = false;
+
+    /**
+     * 设置是否允许看到尸体的名字
+     * 
+     * @param flag
+     * @return
+     */
+    public SRERole setCanSeeBodyName(boolean flag) {
+        this.bodyNameVisibility = flag;
+        return this;
+    }
 
     /**
      * 设置是否允许看到尸体的杀手
@@ -1064,6 +1105,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = count;
         return this;
     };
 
@@ -1075,16 +1117,19 @@ public abstract class SRERole extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
     public SRERole setDefaultEnableMaxPlayerCount(int count) {
         defaultEnableMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
     public SRERole setDefaultEnableNeededPlayerCount(int count) {
         defaultEnableNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
         return this;
     };
 
@@ -1106,6 +1151,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultEnableChance(int count) {
         defaultEnableChance = count;
+        this.spawnInfo.enableChance = count;
         return this;
     };
 
@@ -1157,6 +1203,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return PlayerRoleWeightManager.getRoleType(this);
     }
 
+    public boolean canSeeBodyName() {
+        return this.bodyNameVisibility;
+    };
+
     public boolean canSeeBodyKiller() {
         return this.bodyKillerVisibility;
     };
@@ -1179,7 +1229,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 

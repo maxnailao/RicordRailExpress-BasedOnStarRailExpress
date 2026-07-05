@@ -7,20 +7,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 public class GameConstants {
@@ -241,6 +234,9 @@ public class GameConstants {
         public static ResourceLocation STALKER_EXECUTION = Noellesroles.id("stalker_execution");
         public static ResourceLocation BOMB_DEATH = Noellesroles.id("bomb_death");
         public static ResourceLocation PUPPETEER_PUPPET = Noellesroles.id("puppeteer_puppet");
+        public static ResourceLocation PUPPETEER_KNIFE = Noellesroles.id("knife_puppeteer");
+        public static ResourceLocation PUPPETEER_GUN = Noellesroles.id("gun_puppeteer");
+        public static ResourceLocation RAVEN_BODY_DEATH = Noellesroles.id("raven_body_death");
         public static ResourceLocation RECORDER_MISTAKE = Noellesroles.id("recorder_mistake");
         public static ResourceLocation GAMBLE_SELF_KILL = Noellesroles.id("gamble_self_kill");
         public static ResourceLocation WAYFARER_ERROR = Noellesroles.id("wayfarer_error");
@@ -257,7 +253,6 @@ public class GameConstants {
         public static ResourceLocation FAIL_EXAM = Noellesroles.id("fail_exam");
         public static ResourceLocation BAKA = Noellesroles.id("baka");
         public static ResourceLocation WATCHER_CALM_KILL = Noellesroles.id("watcher_calm_kill");
-        public static ResourceLocation DNF_TENTACLE = Noellesroles.id("dnf_tentacle");
         public static ResourceLocation REPAIR_TRIAL_EXECUTION = Noellesroles.id("repair_trial_execution");
         public static ResourceLocation INFECTION = Noellesroles.id("infection");
         public static ResourceLocation UNDEAD_INFECTION = Noellesroles.id("undead_infection");
@@ -269,6 +264,8 @@ public class GameConstants {
         public static ResourceLocation HOAN_MEIRIN_LONELY = Noellesroles.id("hoan_meirin_lonely");
         public static ResourceLocation HOAN_MEIRIN_ATTACK = Noellesroles.id("hoan_meirin_attack");
         public static ResourceLocation DIO_FINAL_CARNIVAL_CANCEL = Noellesroles.id("dio_final_carnival_cancel");
+        public static ResourceLocation WRAITH_ASSAULT = Noellesroles.id("wraith_assault");
+        public static ResourceLocation MORTICIAN_BODYMAKER = Noellesroles.id("mortician_bodymaker");
 
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
         public static ResourceLocation FAILED_INITIATION = StupidExpress.id("failed_initiation");

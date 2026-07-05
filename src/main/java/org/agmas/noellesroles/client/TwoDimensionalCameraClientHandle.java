@@ -1,0 +1,83 @@
+package org.agmas.noellesroles.client;
+
+import net.exmo.sre.camera.client.AdvancedCameraDirector;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.init.ModEffects;
+
+public final class TwoDimensionalCameraClientHandle {
+    private static final double CAMERA_DISTANCE = 28.0D;
+    private static final double CAMERA_HEIGHT = 6.0D;
+    private static final double TOP_CAMERA_HEIGHT = 34.0D;
+    private static final float CAMERA_FOV = 35.0F;
+    private static final float FOREGROUND_CLIP_DISTANCE = 3.0F;
+    private static volatile boolean active;
+    private static volatile Vec3 voiceListenerPosition;
+
+    private TwoDimensionalCameraClientHandle() {
+    }
+
+    public static void register() {
+        ClientTickEvents.END_CLIENT_TICK.register(TwoDimensionalCameraClientHandle::tick);
+    }
+
+    private static void tick(Minecraft client) {
+        LocalPlayer player = client.player;
+        if (player == null || client.level == null) {
+            active = false;
+            voiceListenerPosition = null;
+            AdvancedCameraDirector.clearFixedOverride();
+            return;
+        }
+
+        MobEffectInstance effect = player.getEffect(ModEffects.TWO_DIMENSIONAL_CAMERA);
+        if (effect == null) {
+            active = false;
+            voiceListenerPosition = null;
+            AdvancedCameraDirector.clearFixedOverride();
+            return;
+        }
+
+        active = true;
+        voiceListenerPosition = player.getEyePosition(1.0F);
+        Vec3 lookAt = player.getEyePosition(1.0F).add(0.0D, 0.5D, 0.0D);
+        Vec3 cameraPos = cameraPosition(lookAt, effect.getAmplifier());
+        Vec3 delta = lookAt.subtract(cameraPos);
+        double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+        float yaw = (float) (Math.atan2(delta.z, delta.x) * Mth.RAD_TO_DEG) - 90.0F;
+        float pitch = (float) (-(Math.atan2(delta.y, horizontal) * Mth.RAD_TO_DEG));
+        AdvancedCameraDirector.setFixedOverride(cameraPos, yaw, pitch, CAMERA_FOV);
+    }
+
+    private static Vec3 cameraPosition(Vec3 lookAt, int amplifier) {
+        if (amplifier == 4) {
+            return lookAt.add(0.0D, TOP_CAMERA_HEIGHT, 0.0D);
+        }
+        return lookAt.add(sideVector(amplifier).scale(CAMERA_DISTANCE)).add(0.0D, CAMERA_HEIGHT, 0.0D);
+    }
+
+    private static Vec3 sideVector(int amplifier) {
+        return switch (Mth.clamp(amplifier, 0, 3)) {
+            case 0 -> new Vec3(-1.0D, 0.0D, 0.0D); // 西边
+            case 1 -> new Vec3(1.0D, 0.0D, 0.0D);  // 东边
+            case 2 -> new Vec3(0.0D, 0.0D, -1.0D); // 北边
+            default -> new Vec3(0.0D, 0.0D, 1.0D); // 南边
+        };
+    }
+
+    public static boolean isActive() {
+        return active;
+    }
+
+    public static Vec3 voiceListenerPosition() {
+        return active ? voiceListenerPosition : null;
+    }
+
+    public static float foregroundClipDistance() {
+        return active ? FOREGROUND_CLIP_DISTANCE : 0.05F;
+    }
+}

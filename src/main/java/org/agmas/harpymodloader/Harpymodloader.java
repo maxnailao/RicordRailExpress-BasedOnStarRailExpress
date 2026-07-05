@@ -122,6 +122,15 @@ public class Harpymodloader implements ModInitializer {
         FORCED_MODDED_ROLE_FLIP.put(player.getUUID(), role);
     }
 
+    public static void setModifierMaximum(SREModifier modifier, Integer max) {
+        if (modifier != null)
+            setModifierMaximum(modifier.identifier(), max);
+    }
+
+    public static void setModifierMaximum(ResourceLocation modifier, Integer max) {
+        MODIFIER_MAX.put(modifier, max);
+    }
+
     public static void setRoleMaximum(ResourceLocation role, Integer max) {
         ROLE_MAX.put(role, max);
     }
@@ -193,7 +202,6 @@ public class Harpymodloader implements ModInitializer {
         mainRole.clearOccupationRole();
         LOGGER.debug("Cleared occupation relation for: " + mainRole.getIdentifier());
     }
-
 
     /**
      * 获取职业的关联职业

@@ -6,16 +6,19 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wifi.ConfigCompact.network.RoleEnableInfoPacket;
 import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.argument.ModifierArgumentType;
 import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
@@ -34,7 +37,8 @@ public class ListRolesCommand {
     public static String roleDetailsCommandRoot = "roleDetails";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("manageRolesUI").requires(source -> source.hasPermission(2))
+        dispatcher.register(Commands.literal("manageRolesUI")
+                .requires(source -> source.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission))
                 .executes((ListRolesCommand::executeManage)));
         dispatcher.register(Commands.literal(roleDetailsCommandRoot)
                 .then(Commands.literal("role")
@@ -72,7 +76,7 @@ public class ListRolesCommand {
                 RoleUtils.getRoleOrModifierOrItemDescription(role)
                         .copy().withStyle(ChatFormatting.WHITE))
                 .withStyle(ChatFormatting.GREEN));
-        if (ctx.getSource().hasPermission(1)) {
+        if (ctx.getSource().hasPermission(SREConfig.instance().spawnInfoConfigRequiredPermission)) {
             message.append("\n").append(Component.translatable("commands.listroles.detail.spawn_info")
                     .withStyle(ChatFormatting.GOLD).withStyle(st -> {
                         st = st.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
@@ -99,7 +103,7 @@ public class ListRolesCommand {
                 RoleUtils.getRoleOrModifierOrItemDescription(modifier)
                         .copy().withStyle(ChatFormatting.WHITE))
                 .withStyle(ChatFormatting.GREEN));
-        if (ctx.getSource().hasPermission(1)) {
+        if (ctx.getSource().hasPermission(SREConfig.instance().spawnInfoConfigRequiredPermission)) {
             message.append("\n").append(Component.translatable("commands.listroles.detail.spawn_info")
                     .withStyle(ChatFormatting.GOLD).withStyle(st -> {
                         st = st.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
@@ -169,8 +173,10 @@ public class ListRolesCommand {
 
         // 准备角色列表
         ArrayList<SRERole> roleList = new ArrayList<>(TMMRoles.ROLES.values());
-        if (!source.hasPermission(2)) {
+        if (!source.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission)) {
             Noellesroles.sortRoles(roleList, false, true);
+        }else{
+            Noellesroles.sortRoles(roleList, false, false);
         }
         // 准备修饰符列表
         List<SREModifier> modifierList = new ArrayList<>(HMLModifiers.MODIFIERS);
@@ -317,7 +323,7 @@ public class ListRolesCommand {
                                     Component.translatable(
                                             "commands.listroles.button.hover",
                                             maxTotalPages)))));
-            if (source.hasPermission(2)) {
+            if (source.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission)) {
                 buttons.append(Component.literal(" [")
                         .append(Component.translatable("commands.listroles.button.manage_all")
                                 .withStyle(ChatFormatting.AQUA))
@@ -358,7 +364,7 @@ public class ListRolesCommand {
     private static MutableComponent createStatus(CommandSourceStack source, boolean disabled, String cmd) {
         String key = disabled ? "disabled" : "enabled";
         return Component.translatable("commands.listroles.status." + key + ".text").withStyle(style -> {
-            if (source.hasPermission(2)) {
+            if (source.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission)) {
                 return style
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                 Component.translatable("commands.listroles.status."

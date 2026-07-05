@@ -1,33 +1,8 @@
 package org.agmas.noellesroles.client.screen;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-
-import org.agmas.harpymodloader.SREDisableManager;
-import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modifiers.HMLModifiers;
-import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.component.DeathPenaltyComponent;
-import org.agmas.noellesroles.init.RoleInitialItems;
-import org.agmas.noellesroles.utils.RoleUtils;
-import org.joml.Matrix4f;
-
 import com.mojang.blaze3d.vertex.VertexConsumer;
-
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.RepairRole;
-import io.wifi.starrailexpress.api.SREAbstractInfoClass;
-import io.wifi.starrailexpress.api.SREGameModes;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
@@ -54,6 +29,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import org.agmas.harpymodloader.SREDisableManager;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import org.agmas.noellesroles.init.RoleInitialItems;
+import org.agmas.noellesroles.utils.FlagUtils;
+import org.agmas.noellesroles.utils.RoleUtils;
+import org.joml.Matrix4f;
+
+import java.util.*;
+import java.util.function.Predicate;
 
 public class RoleIntroduceScreen extends Screen {
     /**
@@ -693,17 +682,22 @@ public class RoleIntroduceScreen extends Screen {
                     Component name = RoleUtils.getRoleOrModifierOrItemName(obj);
                     String numText = "" + i;
                     Component idtext = Component.literal(RoleUtils.getRoleOrModifierOrItemIdentifier(obj).toString());
+                    int num_w = 32;
                     int color = RoleUtils.getRoleOrModifierOrItemColor(obj);
                     g.drawString(font,
-                            Component.translatable("%s.  %s", numText, name.copy().withColor(color))
+                            numText,
+                            contentX + (num_w - font.width(numText)) / 2,
+                            y + (ITEM_H - font.lineHeight) / 2, 0xffffffff);
+                    g.fill(contentX + num_w - 2, y + 2, contentX + num_w - 1, y + ITEM_H - 3, 0x20FFFFFF);
+                    g.drawString(font,
+                            Component.translatable("%s", name.copy().withColor(color))
                                     .withStyle(ChatFormatting.WHITE),
-                            contentX + 6,
-                            y + (ITEM_H / 2 - font.lineHeight - 3), 0xffffffff);
-                    int num_w = font.width(Component.translatable("%s.  ", numText));
+                            contentX + 6 + num_w,
+                            y + (ITEM_H / 2 - font.lineHeight - 1), 0xffffffff);
                     g.drawString(font, idtext.copy()
                             .withStyle(ChatFormatting.DARK_GRAY),
                             contentX + 6 + num_w,
-                            y + (ITEM_H / 2 + 3), 0xffffffff);
+                            y + (ITEM_H / 2 + 1), 0xffffffff);
                     g.fill(contentX + 4, y + ITEM_H - 1, contentX + w - 4, y + ITEM_H, 0x20FFFFFF);
                     if (hovered) {
                         List<FormattedCharSequence> tooltip = new ArrayList<>();
@@ -1372,7 +1366,7 @@ public class RoleIntroduceScreen extends Screen {
 
     private static MutableComponent getFlagText(SREAbstractInfoClass flagInfoable) {
         return ComponentUtils.formatList(flagInfoable.getFlags(), Component.literal(", "),
-                t -> Component.translatable("screen.roleintroduce.flag." + t));
+                t -> FlagUtils.getFlagName(t));
     }
 
     private String getObjectPath(Object it) {
@@ -2074,12 +2068,8 @@ public class RoleIntroduceScreen extends Screen {
         LinkedHashMap<String, Component> optionMap = new LinkedHashMap<>();
         optionMap.put("inner.enable", Component.translatable("screen.roleintroduce.flag.inner.enable"));
         optionMap.put("inner.disable", Component.translatable("screen.roleintroduce.flag.inner.disable"));
-        for (var it : TMMRoles.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
-        for (var it : HMLModifiers.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
+        for (var it : FlagUtils.getAllFlagsSorted())
+            optionMap.put(it, FlagUtils.getFlagName(it));
         FilterSelectionScreen screen = FilterSelectionScreen.builder(this)
                 .title(Component.translatable("screen.filter_selection.title"))
                 .subtitle(Component.translatable("screen.filter_selection.tip"))

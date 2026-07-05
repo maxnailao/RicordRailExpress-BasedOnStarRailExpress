@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.util.ShopEntry;
-import org.agmas.noellesroles.init.NRSounds;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -20,6 +19,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.init.NRSounds;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -34,6 +34,8 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     private final Player player;
     public int balance = 0;
     public long grenadeLastPurchaseTime = 0;
+    // 仅服务端存储：
+    public int total_cost = 0;
 
     public SREPlayerShopComponent(Player player) {
         this.player = player;
@@ -52,12 +54,29 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     public void init() {
         this.balance = 0;
         this.grenadeLastPurchaseTime = 0;
+        this.total_cost = 0;
         this.sync();
     }
 
     @Override
     public void clear() {
         init();
+    }
+
+    /**
+     * 服务端Only
+     */
+    public int getTotalCost() {
+        return this.total_cost;
+    }
+
+    /**
+     * 服务端Only
+     */
+    public int getTotalCostAndClear() {
+        int r = this.total_cost;
+        this.total_cost = 0;
+        return r;
     }
 
     @Override
@@ -130,14 +149,21 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             }
         }
         // 动态价格：实际价格由玩家的 DynamicShopComponent 决定（折扣/减价等），默认等于基础价格。
-        // Dynamic price: the effective price is resolved by the player's DynamicShopComponent
-        // (discounts/reductions/etc.); it defaults to the base price when no modifier exists.
+        // Dynamic price: the effective price is resolved by the player's
+        // DynamicShopComponent
+        // (discounts/reductions/etc.); it defaults to the base price when no modifier
+        // exists.
         final int price = DynamicShopComponent.KEY.get(this.player).effectivePrice(entry);
         if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < price)
             this.balance = price * 10;
-        if (this.balance >= price && !this.player.getCooldowns().isOnCooldown(entry.stack().getItem())
+        boolean isOnCooldown = this.player.getCooldowns().isOnCooldown(entry.stack().getItem());
+        boolean haveEnoughBalance = this.balance >= price;
+        // 重置错误信息
+        entry.setFailedMessage(null);
+        if (haveEnoughBalance && !isOnCooldown
                 && entry.canDisplay(this.player) && entry.canBuy(this.player) && !entry.isSafeTime(this.player)
                 && entry.onBuy(this.player)) {
+            this.total_cost += price;
             this.balance -= price;
             // 手榴弹购买后记录购买时间
             if (entry.stack().is(TMMItems.GRENADE)) {
@@ -153,8 +179,23 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                         price);
             }
         } else {
-            this.player.displayClientMessage(
-                    Component.translatable("message.tip.purchase_failed").withStyle(ChatFormatting.DARK_RED), true);
+            Component reason = null;
+            if (isOnCooldown) {
+                reason = Component.translatable("message.tip.purchase_failed.cooldown");
+            } else if (!haveEnoughBalance) {
+                reason = Component.translatable("message.tip.purchase_failed.not_enough_money");
+            } else {
+                reason = entry.getFailedMessage();
+            }
+            if (reason != null) {
+                this.player.displayClientMessage(
+                        Component.translatable("message.tip.purchase_failed_with_reason", reason)
+                                .withStyle(ChatFormatting.DARK_RED),
+                        true);
+            } else {
+                this.player.displayClientMessage(
+                        Component.translatable("message.tip.purchase_failed").withStyle(ChatFormatting.DARK_RED), true);
+            }
             if (this.player instanceof ServerPlayer player) {
                 player.connection.send(new ClientboundSoundPacket(
                         BuiltInRegistries.SOUND_EVENT.wrapAsHolder(TMMSounds.UI_SHOP_BUY_FAIL), SoundSource.PLAYERS,
@@ -171,11 +212,8 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         if (gameWorldComponent != null && role != null && GameUtils.isPlayerAliveAndSurvival(player)) {
             final var shopEntries = ShopContent.getShopEntries(
                     role.getIdentifier());
-            if (!shopEntries.isEmpty()) {
+            if (shopEntries != null && !shopEntries.isEmpty()) {
                 return shopEntries;
-            }
-            if (gameWorldComponent.canUseKillerFeatures(player)) {
-                return ShopContent.defaultKnifeEntries;
             }
         }
         return List.of();
@@ -224,9 +262,11 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
             // 公共 Cooldown
             player.level().players().forEach(
-                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN, GameConstants.getMonitorBrokenCooldownGlobal()));
+                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
+                            GameConstants.getMonitorBrokenCooldownGlobal()));
 
-            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));
+            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(),
+                    BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));
             player.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
                     GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
         }
@@ -235,6 +275,18 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
     public static boolean useBlackout(@NotNull Player player) {
         return useBlackout(player, SREWorldBlackoutComponent.getMaxDuration(player.level()));
+    }
+
+    public static void addGlobalPsychoCooldown(Player player) {
+        var gamecca = SREGameWorldComponent.getInstance(player);
+        for (var p : player.level().players()) {
+            if (GameUtils.isPlayerAliveAndSurvival(p) && gamecca.isKillerTeam(p)) {
+                if (!p.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE) && !p.getUUID().equals(player.getUUID())) {
+                    p.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                            SREConfig.instance().psychoGlobalCooldown * 20);
+                }
+            }
+        }
     }
 
     /**
@@ -246,10 +298,11 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
      * @return
      */
     public static boolean usePsychoMode(@NotNull Player player, double multtiplier, int armour) {
-        player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
-                GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
         boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho(multtiplier, armour);
         if (started) {
+            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
+            addGlobalPsychoCooldown(player);
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.PSYCHO_MODE));
         }
         return started;

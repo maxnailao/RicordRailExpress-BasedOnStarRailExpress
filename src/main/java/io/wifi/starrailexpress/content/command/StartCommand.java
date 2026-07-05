@@ -26,7 +26,7 @@ public class StartCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(
         Commands.literal("tmm:start")
-            .requires(source -> source.hasPermission(2))
+            .requires(source -> source.hasPermission(SREConfig.instance().startGameRequiredPermission))
             .then(Commands.argument("gameMode", GameModeArgumentType.gameMode())
                 // tmm:start <gameMode> [startTimeInMinutes] — 常规模式，仅准备区域内的玩家加入
                 .then(Commands.argument("startTimeInMinutes", IntegerArgumentType.integer(1))

@@ -7,7 +7,6 @@ import io.wifi.starrailexpress.network.original.KnifeStabPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,7 +28,7 @@ public class PuppeteerBodyKnifePayloadMixin {
             if (bodyEntity.distanceTo(player) > 4.0) return;
             
             // 对傀儡本体造成致命伤害（20点以上确保击杀）
-            bodyEntity.playerHurt(player, Noellesroles.id("knife_puppeteer"));
+            bodyEntity.playerHurt(player, GameConstants.DeathReasons.PUPPETEER_KNIFE);
             
             bodyEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
             player.swing(InteractionHand.MAIN_HAND);

@@ -3,9 +3,12 @@ package org.agmas.noellesroles.game.roles.neutral.mortician;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.util.PlayerStaminaGetter;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -14,12 +17,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.packet.ClearBloodParticlesS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
@@ -426,10 +426,10 @@ public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent
                 playerBody.setXRot(0f);
 
                 PlayerBodyEntityComponent bodyComponent = PlayerBodyEntityComponent.KEY.get(playerBody);
-
+                bodyComponent.setOwnerName(target.getScoreboardName(), false);
                 ResourceLocation deathReasonLoc = deathReason != null && !deathReason.isEmpty()
                         ? ResourceLocation.parse(deathReason)
-                        : ResourceLocation.fromNamespaceAndPath("noellesroles", "mortician_bodymaker");
+                        : GameConstants.DeathReasons.MORTICIAN_BODYMAKER;
                 bodyComponent.setDeathReason(deathReasonLoc.toString(), true);
 
                 bodyComponent.playerRole = ModRoles.MORTICIAN_BODYMAKER.identifier();
@@ -527,8 +527,8 @@ public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent
             this.draggedBody.setYHeadRot(player.getYRot());
             this.draggedBody.yBodyRot = player.getYRot();
             // 通用物证·拖痕：记录该尸体被拖动过（首次记录即同步）
-            io.wifi.starrailexpress.cca.SREGameWorldComponent forensicGw =
-                    io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            io.wifi.starrailexpress.cca.SREGameWorldComponent forensicGw = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY
+                    .get(player.level());
             if (forensicGw != null && this.draggedBody.getPlayerUuid() != null) {
                 forensicGw.markCorpseDragged(this.draggedBody.getPlayerUuid());
             }

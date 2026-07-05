@@ -29,12 +29,14 @@ import java.util.Optional;
  *
  * <h2>Optimizations:</h2>
  * <ul>
- *   <li>Tick-rate caching - reuses cached render list when tick hasn't changed</li>
- *   <li>Batch rendering - same-type operations merged into single draw calls</li>
- *   <li>Minimal allocations - pre-allocated lists, direct matrix copy</li>
+ * <li>Tick-rate caching - reuses cached render list when tick hasn't
+ * changed</li>
+ * <li>Batch rendering - same-type operations merged into single draw calls</li>
+ * <li>Minimal allocations - pre-allocated lists, direct matrix copy</li>
  * </ul>
  *
  * <h2>Lifecycle (managed by GuiRenderMixin):</h2>
+ * 
  * <pre>
  *   ClientTickEvent  →  markTickDirty()    ← called every game tick
  *   Gui.render HEAD  →  beginFrame()       ← opens batch window
@@ -57,7 +59,7 @@ public class OptimizedTextRenderer {
 
     private GuiGraphics frameGraphics = null;
     private boolean inFrame = false;
-    
+
     /** Tracks if any draw calls were made this frame */
     private boolean hasDrawCallsThisFrame = false;
 
@@ -88,8 +90,10 @@ public class OptimizedTextRenderer {
         boolean hideGui = Minecraft.getInstance().options.hideGui;
 
         if (tickDirty) {
-            // Update cache: if there were draw calls and HUD is visible, store them; otherwise clear the cache
-            // This ensures that when nothing should be drawn (or HUD is hidden), the cache is empty
+            // Update cache: if there were draw calls and HUD is visible, store them;
+            // otherwise clear the cache
+            // This ensures that when nothing should be drawn (or HUD is hidden), the cache
+            // is empty
             tickCache.clear();
             if (hasDrawCallsThisFrame && !hideGui) {
                 tickCache.addAll(pending);
@@ -114,7 +118,7 @@ public class OptimizedTextRenderer {
         final Font font = Minecraft.getInstance().font;
         final MultiBufferSource.BufferSource bufferSource = frameGraphics.bufferSource();
         final int size = tickCache.size();
-        
+
         int i = 0;
         while (i < size) {
             RenderAction action = tickCache.get(i);
@@ -174,7 +178,7 @@ public class OptimizedTextRenderer {
         BufferUploader.drawWithShader(bb.buildOrThrow());
         return i;
     }
-    
+
     /**
      * Batch consecutive FillGradientActions into a single draw call.
      */
@@ -207,7 +211,8 @@ public class OptimizedTextRenderer {
         RenderSystem.setShaderTexture(0, tex);
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.enableBlend();
-        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.POSITION_TEX_COLOR);
 
         int i = start;
         while (i < size && tickCache.get(i) instanceof BlitAction b && b.texture.equals(tex)) {
@@ -293,7 +298,8 @@ public class OptimizedTextRenderer {
                 new Matrix4f(graphics.pose().last().pose())));
     }
 
-    public void enqueueFillWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2, int z, int color) {
+    public void enqueueFillWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2, int z,
+            int color) {
         if (!inFrame) {
             graphics.fill(rt, x1, y1, x2, y2, z, color);
             return;
@@ -302,7 +308,8 @@ public class OptimizedTextRenderer {
         pending.add(new FillRenderTypeAction(rt, x1, y1, x2, y2, z, color));
     }
 
-    public void enqueueFillGradient(GuiGraphics graphics, int x1, int y1, int x2, int y2, int z, int colorFrom, int colorTo) {
+    public void enqueueFillGradient(GuiGraphics graphics, int x1, int y1, int x2, int y2, int z, int colorFrom,
+            int colorTo) {
         if (!inFrame) {
             graphics.fillGradient(x1, y1, x2, y2, z, colorFrom, colorTo);
             return;
@@ -312,7 +319,8 @@ public class OptimizedTextRenderer {
                 new Matrix4f(graphics.pose().last().pose())));
     }
 
-    public void enqueueFillGradientWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2, int colorFrom, int colorTo, int z) {
+    public void enqueueFillGradientWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2,
+            int colorFrom, int colorTo, int z) {
         if (!inFrame) {
             graphics.fillGradient(rt, x1, y1, x2, y2, colorFrom, colorTo, z);
             return;
@@ -403,7 +411,8 @@ public class OptimizedTextRenderer {
             return;
         }
         hasDrawCallsThisFrame = true;
-        pending.add(new BlitSpriteAction(loc, x, y, 0, w, h, -1, -1, -1, -1));
+        pending.add(
+                new BlitSpriteAction(loc, x, y, 0, w, h, -1, -1, -1, -1, new Matrix4f(graphics.pose().last().pose())));
     }
 
     public void enqueueBlitSpriteZ(GuiGraphics graphics, ResourceLocation loc, int x, int y, int z, int w, int h) {
@@ -412,28 +421,34 @@ public class OptimizedTextRenderer {
             return;
         }
         hasDrawCallsThisFrame = true;
-        pending.add(new BlitSpriteAction(loc, x, y, z, w, h, -1, -1, -1, -1));
+        pending.add(
+                new BlitSpriteAction(loc, x, y, z, w, h, -1, -1, -1, -1, new Matrix4f(graphics.pose().last().pose())));
     }
 
-    public void enqueueBlitSpriteRegion(GuiGraphics graphics, ResourceLocation loc, int tw, int th, int u, int v, int x, int y, int w, int h) {
+    public void enqueueBlitSpriteRegion(GuiGraphics graphics, ResourceLocation loc, int tw, int th, int u, int v, int x,
+            int y, int w, int h) {
         if (!inFrame) {
             graphics.blitSprite(loc, tw, th, u, v, x, y, w, h);
             return;
         }
         hasDrawCallsThisFrame = true;
-        pending.add(new BlitSpriteAction(loc, x, y, 0, w, h, tw, th, u, v));
+        pending.add(
+                new BlitSpriteAction(loc, x, y, 0, w, h, tw, th, u, v, new Matrix4f(graphics.pose().last().pose())));
     }
 
-    public void enqueueBlitSpriteRegionZ(GuiGraphics graphics, ResourceLocation loc, int tw, int th, int u, int v, int x, int y, int z, int w, int h) {
+    public void enqueueBlitSpriteRegionZ(GuiGraphics graphics, ResourceLocation loc, int tw, int th, int u, int v,
+            int x, int y, int z, int w, int h) {
         if (!inFrame) {
             graphics.blitSprite(loc, tw, th, u, v, x, y, z, w, h);
             return;
         }
         hasDrawCallsThisFrame = true;
-        pending.add(new BlitSpriteAction(loc, x, y, z, w, h, tw, th, u, v));
+        pending.add(
+                new BlitSpriteAction(loc, x, y, z, w, h, tw, th, u, v, new Matrix4f(graphics.pose().last().pose())));
     }
 
-    public void enqueueBlitTexAtlas(GuiGraphics graphics, int x, int y, int z, int w, int h, TextureAtlasSprite sprite) {
+    public void enqueueBlitTexAtlas(GuiGraphics graphics, int x, int y, int z, int w, int h,
+            TextureAtlasSprite sprite) {
         if (!inFrame) {
             graphics.blit(x, y, z, w, h, sprite);
             return;
@@ -442,7 +457,8 @@ public class OptimizedTextRenderer {
         pending.add(new BlitTexAtlasAction(x, y, z, w, h, sprite, 1f, 1f, 1f, 1f));
     }
 
-    public void enqueueBlitTexAtlasColor(GuiGraphics graphics, int x, int y, int z, int w, int h, TextureAtlasSprite sprite, float r, float g, float b, float a) {
+    public void enqueueBlitTexAtlasColor(GuiGraphics graphics, int x, int y, int z, int w, int h,
+            TextureAtlasSprite sprite, float r, float g, float b, float a) {
         if (!inFrame) {
             graphics.blit(x, y, z, w, h, sprite, r, g, b, a);
             return;
@@ -451,7 +467,8 @@ public class OptimizedTextRenderer {
         pending.add(new BlitTexAtlasAction(x, y, z, w, h, sprite, r, g, b, a));
     }
 
-    public void enqueueBlitResource(GuiGraphics graphics, ResourceLocation loc, int x, int y, int z, float u, float v, int w, int h, int tw, int th) {
+    public void enqueueBlitResource(GuiGraphics graphics, ResourceLocation loc, int x, int y, int z, float u, float v,
+            int w, int h, int tw, int th) {
         if (!inFrame) {
             graphics.blit(loc, x, y, z, u, v, w, h, tw, th);
             return;
@@ -460,7 +477,8 @@ public class OptimizedTextRenderer {
         pending.add(new BlitResourceAction(loc, x, y, z, u, v, w, h, w, h, tw, th));
     }
 
-    public void enqueueBlitResourceRegion(GuiGraphics graphics, ResourceLocation loc, int x, int y, int w, int h, float u, float v, int rw, int rh, int tw, int th) {
+    public void enqueueBlitResourceRegion(GuiGraphics graphics, ResourceLocation loc, int x, int y, int w, int h,
+            float u, float v, int rw, int rh, int tw, int th) {
         if (!inFrame) {
             graphics.blit(loc, x, y, w, h, u, v, rw, rh, tw, th);
             return;
@@ -469,7 +487,8 @@ public class OptimizedTextRenderer {
         pending.add(new BlitResourceAction(loc, x, y, 0, u, v, w, h, rw, rh, tw, th));
     }
 
-    public void enqueueBlitResourceSimple(GuiGraphics graphics, ResourceLocation loc, int x, int y, float u, float v, int w, int h, int tw, int th) {
+    public void enqueueBlitResourceSimple(GuiGraphics graphics, ResourceLocation loc, int x, int y, float u, float v,
+            int w, int h, int tw, int th) {
         if (!inFrame) {
             graphics.blit(loc, x, y, u, v, w, h, tw, th);
             return;
@@ -507,8 +526,10 @@ public class OptimizedTextRenderer {
         pending.add(new RenderItemAction(stack.copy(), x, y, seed, z, null));
     }
 
-    public void enqueueRenderItemEntity(GuiGraphics graphics, LivingEntity entity, ItemStack stack, int x, int y, int seed) {
-        // Item rendering with entity context cannot be easily cached due to entity state
+    public void enqueueRenderItemEntity(GuiGraphics graphics, LivingEntity entity, ItemStack stack, int x, int y,
+            int seed) {
+        // Item rendering with entity context cannot be easily cached due to entity
+        // state
         // Fall back to direct rendering
         hasDrawCallsThisFrame = true;
         graphics.renderItem(entity, stack, x, y, seed);
@@ -532,7 +553,8 @@ public class OptimizedTextRenderer {
         pending.add(new RenderFakeItemAction(stack.copy(), x, y, seed));
     }
 
-    public void enqueueRenderItemDecorations(GuiGraphics graphics, Font font, ItemStack stack, int x, int y, @Nullable String label) {
+    public void enqueueRenderItemDecorations(GuiGraphics graphics, Font font, ItemStack stack, int x, int y,
+            @Nullable String label) {
         if (!inFrame) {
             graphics.renderItemDecorations(font, stack, x, y, label);
             return;
@@ -552,7 +574,8 @@ public class OptimizedTextRenderer {
         pending.add(new RenderTooltipItemAction(stack.copy(), x, y));
     }
 
-    public void enqueueRenderTooltipLines(GuiGraphics graphics, Font font, List<Component> lines, Optional<TooltipComponent> image, int x, int y) {
+    public void enqueueRenderTooltipLines(GuiGraphics graphics, Font font, List<Component> lines,
+            Optional<TooltipComponent> image, int x, int y) {
         if (!inFrame) {
             graphics.renderTooltip(font, lines, image, x, y);
             return;
@@ -579,7 +602,8 @@ public class OptimizedTextRenderer {
         pending.add(new RenderComponentTooltipAction(new ArrayList<>(lines), x, y));
     }
 
-    public void enqueueRenderTooltipSeq(GuiGraphics graphics, Font font, List<? extends FormattedCharSequence> lines, int x, int y) {
+    public void enqueueRenderTooltipSeq(GuiGraphics graphics, Font font, List<? extends FormattedCharSequence> lines,
+            int x, int y) {
         if (!inFrame) {
             graphics.renderTooltip(font, lines, x, y);
             return;
@@ -588,7 +612,8 @@ public class OptimizedTextRenderer {
         pending.add(new RenderTooltipSeqAction(new ArrayList<>(lines), x, y));
     }
 
-    public void enqueueRenderComponentHoverEffect(GuiGraphics graphics, Font font, @Nullable Style style, int x, int y) {
+    public void enqueueRenderComponentHoverEffect(GuiGraphics graphics, Font font, @Nullable Style style, int x,
+            int y) {
         if (!inFrame) {
             graphics.renderComponentHoverEffect(font, style, x, y);
             return;
@@ -629,9 +654,9 @@ public class OptimizedTextRenderer {
         final int color;
         final boolean shadow;
         final Matrix4f matrix;
-        
+
         TextAction(@Nullable FormattedCharSequence seq, @Nullable Component text,
-                   float x, float y, int color, boolean shadow, Matrix4f matrix) {
+                float x, float y, int color, boolean shadow, Matrix4f matrix) {
             this.seq = seq;
             this.text = text;
             this.x = x;
@@ -640,7 +665,7 @@ public class OptimizedTextRenderer {
             this.shadow = shadow;
             this.matrix = matrix;
         }
-        
+
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             // Handled by flushBatchedText
@@ -652,7 +677,7 @@ public class OptimizedTextRenderer {
     private static final class FillAction implements RenderAction {
         final int x1, y1, x2, y2, z, color;
         final Matrix4f matrix;
-        
+
         FillAction(int x1, int y1, int x2, int y2, int z, int color, Matrix4f matrix) {
             this.x1 = x1;
             this.y1 = y1;
@@ -662,7 +687,7 @@ public class OptimizedTextRenderer {
             this.color = color;
             this.matrix = matrix;
         }
-        
+
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             // Handled by flushBatchedFills
@@ -690,7 +715,7 @@ public class OptimizedTextRenderer {
     private static final class FillGradientAction implements RenderAction {
         final int x1, y1, x2, y2, z, colorFrom, colorTo;
         final Matrix4f matrix;
-        
+
         FillGradientAction(int x1, int y1, int x2, int y2, int z, int colorFrom, int colorTo, Matrix4f matrix) {
             this.x1 = x1;
             this.y1 = y1;
@@ -701,7 +726,7 @@ public class OptimizedTextRenderer {
             this.colorTo = colorTo;
             this.matrix = matrix;
         }
-        
+
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             // Handled by flushBatchedGradients
@@ -758,10 +783,10 @@ public class OptimizedTextRenderer {
         final float u0, u1, v0, v1;
         final float r, g, b, a;
         final Matrix4f matrix;
-        
+
         BlitAction(ResourceLocation texture, int x1, int x2, int y1, int y2, int z,
-                   float u0, float u1, float v0, float v1,
-                   float r, float g, float b, float a, Matrix4f matrix) {
+                float u0, float u1, float v0, float v1,
+                float r, float g, float b, float a, Matrix4f matrix) {
             this.texture = texture;
             this.x1 = x1;
             this.x2 = x2;
@@ -778,7 +803,7 @@ public class OptimizedTextRenderer {
             this.a = a;
             this.matrix = matrix;
         }
-        
+
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             // Handled by flushBatchedBlits
@@ -789,9 +814,12 @@ public class OptimizedTextRenderer {
 
     private record BlitSpriteAction(
             ResourceLocation loc, int x, int y, int z, int w, int h,
-            int tw, int th, int u, int v) implements RenderAction {
+            int tw, int th, int u, int v, Matrix4f matrix) implements RenderAction {
+
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
+            graphics.pose().pushPose();
+            graphics.pose().mulPose(matrix());
             if (tw < 0) {
                 if (z != 0) {
                     graphics.blitSprite(loc, x, y, z, w, h);
@@ -805,6 +833,7 @@ public class OptimizedTextRenderer {
                     graphics.blitSprite(loc, tw, th, u, v, x, y, w, h);
                 }
             }
+            graphics.pose().popPose();
         }
     }
 

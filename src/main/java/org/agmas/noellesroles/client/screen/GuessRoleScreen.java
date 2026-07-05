@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client.screen;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -27,19 +26,8 @@ import java.util.List;
  */
 public class GuessRoleScreen extends Screen {
 
-    // 需要排除的DNF职业ID列表
-    private static final List<ResourceLocation> DNF_ROLE_IDS = Arrays.asList(
-            SRE.id("dnf_killer"),
-            SRE.id("dnf_maniac"),
-            SRE.id("dnf_soldier"),
-            SRE.id("dnf_chef"),
-            SRE.id("dnf_poisoner"),
-            SRE.id("dnf_psychologist"),
-            SRE.id("dnf_locksmith"),
-            SRE.id("dnf_civilian"),
-            SRE.id("dnf_flying_knife"),
-            SRE.id("dnf_abyss"),
-            SRE.id("dnf_ghost")
+    // 需要排除的职业ID列表
+    private static final List<ResourceLocation> IGNORED_ROLE_IDS = Arrays.asList(
     );
 
     public Screen parent = null;
@@ -305,7 +293,7 @@ public class GuessRoleScreen extends Screen {
         roles = Noellesroles.getAllRolesSorted(true);
         roles.add(0, null);
         // 排除所有DNF职业
-        roles.removeIf(r -> r != null && DNF_ROLE_IDS.contains(r.identifier()));
+        roles.removeIf(r -> r != null && IGNORED_ROLE_IDS.contains(r.identifier()));
         if (roles.isEmpty()) {
             // 如果没有角色，返回上一级
             phase = 0;

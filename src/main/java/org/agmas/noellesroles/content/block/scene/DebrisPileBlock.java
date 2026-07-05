@@ -20,7 +20,7 @@ import org.agmas.noellesroles.content.block_entity.scene.DebrisPileBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.function.Consumer;
 
 public class DebrisPileBlock extends BaseEntityBlock implements TaskInstinctShowableInterface {
@@ -78,10 +78,12 @@ public class DebrisPileBlock extends BaseEntityBlock implements TaskInstinctShow
     public int taskInstinctId() { return TASK_INSTINCT_ID; }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) { return true; }
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
+        return state.getValue(ACTIVE) && !state.getValue(CLOSED);
+    }
 
     @Override
     public Color taskInstinctRenderColor(BlockState state, BlockPos pos, Player player) {
-        return new Color(0x7CFC00);
+        return new Color(139, 90, 43);
     }
 }

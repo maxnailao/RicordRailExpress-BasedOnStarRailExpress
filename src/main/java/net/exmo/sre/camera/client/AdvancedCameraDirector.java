@@ -38,6 +38,9 @@ public final class AdvancedCameraDirector {
     @Nullable
     private static ActiveSequence active;
 
+    @Nullable
+    private static FixedOverride fixedOverride;
+
     /** 运镜结束回到玩家身上时的「黑屏渐显」过渡，独立于 {@link #active} 存活到淡出完成。 */
     @Nullable
     private static ReturnFade returnFade;
@@ -66,7 +69,9 @@ public final class AdvancedCameraDirector {
         Vec3 startPos = player.getEyePosition(1.0f);
         Keyframe[] frames = resolveFrames(sequence, startPos, player.getYRot(), player.getXRot());
 
-        CameraType previousType = active != null ? active.previousType : minecraft.options.getCameraType();
+        CameraType previousType = active != null
+                ? active.previousType
+                : fixedOverride != null ? fixedOverride.previousType : minecraft.options.getCameraType();
         // 切到第三人称，让相机脱离玩家头部（隐藏手部 / HUD），呈现自由运镜效果。
         if (minecraft.options.getCameraType() == CameraType.FIRST_PERSON) {
             minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
@@ -83,7 +88,41 @@ public final class AdvancedCameraDirector {
         }
         ActiveSequence finished = active;
         active = null;
-        if (finished.sequence.restore) {
+        if (finished.sequence.restore && fixedOverride == null) {
+            Minecraft.getInstance().options.setCameraType(finished.previousType);
+        }
+    }
+
+    /** 设置一个由外部效果驱动的固定镜头。高级轨道播放时仍优先显示轨道镜头。 */
+    public static void setFixedOverride(Vec3 pos, float yaw, float pitch, float fov) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return;
+        }
+        CameraType previousType = fixedOverride != null
+                ? fixedOverride.previousType
+                : active != null ? active.previousType : minecraft.options.getCameraType();
+        if (minecraft.options.getCameraType() == CameraType.FIRST_PERSON) {
+            minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        }
+        Pose previousPose = fixedOverride != null
+                ? new Pose(fixedOverride.pos, fixedOverride.yaw, fixedOverride.pitch, fixedOverride.fov)
+                : new Pose(pos, yaw, pitch, fov);
+        fixedOverride = new FixedOverride(
+                previousPose.pos, pos,
+                previousPose.yaw, yaw,
+                previousPose.pitch, pitch,
+                previousPose.fov, fov,
+                previousType);
+    }
+
+    public static void clearFixedOverride() {
+        if (fixedOverride == null) {
+            return;
+        }
+        FixedOverride finished = fixedOverride;
+        fixedOverride = null;
+        if (active == null) {
             Minecraft.getInstance().options.setCameraType(finished.previousType);
         }
     }
@@ -107,6 +146,9 @@ public final class AdvancedCameraDirector {
         if (returnFade != null && ++returnFade.ticks >= RETURN_FADE_TICKS) {
             returnFade = null;
         }
+        if (minecraft.player == null || minecraft.level == null) {
+            clearFixedOverride();
+        }
         if (active == null) {
             return;
         }
@@ -125,19 +167,27 @@ public final class AdvancedCameraDirector {
 
     /** 高级相机是否应当接管视角（激活且安全摄像头未开启）。 */
     public static boolean shouldOverride() {
+        return (active != null || fixedOverride != null) && !SecurityMonitorBlock.isInSecurityMode();
+    }
+
+    /** 只有高级运镜轨道播放时隐藏 HUD；固定镜头效果（如 2D 视角）保留玩家界面。 */
+    public static boolean shouldHideHudForCamera() {
         return active != null && !SecurityMonitorBlock.isInSecurityMode();
     }
 
     public static Vec3 getCameraPos(float partialTick) {
-        return active == null ? Vec3.ZERO : active.poseAt(time(partialTick)).pos;
+        Pose pose = currentPose(partialTick);
+        return pose == null ? Vec3.ZERO : pose.pos;
     }
 
     public static float getYaw(float partialTick) {
-        return active == null ? 0f : active.poseAt(time(partialTick)).yaw;
+        Pose pose = currentPose(partialTick);
+        return pose == null ? 0f : pose.yaw;
     }
 
     public static float getPitch(float partialTick) {
-        return active == null ? 0f : active.poseAt(time(partialTick)).pitch;
+        Pose pose = currentPose(partialTick);
+        return pose == null ? 0f : pose.pitch;
     }
 
     /**
@@ -145,14 +195,26 @@ public final class AdvancedCameraDirector {
      * 安全摄像头开启时不覆盖。
      */
     public static float getFovOverride(float partialTick) {
-        if (active == null || SecurityMonitorBlock.isInSecurityMode()) {
+        if ((active == null && fixedOverride == null) || SecurityMonitorBlock.isInSecurityMode()) {
             return 0f;
         }
-        return active.poseAt(time(partialTick)).fov;
+        Pose pose = currentPose(partialTick);
+        return pose == null ? 0f : pose.fov;
     }
 
     private static float time(float partialTick) {
         return active.ticks + Mth.clamp(partialTick, 0f, 1f);
+    }
+
+    @Nullable
+    private static Pose currentPose(float partialTick) {
+        if (active != null) {
+            return active.poseAt(time(partialTick));
+        }
+        if (fixedOverride != null) {
+            return fixedOverride.poseAt(partialTick);
+        }
+        return null;
     }
 
     // ==================== 黑边渲染 ====================
@@ -251,6 +313,24 @@ public final class AdvancedCameraDirector {
     /** 运镜结束回到玩家身上的黑屏渐显状态：{@link #ticks} 自 0 累加到 {@link #RETURN_FADE_TICKS}。 */
     private static final class ReturnFade {
         int ticks;
+    }
+
+    private record FixedOverride(Vec3 previousPos, Vec3 pos,
+                                 float previousYaw, float yaw,
+                                 float previousPitch, float pitch,
+                                 float previousFov, float fov,
+                                 CameraType previousType) {
+        Pose poseAt(float partialTick) {
+            float alpha = Mth.clamp(partialTick, 0f, 1f);
+            Vec3 lerpedPos = new Vec3(
+                    Mth.lerp(alpha, previousPos.x, pos.x),
+                    Mth.lerp(alpha, previousPos.y, pos.y),
+                    Mth.lerp(alpha, previousPos.z, pos.z));
+            float lerpedYaw = Mth.rotLerp(alpha, previousYaw, yaw);
+            float lerpedPitch = Mth.lerp(alpha, previousPitch, pitch);
+            float lerpedFov = Mth.lerp(alpha, previousFov, fov);
+            return new Pose(lerpedPos, lerpedYaw, lerpedPitch, lerpedFov);
+        }
     }
 
     private static final class ActiveSequence {

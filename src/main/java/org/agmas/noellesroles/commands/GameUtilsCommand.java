@@ -69,7 +69,8 @@ public class GameUtilsCommand {
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
           dispatcher.register(Commands.literal("cooldown")
-              .requires(source -> Harpymodloader.officialVerify && source.hasPermission(2))
+              .requires(source -> Harpymodloader.officialVerify
+                  && source.hasPermission(SREConfig.instance().cooldownCommandsRequiredPermission))
               .then(Commands.argument("player", EntityArgument.player())
                   .then(Commands.argument("item", ItemArgument.item(registryAccess))
                       .then(Commands.argument("time", IntegerArgumentType.integer(0))
@@ -87,8 +88,11 @@ public class GameUtilsCommand {
                             return 1;
                           })))));
           dispatcher.register(
-              Commands.literal("tmm:game").requires(source -> Harpymodloader.officialVerify && source.hasPermission(2))
+              Commands.literal("tmm:game")
+                  .requires(source -> Harpymodloader.officialVerify
+                      && source.hasPermission(SREConfig.instance().gameUtilsRequiredPermission))
                   .then(Commands.literal("role")
+                      .requires(p -> p.hasPermission(SREConfig.instance().changeRoleRequiredPermission))
                       .then(Commands.literal("silent_change")
                           .then(Commands.argument("role", RoleArgumentType.create(false)).executes((ctx) -> {
                             ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -388,6 +392,7 @@ public class GameUtilsCommand {
                                     return removeTaskFromPlayer(context.getSource(), taskId, target);
                                   })))))
                   .then(Commands.literal("win")
+                      .requires((p) -> p.hasPermission(SREConfig.instance().stopGameRequiredPermission))
                       .then(Commands.argument("id", StringArgumentType.string())
                           .suggests(WinStatusSuggestions::suggestWinStatus)
                           .executes(GameUtilsCommand::executeWinWithOnlyId))
@@ -404,6 +409,7 @@ public class GameUtilsCommand {
                                           "subtitle", ComponentArgument.textComponent(registryAccess))
                                       .executes(GameUtilsCommand::executeCustomWinWithIdAndTitle))))))
                   .then(Commands.literal("reset")
+                      .requires(p -> p.hasPermission(SREConfig.instance().forceResetRequiredPermission))
                       .then(Commands.literal("blocks")
                           .then(Commands.literal("copy").executes((context) -> {
                             // GameUtils.tryAutoTrainReset(context.getSource().getLevel());
@@ -439,36 +445,39 @@ public class GameUtilsCommand {
                             true);
                         return 1;
                       }))))
-                  .then(Commands.literal("scan").executes((context) -> {
-                    var source = context.getSource();
-                    var level = source.getLevel();
-                    var areas = AreasWorldComponent.KEY.get(level);
-                    if (areas.mapName == null) {
-                      context.getSource()
-                          .sendFailure(Component
-                              .literal("You should load map first to scan points!\nUsage: /tmm:switchmap load <MapID>")
-                              .withStyle(ChatFormatting.RED));
-                      return 0;
-                    }
-                    MapResetManager.scanArea(level, areas);
-                    MapResetManager.saveArea(level);
-                    context.getSource().sendSuccess(
-                        () -> Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
-                            Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()),
-                        true);
-                    MapScannerManager.scanAndSaveScannerArea(level, areas);
-                    HashMap<Integer, Boolean> map = new HashMap<>();
-                    for (Entry<BlockPos, Integer> entry : GameUtils.taskBlocks.entrySet()) {
-                      map.putIfAbsent(entry.getValue(), true);
-                    }
-                    context.getSource().sendSuccess(
-                        () -> Component.translatable("Scanned Task points! Total %s types!", map.size()), true);
+                  .then(Commands.literal("scan")
+                      .requires(p -> p.hasPermission(SREConfig.instance().forceResetRequiredPermission))
+                      .executes((context) -> {
+                        var source = context.getSource();
+                        var level = source.getLevel();
+                        var areas = AreasWorldComponent.KEY.get(level);
+                        if (areas.mapName == null) {
+                          context.getSource()
+                              .sendFailure(Component
+                                  .literal(
+                                      "You should load map first to scan points!\nUsage: /tmm:switchmap load <MapID>")
+                                  .withStyle(ChatFormatting.RED));
+                          return 0;
+                        }
+                        MapResetManager.scanArea(level, areas);
+                        MapResetManager.saveArea(level);
+                        context.getSource().sendSuccess(
+                            () -> Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
+                                Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()),
+                            true);
+                        MapScannerManager.scanAndSaveScannerArea(level, areas);
+                        HashMap<Integer, Boolean> map = new HashMap<>();
+                        for (Entry<BlockPos, Integer> entry : GameUtils.taskBlocks.entrySet()) {
+                          map.putIfAbsent(entry.getValue(), true);
+                        }
+                        context.getSource().sendSuccess(
+                            () -> Component.translatable("Scanned Task points! Total %s types!", map.size()), true);
 
-                    for (var player : context.getSource().getLevel().players()) {
-                      ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
-                    }
-                    return 1;
-                  })
+                        for (var player : context.getSource().getLevel().players()) {
+                          ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
+                        }
+                        return 1;
+                      })
                       .then(Commands.literal("reset_points").executes((context) -> {
                         var source = context.getSource();
                         var level = source.getLevel();
@@ -514,16 +523,19 @@ public class GameUtilsCommand {
                   })))
                   .then(Commands.literal("monitor_broken").executes((context) -> {
                     return executeMonitorBroken(context, 0);
-                  }).then(Commands.argument("duration", IntegerArgumentType.integer(0)).executes((context) -> {
-                    return executeMonitorBroken(context, IntegerArgumentType.getInteger(context, "duration"));
-                  })).then(Commands.literal("stop").executes((context) -> {
-                    return executeMonitorBroken(context, -1);
-                  })))
+                  })
+                      .then(Commands.argument("duration", IntegerArgumentType.integer(0)).executes((context) -> {
+                        return executeMonitorBroken(context, IntegerArgumentType.getInteger(context, "duration"));
+                      }))
+                      .then(Commands.literal("stop").executes((context) -> {
+                        return executeMonitorBroken(context, -1);
+                      })))
                   .then(Commands.literal("psycho").executes((context) -> {
                     return executePsycho(context, -1);
-                  }).then(Commands.literal("stop").executes((context) -> {
-                    return executePsycho(context, 0);
-                  })))
+                  })
+                      .then(Commands.literal("stop").executes((context) -> {
+                        return executePsycho(context, 0);
+                      })))
                   .then(Commands.literal("body")
                       .then(Commands.literal("teleport").executes((ctx) -> {
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -623,6 +635,7 @@ public class GameUtilsCommand {
                             return 1;
                           }))))
                   .then(Commands.literal("kill")
+                      .requires(p -> p.hasPermission(SREConfig.instance().gameKillRequiredPermission))
                       .then(Commands.argument("victim", EntityArgument.player())
                           .then(Commands.argument("death_reason", ResourceLocationArgument.id())
                               .suggests(DeathReasonSuggestions::suggestDeathReasons)
@@ -977,8 +990,8 @@ public class GameUtilsCommand {
 
   private static int addTaskToPlayer(CommandSourceStack source, String taskId, ServerPlayer target) {
     try {
-      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType =
-          io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task.valueOf(taskId.toUpperCase());
+      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task
+          .valueOf(taskId.toUpperCase());
       var comp = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.KEY.get(target);
       if (comp == null) {
         source.sendFailure(Component.literal("Player task component not found.").withStyle(ChatFormatting.RED));
@@ -999,8 +1012,8 @@ public class GameUtilsCommand {
 
   private static int setTaskForPlayer(CommandSourceStack source, String taskId, ServerPlayer target) {
     try {
-      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType =
-          io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task.valueOf(taskId.toUpperCase());
+      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task
+          .valueOf(taskId.toUpperCase());
       var comp = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.KEY.get(target);
       if (comp == null) {
         source.sendFailure(Component.literal("Player task component not found.").withStyle(ChatFormatting.RED));
@@ -1027,8 +1040,8 @@ public class GameUtilsCommand {
 
   private static int removeTaskFromPlayer(CommandSourceStack source, String taskId, ServerPlayer target) {
     try {
-      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType =
-          io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task.valueOf(taskId.toUpperCase());
+      io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task taskType = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task
+          .valueOf(taskId.toUpperCase());
       var comp = io.wifi.starrailexpress.cca.SREPlayerTaskComponent.KEY.get(target);
       if (comp == null) {
         source.sendFailure(Component.literal("Player task component not found.").withStyle(ChatFormatting.RED));
@@ -1111,8 +1124,8 @@ public class GameUtilsCommand {
   private static final class TaskIdSuggestions {
     static java.util.concurrent.CompletableFuture<Suggestions> suggest(
         CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-      for (io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task t
-          : io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task.values()) {
+      for (io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task t : io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task
+          .values()) {
         String name = t.name().toLowerCase();
         if (name.startsWith(builder.getRemainingLowerCase())) {
           builder.suggest(name);

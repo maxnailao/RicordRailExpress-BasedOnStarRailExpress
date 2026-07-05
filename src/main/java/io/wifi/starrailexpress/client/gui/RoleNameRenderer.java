@@ -3,12 +3,10 @@ package io.wifi.starrailexpress.client.gui;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.AllowNameRender;
-import io.wifi.starrailexpress.event.OnKillerCohortDisplay;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
@@ -26,8 +24,9 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.EntityHitResult;
-
+import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -56,7 +55,6 @@ public class RoleNameRenderer {
         return 2f;
     }
 
-    @SuppressWarnings("unused")
     public static void renderHud(Font renderer, @NotNull LocalPlayer player, FakeGuiGraphics context,
             DeltaTracker tickCounter) {
 
@@ -86,9 +84,12 @@ public class RoleNameRenderer {
             range = result.orElse(range);
         }
         {
+            OnRenderRoleName.RENDER_START.invoker().render(player, range, context, tickCounter, renderer);
+        }
+        {
 
             Player target = null;
-            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player player1,
+            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player,
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof Player) {
                 target = (Player) entityHitResult.getEntity();
@@ -106,6 +107,11 @@ public class RoleNameRenderer {
                             targetRole = null;
                             nametag = Component.literal("");
                             return;
+                        } else if (target.isInvisibleTo(player) && !GameUtils.isPlayerSpectatingOrCreative(player)) {
+                            targetRoleType = TrainRole.BYSTANDER;
+                            targetRole = null;
+                            nametag = Component.literal("");
+                            return;
                         }
                     }
                 }
@@ -117,7 +123,32 @@ public class RoleNameRenderer {
                     } else if (result.isCustom()) {
                         nametag = result.getContent().orElse(Component.empty());
                     } else {
-                        nametag = target.getDisplayName();
+                        nametag = getDisplayName(target);
+                    }
+                }
+                if (SREClient.modifierComponent != null) {
+                    Component modifierText = Component.empty();
+                    boolean shouldRender = false;
+                    var result = OnRenderRoleName.RENDER_PLAYER_MODIFIER.invoker().allowRender(player, target, context,
+                            tickCounter, renderer);
+                    if (result.isFalse()) {
+                        modifierText = Component.empty();
+                        shouldRender = false;
+                    } else if (result.isCustom()) {
+                        modifierText = result.getContent().orElse(Component.empty());
+                        shouldRender = true;
+                    } else {
+                        shouldRender = GameUtils.isPlayerSpectatingOrCreative(player);
+                        MutableComponent temp = Component.literal("");
+                        var modifiers = SREClient.modifierComponent.getModifiers(target);
+                        for (SREModifier modifier : modifiers) {
+                            temp = temp.append(Component.translatable(" [%s]", modifier.getName())
+                                    .withColor(modifier.color));
+                        }
+                        modifierText = temp;
+                    }
+                    if (shouldRender) {
+                        nametag = nametag.copy().append(modifierText);
                     }
                 }
                 if (component.canUseKillerFeatures(target)) {
@@ -174,18 +205,11 @@ public class RoleNameRenderer {
                         }
                         if (allowRenderRole) {
                             context.pose().translate(0, 20 + renderer.lineHeight, 0);
-                            if (target != null) {
-                                MutableComponent roleText2 = OnKillerCohortDisplay.EVENT.invoker()
-                                        .onCohortRender(target);
-                                if (roleText2 != null) {
-                                    roleText1 = roleText2;
-                                }
+                            if (roleText1 != null) {
+                                int roleWidth1 = renderer.width(roleText1);
+                                context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,
+                                        Mth.color(1f, 0f, 0f) | ((int) (1 * 255) << 24));
                             }
-                            if (roleText1 == null)
-                                return;
-                            int roleWidth1 = renderer.width(roleText1);
-                            context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,
-                                    Mth.color(1f, 0f, 0f) | ((int) (1 * 255) << 24));
                         }
                     }
                     {
@@ -211,7 +235,10 @@ public class RoleNameRenderer {
                                     Mth.color(1f, 0f, 0f) | ((int) (255) << 24));
                         }
                     }
-
+                    {
+                        OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(player, target, context, tickCounter,
+                                renderer);
+                    }
                 }
                 context.pose().popPose();
             }
@@ -226,7 +253,7 @@ public class RoleNameRenderer {
                             context, tickCounter,
                             renderer);
                     if (result.isPass()) {
-                        if (!player.isSpectator() && !player.isCreative()) {
+                        if (!GameUtils.isPlayerSpectatingOrCreative(player)) {
                             return;
                         }
                     } else if (result.isFalse()) {
@@ -278,7 +305,13 @@ public class RoleNameRenderer {
             context.pose().popPose();
 
         }
+        {
+            OnRenderRoleName.RENDER_END.invoker().render(player, range, context, tickCounter, renderer);
+        }
+    }
 
+    private static Component getDisplayName(Player target) {
+        return target.getDisplayName();
     }
 
     public enum TrainRole {

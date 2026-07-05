@@ -4,11 +4,11 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.NormalRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEnd;
 import org.agmas.noellesroles.game.roles.special.dirt.DirtRole;
-import java.awt.Color;
+import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEnd;
+
+import java.awt.*;
 
 public class SpecialGameModeRoles {
 
@@ -24,7 +24,7 @@ public class SpecialGameModeRoles {
    * 自选职业
    */
   public static final SRERole CUSTOM_PENDING = registerRole(
-      new NormalRole(SRE.wifiId("custom_pending"), 0x5CFF4A, false, false, SRERole.MoodType.NONE, -1, true), "other_gamemode")
+      new NormalRole(SRE.wifiId("custom_pending"), 0x5CFF4A, false, false, SRERole.MoodType.NONE, -1, true), "inner.other_gamemode")
       .setCanPickUpRevolver(false).setNeutrals(true).setNeutralForKiller(false).setCanBeRandomedByOtherRoles(false)
       .setDefaultMax(0).setOtherModeRole(true);
 
@@ -60,7 +60,7 @@ public class SpecialGameModeRoles {
       false,
       SRERole.MoodType.FAKE,
       Integer.MAX_VALUE,
-      true),"other_gamemode")
+      true),"inner.other_gamemode")
       .setCanSeeCoin(true)
       .setCanSeeTime(true)
       .setCanUseInstinct(true)

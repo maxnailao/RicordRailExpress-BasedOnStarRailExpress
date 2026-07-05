@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client.hud;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
@@ -21,16 +22,16 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemCooldowns.CooldownInstance;
 import org.agmas.noellesroles.client.NoellesrolesClient;
-import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.client.WayfarerHudRenderer;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.client.hud.roles.BroadcasterHud;
-import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
+import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
@@ -47,6 +48,7 @@ import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
@@ -54,7 +56,6 @@ import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayer
 import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHudRender;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent;
@@ -62,6 +63,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
 
@@ -69,6 +71,8 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+
+import static org.agmas.noellesroles.client.NoellesrolesClient.abilityBind;
 
 public class CommonClientHudRenderer {
   static ArrayList<BiConsumer<FakeGuiGraphics, DeltaTracker>> roleRenderConsumers = null;
@@ -119,7 +123,12 @@ public class CommonClientHudRenderer {
           HudStoreRenderer.renderHud(font, player, guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true));
       }
       {
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(SREClientConfig.instance().moodLeftOffset,
+            SREClientConfig.instance().moodTopOffset, 0);
         HudMoodRenderer.renderHud(player, font, guiGraphics, deltaTracker);
+        MiniGameHudRenderer.render(player, font, guiGraphics, trueDeltaTracker);
+        guiGraphics.pose().popPose();
       }
       {
         // 举盾提示：当玩家主手/副手举防暴盾牌时显示 actionbar 提示
@@ -1425,7 +1434,7 @@ public class CommonClientHudRenderer {
       var text = Component.literal("");
       if (comc.cooldown <= 0) {
         text.append(Component.translatable("hud.noellesroles.attendant.available",
-            Component.keybind("key.noellesroles.ability"), AttendantHandler.area_distance)
+            Component.keybind("key.noellesroles.ability"), AttendantHandler.ATTENDANT_LIGHT_DISTANCE)
             .withStyle(ChatFormatting.GOLD));
       } else {
         text.append(Component.translatable("hud.noellesroles.attendant.cooldown", (comc.cooldown / 20))
@@ -1612,6 +1621,35 @@ public class CommonClientHudRenderer {
       guiGraphics.drawString(font, readyText, xOffset - font.width(readyText), dy, Color.WHITE.getRGB());
     });
 
+    RoleHudRenderCallback.EVENT.register(MountainRoles.NITORI_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
+      int xOffset = screenWidth - 10; // 距离右边缘
+
+      var cca = SREAbilityPlayerComponent.KEY
+          .maybeGet(client.player).orElse(null);
+      if (cca == null)
+        return;
+      int dy = yOffset;
+
+      // 显示当前模式
+      Component modeText;
+      if (cca.getCooldown() > 0) {
+        modeText = Component.translatable("message.sre.skill.cooldown", cca.getCooldownStr())
+            .withStyle(ChatFormatting.YELLOW);
+      } else {
+
+        modeText = Component
+            .translatable("message.sre.skill.use_tip", abilityBind.getTranslatedKeyMessage(),
+                Component.translatable("skill.noellesroles.nitori_exchange").withStyle(ChatFormatting.GREEN))
+            .withStyle(ChatFormatting.AQUA);
+      }
+      guiGraphics.drawString(font, modeText, xOffset - font.width(modeText), dy, Color.WHITE.getRGB());
+    });
     // 会计HUD
     RoleHudRenderCallback.EVENT.register(ModRoles.ACCOUNTANT_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();

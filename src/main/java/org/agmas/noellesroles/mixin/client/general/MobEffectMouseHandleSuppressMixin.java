@@ -19,7 +19,7 @@ public class MobEffectMouseHandleSuppressMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null)
             return;
-        if (player.hasEffect(ModEffects.TURN_BANED)){
+        if (player.hasEffect(ModEffects.TURN_BANED) || player.hasEffect(ModEffects.POINTER)) {
             ci.cancel();
         }
     }
