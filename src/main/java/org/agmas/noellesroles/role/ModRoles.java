@@ -2957,7 +2957,7 @@ public class ModRoles {
                     io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
             return entries;
         }
-    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
+    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER);
 
     /**
      * 水手角色 - 平民阵营
@@ -2988,7 +2988,7 @@ public class ModRoles {
                     io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
             return entries;
         }
-    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
+    }).setCanSeeCoin(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER);
 
     public static SRERole PHANTOM_MUSICIAN = TMMRoles
             .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(),
@@ -3055,7 +3055,7 @@ public class ModRoles {
                     new ItemStack(org.agmas.noellesroles.init.ModItems.DURABILITY_BOAT)
             );
         }
-    }).setCanSeeCoin(true).setCanSeeTime(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.underwater);
+    }).setCanSeeCoin(true).setCanSeeTime(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER);
 
     /**
      * 武术家角色 - 平民阵营

@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.role.touhou.roles.THKomachiRole;
 import org.agmas.noellesroles.role.touhou.roles.THRinnosukeRole;
 import org.agmas.noellesroles.role.touhou.roles.THShikieikiRole;
-import org.agmas.noellesroles.role.touhou.roles.THTenshiRole;
+import org.agmas.noellesroles.role.touhou.THTenshiRole;
 
 public class THMiscRoles {
   public static final String NAMESPACE = "th_misc";

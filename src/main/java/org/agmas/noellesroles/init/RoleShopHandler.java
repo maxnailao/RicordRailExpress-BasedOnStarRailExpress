@@ -342,7 +342,6 @@ public class RoleShopHandler {
         ShopContent.customEntries.clear();
         ShopContent.register();
         // 初始化其他角色商店
-        WORKER_SHOP.clear();
 
         // 初始化框架角色商店
         initializeFramingShop();
@@ -392,6 +391,7 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
+        ArrayList<ShopEntry> WORKER_SHOP = new ArrayList<>();
 
         // ---- 柜子区的商店（执行者） ----
         {
@@ -2501,7 +2501,6 @@ public class RoleShopHandler {
                     ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);
         }
 
-        // PACHURI 商店
         {
             var displayStack = ModItems.NEWSPAPER.getDefaultInstance();
             String title = "\u00a7d\u00a7lPachuri Knowledge Book";
@@ -2525,71 +2524,11 @@ public class RoleShopHandler {
                     Collections.shuffle(players);
                     int count = 1;
                     var contents = new ArrayList<Filterable<Component>>();
-                    // {
                     var fstct = Component.translatable("%s\n%s\n\n",
                             Component.translatable("item.written_book.role_title"),
                             Component.translatable("item.written_book.role_intro"));
-                    // var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
-                    // contents.add(fstcontent);
-                    // }
                     for (int i = 0; i < count; i++) {
                         var p = players.get(i);
-      ShopContent.customEntries.put(
-          ModRoles.PHOTOGRAPHER_ID, entries);
-    }
-    {
-      ShopContent.customEntries.put(
-          ModRoles.AWESOME_BINGLUS_ID,
-          List.of(
-              new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 10, ShopEntry.Type.TOOL),
-              new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 75, ShopEntry.Type.TOOL)));
-    }
-    {
-      // 哑女商店 - 便签(20金币)
-      ShopContent.customEntries.put(
-          ModRoles.DUMB_WOMAN_ID,
-          List.of(
-              new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 20, ShopEntry.Type.TOOL)));
-    }
-    {
-      ShopContent.customEntries.put(
-          ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
-    }
-    {
-      ShopContent.customEntries.put(
-          ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);
-    }
-    {
-      // PACHURI 商店
-      var displayStack = ModItems.NEWSPAPER.getDefaultInstance();
-      String title = "\u00a7d\u00a7lPachuri Knowledge Book";
-      displayStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
-          new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "Pachuri Knowledge", 1, List.of(),
-              true));
-      var SHOP = new ArrayList<ShopEntry>();
-      SHOP.add(new ShopEntry(
-          displayStack,
-          125,
-          ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(Player player) {
-          var itemStack = ModItems.NEWSPAPER.getDefaultInstance();
-          var players = new ArrayList<>(player.level().players());
-          var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-          players.removeIf((p) -> {
-            return gameWorldComponent.getRole(p) == null || p.isSpectator();
-          });
-          Collections.shuffle(players);
-          int count = 1;
-          var contents = new ArrayList<Filterable<Component>>();
-          // {
-          var fstct = Component.translatable("%s\n%s\n\n", Component.translatable("item.written_book.role_title"),
-              Component.translatable("item.written_book.role_intro"));
-          // var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
-          // contents.add(fstcontent);
-          // }
-          for (int i = 0; i < count; i++) {
-            var p = players.get(i);
 
                         var ct = Component.translatable("%s%s",
                                 Component.translatable("item.written_book.per_role_title", i + 1),
@@ -2607,7 +2546,6 @@ public class RoleShopHandler {
                                     Component.translatable("message.pachuri.be_known_role")
                                             .withStyle(ChatFormatting.RED));
                     }
-                    String title = "Pachuri Knowledge Book";
                     String shortTitle = title;
                     if (shortTitle.length() >= 10) {
                         shortTitle = shortTitle.substring(0, 8) + "...";
@@ -2683,7 +2621,6 @@ public class RoleShopHandler {
             shopEntries.add(new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
             shopEntries.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 15,
                     ShopEntry.Type.TOOL));
-            // 监控失灵 - 60金币（清道夫专属）
             shopEntries.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
@@ -2709,7 +2646,7 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(
                     ModRoles.STALKER_ID,
                     List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75,
-                            ShopEntry.Type.TOOL),
+                                    ShopEntry.Type.TOOL),
                             new ShopEntry(ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance(), 325,
                                     ShopEntry.Type.WEAPON) {
                                 @Override
@@ -2724,7 +2661,6 @@ public class RoleShopHandler {
 
                                 @Override
                                 public boolean onBuy(@NotNull Player player) {
-
                                     boolean b = player.getOffhandItem().getItem() instanceof KnifeItem;
                                     if (!b) {
                                         player.setItemInHand(InteractionHand.OFF_HAND,
@@ -2871,9 +2807,6 @@ public class RoleShopHandler {
                     ModRoles.REASONER_ID, REASONER_SHOP);
         }
 
-        // 小偷商店（注释部分，保留）
-        // 暂未启用
-
         // 钟表匠商店
         {
             ShopContent.customEntries.put(
@@ -2975,11 +2908,9 @@ public class RoleShopHandler {
         // 故障机器人商店
         {
             List<ShopEntry> glitchRobotShop = new ArrayList<>();
-            // 夜视仪 - 100金币
             glitchRobotShop
                     .add(new ShopEntry(ModItems.NIGHT_VISION_GLASSES.getDefaultInstance(), 100,
                             ShopEntry.Type.TOOL));
-            // 萤石粉 - 25金币（修复夜视仪）
             glitchRobotShop.add(new ShopEntry(Items.GLOWSTONE_DUST.getDefaultInstance(), 25,
                     ShopEntry.Type.TOOL) {
                 @Override
@@ -3004,10 +2935,8 @@ public class RoleShopHandler {
         // 潜水员商店
         {
             List<ShopEntry> diverShop = new ArrayList<>();
-            // 潜水头盔 - 125金币
             diverShop.add(new ShopEntry(ModItems.DIVING_HELMET.getDefaultInstance(), 125,
                     ShopEntry.Type.TOOL));
-            // 潜水靴 - 225金币
             diverShop.add(new ShopEntry(ModItems.DIVING_BOOTS.getDefaultInstance(), 225,
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.DIVER_ID, diverShop);
@@ -3083,17 +3012,15 @@ public class RoleShopHandler {
                                 if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
                                     if (gameWorldComponent.isRole(p, ModRoles.MA_CHEN_XU)) {
                                         var mapc = MaChenXuPlayerComponent.KEY.get(p);
-                                        // 增加所有鬼术冷却30秒
                                         mapc.veilCooldown += 20 * 30;
                                         mapc.effigyCooldown += 20 * 30;
                                         mapc.wailCooldown += 20 * 30;
                                         mapc.seizeCooldown += 20 * 30;
                                         mapc.ultimateCooldown += 20 * 30;
-                                        // 移除护盾
                                         mapc.permanentShield = false;
                                         p.displayClientMessage(
                                                 Component.translatable(
-                                                        "message.noellesroles.ma_chen_xu.into_cooldown_by_guest")
+                                                                "message.noellesroles.ma_chen_xu.into_cooldown_by_guest")
                                                         .withStyle(ChatFormatting.RED),
                                                 true);
                                         p.playNotifySound(TMMSounds.ITEM_PSYCHO_ARMOUR, SoundSource.MASTER, 1f, 1f);
@@ -3119,14 +3046,12 @@ public class RoleShopHandler {
                             return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();
                         }
                     });
-            // 左轮手枪 - 285金币（愤怒姿态）
             shop.add(new ShopEntry(ModItems.ZERO_ONE_FIVE_GUN.getDefaultInstance(), 285, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean canDisplay(Player player) {
                     return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();
                 }
             });
-            // 手榴弹
             shop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), SREConfig.instance().grenadePrice,
                     ShopEntry.Type.WEAPON) {
                 @Override
@@ -3198,10 +3123,9 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.WATCHER_ID, shop);
         }
 
-        // 叛徒商店 - 屏障商品，不可交互、不可购买、不可显示，阻止默认杀手商店出现
+        // 叛徒商店
         {
             var TRAITOR_SHOP = new ArrayList<ShopEntry>();
-            // 添加一个屏障商品：不可显示、不可购买，仅用于阻止 getRoleShopEntries 回退到默认杀手商店
             TRAITOR_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canDisplay(@NotNull Player player) {
@@ -3216,7 +3140,7 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
         }
 
-        // 巫师商店（屏障商品）
+        // 巫师商店
         {
             var WIZARD_SHOP = new ArrayList<ShopEntry>();
             WIZARD_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
@@ -3236,15 +3160,11 @@ public class RoleShopHandler {
         // 疫使商店
         {
             var INFECTED_SHOP_LIST = new ArrayList<ShopEntry>();
-            // 催化剂 - 450金币
-            // 使所有感染玩家和中毒玩家致死，但不会使杀手阵营/杀手方中立玩家致死
             INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 450, ShopEntry.Type.TOOL));
-            // 乘务员钥匙 - 100金币
             INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.INFECTED.getIdentifier(), INFECTED_SHOP_LIST);
         }
         // 工人商店
-        // 锤子 - 200金币
         WORKER_SHOP.add(new ShopEntry(
                 ModItems.HAMMER.getDefaultInstance(),
                 200,
@@ -3266,7 +3186,6 @@ public class RoleShopHandler {
                                 true);
                         return false;
                     }
-                    // 生成情报纸
                     ItemStack report = Items.PAPER.getDefaultInstance();
                     report.set(DataComponents.ITEM_NAME,
                             Component.translatable("item.noellesroles.intelligence_report").withStyle(ChatFormatting.GOLD));
@@ -3304,7 +3223,6 @@ public class RoleShopHandler {
         // 休假警员商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            // 一次性手枪 - 325金币
             SHOP.add(new ShopEntry(
                     org.agmas.noellesroles.init.ModItems.ONCE_REVOLVER.getDefaultInstance(),
                     325,
@@ -3314,18 +3232,14 @@ public class RoleShopHandler {
         // 葬仪商店
         {
             ArrayList<ShopEntry> MORTICIAN_BODYMAKER_SHOP = new ArrayList<>();
-            // 葬仪商店
-            // 乘务员钥匙 - 100金币
             MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
                     ModItems.MASTER_KEY_P.getDefaultInstance(),
                     100,
                     ShopEntry.Type.TOOL));
-            // 裹尸袋 - 150金币
             MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
                     TMMItems.BODY_BAG.getDefaultInstance(),
                     150,
                     ShopEntry.Type.TOOL));
-            // 血瓶 - 75金币
             MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
                     ModItems.BLOOD_BOTTLE.getDefaultInstance(),
                     75,

@@ -2512,7 +2512,7 @@ public class ModEventsRegister {
                 .equals(ModRoles.MONOKUMA_ID)));
         RoleVisibilityRules.canUseOtherPerson.add((role -> role.getIdentifier()
                 .equals(ModRoles.MANIPULATOR_ID)));
-        CollisionRules.canCollide.add(a -> {
+        CollisionRules.cantCollide.add(a -> {
             final var gameWorldComponent = SREGameWorldComponent.KEY.get(a.level());
             if (gameWorldComponent.isRole(a,
                     ModRoles.INSANE_KILLER)) {
@@ -2522,7 +2522,7 @@ public class ModEventsRegister {
             }
             return false;
         });
-        CollisionRules.canCollide.add(a -> {
+        CollisionRules.cantCollide.add(a -> {
             if (a.hasEffect(MobEffects.INVISIBILITY) || a.hasEffect(ModEffects.SAFE_TIME)
                     || a.hasEffect(ModEffects.NO_COLLIDE)) {
                 return true;

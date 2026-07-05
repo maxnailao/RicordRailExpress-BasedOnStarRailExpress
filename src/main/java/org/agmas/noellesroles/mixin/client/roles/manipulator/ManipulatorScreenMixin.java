@@ -15,6 +15,7 @@ import net.minecraft.world.level.GameType;
 import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.ManipulatorPlayerWidget;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
@@ -121,7 +122,7 @@ public abstract class ManipulatorScreenMixin extends LimitedHandledScreen<Invent
             return false;
         }
         return client.level.getPlayerByUUID(info.getProfile().getId()) instanceof AbstractClientPlayer targetPlayer
-                && player.distanceTo(targetPlayer) <= ManipulatorPlayerComponent.DIRECT_CONTROL_RANGE;
+                && player.distanceTo(targetPlayer) <= NoellesRolesConfig.HANDLER.instance().manipulatorMaxControlRange;
     }
 
     @Inject(method = "render", at = @At("HEAD"))
