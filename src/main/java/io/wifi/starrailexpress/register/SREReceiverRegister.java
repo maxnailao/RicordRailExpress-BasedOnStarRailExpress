@@ -86,6 +86,9 @@ public class SREReceiverRegister {
         // Role Rotation receivers
         RoleRotationSelectC2SPacket.registerServerReceiver();
 
+        // 音乐盒 C2S 接收器
+        io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.registerReceiver();
+
         // 职业轮换系统：管理员编辑名单
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 (payload, context) -> {

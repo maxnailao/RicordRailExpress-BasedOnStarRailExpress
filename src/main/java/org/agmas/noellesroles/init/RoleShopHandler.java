@@ -1788,6 +1788,16 @@ public class RoleShopHandler {
     {
       ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
     }
+
+    // 末影人商店 - 同杀手默认商店 + 末影珍珠（100金币）
+    {
+      var ENDERMAN_SHOP = new ArrayList<>(ShopContent.defaultKnifeEntries);
+      ENDERMAN_SHOP.add(new ShopEntry(
+          Items.ENDER_PEARL.getDefaultInstance(),
+          100,
+          ShopEntry.Type.TOOL));
+      ShopContent.customEntries.put(ModRoles.MOYINGREN_ENDERMAN_ID, ENDERMAN_SHOP);
+    }
   }
 
   /**
@@ -3077,6 +3087,16 @@ public class RoleShopHandler {
           325,
           ShopEntry.Type.WEAPON));
       ShopContent.customEntries.put(ModRoles.RESTING_POLICE_ID, SHOP);
+    }
+    // 特工商店
+    {
+      var SHOP = new ArrayList<ShopEntry>();
+      // 消音手枪子弹 - 100金币
+      SHOP.add(new ShopEntry(
+          ModItems.SILENCED_PISTOL_BULLET.getDefaultInstance(),
+          100,
+          ShopEntry.Type.WEAPON));
+      ShopContent.customEntries.put(ModRoles.TEGONG_ID, SHOP);
     }
   }
 }

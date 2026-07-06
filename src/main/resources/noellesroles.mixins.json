@@ -12,6 +12,9 @@
     "FishingHookAccessor",
     "EntityMixinForInvisible",
     "FootstepVanishMixin",
+    "FootstepVanishServerMixin",
+    "FootstepSoundBlockMixin",
+    "PresenceFootstepsSoundBlockMixin",
     "MagicianKillerCountMixin",
     "MagicianPlayerEntityMixin",
     "modifier.SREPlayerTaskComponentMixin",
@@ -152,7 +155,8 @@
     "client.SkincrawlerRoleNameRendererMixin",
     "client.FishingBobberRendererMixin",
     "client.AmonRoleNameRendererMixin",
-    "game.PelicanAliveCheckMixin"
+    "game.PelicanAliveCheckMixin",
+    "client.roles.mengyan.MengyanScreenMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

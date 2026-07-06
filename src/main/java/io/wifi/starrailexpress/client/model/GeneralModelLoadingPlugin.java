@@ -56,6 +56,10 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
                 var item = BuiltInRegistries.ITEM.get(context.topLevelId().id());
                 if (item instanceof SkinableItem it) {
                     var itemName = it.getItemSkinType();
+                    // 皮肤类型为 null 的物品不使用皮肤系统，直接使用原始模型
+                    if (itemName == null) {
+                        return unbakedModel;
+                    }
                     return new GeneralModel(itemName, context.topLevelId(),unbakedModel);
                 }
             }

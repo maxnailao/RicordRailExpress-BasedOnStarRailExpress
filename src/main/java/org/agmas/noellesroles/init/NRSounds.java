@@ -75,6 +75,14 @@ public class NRSounds {
     // 听觉干扰
     public static final SoundEvent OPPOAFIVE = registrar.create("noellesroles.oppoafive");
 
+    // 消音手枪
+    public static final SoundEvent SILENCED_PISTOL_SHOOT = registrar.create("noellesroles.xiaoyinqiang");
+    public static final SoundEvent SILENCED_PISTOL_RELOAD = registrar.create("noellesroles.silenced_pistol_reload");
+
+    // 沙漠之鹰
+    public static final SoundEvent DESERT_EAGLE_SHOOT = registrar.create("noellesroles.shaying");
+    public static final SoundEvent DESERT_EAGLE_RELOAD = registrar.create("noellesroles.desert_eagle_reload");
+
     public static void initialize() {
         registrar.registerEntries();
     }

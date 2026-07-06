@@ -20,6 +20,7 @@ public class StarRailExpressID {
     public final static String MIFAN_MOD_ID = "mifan233";
     public final static String XIAOHEIHAND_MOD_ID = "xiao_hei_hand";
     public final static String BLACK_WHITE_BEAR_MOD_ID = "thef0rs4ken";
+    public final static String JIALE_MOD_ID = "jiale";
     public final static String NOELLESROLES_ROLE = Noellesroles.MOD_ID;
     public final static String STUPIDEXPRESS = StupidExpress.MOD_ID;
 
@@ -54,6 +55,10 @@ public class StarRailExpressID {
 
     public static @NotNull ResourceLocation mifanId(String name) {
         return ResourceLocation.fromNamespaceAndPath(MIFAN_MOD_ID, name);
+    }
+
+    public static @NotNull ResourceLocation jialeId(String name) {
+        return ResourceLocation.fromNamespaceAndPath(JIALE_MOD_ID, name);
     }
 
     public static @NotNull ResourceLocation TMMId(String name) {

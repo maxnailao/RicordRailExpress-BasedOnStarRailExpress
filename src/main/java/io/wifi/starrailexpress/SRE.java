@@ -152,6 +152,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     private void initRegistries() {
         Reflection.initialize(SREDataComponentTypes.class);
         TMMSounds.initialize();
+        io.wifi.starrailexpress.content.musicbox.MusicBoxSounds.initialize();
+        io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry.registerBuiltins();
         TMMEntities.initialize();
         TMMBlocks.initialize();
         TMMItems.initialize();

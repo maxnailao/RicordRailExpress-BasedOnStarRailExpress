@@ -19,11 +19,15 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
  * 哑女角色组件
- * - 永久禁言（voice_silence + chat_ban）
+ * - 存活时：3秒禁言（voice_silence + chat_ban），持续刷新
+ * - 死亡后（旁观模式）：不施加禁言，允许死后说话
  * - 永久夜视效果
  * - 强制赋予夜猫子修饰符
  */
 public class DumbWomanPlayerComponent implements RoleComponent, ServerTickingComponent {
+
+    /** 禁言效果持续时间：3秒 = 60 tick */
+    private static final int SILENCE_DURATION_TICKS = 60;
 
     public static final ComponentKey<DumbWomanPlayerComponent> KEY = ModComponents.DUMB_WOMAN;
 
@@ -52,7 +56,8 @@ public class DumbWomanPlayerComponent implements RoleComponent, ServerTickingCom
     }
 
     /**
-     * 应用哑女的所有被动效果
+     * 应用哑女的被动效果
+     * 仅在存活（冒险模式）时施加禁言效果，死亡后不施加
      */
     private void applyEffects() {
         if (!(player instanceof ServerPlayer sp)) return;
@@ -60,11 +65,13 @@ public class DumbWomanPlayerComponent implements RoleComponent, ServerTickingCom
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorld == null || !gameWorld.isRole(player, ModRoles.DUMB_WOMAN)) return;
 
-        // 永久禁言：禁止语音 + 禁止聊天
-        sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE,
-                Integer.MAX_VALUE, 0, false, false, false));
-        sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN,
-                Integer.MAX_VALUE, 0, false, false, false));
+        // 仅在存活时施加禁言效果（3秒持续时间，由 serverTick 持续刷新）
+        if (!sp.isSpectator()) {
+            sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE,
+                    SILENCE_DURATION_TICKS, 0, false, false, false));
+            sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN,
+                    SILENCE_DURATION_TICKS, 0, false, false, false));
+        }
 
         // 永久夜视
         sp.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,
@@ -108,13 +115,17 @@ public class DumbWomanPlayerComponent implements RoleComponent, ServerTickingCom
                 sp.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,
                         Integer.MAX_VALUE, 0, false, false, false));
             }
-            if (!sp.hasEffect(ModEffects.VOICE_SILENCE)) {
+
+            if (sp.isSpectator()) {
+                // 死亡后（旁观模式）：移除禁言效果，允许死后说话
+                sp.removeEffect(ModEffects.VOICE_SILENCE);
+                sp.removeEffect(ModEffects.CHAT_BAN);
+            } else {
+                // 存活时（冒险模式）：以3秒持续时间刷新禁言效果
                 sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE,
-                        Integer.MAX_VALUE, 0, false, false, false));
-            }
-            if (!sp.hasEffect(ModEffects.CHAT_BAN)) {
+                        SILENCE_DURATION_TICKS, 0, false, false, false));
                 sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN,
-                        Integer.MAX_VALUE, 0, false, false, false));
+                        SILENCE_DURATION_TICKS, 0, false, false, false));
             }
         }
     }

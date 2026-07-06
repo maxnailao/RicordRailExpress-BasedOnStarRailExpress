@@ -84,5 +84,9 @@ public class SREComponents
                 .end(RoleRotationPlayerComponent::new);
         registry.beginRegistration(Player.class, SREPlayerDamageTrackerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerDamageTrackerComponent::new);
+        // 音乐盒组件
+        registry.beginRegistration(Player.class, io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
+                .end(io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent::new);
     }
 }

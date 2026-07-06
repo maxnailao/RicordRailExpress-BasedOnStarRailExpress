@@ -162,6 +162,7 @@
       "noellesroles:great_detective",
       "noellesroles:embalmer",
       "noellesroles:skincrawler",
+      "noellesroles:ruike",
       "starrailexpress:minigame_task",
       "noellesroles:better_killer_ghost",
       "noellesroles:poacher",
@@ -225,6 +226,7 @@
       "starrailexpress:dnf_daily_task",
       "starrailexpress:mailbox",
       "starrailexpress:player_damage_tracker",
+      "starrailexpress:music_box",
       "noellesroles:cuckoo",
       "noellesroles:ma_chen_xu",
       "noellesroles:imitator",
@@ -248,7 +250,10 @@
       "noellesroles:nostalgist",
       "noellesroles:undead_lord",
       "noellesroles:diviner",
-      "noellesroles:ghostofanying"
+      "noellesroles:ghostofanying",
+      "noellesroles:tegong",
+      "noellesroles:mengyan",
+      "noellesroles:xundaozhe"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

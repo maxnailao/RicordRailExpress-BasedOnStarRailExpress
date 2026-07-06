@@ -223,6 +223,8 @@ public class GameConstants {
         public static ResourceLocation BLACKOUT_TIMEOUT = SRE.id("blackout_timeout");
         // 鬼魅幻影被摧毁
         public static ResourceLocation PHANTOM_DESTROYED = SRE.id("phantom_destroyed");
+        // 沙漠之鹰
+        public static ResourceLocation DESERT_EAGLE = SRE.id("desert_eagle_shot");
     }
 
     public static int getFurandoruSafeLine() {

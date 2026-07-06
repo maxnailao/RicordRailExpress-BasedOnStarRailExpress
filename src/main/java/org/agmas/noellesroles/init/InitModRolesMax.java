@@ -242,6 +242,9 @@ public class InitModRolesMax {
         // 电报员 - 默认为0，在 InitModRolesMax 中动态设置（0.5%概率刷新）
         Harpymodloader.setRoleMaximum(BounsRoles.TELEGRAPHER_ID, 0);
 
+        // NiKo - 彩蛋警方，默认为0，通过彩蛋概率刷新
+        Harpymodloader.setRoleMaximum(BounsRoles.NIKOPLAY_ID, 0);
+
         // 设置角色最大数量
         Harpymodloader.setRoleMaximum(ModRoles.POISONER_ID, 0);
         // 和医生一起生成
@@ -326,6 +329,9 @@ public class InitModRolesMax {
 
         // 设置飞行员和影隼绑定生成
         RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
+
+        // 梦魇每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.MENGYAN_ID, 1);
     }
 
     public static void registerDynamic() {

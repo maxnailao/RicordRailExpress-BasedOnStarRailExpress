@@ -234,6 +234,13 @@ public class PsychologistPlayerComponent implements RoleComponent, ServerTicking
         targetMood.setMood(FULL_SANITY); // 1.0f 表示满san
         targetMood.sync();
 
+        // 清除目标身上的噩梦效果（仅1层可被清除）
+        var nightmareEffect = target.getEffect(org.agmas.noellesroles.init.ModEffects.NIGHTMARE);
+        if (nightmareEffect != null && org.agmas.noellesroles.content.effects.NightmareEffect.isRemovableByPsychologist(nightmareEffect.getAmplifier())) {
+            target.removeEffect(org.agmas.noellesroles.init.ModEffects.NIGHTMARE);
+        }
+        // 2层噩梦（amplifier=1）不可被心理学家清除，不做处理
+
         // 播放治疗完成音效
         player.level().playSound(null, target.blockPosition(),
                 SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0F, 1.5F);

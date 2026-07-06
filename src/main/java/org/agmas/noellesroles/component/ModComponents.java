@@ -13,6 +13,7 @@ import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerCo
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.tegong.TegongPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
@@ -31,6 +32,7 @@ import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlaye
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.xundaozhe.XundaozhePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
@@ -506,7 +508,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "better_killer_ghost"),
                   org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent.class);
 
-  // 哑女组件 - 平民阵营，永久禁言+夜视+夜猫子修饰符
+  // 哑女组件 - 平民阵营，存活时禁言+夜视+夜猫子修饰符
   public static final ComponentKey<DumbWomanPlayerComponent> DUMB_WOMAN = ComponentRegistry
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dumb_woman"),
@@ -539,6 +541,30 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghostofanying"),
                   GhostofanyingPlayerComponent.class);
+
+  // 特工组件 - 警长阵营，潜行技能（速度I+消脚步+反透视）
+  public static final ComponentKey<TegongPlayerComponent> TEGONG = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "tegong"),
+                  TegongPlayerComponent.class);
+
+  // 时空旅者组件 - 平民阵营，传送门放置与配对
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.ruike.RuikePlayerComponent> RUIKE = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ruike"),
+                  org.agmas.noellesroles.game.roles.innocence.ruike.RuikePlayerComponent.class);
+
+  // 梦魇组件 - 杀手阵营，恐惧技能+噩梦效果
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent> MENGYAN = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mengyan"),
+                  org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent.class);
+
+  // 殉道者组件 - 平民阵营，牺牲复活+旁观者身份屏蔽
+  public static final ComponentKey<XundaozhePlayerComponent> XUNDAOZHE = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "xundaozhe"),
+                  XundaozhePlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -1051,7 +1077,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent::new);
 
-    // 注册哑女组件 - 平民阵营，永久禁言+夜视+夜猫子修饰符
+    // 注册哑女组件 - 平民阵营，存活时禁言+夜视+夜猫子修饰符
     registry.beginRegistration(Player.class, DUMB_WOMAN)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(DumbWomanPlayerComponent::new);
@@ -1080,6 +1106,26 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, GHOSTOFANYING)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(GhostofanyingPlayerComponent::new);
+
+    // 注册特工组件 - 警长阵营，潜行技能
+    registry.beginRegistration(Player.class, TEGONG)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(TegongPlayerComponent::new);
+
+    // 注册时空旅者组件 - 平民阵营，传送门放置与配对
+    registry.beginRegistration(Player.class, RUIKE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocence.ruike.RuikePlayerComponent::new);
+
+    // 注册梦魇组件 - 杀手阵营，恐惧技能+噩梦效果
+    registry.beginRegistration(Player.class, MENGYAN)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent::new);
+
+    // 注册殉道者组件 - 平民阵营，牺牲复活+旁观者身份屏蔽
+    registry.beginRegistration(Player.class, XUNDAOZHE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(XundaozhePlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

@@ -90,7 +90,8 @@ public class XiaoNaoHandler {
                                 || deathReason.getPath().equals("manhole_suffocation")
                                 || deathReason.getPath().equals("stalactite_impale")
                                 || deathReason.getPath().equals("flamethrower_burned")
-                                || deathReason.getPath().equals("boulder_crush")) {
+                                || deathReason.getPath().equals("boulder_crush")
+                                || deathReason.getPath().equals("desert_eagle_shot")) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
                             TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                             // 仇杀客事件：误杀发生时强化仇杀客

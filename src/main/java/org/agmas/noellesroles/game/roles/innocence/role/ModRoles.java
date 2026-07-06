@@ -269,6 +269,18 @@ public class ModRoles {
     public static final ResourceLocation BETTER_KILLER_GHOST_ID = Noellesroles.id("betterkillerghost");
     // 暗影角色 ID - 杀手阵营
     public static final ResourceLocation GHOSTOFANYING_ID = Noellesroles.id("ghostofanying");
+    // 特工角色 ID - 警长阵营
+    public static final ResourceLocation TEGONG_ID = Noellesroles.id("tegong");
+    // 净化者角色 ID - 平民阵营
+    public static final ResourceLocation JINGHUAZHE_ID = Noellesroles.id("jinghuazhe");
+    // 时空旅者角色 ID - 平民阵营
+    public static final ResourceLocation RUIKE_ID = Noellesroles.id("ruike");
+    // 梦魇角色 ID - 杀手阵营
+    public static final ResourceLocation MENGYAN_ID = Noellesroles.id("mengyan_zuoemengquba");
+    // 殉道者角色 ID - 平民阵营
+    public static final ResourceLocation XUNDAOZHE_ID = Noellesroles.id("xundaozhe");
+    // 末影人角色 ID - 杀手阵营
+    public static final ResourceLocation MOYINGREN_ENDERMAN_ID = Noellesroles.id("moyingren_enderman");
     public static final ResourceLocation MANIPULATOR_ID = Noellesroles.id("manipulator");
     public static final ResourceLocation BANDIT_ID = Noellesroles.id("bandit");
     public static final ResourceLocation BLOOD_FEUDIST_ID = Noellesroles.id("blood_feudist");
@@ -2752,7 +2764,7 @@ public class ModRoles {
      * - 真实心情系统
      * - 标准冲刺时间
      * - 显示计分板
-     * - 被动技能：永久禁言（无法说话和打字）+ 永久夜视 + 强制夜猫子修饰符
+     * - 被动技能：存活时禁言（3秒持续刷新）+ 死亡后解除禁言 + 永久夜视 + 强制夜猫子修饰符
      * - 商店：便签(20g)
      * - 介绍：你拥有语言障碍
      * - 登车标语：小心杀手，活下去
@@ -2780,7 +2792,7 @@ public class ModRoles {
      * - 被动：持续获得语音禁用和聊天混乱效果（监护人技能可暂时免疫）
      * - 被动：移动时10%概率视角随机偏移
      * - 技能：探查周围3.5格玩家背包是否有刀，5秒后高亮3秒，CD60秒
-     * - 商店：风弹(35)、鸡蛋(10)、鱼竿(100)、彩花拉炮(25)
+     * - 商店：鸡蛋(10)、鱼竿(100)、彩花拉炮(25)
      */
     public static SRERole ZHIZHANG = TMMRoles.registerRole(new NormalRole(
             ZHIZHANG_ID,
@@ -2794,12 +2806,6 @@ public class ModRoles {
         @Override
         public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
             java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
-            // 风弹 minecraft:wind_charge 35
-            var windCharge = net.minecraft.core.registries.BuiltInRegistries.ITEM
-                    .getOptional(net.minecraft.resources.ResourceLocation.parse("minecraft:wind_charge"));
-            windCharge.ifPresent(item -> entries.add(
-                    new io.wifi.starrailexpress.util.ShopEntry(new net.minecraft.world.item.ItemStack(item), 35,
-                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL)));
             // 鸡蛋 minecraft:egg 10
             var egg = net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .getOptional(net.minecraft.resources.ResourceLocation.parse("minecraft:egg"));
@@ -2998,6 +3004,142 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),  // 有限体力
             false   // 显示计分板
     )).setCanSeeCoin(true).setCanSeeTime(true).setComponentKey(ModComponents.WUSHUJIA);
+
+    /**
+     * 特工角色 - 警长阵营
+     * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 被动：与警卫相同，拥有被动给予金钱的能力
+     * - 初始物品：消音手枪
+     * - 商店：消音手枪子弹 100金币
+     * - 技能：潜行模式（10秒速度I + 无脚步声 + 反透视），冷却90秒
+     */
+    public static SRERole TEGONG = TMMRoles.registerRole(new NormalRole(
+            TEGONG_ID, // 角色 ID
+            new Color(135, 206, 250).getRGB(), // 浅蓝色
+            true,   // isInnocent = 乘客阵营
+            false,  // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false   // 不隐藏计分板
+    )).setVigilanteTeam(true)
+      .setCanAutoAddMoney(true)
+      .setCanSeeCoin(true)
+      .setComponentKey(ModComponents.TEGONG);
+
+    /**
+     * 净化者角色 - 平民阵营
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限体力
+     * - 显示计分板
+     * - 技能"净化"：
+     * - 花费150金币
+     * - 对准心对准的玩家清空身上所有效果
+     * - 技能射程6格
+     * - 冷却30秒
+     */
+    public static SRERole JINGHUAZHE = TMMRoles.registerRole(new NormalRole(
+            JINGHUAZHE_ID,
+            new Color(120, 200, 180).getRGB(), // 浅蓝色中带绿
+            true,   // isInnocent = 乘客阵营
+            false,  // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(true);
+
+    /**
+     * 时空旅者角色 - 平民阵营
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限体力
+     * - 显示计分板
+     * - 时间不可见
+     * - 技能：花费125金币在原地放置传送门，传送门两两配对，所有玩家可使用，传送后3秒冷却
+     * - 登车标语：在传送门直接穿梭自如
+     */
+    public static SRERole RUIKE = TMMRoles.registerRole(new NormalRole(
+            RUIKE_ID,
+            new Color(180, 100, 200).getRGB(), // 紫偏粉色
+            true,   // isInnocent = 乘客阵营
+            false,  // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false)
+      .setComponentKey(ModComponents.RUIKE)
+      .setDefaultMax(1);
+
+    /**
+     * 梦魇 - 杀手阵营
+     * - 黑红色
+     * - 虚假心情
+     * - 无限体力
+     * - 隐藏计分板
+     * - 技能：从背包选择一名玩家施加"恐惧"
+     * - 登车标语：让他们恐惧，让他们颜抖！
+     */
+    public static SRERole MENGYAN = TMMRoles.registerRole(new NormalRole(
+            MENGYAN_ID,
+            new Color(60, 0, 0).getRGB(), // 黑红色
+            false,  // isInnocent = 非乘客阵营
+            true,   // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 虚假心情
+            Integer.MAX_VALUE, // 无限体力
+            true    // 隐藏计分板
+    )).setComponentKey(ModComponents.MENGYAN)
+      .setCanSeeCoin(true)
+      .setDefaultMax(1);
+
+    /**
+     * 殉道者 - 平民阵营
+     * - 深灰色
+     * - 真实心情
+     * - 有限体力
+     * - 显示计分板
+     * - 技能：花费300金币，对准尸体按G键，保持静止5秒后复活目标玩家，殉道者同时死亡（生命耗尽）
+     * - 被动：当殉道者存活时，旁观者模式下无法查看其他玩家的身份
+     * - 登车标语：牺牲自己，拯救他人
+     */
+    public static SRERole XUNDAOZHE = TMMRoles.registerRole(new NormalRole(
+            XUNDAOZHE_ID,
+            new Color(105, 105, 105).getRGB(), // 深灰色
+            true,   // isInnocent = 乘客阵营
+            false,  // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false   // 显示计分板
+    )).setComponentKey(ModComponents.XUNDAOZHE)
+      .setCanSeeCoin(true)
+      .setDefaultMax(1);
+
+    /**
+     * 末影人 - 杀手阵营
+     * - 黑紫色
+     * - 虚假心情
+     * - 有限体力
+     * - 隐藏计分板
+     * - 技能：无
+     * - 商店：同杀手一致，额外可花费100金币购买末影珍珠
+     * - 初始道具：末影珍珠两个
+     * - 登车标语：穿梭自如
+     */
+    public static SRERole MOYINGREN_ENDERMAN = TMMRoles.registerRole(new NormalRole(
+            MOYINGREN_ENDERMAN_ID,
+            new Color(40, 0, 80).getRGB(), // 黑紫色
+            false,  // isInnocent = 非乘客阵营（杀手）
+            true,   // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 虚假心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            true    // 隐藏计分板
+    )).setCanSeeCoin(true)
+      .setDefaultMax(1);
 
     /**
      * 初始化并注册所有角色

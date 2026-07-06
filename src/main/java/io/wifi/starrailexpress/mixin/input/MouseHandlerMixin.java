@@ -9,6 +9,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.content.item.DesertEagleItem;
+import org.agmas.noellesroles.content.item.SilencedPistolItem;
+import org.agmas.noellesroles.init.ModItems;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -54,6 +57,20 @@ public class MouseHandlerMixin {
             
             LocalPlayer player = client.player;
             ItemStack mainHandStack = player.getMainHandItem();
+            
+            // 处理消音手枪左键换弹
+            if (mainHandStack.is(ModItems.SILENCED_PISTOL)) {
+                SilencedPistolItem.tryReloadFromClient(player);
+                ci.cancel();
+                return;
+            }
+
+            // 处理沙漠之鹰左键开火
+            if (mainHandStack.is(ModItems.DESERT_EAGLE)) {
+                DesertEagleItem.tryShootFromClient(player);
+                ci.cancel();
+                return;
+            }
             
             // 只处理狙击枪
             if (!mainHandStack.is(TMMItems.SNIPER_RIFLE)) {

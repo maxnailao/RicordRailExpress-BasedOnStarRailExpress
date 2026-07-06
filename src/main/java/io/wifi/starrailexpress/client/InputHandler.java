@@ -13,6 +13,8 @@ import io.wifi.starrailexpress.content.vote.client.VoteScreen;
 
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
+import org.agmas.noellesroles.content.item.DesertEagleItem;
+import org.agmas.noellesroles.init.ModItems;
 import io.wifi.starrailexpress.network.RequestOpenClueArchivePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -100,6 +102,13 @@ public class InputHandler {
             }
         } else {
             wasRightDown = false;
+        }
+
+        // 沙漠之鹰 R键换弹
+        if (client.player != null && client.player.getMainHandItem().is(ModItems.DESERT_EAGLE)) {
+            if (sniperReloadKeybind.consumeClick()) {
+                DesertEagleItem.tryReloadFromClient(client.player);
+            }
         }
 
         if (openVotingScreenKeybind.consumeClick()) {

@@ -57,6 +57,9 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
     /** UUID of the commander whose channel was forced to switch */
     private UUID forcedCommanderUuid = null;
 
+    /** Self-managed skill cooldown (ticks). Avoids double-decrement from SREAbilityPlayerComponent's dual tick */
+    private int skillCooldown = 0;
+
     private final Player player;
 
     public BlackkePlayerComponent(Player player) {
@@ -79,8 +82,14 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
         }
     }
 
+    /** Get current skill cooldown in ticks (readable from client after sync) */
+    public int getSkillCooldown() {
+        return skillCooldown;
+    }
+
     @Override
     public void init() {
+        this.skillCooldown = 0;
         this.commanderRestoreTimer = 0;
         this.forcedCommanderUuid = null;
         sync();
@@ -90,6 +99,7 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
     public void clear() {
         // Restore commander channel if forced switch is still active when game ends
         restoreCommanderChannel();
+        this.skillCooldown = 0;
         this.commanderRestoreTimer = 0;
         this.forcedCommanderUuid = null;
         sync();
@@ -111,9 +121,8 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
         // Check if self is alive
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
 
-        // Check cooldown
-        SREAbilityPlayerComponent abilityComp = SREAbilityPlayerComponent.KEY.get(player);
-        if (abilityComp.cooldown > 0) {
+        // Check cooldown (self-managed, not SREAbilityPlayerComponent to avoid dual-tick issue)
+        if (this.skillCooldown > 0) {
             serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.blackke.on_cooldown")
                             .withStyle(ChatFormatting.RED),
@@ -134,8 +143,8 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
         // Deduct coins
         shop.addToBalance(-SKILL_COST);
 
-        // Set cooldown
-        abilityComp.setCooldown(SKILL_COOLDOWN);
+        // Set cooldown (self-managed)
+        this.skillCooldown = SKILL_COOLDOWN;
 
         // If target is spectator, skip effects but still deduct coins and enter cooldown
         if (GameUtils.isPlayerSpectator(target)) {
@@ -189,13 +198,27 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
         if (!gameWorldComponent.isRunning()) return;
         if (!gameWorldComponent.isRole(player, ModRoles.BLACKKE)) return;
 
+        boolean needsSync = false;
+
+        // Decrement self-managed skill cooldown (server-authoritative, no client-side double decrement)
+        if (this.skillCooldown > 0) {
+            this.skillCooldown--;
+            if (this.skillCooldown % 20 == 0 || this.skillCooldown == 0) {
+                needsSync = true;
+            }
+        }
+
         // Handle commander channel restore countdown
         if (commanderRestoreTimer > 0) {
             commanderRestoreTimer--;
             if (commanderRestoreTimer <= 0) {
                 restoreCommanderChannel();
-                sync();
+                needsSync = true;
             }
+        }
+
+        if (needsSync) {
+            sync();
         }
     }
 
@@ -230,6 +253,7 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
         if (!gameWorldComponent.isRunning()) return;
         if (!gameWorldComponent.isRole(this.player, ModRoles.BLACKKE)) return;
 
+        tag.putInt("SkillCooldown", skillCooldown);
         tag.putInt("CommanderRestoreTimer", commanderRestoreTimer);
         if (forcedCommanderUuid != null) {
             tag.putUUID("ForcedCommanderUuid", forcedCommanderUuid);
@@ -238,10 +262,7 @@ public class BlackkePlayerComponent implements RoleComponent, ServerTickingCompo
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        if (!tag.contains("CommanderRestoreTimer")) {
-            this.clear();
-            return;
-        }
+        this.skillCooldown = tag.getInt("SkillCooldown");
         this.commanderRestoreTimer = tag.getInt("CommanderRestoreTimer");
         if (tag.contains("ForcedCommanderUuid")) {
             this.forcedCommanderUuid = tag.getUUID("ForcedCommanderUuid");

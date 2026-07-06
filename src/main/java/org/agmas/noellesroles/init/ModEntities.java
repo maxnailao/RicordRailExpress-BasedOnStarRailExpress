@@ -376,6 +376,19 @@ public class ModEntities {
                     .build());
 
     /**
+     * 时空旅者传送门实体 - 类似地狱门的传送门，两两配对
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<RuikePortalEntity> RUIKE_PORTAL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("ruike_portal"),
+            FabricEntityTypeBuilder.<RuikePortalEntity>create(MobCategory.MISC, RuikePortalEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.75F, 1.25F))
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */

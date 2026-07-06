@@ -77,12 +77,17 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
 
                 // boolean INSANE_alive = false;
                 boolean CONSPIRATOR_alive = false;
+                boolean XUNDAOZHE_alive = false;
                 for (Player p : player.level().players()) {
                     if (gameWorldComponent.isRole(p, ModRoles.CONSPIRATOR)
                             && GameUtils.isPlayerAliveAndSurvival(p)) {
                         CONSPIRATOR_alive = true;
                     }
-                    if (CONSPIRATOR_alive) {
+                    if (gameWorldComponent.isRole(p, ModRoles.XUNDAOZHE)
+                            && GameUtils.isPlayerAliveAndSurvival(p)) {
+                        XUNDAOZHE_alive = true;
+                    }
+                    if (CONSPIRATOR_alive || XUNDAOZHE_alive) {
                         if (this.penaltyExpiry == -2) {
                             this.penaltyExpiry = -1;
                             this.limitCameraUUID = null;

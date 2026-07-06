@@ -201,5 +201,16 @@ public class SREPayloadRegister {
                 net.exmo.sre.record.network.RecordReplayRequestC2SPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.record.network.RecordReplayS2CPayload.ID,
                 net.exmo.sre.record.network.RecordReplayS2CPayload.CODEC);
+
+        // 音乐盒网络包
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.content.musicbox.network.PlayMusicBoxS2CPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.PlayMusicBoxS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.content.musicbox.network.SyncMusicBoxS2CPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.SyncMusicBoxS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.CODEC);
     }
 }

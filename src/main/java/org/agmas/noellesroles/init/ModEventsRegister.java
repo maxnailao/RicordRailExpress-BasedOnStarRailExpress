@@ -411,6 +411,7 @@ public class ModEventsRegister {
         boolean looseEndAlive = false;
         // boolean INSANE_alive = false;
         boolean CONSPIRATOR_alive = false;
+        boolean XUNDAOZHE_alive = false;
         boolean limitView = false;
         var refugeeComponent = RefugeeComponent.KEY.get(level);
         if (gameWorldComponent.getGameMode().identifier.equals(SREGameModes.LOOSE_ENDS_ID))
@@ -426,12 +427,14 @@ public class ModEventsRegister {
                 doctorAlive = true;
             } else if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)) {
                 CONSPIRATOR_alive = true;
+            } else if (gameWorldComponent.isRole(player, ModRoles.XUNDAOZHE)) {
+                XUNDAOZHE_alive = true;
             }
-            if (doctorAlive || CONSPIRATOR_alive) {
+            if (doctorAlive || CONSPIRATOR_alive || XUNDAOZHE_alive) {
                 break;
             }
         }
-        if (CONSPIRATOR_alive) {
+        if (CONSPIRATOR_alive || XUNDAOZHE_alive) {
             limitView = true;
         }
         for (final var victim : victims) {
@@ -1152,6 +1155,7 @@ public class ModEventsRegister {
                 // Noellesroles.LOGGER.info("itemSize:" + items.size());
                 int REVOLVER_COOLDOWN = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0);
                 items.remove(ModItems.FAKE_REVOLVER);
+                items.remove(ModItems.DESERT_EAGLE); // 沙漠之鹰拥有独立的0.3秒射击冷却
                 if (mainHandStack.is(ModItems.ONCE_REVOLVER)) {
                     items.remove(ModItems.ONCE_REVOLVER);
                 }
@@ -1303,6 +1307,32 @@ public class ModEventsRegister {
                 RecallKillerPlayerComponent recallComp = ModComponents.RECALL_KILLER.get(player);
                 if (recallComp != null && recallComp.placed) {
                     recallComp.clearAnchor();
+                }
+            }
+
+            // 清除所有时空旅者传送门实体和组件状态
+            var worldBounds = new net.minecraft.world.phys.AABB(
+                    -30000000, world.getMinBuildHeight(), -30000000,
+                    30000000, world.getMaxBuildHeight(), 30000000);
+            for (var portal : world.getEntitiesOfClass(
+                    org.agmas.noellesroles.content.entity.RuikePortalEntity.class,
+                    worldBounds)) {
+                portal.discard();
+            }
+            org.agmas.noellesroles.content.entity.RuikePortalEntity.clearAllTeleportCooldowns();
+            for (ServerPlayer player : world.players()) {
+                var ruikeComp = ModComponents.RUIKE.maybeGet(player).orElse(null);
+                if (ruikeComp != null) {
+                    ruikeComp.init();
+                }
+            }
+
+            // 清除所有玩家的噩梦效果和梦魇恐惧状态
+            for (ServerPlayer player : world.players()) {
+                player.removeEffect(org.agmas.noellesroles.init.ModEffects.NIGHTMARE);
+                var mengyanComp = ModComponents.MENGYAN.maybeGet(player).orElse(null);
+                if (mengyanComp != null) {
+                    mengyanComp.init();
                 }
             }
 
@@ -2176,6 +2206,23 @@ public class ModEventsRegister {
         });
         // 游戏正式开始，安全时间结束！
         OnGameTrueStarted.EVENT.register((serverLevel) -> {
+            // 双重保障：清除上一局可能残留的时空旅者传送门实体和组件状态
+            var worldBounds = new net.minecraft.world.phys.AABB(
+                    -30000000, serverLevel.getMinBuildHeight(), -30000000,
+                    30000000, serverLevel.getMaxBuildHeight(), 30000000);
+            for (var portal : serverLevel.getEntitiesOfClass(
+                    org.agmas.noellesroles.content.entity.RuikePortalEntity.class,
+                    worldBounds)) {
+                portal.discard();
+            }
+            org.agmas.noellesroles.content.entity.RuikePortalEntity.clearAllTeleportCooldowns();
+            for (ServerPlayer player : serverLevel.players()) {
+                var ruikeComp = ModComponents.RUIKE.maybeGet(player).orElse(null);
+                if (ruikeComp != null) {
+                    ruikeComp.init();
+                }
+            }
+
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
             boolean hasDio = false;
             boolean hasRecorder = false;
@@ -2412,6 +2459,12 @@ public class ModEventsRegister {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             io.wifi.starrailexpress.content.minigame.doudizhu.DoudizhuSessionManager.INSTANCE.tick();
             io.wifi.starrailexpress.content.minigame.mahjong.MahjongSessionManager.INSTANCE.tick();
+        });
+
+        // 服务器Tick事件 - 沙漠之鹰系统清理（后坐力状态 + 击杀累计过期）
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            org.agmas.noellesroles.content.item.DesertEagleRecoilSystem.tickCleanup();
+            org.agmas.noellesroles.content.item.DesertEagleKillSystem.tickCleanup(server.getTickCount());
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

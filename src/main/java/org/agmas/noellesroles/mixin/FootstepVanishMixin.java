@@ -13,11 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * “脚步消失”药水效果（{@link ModEffects#FOOTSTEP_VANISH}）的行为实现。
+ * "脚步消失"药水效果（{@link ModEffects#FOOTSTEP_VANISH} / {@link ModEffects#JINGMOQIANXING}
+ * / {@link ModEffects#JINGBU}）的行为实现。
  *
- * <p>拥有该效果的玩家：脚步声不会播放（{@code playStepSound} 取消）、疾跑粒子不会生成
- * （{@code canSpawnSprintParticle} 返回 false）。该效果由 {@code FootstepVanishEffectSync}
- * 广播给所有客户端，因此其它玩家侧运行的本拦截也能查到该效果，实现“别人也听不到脚步”。</p>
+ * <p>拥有任一效果的玩家：脚步声不会播放（{@code playStepSound} 取消）、疾跑粒子不会生成
+ * （{@code canSpawnSprintParticle} 返回 false）。效果由 {@code FootstepVanishEffectSync}
+ * 广播给所有客户端，因此其它玩家侧运行的本拦截也能查到该效果，实现"别人也听不到脚步"。</p>
  */
 @Mixin(Entity.class)
 public class FootstepVanishMixin {
@@ -26,7 +27,10 @@ public class FootstepVanishMixin {
     private void noe$silenceStepSound(BlockPos pos, BlockState state, CallbackInfo ci) {
         if (SRE.isLobby)
             return;
-        if ((Entity) (Object) this instanceof Player player && player.hasEffect(ModEffects.FOOTSTEP_VANISH)) {
+        if ((Entity) (Object) this instanceof Player player
+                && (player.hasEffect(ModEffects.FOOTSTEP_VANISH)
+                    || player.hasEffect(ModEffects.JINGMOQIANXING)
+                    || player.hasEffect(ModEffects.JINGBU))) {
             ci.cancel();
         }
     }
@@ -35,7 +39,10 @@ public class FootstepVanishMixin {
     private void noe$hideSprintParticle(CallbackInfoReturnable<Boolean> cir) {
         if (SRE.isLobby)
             return;
-        if ((Entity) (Object) this instanceof Player player && player.hasEffect(ModEffects.FOOTSTEP_VANISH)) {
+        if ((Entity) (Object) this instanceof Player player
+                && (player.hasEffect(ModEffects.FOOTSTEP_VANISH)
+                    || player.hasEffect(ModEffects.JINGMOQIANXING)
+                    || player.hasEffect(ModEffects.JINGBU))) {
             cir.setReturnValue(false);
         }
     }

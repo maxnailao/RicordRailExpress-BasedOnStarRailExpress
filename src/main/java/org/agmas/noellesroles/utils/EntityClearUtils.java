@@ -28,6 +28,7 @@ import org.agmas.noellesroles.content.entity.SilenceTotemEntity;
 import org.agmas.noellesroles.content.entity.SmokeGrenadeEntity;
 import org.agmas.noellesroles.content.entity.ThrowingKnifeEntity;
 import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
+import org.agmas.noellesroles.content.entity.DurabilityBoatEntity;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
@@ -88,6 +89,7 @@ public class EntityClearUtils {
                         entity instanceof ItemEntity ||
                         entity instanceof PlayerBodyEntity ||
                         entity instanceof WheelchairEntity ||
+                        entity instanceof DurabilityBoatEntity ||
                         entity instanceof KuiXiPuppetEntity ||
                         entity instanceof NoteEntity ||
                         entity instanceof DevilRouletteTableEntity.TableTextDisplay ||

@@ -399,6 +399,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.renderer.MorphlingKnifeDummyRenderer::new);
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
+        // 注册时空旅者传送门实体渲染器
+        EntityRendererRegistry.register(ModEntities.RUIKE_PORTAL,
+                org.agmas.noellesroles.client.render.RuikePortalRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);

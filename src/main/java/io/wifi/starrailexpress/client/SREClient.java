@@ -170,6 +170,7 @@ public class SREClient implements ClientModInitializer {
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
     public static KeyMapping skinsKeybind; // 新增皮肤管理热键
+    public static KeyMapping musicBoxKeybind; // 音乐盒热键
     public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
     public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
     public static boolean isInstinctToggleEnabled = false; // 新增变量用于跟踪切换状态
@@ -888,6 +889,22 @@ public class SREClient implements ClientModInitializer {
         // 注册职业轮选网络包
         RoleRotationClientReceiver.register();
 
+        // 音乐盒网络包接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.content.musicbox.network.PlayMusicBoxS2CPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    var box = io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry.get(payload.musicBoxId());
+                    if (box != null && context.client().player != null) {
+                        context.client().player.playNotifySound(
+                                box.soundEvent(), net.minecraft.sounds.SoundSource.RECORDS, box.volume(), 1.0f);
+                    }
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.content.musicbox.network.SyncMusicBoxS2CPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen.updateCache(payload);
+                }));
+
         // Chat Dialogue
         ClientPlayNetworking.registerGlobalReceiver(
                 net.exmo.sre.client.chat.OpenChatDialoguePayload.ID, (payload, context) -> {
@@ -947,6 +964,13 @@ public class SREClient implements ClientModInitializer {
                 "key." + SRE.MOD_ID + ".skins",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_N, // 默认热键 'N'
+                "category." + SRE.MOD_ID + ".keybinds"));
+
+        // Register music box keybind
+        musicBoxKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".musicbox",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_COMMA, // 默认热键 ',' (即 '、' 键位)
                 "category." + SRE.MOD_ID + ".keybinds"));
 
         // 路径点管理 GUI（默认未绑定，OP 在按键设置里自行绑定）
@@ -1035,6 +1059,14 @@ public class SREClient implements ClientModInitializer {
                     client.setScreen(null);
                 } else {
                     client.setScreen(new SkinManagementScreen());
+                }
+            }
+
+            if (musicBoxKeybind.consumeClick()) {
+                if (client.screen instanceof io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen) {
+                    client.setScreen(null);
+                } else {
+                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen());
                 }
             }
 
