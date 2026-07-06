@@ -15,10 +15,55 @@ import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponen
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
+import java.util.Set;
+
 /**
  * 小脑惩罚
  */
 public class XiaoNaoHandler {
+
+    /** 小脑（误杀）死亡原因白名单 */
+    private static final Set<String> XIAO_NAO_REASONS = Set.of(
+            "revolver_shot",
+            "general_attack",
+            "sniper_rifle",
+            "nunchuck_hit",
+            "bat_hit",
+            "gun_shot",
+            "hoan_meirin_attack",
+            "arrow",
+            "trident",
+            "knife_stab",
+            "stalker_knife",
+            "knife",
+            "fell_out_of_train",
+            "poison",
+            "throwing_knife_hit",
+            "throwing_knife",
+            "bowen",
+            "baton_kill",
+            "fire_axe",
+            "ninja_knife",
+            "ninja_shuriken",
+            "short_shotgun",
+            "grenade",
+            "zero_one_five_shot",
+            "incinerator_pushed",
+            "manhole_suffocation",
+            "stalactite_impale",
+            "flamethrower_burned",
+            "boulder_crush",
+            "desert_eagle_shot");
+
+    /**
+     * 判断给定的死亡原因是否属于小脑（误杀）原因。
+     *
+     * @param deathReason 死亡原因 ResourceLocation
+     * @return 如果是小脑原因返回 true
+     */
+    public static boolean isXiaoNaoReason(ResourceLocation deathReason) {
+        return deathReason != null && XIAO_NAO_REASONS.contains(deathReason.getPath());
+    }
 
     public static void registerEvent() {
         TeamKillViolationHandler.registerEvent();
@@ -65,36 +110,7 @@ public class XiaoNaoHandler {
                     // 小脑(误杀)惩罚写这里
                     TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
-                        if (deathReason.getPath().equals("revolver_shot")
-                                || deathReason.getPath().equals("general_attack")
-                                || deathReason.getPath().equals("sniper_rifle")
-                                || deathReason.getPath().equals("nunchuck_hit")
-                                || deathReason.getPath().equals("bat_hit")
-                                || deathReason.getPath().equals("gun_shot")
-                                || deathReason.getPath().equals("hoan_meirin_attack")
-                                || deathReason.getPath().equals("arrow")
-                                || deathReason.getPath().equals("trident")
-                                || deathReason.getPath().equals("knife_stab")
-                                || deathReason.getPath().equals("stalker_knife")
-                                || deathReason.getPath().equals("knife")
-                                || deathReason.getPath().equals("fell_out_of_train")
-                                || deathReason.getPath().equals("poison")
-                                || deathReason.getPath().equals("throwing_knife_hit")
-                                || deathReason.getPath().equals("throwing_knife")
-                                || deathReason.getPath().equals("bowen")
-                                || deathReason.getPath().equals("baton_kill")
-                                || deathReason.getPath().equals("fire_axe")
-                                || deathReason.getPath().equals("ninja_knife")
-                                || deathReason.getPath().equals("ninja_shuriken")
-                                || deathReason.getPath().equals("short_shotgun")
-                                || deathReason.getPath().equals("grenade")
-                                || deathReason.getPath().equals("zero_one_five_shot")
-                                || deathReason.getPath().equals("incinerator_pushed")
-                                || deathReason.getPath().equals("manhole_suffocation")
-                                || deathReason.getPath().equals("stalactite_impale")
-                                || deathReason.getPath().equals("flamethrower_burned")
-                                || deathReason.getPath().equals("boulder_crush")
-                                || deathReason.getPath().equals("desert_eagle_shot")) {
+                        if (isXiaoNaoReason(deathReason)) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
                             TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                             // 仇杀客事件：误杀发生时强化仇杀客

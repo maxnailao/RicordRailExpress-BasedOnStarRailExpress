@@ -14,7 +14,7 @@ import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.MengyanPlayerWidget;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
