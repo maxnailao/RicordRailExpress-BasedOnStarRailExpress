@@ -30,8 +30,8 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
 import org.agmas.noellesroles.packet.BuilderWallS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.BounsRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 

@@ -28,7 +28,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -63,6 +63,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
     public int explosionCooldownTicks = 0;
 
     private boolean gaveStartingItems = false;
+    private boolean potionKilledPlayer = false;
     private final List<ShieldExpiry> shieldExpiries = new ArrayList<>();
     private final Map<UUID, FireArrowMark> fireArrowMarks = new HashMap<>();
 
@@ -378,7 +379,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             explosionArmed = false;
             sync();
             WizardSpells.castNineRingFireball(this, sp);
-            sp.getCooldowns().addCooldown(ModItems.WIZARD_STAFF, 20);
         } else {
             if (sp.getCooldowns().isOnCooldown(ModItems.WIZARD_STAFF)) {
                 return;
@@ -388,8 +388,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
                         SoundSource.PLAYERS, 0.8f, 1.2f);
             }
             WizardSpells.castFireArrow(this, sp);
-            int cooldown = (int) Math.round(config().wizardFireArrowCooldownSeconds * 20);
-            sp.getCooldowns().addCooldown(ModItems.WIZARD_STAFF, cooldown);
         }
     }
 
@@ -399,7 +397,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             return;
         }
         mark.hits++;
-        int needed = config().wizardFireArrowHitsToKill;
+        int needed = 3;
         if (mark.hits >= needed) {
             mark.deathTicks = GameConstants.getInTicks(0, config().wizardFireArrowDeathDelaySeconds);
             target.displayClientMessage(Component.translatable("message.noellesroles.wizard.fire_arrow_hit")
@@ -447,6 +445,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             mark.deathTicks--;
             if (mark.deathTicks <= 0) {
                 GameUtils.killPlayer(serverTarget, true, caster, Noellesroles.id("wizard_fire_arrow"));
+                onKillWhileShielded();
                 caster.getCooldowns().addCooldown(ModItems.WIZARD_STAFF,
                         io.wifi.starrailexpress.game.GameConstants.ITEM_COOLDOWNS.get(
                                 io.wifi.starrailexpress.index.TMMItems.KNIFE));
@@ -459,13 +458,14 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         if (sp.getCooldowns().isOnCooldown(ModItems.WIZARD_POTION)) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.potion_cd",
                     Math.max(1, Math.round(sp.getCooldowns().getCooldownPercent(ModItems.WIZARD_POTION, 0f)
-                            * config().wizardPotionCooldown))).withStyle(ChatFormatting.RED), true);
+                            * 160))).withStyle(ChatFormatting.RED), true);
             return false;
         }
-        sp.getCooldowns().addCooldown(ModItems.WIZARD_POTION, GameConstants.getInTicks(0, config().wizardPotionCooldown));
+        sp.getCooldowns().addCooldown(ModItems.WIZARD_POTION, GameConstants.getInTicks(0, 160));
         addMana(config().wizardPotionManaGain);
         io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(sp).addArmor();
         potionShieldTicks = GameConstants.getInTicks(0, config().wizardPotionImmuneSeconds);
+        potionKilledPlayer = false;
         sync();
         castFx(sp, SoundEvents.BREWING_STAND_BREW, ParticleTypes.WITCH);
         sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.potion_used")
@@ -479,10 +479,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         }
         potionShieldTicks = 0;
         spendMana(config().wizardPotionManaGain);
-        if (player instanceof ServerPlayer sp) {
-            sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.potion_shield_broken")
-                    .withStyle(ChatFormatting.RED), true);
-        }
+        applyPotionKillPenalty();
         sync();
     }
 
@@ -492,7 +489,27 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         if (armor.getArmor() > 0) {
             armor.removeArmor();
         }
+        applyPotionKillPenalty();
         sync();
+    }
+
+    private void applyPotionKillPenalty() {
+        if (potionKilledPlayer) return;
+        float penalty = this.mana / 2f;
+        if (penalty > 0) {
+            spendMana(penalty);
+            if (player instanceof ServerPlayer sp) {
+                sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.potion_no_kill_penalty",
+                                Math.round(penalty))
+                        .withStyle(ChatFormatting.RED), true);
+            }
+        }
+    }
+
+    public void onKillWhileShielded() {
+        if (potionShieldTicks > 0) {
+            potionKilledPlayer = true;
+        }
     }
 
     private void grantStartingItems(ServerPlayer sp) {

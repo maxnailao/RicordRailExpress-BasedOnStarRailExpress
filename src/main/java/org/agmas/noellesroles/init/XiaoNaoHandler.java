@@ -6,13 +6,14 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 小脑惩罚
@@ -23,6 +24,7 @@ public class XiaoNaoHandler {
         TeamKillViolationHandler.registerEvent();
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
+
                 if (isInnocent) {
                     SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
@@ -61,6 +63,7 @@ public class XiaoNaoHandler {
                         return;
                     }
                     // 小脑(误杀)惩罚写这里
+                    TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (deathReason.getPath().equals("revolver_shot")
                                 || deathReason.getPath().equals("general_attack")

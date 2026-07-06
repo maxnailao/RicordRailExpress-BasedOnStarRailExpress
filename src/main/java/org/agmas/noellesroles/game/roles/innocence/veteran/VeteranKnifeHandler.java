@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.HashSet;
 import java.util.Set;

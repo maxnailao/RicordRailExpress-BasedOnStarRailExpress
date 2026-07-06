@@ -4,12 +4,14 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -56,7 +58,10 @@ public record PlayerStatsBeforeRefugee(Vec3 pos, int money, ListTag inventory, V
         }
         player.getInventory().clearContent();
         player.getInventory().load(playerStats.inventory());
-        StupidRoleUtils.clearAllSatisfiedItems(player, TMMItems.BAT);
+        // 棒球员的球棒是职业自带武器，亡命徒恢复时不清除
+        if (!SREGameWorldComponent.KEY.get(player.level()).isRole(player, BounsRoles.BASEBALL_PLAYER)) {
+            StupidRoleUtils.clearAllSatisfiedItems(player, TMMItems.BAT);
+        }
         player.setCamera(player);
 
         SREArmorPlayerComponent bartenderPlayerComponent = SREArmorPlayerComponent.KEY.get(player);

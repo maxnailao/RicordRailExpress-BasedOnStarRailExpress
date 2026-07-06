@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.SansRenderer;
 import io.wifi.starrailexpress.client.StaminaRenderer;
 import io.wifi.starrailexpress.client.StatusBarHUD;
-import io.wifi.starrailexpress.client.StatusEffectRenderer;
 import io.wifi.starrailexpress.client.gui.CrosshairRenderer;
 import io.wifi.starrailexpress.game.GameConstants;
 import net.exmo.sre.camera.client.AdvancedCameraDirector;
@@ -52,7 +51,7 @@ public class InGameHudMixin {
         if (player == null)
             return;
         // Font renderer = Minecraft.getInstance().font;
-        
+
         StatusBarHUD.getInstance().render(trueContext, tickCounter.getRealtimeDeltaTicks());
         MapStatusBarHudRenderer.render(trueContext);
         StaminaRenderer.renderHud(player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
@@ -68,26 +67,6 @@ public class InGameHudMixin {
             return;
         }
         original.call(context, tickCounter);
-    }
-
-    @WrapMethod(method = "renderEffects")
-    private void tmm$renderStatusEffects(GuiGraphics context, DeltaTracker tickCounter, Operation<Void> original) {
-        // 运镜动画期间与原版 F1 一致，完全隐藏状态效果。
-        if (AdvancedCameraDirector.shouldOverride()) {
-            return;
-        }
-        // 原版 HUD 模式下保留原版药水图标显示。
-        if (SREClient.shouldRenderVanillaHud()) {
-            original.call(context, tickCounter);
-            return;
-        }
-        LocalPlayer player = this.minecraft.player;
-        if (player == null) {
-            original.call(context, tickCounter);
-            return;
-        }
-        // 自定义排版：图标 + 剩余时间，Shift 展开显示名称（换行）。
-        StatusEffectRenderer.render(this.minecraft, context, player);
     }
 
     @WrapMethod(method = "renderCrosshair")

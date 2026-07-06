@@ -98,7 +98,7 @@ import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.MercenaryContractItem;
 import org.agmas.noellesroles.content.item.CourierMailItem;
 import org.agmas.noellesroles.content.item.NewspaperItem;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
@@ -432,6 +432,11 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(DoomedSinnerFateRevealS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> context.client()
+                    .setScreen(new org.agmas.noellesroles.client.screen.DoomedSinnerFateScreen(payload)));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ShowCustomNewspaperPacket.ID, (payload, context) -> {
@@ -1051,7 +1056,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     });
                 });
 
-        DetectiveListenStepHandler.registerEvents();
+        AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
         // 注册零一五第二枪客户端处理器
         // ClientPlayNetworking.registerGlobalReceiver(
@@ -1371,7 +1376,6 @@ public class NoellesrolesClient implements ClientModInitializer {
             tooltipHelper(TMMItems.DEFENSE_VIAL, itemStack, list);
             tooltipHelper(ModItems.DELUSION_VIAL, itemStack, list);
             tooltipHelper(ModItems.ONCE_REVOLVER, itemStack, list);
-            tooltipHelper(ModItems.SHORT_SHOTGUN, itemStack, list);
             tooltipHelper(FunnyItems.PROBLEM_SET, itemStack, list);
             tooltipHelper(FunnyItems.SHISIYE, itemStack, list);
             tooltipHelper(FunnyItems.BOWEN_BADGE, itemStack, list);

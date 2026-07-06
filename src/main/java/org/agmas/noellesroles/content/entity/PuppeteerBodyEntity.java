@@ -18,8 +18,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
-import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;

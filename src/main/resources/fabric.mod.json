@@ -70,6 +70,7 @@
       "noellesroles:panda",
       "noellesroles:config",
       "noellesroles:gambler",
+      "noellesroles:doomed_sinner",
       "noellesroles:executioner",
       "noellesroles:dio",
       "noellesroles:recaller",
@@ -241,7 +242,9 @@
       "noellesroles:cake_maker",
       "noellesroles:adventurer",
       "noellesroles:silencer",
-      "noellesroles:embalmer",
+      "noellesroles:diviner",
+      "noellesroles:doomed_sinner",
+      "noellesroles:ghost_eye",
       "noellesroles:coward",
       "noellesroles:dumb_woman",
       "noellesroles:zhizhang",
@@ -286,5 +289,9 @@
   },
   "conflicts": {
     "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*"
   }
 }

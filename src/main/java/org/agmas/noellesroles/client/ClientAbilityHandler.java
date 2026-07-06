@@ -16,7 +16,7 @@ import org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket;
 import org.agmas.noellesroles.packet.RepairPrimarySkillC2SPacket;
 import org.agmas.noellesroles.packet.UnifiedSkillInputC2SPacket;
 import org.agmas.noellesroles.packet.WizardSwitchSpellC2SPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.UUID;
 
@@ -54,7 +54,7 @@ public class ClientAbilityHandler {
         var currentRole = gameWorldComponent.getRole(client.player);
 
         // 模仿者客户端前置逻辑：复制模式无目标→提示，消息技能→打开界面
-        if (currentRole != null && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.IMITATOR)) {
+        if (currentRole != null && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.role.ModRoles.IMITATOR)) {
             var comp = org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent.KEY.get(client.player);
             if (comp.isCopyMode) {
                 var hitResult = client.hitResult;
@@ -85,9 +85,9 @@ public class ClientAbilityHandler {
                             .withStyle(net.minecraft.ChatFormatting.RED), true);
                     return;
                 }
-                if (currentAbility.equals(org.agmas.noellesroles.game.roles.innocence.role.BounsRoles.TELEGRAPHER_ID)) {
+                if (currentAbility.equals(org.agmas.noellesroles.role.BounsRoles.TELEGRAPHER_ID)) {
                     client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.TelegrapherScreen()));
-                } else if (currentAbility.equals(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.BROADCASTER_ID)) {
+                } else if (currentAbility.equals(org.agmas.noellesroles.role.ModRoles.BROADCASTER_ID)) {
                     client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.BroadcasterScreen()));
                 }
                 return;

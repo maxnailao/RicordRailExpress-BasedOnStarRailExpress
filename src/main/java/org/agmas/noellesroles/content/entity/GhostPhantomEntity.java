@@ -20,7 +20,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.betterkillerghost.BetterKillerGhostComponent;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;

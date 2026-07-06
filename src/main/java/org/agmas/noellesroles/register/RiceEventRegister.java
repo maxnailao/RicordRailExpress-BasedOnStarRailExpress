@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * Rice's Role Rhapsody 事件注册，

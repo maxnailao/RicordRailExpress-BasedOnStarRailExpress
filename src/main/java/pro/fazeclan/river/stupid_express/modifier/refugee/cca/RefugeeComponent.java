@@ -9,7 +9,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEventsRegister;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -71,6 +71,12 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
     @Override
     public boolean shouldSyncWith(ServerPlayer sp) {
         return true;
+    }
+    public void clear(){
+        this.pendingRevivals.clear();
+        this.pendingWho = null;
+        this.isPendingRestore = false;
+        this.players_stats.clear();
     }
 
     public List<RefugeeData> getPendingRevivals() {

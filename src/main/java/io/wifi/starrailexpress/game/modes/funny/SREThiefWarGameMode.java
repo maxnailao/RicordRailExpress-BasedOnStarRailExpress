@@ -19,7 +19,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.RoleUtils;
 

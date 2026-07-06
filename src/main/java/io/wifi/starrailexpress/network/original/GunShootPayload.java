@@ -36,7 +36,7 @@ import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 

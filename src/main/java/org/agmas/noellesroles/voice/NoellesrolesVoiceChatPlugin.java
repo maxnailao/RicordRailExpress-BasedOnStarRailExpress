@@ -24,7 +24,7 @@ import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {

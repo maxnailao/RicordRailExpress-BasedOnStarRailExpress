@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.agmas.noellesroles.content.entity.LockEntity;
 import org.agmas.noellesroles.content.entity.LockEntityManager;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 加固门道具

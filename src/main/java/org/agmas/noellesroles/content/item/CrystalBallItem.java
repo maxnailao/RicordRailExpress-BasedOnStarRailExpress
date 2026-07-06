@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import org.agmas.noellesroles.game.roles.innocence.diviner.DivinerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 晶球：占卜家专用。右键对准一具尸体进行占卜，得知死者职业与名字（60 秒冷却，已占卜的尸体不可再次占卜）。

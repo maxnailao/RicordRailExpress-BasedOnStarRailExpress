@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.packet.CreateCreeperBombAreaPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;

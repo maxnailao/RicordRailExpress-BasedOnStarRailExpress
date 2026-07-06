@@ -1,12 +1,14 @@
 package org.agmas.noellesroles.client.hud.roles;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 public final class AmonHud {
     public static void register() {
@@ -15,7 +17,7 @@ public final class AmonHud {
             var player = Minecraft.getInstance().player;
             AmonPlayerComponent amon = ModComponents.AMON.get(player);
             int x = context.guiWidth() - 190;
-            int y = context.guiHeight() - 46;
+            int y = context.guiHeight() - 57;
 
             // 终幕阶段：显示倒计时与备用能力，戏耍众人。
             if (amon.finalePhase) {
@@ -50,6 +52,19 @@ public final class AmonHud {
             context.drawString(Minecraft.getInstance().font,
                     Component.translatable("hud.noellesroles.amon.usurped", amon.usurpCount),
                     x, y + 33, amon.hasUsurped ? 0xFFD700 : 0xAAAAAA);
+
+            // 「种时之虫」技能冷却
+            var ability = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY.get(player);
+            int cd = ability.getSkillState(SRE.id("amon_plant_seed")).cooldown;
+            if (cd > 0) {
+                context.drawString(Minecraft.getInstance().font,
+                        Component.translatable("hud.noellesroles.amon.cooldown", (cd + 19) / 20),
+                        x, y + 44, 0xFF7755);
+            } else {
+                context.drawString(Minecraft.getInstance().font,
+                        Component.translatable("hud.noellesroles.amon.ready"),
+                        x, y + 44, 0x55FF55);
+            }
         });
     }
 }

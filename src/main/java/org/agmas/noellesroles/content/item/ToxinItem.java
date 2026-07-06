@@ -22,7 +22,7 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.HSRConstants;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public class ToxinItem extends Item {
@@ -32,6 +32,17 @@ public class ToxinItem extends Item {
 
     public InteractionResultHolder<ItemStack> use(Level world, @NotNull Player user, InteractionHand hand) {
         ItemStack itemStack = user.getItemInHand(hand);
+        // 耐久耗尽的毒针无法使用（需回商店补满）。/ A depleted toxin cannot be used until refilled at the shop.
+        if (!world.isClientSide) {
+            if (ToxinDurability.isDepleted(itemStack)) {
+                user.displayClientMessage(
+                        Component.translatable("message.noellesroles.toxin.depleted").withStyle(ChatFormatting.DARK_RED),
+                        true);
+                return InteractionResultHolder.fail(itemStack);
+            }
+        } else if (itemStack.isDamageableItem() && itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
+            return InteractionResultHolder.fail(itemStack);
+        }
         user.startUsingItem(hand);
         return InteractionResultHolder.consume(itemStack);
     }
@@ -52,7 +63,12 @@ public class ToxinItem extends Item {
                                 player.playSound(NRSounds.SYRINGE_STAB, 0.15F, 1.0F);
                                 player.swing(InteractionHand.MAIN_HAND);
                                 if (!player.isCreative()) {
-                                    player.getMainHandItem().shrink(1);
+                                    // 不再消耗整支毒针，而是消耗 1 点耐久（耗尽提示，但保留毒针，可回商店补满）。
+                                    if (ToxinDurability.consumeOne(player.getMainHandItem())) {
+                                        player.displayClientMessage(Component
+                                                .translatable("message.noellesroles.toxin.depleted")
+                                                .withStyle(ChatFormatting.DARK_RED), true);
+                                    }
                                     if (player.level() instanceof ServerLevel slevel) {
                                         var gameComponent = SREGameWorldComponent.KEY.get(player.level());
                                         slevel.players().forEach((pl) -> {

@@ -634,12 +634,15 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     public static class StoreItemWidget extends Button {
         public final LimitedInventoryScreen screen;
         public final ShopEntry entry;
+        /** 该条目在商店列表中的下标，用于在渲染时取实时（已同步）条目价格，避免显示价与扣费价不同步。 */
+        public final int index;
 
         public StoreItemWidget(LimitedInventoryScreen screen, int x, int y, @NotNull ShopEntry entry, int index) {
             super(x, y, 16, 16, entry.stack().getHoverName(),
                     (a) -> ClientPlayNetworking.send(new StoreBuyPayload(index)), DEFAULT_NARRATION);
             this.screen = screen;
             this.entry = entry;
+            this.index = index;
         }
 
         @Override
@@ -656,11 +659,23 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             // \u6253\u6298\uFF0C\u5219\u7528\u7EFF\u8272\u5C55\u793A\u6298\u540E\u4EF7\u3002
             // Show the dynamic price: if discounted by DynamicShopComponent, render the
             // reduced price in green.
-            int basePrice = this.entry.price();
+            // 取实时（已同步）的商店条目，使显示的基础价/折后价与服务端实际扣费价一致；
+            // 开屏后若基础价被调整（如 /sre config reload 重建商店），快照价会过期，这里改读实时条目。
+            ShopEntry liveEntry = this.entry;
+            List<ShopEntry> liveEntries = this.screen.getShopEntries();
+            if (this.index >= 0 && this.index < liveEntries.size()) {
+                liveEntry = liveEntries.get(this.index);
+            }
+            int basePrice = liveEntry.price();
+            // 用服务端同步来的价格覆盖显示用基础价（按下标 + itemId 校验），保证显示价与服务端实际扣费一致。
+            basePrice = io.wifi.starrailexpress.shop.client.ShopPriceClientCache.overrideBasePrice(this.index,
+                    liveEntry.stack(), basePrice);
             int effectivePrice = basePrice;
             final var clientPlayer = Minecraft.getInstance().player;
             if (clientPlayer != null) {
-                effectivePrice = DynamicShopComponent.KEY.get(clientPlayer).effectivePrice(this.entry);
+                effectivePrice = DynamicShopComponent.KEY.get(clientPlayer).effectivePrice(
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(liveEntry.stack().getItem()),
+                        basePrice);
             }
             MutableComponent price = Component.literal(effectivePrice + "\uE781");
             int displayX = this.getX() - 4 - this.screen.font.width(price) / 2;

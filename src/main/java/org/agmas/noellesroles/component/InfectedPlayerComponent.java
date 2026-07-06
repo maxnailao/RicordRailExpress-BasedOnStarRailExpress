@@ -3,6 +3,7 @@ package org.agmas.noellesroles.component;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -10,9 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.NRSounds;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -41,7 +41,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
     private static final int INFECTOR_CHECK_INTERVAL = 40; // 每2秒检查一次感染源状态（原来每tick检查）
 
     // 死亡原因标识
-    public static final net.minecraft.resources.ResourceLocation INFECTION_DEATH_REASON = Noellesroles.id("infection");
+    public static final net.minecraft.resources.ResourceLocation INFECTION_DEATH_REASON = GameConstants.DeathReasons.INFECTION;
 
     // 配置值
     private static final int INFECTED_KILL_TIME = 240 * 20; // 240秒致死，硬编码

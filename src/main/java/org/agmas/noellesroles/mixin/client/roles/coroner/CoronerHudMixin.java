@@ -33,7 +33,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -223,7 +223,11 @@ public abstract class CoronerHudMixin {
                     }
                     context.drawString(renderer, roleInfo, -renderer.width(roleInfo) / 2, 48, CommonColors.WHITE);
                 }
-                if ((SREClient.isPlayerSpectatingOrCreative() || selfrole.canSeeBodyKiller()) && !hasPenalty) {
+                // 验尸官不允许看到尸体的凶手（即便处于旁观/创造），其余可看凶手的职业不受影响
+                boolean selfIsCoroner = selfrole != null && ModRoles.CORONER_ID.equals(selfrole.identifier());
+                boolean showBodyKiller = (SREClient.isPlayerSpectatingOrCreative() || selfrole.canSeeBodyKiller())
+                        && !selfIsCoroner;
+                if (showBodyKiller && !hasPenalty) {
                     var killerName = Component.translatable("sre.general.unknown");
                     UUID killerId = NoellesrolesClient.targetBody.getKillerUuid();
                     if (killerId != null) {
@@ -243,7 +247,7 @@ public abstract class CoronerHudMixin {
                     if (playerInfo != null) {
                         conspiratorName = Component.literal(playerInfo.getProfile().getName());
                     }
-                    int evidenceY = (SREClient.isPlayerSpectatingOrCreative() || selfrole.canSeeBodyKiller()) ? 80 : 64;
+                    int evidenceY = showBodyKiller ? 80 : 64;
                     Component evidenceInfo = Component
                             .translatable("hud.coroner.body.conspirator_evidence", conspiratorName)
                             .withColor(ModRoles.CONSPIRATOR.color());

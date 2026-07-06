@@ -13,7 +13,7 @@ import net.minecraft.world.item.component.CustomData;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.content.item.BombItem;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 public class BomberHud {
     public static void register() {

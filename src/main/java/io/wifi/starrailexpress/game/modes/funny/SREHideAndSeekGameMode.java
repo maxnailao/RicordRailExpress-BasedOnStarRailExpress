@@ -40,7 +40,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
@@ -99,10 +99,6 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
             final var value = entry.getValue();
             if (value != null) {
                 gameWorldComponent.addRole(key, value, false);
-                // 自定义职业的初始物品已通过 INITIAL_ITEMS_MAP 在 assignModdedRole 事件中发放，此处跳过避免重复
-                if (!"customrole".equals(value.identifier().getNamespace())) {
-                    value.getDefaultItems().forEach(item -> key.getInventory().placeItemBackInInventory(item));
-                }
                 Harpymodloader.LOGGER.debug("Assigned role " + value.getIdentifier() + " to " + key.getName());
                 if (value.canUseKiller()) {
                     SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(key);

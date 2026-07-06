@@ -29,9 +29,18 @@ public abstract class SREAbstractInfoClass {
         return RoleUtils.getRoleOrModifierNameWithColor(this);
     }
 
+    public abstract Component getName();
+    public abstract Component getDescription();
+    public abstract boolean hasSimpleDescription();
+    public abstract Component getSimpleDescription();
     public abstract ResourceLocation identifier();
+    public abstract int color();
 
+    public int getColor() {
+        return color();
+    }
     public ResourceLocation getIdentifier() {
         return identifier();
     }
+    
 }

@@ -13,13 +13,13 @@ public class OtherRolesRegister {
     public static void registerSons() {
     CuckooHud.register();
         VoteHud.register();
-
+        GreatDetectiveHud.register();
         CustomPendingHud.register();
         AdmirerHud.register();
         AvengerHud.register();
         BomberHud.register();
         BoxerHud.register();
-        DetectiveHud.register();
+        AgentHud.register();
         DetectivePassiveHud.register();
         DIOHud.register();
         ExecutionerHud.register();
@@ -29,6 +29,7 @@ public class OtherRolesRegister {
         MagicianHud.register();
         MonitorHud.register();
         MorphlingHud.register();
+        GhostEyeHud.register();
         SilencerHud.register();
         NostalgistHud.register();
         NianShouHud.register();
@@ -60,11 +61,13 @@ public class OtherRolesRegister {
         WarlockHud.register();
         WizardHud.register();
         RavenHud.register();
+        DoomedSinnerHud.register();
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
         AdventurerHud.register();
         ReasonerHud.register();
         EmbalmerHud.register();
         SkincrawlerHud.register();
+        SwapperHud.register();
         PhantomMusicianHud.register();
         ZhizhangHud.register();
         GuardianHud.register();

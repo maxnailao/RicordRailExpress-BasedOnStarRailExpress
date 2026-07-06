@@ -3,7 +3,7 @@ package org.agmas.noellesroles.game.roles.killer.conspirator;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGiveKillerBalance;
 import io.wifi.starrailexpress.game.GameConstants;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 public class ConspiratorKilledPlayer {
     public static void registerEvents() {

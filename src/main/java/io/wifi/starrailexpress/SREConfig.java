@@ -21,6 +21,8 @@ public class SREConfig implements ConfigData {
             SREConfig.class);
 
 
+
+
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -85,6 +87,8 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     @Tooltip(count = 2)
     public boolean knifeDurabilityMode = true;
+    @ConfigEntry.Category(value = "shop")
+    public boolean knifeBrokenWhenNotAvailable = true;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int revolverPrice = 285;
@@ -120,7 +124,7 @@ public class SREConfig implements ConfigData {
     public int bodyBagPrice = 100;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
-    public int blackoutPrice = 190;
+    public int blackoutPrice = 120;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int monitorBrokenPrice = 60;
@@ -235,11 +239,11 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     public boolean forensicShowCorpseFacing = true;
     @ConfigEntry.Category(value = "forensic")
-    @ConfigSync(shouldSync = true)
     public boolean forensicBloodTrail = true;
     @ConfigEntry.Category(value = "forensic")
-    @ConfigSync(shouldSync = true)
-    public int forensicBloodTrailSeconds = 40;
+    public int bloodTrackWetDistance = 8;
+    @ConfigEntry.Category(value = "forensic")
+    public int forensicBloodTrailSeconds = 5;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
     public boolean forensicShowDeathOrder = false;
@@ -247,7 +251,6 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     public boolean forensicShowDragMark = true;
     @ConfigEntry.Category(value = "forensic")
-    @ConfigSync(shouldSync = true)
     public boolean forensicDoorMark = false;
 
     // // 自动切换预设配置 - 游戏开始前自动应用指定预设，留空则不自动切换

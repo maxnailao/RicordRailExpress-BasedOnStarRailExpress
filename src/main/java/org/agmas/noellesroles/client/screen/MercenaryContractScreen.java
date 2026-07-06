@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.client.widget.MercenaryContractPlayerWidget;
 import org.agmas.noellesroles.packet.MercenaryContractSignC2SPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.awt.*;
 import java.util.ArrayList;

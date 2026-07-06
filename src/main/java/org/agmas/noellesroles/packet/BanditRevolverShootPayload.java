@@ -24,7 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public record BanditRevolverShootPayload(int target) implements CustomPacketPayload {

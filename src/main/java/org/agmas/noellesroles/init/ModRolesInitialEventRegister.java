@@ -69,8 +69,8 @@ import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPla
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
@@ -246,8 +246,8 @@ public class ModRolesInitialEventRegister {
                 return;
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
-                if (!SREItemUtils.hasItem(player, io.wifi.starrailexpress.index.TMMItems.REVOLVER)) {
-                    player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance().copy());
+                if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
+                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
                 return;
             }
@@ -326,8 +326,6 @@ public class ModRolesInitialEventRegister {
                 recorderPlayerComponent.init();
                 recorderPlayerComponent.sync();
             }
-            // 使用映射表添加初始物品
-            RoleInitialItems.addInitialItemsForRole(player, role);
 
             if (role.equals(ModRoles.GAMBLER)) {
                 org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent gamblerPlayerComponent = org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent.KEY
@@ -520,6 +518,34 @@ public class ModRolesInitialEventRegister {
                                 SREPlayerShopComponent.KEY.get(player).addToBalance(50);
                             }
                         }));
+        // 宿命的罪人技能注册：
+        // 技能 1「命运的启示」(G)：近距离查看准星目标最近 3 次杀人方式
+        // 技能 2「重启」(Shift+G)：随机死因死亡脱离，回房间 + 短暂无敌
+        RoleSkill.register(ModRoles.DOOMED_SINNER,
+                RoleSkill.skill(SRE.id("doomed_sinner_revelation"),
+                        "skill.noellesroles.doomed_sinner.revelation",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) {
+                                return false;
+                            }
+                            ServerPlayer target = context.target() != null
+                                    && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp
+                                            ? sp
+                                            : null;
+                            return org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent
+                                    .revealFate(player, target);
+                        }).cooldownSeconds(40).showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("doomed_sinner_reboot"),
+                        "skill.noellesroles.doomed_sinner.reboot",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) {
+                                return false;
+                            }
+                            return org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent
+                                    .reboot(player);
+                        }).cooldownSeconds(75).shifted(true).showOnHud(true).announceToSelf(true).build());
 
         // 智力障碍患者技能注册：探查周围3.5格内有刀的玩家，5秒后高亮3秒，CD60秒
         RoleSkill.register(ModRoles.ZHIZHANG, RoleSkill.skill(

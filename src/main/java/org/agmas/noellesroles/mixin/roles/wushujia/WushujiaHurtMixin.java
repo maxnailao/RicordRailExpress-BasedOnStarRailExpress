@@ -3,7 +3,7 @@ package org.agmas.noellesroles.mixin.roles.wushujia;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPunchHandler;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import org.spongepowered.asm.mixin.Mixin;

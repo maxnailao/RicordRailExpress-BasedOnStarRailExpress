@@ -19,7 +19,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.SilenceTotemEntity;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.init.ModEntities;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public class SilenceTotemItem extends Item {

@@ -39,8 +39,8 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -930,14 +930,13 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     // ==================== 特殊平民职业检查 ====================
 
     /**
-     * 特殊平民职业列表：潜水员、医生、飞行员、锁匠、琪露诺（BAKA）、帕秋莉、钳工
+     * 特殊平民职业列表：潜水员、医生、飞行员、琪露诺（BAKA）、帕秋莉、钳工
      * 这些职业在最后阶段和职业调整阶段需要被优先选取
      */
     private static final Set<SRERole> SPECIAL_CIVILIAN_ROLES = Set.of(
             ModRoles.DIVER,
             ModRoles.DOCTOR,
             ModRoles.PILOT,
-            ModRoles.LOCKSMITH,
             RedHouseRoles.BAKA,
             RedHouseRoles.PACHURI,
             ModRoles.FITTER);

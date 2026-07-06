@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -44,6 +44,13 @@ public abstract class InstinctMixin {
 
         // 检查玩家是否正在被操纵师控制 - 如果是，禁止使用杀手本能
         if (noellesroles$isPlayerBeingControlled(player)) {
+            cir.setReturnValue(false);
+            cir.cancel();
+            return;
+        }
+
+        // 鬼眼·杨间 诡域内：禁止开启杀手透视
+        if (player.hasEffect(org.agmas.noellesroles.init.ModEffects.EERIE_DOMAIN)) {
             cir.setReturnValue(false);
             cir.cancel();
             return;

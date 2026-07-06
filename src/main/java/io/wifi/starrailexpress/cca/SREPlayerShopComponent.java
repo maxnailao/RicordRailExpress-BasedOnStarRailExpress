@@ -92,7 +92,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             return false;
         }
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(this.player.level());
-        if (gameWorld == null || !gameWorld.isRole(this.player, org.agmas.noellesroles.game.roles.innocence.role.ModRoles.WIZARD)) {
+        if (gameWorld == null || !gameWorld.isRole(this.player, org.agmas.noellesroles.role.ModRoles.WIZARD)) {
             return false;
         }
         if (amount > 0) {

@@ -35,7 +35,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -76,8 +76,10 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     public static final int INCUBATION_TICKS = 90 * 20;
     /** 终幕「寻找阿蒙」持续时间：80 秒。 */
     public static final int FINALE_TICKS = 80 * 20;
-    /** 种植半径：4 格。 */
-    private static final double PLANT_RADIUS_SQR = 4.0 * 4.0;
+    /** 种植半径：15 格。 */
+    private static final double PLANT_RADIUS_SQR = 15.0 * 15.0;
+    /** 夺舍半径：15 格（玩家主动夺舍时，目标须在此范围内）。 */
+    private static final double USURP_RADIUS_SQR = 15.0 * 15.0;
     /** 食物/饮料标签（noellesroles:food_drink），用于窃取豁免。 */
     private static final TagKey<net.minecraft.world.item.Item> FOOD_DRINK_TAG = TagKey.create(
             Registries.ITEM, ResourceLocation.fromNamespaceAndPath("noellesroles", "food_drink"));
@@ -268,9 +270,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             return false;
         }
         seeds.put(target.getUUID(), 0);
-        // 仅通知阿蒙自己；绝不给受害者任何反馈。
         amon.displayClientMessage(Component.translatable("message.noellesroles.amon.seed_planted")
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
+        // 被寄生者获得音效与提示。
+        target.playNotifySound(SoundEvents.SCULK_CLICKING, SoundSource.PLAYERS, 0.8f, 0.6f);
+        target.displayClientMessage(Component.translatable("message.noellesroles.amon.parasitized")
+                .withStyle(ChatFormatting.DARK_PURPLE), false);
         sync();
         return true;
     }
@@ -296,6 +301,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             sync();
             return false;
         }
+        // 夺舍距离限制：目标须在 15 格以内。
+        if (amon.distanceToSqr(host) > USURP_RADIUS_SQR) {
+            amon.displayClientMessage(Component.translatable("message.noellesroles.amon.usurp_too_far")
+                    .withStyle(ChatFormatting.RED), true);
+            return false;
+        }
         // 记录本体位置（完成夺舍时在此生成阿蒙自己的尸体）。
         homePos = amon.position();
         homeYRot = amon.getYHeadRot();
@@ -305,6 +316,10 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         amon.teleportTo(level, host.getX(), host.getY(), host.getZ(), host.getYRot(), host.getXRot());
         amon.displayClientMessage(Component.translatable("message.noellesroles.amon.possess_start", host.getName())
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
+        // 被夺舍宿主获得音效与提示。
+        host.playNotifySound(SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.PLAYERS, 0.9f, 0.7f);
+        host.displayClientMessage(Component.translatable("message.noellesroles.amon.possessed_victim")
+                .withStyle(ChatFormatting.DARK_PURPLE), false);
         sync();
         return true;
     }
@@ -323,7 +338,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             return;
         }
         refreshPossessionEffects(amon);
-        amon.teleportTo(level, target.getX(), target.getY(), target.getZ(), target.getYRot(), target.getXRot());
+        // 阿蒙掌控目标移动：阿蒙隐身自由移动，目标被锁定移动/视角并每 tick 牵引到阿蒙位置；
+        // 二者均无碰撞箱，避免互相拥挤。
+        target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 10, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 10, 0, false, false, false));
+        target.teleportTo(level, amon.getX(), amon.getY(), amon.getZ(), amon.getYRot(), amon.getXRot());
     }
 
     /**
@@ -456,8 +476,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         // 阿蒙抛下原来的躯壳：在旧位置生成阿蒙自己的尸体。
         spawnOwnBody(amon, level, amonOldPos, amonOldYRot);
 
-        // 阿蒙夺舍后回到自己的房间（而非传送到宿主旁边），只顶替宿主外观。
-        GameUtils.teleportBackToRoom(amon);
+        // 阿蒙夺舍后传送到一个随机房间（而非自己的房间或宿主旁边），只顶替宿主外观。
+        GameUtils.teleportToRandomRoom(amon);
         setDisguise(hostUuid);
 
         usurpCount++;

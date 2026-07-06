@@ -42,7 +42,7 @@ public class SilencerPlayerWidget extends Button {
         } else {
             if (SREClient.gameComponent != null
                     && SREClient.gameComponent.getRole(skillTarget.getProfile().getId()) != null
-                    && org.agmas.noellesroles.game.roles.innocence.role.ModRoles.isVisibleKillerTeammate(
+                    && org.agmas.noellesroles.role.ModRoles.isVisibleKillerTeammate(
                         SREClient.gameComponent.getRole(skillTarget.getProfile().getId()))) {
                 setDisplayText(Component.translatable("hud.general.killer_friend").withStyle(ChatFormatting.GOLD));
             }

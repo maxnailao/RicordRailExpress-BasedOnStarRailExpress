@@ -21,7 +21,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
@@ -153,8 +153,8 @@ public class InfectedWinChecker {
                 clearAllInfection(serverWorld);
                 // 疫使胜利 - 算作杀手胜利
                 RoleUtils.customWinnerWin(serverWorld, WinStatus.KILLERS,
-                    org.agmas.noellesroles.game.roles.innocence.role.ModRoles.INFECTED.identifier().getPath(),
-                    java.util.OptionalInt.of(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.INFECTED.color()));
+                    org.agmas.noellesroles.role.ModRoles.INFECTED.identifier().getPath(),
+                    java.util.OptionalInt.of(org.agmas.noellesroles.role.ModRoles.INFECTED.color()));
                 return WinStatus.KILLERS;
             }
 
@@ -164,8 +164,8 @@ public class InfectedWinChecker {
                 clearAllInfection(serverWorld);
                 // 疫使胜利 - 算作杀手胜利
                 RoleUtils.customWinnerWin(serverWorld, WinStatus.KILLERS,
-                    org.agmas.noellesroles.game.roles.innocence.role.ModRoles.INFECTED.identifier().getPath(),
-                    java.util.OptionalInt.of(org.agmas.noellesroles.game.roles.innocence.role.ModRoles.INFECTED.color()));
+                    org.agmas.noellesroles.role.ModRoles.INFECTED.identifier().getPath(),
+                    java.util.OptionalInt.of(org.agmas.noellesroles.role.ModRoles.INFECTED.color()));
                 return WinStatus.KILLERS;
             }
 

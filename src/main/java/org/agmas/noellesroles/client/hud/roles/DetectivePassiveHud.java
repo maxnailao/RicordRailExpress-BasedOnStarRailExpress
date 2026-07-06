@@ -5,10 +5,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.client.SREClient;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
-import org.agmas.noellesroles.client.DetectiveListenStepHandler;
+import org.agmas.noellesroles.client.AgentListenStepHandler;
 import org.joml.Vector3f;
 
-import static org.agmas.noellesroles.client.DetectiveListenStepHandler.*;
+import static org.agmas.noellesroles.client.AgentListenStepHandler.*;
 
 public class DetectivePassiveHud {
 
@@ -17,7 +17,7 @@ public class DetectivePassiveHud {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level == null || mc.player == null)
                 return;
-            if (!DetectiveListenStepHandler.canUseListenPassive(mc.player))
+            if (!AgentListenStepHandler.canUseListenPassive(mc.player))
                 return;
             if (SREClient.isPlayerSpectator())
                 return;
@@ -38,7 +38,7 @@ public class DetectivePassiveHud {
 
             // 遍历所有实体
             for (int i = soundInfos.size() - 1; i >= 0; i--) {
-                DetectiveListenStepHandler.SoundInfo info = soundInfos.get(i);
+                AgentListenStepHandler.SoundInfo info = soundInfos.get(i);
 
                 // 世界坐标 → 屏幕坐标
                 Vector3f screen = worldToScreen(info.pos.x, info.pos.y, info.pos.z);

@@ -2,7 +2,6 @@ package org.agmas.noellesroles.mixin.client.general;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.api.SRERole;
-import net.minecraft.resources.ResourceLocation;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
@@ -55,63 +54,58 @@ public class InventoryIntroductionRenderer {
             final int MAX_WIDTH = (int) (context.guiWidth() / scale / 3);
 
             if (role != null) {
-               ResourceLocation rid = role.getIdentifier();
-               String roleName = rid.getPath();
-               if (roleName != null) {
-                  int x = 10;
-                  int y = 10;
-                  Component roleNameComponent;
-                  Component roleInfoComponent;
-                  if ("customrole".equals(rid.getNamespace())) {
-                     var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(roleName);
-                     roleNameComponent = (cd != null && !cd.displayName.isEmpty())
-                         ? Component.literal(cd.displayName).withStyle(ChatFormatting.BOLD)
-                         : Component.translatable("announcement.star.role." + roleName).withStyle(ChatFormatting.BOLD);
-                     roleInfoComponent = (cd != null && !cd.description.isEmpty())
-                         ? Component.literal(cd.description.replace("\\n", "\n"))
-                         : Component.translatable("info.screen.roleid." + roleName);
-                  } else {
-                     roleNameComponent = Component.translatable("announcement.star.role." + roleName).withStyle(ChatFormatting.BOLD);
-                     roleInfoComponent = Component.translatable("info.screen.roleid." + roleName);
-                  }
-                  PoseStack poseStack = context.pose();
-                  poseStack.pushPose();
-                  poseStack.scale(scale, scale, 1.0F);
-                  float scaledX = (float) x / scale;
-                  float scaledY = (float) y / scale;
-                  this.renderScaledTextWithShadow(context, font, roleNameComponent, scaledX, scaledY, scale, 16777215,
-                        4210752);
-                  Objects.requireNonNull(font);
-                  int roleNameHeight = (int) (9.0F * scale);
-                  int currentY = y + roleNameHeight + 2;
-                  List<FormattedCharSequence> infoLines = font.split(roleInfoComponent, MAX_WIDTH);
-                  int i = 0;
-                  int maxInfoWidth = 0;
-                  for (FormattedCharSequence line : infoLines) {
-                     i++;
-                     if (currentY >= (float) context.guiHeight() / 3) {
-                        float lineY = (float) currentY / scale;
-                        var moreInfo = Component.translatable("info.screen.role.see_more")
-                              .withStyle(ChatFormatting.GRAY);
-                        maxInfoWidth = Math.max(maxInfoWidth, font.width(moreInfo));
-                        context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
-                        break;
-                     }
-                     maxInfoWidth = Math.max(maxInfoWidth, font.width(line));
-                     float lineY = (float) currentY / scale;
-                     context.drawString(font, line, (int) scaledX, (int) lineY, 11184810);
-                     currentY += (int) (9.0F * scale) + 2;
-                  }
 
-                  poseStack.popPose();
-                  int infoLineCount = i;
-                  Objects.requireNonNull(font);
-                  int var10000 = (int) (9.0F * scale);
-                  int totalHeight = var10000 + infoLineCount * (int) (9.0F * scale) + infoLineCount * 2 + 2;
-                  int scaledNameWidth = (int) ((float) font.width(roleNameComponent) * scale);
-                  int maxWidth = Math.max(scaledNameWidth, (int) (maxInfoWidth * scale));
-                  this.drawScaledBackground(context, x, y, maxWidth, totalHeight);
+               int x = 10;
+               int y = 10;
+               Component roleNameComponent;
+               Component roleInfoComponent;
+
+               roleNameComponent = RoleUtils.getRoleName(role).withStyle(ChatFormatting.BOLD);
+               roleInfoComponent = RoleUtils.getRoleSimpleDescription(role);
+
+               PoseStack poseStack = context.pose();
+               poseStack.pushPose();
+               poseStack.scale(scale, scale, 1.0F);
+               float scaledX = (float) x / scale;
+               float scaledY = (float) y / scale;
+               this.renderScaledTextWithShadow(context, font, roleNameComponent, scaledX, scaledY, scale, 16777215,
+                     4210752);
+               Objects.requireNonNull(font);
+               int roleNameHeight = (int) (9.0F * scale);
+               int currentY = y + roleNameHeight + 2;
+               List<FormattedCharSequence> infoLines = font.split(roleInfoComponent, MAX_WIDTH);
+               int i = 0;
+               int maxInfoWidth = 0;
+
+               final var moreInfo = Component.translatable("info.screen.role.see_more")
+                     .withStyle(ChatFormatting.GRAY);
+               for (FormattedCharSequence line : infoLines) {
+                  i++;
+                  float lineY = (float) currentY / scale;
+                  if (currentY >= (float) context.guiHeight() / 3) {
+                     maxInfoWidth = Math.max(maxInfoWidth, font.width(moreInfo));
+                     // context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
+                     break;
+                  }
+                  maxInfoWidth = Math.max(maxInfoWidth, font.width(line));
+                  context.drawString(font, line, (int) scaledX, (int) lineY, 11184810);
+                  currentY += (int) (9.0F * scale) + 2;
                }
+               {
+                  float lineY = (float) currentY / scale;
+                  maxInfoWidth = Math.max(maxInfoWidth, font.width(moreInfo));
+                  context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
+                  i++;
+               }
+               poseStack.popPose();
+               int infoLineCount = i;
+               Objects.requireNonNull(font);
+               int var10000 = (int) (9.0F * scale);
+               int totalHeight = var10000 + infoLineCount * (int) (9.0F * scale) + infoLineCount * 2 + 2;
+               int scaledNameWidth = (int) ((float) font.width(roleNameComponent) * scale);
+               int maxWidth = Math.max(scaledNameWidth, (int) (maxInfoWidth * scale));
+               this.drawScaledBackground(context, x, y, maxWidth, totalHeight);
+
             }
             // Modifier
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
@@ -121,9 +115,9 @@ public class InventoryIntroductionRenderer {
                   int x = 10;
                   int y = (int) ((float) context.guiHeight()) - 10;
                   for (var modifier : modifiers) {
-                     Component modifierNameComponent = modifier.getName()
+                     Component modifierNameComponent = modifier.getName(false)
                            .withStyle(ChatFormatting.BOLD);
-                     Component modifierInfoComponent = RoleUtils.getModifierDescription(modifier);
+                     Component modifierInfoComponent = RoleUtils.getModifierSimpleDescription(modifier);
                      PoseStack poseStack = context.pose();
                      poseStack.pushPose();
                      poseStack.scale(scale, scale, 1.0F);

@@ -83,6 +83,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.CloudStatus;
@@ -623,6 +624,24 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.tick();
         });
         SyncMapConfigPayload.registerReceiver();
+        // 商店价格同步：握手（哈希）+ 完整数据 / Shop price sync: handshake (hash) + full data
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.shop.network.ShopPriceHandshakeS2CPayload.TYPE, (payload, context) -> {
+                    String hash = payload.hash();
+                    context.client().execute(() -> {
+                        if (!io.wifi.starrailexpress.shop.client.ShopPriceClientCache.handleHandshake(hash)) {
+                            ClientPlayNetworking
+                                    .send(new io.wifi.starrailexpress.shop.network.ShopPriceRequestC2SPayload(hash));
+                        }
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.shop.network.ShopPriceDataS2CPayload.TYPE, (payload, context) -> {
+                    String hash = payload.hash();
+                    byte[] data = payload.data();
+                    context.client().execute(
+                            () -> io.wifi.starrailexpress.shop.client.ShopPriceClientCache.handleData(hash, data));
+                });
         FourthRoomStatePayload.registerReceiver();
         FourthRoomTableEffectsPayload.registerReceiver();
         ClientPlayNetworking.registerGlobalReceiver(CustomNarratorPacket.ID, (payload, context) -> {
@@ -993,7 +1012,7 @@ public class SREClient implements ClientModInitializer {
         CommandMacroExecutor.initialize();
 
         // Register HUD rendering for security camera
-        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((guiGraphics, deltaTick) -> {
+        HudRenderCallback.EVENT.register((guiGraphics, deltaTick) -> {
             SecurityCameraHUD.render(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
                     Minecraft.getInstance().getWindow().getGuiScaledHeight());
             SecurityCameraHUD.renderCameraFeed(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
@@ -1011,16 +1030,6 @@ public class SREClient implements ClientModInitializer {
             // 滞时雷引爆倒计时 HUD
             io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
-
-            // RoleUnlockHudRenderer.render(guiGraphics);
-
-            // // 添加地图详情渲染
-            // Font font = Minecraft.getInstance().font;
-            // LocalPlayer player = Minecraft.getInstance().player;
-            // if (font != null && player != null) {
-            // MapDetailsRenderer.renderHud(font, player, guiGraphics,
-            // deltaTick.getRealtimeDeltaTicks());
-            // }
         });
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointsPacket.ID, SyncWaypointsPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointVisibilityPacket.ID,

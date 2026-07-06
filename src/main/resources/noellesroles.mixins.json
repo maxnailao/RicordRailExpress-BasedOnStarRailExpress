@@ -82,8 +82,10 @@
   },
   "client": [
     "LivingEntityAccessor",
+    "client.general.AmonHideTargetMixin",
     "client.HandCuffsKeyBindingMixin",
     "client.InstinctMixin",
+    "client.VisionFogMixin",
     "client.LamBugFix",
     "client.LobbyCreditsHudMixin",
     "client.game.ChairWheelKeyMappingMixin",

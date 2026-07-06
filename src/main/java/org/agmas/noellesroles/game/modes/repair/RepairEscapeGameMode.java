@@ -26,7 +26,8 @@ import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.OpenRepairRoleSelectionS2CPacket;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.game_spec.RepairRoles;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -173,9 +174,9 @@ public class RepairEscapeGameMode extends GameMode {
             component.sync();
 
             gameWorldComponent.addRole(player, switch (faction) {
-                case HUNTER -> ModRoles.REPAIR_HUNTER;
-                case NEUTRAL -> ModRoles.REPAIR_NEUTRAL;
-                case SURVIVOR -> ModRoles.REPAIR_SURVIVOR;
+                case HUNTER -> RepairRoles.REPAIR_HUNTER;
+                case NEUTRAL -> RepairRoles.REPAIR_NEUTRAL;
+                case SURVIVOR -> RepairRoles.REPAIR_SURVIVOR;
             }, false);
             SREPlayerShopComponent.KEY.get(player).setBalance(startingCoins(faction));
             giveModeItems(player, faction, serverWorld.random);
@@ -277,7 +278,7 @@ public class RepairEscapeGameMode extends GameMode {
 
             boolean hunter = RepairRoleDefinition.byId(component.activeRole)
                     .map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER)
-                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_HUNTER));
+                    .orElse(gameWorldComponent.isRole(player, RepairRoles.REPAIR_HUNTER));
             if (hunter) {
                 if (!GameUtils.isPlayerEliminated(player)) {
                     livingHunters++;
@@ -287,7 +288,7 @@ public class RepairEscapeGameMode extends GameMode {
 
             boolean survivor = RepairRoleDefinition.byId(component.activeRole)
                     .map(role -> role.faction == RepairRoleDefinition.Faction.SURVIVOR)
-                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_SURVIVOR));
+                    .orElse(gameWorldComponent.isRole(player, RepairRoles.REPAIR_SURVIVOR));
             if (!survivor) {
                 continue;
             }
@@ -305,7 +306,7 @@ public class RepairEscapeGameMode extends GameMode {
             var component = ModComponents.REPAIR_ROLES.get(player);
             boolean survivor = RepairRoleDefinition.byId(component.activeRole)
                     .map(role -> role.faction == RepairRoleDefinition.Faction.SURVIVOR)
-                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_SURVIVOR));
+                    .orElse(gameWorldComponent.isRole(player, RepairRoles.REPAIR_SURVIVOR));
             if (survivor && !player.getTags().contains(RepairModeState.ESCAPED_TAG) && !GameUtils.isPlayerEliminated(player)) {
                 totalSurvivors++;
                 if (component.downed) {
@@ -346,10 +347,10 @@ public class RepairEscapeGameMode extends GameMode {
     }
 
     private static RepairRoleDefinition.Faction selectionFaction(ServerPlayer player, SREGameWorldComponent gameWorldComponent) {
-        if (gameWorldComponent.isRole(player, ModRoles.REPAIR_HUNTER)) {
+        if (gameWorldComponent.isRole(player, RepairRoles.REPAIR_HUNTER)) {
             return RepairRoleDefinition.Faction.HUNTER;
         }
-        if (gameWorldComponent.isRole(player, ModRoles.REPAIR_NEUTRAL)) {
+        if (gameWorldComponent.isRole(player, RepairRoles.REPAIR_NEUTRAL)) {
             return RepairRoleDefinition.Faction.NEUTRAL;
         }
         return RepairRoleDefinition.Faction.SURVIVOR;
@@ -363,9 +364,9 @@ public class RepairEscapeGameMode extends GameMode {
         int survivorSpawnIndex = 0;
         for (ServerPlayer player : serverWorld.players()) {
             var component = ModComponents.REPAIR_ROLES.get(player);
-            RepairRoleDefinition.Faction faction = gameWorldComponent.isRole(player, ModRoles.REPAIR_HUNTER)
+            RepairRoleDefinition.Faction faction = gameWorldComponent.isRole(player, RepairRoles.REPAIR_HUNTER)
                     ? RepairRoleDefinition.Faction.HUNTER
-                    : gameWorldComponent.isRole(player, ModRoles.REPAIR_NEUTRAL)
+                    : gameWorldComponent.isRole(player, RepairRoles.REPAIR_NEUTRAL)
                             ? RepairRoleDefinition.Faction.NEUTRAL
                             : RepairRoleDefinition.Faction.SURVIVOR;
             RepairRoleDefinition role = RepairForcedRoleState.forcedRole(player.getUUID())

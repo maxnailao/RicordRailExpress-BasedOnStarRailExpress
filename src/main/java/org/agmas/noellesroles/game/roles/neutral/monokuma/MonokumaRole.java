@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.awt.*;
 
@@ -37,7 +37,9 @@ public class MonokumaRole extends CustomWinnerRole {
 
   @Override
   public void onKill(Player victim, boolean spawnBody, Player killer, ResourceLocation deathReason) {
-    MonokumaPlayerComponent.KEY.get(killer).onKillPlayer();
+    if (killer == null)
+      return;
+    MonokumaPlayerComponent.KEY.maybeGet(killer).ifPresent(MonokumaPlayerComponent::onKillPlayer);
     return;
   }
 

@@ -25,7 +25,7 @@ import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.NRSounds;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;

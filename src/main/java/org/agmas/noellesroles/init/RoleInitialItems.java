@@ -8,10 +8,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
-import org.agmas.noellesroles.game.roles.innocence.role.BounsRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
-import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
-import org.agmas.noellesroles.game.roles.innocence.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.BounsRoles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 
 import java.util.ArrayList;
@@ -71,17 +71,33 @@ public class RoleInitialItems {
                 }
             }
         }
-
     }
 
-
+    public static ArrayList<ItemStack> getInitialItemsForRole(SRERole role) {
+        ArrayList<ItemStack> result = new ArrayList<>();
+        List<Supplier<ItemStack>> itemSuppliers = RoleInitialItems.INITIAL_ITEMS_MAP.get(role);
+        if (itemSuppliers != null) {
+            for (Supplier<ItemStack> itemSupplier : itemSuppliers) {
+                ItemStack itemStack = itemSupplier.get();
+                if (itemStack != null && !itemStack.isEmpty()) {
+                    result.add(itemStack.copy());
+                }
+            }
+        } else {
+            // 静态 Map 中没有此角色 → 回退到 getDefaultItems()（自定义职业走这条路）
+            List<ItemStack> defaultItems = role.getDefaultItems();
+            for (var i : defaultItems) {
+                if (i != null && !i.isEmpty()) {
+                    result.add(i.copy());
+                }
+            }
+        }
+        return result;
+    }
 
     private static ItemStack normalizeInitialItemForRole(SRERole role, ItemStack stack) {
-
         return stack.copy();
     }
-
-
 
     /**
      * 初始化初始物品映射，职业的初始物品加在这里。
@@ -308,6 +324,9 @@ public class RoleInitialItems {
 
         // 警卫初始物品（无开局物品）
         INITIAL_ITEMS_MAP.put(ModRoles.SHERIFF, new ArrayList<>());
+
+        // 鬼眼·杨间 初始物品（无开局物品；完成两个任务后才获得左轮手枪）
+        INITIAL_ITEMS_MAP.put(ModRoles.GHOST_EYE, new ArrayList<>());
 
         // 广播员初始物品 - 对讲机
         List<Supplier<ItemStack>> broadcasterItems = new ArrayList<>();

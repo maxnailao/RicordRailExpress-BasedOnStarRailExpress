@@ -1,22 +1,18 @@
 package org.agmas.noellesroles.init;
 
 import dev.doctor4t.ratatouille.util.registrar.ItemRegistrar;
-import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.index.DevItems;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.index.TMMItems;
 import static io.wifi.starrailexpress.index.TMMItems.*;
-import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
@@ -26,7 +22,6 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
 import org.agmas.noellesroles.content.item.charge_item.*;
 import org.agmas.noellesroles.utils.LocalDateData;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -155,7 +150,8 @@ public class ModItems {
                     .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)
                             .alwaysEdible().build())),
             "pill", CONSUMABLES_GROUP);
-    public static final Item TOXIN = register(new ToxinItem((new Item.Properties()).stacksTo(1)), "toxin",
+    public static final Item TOXIN = register(
+            new ToxinItem((new Item.Properties()).durability(ToxinDurability.MAX_DURABILITY)), "toxin",
             CONSUMABLES_GROUP);
     public static final Item REUSABLE_TOXIN = register(new ReusableToxinItem((new Item.Properties()).stacksTo(1)), "reusable_toxin",
             NOELLESROLES_ALL_GROUP);
@@ -178,9 +174,12 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
-    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)), "cake_ingredients", CONSUMABLES_GROUP);
-    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg", CONSUMABLES_GROUP);
-    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)), "cake_milk_bucket", CONSUMABLES_GROUP);
+    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)),
+            "cake_ingredients", CONSUMABLES_GROUP);
+    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg",
+            CONSUMABLES_GROUP);
+    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)),
+            "cake_milk_bucket", CONSUMABLES_GROUP);
     public static final Item PAN = register(
             new PanItem((new Item.Properties()).stacksTo(1)), "pan",
             CONSUMABLES_GROUP);
@@ -490,7 +489,7 @@ public class ModItems {
     public static final Item DELIVERY_BOX = register(
             new DeliveryBoxItem(new Item.Properties().stacksTo(8)),
             "delivery_box", ROLE_ITEMS_GROUP);
- /**
+    /**
      * 快递包裹盒子
      * - 射命丸文专属物品
      * - 在商店以150金币购买
@@ -1116,11 +1115,12 @@ public class ModItems {
             new Item(new Item.Properties().stacksTo(1)),
             "transport_package", MISC_ITEMS_GROUP);
 
+    public static final Item SCARLET_PERCEPTION_SWORD = register(
+            new ScarletPerceptionSwordItem(
+                    new Item.Properties().stacksTo(1).attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
+            "scarlet_perception_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
-    public static List<ShopEntry> POISONER_SHOP_ENTRIES = new ArrayList<>();
-    public static List<ShopEntry> BANDIT_SHOP_ENTRIES = new ArrayList<>();
-
     static {
         var examplerPsychoLore = new ItemLore(
                 List.of(Component.translatable("itemstack.exampler.psychoitem.item_lore.1"),

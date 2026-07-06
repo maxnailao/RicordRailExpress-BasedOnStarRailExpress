@@ -13,6 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
 
+import org.agmas.noellesroles.init.XiaoNaoHandler;
+
 /**
  * 队友击杀违规检测处理器。
  * <p>
@@ -54,7 +56,9 @@ public class TeamKillViolationHandler {
         if (killer.hasPermissions(1)) {
             return;
         }
-
+        // 白名单检测小脑
+        if (!XiaoNaoHandler.isXiaoNaoReason(deathReason))
+            return;
         // 排除中立职业：击杀者或受害者任意一方为中立则不计入
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
         SRERole killerRole = gameWorldComponent.getRole(killer);

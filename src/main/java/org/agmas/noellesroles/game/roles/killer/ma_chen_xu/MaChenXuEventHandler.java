@@ -6,7 +6,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeath;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import org.agmas.noellesroles.game.roles.innocence.role.ModRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 /**

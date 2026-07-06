@@ -6,7 +6,7 @@ import io.wifi.starrailexpress.network.original.KnifeStabPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.game.roles.innocence.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

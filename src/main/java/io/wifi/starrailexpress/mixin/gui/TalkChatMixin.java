@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class TalkChatMixin {
     @Inject(method = "isPlayerOpped", at = @At("HEAD"), cancellable = true)
     private static void execute(MinecraftServer server, ServerPlayer player, CallbackInfoReturnable<Boolean> cir) {
-        cir.cancel();
         cir.setReturnValue(player.hasPermissions(2));
     }
 }

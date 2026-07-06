@@ -10,10 +10,11 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.event.AFKEventHandler;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
+import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.PlayerMountainHandler;
-import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.network.*;
@@ -42,7 +43,12 @@ public class SREEventRegister {
         PlayerMountainHandler.register();
 
         // 游戏开始：通知客户端（驱动 OnGameStartedClient 事件），并向本局玩家播放默认开场镜头
-        io.wifi.starrailexpress.event.OnGameStarted.EVENT.register(serverLevel -> {
+
+        OnGameEnd.EVENT.register((serverLevel, __cca) -> {
+            RefugeeComponent.KEY.get(serverLevel).clear();
+        });
+        OnGameStarted.EVENT.register(serverLevel -> {
+            RefugeeComponent.KEY.get(serverLevel).clear();
             for (ServerPlayer player : serverLevel.players()) {
                 PacketTracker.sendToClient(player, new OnGameStartedPayload());
                 // 仅向本局参与者（冒险模式）播放"由远及近到玩家位置"的开场镜头
@@ -65,8 +71,8 @@ public class SREEventRegister {
             StupidExpressConfig.HANDLER.syncToClient(handler.getPlayer());
         });
         // 玩家加入时同步当前赞助者名单
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                io.wifi.starrailexpress.sponsor.SponsorManager.syncTo(handler.getPlayer()));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender,
+                server) -> io.wifi.starrailexpress.sponsor.SponsorManager.syncTo(handler.getPlayer()));
         EntitySleepEvents.ALLOW_SLEEP_TIME.register((player, pos, isNight) -> {
             if (SREGameWorldComponent.KEY.get(player.level()).isRunning())
                 return InteractionResult.SUCCESS;
@@ -125,7 +131,8 @@ public class SREEventRegister {
             if (SRE.REPLAY_MANAGER != null) {
                 var role = gameWorldComponent.getRole(handler.player);
                 if (role != null) {
-                    SRE.REPLAY_MANAGER.addEvent(GameReplayData.EventType.PLAYER_JOIN, handler.player.getUUID(), null, null,
+                    SRE.REPLAY_MANAGER.addEvent(GameReplayData.EventType.PLAYER_JOIN, handler.player.getUUID(), null,
+                            null,
                             handler.player.getScoreboardName());
                 }
             }
@@ -134,6 +141,8 @@ public class SREEventRegister {
             SceneAssetServer.sendCurrentManifest(handler.player);
             // 同步当前路径点给新加入的玩家
             io.wifi.starrailexpress.util.WaypointSync.syncTo(handler.player);
+            // 商店价格同步握手（仅哈希；客户端本地命中则无需服务端再发完整内容）
+            io.wifi.starrailexpress.shop.ShopPriceSyncServer.syncTo(handler.player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             CustomRoleServerNetwork.onPlayerDisconnect(handler.player.getUUID());
@@ -152,7 +161,8 @@ public class SREEventRegister {
             if (SRE.REPLAY_MANAGER != null) {
                 var role = gameWorldComponent.getRole(handler.player);
                 if (role != null) {
-                    SRE.REPLAY_MANAGER.addEvent(GameReplayData.EventType.PLAYER_LEAVE, handler.player.getUUID(), null, null,
+                    SRE.REPLAY_MANAGER.addEvent(GameReplayData.EventType.PLAYER_LEAVE, handler.player.getUUID(), null,
+                            null,
                             handler.player.getScoreboardName());
                 }
             }
