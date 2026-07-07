@@ -39,6 +39,12 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "testofknifeskin", QualityColor.COMMON);
         registerSkin(SkinTypes.KNIFE, "test", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.KNIFE, "knife_bunana", QualityColor.EPIC);
+        registerSkin(SkinTypes.KNIFE, "knife_tangdao", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_cheese", QualityColor.RARE);
+        registerSkin(SkinTypes.KNIFE, "knife_stonetool", QualityColor.COMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_brokenbottle", QualityColor.COMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_ceremonial", QualityColor.RARE);
+        registerSkin(SkinTypes.KNIFE, "knife_goldcross", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤
@@ -58,6 +64,12 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.REVOLVER, "revolver_golden", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.REVOLVER, "revolver_onyx", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.REVOLVER, "revolver_xiangzadi", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_g7", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.REVOLVER, "revolver_m1911", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.REVOLVER, "revolver_crude", QualityColor.COMMON);
+        registerSkin(SkinTypes.REVOLVER, "revolver_liberator", QualityColor.RARE);
+        registerSkin(SkinTypes.REVOLVER, "revolver_longbarrel", QualityColor.RARE);
+        registerSkin(SkinTypes.REVOLVER, "revolver_banana", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）皮肤
@@ -70,6 +82,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.BAT, "baseball_bat_fish", QualityColor.RARE);
         registerSkin(SkinTypes.BAT, "baseball_bat_ice", QualityColor.EPIC);
         registerSkin(SkinTypes.BAT, "baseball_bat_sonic", QualityColor.EPIC);
+        registerSkin(SkinTypes.BAT, "baseball_bat_studded", QualityColor.UNCOMMON);
 
         // ═══════════════════════════════════════════════════════════════════
         // GRENADE（手雷）皮肤
@@ -86,6 +99,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_diamond", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.GRENADE, "grenade_kanshenmekan", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zisefurui", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_zhumei", QualityColor.RARE);
 
         // ═══════════════════════════════════════════════════════════════════
         // HAT（帽子）皮肤

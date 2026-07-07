@@ -1,0 +1,6 @@
+﻿{
+	"parent": "item/generated",
+	"textures": {
+		"layer0": "starrailexpress:item/skins/knife/knife_tangdao"
+	}
+}

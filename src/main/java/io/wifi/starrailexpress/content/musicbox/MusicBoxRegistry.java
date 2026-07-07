@@ -47,14 +47,14 @@ public final class MusicBoxRegistry {
      */
     public static void registerBuiltins() {
         register(new MusicBox("triumph_01", MusicBoxSounds.MUSICBOX_TRIUMPH_01,
-                Component.translatable("musicbox.starrailexpress.triumph_01")));
+                Component.translatable("musicbox.starrailexpress.triumph_01"), 3.0f));
         register(new MusicBox("triumph_02", MusicBoxSounds.MUSICBOX_TRIUMPH_02,
-                Component.translatable("musicbox.starrailexpress.triumph_02")));
+                Component.translatable("musicbox.starrailexpress.triumph_02"), 3.0f));
         register(new MusicBox("triumph_03", MusicBoxSounds.MUSICBOX_TRIUMPH_03,
-                Component.translatable("musicbox.starrailexpress.triumph_03")));
+                Component.translatable("musicbox.starrailexpress.triumph_03"), 3.0f));
         register(new MusicBox("gaoshouruyun", MusicBoxSounds.MUSICBOX_GAOSHOURUYUN,
-                Component.translatable("musicbox.starrailexpress.gaoshouruyun")));
+                Component.translatable("musicbox.starrailexpress.gaoshouruyun"), 3.0f));
         register(new MusicBox("inhuman", MusicBoxSounds.MUSICBOX_INHUMAN,
-                Component.translatable("musicbox.starrailexpress.inhuman"), 1.3f));
+                Component.translatable("musicbox.starrailexpress.inhuman"), 3.9f));
     }
 }

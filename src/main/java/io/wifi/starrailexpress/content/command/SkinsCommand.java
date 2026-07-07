@@ -53,6 +53,10 @@ public class SkinsCommand {
                         .then(Commands.literal("give")
                                 .requires(source -> source.hasPermission(2))
                                 .then(Commands.argument("targets", EntityArgument.players())
+                                        // all 分支: /tmm:skins give <targets> all
+                                        .then(Commands.literal("all")
+                                                .executes(SkinsCommand::executeGiveAll))
+                                        // 单个皮肤分支: /tmm:skins give <targets> <type> <skin>
                                         .then(Commands.argument("type", StringArgumentType.word())
                                                 .suggests(SKIN_TYPE_SUGGESTIONS)
                                                 .then(Commands.argument("skin", StringArgumentType.word())
@@ -130,6 +134,39 @@ public class SkinsCommand {
                 true);
 
         return count;
+    }
+
+    /**
+     * 执行解锁全部皮肤命令
+     * /tmm:skins give <targets> all
+     */
+    private static int executeGiveAll(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        Collection<ServerPlayer> targets = EntityArgument.getPlayers(ctx, "targets");
+
+        int totalSkins = 0;
+        for (ServerPlayer target : targets) {
+            for (var entry : ItemSkinManager.getSkins().entrySet()) {
+                String typeName = entry.getKey();
+                for (String skinName : entry.getValue().keySet()) {
+                    ItemSkinManager.unlockSkinForItemType(target, typeName, skinName);
+                    totalSkins++;
+                }
+            }
+            ItemSkinManager.sync(target);
+        }
+
+        final int finalTotal = totalSkins;
+        final String targetNames = targets.stream()
+                .map(p -> p.getName().getString())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("unknown");
+
+        ctx.getSource().sendSuccess(
+                () -> Component.translatable("commands.sre.skins.give_all.success",
+                        finalTotal, targetNames),
+                true);
+
+        return totalSkins;
     }
 
     private static void openSkinScreen(ServerPlayer player) {

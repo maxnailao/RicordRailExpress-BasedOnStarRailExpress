@@ -18,6 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.List;
+
 /**
  * 疯魔乱斗场
  * <p>
@@ -47,6 +49,16 @@ public class SREPsychoBrawlGameMode extends WTLooseEndsGameMode {
 
     public SREPsychoBrawlGameMode(ResourceLocation identifier) {
         super(identifier);
+    }
+
+    // ──────────────── 每局游戏初始化：重置状态 ────────────────
+
+    @Override
+    public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            List<ServerPlayer> players) {
+        super.initializeGame(serverWorld, gameWorldComponent, players);
+        psychoStartTime = 0;
+        shieldRefreshTick = 0;
     }
 
     @Override

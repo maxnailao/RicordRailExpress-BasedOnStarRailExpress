@@ -50,7 +50,8 @@ public class CustomRoleServerNetwork {
     }
 
     /**
-     * 分块发送 JSON 内容，当内容超过单包限制时自动拆分
+     * 分块发送 JSON 内容，当内容超过单包 UTF-8 字节限制时自动拆分
+     * 按 UTF-8 字节数分块，避免多字节字符（如中文）导致超出 writeUtf 的 32767 字节上限
      */
     private static void sendChunked(ServerPlayer player, int hash, String fullContent) {
         // hash 相同则跳过
@@ -59,14 +60,27 @@ public class CustomRoleServerNetwork {
             return;
         }
 
-        int totalLength = fullContent.length();
-        int maxChunkChars = CustomRoleSyncPayload.MAX_CHUNK_CHARS;
-        int totalChunks = (totalLength + maxChunkChars - 1) / maxChunkChars;
+        byte[] allBytes = fullContent.getBytes(StandardCharsets.UTF_8);
+        int maxChunkBytes = CustomRoleSyncPayload.MAX_CHUNK_BYTES;
+
+        // 先按 UTF-8 字符边界计算所有分块起点，确保不会在多字节字符中间切割
+        java.util.List<Integer> chunkStarts = new java.util.ArrayList<>();
+        int pos = 0;
+        while (pos < allBytes.length) {
+            chunkStarts.add(pos);
+            int next = Math.min(pos + maxChunkBytes, allBytes.length);
+            // UTF-8 续字节格式为 10xxxxxx (0x80..0xBF)，回退到字符起始位置
+            while (next < allBytes.length && (allBytes[next] & 0xC0) == 0x80) {
+                next--;
+            }
+            pos = next;
+        }
+        int totalChunks = chunkStarts.size();
 
         for (int i = 0; i < totalChunks; i++) {
-            int start = i * maxChunkChars;
-            int end = Math.min(start + maxChunkChars, totalLength);
-            String chunk = fullContent.substring(start, end);
+            int start = chunkStarts.get(i);
+            int end = (i + 1 < totalChunks) ? chunkStarts.get(i + 1) : allBytes.length;
+            String chunk = new String(allBytes, start, end - start, StandardCharsets.UTF_8);
             ServerPlayNetworking.send(player, new CustomRoleSyncPayload(hash, totalChunks, i, chunk));
         }
 

@@ -59,6 +59,10 @@ public record DesertEagleShootPayload(Action action, int targetId, boolean isHea
             if (!mainHandStack.is(ModItems.DESERT_EAGLE))
                 return;
 
+            // 旁观者/死亡检查
+            if (player.isSpectator() || !player.isAlive())
+                return;
+
             switch (payload.action()) {
                 case SHOOT -> handleShoot(player, mainHandStack, payload.targetId(), payload.isHeadshot());
                 case RELOAD -> handleReload(player, mainHandStack);

@@ -17,8 +17,8 @@ public class CustomRoleSyncPayload implements CustomPacketPayload {
     public static final Type<CustomRoleSyncPayload> TYPE = new Type<>(PAYLOAD_ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, CustomRoleSyncPayload> CODEC;
 
-    /** 每块最大字符数（留安全余量，远小于 32767） */
-    public static final int MAX_CHUNK_CHARS = 30000;
+    /** 每块最大 UTF-8 字节数（留安全余量，远小于 32767） */
+    public static final int MAX_CHUNK_BYTES = 30000;
 
     private final int hash;
     private final int totalChunks;
@@ -46,14 +46,14 @@ public class CustomRoleSyncPayload implements CustomPacketPayload {
         buf.writeInt(hash);
         buf.writeInt(totalChunks);
         buf.writeInt(chunkIndex);
-        buf.writeUtf(chunkData);
+        buf.writeUtf(chunkData, MAX_CHUNK_BYTES);
     }
 
     public static CustomRoleSyncPayload read(FriendlyByteBuf buf) {
         int hash = buf.readInt();
         int totalChunks = buf.readInt();
         int chunkIndex = buf.readInt();
-        String chunkData = buf.readUtf();
+        String chunkData = buf.readUtf(MAX_CHUNK_BYTES);
         return new CustomRoleSyncPayload(hash, totalChunks, chunkIndex, chunkData);
     }
 

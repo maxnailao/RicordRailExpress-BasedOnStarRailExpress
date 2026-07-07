@@ -114,6 +114,10 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
         if (!stack.is(ModItems.DESERT_EAGLE))
             return;
 
+        // 旁观者/死亡检查
+        if (user.isSpectator() || !user.isAlive())
+            return;
+
         // 冷却检查
         if (user.getCooldowns().isOnCooldown(stack.getItem()))
             return;
@@ -194,6 +198,10 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
     public static void tryReloadFromClient(Player user) {
         ItemStack stack = user.getMainHandItem();
         if (!stack.is(ModItems.DESERT_EAGLE))
+            return;
+
+        // 旁观者/死亡检查
+        if (user.isSpectator() || !user.isAlive())
             return;
 
         // 冷却检查
