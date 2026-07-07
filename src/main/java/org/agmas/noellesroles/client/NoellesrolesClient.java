@@ -388,6 +388,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ROLLING_LOG,
+                org.agmas.noellesroles.client.render.RollingLogRenderer::new);
         EntityRendererRegistry.register(ModEntities.PIGEON,
                 org.agmas.noellesroles.client.render.PigeonRenderer::new);
         EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
@@ -436,6 +438,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
+            TwoDimensionalTaskArrowRenderer.render(renderContext);
         });
         InstinctRenderer.registerInstinctEvents();
 

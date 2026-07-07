@@ -1200,10 +1200,10 @@ public class RoleShopHandler {
                     185,
                     ShopEntry.Type.WEAPON));
 
-            // C4炸药 - 300金币
+            // C4炸药 - 280金币
             GANGSTERS_SHOP.add(new ShopEntry(
                     ModItems.C4.getDefaultInstance(),
-                    300,
+                    280,
                     ShopEntry.Type.TOOL));
 
             // 撬棍 - 25金币

@@ -340,8 +340,10 @@ public class RoleUtils extends MCItemsUtils {
      * 
      * @return 返回Role
      */
-    public static SRERole getRoleFromName(String roleName) {
-        var roles = Noellesroles.id(roleName);
+    public static SRERole getRole(String roleName) {
+        var roles = ResourceLocation.tryParse(roleName);
+        if (roles == null)
+            return null;
         return TMMRoles.ROLES.get(roles);
     }
 
@@ -648,6 +650,7 @@ public class RoleUtils extends MCItemsUtils {
         }
         return true;
     }
+
     public static boolean isPlayerTheModifier(Player player, SREModifier... modifier) {
         if (player == null)
             return false;

@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.client.render.hud.stamina;
 import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
@@ -10,18 +12,11 @@ import io.wifi.starrailexpress.util.ProgressProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 
 public class StaminaSplitStyleRenderer {
-
-    private static float lastCooldown = 0f;
-    private static boolean playedCooldownSound = false;
-    private static ItemStack lastMainHandStack = ItemStack.EMPTY; // 用于跟踪上一次的主手物品
 
     private static float chargeDisplayValue = 0f; // 蓄力状态条平滑显示值（逐帧过渡用）
     public static StaminaBarRenderer view = new StaminaBarRenderer();
@@ -54,10 +49,10 @@ public class StaminaSplitStyleRenderer {
                 knifeFullyCharged = false;
             }
             itemPercent = itemChargeProvider.getPercent();
-        } else {
-            if (staminaProvider != null) {
-                staminaPercent = staminaProvider.getPercent();
-            }
+        }
+
+        if (staminaProvider != null) {
+            staminaPercent = staminaProvider.getPercent();
         }
         // 使用与TimeRenderer类似的颜色逻辑
         if (Math.abs(view.getTarget() - staminaPercent) > 0.1f) {
@@ -75,9 +70,6 @@ public class StaminaSplitStyleRenderer {
         } else if (staminaPercent < 0.6f) {
             colour = Mth.color(1f, 0.85f, 0.1f) | 0xFF000000;// 黄
         }
-
-        // 渲染主手物品冷却提示
-        renderMainHandCooldown(context, player, delta);
 
         if (staminaPercent >= 0) {
             // 渲染体力条 - 移动到物品栏上方
@@ -138,85 +130,6 @@ public class StaminaSplitStyleRenderer {
             int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;
             int iconY = barCenterY - ICON_SIZE / 2;
             context.blitSprite(STAMINA_ICON, iconX, iconY, ICON_SIZE, ICON_SIZE);
-        }
-    }
-
-    /**
-     * 渲染主手物品冷却提示
-     */
-    public static void renderMainHandCooldown(@NotNull GuiGraphics context, @NotNull LocalPlayer player, float delta) {
-        ItemStack mainHandStack = player.getMainHandItem();
-        ItemCooldowns cooldowns = player.getCooldowns();
-        float cooldown = cooldowns.getCooldownPercent(mainHandStack.getItem(), delta);
-
-        // 检查是否是同一个物品且冷却刚刚结束
-        if (lastCooldown > 0 && cooldown == 0 && !playedCooldownSound
-                && ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-            // 播放冷却结束音效
-            Minecraft.getInstance().getSoundManager().play(
-                    SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.7f, 1.0f));
-            playedCooldownSound = true;
-        } else if (cooldown > 0 || !ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-            // 如果物品已切换，则重置冷却音效标志
-            if (!ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-                // 如果切换到刀，则播放切刀音效
-                // if (mainHandStack.getItem() instanceof KnifeItem
-                // && !(lastMainHandStack.getItem() instanceof KnifeItem)) {
-                // Minecraft.getInstance().getSoundManager().play(
-                // SimpleSoundInstance.forUI(SoundEvents.IRON_GOLEM_REPAIR, 0.4f, 2.1f));
-                // }
-                playedCooldownSound = false;
-            }
-            // 如果物品仍在冷却中，重置音效标志
-            if (cooldown > 0) {
-                playedCooldownSound = false;
-            }
-        }
-
-        // 更新上一次冷却值和物品
-        lastCooldown = cooldown;
-        lastMainHandStack = mainHandStack.copy();
-
-        // 如果物品在冷却中，显示冷却百分比
-        if (cooldown > 0) {
-            int screenWidth = context.guiWidth();
-            int screenHeight = context.guiHeight();
-
-            // 在屏幕中心稍上方显示冷却文字
-            int x = screenWidth / 2;
-            int y = screenHeight - 48; // 物品栏上方
-
-            String cooldownText = String.format("%d%%", (int) (cooldown * 100));
-
-            // 根据冷却百分比改变颜色：红色->橙色->绿色
-            int textColor;
-            if (cooldown > 0.7f) {
-                textColor = 0xFFFF0000; // 红色
-            } else if (cooldown > 0.3f) {
-                textColor = 0xFFFFA500; // 橙色
-            } else {
-                textColor = 0xFF00FF00; // 绿色
-            }
-
-            // 绘制文字背景（半透明黑色）
-            // int textWidth = Minecraft.getInstance().font.width(cooldownText);
-            // int padding = 4;
-            // context.fill(
-            // x - textWidth / 2 - padding,
-            // y - padding,
-            // x + textWidth / 2 + padding,
-            // y + 9 + padding,
-            // 0x80000000
-            // );
-
-            // 绘制冷却文字
-            context.drawCenteredString(
-                    Minecraft.getInstance().font,
-                    cooldownText,
-                    x,
-                    y,
-                    textColor);
-
         }
     }
 
@@ -310,7 +223,31 @@ public class StaminaSplitStyleRenderer {
             }
         }
 
+        private void renderOutline(GuiGraphics context, int x1, int y1, int x2, int y2, int width,
+                int backgroundColor) {
+            // 如果边框宽度 <= 0，则不绘制
+            if (width <= 0)
+                return;
+
+            // 规范化坐标，确保 left<right, top<bottom
+            int left = Math.min(x1, x2);
+            int right = Math.max(x1, x2);
+            int top = Math.min(y1, y2);
+            int bottom = Math.max(y1, y2);
+
+            // 1. 上边框
+            context.fill(left, top, right, top + width, backgroundColor);
+            // 2. 下边框
+            context.fill(left, bottom - width, right, bottom, backgroundColor);
+            // 3. 左边框（避开上下边框已占用的区域，防止重叠绘制造成的视觉问题）
+            context.fill(left, top + width, left + width, bottom - width, backgroundColor);
+            // 4. 右边框
+            context.fill(right - width, top + width, right, bottom - width, backgroundColor);
+        }
+
         public void renderItemCharge(@NotNull GuiGraphics context, int colour, float value) {
+
+            RenderSystem.enableBlend();
             // 体力条参数 - 更现代、更扁平的设计
             int barWidth = 40; // 总宽度增加
             int barHeight = 6; // 高度减小变得更扁平
@@ -319,8 +256,13 @@ public class StaminaSplitStyleRenderer {
             colour = colour & 0x88FFFFFF;
             // 绘制背景（更现代化的半透明黑色）
             int backgroundColor = 0x55000000; // 更透明的背景
-            context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
-                    barHeight / 2 + barBorder, backgroundColor);
+            if (value <= 0) {
+                renderOutline(context, -halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, 1, backgroundColor);
+            } else {
+                context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, backgroundColor);
+            }
 
             // 计算当前体力条宽度 - 从左锚定，向右延伸
             int currentWidth = Math.round(barWidth * value);
@@ -329,6 +271,7 @@ public class StaminaSplitStyleRenderer {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
                 context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
             }
+            RenderSystem.disableBlend();
         }
 
         public float getTarget() {

@@ -1177,6 +1177,10 @@ public class RoleIntroduceScreen extends Screen {
                 lines.add(FormattedCharSequence.EMPTY);
                 if (selectedRole instanceof SRERole role) {
                     lines.addAll(font.split(role.getGoal(), textW));
+                    if (!role.canBeRandomed()) {
+                        lines.addAll(font.split(Component.translatable("screen.roleintroduce.role.cant_be_randomed")
+                                .withStyle(ChatFormatting.RED), textW));
+                    }
                 } else if (selectedRole instanceof Item it) {
                     lines.addAll(font.split(it.getDescription(), textW));
                 } else if (selectedRole instanceof SREModifier mod) {

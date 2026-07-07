@@ -15,17 +15,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ItemFrame.class)
 public class ItemFrameMixin {
 
-
     @Inject(method = "interact", at = @At("HEAD"), cancellable = true)
-    public void interact(Player player, InteractionHand interactionHand, CallbackInfoReturnable<InteractionResult> cir) {
+    public void interact(Player player, InteractionHand interactionHand,
+            CallbackInfoReturnable<InteractionResult> cir) {
         if (SRE.isLobby) {
             return;
         }
         SREGameWorldComponent sreGameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        if (sreGameWorldComponent !=null&& sreGameWorldComponent.isRunning()) {
+        if (sreGameWorldComponent != null && sreGameWorldComponent.isRunning()) {
             if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                cir.setReturnValue(InteractionResult.FAIL);
-                cir.cancel();
+                cir.setReturnValue(InteractionResult.PASS);
             }
         }
     }

@@ -291,6 +291,30 @@ public class InstinctRenderer {
             }
             return -1;
         });
+        // CUPID
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!GameUtils.isPlayerAliveAndSurvival(self))
+                return -1;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent != null && SREClient.gameComponent.isRole(self, ModRoles.CUPID)) {
+                if (!hasInstinct)
+                    return -1;
+                if (!(target instanceof Player targetPlayer))
+                    return -1;
+                if (targetPlayer.isSpectator())
+                    return -2;
+                if (WorldModifierComponent.KEY.get(targetPlayer.level()).isModifier(targetPlayer, SEModifiers.LOVERS)
+                        || LoversComponent.KEY.get(targetPlayer).isLover()) {
+                    return Color.ORANGE.getRGB();
+                }
+                return ModRoles.CUPID.color();
+            }
+            return -1;
+        });
         // 明星
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (Minecraft.getInstance() == null)
@@ -311,47 +335,7 @@ public class InstinctRenderer {
             }
             return -1;
         });
-        // 死亡惩罚
-        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (Minecraft.getInstance() == null)
-                return -1;
-            var self = Minecraft.getInstance().player;
-            if (self == null)
-                return -1;
-            if (SREClient.gameComponent != null && SREClient.gameComponent.isRole(self, ModRoles.CUPID)) {
-                if (!GameUtils.isPlayerAliveAndSurvival(self))
-                    return -1;
-                if (!hasInstinct)
-                    return -1;
-                if (!(target instanceof Player targetPlayer))
-                    return -1;
-                if (targetPlayer.isSpectator())
-                    return -2;
-                if (WorldModifierComponent.KEY.get(targetPlayer.level()).isModifier(targetPlayer, SEModifiers.LOVERS)
-                        || LoversComponent.KEY.get(targetPlayer).isLover()) {
-                    return Color.ORANGE.getRGB();
-                }
-                return ModRoles.CUPID.color();
-            }
-            if (!(self.isSpectator()))
-                return -1;
-            if (hasInstinct) {
-                var deathPenalty = org.agmas.noellesroles.component.ModComponents.DEATH_PENALTY.get(self);
-                if (deathPenalty.hasPenalty()) {
-                    if (!deathPenalty.chatEnabled)
-                        return -2;
-                    if (target instanceof Player target_player) {
-                        if (target_player.isSpectator())
-                            return -2;
-                        return new java.awt.Color(253, 253, 253).getRGB();
-                    } else {
-                        return -2;
-                    }
-                }
-            }
-            return -1;
-
-        });
+        // 死亡惩罚已被移到最高级的地方（调用处）
 
         // 秉烛人：可透视被秉烛的活人与对应尸体
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {

@@ -84,6 +84,7 @@ public class InGameHudMixin {
             original.call(context, tickCounter);
             return;
         }
+        // 因为wathe资源包的缘故，原版的攻击指示器基本上坏的
         LocalPlayer player = this.minecraft.player;
         if (player == null)
             return;

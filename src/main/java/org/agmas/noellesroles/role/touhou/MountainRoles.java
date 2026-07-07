@@ -39,6 +39,7 @@ public class MountainRoles {
             true) {
         private static final List<ShopEntry> NITORI_SHOP = List.of(
                 new ShopEntry(ModItems.DEALER_PACKAGE.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
         @Override
         public List<ShopEntry> getShopEntries() {
             return NITORI_SHOP;
@@ -81,7 +82,7 @@ public class MountainRoles {
                 return InteractionResult.SUCCESS;
             return InteractionResult.PASS;
         }
-    }.setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
+    }.setHiddenForRoleRotation(true).setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
 
     public static SRERole HATATE = TMMRoles.registerRole(new TouhouRole(HATATE_ID, // 角色 ID
             new Color(123, 63, 158).getRGB(), // 黑色 - 代表乌鸦
@@ -119,7 +120,7 @@ public class MountainRoles {
             return InteractionResult.PASS;
         }
 
-    }.setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
+    }.setHiddenForRoleRotation(true).setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
 
     public static void init() {
         // 强制交易：Nitori

@@ -363,19 +363,19 @@ public class SwitchMapCommand {
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Can Jump: " + (areas.canJump ? "Yes" : "No"))
+                () -> Component.literal("Can Jump: " + (areas.areasSettings.canJump ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Can Swim: " + (areas.canSwim ? "Yes" : "No"))
+                () -> Component.literal("Can SimpleSwim: " + (areas.areasSettings.canSimpleSwim ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Outside Noise: " + (areas.haveOutsideSound ? "Yes" : "No"))
+                () -> Component.literal("Outside Noise: " + (areas.areasSettings.haveOutsideSound ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Scene Outside Sound: " + areas.sceneOutsideSound)
+                () -> Component.literal("Scene Outside Sound: " + areas.areasSettings.sceneOutsideSound.name())
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(

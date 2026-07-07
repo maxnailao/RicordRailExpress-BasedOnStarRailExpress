@@ -9,6 +9,8 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+
 import org.agmas.noellesroles.content.entity.HurricaneEntity;
 import org.agmas.noellesroles.init.ModEntities;
 
@@ -34,6 +36,7 @@ public final class SceneRuntimeEvents {
             if (level instanceof ServerLevel serverLevel) {
                 tickOxygenDrowning(serverLevel);
                 MapStatusBarRuntime.tick(serverLevel);
+                SceneEventManager.tickSabotageAlarm(serverLevel);
             }
         });
     }
@@ -76,7 +79,8 @@ public final class SceneRuntimeEvents {
                 ZERO_AIR_TICKS.put(player.getUUID(), ticks);
                 if (ticks >= 5 * 20) {
                     ZERO_AIR_TICKS.remove(player.getUUID());
-                    GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.DROWNED);
+                    player.setAirSupply(Player.TOTAL_AIR_SUPPLY);
+                    GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.DROWNED);
                 }
             } else {
                 ZERO_AIR_TICKS.remove(player.getUUID());
@@ -85,7 +89,7 @@ public final class SceneRuntimeEvents {
     }
 
     private static boolean isOxygenDrowningEnabled(ServerLevel level) {
-        return AreasWorldComponent.KEY.get(level).enableOxygenDrowning;
+        return AreasWorldComponent.KEY.get(level).areasSettings.enableOxygenDrowning;
     }
 
     private static void clearOxygenDrowning(ServerLevel level) {

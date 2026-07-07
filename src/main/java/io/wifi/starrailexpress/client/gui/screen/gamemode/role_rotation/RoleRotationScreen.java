@@ -16,7 +16,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.agmas.noellesroles.client.NoellesrolesClient;
-import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -69,7 +68,6 @@ public class RoleRotationScreen extends Screen {
     public RoleRotationScreen() {
         super(Component.translatable("gui.sre.role_rotation.title").withStyle(ChatFormatting.GOLD));
     }
-
 
     @Override
     protected void init() {
@@ -205,12 +203,13 @@ public class RoleRotationScreen extends Screen {
             return Component.translatable("gui.sre.role_rotation.random").withStyle(ChatFormatting.GOLD);
         }
         // 魔术师在左侧列表中显示为"随机"，隐藏真实身份
-        if (rolePath.equals(ModRoles.MAGICIAN_ID.toString())) {
-            return Component.translatable("gui.sre.role_rotation.random").withStyle(ChatFormatting.GOLD);
-        }
         SRERole role = getRoleByPath(rolePath);
+
         if (role == null) {
             return Component.literal(rolePath).withStyle(ChatFormatting.AQUA);
+        }
+        if (role.isFlag("inner.role_rotation.hidden")) {
+            return Component.translatable("gui.sre.role_rotation.random").withStyle(ChatFormatting.GOLD);
         }
         // 阵营着色：杀手=红，平民=绿，中立=金
         int factionColor = getFactionColor(role);
@@ -304,7 +303,7 @@ public class RoleRotationScreen extends Screen {
     }
 
     private void drawRoleCard(GuiGraphics g, int x, int y, int w, int h, int index, List<String> candidates,
-                              boolean hover, boolean enabled) {
+            boolean hover, boolean enabled) {
         int border = hover ? GOLD : 0xFF5A4530;
         int top = hover ? 0xFF2B2112 : 0xFF1A1008;
         int bottom = hover ? 0xFF112536 : 0xFF0B1722;
@@ -448,11 +447,14 @@ public class RoleRotationScreen extends Screen {
         } else if (role.canUseKiller()) {
             return Component.translatable("display.type.role.killer").withStyle(style -> style.withColor(0xFFCC2233));
         } else if (role.isNeutralForKiller()) {
-            return Component.translatable("display.type.role.neutral_for_killer_2").withStyle(style -> style.withColor(0xFFAA44CC));
+            return Component.translatable("display.type.role.neutral_for_killer_2")
+                    .withStyle(style -> style.withColor(0xFFAA44CC));
         } else if (role.isNeutrals()) {
-            return Component.translatable("display.type.role.neutral_special").withStyle(style -> style.withColor(0xFFCCAA22));
+            return Component.translatable("display.type.role.neutral_special")
+                    .withStyle(style -> style.withColor(0xFFCCAA22));
         } else if (role.isVigilanteTeam()) {
-            return Component.translatable("display.type.role.vigilante").withStyle(style -> style.withColor(0xFF22BBCC));
+            return Component.translatable("display.type.role.vigilante")
+                    .withStyle(style -> style.withColor(0xFF22BBCC));
         }
         return Component.literal("Unknown").withStyle(ChatFormatting.GRAY);
     }
@@ -518,16 +520,16 @@ public class RoleRotationScreen extends Screen {
         calculateScroll();
     }
 
-    private String getPlayerName(UUID uuid) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.getConnection() != null) {
-            var playerInfo = mc.getConnection().getPlayerInfo(uuid);
-            if (playerInfo != null) {
-                return playerInfo.getProfile().getName();
-            }
-        }
-        return uuid.toString().substring(0, 8);
-    }
+    // private String getPlayerName(UUID uuid) {
+    //     Minecraft mc = Minecraft.getInstance();
+    //     if (mc.getConnection() != null) {
+    //         var playerInfo = mc.getConnection().getPlayerInfo(uuid);
+    //         if (playerInfo != null) {
+    //             return playerInfo.getProfile().getName();
+    //         }
+    //     }
+    //     return uuid.toString().substring(0, 8);
+    // }
 
     private SRERole getRoleByPath(String path) {
         if (path == null || path.isBlank()) {

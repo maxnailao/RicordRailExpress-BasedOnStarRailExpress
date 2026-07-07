@@ -197,6 +197,43 @@ List<ShopEntry> getShopEntries()
 | `REAL` | 真实心情 |
 | `FAKE` | 假心情 |
 
+#### 任务刷新控制 / Task Refresh Control
+
+控制该职业玩家的 SAN 任务随机池：黑名单排除指定任务，白名单（非空时）只允许指定任务。
+任务生成（`SREPlayerTaskComponent.generateTaskInternal`）时对每个候选任务调用 `canRefreshTask`。
+Controls which SAN tasks this role's players can roll: a blacklist excludes tasks, and a non-empty
+whitelist restricts rolls to the listed tasks only. `canRefreshTask` is consulted for every candidate
+during task generation.
+
+```java
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task;
+
+// 黑名单：该职业不可刷出的任务（链式，可叠加）
+SRERole addUnrefreshableTasks(Task... tasks)
+SRERole removeUnrefreshableTasks(Task... tasks)
+
+// 白名单：该职业仅可刷出的任务（为空表示不限制）
+SRERole addOnlyRefreshableTasks(Task... tasks)
+SRERole removeOnlyRefreshableTasks(Task... tasks)
+
+// 只读查询
+Set<Task> getUnrefreshableTasks()
+Set<Task> getOnlyRefreshableTasks()
+
+// 可重写：动态判断（默认先查白名单再查黑名单）
+boolean canRefreshTask(Player player, Task taskType)
+```
+
+```java
+// 示例：某职业永远不会刷出睡觉/马桶任务
+TMMRoles.registerRole(new NormalRole(...)
+        .addUnrefreshableTasks(Task.SLEEP, Task.TOILET));
+
+// 示例：某职业只会刷出进食和喝水任务
+TMMRoles.registerRole(new NormalRole(...)
+        .addOnlyRefreshableTasks(Task.EAT, Task.DRINK));
+```
+
 #### 获取技能冷却组件
 
 ```java

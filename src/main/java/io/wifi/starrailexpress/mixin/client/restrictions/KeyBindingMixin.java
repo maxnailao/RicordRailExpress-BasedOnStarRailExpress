@@ -54,6 +54,13 @@ public abstract class KeyBindingMixin {
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()
                 && SREClient.isPlayerAliveAndInSurvival()) {
             if (this.same(options.keyJump)) {
+                if (SREClient.areaComponent.areasSettings.canSwim) {
+                    if (SREClient.cached_player != null && SREClient.cached_player.isInWater()) {
+                        if (!SREClient.gameComponent.isJumpAvailable()) {
+                            return false;
+                        }
+                    }
+                }
                 if (SREClient.gameComponent.isJumpAvailable())
                     return false;
                 return true;

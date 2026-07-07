@@ -24,7 +24,6 @@ public class XiaoNaoHandler {
         TeamKillViolationHandler.registerEvent();
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
-
                 if (isInnocent) {
                     SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
@@ -85,6 +84,9 @@ public class XiaoNaoHandler {
 
     public static boolean isXiaoNaoReason(ResourceLocation deathReason) {
         return deathReason.getPath().equals("revolver_shot")
+                || deathReason.getPath().equals("fall_damage")
+                || deathReason.getPath().equals("cant_swim_drowned")
+                || deathReason.getPath().equals("swim_in_lava")
                 || deathReason.getPath().equals("general_attack")
                 || deathReason.getPath().equals("sniper_rifle")
                 || deathReason.getPath().equals("nunchuck_hit")

@@ -3,8 +3,11 @@ package org.agmas.noellesroles.client;
 import com.mojang.blaze3d.platform.Window;
 import net.exmo.sre.camera.client.AdvancedCameraDirector;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,28 +27,39 @@ public final class PointerClientHandle {
     private static final double POINTER_RANGE = 96.0D;
     private static final double ENTITY_PICK_PADDING = 1.0D;
     private static final float ENTITY_PICK_MARGIN = 0.25F;
-    private static boolean releasedForPointer;
+    private static final double POINTER_SPEED = 1.0D;
+    private static final int POINTER_MARK_SIZE = 5;
+    private static boolean active;
+    private static boolean pointerInitialized;
+    private static boolean hasMouseSample;
+    private static double pointerX;
+    private static double pointerY;
+    private static double lastMouseX;
+    private static double lastMouseY;
 
     private PointerClientHandle() {
     }
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(PointerClientHandle::tick);
+        HudRenderCallback.EVENT.register(PointerClientHandle::renderHud);
     }
 
     private static void tick(Minecraft client) {
         LocalPlayer player = client.player;
-        boolean active = player != null && client.level != null && player.hasEffect(ModEffects.POINTER);
+        boolean shouldBeActive = isPointerActive(client);
+        if (!shouldBeActive) {
+            deactivate();
+            return;
+        }
         if (!active) {
-            restoreMouse(client);
-            return;
+            active = true;
+            resetPointer(client);
         }
+        clampPointer(client);
         if (client.screen != null || !client.isWindowActive()) {
+            hasMouseSample = false;
             return;
-        }
-        if (client.mouseHandler.isMouseGrabbed()) {
-            client.mouseHandler.releaseMouse();
-            releasedForPointer = true;
         }
 
         PointerTarget target = findPointerTarget(client, player);
@@ -57,14 +71,97 @@ public final class PointerClientHandle {
         client.crosshairPickEntity = target.entity();
     }
 
-    private static void restoreMouse(Minecraft client) {
-        if (!releasedForPointer) {
+    public static boolean onMouseMove(double x, double y) {
+        Minecraft client = Minecraft.getInstance();
+        if (!shouldCaptureMouse(client)) {
+            hasMouseSample = false;
+            return false;
+        }
+
+        ensurePointerInitialized(client);
+        if (!hasMouseSample) {
+            lastMouseX = x;
+            lastMouseY = y;
+            hasMouseSample = true;
+            return true;
+        }
+
+        double dx = x - lastMouseX;
+        double dy = y - lastMouseY;
+        lastMouseX = x;
+        lastMouseY = y;
+
+        Window window = client.getWindow();
+        double width = Math.max(1.0D, window.getScreenWidth());
+        double height = Math.max(1.0D, window.getScreenHeight());
+        pointerX = Mth.clamp(pointerX + dx * POINTER_SPEED, 0.0D, width);
+        pointerY = Mth.clamp(pointerY + dy * POINTER_SPEED, 0.0D, height);
+        return true;
+    }
+
+    private static void renderHud(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        Minecraft client = Minecraft.getInstance();
+        if (!isPointerActive(client) || client.screen != null || client.options.hideGui) {
             return;
         }
-        releasedForPointer = false;
-        if (client.screen == null && client.isWindowActive()) {
-            client.mouseHandler.grabMouse();
+        ensurePointerInitialized(client);
+
+        Window window = client.getWindow();
+        double screenWidth = Math.max(1.0D, window.getScreenWidth());
+        double screenHeight = Math.max(1.0D, window.getScreenHeight());
+        int guiX = (int) Math.round(pointerX / screenWidth * window.getGuiScaledWidth());
+        int guiY = (int) Math.round(pointerY / screenHeight * window.getGuiScaledHeight());
+        int color = 0xE0FFE082;
+        int shadow = 0x90000000;
+
+        guiGraphics.fill(guiX - POINTER_MARK_SIZE - 1, guiY, guiX - 1, guiY + 1, shadow);
+        guiGraphics.fill(guiX + 2, guiY, guiX + POINTER_MARK_SIZE + 2, guiY + 1, shadow);
+        guiGraphics.fill(guiX, guiY - POINTER_MARK_SIZE - 1, guiX + 1, guiY - 1, shadow);
+        guiGraphics.fill(guiX, guiY + 2, guiX + 1, guiY + POINTER_MARK_SIZE + 2, shadow);
+
+        guiGraphics.fill(guiX - POINTER_MARK_SIZE, guiY, guiX, guiY + 1, color);
+        guiGraphics.fill(guiX + 1, guiY, guiX + POINTER_MARK_SIZE + 1, guiY + 1, color);
+        guiGraphics.fill(guiX, guiY - POINTER_MARK_SIZE, guiX + 1, guiY, color);
+        guiGraphics.fill(guiX, guiY + 1, guiX + 1, guiY + POINTER_MARK_SIZE + 1, color);
+    }
+
+    private static boolean shouldCaptureMouse(Minecraft client) {
+        return isPointerActive(client) && client.screen == null && client.isWindowActive();
+    }
+
+    private static boolean isPointerActive(Minecraft client) {
+        return client != null
+                && client.player != null
+                && client.level != null
+                && client.player.hasEffect(ModEffects.POINTER);
+    }
+
+    private static void deactivate() {
+        active = false;
+        pointerInitialized = false;
+        hasMouseSample = false;
+    }
+
+    private static void ensurePointerInitialized(Minecraft client) {
+        if (!pointerInitialized) {
+            resetPointer(client);
+        } else {
+            clampPointer(client);
         }
+    }
+
+    private static void resetPointer(Minecraft client) {
+        Window window = client.getWindow();
+        pointerX = Math.max(1.0D, window.getScreenWidth()) * 0.5D;
+        pointerY = Math.max(1.0D, window.getScreenHeight()) * 0.5D;
+        pointerInitialized = true;
+        hasMouseSample = false;
+    }
+
+    private static void clampPointer(Minecraft client) {
+        Window window = client.getWindow();
+        pointerX = Mth.clamp(pointerX, 0.0D, Math.max(1.0D, window.getScreenWidth()));
+        pointerY = Mth.clamp(pointerY, 0.0D, Math.max(1.0D, window.getScreenHeight()));
     }
 
     private static PointerTarget findPointerTarget(Minecraft client, LocalPlayer player) {
@@ -129,8 +226,9 @@ public final class PointerClientHandle {
         Window window = client.getWindow();
         double width = Math.max(1.0D, window.getScreenWidth());
         double height = Math.max(1.0D, window.getScreenHeight());
-        double mouseX = Mth.clamp(client.mouseHandler.xpos(), 0.0D, width);
-        double mouseY = Mth.clamp(client.mouseHandler.ypos(), 0.0D, height);
+        ensurePointerInitialized(client);
+        double mouseX = Mth.clamp(pointerX, 0.0D, width);
+        double mouseY = Mth.clamp(pointerY, 0.0D, height);
         double ndcX = mouseX / width * 2.0D - 1.0D;
         double ndcY = 1.0D - mouseY / height * 2.0D;
         double fov = currentFov(client);

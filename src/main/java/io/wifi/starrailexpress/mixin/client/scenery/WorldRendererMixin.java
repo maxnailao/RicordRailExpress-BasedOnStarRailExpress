@@ -4,6 +4,8 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -23,8 +25,7 @@ public abstract class WorldRendererMixin {
     @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderSky(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;FLnet/minecraft/client/Camera;ZLjava/lang/Runnable;)V"))
     public void tmm$disableSky(LevelRenderer instance, Matrix4f matrix4f, Matrix4f projectionMatrix, float tickDelta,
             Camera camera, boolean thickFog, Runnable fogCallback, Operation<Void> original) {
-        if (!SREClient.isTrainMoving()
-                )
+        if (!SREClient.isTrainMoving())
             original.call(instance, matrix4f, projectionMatrix, tickDelta, camera, thickFog, fogCallback);
     }
 
@@ -36,7 +37,8 @@ public abstract class WorldRendererMixin {
             return;
         }
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null)return;
+        if (player == null)
+            return;
         if (player.hasEffect(ModEffects.VISION_FOG)) {
             var instance = player.getEffect(ModEffects.VISION_FOG);
             float end = ModEffects.getVisionFogDistance(instance.getAmplifier());
@@ -45,17 +47,17 @@ public abstract class WorldRendererMixin {
             return;
         }
         if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()
-                && SREClient.areaComponent != null && SREClient.areaComponent.fogEnabled
+                && SREClient.areaComponent != null && SREClient.areaComponent.areasSettings.fogEnabled
                 && SREClient.isTrainMoving()) {
 
-            if (player.hasEffect(ModEffects.OTHERWORLD_AURA)){
-                if (SREClient.gameComponent== null|| !SREClient.gameComponent.canUseKillerFeatures(player)){
+            if (player.hasEffect(ModEffects.OTHERWORLD_AURA)) {
+                if (SREClient.gameComponent == null || !SREClient.gameComponent.canUseKillerFeatures(player)) {
                     tmm$doFog(0, 17);
                     return;
                 }
             }
-            if (player.hasEffect(MobEffects.BLINDNESS)){
-                if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)){
+            if (player.hasEffect(MobEffects.BLINDNESS)) {
+                if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
                     tmm$doFog(0, 20);
                     return;
                 }
@@ -63,8 +65,11 @@ public abstract class WorldRendererMixin {
                 return;
             }
             // 如果地图未自定义 fogEnd（仍是默认200），则使用原默认值100
-            tmm$doFog(0, SREClient.areaComponent.fogEnd != 200.0f ? SREClient.areaComponent.fogEnd : 100,
-                    SREClient.areaComponent.fogShape);
+            tmm$doFog(0,
+                    SREClient.areaComponent.areasSettings.fogEnd != 200.0f
+                            ? SREClient.areaComponent.areasSettings.fogEnd
+                            : 100,
+                    SREClient.areaComponent.areasSettings.fogShape);
         } else {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
         }
@@ -72,18 +77,18 @@ public abstract class WorldRendererMixin {
 
     @Unique
     private static void tmm$doFog(float fogStart, float fogEnd) {
-        tmm$doFog(fogStart, fogEnd, "SPHERE");
+        tmm$doFog(fogStart, fogEnd, AreasSettings.FogShape.SPHERE);
     }
 
     @Unique
-    private static void tmm$doFog(float fogStart, float fogEnd, String fogShapeStr) {
+    private static void tmm$doFog(float fogStart, float fogEnd, AreasSettings.FogShape fogShape) {
         FogRenderer.FogData fogData = new FogRenderer.FogData(FogRenderer.FogMode.FOG_SKY);
 
         fogData.start = fogStart;
         fogData.end = fogEnd;
 
         FogShape shape = FogShape.SPHERE;
-        if ("CYLINDER".equalsIgnoreCase(fogShapeStr)) {
+        if (AreasSettings.FogShape.CYLINDER.equals(fogShape)) {
             shape = FogShape.CYLINDER;
         }
         fogData.shape = shape;

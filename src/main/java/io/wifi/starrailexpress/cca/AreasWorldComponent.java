@@ -3,8 +3,10 @@ package io.wifi.starrailexpress.cca;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.game.data.MapStatusBarType;
+import io.wifi.starrailexpress.api.AreasSettings;
+import io.wifi.starrailexpress.util.NbtSerializer;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
@@ -29,6 +31,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * 新的地图设定丢{@link AreasSettings}里面，不需要手动写其他东西就能自动读取，存储，命令修改
+ */
 public class AreasWorldComponent implements AutoSyncedComponent {
     public static final ComponentKey<AreasWorldComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("areas"),
             AreasWorldComponent.class);
@@ -37,6 +42,11 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public static enum ScrollAxis {
         X, Y, Z, NONE
     }
+
+    /**
+     * 新的设定丢里面，不需要手动写其他东西就能自动读取，存储，命令修改
+     */
+    public AreasSettings areasSettings = new AreasSettings();
 
     private ScrollAxis sceneScroll = ScrollAxis.NONE;
     private boolean sceneAreaConfigured = false;
@@ -54,14 +64,17 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         return new HashSet<>(this.disabledTasks);
     }
 
-    /** 此地图禁用的职业 ID。可填完整 ID 或职业 path。 */
+    /**
+     * 此地图禁用的职业 ID。可填完整 ID 或职业 path。
+     * 直接访问，避免额外消耗
+     */
     public HashSet<String> disabledRoles = new HashSet<>();
 
-    public HashSet<String> getDisabledRoles() {
-        if (this.disabledRoles == null)
-            return new HashSet<>();
-        return new HashSet<>(this.disabledRoles);
-    }
+    /**
+     * 此地图禁用的修饰符 ID。可填完整 ID 或职业 path。
+     * 直接访问，避免额外消耗
+     */
+    public HashSet<String> disabledModifiers = new HashSet<>();
 
     /** 启用场景任务列表（仅可填场景任务名）。为空表示不启用任何场景任务。 */
     public HashSet<String> enableSceneTask = new HashSet<>();
@@ -170,58 +183,14 @@ public class AreasWorldComponent implements AutoSyncedComponent {
 
     // Room count
     int roomCount = 1;
-
     // Room positions map
     Map<Integer, Vec3> roomPositions = new HashMap<>();
-    public boolean canJump = false;
-    public boolean canSwim = false;
-    public boolean enableOxygenDrowning = false;
-    public MapStatusBarType mapStatusBar = MapStatusBarType.NONE;
     public boolean noReset = false;
     public String mapName = null;
-    public boolean haveOutsideSound = false;
-    /** 背景音效类型：train/wind/sand_storm/snow_storm/circus。空字符串或未设置时默认 train。 */
-    public String sceneOutsideSound = "train";
 
-    // 场景偏移配置 - 将sceneArea内的区块渲染到偏移位置（默认关闭）
-    public boolean sceneOffsetEnabled = false;
-    public double sceneOffsetX = 0;
-    public double sceneOffsetY = 125; // 默认向上偏移125格（场景放置在游玩区域下方100-150格）
-    public double sceneOffsetZ = 0;
-    
-    // 雪花效果配置（默认关闭）
-    public boolean snowEnabled = false;
-    
-    // 沙尘暴效果配置（默认关闭）
-    public boolean sandEnabled = false;
-
-    // 雾气效果配置（默认启用）
-    public boolean fogEnabled = true;
-    
-    // 雾气可见范围（fogEnd，默认200），仅在 fogEnabled 启用时生效
-    public float fogEnd = 200.0f;
-
-    // 雾气形状（SPHERE 或 CYLINDER），默认 SPHERE，仅在 fogEnabled 启用时生效
-    public String fogShape = "SPHERE";
-    
-    // 天气配置（默认晴天）
-    public String weather = "clear"; // clear, rain, thunder
-    
-    // 重力modifier（默认0）
-    public double gravity = 0;
-    
     // 药水效果配置（格式：["namespace:effect_id,level", ...]，为空数组则无效果）
     public List<String> effect = new ArrayList<>();
-    
-    // 时间配置（默认午夜 18000）
-    public long time = 18000;
-    
-    // 昼夜循环配置（默认关闭）
-    public boolean daylightCycle = false;
-    
-    // 天气循环配置（默认关闭）
-    public boolean weatherCycle = false;
-    
+
     public boolean mustCopy = false;
 
     // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
@@ -236,7 +205,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     // 地图初始物品（格式：["itemId;count", ...]，所有玩家进入地图时获得）
     public java.util.List<String> initialItems = new java.util.ArrayList<>();
     // 0为禁用
-    public int fallToDeathHeight = 0;
 
     public PosWithOrientation getSpawnPos() {
         return spawnPos;
@@ -496,26 +464,28 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.mapName = tag.contains("mapName") && !tag.getString("mapName").isBlank()
                 ? tag.getString("mapName")
                 : null;
-        this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
-        this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
-        this.enableOxygenDrowning = tag.contains("enableOxygenDrowning") && tag.getBoolean("enableOxygenDrowning");
-        this.mapStatusBar = tag.contains("mapStatusBar")
-                ? MapStatusBarType.byName(tag.getString("mapStatusBar"))
-                : MapStatusBarType.NONE;
-        this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
-        this.sceneOutsideSound = tag.contains("sceneOutsideSound") && !tag.getString("sceneOutsideSound").isBlank()
-                ? tag.getString("sceneOutsideSound") : "train";
-        this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
-        this.sandEnabled = tag.contains("sandEnabled") ? tag.getBoolean("sandEnabled") : false;
-        this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") : true;
-        this.fogEnd = tag.contains("fogEnd") ? tag.getFloat("fogEnd") : 200.0f;
-        this.fogShape = tag.contains("fogShape") ? tag.getString("fogShape") : "SPHERE";
-        this.sceneOffsetEnabled = tag.contains("sceneOffsetEnabled") ? tag.getBoolean("sceneOffsetEnabled") : false;
-        this.sceneOffsetX = tag.contains("sceneOffsetX") ? tag.getDouble("sceneOffsetX") : 0;
-        this.sceneOffsetY = tag.contains("sceneOffsetY") ? tag.getDouble("sceneOffsetY") : 125;
-        this.sceneOffsetZ = tag.contains("sceneOffsetZ") ? tag.getDouble("sceneOffsetZ") : 0;
-        this.weather = tag.contains("weather") ? tag.getString("weather") : "clear";
-        this.gravity = tag.contains("gravity") ? tag.getDouble("gravity") : 0.08;
+        // this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
+        // this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
+        // this.enableOxygenDrowning = tag.contains("drowning") &&
+        // tag.getBoolean("drowning");
+        // this.mapStatusBar = tag.contains("mapStatusBar")
+        // ? MapStatusBarType.byName(tag.getString("mapStatusBar"))
+        // : MapStatusBarType.NONE;
+        // this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
+        // this.sceneOutsideSound = tag.contains("sceneOutsideSound") && !tag.getString("sceneOutsideSound").isBlank()
+        //         ? tag.getString("sceneOutsideSound")
+        //         : "train";
+        // this.snowEnabled = tag.contains("snowEnabled") ?
+        // tag.getBoolean("snowEnabled") : false;
+        // this.sandEnabled = tag.contains("sandEnabled") ?
+        // tag.getBoolean("sandEnabled") : false;
+        // this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") :
+        // true;
+        // this.fogEnd = tag.contains("fogEnd") ? tag.getFloat("fogEnd") : 200.0f;
+        // this.fogShape = tag.contains("fogShape") ? tag.getString("fogShape") :
+        // "SPHERE";
+        // this.weather = tag.contains("weather") ? tag.getString("weather") : "clear";
+        // this.gravity = tag.contains("gravity") ? tag.getDouble("gravity") : 0.08;
         this.effect = new ArrayList<>();
         if (tag.contains("effect")) {
             var list = tag.getList("effect", net.minecraft.nbt.Tag.TAG_STRING);
@@ -523,9 +493,11 @@ public class AreasWorldComponent implements AutoSyncedComponent {
                 this.effect.add(list.getString(i));
             }
         }
-        this.time = tag.contains("time") ? tag.getLong("time") : 18000;
-        this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
-        this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
+        // this.time = tag.contains("time") ? tag.getLong("time") : 18000;
+        // this.daylightCycle = tag.contains("daylightCycle") ?
+        // tag.getBoolean("daylightCycle") : false;
+        // this.weatherCycle = tag.contains("weatherCycle") ?
+        // tag.getBoolean("weatherCycle") : false;
         this.minigameQuestEnabled = tag.contains("minigameQuestEnabled") && tag.getBoolean("minigameQuestEnabled");
         this.disabledRoles = new HashSet<>();
         if (tag.contains("disabledRoles")) {
@@ -568,6 +540,15 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         //
         // 房间位置需要从NBT中读取（如果实现此功能）
         // 这里暂时不实现，因为NBT格式可能需要专门处理Map类型
+        
+        if (tag.contains("AreasSettings")) {
+            CompoundTag settingsTag = tag.getCompound("AreasSettings");
+            try {
+                areasSettings = NbtSerializer.DEFAULT.deserializeFromTag(settingsTag, AreasSettings.class);
+            } catch (Exception e) {
+                // 处理异常
+            }
+        }
     }
 
     @Override
@@ -616,32 +597,18 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         //
         // 将房间数量写入NBT
         tag.putInt("roomCount", this.roomCount);
-        tag.putBoolean("canJump", this.canJump);
-        tag.putBoolean("canSwim", this.canSwim);
-        tag.putBoolean("enableOxygenDrowning", this.enableOxygenDrowning);
-        tag.putString("mapStatusBar", (this.mapStatusBar == null ? MapStatusBarType.NONE : this.mapStatusBar).name());
-        tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
-        tag.putString("sceneOutsideSound", this.sceneOutsideSound);
-        tag.putBoolean("snowEnabled", this.snowEnabled);
-        tag.putBoolean("sandEnabled", this.sandEnabled);
-        tag.putBoolean("fogEnabled", this.fogEnabled);
-        tag.putFloat("fogEnd", this.fogEnd);
-        tag.putString("fogShape", this.fogShape);
-        tag.putBoolean("sceneOffsetEnabled", this.sceneOffsetEnabled);
-        tag.putDouble("sceneOffsetX", this.sceneOffsetX);
-        tag.putDouble("sceneOffsetY", this.sceneOffsetY);
-        tag.putDouble("sceneOffsetZ", this.sceneOffsetZ);
-        tag.putString("weather", this.weather);
-        tag.putDouble("gravity", this.gravity);
-        var effectList = new net.minecraft.nbt.ListTag();
-        for (String e : this.effect) {
-            effectList.add(net.minecraft.nbt.StringTag.valueOf(e));
-        }
-        tag.put("effect", effectList);
-        tag.putLong("time", this.time);
-        tag.putBoolean("daylightCycle", this.daylightCycle);
-        tag.putBoolean("weatherCycle", this.weatherCycle);
-        tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
+
+        // tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
+        // tag.putString("sceneOutsideSound", this.sceneOutsideSound);
+        // // effect 在客户端无用，不发包
+        // var effectList = new net.minecraft.nbt.ListTag();
+        // for (String e : this.effect) {
+        // effectList.add(net.minecraft.nbt.StringTag.valueOf(e));
+        // }
+        // tag.put("effect", effectList);
+
+        // 客户端无用，不发包
+        // tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
 
         var disabledRolesList = new net.minecraft.nbt.ListTag();
         if (this.disabledRoles != null) {
@@ -649,20 +616,30 @@ public class AreasWorldComponent implements AutoSyncedComponent {
                 disabledRolesList.add(net.minecraft.nbt.StringTag.valueOf(role));
             }
         }
+
+        var disabledModifiersList = new net.minecraft.nbt.ListTag();
+        if (this.disabledModifiers != null) {
+            for (String role : this.disabledModifiers) {
+                disabledModifiersList.add(net.minecraft.nbt.StringTag.valueOf(role));
+            }
+        }
         tag.put("disabledRoles", disabledRolesList);
+        tag.put("disabledModifiers", disabledModifiersList);
 
         // 序列化 availableMinigameIds
-        var minigameIdsList = new net.minecraft.nbt.ListTag();
-        for (String id : this.availableMinigameIds) {
-            minigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
-        }
-        tag.put("AvailableMinigameIds", minigameIdsList);
+        // 客户端无用，不发包
+        // var minigameIdsList = new net.minecraft.nbt.ListTag();
+        // for (String id : this.availableMinigameIds) {
+        // minigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
+        // }
+        // tag.put("AvailableMinigameIds", minigameIdsList);
 
-        var sabotageMinigameIdsList = new net.minecraft.nbt.ListTag();
-        for (String id : this.sabotageMinigameIds) {
-            sabotageMinigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
-        }
-        tag.put("SabotageMinigameIds", sabotageMinigameIdsList);
+        // 客户端无用，不发包
+        // var sabotageMinigameIdsList = new net.minecraft.nbt.ListTag();
+        // for (String id : this.sabotageMinigameIds) {
+        // sabotageMinigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
+        // }
+        // tag.put("SabotageMinigameIds", sabotageMinigameIdsList);
 
         var initialItemsList = new net.minecraft.nbt.ListTag();
         for (String item : this.initialItems) {
@@ -670,8 +647,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         }
         tag.put("initialItems", initialItemsList);
 
-        // 房间位置需要写入NBT（如果实现此功能）
-        // 这里暂时不实现，因为NBT格式可能需要专门处理Map类型
+        // 写入额外数据
+        CompoundTag settingsTag = NbtSerializer.DEFAULT.serializeToTag(areasSettings);
+        tag.put("AreasSettings", settingsTag);
     }
 
     @Override

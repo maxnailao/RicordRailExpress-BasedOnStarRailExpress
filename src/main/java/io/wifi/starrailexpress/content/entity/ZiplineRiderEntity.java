@@ -1,12 +1,14 @@
 package io.wifi.starrailexpress.content.entity;
 
 import io.wifi.starrailexpress.content.block.ZiplineBlock;
+import io.wifi.starrailexpress.content.block_entity.ZiplineBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -15,12 +17,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class ZiplineRiderEntity extends Entity {
-    private static final float RIDE_SPEED = 0.05f;
-    private static final double MAX_DISTANCE = 4.0;
+    // 恒定线速度（格/tick），进度增量按段长换算，长短段体感速度一致
+    private static final float BLOCKS_PER_TICK = 0.45f;
+    // 单 tick 进度上限：极短的段至少 5 tick 走完，避免瞬移
+    private static final float MAX_PROGRESS_STEP = 0.2f;
+    private static final double MAX_DISTANCE = 8.0;
     private static final double RIDER_VERTICAL_OFFSET = -1.15;
+    // 视为"直行延续"的方向点积阈值
+    private static final double STRAIGHT_DOT = 0.9;
 
     @Nullable
     private BlockPos startPos;
@@ -30,6 +39,12 @@ public class ZiplineRiderEntity extends Entity {
     private UUID riderId;
     private float progress = 0f;
     private int rideTick = 0;
+
+    // 客户端位置插值
+    private double lerpX;
+    private double lerpY;
+    private double lerpZ;
+    private int lerpSteps;
 
     public ZiplineRiderEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -69,10 +84,29 @@ public class ZiplineRiderEntity extends Entity {
     }
 
     @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpSteps = Math.max(1, steps);
+    }
+
+    private void tickLerp() {
+        if (this.lerpSteps > 0) {
+            this.setPos(
+                    this.getX() + (this.lerpX - this.getX()) / this.lerpSteps,
+                    this.getY() + (this.lerpY - this.getY()) / this.lerpSteps,
+                    this.getZ() + (this.lerpZ - this.getZ()) / this.lerpSteps);
+            this.lerpSteps--;
+        }
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
         if (this.level().isClientSide) {
+            tickLerp();
             return;
         }
 
@@ -98,7 +132,7 @@ public class ZiplineRiderEntity extends Entity {
             return;
         }
 
-        // 强制传送 / 距离过远
+        // 玩家被外力传送走等异常情况
         if (rider.position().distanceTo(ropePos) > MAX_DISTANCE) {
             this.ejectPassengers();
             this.discard();
@@ -120,9 +154,24 @@ public class ZiplineRiderEntity extends Entity {
                     SoundEvents.MINECART_RIDING, SoundSource.PLAYERS, 0.3f, 1.2f);
         }
 
-        // 更新进度
-        progress += RIDE_SPEED;
+        // 更新进度：按段长换算成恒定线速度
+        progress += progressStep(startPos, endPos);
         if (progress >= 1.0f) {
+            // 到达当前柱子：优先沿路线接续下一段，走不通才落地
+            BlockPos next = findNextSegment(endPos, startPos);
+            if (next != null) {
+                BlockPos reached = endPos;
+                this.startPos = reached;
+                this.endPos = next;
+                this.progress = 0f;
+                Vec3 jointPos = ZiplineBlock.ropePoint(reached, next, 0.0f);
+                this.setPos(jointPos);
+                Vec3 jointRiderPos = this.getPassengerRidingPosition(rider);
+                rider.setPos(jointRiderPos.x, jointRiderPos.y, jointRiderPos.z);
+                rideTick++;
+                return;
+            }
+
             progress = 1.0f;
             Vec3 endRopePos = ZiplineBlock.ropePoint(startPos, endPos, 1.0f);
             this.setPos(endRopePos);
@@ -142,6 +191,55 @@ public class ZiplineRiderEntity extends Entity {
         rider.setXRot(pitch);
 
         rideTick++;
+    }
+
+    private float progressStep(BlockPos start, BlockPos end) {
+        double length = Vec3.atCenterOf(start).distanceTo(Vec3.atCenterOf(end));
+        if (length < 1.0e-3) {
+            return MAX_PROGRESS_STEP;
+        }
+        return Mth.clamp((float) (BLOCKS_PER_TICK / length), 1.0e-4f, MAX_PROGRESS_STEP);
+    }
+
+    /**
+     * 到达柱子后寻找可接续的下一段：优先直行；拐角处若只有一条其他连接则跟随；岔路口停下。
+     */
+    @Nullable
+    private BlockPos findNextSegment(BlockPos from, BlockPos cameFrom) {
+        if (!(this.level().getBlockState(from).getBlock() instanceof ZiplineBlock)) {
+            return null;
+        }
+        if (!(this.level().getBlockEntity(from) instanceof ZiplineBlockEntity zbe)) {
+            return null;
+        }
+
+        Vec3 travel = Vec3.atCenterOf(from).subtract(Vec3.atCenterOf(cameFrom));
+        if (travel.lengthSqr() < 1.0e-6) {
+            return null;
+        }
+        travel = travel.normalize();
+
+        BlockPos straight = null;
+        double bestDot = STRAIGHT_DOT;
+        List<BlockPos> others = new ArrayList<>();
+        for (BlockPos conn : zbe.getConnectedPositions()) {
+            if (conn.equals(cameFrom)) {
+                continue;
+            }
+            if (!(this.level().getBlockState(conn).getBlock() instanceof ZiplineBlock)) {
+                continue;
+            }
+            others.add(conn);
+            double dot = travel.dot(Vec3.atCenterOf(conn).subtract(Vec3.atCenterOf(from)).normalize());
+            if (dot > bestDot) {
+                bestDot = dot;
+                straight = conn;
+            }
+        }
+        if (straight != null) {
+            return straight;
+        }
+        return others.size() == 1 ? others.get(0) : null;
     }
 
     @Override

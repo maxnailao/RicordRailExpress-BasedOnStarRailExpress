@@ -56,6 +56,11 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     /** 本局各小游戏任务点对该玩家的复用冷却到期游戏刻（key 为 {@link BlockPos#asLong()}）。 */
     public final Map<Long, Long> blockCooldownUntil = new HashMap<>();
 
+    /** 轮换模式：自上次小游戏任务派发以来刷新的普通 Mood 任务数。 */
+    public int normalTasksSinceMinigame = 0;
+    /** 轮换模式：再刷新多少个普通任务后轮换到小游戏任务（2~3 随机，0 表示未初始化）。 */
+    public int nextMinigameAfter = 0;
+
     public SREPlayerMinigameTaskComponent(Player player) {
         this.player = player;
     }
@@ -77,6 +82,8 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
         this.targetMinigameId = null;
         this.sabotageMinigameId = null;
         this.blockCooldownUntil.clear();
+        this.normalTasksSinceMinigame = 0;
+        this.nextMinigameAfter = 0;
         this.sync();
     }
 
@@ -157,23 +164,75 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
             return;
         }
         refreshSabotageTask(serverLevel, sp);
+        // 轮换模式下小游戏任务并入 Mood 任务轮换派发（见 SREPlayerTaskComponent），不再独立计时
+        if (isRotationModeActive(serverLevel)) {
+            this.minigameTaskTimer = SREConfig.instance().minigameTaskIntervalSeconds * 20;
+            return;
+        }
         this.minigameTaskTimer--;
         if (this.minigameTaskTimer <= 0) {
             if (this.pendingMinigameTasks < 1) {
-                // 从地图中存在的小游戏种类中随机选取一个
-                var areas = AreasWorldComponent.KEY.get(serverLevel);
-                if (!areas.availableMinigameIds.isEmpty()) {
-                    this.pendingMinigameTasks++;
-                    List<String> ids = new ArrayList<>(areas.availableMinigameIds);
-                    this.targetMinigameId = ids.get(sp.getRandom().nextInt(ids.size()));
-                    this.sync();
-                } else {
-                    // 兜底：没有可用小游戏种类则不指派特定种类
-                    this.targetMinigameId = null;
-                }
+                dispatchMinigameTask(sp, serverLevel);
             }
             this.minigameTaskTimer = SREConfig.instance().minigameTaskIntervalSeconds * 20;
         }
+    }
+
+    /** 从地图中存在的小游戏种类中随机选取一个派发为待办任务，成功返回 true。 */
+    private boolean dispatchMinigameTask(ServerPlayer sp, ServerLevel serverLevel) {
+        var areas = AreasWorldComponent.KEY.get(serverLevel);
+        if (!areas.availableMinigameIds.isEmpty()) {
+            this.pendingMinigameTasks++;
+            List<String> ids = new ArrayList<>(areas.availableMinigameIds);
+            this.targetMinigameId = ids.get(sp.getRandom().nextInt(ids.size()));
+            this.sync();
+            return true;
+        }
+        // 兜底：没有可用小游戏种类则不指派特定种类
+        this.targetMinigameId = null;
+        return false;
+    }
+
+    // ───────────────────────── 轮换模式（与 Mood 任务相互替换刷新） ─────────────────────────
+
+    /** 轮换模式是否生效：配置开启且当前地图启用小游戏任务。 */
+    public static boolean isRotationModeActive(ServerLevel serverLevel) {
+        return SREConfig.instance().minigameTaskRotationMode
+                && AreasWorldComponent.KEY.get(serverLevel).minigameQuestEnabled;
+    }
+
+    /** 轮换模式：普通 Mood 任务刷新一个后计数。 */
+    public void onNormalTaskGenerated(ServerPlayer sp) {
+        rollNextMinigameAfterIfNeeded(sp);
+        this.normalTasksSinceMinigame++;
+    }
+
+    /** 轮换模式：本次刷新槽位是否应替换为小游戏任务（刷满 2~3 个普通任务且无待办时）。 */
+    public boolean shouldReplaceNormalTask(ServerPlayer sp) {
+        rollNextMinigameAfterIfNeeded(sp);
+        return this.pendingMinigameTasks < 1 && this.normalTasksSinceMinigame >= this.nextMinigameAfter;
+    }
+
+    /** 轮换模式：在普通任务的刷新槽位上派发小游戏任务，成功后重置轮换计数。 */
+    public boolean dispatchRotationTask(ServerPlayer sp, ServerLevel serverLevel) {
+        if (!dispatchMinigameTask(sp, serverLevel)) {
+            return false;
+        }
+        this.normalTasksSinceMinigame = 0;
+        this.nextMinigameAfter = rollNextMinigameAfter(sp);
+        return true;
+    }
+
+    private void rollNextMinigameAfterIfNeeded(ServerPlayer sp) {
+        if (this.nextMinigameAfter <= 0) {
+            this.nextMinigameAfter = rollNextMinigameAfter(sp);
+        }
+    }
+
+    private static int rollNextMinigameAfter(ServerPlayer sp) {
+        int min = io.wifi.starrailexpress.game.GameConstants.MINIGAME_ROTATION_MIN_NORMAL_TASKS;
+        int max = io.wifi.starrailexpress.game.GameConstants.MINIGAME_ROTATION_MAX_NORMAL_TASKS;
+        return min + sp.getRandom().nextInt(Math.max(1, max - min + 1));
     }
 
     private void refreshSabotageTask(ServerLevel serverLevel, ServerPlayer sp) {
@@ -251,6 +310,13 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
         this.pendingMinigameTasks--;
         this.targetMinigameId = null; // 完成后清除目标，等待下次刷新
         addTokens(reward);
+        // 轮换模式：完成小游戏任务额外获得金币奖励
+        if (sp.level() instanceof ServerLevel serverLevel && isRotationModeActive(serverLevel)) {
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(sp);
+            if (shop != null) {
+                shop.addToBalance(SREConfig.instance().minigameRotationCoinBonus);
+            }
+        }
         this.sync();
         return true;
     }

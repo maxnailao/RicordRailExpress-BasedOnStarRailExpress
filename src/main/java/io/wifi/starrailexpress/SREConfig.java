@@ -234,6 +234,12 @@ public class SREConfig implements ConfigData {
     public int minigameBlockCooldownSeconds = 200;
     // 小游戏任务独立刷新间隔（秒），与 Mood 任务解耦
     public int minigameTaskIntervalSeconds = 75;
+    // 小游戏任务轮换模式：开启后小游戏任务并入 Mood 任务轮换（刷 2~3 个普通任务后替换刷新一个
+    // 小游戏任务，不重复刷新），小游戏任务完成额外获得 minigameRotationCoinBonus 金币，
+    // 全局任务刷新速率减缓 15%；关闭后恢复独立计时刷新逻辑
+    public boolean minigameTaskRotationMode = true;
+    // 轮换模式下小游戏任务完成时的额外金币奖励
+    public int minigameRotationCoinBonus = 15;
     public int moneyPerKill = 100;
     public int grenadeMoneyPerKill = 80;
     public int grenadeMaxMoneyReward = 375;

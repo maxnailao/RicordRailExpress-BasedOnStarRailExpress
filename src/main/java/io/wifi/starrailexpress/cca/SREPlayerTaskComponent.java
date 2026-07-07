@@ -145,20 +145,38 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         boolean shouldSync = false;
         this.nextTaskTimer--;
         if (this.nextTaskTimer <= 0) {
-            TrainTask task = this.generateTask();
-            if (task != null) {
-                this.tasks.put(task.getType(), task);
-                this.timesGotten.putIfAbsent(task.getType(), 1);
-                this.timesGotten.put(task.getType(), this.timesGotten.get(task.getType()) + 1);
-                // 记录任务分配时的情绪值
-                this.moodWhenTaskAssigned = (playerMoodComponent != null) ? playerMoodComponent.getMood() : 1f;
-                this.currentTaskAge = 0;
-                this.parallelTaskGenerated = false;
-                // 任务出现时通过字幕报幕通知玩家（TOP 模式，兼容 broadcast）
-                if (this.player instanceof ServerPlayer sp) {
-                    Component taskTitle = Component.translatable("task." + task.getName());
-                    Component taskSub = Component.translatable("subtitle.task.new");
-                    net.exmo.sre.subtitle.SubtitleCommand.sendToPlayerTop(sp, taskTitle, taskSub, 60);
+            // 小游戏任务轮换模式：刷满 2~3 个普通任务后，本次刷新槽位替换为派发一个小游戏任务
+            boolean minigameDispatched = false;
+            SREPlayerMinigameTaskComponent minigameComponent = null;
+            boolean rotationActive = false;
+            if (this.player instanceof ServerPlayer sp && sp.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
+                    && SREPlayerMinigameTaskComponent.isRotationModeActive(serverLevel)) {
+                rotationActive = true;
+                minigameComponent = SREPlayerMinigameTaskComponent.KEY.get(sp);
+                if (this.tasks.isEmpty() && minigameComponent.shouldReplaceNormalTask(sp)) {
+                    minigameDispatched = minigameComponent.dispatchRotationTask(sp, serverLevel);
+                }
+            }
+            if (!minigameDispatched) {
+                TrainTask task = this.generateTask();
+                if (task != null) {
+                    this.tasks.put(task.getType(), task);
+                    this.timesGotten.putIfAbsent(task.getType(), 1);
+                    this.timesGotten.put(task.getType(), this.timesGotten.get(task.getType()) + 1);
+                    // 记录任务分配时的情绪值
+                    this.moodWhenTaskAssigned = (playerMoodComponent != null) ? playerMoodComponent.getMood() : 1f;
+                    this.currentTaskAge = 0;
+                    this.parallelTaskGenerated = false;
+                    // 任务出现时通过字幕报幕通知玩家（TOP 模式，兼容 broadcast）
+                    if (this.player instanceof ServerPlayer sp) {
+                        Component taskTitle = Component.translatable("task." + task.getName());
+                        Component taskSub = Component.translatable("subtitle.task.new");
+                        net.exmo.sre.subtitle.SubtitleCommand.sendToPlayerTop(sp, taskTitle, taskSub, 60);
+                        // 轮换模式：普通任务刷新计数（供轮换到小游戏任务判断）
+                        if (minigameComponent != null) {
+                            minigameComponent.onNormalTaskGenerated(sp);
+                        }
+                    }
                 }
             }
             // 使用动态任务冷却：根据游戏已过时间调整
@@ -172,6 +190,10 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             // 小游戏任务未启用时，正常任务刷新加快 30%
             if (!AreasWorldComponent.KEY.get(this.player.level()).minigameQuestEnabled) {
                 this.nextTaskTimer = (int) (this.nextTaskTimer * 0.7f);
+            }
+            // 轮换模式：全局任务刷新速率减缓 15%
+            if (rotationActive) {
+                this.nextTaskTimer = (int) (this.nextTaskTimer * GameConstants.MINIGAME_ROTATION_REFRESH_SLOWDOWN);
             }
             this.nextTaskTimer = Math.max(this.nextTaskTimer, 2);
             shouldSync = true;
@@ -395,12 +417,18 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         float currentMood = (playerMoodComponent != null) ? playerMoodComponent.getMood() : 1f;
         // 获取当前地图禁用的任务
         Set<String> disabledTasks = getDisabledTasks();
+        // 获取职业用于任务刷新控制（SRERole.canRefreshTask）
+        io.wifi.starrailexpress.api.SRERole role = SREGameWorldComponent.KEY.get(this.player.level())
+                .getRole(this.player);
         // 遍历非场景任务
         for (Task task : Task.getAvailableTasksList()) {
             if (this.tasks.containsKey(task))
                 continue;
             // 检查任务是否被当前地图禁用
             if (disabledTasks.contains(task.name()))
+                continue;
+            // 检查任务是否被职业禁止刷新
+            if (role != null && !role.canRefreshTask(this.player, task))
                 continue;
             float weight = 1f / this.timesGotten.getOrDefault(task, 1);
             // 情绪驱动的任务权重调整（基于任务种类）
@@ -416,6 +444,9 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                     continue;
                 // 只有在地图启用列表中的场景任务才可选
                 if (!enabledSceneTasks.contains(task.name()))
+                    continue;
+                // 检查任务是否被职业禁止刷新
+                if (role != null && !role.canRefreshTask(this.player, task))
                     continue;
                 float weight = 1f / this.timesGotten.getOrDefault(task, 1);
                 weight = applyMoodWeight(weight, task.category, currentMood);

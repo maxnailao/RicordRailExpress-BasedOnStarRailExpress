@@ -386,6 +386,17 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /** 滚木实体 - 沿方向滚动碾死玩家 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<RollingLogEntity> ROLLING_LOG = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("rolling_log"),
+            FabricEntityTypeBuilder.<RollingLogEntity>create(MobCategory.MISC, RollingLogEntity::new)
+                    .dimensions(EntityDimensions.fixed(2.0F, 2.0F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
     /** 移动平台实体 - 可站立、往返移动 */
     @SuppressWarnings("deprecation")
     public static final EntityType<MovingPlatformEntity> MOVING_PLATFORM = Registry.register(

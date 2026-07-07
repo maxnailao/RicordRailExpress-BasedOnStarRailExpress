@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.client.render.hud.stamina;
 import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
@@ -11,22 +13,14 @@ import io.wifi.starrailexpress.util.ProgressProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 
 public class StaminaMCStyleRenderer {
 
-    private static float lastCooldown = 0f;
-    private static boolean playedCooldownSound = false;
-    private static ItemStack lastMainHandStack = ItemStack.EMPTY; // 用于跟踪上一次的主手物品
-
     private static float chargeDisplayValue = 0f; // 蓄力状态条平滑显示值（逐帧过渡用）
     public static ChargeBarRenderer view = new ChargeBarRenderer();
-    public static float offsetDelta = 0f;
 
     private static final long FLASH_DURATION_MS = 250L; // 闪光持续时间（毫秒）
 
@@ -50,25 +44,17 @@ public class StaminaMCStyleRenderer {
                 knifeFullyCharged = false;
             }
             itemPercent = itemChargeProvider.getPercent();
-        } else {
-            if (staminaProvider != null) {
-                staminaPercent = staminaProvider.getPercent();
-            }
         }
-        // 使用与TimeRenderer类似的颜色逻辑
-        if (Math.abs(view.getTarget() - staminaPercent) > 0.1f) {
-            offsetDelta = staminaPercent > view.getTarget() ? .6f : -.6f;
+
+        if (staminaProvider != null) {
+            staminaPercent = staminaProvider.getPercent();
         }
-        offsetDelta = Mth.lerp(delta / 16, offsetDelta, 0f);
-
-        view.setTarget(staminaPercent);
-
         if (staminaPercent >= 0) {
             // 渲染体力条 - 移动到物品栏上方
             // 1. 更新状态（每帧都传当前体力值）
             StaminaIconRenderer.update(staminaPercent);
             int heartX = context.guiWidth() / 2 - 91; // 第一颗心的 X 坐标
-            int heartY = context.guiHeight() - 40; // 心的 Y 坐标（距底部 49 像素）
+            int heartY = context.guiHeight() - 36; // 心的 Y 坐标（距底部 49 像素）
             // 2. 将坐标系平移到您想要的左上角位置（例如 x=10, y=20）
             context.pose().pushPose();
             context.pose().translate(heartX, heartY, 0);
@@ -81,7 +67,6 @@ public class StaminaMCStyleRenderer {
         }
 
         // 渲染主手物品冷却提示
-        renderMainHandCooldown(context, player, delta);
 
         {
             context.pose().pushPose();
@@ -122,101 +107,6 @@ public class StaminaMCStyleRenderer {
                 }
             }
             context.pose().popPose();
-        }
-    }
-
-    /**
-     * 渲染主手物品冷却提示
-     */
-    public static void renderMainHandCooldown(@NotNull GuiGraphics context, @NotNull LocalPlayer player, float delta) {
-        ItemStack mainHandStack = player.getMainHandItem();
-        ItemCooldowns cooldowns = player.getCooldowns();
-        float cooldown = cooldowns.getCooldownPercent(mainHandStack.getItem(), delta);
-
-        // 检查是否是同一个物品且冷却刚刚结束
-        if (lastCooldown > 0 && cooldown == 0 && !playedCooldownSound
-                && ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-            // 播放冷却结束音效
-            Minecraft.getInstance().getSoundManager().play(
-                    SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.7f, 1.0f));
-            playedCooldownSound = true;
-        } else if (cooldown > 0 || !ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-            // 如果物品已切换，则重置冷却音效标志
-            if (!ItemStack.isSameItemSameComponents(lastMainHandStack, mainHandStack)) {
-                // 如果切换到刀，则播放切刀音效
-                // if (mainHandStack.getItem() instanceof KnifeItem
-                //         && !(lastMainHandStack.getItem() instanceof KnifeItem)) {
-                //     Minecraft.getInstance().getSoundManager().play(
-                //             SimpleSoundInstance.forUI(SoundEvents.IRON_GOLEM_REPAIR, 0.4f, 2.1f));
-                // }
-                playedCooldownSound = false;
-            }
-            // 如果物品仍在冷却中，重置音效标志
-            if (cooldown > 0) {
-                playedCooldownSound = false;
-            }
-        }
-
-        // 更新上一次冷却值和物品
-        lastCooldown = cooldown;
-        lastMainHandStack = mainHandStack.copy();
-
-        // 如果物品在冷却中，显示冷却百分比
-        if (cooldown > 0) {
-            int screenWidth = context.guiWidth();
-            int screenHeight = context.guiHeight();
-
-            // 在屏幕中心稍上方显示冷却文字
-            int x = screenWidth / 2;
-            int y = screenHeight - 48; // 物品栏上方
-
-            String cooldownText = String.format("%d%%", (int) (cooldown * 100));
-
-            // 根据冷却百分比改变颜色：红色->橙色->绿色
-            int textColor;
-            if (cooldown > 0.7f) {
-                textColor = 0xFFFF0000; // 红色
-            } else if (cooldown > 0.3f) {
-                textColor = 0xFFFFA500; // 橙色
-            } else {
-                textColor = 0xFF00FF00; // 绿色
-            }
-
-            // 绘制文字背景（半透明黑色）
-            // int textWidth = Minecraft.getInstance().font.width(cooldownText);
-            // int padding = 4;
-            // context.fill(
-            // x - textWidth / 2 - padding,
-            // y - padding,
-            // x + textWidth / 2 + padding,
-            // y + 9 + padding,
-            // 0x80000000
-            // );
-
-            // 绘制冷却文字
-            context.drawCenteredString(
-                    Minecraft.getInstance().font,
-                    cooldownText,
-                    x,
-                    y,
-                    textColor);
-
-        }
-    }
-
-    public static void tick() {
-        view.update();
-        // 如果不在使用蓄力物品，重置蓄力状态
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player != null) {
-            ItemStack mainHandStack = minecraft.player.getMainHandItem();
-            // 检查是否不是蓄力物品
-            if (!ChargeableItemRegistry.isChargeableStack(mainHandStack)) {
-                knifeFullyCharged = false;
-                flashStartTime = 0L;
-                RedScreenRenderer.screenRedEffectStartTime = 0L;
-                chargeDisplayValue = 0f; // 重置蓄力状态条平滑值，下次蓄力从 0 开始
-            }
         }
     }
 
@@ -337,23 +227,10 @@ public class StaminaMCStyleRenderer {
     }
 
     public static class ChargeBarRenderer {
-        private float target;
-        private float currentValue;
-        public float lastValue;
-
-        public void setTarget(float target) {
-            this.target = Mth.clamp(target, 0f, 1f);
-        }
-
-        public void update() {
-            this.lastValue = this.currentValue;
-            this.currentValue = Mth.lerp(0.15f, this.currentValue, this.target);
-            if (Math.abs(this.currentValue - this.target) < 0.01f) {
-                this.currentValue = this.target;
-            }
-        }
 
         public void renderItemCharge(@NotNull GuiGraphics context, int colour, float value) {
+            RenderSystem.enableBlend();
+
             // 体力条参数 - 更现代、更扁平的设计
             int barWidth = 40; // 总宽度增加
             int barHeight = 6; // 高度减小变得更扁平
@@ -362,8 +239,13 @@ public class StaminaMCStyleRenderer {
             colour = colour & 0x88FFFFFF;
             // 绘制背景（更现代化的半透明黑色）
             int backgroundColor = 0x55000000; // 更透明的背景
-            context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
-                    barHeight / 2 + barBorder, backgroundColor);
+            if (value <= 0) {
+                renderOutline(context, -halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, 1, backgroundColor);
+            } else {
+                context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, backgroundColor);
+            }
 
             // 计算当前体力条宽度 - 从左锚定，向右延伸
             int currentWidth = Math.round(barWidth * value);
@@ -372,10 +254,45 @@ public class StaminaMCStyleRenderer {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
                 context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
             }
+            RenderSystem.disableBlend();
+
         }
 
-        public float getTarget() {
-            return this.target;
+        private void renderOutline(GuiGraphics context, int x1, int y1, int x2, int y2, int width,
+                int backgroundColor) {
+            // 如果边框宽度 <= 0，则不绘制
+            if (width <= 0)
+                return;
+
+            // 规范化坐标，确保 left<right, top<bottom
+            int left = Math.min(x1, x2);
+            int right = Math.max(x1, x2);
+            int top = Math.min(y1, y2);
+            int bottom = Math.max(y1, y2);
+
+            // 1. 上边框
+            context.fill(left, top, right, top + width, backgroundColor);
+            // 2. 下边框
+            context.fill(left, bottom - width, right, bottom, backgroundColor);
+            // 3. 左边框（避开上下边框已占用的区域，防止重叠绘制造成的视觉问题）
+            context.fill(left, top + width, left + width, bottom - width, backgroundColor);
+            // 4. 右边框
+            context.fill(right - width, top + width, right, bottom - width, backgroundColor);
+        }
+    }
+
+    public static void tick() {
+        // 如果不在使用蓄力物品，重置蓄力状态
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) {
+            ItemStack mainHandStack = minecraft.player.getMainHandItem();
+            // 检查是否不是蓄力物品
+            if (!ChargeableItemRegistry.isChargeableStack(mainHandStack)) {
+                knifeFullyCharged = false;
+                flashStartTime = 0L;
+                RedScreenRenderer.screenRedEffectStartTime = 0L;
+                chargeDisplayValue = 0f; // 重置蓄力状态条平滑值，下次蓄力从 0 开始
+            }
         }
     }
 }

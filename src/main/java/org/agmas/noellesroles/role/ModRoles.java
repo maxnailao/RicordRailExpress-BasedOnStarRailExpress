@@ -1114,7 +1114,8 @@ public class ModRoles {
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanJumpManhole(true).setCanAcrossFog(true)
             .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(0);
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(0)
+            .setCanBeRandomedByOtherRoles(false);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
             new NormalRole(WAYFARER_ID, new Color(255, 54, 105).getRGB(),
@@ -1211,7 +1212,7 @@ public class ModRoles {
     public static SRERole GHOST = TMMRoles
             .registerRole(new NormalRole(GHOST_ID, new Color(200, 200, 200).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setDefaultMax(1);
+            .setDefaultMax(1).setHiddenForRoleRotation(true);
     public static SRERole DOCTOR = TMMRoles
             .registerRole(new NormalRole(DOCTOR_ID, new Color(30, 144, 255).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -1245,7 +1246,8 @@ public class ModRoles {
                     .setVigilanteTeam(true)
                     .setComponentKey(
                             org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.KEY))
-            .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(5000).setDefaultEnableNeededPlayerCount(12)
+            .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(5000)
+            .setDefaultEnableNeededPlayerCount(12)
             .setSpecialVigilante(true);
 
     /**
@@ -1597,7 +1599,7 @@ public class ModRoles {
             .registerRole(new GamblerRole(GAMBLER_ID, new Color(72, 61, 139).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
             .setCanPickUpRevolver(true).setComponentKey(GamblerPlayerComponent.KEY).setNeutrals(true)
-            .setDefaultMax(1);
+            .setDefaultMax(1).setHiddenForRoleRotation(true);
     public static SRERole POISONER = TMMRoles
             .registerRole(new NormalRole(POISONER_ID, (new Color(115, 0, 57)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -2426,7 +2428,8 @@ public class ModRoles {
             return itemStacks;
         }
     }).setComponentKey(ThiefPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
-            .setCanSeeTeammateKiller(false).setDefaultEnableChance(5000).setDefaultEnableNeededPlayerCount(10);
+            .setCanSeeTeammateKiller(false).setDefaultEnableChance(5000)
+            .setDefaultEnableNeededPlayerCount(10);
 
     /**
      * 雇佣兵角色 - 中立阵营（非独立胜利）
@@ -2561,7 +2564,9 @@ public class ModRoles {
     )).setCanPickUpRevolver(true).setCanSeeCoin(true)
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setNeutrals(false)
             .setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(2500).setDefaultEnableNeededPlayerCount(16);
+            .setDefaultEnableChance(2500)
+            .setDefaultEnableNeededPlayerCount(16)
+            .setHiddenForRoleRotation(true);
 
     /**
      * 钟表匠角色 - 好人阵营

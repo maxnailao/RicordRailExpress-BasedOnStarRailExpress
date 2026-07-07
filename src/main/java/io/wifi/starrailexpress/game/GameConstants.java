@@ -83,6 +83,11 @@ public class GameConstants {
     public static float MOOD_GAIN = 0.5f;
     // 完成一个小游戏任务（指定方块）发放的游戏代币数量（降频后翻倍补偿）
     public static int MINIGAME_TASK_TOKEN_REWARD = 2;
+    // 小游戏任务轮换模式下全局任务刷新冷却的减缓系数（+15% 冷却时长）
+    public static float MINIGAME_ROTATION_REFRESH_SLOWDOWN = 1.15f;
+    // 小游戏任务轮换模式：刷新多少个普通任务后轮换到小游戏任务（随机下限/上限）
+    public static int MINIGAME_ROTATION_MIN_NORMAL_TASKS = 2;
+    public static int MINIGAME_ROTATION_MAX_NORMAL_TASKS = 3;
     // 理智流失：单个任务从满到空的时间，4分钟→6分钟，减轻任务treadmill
     public static float MOOD_DRAIN = 1f / getInTicks(6, 0);
     public static int TIME_TO_FIRST_TASK = getInTicks(0, 30);
@@ -187,6 +192,7 @@ public class GameConstants {
     }
 
     public static class DeathReasons {
+        public static ResourceLocation FALL_DAMAGE = SRE.id("fall_damage");
         public static ResourceLocation DISCONNECT = SRE.id("disconnected");
         public static ResourceLocation DEATH_AFK = SRE.id("death_afk");
         public static ResourceLocation BLACK_WHITE_TIMEOUT = SRE.id("black_white");
@@ -203,6 +209,8 @@ public class GameConstants {
         public static ResourceLocation POISON = SRE.id("poison");
         public static ResourceLocation SELF_EXPLOSION = SRE.id("self_explosion");
         public static ResourceLocation FELL_OUT_OF_TRAIN = SRE.id("fell_out_of_train");
+        public static ResourceLocation CANNOT_SWIM = SRE.id("cant_swim_drowned");
+        public static ResourceLocation LAVA = SRE.id("swim_in_lava");
         public static ResourceLocation ARROW = SRE.id("arrow");
         public static ResourceLocation TRIDENT = SRE.id("trident");
         public static ResourceLocation SNIPER_RIFLE = SRE.id("sniper_rifle");
@@ -214,6 +222,7 @@ public class GameConstants {
         public static ResourceLocation STALACTITE_IMPALE = SRE.id("stalactite_impale");
         public static ResourceLocation FLAMETHROWER_BURNED = SRE.id("flamethrower_burned");
         public static ResourceLocation BOULDER_CRUSH = SRE.id("boulder_crush");
+        public static ResourceLocation LOG_CRUSH = SRE.id("log_crush");
         public static ResourceLocation INCINERATOR_PUSHED = SRE.id("incinerator_pushed");
         public static ResourceLocation ANCIENT_BITE = SRE.id("ancient_bite");
         public static ResourceLocation DROWNED = SRE.id("drowned");

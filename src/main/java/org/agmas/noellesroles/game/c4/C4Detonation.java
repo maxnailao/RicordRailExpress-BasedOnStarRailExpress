@@ -29,8 +29,10 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,7 +42,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class C4Detonation {
     private C4Detonation() {}
 
-    private static final double BLAST_RADIUS = 6.0D;
+    private static final double BLAST_RADIUS = 7.0D;
+    private static final double WALL_PIERCE_STEP = 0.2D;
+    private static final int MAX_PIERCED_WALL_BLOCKS = 1;
     private static final double SURFACE_OFFSET = 0.001D;
     private static final Map<UUID, ThrownCharge> thrownCharges = new ConcurrentHashMap<>();
 
@@ -56,7 +60,8 @@ public final class C4Detonation {
 
     public static void registerThrownCharge(ItemEntity entity, UUID owner) {
         if (entity == null || owner == null) return;
-        thrownCharges.put(entity.getUUID(), new ThrownCharge(owner, -1L, -1L, entity.position(), false, entity.level().getGameTime()));
+        thrownCharges.put(entity.getUUID(), new ThrownCharge(owner, -1L, -1L, entity.position(), false,
+            entity.level().getGameTime(), true));
     }
 
     public static boolean isDefusableBlockCharge(ItemEntity entity) {
@@ -111,7 +116,8 @@ public final class C4Detonation {
         for (ItemEntity entity : level.getEntitiesOfClass(ItemEntity.class, owner.getBoundingBox().inflate(256.0D),
                 e -> e.getItem().is(ModItems.C4) && isOwnedBy(e, owner.getUUID()))) {
             thrownCharges.putIfAbsent(entity.getUUID(),
-                new ThrownCharge(owner.getUUID(), -1L, -1L, entity.position(), entity.isNoGravity(), placedAt(level, entity)));
+                new ThrownCharge(owner.getUUID(), -1L, -1L, entity.position(), entity.isNoGravity(),
+                    placedAt(level, entity), true));
         }
     }
 
@@ -140,10 +146,6 @@ public final class C4Detonation {
     public static void triggerRemoteDetonation(ServerPlayer player) {
         if (player == null || !(player.level() instanceof ServerLevel level)) return;
         registerVisibleThrownCharges(level, player);
-        if (hasArmedCharge(level, player)) {
-            player.displayClientMessage(Component.translatable("c4.already_armed"), true);
-            return;
-        }
         long now = level.getGameTime();
         long detonationAt = now + 3L * 20L + 15L * 20L;
         Map.Entry<UUID, ThrownCharge> target = newestUnarmedCharge(level, player);
@@ -183,7 +185,7 @@ public final class C4Detonation {
         long now = level.getGameTime();
         MinecraftServer server = level.getServer();
         List<UUID> expired = null;
-        List<UUID> removeOnly = null;
+        List<UUID> dropOnly = null;
 
         for (Map.Entry<UUID, Long> e : carriers.entrySet()) {
             UUID id = e.getKey();
@@ -199,16 +201,19 @@ public final class C4Detonation {
             ServerPlayer carrier = server.getPlayerList().getPlayer(id);
             if (carrier == null || carrier.isRemoved()) continue;
             if (!carrier.isAlive()) {
-                if (removeOnly == null) removeOnly = new ArrayList<>();
-                removeOnly.add(id);
+                if (dropOnly == null) dropOnly = new ArrayList<>();
+                dropOnly.add(id);
                 continue;
             }
             maybeBeep(comp, carrier, remaining);
         }
 
-        if (removeOnly != null) {
-            for (UUID carrierId : removeOnly) {
-                comp.removeC4(carrierId);
+        if (dropOnly != null) {
+            for (UUID carrierId : dropOnly) {
+                ServerPlayer carrier = server.getPlayerList().getPlayer(carrierId);
+                if (carrier != null && !carrier.isRemoved()) {
+                    dropCarrierCharge(carrier, comp);
+                }
             }
         }
 
@@ -256,6 +261,7 @@ public final class C4Detonation {
     }
 
     private static boolean tryAttachThrownToPlayer(ServerLevel level, ItemEntity entity, ThrownCharge charge) {
+        if (!charge.canAttach()) return false;
         if (charge.stuck()) return false;
         Vec3 previous = charge.previousPos() != null ? charge.previousPos() : entity.position();
         Vec3 current = entity.position();
@@ -477,13 +483,62 @@ public final class C4Detonation {
      * {@link GrenadeEntity#computeSpatialVisibility}。
      */
     private static boolean hasExplosionLineOfSight(ServerLevel level, Vec3 blastCenter, ServerPlayer victim) {
-        return GrenadeEntity.hasExplosionLineOfSight(level, blastCenter, victim);
+        if (GrenadeEntity.hasExplosionLineOfSight(level, blastCenter, victim)) return true;
+        Vec3 center = blastCenter.add(0.0D, 0.35D, 0.0D);
+        Vec3 eye = victim.getEyePosition();
+        Vec3 body = victim.position().add(0.0D, victim.getBbHeight() * 0.5D, 0.0D);
+        return canPierceAtMostOneWallBlock(level, center, eye, victim)
+            || canPierceAtMostOneWallBlock(level, center, body, victim);
+    }
+
+    private static boolean canPierceAtMostOneWallBlock(ServerLevel level, Vec3 from, Vec3 to, Entity context) {
+        double distance = from.distanceTo(to);
+        if (distance <= 1.0E-7D) return true;
+        Vec3 direction = to.subtract(from).scale(1.0D / distance);
+        int steps = Math.max(1, (int) Math.ceil(distance / WALL_PIERCE_STEP));
+        Set<BlockPos> piercedBlocks = new HashSet<>();
+
+        for (int i = 1; i < steps; i++) {
+            Vec3 sample = from.add(direction.scale(distance * i / steps));
+            BlockPos pos = BlockPos.containing(sample);
+            if (!isBlockingExplosion(level, pos, context)) continue;
+            piercedBlocks.add(pos.immutable());
+            if (piercedBlocks.size() > MAX_PIERCED_WALL_BLOCKS) return false;
+        }
+
+        return true;
+    }
+
+    private static boolean isBlockingExplosion(ServerLevel level, BlockPos pos, Entity context) {
+        var state = level.getBlockState(pos);
+        return !state.isAir()
+            && !state.getCollisionShape(level, pos).isEmpty();
     }
 
     private static void afterDeath(LivingEntity entity, DamageSource source) {
         if (!(entity instanceof ServerPlayer player)) return;
         C4BackComponent comp = C4BackComponent.KEY.getNullable(player.level());
-        if (comp != null) comp.removeC4(player.getUUID());
+        if (comp != null) dropCarrierCharge(player, comp);
+    }
+
+    private static void dropCarrierCharge(ServerPlayer carrier, C4BackComponent comp) {
+        if (carrier == null || comp == null || !(carrier.level() instanceof ServerLevel level)) return;
+        Long detonationAt = comp.getCarriers().get(carrier.getUUID());
+        if (detonationAt == null) return;
+
+        UUID planter = comp.getPlanter(carrier.getUUID());
+        long plantedAt = level.getGameTime() - comp.ticksSincePlant(carrier.getUUID());
+        ItemEntity droppedCharge = new ItemEntity(level, carrier.getX(), carrier.getY() + 0.2D, carrier.getZ(),
+            ModItems.C4.getDefaultInstance());
+        droppedCharge.setPickUpDelay(32767);
+        droppedCharge.setUnlimitedLifetime();
+        level.addFreshEntity(droppedCharge);
+
+        UUID owner = planter != null ? planter : carrier.getUUID();
+        thrownCharges.put(droppedCharge.getUUID(),
+            new ThrownCharge(owner, plantedAt, detonationAt, droppedCharge.position(), false,
+                level.getGameTime(), false));
+        comp.removeC4(carrier.getUUID());
     }
 
     private static void clearThrownCharges() {
@@ -506,34 +561,35 @@ public final class C4Detonation {
         }
     }
 
-    private record ThrownCharge(UUID owner, long armedAt, long detonationAt, Vec3 previousPos, boolean stuck, long placedAt) {
+    private record ThrownCharge(UUID owner, long armedAt, long detonationAt, Vec3 previousPos, boolean stuck,
+            long placedAt, boolean canAttach) {
         private boolean isArmed() {
             return armedAt >= 0L && detonationAt >= 0L;
         }
 
         private ThrownCharge armed(long armedAt, long detonationAt) {
-            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt);
+            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt, canAttach);
         }
 
         private ThrownCharge withPreviousPos(Vec3 previousPos) {
-            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt);
+            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt, canAttach);
         }
 
         private ThrownCharge stuck(Vec3 previousPos) {
-            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, true, placedAt);
+            return new ThrownCharge(owner, armedAt, detonationAt, previousPos, true, placedAt, canAttach);
         }
     }
 
     public record TimeState(Map<UUID, Entry> thrownCharges) {
         public record Entry(UUID owner, long armedAt, long detonationAt, Vec3 previousPos,
-                boolean stuck, long placedAt) {
+                boolean stuck, long placedAt, boolean canAttach) {
             private static Entry from(ThrownCharge charge) {
                 return new Entry(charge.owner(), charge.armedAt(), charge.detonationAt(),
-                    charge.previousPos(), charge.stuck(), charge.placedAt());
+                    charge.previousPos(), charge.stuck(), charge.placedAt(), charge.canAttach());
             }
 
             private ThrownCharge toThrownCharge() {
-                return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt);
+                return new ThrownCharge(owner, armedAt, detonationAt, previousPos, stuck, placedAt, canAttach);
             }
         }
     }
