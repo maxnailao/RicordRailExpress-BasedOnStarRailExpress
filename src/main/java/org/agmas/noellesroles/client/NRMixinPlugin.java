@@ -10,6 +10,7 @@ import java.util.Set;
 
 public class NRMixinPlugin implements IMixinConfigPlugin {
     private static final boolean IS_LAMBDYNLIGHTS_LOADED = FabricLoader.getInstance().isModLoaded("lambdynlights");
+    private static final boolean IS_PRESENCE_FOOTSTEPS_LOADED = FabricLoader.getInstance().isModLoaded("presencefootsteps");
 
     public void onLoad(String mixinPackage) {
         System.out.println("Noelle's Roles: Mixin Plugin Loaded");
@@ -23,6 +24,9 @@ public class NRMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         // Skip LamBugFix mixin if LambDynLights is not loaded
         if (mixinClassName.endsWith("LamBugFix") && !IS_LAMBDYNLIGHTS_LOADED) {
+            return false;
+        }
+        if (mixinClassName.endsWith("PresenceFootstepsSoundBlockMixin") && !IS_PRESENCE_FOOTSTEPS_LOADED) {
             return false;
         }
         return true;

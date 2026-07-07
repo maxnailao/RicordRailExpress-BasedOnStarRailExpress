@@ -91,6 +91,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modRuntimeOnly files("libs/architectury-13.0.8-fabric.jar")
     modCompileOnly("dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:4.8.7+1.21.1")
+    modCompileOnly files("libs/PresenceFootsteps-1.11.1+1.21.jar")
     modRuntimeOnly files("libs/WalksyLib-0.9.96+1.21.jar")
     modRuntimeOnly("dev.lambdaurora.lambdynamiclights:lambdynamiclights-runtime:4.8.7+1.21.1")
     // Wathe Items

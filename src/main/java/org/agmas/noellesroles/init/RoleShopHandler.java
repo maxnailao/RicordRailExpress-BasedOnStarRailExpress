@@ -3255,7 +3255,7 @@ public class RoleShopHandler {
           }
         // 末影人商店 - 同杀手默认商店 + 末影珍珠（100金币）
         {
-            var ENDERMAN_SHOP = new ArrayList<>(ShopContent.defaultKnifeEntries);
+            var ENDERMAN_SHOP = new ArrayList<>(ShopContent.getDefaultKnifeEntries());
             ENDERMAN_SHOP.add(new ShopEntry(
                     Items.ENDER_PEARL.getDefaultInstance(),
                     100,
