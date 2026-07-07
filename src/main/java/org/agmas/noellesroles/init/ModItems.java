@@ -856,6 +856,40 @@ public class ModItems {
             "zero_one_five_gun", WEAPONS_GROUP);
 
     /**
+     * 消音手枪
+     * - 右键开枪，左键换弹
+     * - 射程18格，冷却8秒
+     * - 弹容量2发，装填时间2秒
+     * - 枪声传播距离极低（半径8格）
+     */
+    public static final Item SILENCED_PISTOL = register(
+            new org.agmas.noellesroles.content.item.SilencedPistolItem(
+                    new Item.Properties().stacksTo(1)),
+            "silenced_pistol", WEAPONS_GROUP);
+
+    /**
+     * 沙漠之鹰
+     * - 左键开火，R键换弹
+     * - 射程25格，射击冷却0.3秒
+     * - 弹容量7发，使用沙鹰弹匣装填（2.5秒换弹）
+     * - 连续开火后坐力系统，独特的爆头/致残击杀机制
+     */
+    public static final Item DESERT_EAGLE = register(
+            new org.agmas.noellesroles.content.item.DesertEagleItem(
+                    new Item.Properties().stacksTo(1)),
+            "desert_eagle", WEAPONS_GROUP);
+
+    /**
+     * 沙鹰弹匣
+     * - 用于装填沙漠之鹰
+     * - 消耗一个弹匣回满弹药
+     */
+    public static final Item DESERT_EAGLE_MAGAZINE = register(
+            new org.agmas.noellesroles.content.item.DesertEagleMagazineItem(
+                    new Item.Properties()),
+            "desert_eagle_magazine", WEAPONS_GROUP);
+
+    /**
      * 海盗燧发枪
      * - 射程15格，坐在耐久橡木船上时射程提升为40格
      * - 冷却30秒
@@ -1059,6 +1093,14 @@ public class ModItems {
             "bullet", CONSUMABLES_GROUP);
 
     /**
+     * 消音手枪子弹
+     * - 右键使用：装填消音手枪
+     */
+    public static final Item SILENCED_PISTOL_BULLET = register(
+            new org.agmas.noellesroles.content.item.SilencedPistolBulletItem(new Item.Properties().stacksTo(64)),
+            "silenced_pistol_bullet", CONSUMABLES_GROUP);
+
+    /**
      * 磁铁
      * - 携带在物品栏中时持续吸取周围8格内的掉落物到自己身边
      */
@@ -1160,7 +1202,8 @@ public class ModItems {
         ITEM_COOLDOWNS.put(ModItems.BANDIT_REVOLVER, getInTicks(0, 40));
         ITEM_COOLDOWNS.put(ModItems.SHORT_SHOTGUN, getInTicks(30, 0));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));
-        ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 75));
+        ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 60));
+        ITEM_COOLDOWNS.put(ModItems.SILENCED_PISTOL, getInTicks(0, 8));
         DevItems.init();
     }
 

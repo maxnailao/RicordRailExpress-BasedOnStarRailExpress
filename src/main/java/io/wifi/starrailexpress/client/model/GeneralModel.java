@@ -57,18 +57,17 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         defaultBakedModel = baker.bake(itml.withPath("item/" + itml.getPath()),
                 settings);
         for (ItemSkinManager.Skin skin : ItemSkinManager.getSkins(itemType).values()) {
+            Map<GeneralModelLoadingPlugin.Variant, BakedModel> variantMap = new HashMap<>();
             for (GeneralModelLoadingPlugin.Variant variant : GeneralModelLoadingPlugin.Variant.values()) {
                 var bakedModel = baker.bake(
                         GeneralModelLoadingPlugin.getModelLocation(itemType, skin.getName(), variant),
                         settings);
-                if (skin.getName() == "default")
-                    continue;
-                if (bakeModels.containsKey(skin.getName()))
-                    bakeModels.get(skin.getName()).put(variant, bakedModel);
-                else {
-                    bakeModels.put(skin.getName(), new HashMap<>());
-                    bakeModels.get(skin.getName()).put(variant, bakedModel);
+                if (bakedModel != null) {
+                    variantMap.put(variant, bakedModel);
                 }
+            }
+            if (!variantMap.isEmpty() && !"default".equals(skin.getName())) {
+                bakeModels.put(skin.getName(), variantMap);
             }
         }
 
@@ -96,11 +95,14 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         }
         var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
 
-        if (skin != null && bakeModels.containsKey(skin.getName()) && bakeModels.containsKey(skin.getName())
-                && bakeModels.get(skin.getName()).containsKey(variant))
-            bakeModels.get(skin.getName()).get(variant).emitItemQuads(stack, randomSupplier, context);
-        else
-            getDefaultModel().emitItemQuads(stack, randomSupplier, context);
+        if (skin != null && bakeModels.containsKey(skin.getName())) {
+            var variantMap = bakeModels.get(skin.getName());
+            if (variantMap != null && variantMap.containsKey(variant)) {
+                variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
+                return;
+            }
+        }
+        getDefaultModel().emitItemQuads(stack, randomSupplier, context);
     }
 
     /**

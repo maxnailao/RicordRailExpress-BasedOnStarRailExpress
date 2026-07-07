@@ -1,0 +1,52 @@
+{
+  "musicbox.triumph_01": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.triumph_01",
+    "sounds": [
+      {
+        "name": "starrailexpress:musicbox/triumph_01",
+        "stream": true
+      }
+    ]
+  },
+  "musicbox.triumph_02": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.triumph_02",
+    "sounds": [
+      {
+        "name": "starrailexpress:musicbox/triumph_02",
+        "stream": true
+      }
+    ]
+  },
+  "musicbox.triumph_03": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.triumph_03",
+    "sounds": [
+      {
+        "name": "starrailexpress:musicbox/triumph_03",
+        "stream": true
+      }
+    ]
+  },
+  "musicbox.gaoshouruyun": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.gaoshouruyun",
+    "sounds": [
+      {
+        "name": "starrailexpress:musicbox/gaoshouruyun",
+        "stream": true
+      }
+    ]
+  },
+  "musicbox.inhuman": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.inhuman",
+    "sounds": [
+      {
+        "name": "starrailexpress:musicbox/inhuman",
+        "stream": true
+      }
+    ]
+  }
+}

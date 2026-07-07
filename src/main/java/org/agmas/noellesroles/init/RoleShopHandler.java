@@ -3246,5 +3246,31 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
         }
+          {
+              // 哑女商店 - 便签(20金币)
+              ShopContent.customEntries.put(
+                      ModRoles.DUMB_WOMAN_ID,
+                      List.of(
+                              new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 20, ShopEntry.Type.TOOL)));
+          }
+        // 末影人商店 - 同杀手默认商店 + 末影珍珠（100金币）
+        {
+            var ENDERMAN_SHOP = new ArrayList<>(ShopContent.defaultKnifeEntries);
+            ENDERMAN_SHOP.add(new ShopEntry(
+                    Items.ENDER_PEARL.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.MOYINGREN_ENDERMAN_ID, ENDERMAN_SHOP);
+        }
+      // 特工商店
+      {
+          var SHOP = new ArrayList<ShopEntry>();
+          // 消音手枪子弹 - 100金币
+          SHOP.add(new ShopEntry(
+                  ModItems.SILENCED_PISTOL_BULLET.getDefaultInstance(),
+                  100,
+                  ShopEntry.Type.WEAPON));
+          ShopContent.customEntries.put(ModRoles.TEGONG_ID, SHOP);
+      }
     }
 }

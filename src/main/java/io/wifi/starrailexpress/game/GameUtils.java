@@ -671,6 +671,8 @@ public class GameUtils {
             var items = new ArrayList<>(MCItemsUtils.getItemsByTag(player.serverLevel(), TMMItemTags.GUNS));
             // Noellesroles.LOGGER.info("itemSize:" + items.size());
             items.forEach((item) -> {
+                // 沙漠之鹰拥有独立的快速射击冷却系统，不受全局冷却影响
+                if (BuiltInRegistries.ITEM.getKey(item).getPath().equals("desert_eagle")) return;
                 cooldowns.addCooldown(item,
                         (Integer) time);
             });
@@ -689,7 +691,11 @@ public class GameUtils {
             cooldowns.addCooldown(TMMItems.BLACKOUT, time);
 
             cooldownItems.forEach(
-                    item -> cooldowns.addCooldown(item, time));
+                    item -> {
+                        // 沙漠之鹰拥有独立的快速射击冷却系统，不受全局冷却影响
+                        if (BuiltInRegistries.ITEM.getKey(item).getPath().equals("desert_eagle")) return;
+                        cooldowns.addCooldown(item, time);
+                    });
 
             // cooldowns.addCooldown(ModItems.SP_KNIFE, time);
             // cooldowns.addCooldown(ModItems.STALKER_KNIFE, time);
@@ -1068,6 +1074,8 @@ public class GameUtils {
         isGameStarted = false;
 
         gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
+        // --- 音乐盒：播放胜利方击杀最多玩家的凯旋音乐 ---
+        playVictoryMusicBox(world, roundEnd, gameComponent);
         // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
         // roundEnd.sync();
         // Show replay to all players
@@ -1281,6 +1289,147 @@ public class GameUtils {
                 }
                 ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
             }
+        }
+    }
+
+    // ── 音乐盒：播放胜利方击杀最多玩家的凯旋音乐 ──
+    private static void playVictoryMusicBox(ServerLevel world, SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent) {
+        SRE.LOGGER.info("[MusicBox] playVictoryMusicBox 开始执行");
+        try {
+            // 收集胜利方玩家 UUID
+            java.util.Set<java.util.UUID> winnerUuids = new java.util.LinkedHashSet<>();
+
+            // 1. 优先使用 CustomWinnerPlayers（由 recordWinStats 或游戏模式 tick 填充）
+            if (roundEnd.CustomWinnerPlayers != null && !roundEnd.CustomWinnerPlayers.isEmpty()) {
+                winnerUuids.addAll(roundEnd.CustomWinnerPlayers);
+                SRE.LOGGER.info("[MusicBox] 使用 CustomWinnerPlayers: {} 名胜利玩家", winnerUuids.size());
+            }
+
+            // 2. 回退：根据 winStatus 自行判定胜利方（部分游戏模式 shouldRecordPlayerStats=false 不会填充 CustomWinnerPlayers）
+            if (winnerUuids.isEmpty()) {
+                WinStatus winStatus = roundEnd.getWinStatus();
+                SRE.LOGGER.info("[MusicBox] CustomWinnerPlayers 为空，使用 winStatus={} 回退判定", winStatus);
+                for (ServerPlayer player : world.players()) {
+                    SRERole role = gameComponent.getRole(player);
+                    if (role == null) continue;
+                    boolean isWinner = false;
+                    switch (winStatus) {
+                        case PASSENGERS:
+                        case TIME:
+                            isWinner = role.isInnocent()
+                                    || "amnesiac".equals(role.identifier().getPath())
+                                    || "initiate".equals(role.identifier().getPath());
+                            break;
+                        case KILLERS:
+                            isWinner = SREGameWorldComponent.isKillerTeamRoleStatic(role) && !role.isInnocent();
+                            break;
+                        case LOOSE_END:
+                            isWinner = role.identifier().equals(TMMRoles.LOOSE_END.identifier());
+                            break;
+                        case NIAN_SHOU:
+                            isWinner = "nianshou".equals(role.identifier().getPath());
+                            break;
+                        case GAMBLER:
+                            isWinner = "gambler".equals(role.identifier().getPath());
+                            break;
+                        case RECORDER:
+                            isWinner = "recorder".equals(role.identifier().getPath());
+                            break;
+                        case LOVERS:
+                            isWinner = roundEnd.CustomWinnerPlayers != null
+                                    && roundEnd.CustomWinnerPlayers.contains(player.getUUID());
+                            break;
+                        case CUSTOM:
+                        case CUSTOM_COMPONENT:
+                            if (roundEnd.CustomWinnerID != null
+                                    && roundEnd.CustomWinnerID.equals(role.identifier().getPath())) {
+                                isWinner = true;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    if (isWinner) {
+                        winnerUuids.add(player.getUUID());
+                    }
+                }
+                SRE.LOGGER.info("[MusicBox] 回退判定找到 {} 名胜利玩家", winnerUuids.size());
+            }
+
+            if (winnerUuids.isEmpty()) {
+                SRE.LOGGER.info("[MusicBox] 无胜利方玩家，跳过音乐盒");
+                return;
+            }
+
+            // 在胜利方玩家中找击杀最多的
+            java.util.UUID topKillerUuid = null;
+            int topKills = -1;
+            for (java.util.UUID winnerUuid : winnerUuids) {
+                int kills = gameComponent.getPlayerKills(winnerUuid);
+                if (kills > topKills) {
+                    topKills = kills;
+                    topKillerUuid = winnerUuid;
+                }
+            }
+            if (topKillerUuid == null) {
+                SRE.LOGGER.info("[MusicBox] 未找到有效 topKiller，跳过");
+                return;
+            }
+
+            // 获取该玩家
+            ServerPlayer topKiller = world.getServer().getPlayerList().getPlayer(topKillerUuid);
+            if (topKiller == null) {
+                SRE.LOGGER.info("[MusicBox] topKiller 已离线，跳过");
+                return;
+            }
+
+            // 检查装备的音乐盒
+            var musicBoxComp = io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY
+                    .maybeGet(topKiller).orElse(null);
+            if (musicBoxComp == null || !musicBoxComp.hasEquipped()) {
+                SRE.LOGGER.info("[MusicBox] 玩家 {} 未装备音乐盒，跳过",
+                        topKiller.getName().getString());
+                return;
+            }
+
+            String boxId = musicBoxComp.getEquippedBox();
+            var box = io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry.get(boxId);
+            if (box == null) {
+                SRE.LOGGER.info("[MusicBox] 音乐盒 ID={} 未注册，跳过", boxId);
+                return;
+            }
+
+            // 全服广播：立即显示提示，延迟播放音乐（等待客户端 fade 渐暗结束、MASTER 音量恢复）
+            // fade 最大值 60，每 tick 递减 1，约 70 tick 后音量基本恢复
+            String playerName = topKiller.getName().getString();
+            String boxName = box.displayName().getString();
+            SRE.LOGGER.info("[MusicBox] 播放胜利音乐: 玩家={}, 音乐盒={}", playerName, boxName);
+
+            // 立即在 actionbar 显示提示（不受 fade 静音影响）
+            Component actionBarMsg = Component.translatable("message.sre.musicbox.victory",
+                    playerName, boxName).withStyle(ChatFormatting.GOLD);
+            for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
+                player.displayClientMessage(actionBarMsg, true);
+            }
+
+            // 延迟 ~70 tick (3.5秒) 后发送音效包 + 再次显示 actionbar，此时客户端 fade 已接近 0，MASTER 音量恢复
+            final String finalBoxId = boxId;
+            final String finalPlayerName = playerName;
+            final String finalBoxName = boxName;
+            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(70, () -> {
+                var delayedPayload = new io.wifi.starrailexpress.content.musicbox.network.PlayMusicBoxS2CPayload(
+                        finalBoxId, finalPlayerName);
+                Component musicMsg = Component.translatable("message.sre.musicbox.victory",
+                        finalPlayerName, finalBoxName).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+                for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
+                    ServerPlayNetworking.send(player, delayedPayload);
+                    player.displayClientMessage(musicMsg, true);
+                }
+                SRE.LOGGER.info("[MusicBox] 延迟音效包已发送");
+            }));
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[MusicBox] playVictoryMusicBox 发生异常，已跳过", e);
         }
     }
 

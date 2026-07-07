@@ -19,6 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.GhostStateComponent;
+import org.agmas.noellesroles.content.effects.NightmareEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
@@ -186,6 +187,33 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> FOOTSTEP_VANISH = register("footstep_vanish",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9E9E9E));
+
+    /**
+     * 静默潜行（特工被动）
+     * - 中性效果，浅蓝色
+     * - 特工专属被动效果，游戏开始时永久施加。
+     *   拥有该效果的玩家脚步声被完全屏蔽（与 {@link #FOOTSTEP_VANISH} 共用
+     *   {@code FootstepVanishMixin} / {@code FootstepVanishServerMixin} 拦截逻辑），
+     *   由 {@code FootstepVanishEffectSync} 广播给所有客户端。
+     */
+    public static final Holder<MobEffect> JINGMOQIANXING = register("jingmoqianxing",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
+
+    /**
+     * 静步（脚步声屏蔽）
+     * - 中性效果，深青色
+     * - 专门屏蔽脚步声的效果，与 {@link #JINGMOQIANXING}（移动粒子隐藏）配合使用。
+     *   拥有该效果的玩家：
+     *   <ul>
+     *     <li>服务端：{@code FootstepVanishServerMixin} 拦截 {@code ServerLevel.playSeededSound*}，
+     *         阻止该玩家产生的声音广播给其他客户端。</li>
+     *     <li>客户端：{@code FootstepVanishMixin} 拦截 {@code Entity.playStepSound}，
+     *         阻止本地脚步声播放。</li>
+     *   </ul>
+     *   由 {@code FootstepVanishEffectSync} 广播给所有客户端。
+     */
+    public static final Holder<MobEffect> JINGBU = register("jingbu",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x008B8B));
 
     /**
      * san值消耗减缓
@@ -398,6 +426,14 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> GONGJIJIANGEOFF = register("gongjijiangeoff",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFD700));
+
+    /**
+     * 噩梦效果（梦魇角色）
+     * - 有害效果，暗紫色
+     * - 1层: 缓慢I + 每秒降低1点理智值，可被心理学家治疗消除
+     * - 2层: 缓慢I + 每秒降低1点理智值 + 每15秒获得5秒黑暗效果，不可被心理学家治疗消除
+     */
+    public static final Holder<MobEffect> NIGHTMARE = register("nightmare", new NightmareEffect());
 
     /**
      * 注册药水效果到注册表

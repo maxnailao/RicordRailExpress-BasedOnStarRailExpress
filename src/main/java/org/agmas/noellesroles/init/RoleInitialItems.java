@@ -396,6 +396,20 @@ public class RoleInitialItems {
         List<Supplier<ItemStack>> restingPoliceItems = new ArrayList<>();
         restingPoliceItems.add(() -> ModItems.ONCE_REVOLVER.getDefaultInstance());
         INITIAL_ITEMS_MAP.put(ModRoles.RESTING_POLICE, restingPoliceItems);
+
+        // 特工初始物品 - 消音手枪（无弹药）
+        List<Supplier<ItemStack>> tegongItems = new ArrayList<>();
+        tegongItems.add(() -> ModItems.SILENCED_PISTOL.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.TEGONG, tegongItems);
+
+        // 末影人初始物品 - 末影珍珠两个
+        List<Supplier<ItemStack>> endermanItems = new ArrayList<>();
+        endermanItems.add(() -> {
+            ItemStack pearls = Items.ENDER_PEARL.getDefaultInstance();
+            pearls.setCount(2);
+            return pearls;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.MOYINGREN_ENDERMAN, endermanItems);
     }
 
 }

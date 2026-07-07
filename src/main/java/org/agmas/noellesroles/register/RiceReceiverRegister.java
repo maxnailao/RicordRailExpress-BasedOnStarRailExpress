@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.register;
 
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -780,6 +781,40 @@ public class RiceReceiverRegister {
             PsychologistPlayerComponent psychComp = ModComponents.PSYCHOLOGIST.get(context.player());
             psychComp.startHealing(target);
             ConfigWorldComponent.onPlayerUsedSkill(context.player());
+        });
+
+        // 处理梦魇恐惧技能包
+        ServerPlayNetworking.registerGlobalReceiver(MENGYAN_PACKET, (payload, context) -> {
+            ServerPlayer player = context.player();
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+
+            // 验证玩家是梦魇
+            if (!gameWorld.isRole(player, ModRoles.MENGYAN)) return;
+
+            // 验证玩家存活
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+
+            // 验证目标玩家
+            Player target = player.level().getPlayerByUUID(payload.targetUuid());
+            if (target == null || target == player) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.mengyan.target_invalid"), true);
+                return;
+            }
+
+            // 验证目标不是杀手队友
+            SRERole targetRole = gameWorld.getRole(target);
+            if (targetRole != null && ModRoles.isVisibleKillerTeammate(targetRole)) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.mengyan.target_teammate"), true);
+                return;
+            }
+
+            // 获取梦魇组件并施放恐惧
+            org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent mengyanComp =
+                    ModComponents.MENGYAN.get(player);
+            mengyanComp.useSkill(payload.targetUuid());
+            ConfigWorldComponent.onPlayerUsedSkill(player);
         });
 
         // 处理傀儡师技能包

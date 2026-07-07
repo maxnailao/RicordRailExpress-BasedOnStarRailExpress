@@ -7,6 +7,8 @@ import io.wifi.starrailexpress.network.packet.ShowCustomNewspaperPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.agmas.noellesroles.content.item.SilencedPistolShootPayload;
+import org.agmas.noellesroles.content.item.DesertEagleShootPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
 import org.agmas.noellesroles.packet.*;
@@ -185,6 +187,16 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(PirateFlintlockShootPayload.ID, PirateFlintlockShootPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(PirateFlintlockShootPayload.ID,
                 new PirateFlintlockShootPayload.Receiver());
+
+        // 注册消音手枪射击/装填网络包
+        PayloadTypeRegistry.playC2S().register(SilencedPistolShootPayload.ID, SilencedPistolShootPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(SilencedPistolShootPayload.ID,
+                new SilencedPistolShootPayload.Receiver());
+
+        // 注册沙漠之鹰射击/装填网络包
+        PayloadTypeRegistry.playC2S().register(DesertEagleShootPayload.ID, DesertEagleShootPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DesertEagleShootPayload.ID,
+                new DesertEagleShootPayload.Receiver());
 
         // 注册鹈鹕网络包
         PayloadTypeRegistry.playC2S().register(PelicanEatC2SPacket.ID, PelicanEatC2SPacket.CODEC);

@@ -77,6 +77,11 @@ public class OtherRolesRegister {
         LeonHud.register();
         BlackkeHud.register();
         GhostofanyingHud.register();
+        TegongHud.register();
+        JinghuazheHud.register();
+        RuikeHud.register();
+        MengyanHud.register();
+        XundaozheHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

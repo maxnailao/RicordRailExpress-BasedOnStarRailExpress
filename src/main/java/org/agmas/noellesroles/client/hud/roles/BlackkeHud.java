@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client.hud.roles;
 
-import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -19,7 +18,7 @@ public class BlackkeHud {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null) return;
 
-            SREAbilityPlayerComponent abilityComp = SREAbilityPlayerComponent.KEY.get(client.player);
+            BlackkePlayerComponent blackkeComp = BlackkePlayerComponent.KEY.get(client.player);
 
             Font textRenderer = client.font;
             int screenWidth = client.getWindow().getGuiScaledWidth();
@@ -34,8 +33,8 @@ public class BlackkeHud {
                     x - textRenderer.width(costText), y, 0x00C853);
 
             // Display cooldown time
-            if (abilityComp.cooldown > 0) {
-                int cooldownSeconds = (abilityComp.cooldown + 19) / 20;
+            if (blackkeComp.getSkillCooldown() > 0) {
+                int cooldownSeconds = (blackkeComp.getSkillCooldown() + 19) / 20;
                 Component cooldownText = Component.translatable("hud.noellesroles.blackke.cooldown",
                         cooldownSeconds);
                 context.drawString(textRenderer, cooldownText,

@@ -31,7 +31,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * - 最多存储3次使用次数，每次回转CD为30秒
  * - 游戏开始时存储为1次
  * - 使用后进入隐身形态，进行自动移动
- * - 初速度100格/s，移动0.3秒(30格)后减速至停止(再约20格)
+ * - 初速度70格/s，移动0.3秒(21格)后减速至停止(再约14格)
  * - 移动期间可转动视角控制方向
  * - 移动路径留下黑色、灰色粒子
  */
@@ -50,13 +50,13 @@ public class GhostofanyingPlayerComponent implements RoleComponent, ServerTickin
     /** 暗影步总持续时间（14 tick = 0.7秒） */
     private static final int DASH_TOTAL_TICKS = 14;
 
-    /** 匀速阶段持续 tick（6 tick = 0.3秒，移动30格） */
+    /** 匀速阶段持续 tick（6 tick = 0.3秒，移动21格） */
     private static final int CONSTANT_PHASE_TICKS = 6;
 
-    /** 初速度（100格/s = 5格/tick） */
-    private static final double INITIAL_SPEED = 5.0;
+    /** 初速度（70格/s = 3.5格/tick） */
+    private static final double INITIAL_SPEED = 3.5;
 
-    /** 减速阶段每 tick 的速度衰减量（8tick内从5.0降至0） */
+    /** 减速阶段每 tick 的速度衰减量（8tick内从3.5降至0） */
     private static final double DECELERATION_PER_TICK = INITIAL_SPEED / (DASH_TOTAL_TICKS - CONSTANT_PHASE_TICKS);
 
     // ==================== 状态变量 ====================

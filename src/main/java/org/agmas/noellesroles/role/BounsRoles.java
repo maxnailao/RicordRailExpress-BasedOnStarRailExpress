@@ -32,6 +32,8 @@ public class BounsRoles {
     public static final ResourceLocation BASEBALL_PLAYER_ID = id("baseball_player");
     public static final ResourceLocation CREEPER_ID = id("creeper");
     public static final ResourceLocation TELEGRAPHER_ID = id("telegrapher");
+    // NiKo 角色 ID - 彩蛋警方
+    public static final ResourceLocation NIKOPLAY_ID = id("nikoplay");
 
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(NAMESPACE, path);
@@ -180,6 +182,49 @@ public class BounsRoles {
             false // 显示计分板
     )).setVigilanteTeam(true).setCanPickUpRevolver(true).setCanBeRandomedByOtherRoles(false)
             .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(10);
+    /**
+     * NiKo 角色 - 彩蛋警方
+     * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 初始物品：沙漠之鹰
+     * - 商店：沙鹰弹夹 150金币
+     * - 登场标语：老霸道了
+     * - 0.5% * egg chance 概率刷新
+     */
+    public static SRERole NIKOPLAY = TMMRoles.registerRole(new EggRole(
+            NIKOPLAY_ID, // 角色 ID
+            new Color(0, 168, 107).getRGB(), // 玉绿色
+            true,   // isInnocent = 警长阵营
+            false,  // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false   // 不隐藏计分板
+    ) {
+        @Override
+        public java.util.List<net.minecraft.world.item.ItemStack> getDefaultItems() {
+            return java.util.List.of(
+                    new net.minecraft.world.item.ItemStack(org.agmas.noellesroles.init.ModItems.DESERT_EAGLE)
+            );
+        }
+
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new net.minecraft.world.item.ItemStack(org.agmas.noellesroles.init.ModItems.DESERT_EAGLE_MAGAZINE),
+                    150,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.WEAPON));
+            return entries;
+        }
+    }).setVigilanteTeam(true)
+      .setCanSeeCoin(true)
+      .setCanPickUpRevolver(true)
+      .setCanBeRandomedByOtherRoles(false)
+      .setDefaultMax(1)
+      .setDefaultEnableChance(50);
     /**
      * 职业：冷笑
      * 巫毒对立职业

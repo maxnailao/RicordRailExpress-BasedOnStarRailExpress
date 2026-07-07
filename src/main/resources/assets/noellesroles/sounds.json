@@ -166,5 +166,41 @@
         "stream": false
       }
     ]
+  },
+  "noellesroles.xiaoyinqiang": {
+    "sounds": [
+      {
+        "name": "noellesroles:xiaoyinqiang",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.silenced_pistol_reload": {
+    "sounds": [
+      {
+        "name": "minecraft:block.piston.extend",
+        "stream": false,
+        "volume": 0.5,
+        "pitch": 1.5
+      }
+    ]
+  },
+  "noellesroles.shaying": {
+    "sounds": [
+      {
+        "name": "noellesroles:shaying",
+        "stream": false
+      }
+    ]
+  },
+  "noellesroles.desert_eagle_reload": {
+    "sounds": [
+      {
+        "name": "minecraft:item.armor.equip_iron",
+        "stream": false,
+        "volume": 0.8,
+        "pitch": 0.8
+      }
+    ]
   }
 }

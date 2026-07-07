@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client.widget;
 
-import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -13,6 +12,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 
+import org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent;
 import org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket;
 
 import java.awt.*;
@@ -44,8 +44,8 @@ public class BlackkePlayerWidget extends Button {
         if (player == null) return;
         if (targetPlayerEntry == null) return;
 
-        final var abilityPlayerComponent = SREAbilityPlayerComponent.KEY.get(player);
-        if (abilityPlayerComponent == null) return;
+        final var blackkeComp = BlackkePlayerComponent.KEY.get(player);
+        if (blackkeComp == null) return;
 
         // Check skin texture existence to avoid NullPointerException
         var skinTextures = targetPlayerEntry.getSkin();
@@ -55,7 +55,7 @@ public class BlackkePlayerWidget extends Button {
         if (textRenderer == null) return;
 
         // Operable when cooldown is finished
-        if (abilityPlayerComponent.cooldown == 0) {
+        if (blackkeComp.getSkillCooldown() == 0) {
             context.blitSprite(ShopEntry.Type.POISON.getTexture(), this.getX() - 7, this.getY() - 7, 30, 30);
             PlayerFaceRenderer.draw(context, skinTextures.texture(), this.getX(), this.getY(), 16);
             if (this.isHovered()) {
@@ -69,7 +69,7 @@ public class BlackkePlayerWidget extends Button {
         }
 
         // Grayed out during cooldown
-        if (abilityPlayerComponent.cooldown > 0) {
+        if (blackkeComp.getSkillCooldown() > 0) {
             context.setColor(0.25f, 0.25f, 0.25f, 0.5f);
             context.blitSprite(ShopEntry.Type.POISON.getTexture(), this.getX() - 7, this.getY() - 7, 30, 30);
             PlayerFaceRenderer.draw(context, skinTextures.texture(), this.getX(), this.getY(), 16);
@@ -77,7 +77,7 @@ public class BlackkePlayerWidget extends Button {
                 this.drawShopSlotHighlight(context, this.getX(), this.getY(), 0);
             }
             context.setColor(1f, 1f, 1f, 1f);
-            context.drawString(textRenderer, abilityPlayerComponent.cooldown / 20 + "",
+            context.drawString(textRenderer, blackkeComp.getSkillCooldown() / 20 + "",
                     this.getX(), this.getY(), Color.RED.getRGB(), true);
         }
     }

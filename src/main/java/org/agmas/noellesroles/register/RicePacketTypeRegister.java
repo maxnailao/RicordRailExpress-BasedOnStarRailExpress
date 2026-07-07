@@ -79,6 +79,9 @@ public class RicePacketTypeRegister {
         // 注册管家技能包
         PayloadTypeRegistry.playC2S().register(HousekeeperAbilityC2SPacket.ID, HousekeeperAbilityC2SPacket.CODEC);
 
+        // 注册梦魇恐惧技能包
+        PayloadTypeRegistry.playC2S().register(MengyanC2SPacket.ID, MengyanC2SPacket.CODEC);
+
         // 注册建筑师墙数据S2C包
         PayloadTypeRegistry.playS2C().register(BuilderWallS2CPacket.ID, BuilderWallS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BuilderRemoveWallS2CPacket.ID, BuilderRemoveWallS2CPacket.CODEC);

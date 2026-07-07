@@ -38,6 +38,7 @@ public final class SRESkinRegistry {
         // ═══════════════════════════════════════════════════════════════════
         registerSkin(SkinTypes.KNIFE, "testofknifeskin", QualityColor.COMMON);
         registerSkin(SkinTypes.KNIFE, "test", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.KNIFE, "knife_bunana", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤
@@ -56,6 +57,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.REVOLVER, "revolver_sakura", QualityColor.EPIC);
         registerSkin(SkinTypes.REVOLVER, "revolver_golden", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.REVOLVER, "revolver_onyx", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.REVOLVER, "revolver_xiangzadi", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）皮肤
@@ -82,6 +84,8 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_heart", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_star", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_diamond", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.GRENADE, "grenade_kanshenmekan", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_zisefurui", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // HAT（帽子）皮肤

@@ -87,6 +87,9 @@ public class RicesRoleRhapsody implements ModInitializer {
     // 管家技能包
     public static final CustomPacketPayload.Type<HousekeeperAbilityC2SPacket> HOUSEKEEPER_ABILITY_PACKET = HousekeeperAbilityC2SPacket.ID;
 
+    // 梦魇恐惧技能包
+    public static final CustomPacketPayload.Type<MengyanC2SPacket> MENGYAN_PACKET = MengyanC2SPacket.ID;
+
     public static final CustomPacketPayload.Type<LockGameC2Packet> LOCK_GAME_PACKET = LockGameC2Packet.ID;
     public static final CustomPacketPayload.Type<KeyForgeGameC2Packet> KEY_FORGE_GAME_PACKET = KeyForgeGameC2Packet.ID;
     public static final CustomPacketPayload.Type<LootRequestC2SPacket> LOOT_REQUIRE_PACKET = LootRequestC2SPacket.ID;
@@ -416,6 +419,36 @@ public class RicesRoleRhapsody implements ModInitializer {
         if (role.equals(ModRoles.BUILDER)) {
             org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent builderComponent = org.agmas.noellesroles.component.ModComponents.BUILDER.get(player);
             builderComponent.init();
+        }
+
+        // ==================== 管家角色处理 ====================
+        if (role.equals(ModRoles.HOUSEKEEPER)) {
+            org.agmas.noellesroles.game.roles.innocence.housekeeper.HousekeeperPlayerComponent housekeeperComponent = org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(player);
+            housekeeperComponent.init();
+        }
+
+        // ==================== 暗影角色处理 ====================
+        if (role.equals(ModRoles.GHOSTOFANYING)) {
+            org.agmas.noellesroles.game.roles.killer.ghostofanying.GhostofanyingPlayerComponent ghostofanyingComponent = org.agmas.noellesroles.component.ModComponents.GHOSTOFANYING.get(player);
+            ghostofanyingComponent.init();
+        }
+
+        // ==================== 特工角色处理 ====================
+        if (role.equals(ModRoles.TEGONG)) {
+            org.agmas.noellesroles.game.roles.innocence.tegong.TegongPlayerComponent tegongComponent = org.agmas.noellesroles.component.ModComponents.TEGONG.get(player);
+            tegongComponent.init();
+        }
+
+        // ==================== 梦魇角色处理 ====================
+        if (role.equals(ModRoles.MENGYAN)) {
+            org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent mengyanComponent = org.agmas.noellesroles.component.ModComponents.MENGYAN.get(player);
+            mengyanComponent.init();
+        }
+
+        // ==================== 殉道者角色处理 ====================
+        if (role.equals(ModRoles.XUNDAOZHE)) {
+            org.agmas.noellesroles.game.roles.innocence.xundaozhe.XundaozhePlayerComponent xundaozheComponent = org.agmas.noellesroles.component.ModComponents.XUNDAOZHE.get(player);
+            xundaozheComponent.init();
         }
         // if (role.equals(ModRoles.EXAMPLE_ROLE)) {
         // // 给予物品

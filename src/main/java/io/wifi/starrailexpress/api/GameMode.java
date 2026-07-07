@@ -380,6 +380,8 @@ public abstract class GameMode {
                         case "derringer_shot":
                         case "revolver_shot":
                         case "gun_shot":
+                        case "silenced_pistol_shot":
+                        case "desert_eagle_shot":
                             eventDeathReason = OnPlayerKilledPlayer.DeathReason.GUN_SHOOT;
                             break;
                         case "knife_stab":

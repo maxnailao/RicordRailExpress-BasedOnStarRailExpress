@@ -153,6 +153,21 @@ public class InstinctRenderer {
 
             return -1;
         });
+        // 特工：技能激活时反透视
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer)) return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null) return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning()) return -1;
+            try {
+                var tegongComp = ModComponents.TEGONG.get(targetPlayer);
+                if (tegongComp != null && tegongComp.skillActive) {
+                    return -2;
+                }
+            } catch (Exception e) {
+                // 静默处理
+            }
+            return -1;
+        });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player target_player))
                 return -1;

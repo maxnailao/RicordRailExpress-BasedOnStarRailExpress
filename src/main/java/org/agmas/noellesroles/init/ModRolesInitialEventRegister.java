@@ -494,6 +494,13 @@ public class ModRolesInitialEventRegister {
                 moodComp.sync();
                 return;
             }
+            // 时空旅者角色初始化
+            if (role.identifier().equals(ModRoles.RUIKE.identifier())) {
+                var comp = ModComponents.RUIKE.get(player);
+                comp.init();
+                comp.sync();
+                return;
+            }
             // 如果不拦截就同步
             abilityPlayerComponent.sync();
         });
@@ -1324,6 +1331,165 @@ public class ModRolesInitialEventRegister {
                     if (comp == null) return false;
                     return comp.useShadowStep();
                 }).toggleable(true).announceToSelf(false).showOnHud(true).build());
+
+        // 特工技能注册：潜行模式（10秒速度I+消脚步+反透视），冷却90秒
+        RoleSkill.register(ModRoles.TEGONG, RoleSkill.skill(
+                SRE.id("tegong_stealth"),
+                "skill.noellesroles.tegong.stealth",
+                context -> {
+                    var comp = ModComponents.TEGONG.get(context.player());
+                    return comp.activateSkill();
+                }).cooldownSeconds(90).announceToSelf(true).showOnHud(true).build());
+
+        // 净化者技能注册：花费150金币清空准心对准的玩家身上所有效果，射程6格，冷却30秒
+        RoleSkill.register(ModRoles.JINGHUAZHE, RoleSkill.skill(
+                SRE.id("jinghuazhe_purify"),
+                "skill.noellesroles.jinghuazhe.purify",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (GameUtils.isPlayerEliminated(player)) return false;
+                    UUID targetUuid = context.target();
+                    if (targetUuid == null) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.jinghuazhe.no_target")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    Player target = player.level().getPlayerByUUID(targetUuid);
+                    if (target == null || !GameUtils.isPlayerAliveAndSurvival(target)) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.jinghuazhe.no_target")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    double distance = player.distanceTo(target);
+                    if (distance > 6.0) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.jinghuazhe.too_far")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 150) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    shop.addToBalance(-150);
+                    target.removeAllEffects();
+                    player.displayClientMessage(
+                            Component.translatable("message.noellesroles.jinghuazhe.purified", target.getName().getString())
+                                    .withStyle(ChatFormatting.AQUA),
+                            true);
+                    target.displayClientMessage(
+                            Component.translatable("message.noellesroles.jinghuazhe.been_purified")
+                                    .withStyle(ChatFormatting.AQUA),
+                            true);
+                    player.level().playSound(null, player.blockPosition(),
+                            SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.5F);
+                    return true;
+                }).cooldownSeconds(30).build());
+
+        // 时空旅者技能注册：花费125金币在原地放置传送门
+        RoleSkill.register(ModRoles.RUIKE, RoleSkill.skill(
+                SRE.id("ruike_place_portal"),
+                "skill.noellesroles.ruike.place_portal",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (GameUtils.isPlayerEliminated(player)) return false;
+
+                    // 检查金币
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 125) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+
+                    // 获取组件
+                    var comp = ModComponents.RUIKE.get(player);
+                    if (comp == null) return false;
+
+                    // 如果已有2个传送门，销毁最早放置的
+                    if (comp.getPortalCount() >= 2) {
+                        UUID oldestUuid = comp.portalUuids.get(0);
+                        var oldestEntity = player.serverLevel().getEntity(oldestUuid);
+                        if (oldestEntity instanceof org.agmas.noellesroles.content.entity.RuikePortalEntity oldPortal) {
+                            oldPortal.discard();
+                        } else {
+                            // 实体已不存在，手动从组件清理
+                            comp.removePortal(oldestUuid);
+                        }
+                    }
+
+                    // 扣除金币
+                    shop.addToBalance(-125);
+
+                    // 生成传送门实体
+                    var portal = new org.agmas.noellesroles.content.entity.RuikePortalEntity(
+                            org.agmas.noellesroles.init.ModEntities.RUIKE_PORTAL,
+                            player.level());
+                    portal.setPos(player.getX(), player.getY(), player.getZ());
+                    portal.setYRot(player.getYRot());
+                    portal.setOwnerUUID(player.getUUID());
+                    player.serverLevel().addFreshEntity(portal);
+
+                    // 配对逻辑：如果已有1个传送门，新传送门与之配对
+                    if (comp.getPortalCount() == 1) {
+                        UUID existingPortalUuid = comp.portalUuids.get(0);
+                        var existingPortal = player.serverLevel().getEntity(existingPortalUuid);
+                        if (existingPortal instanceof org.agmas.noellesroles.content.entity.RuikePortalEntity existing) {
+                            // 双向配对
+                            existing.setPairUUID(portal.getUUID());
+                            portal.setPairUUID(existing.getUUID());
+                            player.displayClientMessage(
+                                    Component.translatable("message.noellesroles.ruike.portal_paired")
+                                            .withStyle(ChatFormatting.AQUA),
+                                    true);
+                        }
+                    } else {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.ruike.portal_placed_first")
+                                        .withStyle(ChatFormatting.LIGHT_PURPLE),
+                                true);
+                    }
+
+                    // 添加传送门到组件
+                    comp.addPortal(portal.getUUID());
+
+                    // 播放放置音效
+                    player.level().playSound(null, player.blockPosition(),
+                            SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 0.5F, 1.0F);
+
+                    return true;
+                }).cooldownSeconds(10).build());
+
+        // 梦魇技能注册：打开背包选择玩家施加恐惧
+        RoleSkill.register(ModRoles.MENGYAN, RoleSkill.skill(
+                SRE.id("mengyan_fear"),
+                "skill.noellesroles.mengyan.fear",
+                context -> {
+                    // 实际逻辑在C2S包处理器中，这里只是标记技能可用
+                    // 玩家打开背包后通过选人UI发送C2S包触发
+                    return false;
+                }).cooldownSeconds(0).showOnHud(false).build());
+
+        // 殉道者技能注册：牺牲复活
+        RoleSkill.register(ModRoles.XUNDAOZHE, RoleSkill.skill(
+                SRE.id("xundaozhe_revive"),
+                "skill.noellesroles.xundaozhe.revive",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = ModComponents.XUNDAOZHE.get(player);
+                    return comp.tryStartRevival();
+                }).cooldownSeconds(0).build());
     }
 
 }

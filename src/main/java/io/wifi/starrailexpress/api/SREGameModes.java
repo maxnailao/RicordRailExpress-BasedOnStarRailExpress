@@ -53,6 +53,10 @@ public class SREGameModes {
     // Discovery Mode (sre)
     public static final ResourceLocation DISCOVERY_MODE_ID = SRE.shortId("discovery");
 
+    // Author: jiale
+    public static final ResourceLocation PSYCHO_BRAWL_ID = SRE.jialeId("fengmoluandoushashashashasha");
+    public static final ResourceLocation DESERT_EAGLE_KING_ID = SRE.jialeId("nikoplaynikonikoniniko");
+
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
 
@@ -95,6 +99,13 @@ public class SREGameModes {
 
     // Discovery Mode (sre)
     public static final GameMode DISCOVERY_MODE = registerGameMode(new SREDiscoveryGameMode(DISCOVERY_MODE_ID));
+
+    // Psycho Brawl Mode (jiale)
+    public static final GameMode PSYCHO_BRAWL_MODE = registerGameMode(new SREPsychoBrawlGameMode(PSYCHO_BRAWL_ID));
+
+    // Desert Eagle King Mode (jiale)
+    public static final GameMode DESERT_EAGLE_KING_MODE = registerGameMode(
+            new SREDesertEagleKingGameMode(DESERT_EAGLE_KING_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {
