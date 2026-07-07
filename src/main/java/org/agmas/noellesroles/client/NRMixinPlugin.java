@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class NRMixinPlugin implements IMixinConfigPlugin {
     private static final boolean IS_LAMBDYNLIGHTS_LOADED = FabricLoader.getInstance().isModLoaded("lambdynlights");
-    private static final boolean IS_PRESENCEFOOTSTEPS_LOADED = FabricLoader.getInstance().isModLoaded("presencefootsteps");
+    private static final boolean IS_PRESENCE_FOOTSTEPS_LOADED = FabricLoader.getInstance().isModLoaded("presencefootsteps");
 
     public void onLoad(String mixinPackage) {
         System.out.println("Noelle's Roles: Mixin Plugin Loaded");
@@ -26,11 +26,10 @@ public class NRMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.endsWith("LamBugFix") && !IS_LAMBDYNLIGHTS_LOADED) {
             return false;
         }
-        // Skip PresenceFootstepsSoundBlockMixin if PresenceFootsteps is not loaded
-        if (mixinClassName.endsWith("PresenceFootstepsSoundBlockMixin") && !IS_PRESENCEFOOTSTEPS_LOADED) {
+        if (mixinClassName.endsWith("PresenceFootstepsSoundBlockMixin") && !IS_PRESENCE_FOOTSTEPS_LOADED) {
             return false;
         }
-        return !"dpm.harpysimpleroles.mixin.client.LimitedInventoryScreen".equals(mixinClassName) && !"dpm.harpysimpleroles.mixin.PurchaseMixin".equals(mixinClassName) && !"dev.doctor4t.ratatouille.mixin.client.armor.PlayerEntityRendererMixin".equals(mixinClassName) && !"dev.doctor4t.ratatouille.mixin.client.armor.LivingEntityRendererMixin".equals(mixinClassName);
+        return true;
     }
 
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {

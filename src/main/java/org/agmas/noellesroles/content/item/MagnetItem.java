@@ -35,8 +35,12 @@ public class MagnetItem extends Item {
 
     @Override
     public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int slot, boolean selected) {
-        if (level.isClientSide()) return;
-        if (!(entity instanceof Player player)) return;
+        if (level.isClientSide())
+            return;
+        if (!(entity instanceof Player player))
+            return;
+        if (entity.isSpectator())
+            return;
 
         Vec3 center = player.position().add(0, player.getBbHeight() / 2.0D, 0);
         AABB area = player.getBoundingBox().inflate(PULL_RADIUS);
@@ -47,7 +51,8 @@ public class MagnetItem extends Item {
         for (ItemEntity item : items) {
             Vec3 toPlayer = center.subtract(item.position());
             double distance = toPlayer.length();
-            if (distance < 1.0E-4D) continue;
+            if (distance < 1.0E-4D)
+                continue;
 
             if (distance <= SNAP_DISTANCE) {
                 // 足够近，直接拉到玩家身上以触发原版拾取逻辑

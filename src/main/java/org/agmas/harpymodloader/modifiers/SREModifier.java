@@ -10,16 +10,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 public class SREModifier extends SREAbstractInfoClass {
     private final Random random = new Random();
@@ -28,18 +23,100 @@ public class SREModifier extends SREAbstractInfoClass {
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo;
     public HashSet<SRERole> canOnlyBeAppliedTo;
-    public boolean killerOnly;
-    public boolean civilianOnly;
-    public boolean notVigilante;
+    public boolean killerOnly = false;
+    public boolean civilianOnly = false;
+    public boolean notVigilante = false;
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
-    public int defaultMaxCount = -1;
+    public int defaultMaxCount = 1;
     public SpawnInfo spawnInfo = new SpawnInfo();
     public int defaultEnableChance = 10000;
     public int defaultNeedPlayerCount = 6;
     public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+
+    /**
+     * 添加与此相关的职业。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addBothRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null) {
+                this.relatedRoles.add(i);
+                i.addRelatedModifier(this);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addBothRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null) {
+                this.relatedModifiers.add(i);
+                i.addRelatedModifier(this);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null)
+                this.relatedModifiers.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedModifier(SREModifier... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedModifiers.remove(i);
+        }
+        return this;
+    }
 
     /**
      * 添加显示FLAG
@@ -154,11 +231,12 @@ public class SREModifier extends SREAbstractInfoClass {
     /**
      * 在启用的状态下，默认的最大分配数量。
      * 
-     * @param count 最大数量
+     * @param count 最大数量。-2代表不限制
      * @return
      */
     public SREModifier setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = defaultMaxCount;
         return this;
     };
 
@@ -170,6 +248,7 @@ public class SREModifier extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
@@ -181,6 +260,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultMaxPlayerCount(int count) {
         defaultMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
@@ -192,6 +272,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableNeededPlayerCount(int count) {
         defaultNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
+
         return this;
     };
 
@@ -203,6 +285,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableChance(int chance) {
         defaultEnableChance = chance;
+        this.spawnInfo.enableChance = chance;
+
         return this;
     };
 
@@ -216,6 +300,20 @@ public class SREModifier extends SREAbstractInfoClass {
         this.spawnInfo = spinfo;
         return this;
     };
+
+    /**
+     * 修饰符普通玩家不可视
+     * 隐藏修饰符
+     * 
+     * @return
+     */
+    public SREModifier setHidden(boolean flag) {
+        if (flag)
+            this.addFlag("inner.hidden");
+        else
+            this.removeFlag("inner.hidden");
+        return this;
+    }
 
     public SREModifier(ResourceLocation identifier, int color, HashSet<SRERole> cannotBeAppliedTo,
             HashSet<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
@@ -238,10 +336,10 @@ public class SREModifier extends SREAbstractInfoClass {
     }
 
     public MutableComponent getName(boolean color) {
-        String key = "announcement.star.modifier." + identifier().toLanguageKey();
-        // if (!Language.getInstance().has(key)) {
-        // return Component.translatable("info.screen.role.name.error", key);
-        // }
+        String key = "announcement.star.modifier." + identifier().getPath();
+        if (!Language.getInstance().has(key)) {
+            key = "announcement.star.modifier." + identifier().toLanguageKey();
+        }
         final MutableComponent text = Component
                 .translatable(key);
         if (color) {
@@ -281,7 +379,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players, String mapName) {
-        if (defaultMaxCount == -1)
+        if (spawnInfo.maxSpawn == -1)
             return -1;
         // 优先使用 spawnInfo（来自用户配置），若未设置则不回退。如果要设置默认的请设置canSetSpawnInfoInConfig为false
         int chance = this.spawnInfo.enableChance;
@@ -336,7 +434,7 @@ public class SREModifier extends SREAbstractInfoClass {
         this.isOtherModeRole = isOtherModeRole;
         if (isOtherModeRole)
             this.canSetSpawnInfoInConfig = false;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 

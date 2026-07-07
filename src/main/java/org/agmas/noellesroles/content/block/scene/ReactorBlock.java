@@ -1,14 +1,6 @@
 package org.agmas.noellesroles.content.block.scene;
 
-import java.awt.Color;
-import java.util.function.Consumer;
-
 import com.mojang.serialization.MapCodec;
-
-import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
-import org.agmas.noellesroles.init.ModSceneBlocks;
-import org.agmas.noellesroles.scene.SceneEventManager;
-
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
@@ -28,7 +20,8 @@ import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
+import java.util.function.Consumer;
 
 /**
  * 反应堆装置：破坏任务激活时进入过载（active），玩家右键打开温度调节小游戏。
@@ -105,8 +98,8 @@ public class ReactorBlock extends BaseEntityBlock implements TaskInstinctShowabl
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        return true;
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
+        return state.getValue(ACTIVE) && !state.getValue(CLOSED);
     }
 
     @Override

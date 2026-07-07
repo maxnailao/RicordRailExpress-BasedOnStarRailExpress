@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
@@ -28,7 +30,7 @@ import java.util.Map;
 
 public class SwitchMapCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal("tmm:switchmap")
-            .requires(source -> source.hasPermission(2))
+            .requires(source -> source.hasPermission(SREConfig.instance().switchMapRequiredPermission))
             .then(Commands.literal("reset_and_scan_all")
                     .requires(source -> source.hasPermission(3))
                     .executes(SwitchMapCommand::executeScanWithReset))
@@ -361,19 +363,19 @@ public class SwitchMapCommand {
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Can Jump: " + (areas.canJump ? "Yes" : "No"))
+                () -> Component.literal("Can Jump: " + (areas.areasSettings.canJump ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Can Swim: " + (areas.canSwim ? "Yes" : "No"))
+                () -> Component.literal("Can SimpleSwim: " + (areas.areasSettings.canSimpleSwim ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Outside Noise: " + (areas.haveOutsideSound ? "Yes" : "No"))
+                () -> Component.literal("Outside Noise: " + (areas.areasSettings.haveOutsideSound ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Scene Outside Sound: " + areas.sceneOutsideSound)
+                () -> Component.literal("Scene Outside Sound: " + areas.areasSettings.sceneOutsideSound.name())
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(

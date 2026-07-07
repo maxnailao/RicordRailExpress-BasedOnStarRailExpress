@@ -4,30 +4,36 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.HoneyBottleItem;
-import net.minecraft.world.item.PotionItem;
-import io.wifi.starrailexpress.content.item.CocktailItem;
-import pro.fazeclan.river.stupid_express.constants.SEItems;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.HoneyBottleItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
@@ -37,43 +43,33 @@ import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
-import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.index.tag.TMMItemTags;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import pro.fazeclan.river.stupid_express.constants.SEItems;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 阿蒙（诡秘之主）—— 中立独立胜利角色，核心机制为「寄生」。
  *
- * <p>阿蒙隐秘地给附近活人种下「时之虫」（受害者无感），时之虫潜伏成熟后该宿主成为可「夺舍」的载体。
+ * <p>
+ * 阿蒙隐秘地给附近活人种下「时之虫」（受害者无感），时之虫潜伏成熟后该宿主成为可「夺舍」的载体。
  * 阿蒙可主动夺舍，也会在受到致命伤时自动夺舍续命（{@link AmonEventHandler}）；只有在没有成熟宿主时才会真正死亡。
  * 胜利条件「夺舍并幸存」：游戏结算时若阿蒙存活且至少夺舍过一次，则独立获胜
  * （在 {@code CustomWinnerClass} 中判定）。
  *
- * <p>隐私要点：时之虫状态仅同步给阿蒙本人，且绝不给受害者任何可见效果。
+ * <p>
+ * 隐私要点：时之虫状态仅同步给阿蒙本人，且绝不给受害者任何可见效果。
  */
 public final class AmonPlayerComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<AmonPlayerComponent> KEY = ComponentRegistry.getOrCreate(
             Noellesroles.id("amon"), AmonPlayerComponent.class);
 
     /** 时之虫潜伏成熟时间：90 秒。 */
-    public static final int INCUBATION_TICKS = 90 * 20;
+    public static final int INCUBATION_TICKS = 75 * 20;
+    private static final int POSSESSION_REQUIRED_TICKS = 60 * 20;
     /** 终幕「寻找阿蒙」持续时间：80 秒。 */
     public static final int FINALE_TICKS = 80 * 20;
     /** 种植半径：15 格。 */
@@ -95,9 +91,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private UUID disguiseTarget;
     /** 正在附身的目标（须为成熟宿主）；非空即处于附身中，按 G 完成夺舍。 */
     public UUID possessTarget;
+    private int possessTicks;
     /** 附身开始时记录的「本体」位置（完成夺舍时在此生成阿蒙自己的尸体）。 */
     private Vec3 homePos;
     private float homeYRot;
+    private double prePossessionScale = Double.NaN;
 
     public int usurpCount;
     public boolean hasUsurped;
@@ -123,12 +121,20 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         this.player = player;
     }
 
-    @Override public Player getPlayer() { return player; }
+    @Override
+    public Player getPlayer() {
+        return player;
+    }
 
     /** 隐私：时之虫状态只对阿蒙本人可见。 */
-    @Override public boolean shouldSyncWith(ServerPlayer target) { return this.player == target; }
+    @Override
+    public boolean shouldSyncWith(ServerPlayer target) {
+        return this.player == target;
+    }
 
-    public void sync() { KEY.sync(player); }
+    public void sync() {
+        KEY.sync(player);
+    }
 
     @Override
     public void init() {
@@ -136,7 +142,9 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         maturedHosts.clear();
         disguiseTarget = null;
         possessTarget = null;
+        possessTicks = 0;
         homePos = null;
+        prePossessionScale = Double.NaN;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -157,15 +165,20 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         if (possessTarget != null && player instanceof ServerPlayer amon) {
             clearPossessionEffects(amon);
         }
-        // 若终幕进行中被重置，关闭全服表现（音乐/滤镜/状态栏）。
+        // 若终幕进行中被重置，关闭全服表现（音乐/滤镜/状态栏）并还原体型。
         if (finalePhase && player instanceof ServerPlayer amon && amon.level() instanceof ServerLevel level) {
+            if (amon.getAttribute(Attributes.SCALE) != null) {
+                amon.getAttribute(Attributes.SCALE).setBaseValue(1.0D);
+            }
             broadcastFinale(level, false);
         }
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
         possessTarget = null;
+        possessTicks = 0;
         homePos = null;
+        prePossessionScale = Double.NaN;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -181,39 +194,52 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public void serverTick() {
-        if (!(player instanceof ServerPlayer amon)) return;
+        if (!(player instanceof ServerPlayer amon))
+            return;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
-
         // 角色被中途更换：清理残留状态与伪装。
         if (!game.isRole(amon, ModRoles.AMON)) {
             if (!seeds.isEmpty() || !maturedHosts.isEmpty() || disguiseTarget != null || possessTarget != null) {
                 clearDisguise();
-                if (possessTarget != null) clearPossessionEffects(amon);
+                if (possessTarget != null)
+                    clearPossessionEffects(amon);
                 seeds.clear();
                 maturedHosts.clear();
                 disguiseTarget = null;
                 possessTarget = null;
                 homePos = null;
+                possessTicks = 0;
+                prePossessionScale = Double.NaN;
                 sync();
             }
             return;
         }
-        if (!game.isRunning()) return;
+        if (!game.isRunning())
+            return;
         boolean alive = GameUtils.isPlayerAliveAndSurvival(amon);
 
         // 终幕阶段：驱动倒计时、发光与胜利判定（结束不再潜伏新虫）。
         if (finalePhase) {
-            if (alive) tickFinale(amon, game);
+            if (alive)
+                tickFinale(amon, game);
             return;
         }
-        if (!alive) return;
+        if (!alive)
+            return;
+
+        // 安全网：若游戏本应结束（平民或杀手胜利）但 handleGameEnd 未能触发终幕，
+        // 由服务端 tick 兜底启动，确保持有成熟宿主的阿蒙不会因时序问题错过终幕。
+        if (!maturedHosts.isEmpty() && isGameEnding(amon, game)) {
+            startFinale();
+            return;
+        }
 
         // 附身中：跟随目标、维持隐身/无敌；目标失效则解除附身。
         if (possessTarget != null) {
             handlePossessionTick(amon);
         }
 
-        seedCap = Math.max(1, (game.getPlayerCount() ) / 6);
+        seedCap = Math.max(1, (game.getPlayerCount()) / 6);
 
         boolean changed = false;
 
@@ -247,12 +273,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             changed = true;
         }
 
-        if (changed || amon.tickCount % 20 == 0) sync();
+        if (changed || amon.tickCount % 20 == 0)
+            sync();
     }
 
     /** 种下时之虫（静默）。target 为准星指向的玩家。 */
     public boolean plantSeed(ServerPlayer target) {
-        if (!(player instanceof ServerPlayer amon)) return false;
+        if (!(player instanceof ServerPlayer amon))
+            return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
@@ -285,12 +313,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
      * 由 {@code AmonSelectTargetC2SPacket} 服务端接收后调用。
      */
     public boolean setPossessTarget(UUID targetUuid) {
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return false;
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
+            return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
         }
-        if (finalePhase || possessTarget != null) return false;
+        if (finalePhase || possessTarget != null)
+            return false;
         // 只能附身已成熟、仍存活的宿主。
         if (targetUuid == null || !maturedHosts.contains(targetUuid)) {
             return false;
@@ -311,7 +341,9 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         homePos = amon.position();
         homeYRot = amon.getYHeadRot();
         possessTarget = targetUuid;
+        possessTicks = 0;
         refreshPossessionEffects(amon);
+        shrinkForPossession(amon);
         // 立即贴附到目标身上。
         amon.teleportTo(level, host.getX(), host.getY(), host.getZ(), host.getYRot(), host.getXRot());
         amon.displayClientMessage(Component.translatable("message.noellesroles.amon.possess_start", host.getName())
@@ -331,27 +363,33 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     /** 附身每 tick：跟随目标并维持隐身/无敌；目标失效则解除附身。 */
     private void handlePossessionTick(ServerPlayer amon) {
-        if (!(amon.level() instanceof ServerLevel level)) return;
+        if (!(amon.level() instanceof ServerLevel level))
+            return;
         Player t = level.getPlayerByUUID(possessTarget);
         if (!(t instanceof ServerPlayer target) || !GameUtils.isPlayerAliveAndSurvival(target)) {
             cancelPossession(amon, "message.noellesroles.amon.possession_lost");
             return;
         }
+        possessTicks++;
         refreshPossessionEffects(amon);
         // 阿蒙掌控目标移动：阿蒙隐身自由移动，目标被锁定移动/视角并每 tick 牵引到阿蒙位置；
-        // 二者均无碰撞箱，避免互相拥挤。
+        // 二者均无碰撞箱，避免互相拥挤。目标被致盲失明，无法看见阿蒙。
         target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 10, 0, false, false, false));
         target.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, false, false, false));
         target.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 10, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 10, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 10, 0, false, false, false));
         target.teleportTo(level, amon.getX(), amon.getY(), amon.getZ(), amon.getYRot(), amon.getXRot());
     }
 
     /**
-     * 附身期间按 G：完成夺舍——变成目标（伪装其皮肤/名字）、令其死亡，并在本体处生成阿蒙自己的尸体。
+     * 附身期间按 Shift+G：完成夺舍——变成目标（伪装其皮肤/名字）、令其死亡，并在本体处生成阿蒙自己的尸体。
      */
     public boolean finalizePossession() {
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return false;
-        if (possessTarget == null) return false;
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
+            return false;
+        if (possessTarget == null)
+            return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
@@ -360,6 +398,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         Player t = level.getPlayerByUUID(targetUuid);
         if (!(t instanceof ServerPlayer target) || !GameUtils.isPlayerAliveAndSurvival(target)) {
             cancelPossession(amon, "message.noellesroles.amon.possession_lost");
+            return false;
+        }
+        if (possessTicks < POSSESSION_REQUIRED_TICKS) {
+            int seconds = Math.max(1, (POSSESSION_REQUIRED_TICKS - possessTicks + 19) / 20);
+            amon.displayClientMessage(Component.translatable("message.noellesroles.amon.possess_wait", seconds)
+                    .withStyle(ChatFormatting.DARK_PURPLE), true);
             return false;
         }
         Vec3 targetPos = target.position();
@@ -382,6 +426,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.remove(targetUuid);
         maturedHosts.remove(targetUuid);
         possessTarget = null;
+        possessTicks = 0;
         homePos = null;
 
         amon.displayClientMessage(Component.translatable("message.noellesroles.amon.usurp_done")
@@ -397,6 +442,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             amon.teleportTo(level, homePos.x, homePos.y, homePos.z, homeYRot, 0f);
         }
         possessTarget = null;
+        possessTicks = 0;
         homePos = null;
         if (msgKey != null) {
             amon.displayClientMessage(Component.translatable(msgKey).withStyle(ChatFormatting.RED), true);
@@ -415,6 +461,23 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         amon.removeEffect(MobEffects.INVISIBILITY);
         amon.removeEffect(ModEffects.INVINCIBLE);
         amon.removeEffect(ModEffects.NO_COLLIDE);
+        restorePossessionScale(amon);
+    }
+
+    private void shrinkForPossession(ServerPlayer amon) {
+        if (amon.getAttribute(Attributes.SCALE) == null || !Double.isNaN(prePossessionScale)) {
+            return;
+        }
+        prePossessionScale = amon.getAttribute(Attributes.SCALE).getBaseValue();
+        amon.getAttribute(Attributes.SCALE).setBaseValue(prePossessionScale * 0.45D);
+    }
+
+    private void restorePossessionScale(ServerPlayer amon) {
+        if (amon.getAttribute(Attributes.SCALE) == null || Double.isNaN(prePossessionScale)) {
+            return;
+        }
+        amon.getAttribute(Attributes.SCALE).setBaseValue(prePossessionScale);
+        prePossessionScale = Double.NaN;
     }
 
     /**
@@ -423,10 +486,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
      * @return true 表示已夺舍（死亡应被取消）；false 表示无成熟宿主（真正死亡）。
      */
     public boolean tryDeathTransfer() {
-        if (!(player instanceof ServerPlayer amon)) return false;
+        if (!(player instanceof ServerPlayer amon))
+            return false;
         while (true) {
             UUID host = pickAliveMaturedHost(amon);
-            if (host == null) return false;
+            if (host == null)
+                return false;
             if (usurp(host)) {
                 amon.displayClientMessage(Component.translatable("message.noellesroles.amon.death_transfer")
                         .withStyle(ChatFormatting.DARK_PURPLE), true);
@@ -458,8 +523,10 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     /** 夺舍指定宿主：杀死宿主、传送到其位置、顶替其皮肤与名字。 */
     private boolean usurp(UUID hostUuid) {
-        if (!(player instanceof ServerPlayer amon)) return false;
-        if (!(amon.level() instanceof ServerLevel level)) return false;
+        if (!(player instanceof ServerPlayer amon))
+            return false;
+        if (!(amon.level() instanceof ServerLevel level))
+            return false;
         Player hostPlayer = level.getPlayerByUUID(hostUuid);
         if (!(hostPlayer instanceof ServerPlayer host) || !GameUtils.isPlayerAliveAndSurvival(host)) {
             seeds.remove(hostUuid);
@@ -494,11 +561,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     /** 在指定位置生成阿蒙自己的尸体（夺舍时抛下的旧躯壳，死因 AMON_USURP）。 */
     private void spawnOwnBody(ServerPlayer amon, ServerLevel level, Vec3 pos, float yRot) {
         PlayerBodyEntity body = TMMEntities.PLAYER_BODY.create(level);
-        if (body == null) return;
+        if (body == null)
+            return;
         body.getAttribute(Attributes.SCALE).setBaseValue(amon.getAttributeValue(Attributes.SCALE));
         PlayerBodyEntityComponent bodycca = body.getComponent();
         bodycca.setDeathReason(GameConstants.DeathReasons.AMON_USURP.toString(), false);
         body.setPlayerUuid(amon.getUUID());
+        bodycca.setOwnerName(amon.getScoreboardName(), false);
+
         body.moveTo(pos.x, pos.y, pos.z, yRot, 0f);
         body.setYRot(yRot);
         body.setYHeadRot(yRot);
@@ -509,7 +579,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     private void setDisguise(UUID hostUuid) {
         disguiseTarget = hostUuid;
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return;
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
+            return;
         AmonSkinS2CPacket packet = new AmonSkinS2CPacket(amon.getUUID(), hostUuid);
         for (ServerPlayer p : level.players()) {
             ServerPlayNetworking.send(p, packet);
@@ -518,9 +589,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     /** 清除阿蒙伪装（向所有客户端广播）。在真正死亡 / 重置 / 角色变更时调用。 */
     public void clearDisguise() {
-        if (disguiseTarget == null) return;
+        if (disguiseTarget == null)
+            return;
         disguiseTarget = null;
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return;
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
+            return;
         AmonSkinS2CPacket packet = new AmonSkinS2CPacket(amon.getUUID(), null);
         for (ServerPlayer p : level.players()) {
             ServerPlayNetworking.send(p, packet);
@@ -537,7 +610,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
         boolean block = false;
         for (ServerPlayer p : level.players()) {
-            if (!GameUtils.isPlayerAliveAndSurvival(p) || !game.isRole(p, ModRoles.AMON)) continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(p) || !game.isRole(p, ModRoles.AMON))
+                continue;
             AmonPlayerComponent comp = KEY.get(p);
             if (comp.finalePhase) {
                 block = true;
@@ -551,12 +625,44 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         return block ? GameUtils.WinStatus.NONE : GameUtils.WinStatus.NOT_MODIFY;
     }
 
+    /**
+     * 检查游戏是否即将结束（杀手全灭或平民全灭），作为 handleGameEnd 的兜底安全网。
+     * 确保持有时之虫的阿蒙不会因 AllowGameEnd.EVENT 时序/游戏模式差异而错过终幕。
+     */
+    private static boolean isGameEnding(ServerPlayer amon, SREGameWorldComponent game) {
+        boolean killerAlive = false;
+        boolean innocentAlive = false;
+        for (ServerPlayer p : amon.serverLevel().players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(p))
+                continue;
+            if (p == amon)
+                continue; // 阿蒙自己是中立，不计入平民或杀手
+            if (game.isKillerTeam(p))
+                killerAlive = true;
+            else if (game.isInnocent(p))
+                innocentAlive = true;
+        }
+        // 平民全灭（杀手胜利）或杀手全灭（平民胜利）→ 游戏应结束
+        return !innocentAlive || !killerAlive;
+    }
+
     /** 开启终幕：寄宿体回归为备用能力、窃取全场物品、发光、全服播报。 */
     private void startFinale() {
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return;
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
+            return;
         finalePhase = true;
         finaleTicks = FINALE_TICKS;
         reserveLives = maturedHosts.size();
+        // 若有附身残留状态（缩形等），先清理
+        if (possessTarget != null) {
+            clearPossessionEffects(amon);
+            possessTarget = null;
+            possessTicks = 0;
+            homePos = null;
+        }
+        // 终幕形态：8 倍体型
+        amon.getAttribute(Attributes.SCALE).setBaseValue(1.0D);
+        prePossessionScale = Double.NaN;
         // 寄宿体回归阿蒙：清空潜伏/成熟状态。
         maturedHosts.clear();
         seeds.clear();
@@ -590,10 +696,17 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private void tickFinale(ServerPlayer amon, SREGameWorldComponent game) {
         applyGlow(amon);
         // 杀光其余所有人 → 立即获胜。
-        if (countOtherAlive(amon) == 0) { declareWin(amon); return; }
+        if (countOtherAlive(amon) == 0) {
+            declareWin(amon);
+            return;
+        }
         finaleTicks--;
-        if (finaleTicks <= 0) { declareWin(amon); return; }
-        if (finaleTicks % 20 == 0) sync();
+        if (finaleTicks <= 0) {
+            declareWin(amon);
+            return;
+        }
+        if (finaleTicks % 20 == 0)
+            sync();
     }
 
     private void applyGlow(ServerPlayer amon) {
@@ -605,13 +718,15 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private int countOtherAlive(ServerPlayer amon) {
         int n = 0;
         for (ServerPlayer p : amon.serverLevel().players()) {
-            if (p != amon && GameUtils.isPlayerAliveAndSurvival(p)) n++;
+            if (p != amon && GameUtils.isPlayerAliveAndSurvival(p))
+                n++;
         }
         return n;
     }
 
     private void declareWin(ServerPlayer amon) {
-        if (!(amon.level() instanceof ServerLevel level)) return;
+        if (!(amon.level() instanceof ServerLevel level))
+            return;
         finalePhase = false;
         broadcastFinale(level, false);
         RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM,
@@ -623,10 +738,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
      * 否则「杀死阿蒙」状态栏/音乐/滤镜会残留。
      */
     public void endFinaleOnDeath() {
-        if (!finalePhase) return;
+        if (!finalePhase)
+            return;
         finalePhase = false;
         finaleTicks = 0;
         if (player instanceof ServerPlayer amon && amon.level() instanceof ServerLevel level) {
+            if (amon.getAttribute(Attributes.SCALE) != null) {
+                amon.getAttribute(Attributes.SCALE).setBaseValue(1.0D);
+            }
             broadcastFinale(level, false);
         }
         sync();
@@ -634,7 +753,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     /** 终幕续命/逃脱：消耗一个备用能力，瞬移逃脱并短暂无敌。无备用能力则真正死亡。 */
     public boolean tryFinaleEscape() {
-        if (!(player instanceof ServerPlayer amon) || reserveLives <= 0) return false;
+        if (!(player instanceof ServerPlayer amon) || reserveLives <= 0)
+            return false;
         reserveLives--;
         blinkAway(amon);
         amon.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 40, 0, false, false, false));
@@ -656,24 +776,51 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     /** 窃取全场存活玩家的随机一件物品（钥匙/信件除外；枪械则复制而非夺走）。 */
     private void stealItems(ServerPlayer amon, ServerLevel level) {
         for (ServerPlayer p : level.players()) {
-            if (p == amon || !GameUtils.isPlayerAliveAndSurvival(p)) continue;
+            if (p == amon || !GameUtils.isPlayerAliveAndSurvival(p))
+                continue;
             Inventory inv = p.getInventory();
             List<Integer> slots = new ArrayList<>();
             for (int i = 0; i < inv.getContainerSize(); i++) {
                 ItemStack s = inv.getItem(i);
-                if (s.isEmpty() || isProtectedItem(s)) continue;
+                if (s.isEmpty() || isProtectedItem(s))
+                    continue;
                 slots.add(i);
             }
-            if (slots.isEmpty()) continue;
+            if (slots.isEmpty())
+                continue;
             int slot = slots.get(amon.getRandom().nextInt(slots.size()));
             ItemStack stack = inv.getItem(slot);
             ItemStack stolen = stack.copy();
             // 枪/左轮：复制给阿蒙，目标保留；其他物品：夺走。
-            if (!stack.is(TMMItemTags.GUNS)&& !stack.is(Items.BOW)) {
+            if (!stack.is(TMMItemTags.GUNS) && !stack.is(Items.BOW)) {
                 inv.setItem(slot, ItemStack.EMPTY);
             }
-            RoleUtils.insertStackInFreeSlot(amon, stolen);
+            insertStolenItem(amon, stolen);
         }
+    }
+
+    private boolean insertStolenItem(ServerPlayer amon, ItemStack stolen) {
+        if (RoleUtils.insertStackInFreeSlot(amon, stolen)) {
+            return true;
+        }
+        return insertIntoBundle(amon, stolen);
+    }
+
+    private boolean insertIntoBundle(ServerPlayer amon, ItemStack stack) {
+        for (int i = 0; i < amon.getInventory().getContainerSize(); i++) {
+            ItemStack bundle = amon.getInventory().getItem(i);
+            if (!bundle.is(Items.BUNDLE)) {
+                continue;
+            }
+            BundleContents.Mutable contents = new BundleContents.Mutable(
+                    bundle.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY));
+            int inserted = contents.tryInsert(stack);
+            if (inserted > 0) {
+                bundle.set(DataComponents.BUNDLE_CONTENTS, contents.toImmutable());
+                return stack.isEmpty();
+            }
+        }
+        return false;
     }
 
     private boolean isProtectedItem(ItemStack s) {
@@ -703,7 +850,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             maturedList.add(net.minecraft.nbt.StringTag.valueOf(u.toString()));
         }
         tag.put("MaturedHosts", maturedList);
-        if (possessTarget != null) tag.putUUID("Possess", possessTarget);
+        if (possessTarget != null)
+            tag.putUUID("Possess", possessTarget);
         tag.putInt("UsurpCount", usurpCount);
         tag.putBoolean("HasUsurped", hasUsurped);
         tag.putInt("SeedCap", seedCap);
@@ -733,6 +881,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         reserveLives = tag.getInt("Reserve");
     }
 
-    @Override public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) { }
-    @Override public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) { }
+    @Override
+    public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
+    }
+
+    @Override
+    public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
+    }
 }

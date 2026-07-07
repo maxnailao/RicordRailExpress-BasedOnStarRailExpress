@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+
+import io.wifi.starrailexpress.SREConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -22,7 +24,7 @@ public class SetEnabledModifierCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("setEnabledModifier")
-                        .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+                        .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission))
                         .then(Commands.literal("enableAll").executes(SetEnabledModifierCommand::enableAll))
                         .then(Commands.literal("disableAll").executes(SetEnabledModifierCommand::disableAll))
                         .then(Commands.argument("modifier", ModifierArgumentType.create())

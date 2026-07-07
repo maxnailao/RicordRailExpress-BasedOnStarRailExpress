@@ -23,6 +23,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.block.SREPlushBlock;
+import org.agmas.noellesroles.content.block_entity.SREPlushBlockEntity;
 
 public interface SREFumoBlocks {
 
@@ -37,7 +40,7 @@ public interface SREFumoBlocks {
     public static final BlockRegistrar blockRegistrar = new BlockRegistrar(Noellesroles.MOD_ID);
     public static final BlockEntityTypeRegistrar blockEntityRegistrar = new BlockEntityTypeRegistrar(
             Noellesroles.MOD_ID);
-    
+
     // === 普通Fumo玩偶 ===
     Block MILK_DRAGON_PLUSH = registerBlock("milk_dragon_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
@@ -93,7 +96,7 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block ALLINTOKYO_PLUSH = registerBlock("allintokyo_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
-    
+
     // === 特殊Fumo玩偶===
     Block JUSTACHEESE_PLUSH = registerSpecialBlock("justacheese_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
@@ -183,13 +186,13 @@ public interface SREFumoBlocks {
                     return new ItemStack(BAKA_PLUSH.asItem());
                 })
                 .build());
-        
+
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SPECIAL_FUMO_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.starrailexpress.special_fumo_blocks")).icon(() -> {
                     return new ItemStack(JUSTACHEESE_PLUSH.asItem());
                 })
                 .build());
-        
+
         blockRegistrar.registerEntries();
         blockEntityRegistrar.registerEntries();
     }

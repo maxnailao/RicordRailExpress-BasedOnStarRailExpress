@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "noellesroles:item/rope",
+    "rope": "noellesroles:item/rope"
+  },
+  "elements": [
+    {
+      "from": [6.5, 5.5, 0.0],
+      "to": [9.5, 8.5, 8.0],
+      "faces": {
+        "down": { "texture": "#rope", "uv": [6.5, 0.0, 9.5, 8.0] },
+        "up": { "texture": "#rope", "uv": [6.5, 0.0, 9.5, 8.0] },
+        "north": { "texture": "#rope", "uv": [6.5, 5.5, 9.5, 8.5] },
+        "south": { "texture": "#rope", "uv": [6.5, 5.5, 9.5, 8.5] },
+        "west": { "texture": "#rope", "uv": [0.0, 5.5, 8.0, 8.5] },
+        "east": { "texture": "#rope", "uv": [0.0, 5.5, 8.0, 8.5] }
+      }
+    }
+  ]
+}

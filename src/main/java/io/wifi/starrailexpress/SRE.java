@@ -2,9 +2,9 @@ package io.wifi.starrailexpress;
 
 import com.google.common.reflect.Reflection;
 import io.wifi.ConfigCompact.ConfigEvents;
-
 import io.wifi.StarRailExpressID;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.replay.EmptyGameReplayManager;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.api.replay.ReplayApiInitializer;
 import io.wifi.starrailexpress.cca.*;
@@ -17,7 +17,8 @@ import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeModifiers;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.*;
-import io.wifi.starrailexpress.network.*;
+import io.wifi.starrailexpress.network.NetworkStatistics;
+import io.wifi.starrailexpress.network.PacketTracker;
 import io.wifi.starrailexpress.network.packet.SyncRoomToPlayerPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.register.SRECommandRegister;
@@ -25,6 +26,7 @@ import io.wifi.starrailexpress.register.SREEventRegister;
 import io.wifi.starrailexpress.register.SREPayloadRegister;
 import io.wifi.starrailexpress.register.SREReceiverRegister;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
+import io.wifi.starrailexpress.util.CustomMotdManager;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -38,7 +40,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
-
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
@@ -51,16 +52,17 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static MinecraftServer SERVER;
     public static SREMurderGameMode GAME;
-    public static GameReplayManager REPLAY_MANAGER;
-    public static final Networking NETWORKING = new Networking();
+    // 服务端会覆盖此项目，此项目用于客户端。
+    public static GameReplayManager REPLAY_MANAGER = new EmptyGameReplayManager();
+    public static final SRENetworking NETWORKING = new SRENetworking();
     public static boolean isLobby = false;
     // 各类"列表式"注册点已按类别归一化至 io.wifi.starrailexpress.rules 包：
-    //   ChatHudRules        - canUseChatHud / canUseChatHudPlayer / cantUseChatHud
-    //   ReplayRules         - canSendReplay / cantSendReplay
-    //   CollisionRules      - canCollide / cantPushableBy / canCollideEntity
-    //   ArmorRules          - canStickArmor
-    //   DropRules           - canDropItem / canDrop
-    //   RoleVisibilityRules - canUseOtherPerson
+    // ChatHudRules - canUseChatHud / canUseChatHudPlayer / cantUseChatHud
+    // ReplayRules - canSendReplay / cantSendReplay
+    // CollisionRules - canCollide / cantPushableBy / canCollideEntity
+    // ArmorRules - canStickArmor
+    // DropRules - canDropItem / canDrop
+    // RoleVisibilityRules - canUseOtherPerson
 
     public static @NotNull ResourceLocation id(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
@@ -79,6 +81,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        CustomMotdManager.init();
         initConfig();
         initConstants();
         initWaypoints();
@@ -229,7 +232,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         return GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
     }
 
-    public static class Networking {
+    public static class SRENetworking {
         public void sendToAllPlayers(CustomPacketPayload packet) {
             if (SERVER != null) {
                 for (ServerPlayer player : SERVER.getPlayerList().getPlayers()) {

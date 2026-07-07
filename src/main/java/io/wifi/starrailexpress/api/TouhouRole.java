@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.api;
 
 import net.minecraft.resources.ResourceLocation;
+import org.agmas.noellesroles.init.InitModRolesMax;
 
 public class TouhouRole extends NormalRole {
     /**
@@ -17,5 +18,12 @@ public class TouhouRole extends NormalRole {
             MoodType moodType, int maxSprintTime, boolean canSeeTime) {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
         this.addFlag("touhou");
+    }
+
+    @Override
+    public boolean canBeRandomed() {
+        if (InitModRolesMax.isTouhouEnabled)
+            return super.canBeRandomed;
+        return false;
     }
 }

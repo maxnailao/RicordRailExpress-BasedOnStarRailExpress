@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
@@ -27,7 +28,7 @@ public class ClassChangeTestCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("tmm:game")
         .then(Commands.literal("role").then(Commands.literal("role_change_mode")
-            .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
+            .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().changeRoleRequiredPermission))
             .then(Commands.argument("player", EntityArgument.player())
                 .then(Commands.argument("role", RoleArgumentType.create())
                     .executes((ctx) -> execute(ctx, true, false))

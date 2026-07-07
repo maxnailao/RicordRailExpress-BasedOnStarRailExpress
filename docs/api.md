@@ -197,6 +197,43 @@ List<ShopEntry> getShopEntries()
 | `REAL` | 真实心情 |
 | `FAKE` | 假心情 |
 
+#### 任务刷新控制 / Task Refresh Control
+
+控制该职业玩家的 SAN 任务随机池：黑名单排除指定任务，白名单（非空时）只允许指定任务。
+任务生成（`SREPlayerTaskComponent.generateTaskInternal`）时对每个候选任务调用 `canRefreshTask`。
+Controls which SAN tasks this role's players can roll: a blacklist excludes tasks, and a non-empty
+whitelist restricts rolls to the listed tasks only. `canRefreshTask` is consulted for every candidate
+during task generation.
+
+```java
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task;
+
+// 黑名单：该职业不可刷出的任务（链式，可叠加）
+SRERole addUnrefreshableTasks(Task... tasks)
+SRERole removeUnrefreshableTasks(Task... tasks)
+
+// 白名单：该职业仅可刷出的任务（为空表示不限制）
+SRERole addOnlyRefreshableTasks(Task... tasks)
+SRERole removeOnlyRefreshableTasks(Task... tasks)
+
+// 只读查询
+Set<Task> getUnrefreshableTasks()
+Set<Task> getOnlyRefreshableTasks()
+
+// 可重写：动态判断（默认先查白名单再查黑名单）
+boolean canRefreshTask(Player player, Task taskType)
+```
+
+```java
+// 示例：某职业永远不会刷出睡觉/马桶任务
+TMMRoles.registerRole(new NormalRole(...)
+        .addUnrefreshableTasks(Task.SLEEP, Task.TOILET));
+
+// 示例：某职业只会刷出进食和喝水任务
+TMMRoles.registerRole(new NormalRole(...)
+        .addOnlyRefreshableTasks(Task.EAT, Task.DRINK));
+```
+
 #### 获取技能冷却组件
 
 ```java
@@ -1182,10 +1219,6 @@ OnGetInstinctHighlight.EVENT.register((player) -> {
 
 **类型:** 可拦截。
 
-#### `OnKillerCohortDisplay` — 杀手同伙显示
-
-**类型:** 通知型。控制杀手同伙的显示方式。
-
 #### `EntityInteractionHandler` — 实体交互处理
 
 提供与地图命令方块类似的占位符替换功能：  
@@ -1294,7 +1327,7 @@ Harpymodloader.setRoleMaximum(MY_ROLE_ID, 2);  // ResourceLocation 版
 ```
 
 #### 伴侣职业 / Companion Role（同时分配两个职业）
-
+现已迁移到 `SRERole` 中存储。当然，您也可以使用旧版本API：
 ```java
 // 设置：分配 DOCTOR 的同时也分配 POISONER
 Harpymodloader.setOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
@@ -1304,16 +1337,17 @@ SRERole companion = Harpymodloader.getOccupationRole(ModRoles.DOCTOR); // POISON
 boolean has = Harpymodloader.hasOccupationRole(ModRoles.DOCTOR);
 
 // 移除
-Harpymodloader.removeOccupationRole(ModRoles.DOCTOR);
-Harpymodloader.clearOccupationRoles();
+Harpymodloader.removeOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
+Harpymodloader.clearOccupationRole(ModRoles.DOCTOR);
 ```
 
 #### 隐藏修饰符 / Hide Modifiers
 
-将修饰符 path 加入 `HIDDEN_MODIFIERS` 可使其不在 UI 中展示（但仍可被分配）。
+设置修饰符的 `setHidden(true)` 可使其不在 UI 中展示（但仍可被分配）。
 
 ```java
-Harpymodloader.HIDDEN_MODIFIERS.add(NRModifiers.INTROVERTED.identifier().getPath());
+// 假设存在：SREModifier modifier;
+modifier.setHidden(true);
 ```
 
 #### 特殊职业列表 / Special Roles

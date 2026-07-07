@@ -14,7 +14,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-import java.util.*;
+import java.util.UUID;
 
 public class WarlockPlayerComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<WarlockPlayerComponent> KEY = ComponentRegistry.getOrCreate(

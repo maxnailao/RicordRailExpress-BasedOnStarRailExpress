@@ -8,6 +8,10 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -24,6 +28,10 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 鬼眼·杨间组件（警长阵营）。
@@ -46,20 +54,24 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
     /** 被动扫描半径（格）。客户端轮廓判定与服务端一致。 */
     public static final int SCAN_RADIUS = 20;
     /** 单次扫描的轮廓显示时长（tick）= 2 秒。 */
-    private static final int REVEAL_TICKS = 40;
+    public static final int REVEAL_TICKS = 40;
     /** 领域内效果每 tick 续期的时长（tick），离开后约 0.5 秒自然消退。 */
     private static final int EFFECT_REFRESH = 10;
+    private static final EntityDataAccessor<Byte> SHARED_FLAGS =
+            new EntityDataAccessor<>(0, EntityDataSerializers.BYTE);
+    private static final byte GLOWING_FLAG = 0x40;
 
     private final Player player;
 
-    /** 距下一次扫描的剩余 tick（仅服务端）。 */
-    private int scanCountdown = REVEAL_TICKS;
+    /** 距下一次扫描的剩余 tick（同步给本人客户端，供 HUD 显示）。 */
+    public int scanCountdown = REVEAL_TICKS;
     /** 当前轮廓显示剩余 tick（同步给本人客户端）。 */
     public int revealTicks = 0;
 
     /** 诡域剩余 tick（仅服务端）。 */
     private int domainTicks = 0;
     private double domainX, domainY, domainZ;
+    private final Set<Integer> ghostEyeGlowingEntityIds = new HashSet<>();
 
     public GhostEyePlayerComponent(Player player) {
         this.player = player;
@@ -73,6 +85,7 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
         scanCountdown = GameConstants.getInTicks(0, NoellesRolesConfig.HANDLER.instance().ghostEyeScanInterval);
         revealTicks = 0;
         domainTicks = 0;
+        clearGhostEyeGlow();
         sync();
     }
 
@@ -84,7 +97,7 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
     public boolean deployDomain() {
         if (!(player instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(player)) return false;
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, ModRoles.GHOST_EYE)) return false;
+        if (!isGhostEyeRole(gameWorld)) return false;
 
         this.domainX = sp.getX();
         this.domainY = sp.getY();
@@ -101,8 +114,10 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
     public void serverTick() {
         if (!(player instanceof ServerPlayer sp)) return;
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, ModRoles.GHOST_EYE)) return;
-        if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+        if (!isGhostEyeRole(gameWorld) || !GameUtils.isPlayerAliveAndSurvival(player)) {
+            clearGhostEyeGlow();
+            return;
+        }
 
         // 被动·鬼眼：周期性扫描
         if (scanCountdown > 0) scanCountdown--;
@@ -114,8 +129,16 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
             sync();
         }
         if (revealTicks > 0) {
+            sendGhostEyeGlow(sp);
             revealTicks--;
-            if (revealTicks % 20 == 0 || revealTicks == 0) sync();
+            if (revealTicks == 0) {
+                clearGhostEyeGlow();
+                sync();
+            }
+        }
+        // 每 20 tick（1 秒）同步一次，保证 HUD 倒计时平滑显示
+        if (sp.serverLevel().getGameTime() % 20 == 0) {
+            sync();
         }
 
         // 主动·诡域：持续施加领域效果
@@ -123,6 +146,45 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
             domainTicks--;
             applyDomain(sp);
         }
+    }
+
+    private boolean isGhostEyeRole(SREGameWorldComponent gameWorld) {
+        if (gameWorld == null || player == null) return false;
+        var role = gameWorld.getRole(player);
+        return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
+    }
+
+    private void sendGhostEyeGlow(ServerPlayer viewer) {
+        if (!(viewer.level() instanceof ServerLevel level)) return;
+        double radiusSq = SCAN_RADIUS * SCAN_RADIUS;
+        AABB box = viewer.getBoundingBox().inflate(SCAN_RADIUS);
+
+        for (ServerPlayer target : level.getEntitiesOfClass(ServerPlayer.class, box,
+                GameUtils::isPlayerAliveAndSurvival)) {
+            if (target == viewer || target.isSpectator()) continue;
+            if (target.distanceToSqr(viewer) > radiusSq) continue;
+
+            byte flags = target.getEntityData().get(SHARED_FLAGS);
+            byte glowingFlags = (byte) (flags | GLOWING_FLAG);
+            viewer.connection.send(new ClientboundSetEntityDataPacket(target.getId(),
+                    List.of(new SynchedEntityData.DataValue<>(SHARED_FLAGS.id(), SHARED_FLAGS.serializer(), glowingFlags))));
+            ghostEyeGlowingEntityIds.add(target.getId());
+        }
+    }
+
+    private void clearGhostEyeGlow() {
+        if (!(player instanceof ServerPlayer viewer) || !(viewer.level() instanceof ServerLevel level)) {
+            ghostEyeGlowingEntityIds.clear();
+            return;
+        }
+
+        for (Integer entityId : new HashSet<>(ghostEyeGlowingEntityIds)) {
+            if (level.getEntity(entityId) == null) continue;
+            byte flags = level.getEntity(entityId).getEntityData().get(SHARED_FLAGS);
+            viewer.connection.send(new ClientboundSetEntityDataPacket(entityId,
+                    List.of(new SynchedEntityData.DataValue<>(SHARED_FLAGS.id(), SHARED_FLAGS.serializer(), flags))));
+        }
+        ghostEyeGlowingEntityIds.clear();
     }
 
     private void applyDomain(ServerPlayer sp) {
@@ -136,13 +198,13 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
                 GameUtils::isPlayerAliveAndSurvival)) {
             if (target.distanceToSqr(domainX, domainY, domainZ) > radiusSq) continue;
 
-            // 领域内所有人（含杨间）减速：缓慢 II
+
+            target.addEffect(new MobEffectInstance(ModEffects.VISION_FOG, EFFECT_REFRESH, 5, false, false, false));
+            if (target == player) continue; // 杨间本人保留视野与透视
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, EFFECT_REFRESH, 1, false, false, false));
 
-            if (target == player) continue; // 杨间本人保留视野与透视
-
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, EFFECT_REFRESH, 0, false, false, false));
             target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, EFFECT_REFRESH, 0, false, false, false));
+            target.addEffect(new MobEffectInstance(ModEffects.VISION_FOG, EFFECT_REFRESH, 1, false, false, false));
             // 标记效果：使其无法开启杀手透视（InstinctMixin 拦截）
             target.addEffect(new MobEffectInstance(ModEffects.EERIE_DOMAIN, EFFECT_REFRESH, 0, false, false, false));
         }
@@ -155,17 +217,25 @@ public class GhostEyePlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public void clientTick() {
-        if (revealTicks > 0) revealTicks--;
+        if (revealTicks > 0) {
+            revealTicks--;
+            if (revealTicks == 0) {
+                SREClient.cachedHighLightMap.clear();
+            }
+        }
+        if (scanCountdown > 0) scanCountdown--;
     }
 
     // ==================== NBT ====================
 
     @Override public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider p) {
         tag.putInt("revealTicks", revealTicks);
+        tag.putInt("scanCountdown", scanCountdown);
     }
 
     @Override public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider p) {
         revealTicks = tag.getInt("revealTicks");
+        scanCountdown = tag.getInt("scanCountdown");
         // 立即刷新本能高亮缓存，使白色轮廓的出现/消失更跟手
         SREClient.cachedHighLightMap.clear();
     }

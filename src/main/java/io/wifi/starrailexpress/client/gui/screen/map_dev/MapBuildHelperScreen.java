@@ -1,9 +1,7 @@
 package io.wifi.starrailexpress.client.gui.screen.map_dev;
 
-import io.wifi.starrailexpress.cca.AreasWorldComponent;
-import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.scenery.SceneGeometry;
 import io.wifi.starrailexpress.scenery.client.SceneAssetClient;
+import io.wifi.starrailexpress.client.gui.screen.map_dev.modules.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -14,48 +12,66 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSide;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.*;
 import java.util.function.Consumer;
 
-public class MapBuildHelperScreen extends Screen {
+public class MapBuildHelperScreen extends Screen implements ModuleContext {
+    @Override
+    public void requestModuleRefresh() {
+        if (activeTab < 0 || activeTab >= modules.size())
+            return;
 
-    // ══════════════════════════════════════════════════════════════════
-    // 偏移量（静态 + 文件持久化）
-    // ══════════════════════════════════════════════════════════════════
+        // 1. 移除当前所有可滚动控件（从屏幕的渲染列表、子控件列表、旁白列表中删除）
+        for (WidgetPlacement p : currentTabPlacements) {
+            removeWidget(p.widget); // Screen 方法，会从 renderables、children、narratables 中移除
+        }
+        currentTabPlacements.clear();
+
+        // 2. 重新初始化当前模块（注意：AllSettingsModule 会保留 entriesBuilt 状态）
+        TabModule module = modules.get(activeTab);
+        if (module != null) {
+            module.init(layoutCtx, this, currentTabPlacements);
+            contentHeight = module.getContentHeight();
+
+            // 3. 将新生成的控件加入屏幕
+            currentTabPlacements.forEach(p -> addRenderableWidget(p.widget));
+
+            // 4. 钳制滚动偏移，避免因内容高度变化导致偏移越界
+            int visibleH = visibleContentHeight();
+            if (contentHeight > visibleH) {
+                scrollOffset = Math.max(0, Math.min(scrollOffset, contentHeight - visibleH));
+            } else {
+                scrollOffset = 0;
+            }
+        }
+    }
 
     private static double offsetX = 0.5;
     private static double offsetY = 1;
     private static double offsetZ = 0.5;
 
-    // ══════════════════════════════════════════════════════════════════
-    // 实例字段
-    // ══════════════════════════════════════════════════════════════════
-
     private final BlockPos position;
     private int activeTab = 0;
 
     private EditBox dxBox, dyBox, dzBox;
-    private EditBox sceneIdBox;
-    private EditBox mapNameBox, mapImportBox;
+    private final List<AbstractWidget> fixedWidgets = new ArrayList<>();
+    private final Map<Integer, TabModule> modules = new LinkedHashMap<>();
+    private final List<WidgetPlacement> currentTabPlacements = new ArrayList<>();
 
-    private final List<AbstractWidget> tabWidgets0 = new ArrayList<>();
-    private final List<AbstractWidget> tabWidgets1 = new ArrayList<>();
-    private final List<AbstractWidget> tabWidgets2 = new ArrayList<>();
-    private final List<AbstractWidget> tabWidgets3 = new ArrayList<>(); // 新增：房间选项卡
-    private final List<AbstractWidget> tabWidgets4 = new ArrayList<>(); // 新增：环境选项卡
-    private final List<AbstractWidget> tabWidgets5 = new ArrayList<>();
-    private final List<AbstractWidget> tabWidgets6 = new ArrayList<>();
+    private int panelWidth, panelHeight;
+    private static final int MAX_PANEL_WIDTH = 500;
+    private static final int MIN_PANEL_WIDTH = 340;
+    private static final int MIN_PANEL_HEIGHT = 200;
+    private int panelLeftX, panelTopY;
 
-    // 面板居中定位
-    private int panelLeftX;
-    private int panelTopY;
-    private static final int PANEL_WIDTH = 340;
-    private static final int PANEL_HEIGHT = 454;
+    private int scrollOffset = 0;
+    private int contentHeight = 0;
+    private boolean isDraggingScroll = false;
+    private int dragStartY = 0;
+    private int dragStartScroll = 0;
 
-    // ══════════════════════════════════════════════════════════════════
-    // 构造
-    // ══════════════════════════════════════════════════════════════════
+    private LayoutContext layoutCtx;
 
     public MapBuildHelperScreen(BlockPos position) {
         this(position, 0);
@@ -64,666 +80,217 @@ public class MapBuildHelperScreen extends Screen {
     public MapBuildHelperScreen(BlockPos position, int initialTab) {
         super(Component.translatable("sre.map_helper.title"));
         this.position = position;
-        this.activeTab = Math.max(0, Math.min(6, initialTab));
+        this.activeTab = Math.max(0, Math.min(7, initialTab));
+        registerModules();
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // 坐标计算
-    // ══════════════════════════════════════════════════════════════════
+    private void registerModules() {
+        modules.put(0, new PositionsModule());
+        modules.put(1, new AreasModule());
+        modules.put(2, new BooleanSettingsModule());
+        modules.put(3, new RoomsModule());
+        modules.put(4, new EnvironmentModule());
+        modules.put(5, new SceneModule());
+        modules.put(6, new MapModule());
+        modules.put(7, new AllSettingsModule());
+    }
 
-    private double ax() {
+    // ── ModuleContext implementation ─────────────────────────────────
+    @Override
+    public double ax() {
         return position.getX() + offsetX;
     }
 
-    private double ay() {
+    @Override
+    public double ay() {
         return position.getY() + offsetY;
     }
 
-    private double az() {
+    @Override
+    public double az() {
         return position.getZ() + offsetZ;
     }
 
-    private float playerYaw() {
+    @Override
+    public float playerYaw() {
         var p = Minecraft.getInstance().player;
         return p != null ? p.getYRot() : 0f;
     }
 
-    private float playerPitch() {
+    @Override
+    public float playerPitch() {
         var p = Minecraft.getInstance().player;
         return p != null ? p.getXRot() : 0f;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // 命令发送（可选是否关闭界面）
-    // ══════════════════════════════════════════════════════════════════
+    @Override
+    public void sendOnly(String cmd) {
+        if (Minecraft.getInstance().player != null)
+            Minecraft.getInstance().player.connection.sendCommand(cmd);
+    }
 
-    private void sendAndClose(String cmd) {
-        var p = Minecraft.getInstance().player;
-        if (p != null)
-            p.connection.sendCommand(cmd);
+    @Override
+    public void sendAndClose(String cmd) {
+        sendOnly(cmd);
         onClose();
     }
 
-    private void sendOnly(String cmd) {
-        var p = Minecraft.getInstance().player;
-        if (p != null)
-            p.connection.sendCommand(cmd);
+    @Override
+    public double getOffsetX() {
+        return offsetX;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // init – 全部 UI 构建
-    // ══════════════════════════════════════════════════════════════════
+    @Override
+    public double getOffsetY() {
+        return offsetY;
+    }
 
     @Override
+    public double getOffsetZ() {
+        return offsetZ;
+    }
+
+    @Override
+    public void setOffsetX(double v) {
+        offsetX = v;
+    }
+
+    @Override
+    public void setOffsetY(double v) {
+        offsetY = v;
+    }
+
+    @Override
+    public void setOffsetZ(double v) {
+        offsetZ = v;
+    }
+
+    @Override
+    public void resetOffsets() {
+        offsetX = 0.5;
+        offsetY = 1;
+        offsetZ = 0.5;
+        dxBox.setValue("0.5");
+        dyBox.setValue("1");
+        dzBox.setValue("0.5");
+    }
+
+    @Override
+    public void refreshScreen() {
+        init(minecraft, width, height);
+    }
+
+    @Override
+    public String quoteCommandArgument(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    // ── Screen init ─────────────────────────────────────────────────
+    @Override
     protected void init() {
-        tabWidgets0.clear();
-        tabWidgets1.clear();
-        tabWidgets2.clear();
-        tabWidgets3.clear();
-        tabWidgets4.clear();
-        tabWidgets5.clear();
-        tabWidgets6.clear();
+        panelWidth = Math.min(Math.max((int) (width * 0.7f), MIN_PANEL_WIDTH), MAX_PANEL_WIDTH);
+        panelHeight = Math.min(454, height - 40);
+        panelHeight = Math.max(panelHeight, MIN_PANEL_HEIGHT);
+        panelLeftX = (width - panelWidth) / 2;
+        panelTopY = (height - panelHeight) / 2;
 
-        final int bw = 158;
-        final int gap = 12;
-        final int bh = 22;
+        int titleHeight = 40;
+        int offsetRowHeight = 42;
+        int tabBarHeight = 30;
+        int headerGap = 10;
+        int bottomStatusHeight = 8;
+        int contentStartY = panelTopY + titleHeight + offsetRowHeight + tabBarHeight + headerGap;
+        int contentEndY = panelTopY + panelHeight - bottomStatusHeight;
+        layoutCtx = new LayoutContext(panelLeftX, panelTopY, panelWidth, panelHeight, contentStartY, contentEndY, 6,
+                font);
 
-        panelLeftX = (width - PANEL_WIDTH) / 2;
-        panelTopY = (height - PANEL_HEIGHT) / 2;
+        clearWidgets();
+        fixedWidgets.clear();
+        currentTabPlacements.clear();
 
         buildOffsetRow();
         buildTabBar();
 
-        final int cy = panelTopY + 114;
-
-        // ---------- Tab 0: Positions ----------
-        addTabWidget(tabWidgets0, ModernButton.builder(
-                Component.translatable("sre.map_helper.set_spawn"),
-                b -> sendAndClose(String.format("sre:area_manager set spawnPos %f %f %f %.1f %.1f",
-                        ax(), ay(), az(), playerYaw(), playerPitch())))
-                .bounds(panelLeftX + 6, cy, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build());
-
-        addTabWidget(tabWidgets0, ModernButton.builder(
-                Component.translatable("sre.map_helper.set_spectator_spawn"),
-                b -> sendAndClose(String.format("sre:area_manager set spectatorSpawnPos %f %f %f %.1f %.1f",
-                        ax(), ay(), az(), playerYaw(), playerPitch())))
-                .bounds(panelLeftX + 6 + bw + gap, cy, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build());
-
-        // ---------- Tab 1: Areas ----------
-        String[] areaKeys = { "readyArea", "playArea", "sceneArea", "resetTemplateArea", "resetPasteArea" };
-        for (int i = 0; i < areaKeys.length; i++) {
-            final String cmd = areaKeys[i];
-            final Component areaName = Component.translatable("sre.area." + cmd);
-            final int rowY = cy + i * (bh + gap);
-
-            addTabWidget(tabWidgets1, ModernButton.builder(
-                    Component.translatable("sre.map_helper.area.set_min", areaName),
-                    b -> sendAndClose(
-                            String.format("sre:area_manager set %s min %.0f %.0f %.0f", cmd, Math.floor(ax()),
-                                    Math.floor(ay()), Math.floor(az()))))
-                    .bounds(panelLeftX + 6, rowY, bw, bh)
-                    .accentBar(AccentSide.LEFT)
-                    .build());
-
-            addTabWidget(tabWidgets1, ModernButton.builder(
-                    Component.translatable("sre.map_helper.area.set_max", areaName),
-                    b -> sendAndClose(
-                            String.format("sre:area_manager set %s max %.0f %.0f %.0f", cmd, Math.floor(ax()),
-                                    Math.floor(ay()), Math.floor(az()))))
-                    .bounds(panelLeftX + 6 + bw + gap, rowY, bw, bh)
-                    .accentBar(AccentSide.RIGHT)
-                    .build());
+        TabModule module = modules.get(activeTab);
+        if (module != null) {
+            module.init(layoutCtx, this, currentTabPlacements);
+            contentHeight = module.getContentHeight();
         }
 
-        // ---------- Tab 2: Settings ----------
-        String[] boolFields = { "canJump", "canSwim", "enableOxygenDrowning", "noReset", "haveOutsideSound", "sceneOffsetEnabled", "mustCopy",
-                "minigameQuestEnabled" };
-        String[] boolFieldKeys = {
-                "sre.field.canJump",
-                "sre.field.canSwim",
-                "sre.field.enableOxygenDrowning",
-                "sre.field.noReset",
-                "sre.field.haveOutsideSound",
-                "sre.field.sceneOffsetEnabled",
-                "sre.field.mustCopy",
-                "sre.field.minigameQuestEnabled"
-        };
-        for (int i = 0; i < boolFields.length; i++) {
-            final String field = boolFields[i];
-            final int rowY = cy + i * (bh + gap);
-
-            addTabWidget(tabWidgets2, ModernButton.builder(
-                    Component.translatable("sre.map_helper.set_true", Component.translatable(boolFieldKeys[i])),
-                    b -> sendOnly("sre:area_manager set " + field + " true"))
-                    .bounds(panelLeftX + 6, rowY, bw, bh)
-                    .accentBar(AccentSide.LEFT)
-                    .build());
-            addTabWidget(tabWidgets2, ModernButton.builder(
-                    Component.translatable("sre.map_helper.set_false", Component.translatable(boolFieldKeys[i])),
-                    b -> sendOnly("sre:area_manager set " + field + " false"))
-                    .bounds(panelLeftX + 6 + bw + gap, rowY, bw, bh)
-                    .accentBar(AccentSide.RIGHT)
-                    .build());
-        }
-
-        // ---------- Tab 3: Rooms (新增) ----------
-        buildRoomsTab(cy, bw, gap, bh);
-
-        // ---------- Tab 4: Environment (新增) ----------
-        buildEnvironmentTab(cy, bw, gap, bh);
-        buildSceneTab(cy, bw, gap, bh);
-        buildMapTab(cy, bw, gap, bh);
-
-        tabWidgets0.forEach(this::addRenderableWidget);
-        tabWidgets1.forEach(this::addRenderableWidget);
-        tabWidgets2.forEach(this::addRenderableWidget);
-        tabWidgets3.forEach(this::addRenderableWidget);
-        tabWidgets4.forEach(this::addRenderableWidget);
-        tabWidgets5.forEach(this::addRenderableWidget);
-        tabWidgets6.forEach(this::addRenderableWidget);
-        syncTabVisibility();
+        // 所有控件（固定 + 可滚动）都加入屏幕列表，让屏幕自动管理焦点和事件
+        fixedWidgets.forEach(this::addRenderableWidget);
+        currentTabPlacements.forEach(p -> addRenderableWidget(p.widget));
+        scrollOffset = 0;
     }
 
-    private void buildMapTab(int startY, int bw, int gap, int bh) {
-        int left = panelLeftX + 6;
-        int right = left + bw + gap;
-        int fullWidth = PANEL_WIDTH - 12;
-
-        AreasWorldComponent areas = SREClient.areaComponent;
-        String currentName = areas == null || areas.mapName == null ? "" : areas.mapName;
-
-        mapNameBox = new EditBox(font, left, startY, 230, bh, Component.literal("地图名称"));
-        mapNameBox.setMaxLength(128);
-        mapNameBox.setValue(currentName);
-        addTabWidget(tabWidgets6, mapNameBox);
-
-        int row1 = startY + bh + gap;
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("保存为新地图"), b -> {
-            String name = mapNameBox.getValue().trim();
-            if (!name.isEmpty()) {
-                sendOnly("sre:area_manager map save " + quoteCommandArgument(name));
-            }
-        }).bounds(left, row1, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("覆盖保存地图"), b -> {
-            String name = mapNameBox.getValue().trim();
-            if (!name.isEmpty()) {
-                sendOnly("sre:area_manager map save " + quoteCommandArgument(name) + " force");
-            }
-        }).bounds(right, row1, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row2 = row1 + bh + gap;
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("载入此地图配置"), b -> {
-            String name = mapNameBox.getValue().trim();
-            if (!name.isEmpty()) {
-                sendOnly("sre:area_manager map load " + quoteCommandArgument(name));
-            }
-        }).bounds(left, row2, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("列出已有地图"),
-                b -> sendOnly("sre:area_manager map list"))
-                .bounds(right, row2, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row3 = row2 + bh + gap;
-        mapImportBox = new EditBox(font, left, row3, fullWidth, bh,
-                Component.literal("map_imports 中的 JSON 文件名"));
-        mapImportBox.setMaxLength(128);
-        addTabWidget(tabWidgets6, mapImportBox);
-
-        int row4 = row3 + bh + gap;
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("导入为此地图"),
-                b -> importMapConfig(false))
-                .bounds(left, row4, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("覆盖导入"),
-                b -> importMapConfig(true))
-                .bounds(right, row4, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row5 = row4 + bh + gap;
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("创建空白地图配置"), b -> {
-            sendOnly("sre:area_manager create_new");
-            String name = mapNameBox.getValue().trim();
-            if (!name.isEmpty()) {
-                sendOnly("sre:area_manager map name " + quoteCommandArgument(name));
-            }
-        }).bounds(left, row5, fullWidth, bh).accentBar(AccentSide.BOTTOM).build());
-
-        // 地图初始物品配置
-        int row6 = row5 + bh + gap;
-        AreasWorldComponent areasForII = SREClient.areaComponent;
-        String currentInitialItems = "";
-        if (areasForII != null && !areasForII.initialItems.isEmpty()) {
-            // 将 "itemId;count" 格式转为逗号分隔 "itemId,count,itemId,count"
-            StringBuilder sb = new StringBuilder();
-            for (String item : areasForII.initialItems) {
-                String[] parts = item.split(";");
-                if (parts.length >= 2) {
-                    if (sb.length() > 0) sb.append(",");
-                    sb.append(parts[0]).append(",").append(parts[1]);
-                }
-            }
-            currentInitialItems = sb.toString();
-        }
-        EditBox initialItemsBox = new EditBox(font, left, row6, fullWidth, bh,
-                Component.literal("初始物品(格式: 物品ID,数量,物品ID,数量...) 如 minecraft:diamond,2"));
-        initialItemsBox.setMaxLength(512);
-        initialItemsBox.setValue(currentInitialItems);
-        addTabWidget(tabWidgets6, initialItemsBox);
-
-        int row7 = row6 + bh + gap;
-        addTabWidget(tabWidgets6, ModernButton.builder(Component.literal("设置地图初始物品"), b -> {
-            String value = initialItemsBox.getValue().trim();
-            if (!value.isEmpty()) {
-                sendOnly("sre:area_manager set initialItems " + quoteCommandArgument(value));
-            }
-        }).bounds(left, row7, fullWidth, bh).accentBar(AccentSide.BOTTOM).build());
-    }
-
-    private void importMapConfig(boolean force) {
-        String filename = mapImportBox.getValue().trim();
-        String mapName = mapNameBox.getValue().trim();
-        if (filename.isEmpty() || mapName.isEmpty()) {
-            return;
-        }
-        sendOnly("sre:area_manager map import " + quoteCommandArgument(filename)
-                + " as " + quoteCommandArgument(mapName)
-                + (force ? " force" : ""));
-    }
-
-    private void buildSceneTab(int startY, int bw, int gap, int bh) {
-        int left = panelLeftX + 6;
-        int right = left + bw + gap;
-        AreasWorldComponent areas = SREClient.areaComponent;
-
-        sceneIdBox = new EditBox(font, left, startY, 190, bh, Component.literal("场景 ID"));
-        sceneIdBox.setMaxLength(128);
-        sceneIdBox.setValue(areas == null ? "" : areas.getSceneId());
-        addTabWidget(tabWidgets5, sceneIdBox);
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("指定场景"), b -> {
-            String id = sceneIdBox.getValue().trim();
-            if (!id.isEmpty()) {
-                sendOnly("sre:scene library assign " + quoteCommandArgument(id));
-            }
-        }).bounds(left + 196, startY, 64, bh).accentBar(AccentSide.BOTTOM).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("编辑器"),
-                b -> sendOnly("sre:scene manager"))
-                .bounds(left + 264, startY, 64, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row1 = startY + bh + gap;
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("取消当前地图场景"),
-                b -> sendOnly("sre:scene library detach"))
-                .bounds(left, row1, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("列出场景库"),
-                b -> sendOnly("sre:scene library list"))
-                .bounds(right, row1, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row2 = row1 + bh + gap;
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("显示/隐藏投影"), b ->
-                SceneAssetClient.setPreviewEnabled(!SceneAssetClient.isPreviewEnabled()))
-                .bounds(left, row2, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("暂停/继续滚动"), b ->
-                SceneAssetClient.setPreviewPaused(!SceneAssetClient.isPreviewPaused()))
-                .bounds(right, row2, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row3 = row2 + bh + gap;
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("投影透明度 -"), b ->
-                SceneAssetClient.setPreviewAlpha(SceneAssetClient.getPreviewAlpha() - 0.05F))
-                .bounds(left, row3, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("投影透明度 +"), b ->
-                SceneAssetClient.setPreviewAlpha(SceneAssetClient.getPreviewAlpha() + 0.05F))
-                .bounds(right, row3, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row4 = row3 + bh + gap;
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("预览速度 -"), b ->
-                SceneAssetClient.setPreviewSpeed(SceneAssetClient.getPreviewSpeed() - 0.25F))
-                .bounds(left, row4, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("预览速度 +"), b ->
-                SceneAssetClient.setPreviewSpeed(SceneAssetClient.getPreviewSpeed() + 0.25F))
-                .bounds(right, row4, bw, bh).accentBar(AccentSide.RIGHT).build());
-
-        int row5 = row4 + bh + gap;
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("刷新投影"),
-                b -> SceneAssetClient.refreshPreview())
-                .bounds(left, row5, bw, bh).accentBar(AccentSide.LEFT).build());
-        addTabWidget(tabWidgets5, ModernButton.builder(Component.literal("客户端场景 "
-                        + (SceneAssetClient.isMovingSceneEnabled() ? "开" : "关")),
-                b -> {
-                    SceneAssetClient.setMovingSceneEnabled(!SceneAssetClient.isMovingSceneEnabled());
-                    init(minecraft, width, height);
-                })
-                .bounds(right, row5, bw, bh).accentBar(AccentSide.RIGHT).build());
-    }
-
-    // ── 房间选项卡 UI ────────────────────────────────────────────────
-    private void buildRoomsTab(int startY, int bw, int gap, int bh) {
-        // 第一行：房间数量设置
-        final int row1 = startY;
-        final int fieldWidth = 60;
-        EditBox roomCountBox = makeField(panelLeftX + 6, row1, fieldWidth, bh, "0",
-                v -> {
-                    /* 不需要实时响应，点击按钮时读取 */ });
-        addTabWidget(tabWidgets3, roomCountBox);
-
-        ModernButton setCountBtn = ModernButton.builder(
-                Component.literal("设置房间数量"),
-                b -> {
-                    String count = roomCountBox.getValue().trim();
-                    if (!count.isEmpty()) {
-                        sendOnly("sre:area_manager set roomCount " + count);
-                    }
-                })
-                .bounds(panelLeftX + 6 + fieldWidth + gap, row1, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets3, setCountBtn);
-
-        // 第二行：房间 ID 输入框 + 添加按钮
-        final int row2 = startY + (bh + gap);
-        EditBox roomIdBox = makeField(panelLeftX + 6, row2, fieldWidth, bh, "0",
-                v -> {
-                });
-        addTabWidget(tabWidgets3, roomIdBox);
-
-        ModernButton addRoomBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.add_to_room"),
-                b -> {
-                    String idStr = roomIdBox.getValue().trim();
-                    if (!idStr.isEmpty()) {
-                        try {
-                            int id = Integer.parseInt(idStr);
-                            long x = (long) Math.floor(ax());
-                            long y = (long) Math.floor(ay());
-                            long z = (long) Math.floor(az());
-                            sendOnly(String.format("sre:area_manager set roomPositions add %d %d %d %d", id, x, y, z));
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                })
-                .bounds(panelLeftX + 6 + fieldWidth + gap, row2, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets3, addRoomBtn);
-
-        // 第三行：移除房间按钮（使用相同的 ID 输入框）
-        final int row3 = startY + 2 * (bh + gap);
-        ModernButton removeRoomBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.remove_room"),
-                b -> {
-                    String idStr = roomIdBox.getValue().trim();
-                    if (!idStr.isEmpty()) {
-                        try {
-                            int id = Integer.parseInt(idStr);
-                            sendOnly("sre:area_manager set roomPositions remove " + id);
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                })
-                .bounds(panelLeftX + 6 + fieldWidth + gap, row3, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets3, removeRoomBtn);
-    }
-
-    // ── 环境选项卡 UI ────────────────────────────────────────────────
-    private void buildEnvironmentTab(int startY, int bw, int gap, int bh) {
-        final int halfW = (bw - gap) / 2;
-        final int smallH = 18;
-        final int fieldW = 120;
-
-        // 第0行：天气按钮
-        final int row0 = startY;
-        ModernButton weatherClearBtn = ModernButton.builder(
-                Component.translatable("screen.game_manage.btn.weather_clear"),
-                b -> sendOnly("sre:area_manager set weather clear"))
-                .bounds(panelLeftX + 6, row0, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, weatherClearBtn);
-
-        ModernButton weatherRainBtn = ModernButton.builder(
-                Component.translatable("screen.game_manage.btn.weather_rain"),
-                b -> sendOnly("sre:area_manager set weather rain"))
-                .bounds(panelLeftX + 6 + bw + gap, row0, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, weatherRainBtn);
-
-        // 第1行：雷暴按钮
-        final int row1 = startY + (bh + gap);
-        ModernButton weatherThunderBtn = ModernButton.builder(
-                Component.translatable("screen.game_manage.btn.weather_thunder"),
-                b -> sendOnly("sre:area_manager set weather thunder"))
-                .bounds(panelLeftX + 6, row1, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, weatherThunderBtn);
-
-        // 第2行：重力输入
-        final int row2 = startY + 2 * (bh + gap);
-        EditBox gravityBox = makeField(panelLeftX + 6, row2, fieldW, smallH, "0.08",
-                v -> {});
-        addTabWidget(tabWidgets4, gravityBox);
-
-        ModernButton gravityBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_gravity"),
-                b -> {
-                    String val = gravityBox.getValue().trim();
-                    if (!val.isEmpty())
-                        sendOnly("sre:area_manager set gravity " + val);
-                })
-                .bounds(panelLeftX + 6 + fieldW + gap, row2, bw - fieldW - gap + gap, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, gravityBtn);
-
-        // 第3行：时间输入
-        final int row3 = startY + 3 * (bh + gap);
-        EditBox timeBox = makeField(panelLeftX + 6, row3, fieldW, smallH, "18000",
-                v -> {});
-        addTabWidget(tabWidgets4, timeBox);
-
-        ModernButton timeBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_time"),
-                b -> {
-                    String val = timeBox.getValue().trim();
-                    if (!val.isEmpty())
-                        sendOnly("sre:area_manager set time " + val);
-                })
-                .bounds(panelLeftX + 6 + fieldW + gap, row3, bw - fieldW - gap + gap, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, timeBtn);
-
-        // 第4行：药水效果输入
-        final int row4 = startY + 4 * (bh + gap);
-        EditBox effectBox = makeField(panelLeftX + 6, row4, fieldW, smallH, "",
-                v -> {});
-        addTabWidget(tabWidgets4, effectBox);
-
-        ModernButton effectBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_effect"),
-                b -> {
-                    String val = effectBox.getValue().trim();
-                    sendOnly("sre:area_manager set effect " + (val.isEmpty() ? "\"\"" : val));
-                })
-                .bounds(panelLeftX + 6 + fieldW + gap, row4, bw - fieldW - gap + gap, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, effectBtn);
-
-        // 第5行：雪花效果开关
-        final int row5 = startY + 5 * (bh + gap);
-        ModernButton snowEnableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_true", Component.translatable("sre.field.snowEnabled")),
-                b -> sendOnly("sre:area_manager set snowEnabled true"))
-                .bounds(panelLeftX + 6, row5, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, snowEnableBtn);
-
-        ModernButton snowDisableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_false", Component.translatable("sre.field.snowEnabled")),
-                b -> sendOnly("sre:area_manager set snowEnabled false"))
-                .bounds(panelLeftX + 6 + bw + gap, row5, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, snowDisableBtn);
-
-        // 第5.5行：沙尘暴效果开关
-        final int row5_5 = startY + 5 * (bh + gap) + bh + gap;
-        ModernButton sandEnableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_true", Component.translatable("sre.field.sandEnabled")),
-                b -> sendOnly("sre:area_manager set sandEnabled true"))
-                .bounds(panelLeftX + 6, row5_5, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, sandEnableBtn);
-
-        ModernButton sandDisableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_false", Component.translatable("sre.field.sandEnabled")),
-                b -> sendOnly("sre:area_manager set sandEnabled false"))
-                .bounds(panelLeftX + 6 + bw + gap, row5_5, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, sandDisableBtn);
-
-        // 第6行：昼夜循环开关
-        final int row6 = startY + 6 * (bh + gap);
-        ModernButton daylightEnableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_true", Component.translatable("sre.field.daylightCycle")),
-                b -> sendOnly("sre:area_manager set daylightCycle true"))
-                .bounds(panelLeftX + 6, row6, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, daylightEnableBtn);
-
-        ModernButton daylightDisableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_false", Component.translatable("sre.field.daylightCycle")),
-                b -> sendOnly("sre:area_manager set daylightCycle false"))
-                .bounds(panelLeftX + 6 + bw + gap, row6, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, daylightDisableBtn);
-
-        // 第7行：天气循环开关
-        final int row7 = startY + 7 * (bh + gap);
-        ModernButton weatherCycleEnableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_true", Component.translatable("sre.field.weatherCycle")),
-                b -> sendOnly("sre:area_manager set weatherCycle true"))
-                .bounds(panelLeftX + 6, row7, bw, bh)
-                .accentBar(AccentSide.LEFT)
-                .build();
-        addTabWidget(tabWidgets4, weatherCycleEnableBtn);
-
-        ModernButton weatherCycleDisableBtn = ModernButton.builder(
-                Component.translatable("sre.map_helper.set_false", Component.translatable("sre.field.weatherCycle")),
-                b -> sendOnly("sre:area_manager set weatherCycle false"))
-                .bounds(panelLeftX + 6 + bw + gap, row7, bw, bh)
-                .accentBar(AccentSide.RIGHT)
-                .build();
-        addTabWidget(tabWidgets4, weatherCycleDisableBtn);
-    }
-
-    // ── 偏移量行 ─────────────────────────────────────────────────────
+    // ── Fixed UI sections ───────────────────────────────────────────
     private void buildOffsetRow() {
-        final int oy = panelTopY + 52;
-        final int fh = 18;
-        final int labelW = 14;
-        final int fieldW = 64;
-        final int smallGap = 6;
-        final int bigGap = 12;
-        final int groupW = labelW + smallGap + fieldW;
-        final int resetW = 48;
-        final int totalW = groupW * 3 + bigGap * 2 + resetW;
-        final int startX = panelLeftX + (PANEL_WIDTH - totalW) / 2;
+        final int oy = panelTopY + 68;
+        final int fh = 18, labelW = 14, fieldW = 60, smallGap = 4, bigGap = 8, resetW = 48;
+        int groupW = labelW + smallGap + fieldW;
+        int totalW = groupW * 3 + bigGap * 2 + resetW;
+        int startX = panelLeftX + (panelWidth - totalW) / 2;
 
-        dxBox = makeField(startX + labelW + smallGap, oy, fieldW, fh, "0",
-                v -> {
-                    try {
-                        offsetX = Double.parseDouble(v);
-                    } catch (Exception ignored) {
-                    }
-                });
+        dxBox = makeField(startX + labelW + smallGap, oy, fieldW, fh, "0", v -> {
+            try {
+                setOffsetX(Double.parseDouble(v));
+            } catch (Exception ignored) {
+            }
+        });
         dxBox.setValue(fmtDouble(offsetX));
-        addRenderableWidget(dxBox);
+        fixedWidgets.add(dxBox);
 
         int yStart = startX + groupW + bigGap;
-        dyBox = makeField(yStart + labelW + smallGap, oy, fieldW, fh, "1",
-                v -> {
-                    try {
-                        offsetY = Double.parseDouble(v);
-                    } catch (Exception ignored) {
-                    }
-                });
+        dyBox = makeField(yStart + labelW + smallGap, oy, fieldW, fh, "1", v -> {
+            try {
+                setOffsetY(Double.parseDouble(v));
+            } catch (Exception ignored) {
+            }
+        });
         dyBox.setValue(fmtDouble(offsetY));
-        addRenderableWidget(dyBox);
+        fixedWidgets.add(dyBox);
 
         int zStart = yStart + groupW + bigGap;
-        dzBox = makeField(zStart + labelW + smallGap, oy, fieldW, fh, "0",
-                v -> {
-                    try {
-                        offsetZ = Double.parseDouble(v);
-                    } catch (Exception ignored) {
-                    }
-                });
+        dzBox = makeField(zStart + labelW + smallGap, oy, fieldW, fh, "0", v -> {
+            try {
+                setOffsetZ(Double.parseDouble(v));
+            } catch (Exception ignored) {
+            }
+        });
         dzBox.setValue(fmtDouble(offsetZ));
-        addRenderableWidget(dzBox);
+        fixedWidgets.add(dzBox);
 
         int resetX = zStart + groupW + bigGap;
-        addRenderableWidget(ModernButton.builder(Component.translatable("sre.map_helper.reset"), b -> {
-            offsetX = offsetZ = 0.5;
-            offsetY = 1;
-            dxBox.setValue("0.5");
-            dyBox.setValue("1");
-            dzBox.setValue("0.5");
-        }).bounds(resetX, oy, resetW, fh)
-                .accentBar(AccentSide.BOTTOM)
-                .build());
+        fixedWidgets.add(ModernButton.builder(Component.translatable("sre.map_helper.reset"), b -> resetOffsets())
+                .bounds(resetX, oy, resetW, fh).accentBar(AccentSide.BOTTOM).build());
     }
 
-    // ── Tab 栏 ───────────────────────────────────────────────────────
     private void buildTabBar() {
-        final int tabY = panelTopY + 74;
-        final int tabH = 22;
-        final int tabW = 42;
-        final int tabGap = 5;
-        final int totalTabW = tabW * 7 + tabGap * 6;
-        final int startX = panelLeftX + (PANEL_WIDTH - totalTabW) / 2;
+        int tabY = panelTopY + 90, tabH = 22, tabGap = 5;
+        int tabW = Math.min(42, (panelWidth - 12 - 7 * tabGap) / 8);
+        int totalTabW = tabW * 8 + tabGap * 7;
+        int startX = panelLeftX + (panelWidth - totalTabW) / 2;
 
-        String[] tabKeys = { "positions", "areas", "settings", "rooms", "environment", "scene", "map" };
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 8; i++) {
             final int idx = i;
-            var builder = ModernButton.builder(Component.translatable("sre.map_helper.tab." + tabKeys[i]), b -> {
+            TabModule mod = modules.get(idx);
+            Component title = mod != null ? mod.getTabTitle() : Component.literal("?");
+            var builder = ModernButton.builder(title, b -> {
                 activeTab = idx;
-                init(minecraft, width, height);
-            }).bounds(startX + i * (tabW + tabGap), tabY, tabW, tabH);
-
-            if (activeTab == i)
+                refreshScreen();
+            })
+                    .bounds(startX + i * (tabW + tabGap), tabY, tabW, tabH);
+            if (activeTab == idx)
                 builder.accentBar(AccentSide.BOTTOM);
             else
                 builder.accentBar();
-            addRenderableWidget(builder.build());
+            fixedWidgets.add(builder.build());
         }
     }
 
-    // ── 辅助方法 ────────────────────────────────────────────────────
-    private void addTabWidget(List<AbstractWidget> list, AbstractWidget widget) {
-        list.add(widget);
-    }
-
-    private void syncTabVisibility() {
-        tabWidgets0.forEach(w -> w.visible = (activeTab == 0));
-        tabWidgets1.forEach(w -> w.visible = (activeTab == 1));
-        tabWidgets2.forEach(w -> w.visible = (activeTab == 2));
-        tabWidgets3.forEach(w -> w.visible = (activeTab == 3));
-        tabWidgets4.forEach(w -> w.visible = (activeTab == 4));
-        tabWidgets5.forEach(w -> w.visible = (activeTab == 5));
-        tabWidgets6.forEach(w -> w.visible = (activeTab == 6));
-    }
-
+    // ── Helpers ─────────────────────────────────────────────────────
     private EditBox makeField(int x, int y, int w, int h, String defaultVal, Consumer<String> responder) {
-        var box = new EditBox(font, x, y, w, h, Component.empty());
+        EditBox box = new EditBox(font, x, y, w, h, Component.empty());
         box.setValue(defaultVal);
         box.setMaxLength(20);
         box.setResponder(responder);
@@ -734,122 +301,153 @@ public class MapBuildHelperScreen extends Screen {
         if (v == Math.floor(v) && !Double.isInfinite(v) && Math.abs(v) < 1e9)
             return String.valueOf((long) v);
         String s = String.format("%.4f", v);
-        s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
-        return s;
+        return s.replaceAll("0+$", "").replaceAll("\\.$", "");
     }
 
-    private static String quoteCommandArgument(String value) {
-        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    // ── Scrolling ───────────────────────────────────────────────────
+    private int visibleContentHeight() {
+        return layoutCtx.contentEndY - layoutCtx.contentStartY;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // 渲染
-    // ══════════════════════════════════════════════════════════════════
+    @Override
+    public boolean mouseScrolled(double mx, double my, double horiz, double vert) {
+        if (contentHeight > visibleContentHeight()) {
+            scrollOffset = Math.max(0,
+                    Math.min(scrollOffset - (int) vert * 20, contentHeight - visibleContentHeight()));
+            return true;
+        }
+        return super.mouseScrolled(mx, my, horiz, vert);
+    }
 
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        // 滚动条拖拽处理（优先）
+        if (contentHeight > visibleContentHeight()) {
+            int barX = panelLeftX + panelWidth - 8, barY = layoutCtx.contentStartY, barH = visibleContentHeight();
+            if (mx >= barX && mx <= barX + 4 && my >= barY && my <= barY + barH) {
+                isDraggingScroll = true;
+                dragStartY = (int) my;
+                dragStartScroll = scrollOffset;
+                return true;
+            }
+        }
+        // 剩余事件交给屏幕自动分发给所有控件
+        return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        isDraggingScroll = false;
+        return super.mouseReleased(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (isDraggingScroll && contentHeight > visibleContentHeight()) {
+            int delta = (int) (my - dragStartY);
+            scrollOffset = Math.max(0, Math.min(
+                    dragStartScroll + delta * (contentHeight - visibleContentHeight()) / visibleContentHeight(),
+                    contentHeight - visibleContentHeight()));
+            return true;
+        }
+        return super.mouseDragged(mx, my, button, dx, dy);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    // ── Rendering ───────────────────────────────────────────────────
     @Override
     public void renderBackground(GuiGraphics g, int i, int j, float f) {
-        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + PANEL_WIDTH + 6, panelTopY + PANEL_HEIGHT + 3, 0xCC080C18);
-        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + PANEL_WIDTH + 6, panelTopY - 2, 0xFF5577CC);
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
+        // 背景与顶部装饰线
+        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + panelWidth + 6, panelTopY + panelHeight + 3, 0xCC080C18);
+        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + panelWidth + 6, panelTopY - 2, 0xFF5577CC);
 
-        final int cx = panelLeftX + PANEL_WIDTH / 2;
+        // 1. 绘制固定控件（不受裁剪，且不会被 super.render 重复绘制）
+        for (AbstractWidget w : fixedWidgets) {
+            w.render(g, mouseX, mouseY, partial);
+        }
 
+        // 2. 更新可滚动控件 Y 坐标并裁剪绘制
+        for (WidgetPlacement p : currentTabPlacements) {
+            p.widget.setY(layoutCtx.contentStartY + p.relativeY - scrollOffset);
+        }
+
+        g.enableScissor(layoutCtx.panelLeftX, layoutCtx.contentStartY,
+                layoutCtx.panelLeftX + layoutCtx.panelWidth, layoutCtx.contentEndY);
+        for (WidgetPlacement p : currentTabPlacements) {
+            p.widget.render(g, mouseX, mouseY, partial);
+        }
+        g.disableScissor();
+
+        // 3. 固定文本 overlay 和模块额外内容
+        drawFixedOverlays(g);
+        TabModule mod = modules.get(activeTab);
+        if (mod != null)
+            mod.renderOverlay(g, mouseX, mouseY, partial);
+        drawScrollbar(g);
+
+        // 4. 手动绘制 tooltip（因为未调用 super.render）
+    }
+
+    private void drawFixedOverlays(GuiGraphics g) {
+        int cx = panelLeftX + panelWidth / 2;
         g.drawCenteredString(font,
-                Component.translatable("sre.map_helper.title").withStyle(s -> s.withColor(0x55BBFF).withBold(true)),
-                cx, panelTopY + 10, 0xFFFFFF);
-
+                Component.translatable("sre.map_helper.title").withStyle(s -> s.withColor(0x55BBFF).withBold(true)), cx,
+                panelTopY + 10, 0xFFFFFF);
         g.drawCenteredString(font,
                 Component.translatable("sre.map_helper.source_pos", position.getX(), position.getY(), position.getZ())
                         .withStyle(s -> s.withColor(0x778899)),
                 cx, panelTopY + 22, 0xFFFFFF);
-
         boolean hasOffset = offsetX != 0 || offsetY != 0 || offsetZ != 0;
-        g.drawCenteredString(font,
-                Component.translatable("sre.map_helper.applied_pos", ax(), ay(), az())
-                        .withStyle(s -> s.withColor(hasOffset ? 0x55DD88 : 0x445566)),
-                cx, panelTopY + 32, 0xFFFFFF);
+        g.drawCenteredString(font, Component.translatable("sre.map_helper.applied_pos", ax(), ay(), az())
+                .withStyle(s -> s.withColor(hasOffset ? 0x55DD88 : 0x445566)), cx, panelTopY + 32, 0xFFFFFF);
 
         // 偏移量标签
-        final int oy = panelTopY + 52;
-        final int fh = 18;
-        final int labelW = 14;
-        final int fieldW = 64;
-        final int smallGap = 6;
-        final int bigGap = 12;
+        final int oy = panelTopY + 68;
+        int labelW = 14, fieldW = 60, smallGap = 4, bigGap = 8, resetW = 48;
         int groupW = labelW + smallGap + fieldW;
-        int resetW = 48;
         int totalW = groupW * 3 + bigGap * 2 + resetW;
-        int startX = panelLeftX + (PANEL_WIDTH - totalW) / 2;
-
+        int startX = panelLeftX + (panelWidth - totalW) / 2;
         g.drawString(font, Component.translatable("sre.map_helper.dx"), startX, oy + 4, 0xAABBCC, false);
-        int yStart = startX + groupW + bigGap;
-        g.drawString(font, Component.translatable("sre.map_helper.dy"), yStart, oy + 4, 0xAABBCC, false);
-        int zStart = yStart + groupW + bigGap;
-        g.drawString(font, Component.translatable("sre.map_helper.dz"), zStart, oy + 4, 0xAABBCC, false);
+        g.drawString(font, Component.translatable("sre.map_helper.dy"), startX + groupW + bigGap, oy + 4, 0xAABBCC,
+                false);
+        g.drawString(font, Component.translatable("sre.map_helper.dz"), startX + (groupW + bigGap) * 2, oy + 4,
+                0xAABBCC, false);
 
-        g.fill(panelLeftX, panelTopY + 70, panelLeftX + PANEL_WIDTH, panelTopY + 71, 0x33AABBCC);
-        g.fill(panelLeftX, panelTopY + 94, panelLeftX + PANEL_WIDTH, panelTopY + 95, 0x33AABBCC);
+        // 分割线
+        g.fill(panelLeftX, panelTopY + 86, panelLeftX + panelWidth, panelTopY + 87, 0x33AABBCC);
+        g.fill(panelLeftX, panelTopY + 110, panelLeftX + panelWidth, panelTopY + 111, 0x33AABBCC);
 
-        String[] tabTitlesKeys = {
-                "spawn_offset", "aabb_areas", "boolean_settings", "rooms_config", "environment", "scene", "map"
-        };
+        // 当前标签标题
+        String[] tabTitlesKeys = { "spawn_offset", "aabb_areas", "boolean_settings", "rooms_config", "environment",
+                "scene", "map", "all" };
         g.drawString(font,
                 Component.translatable("sre.map_helper.tab_title." + tabTitlesKeys[activeTab])
                         .withStyle(Style.EMPTY.withColor(0x5577CC).withBold(true)),
-                panelLeftX + 6, panelTopY + 100, 0xFFFFFF, false);
-
-        if (activeTab == 1) {
-            g.drawString(font,
-                    Component.translatable("sre.map_helper.areas.hint", ax(), ay(), az())
-                            .withStyle(s -> s.withColor(0x445566)),
-                    panelLeftX + 6, panelTopY + PANEL_HEIGHT - 12, 0xFFFFFF, false);
-        } else if (activeTab == 3) {
-            g.drawString(font,
-                    Component.literal("房间 ID 必须为整数，坐标自动取整为当前偏移位置")
-                            .withStyle(s -> s.withColor(0x445566)),
-                    panelLeftX + 6, panelTopY + PANEL_HEIGHT - 12, 0xFFFFFF, false);
-        } else if (activeTab == 5) {
-            renderSceneSummary(g);
-        } else if (activeTab == 6) {
-            String mapName = SREClient.areaComponent == null || SREClient.areaComponent.mapName == null
-                    ? "-"
-                    : SREClient.areaComponent.mapName;
-            g.drawString(font, Component.literal("当前地图: " + mapName),
-                    panelLeftX + 6, panelTopY + PANEL_HEIGHT - 24, 0x88DDFF, false);
-            g.drawString(font, Component.literal("导入目录: <world>/map_imports，仅接受单个 JSON 文件名"),
-                    panelLeftX + 6, panelTopY + PANEL_HEIGHT - 12, 0x88CC99, false);
-        }
+                panelLeftX + 6, panelTopY + 94, 0xFFFFFF, false);
     }
 
-    private void renderSceneSummary(GuiGraphics g) {
-        AreasWorldComponent areas = SREClient.areaComponent;
-        if (areas == null) {
-            return;
+    private void drawScrollbar(GuiGraphics g) {
+        int visibleH = visibleContentHeight();
+        if (contentHeight > visibleH) {
+            int barX = panelLeftX + panelWidth - 8, barY = layoutCtx.contentStartY, barH = visibleH;
+            int thumbH = Math.max(20, (int) ((float) visibleH / contentHeight * barH));
+            int thumbY = barY + (int) ((float) scrollOffset / (contentHeight - visibleH) * (barH - thumbH));
+            g.fill(barX, barY, barX + 4, barY + barH, 0x22FFFFFF);
+            g.fill(barX, thumbY, barX + 4, thumbY + thumbH, 0xCC5577CC);
         }
-        SceneGeometry.SectionBounds bounds = SceneGeometry.sectionBounds(areas.getSceneArea());
-        var status = SceneAssetClient.cacheStatus();
-        String hash = SceneAssetClient.currentHash();
-        g.drawString(font, Component.literal(String.format(
-                "场景=%s 选区=%s 发布=%s 轴=%s 区段=%d 投影=%.0f%% 速度=%.2f%s",
-                areas.getSceneId().isBlank() ? "未指定" : areas.getSceneId(),
-                areas.isSceneAreaConfigured() ? "完成" : "未完成",
-                areas.getSceneAssetHash().isBlank() ? "未完成" : "完成",
-                areas.getSceneScroll(), bounds.sectionCount(),
-                SceneAssetClient.getPreviewAlpha() * 100.0F, SceneAssetClient.getPreviewSpeed(),
-                SceneAssetClient.isPreviewPaused() ? " [暂停]" : "")),
-                panelLeftX + 6, panelTopY + PANEL_HEIGHT - 24, 0x88DDFF, false);
-        g.drawString(font, Component.literal(String.format(
-                "缓存=%d 个 %.1f/%.1f MiB 当前=%s 客户端=%s 远程=%s%s",
-                status.entries(), status.bytes() / 1048576.0D, status.limitBytes() / 1048576.0D,
-                hash.isBlank() ? "-" : hash.substring(0, Math.min(12, hash.length())),
-                SceneAssetClient.isMovingSceneEnabled() ? "开" : "关",
-                areas.getSceneAssetRemoteUrl().isBlank() ? "关" : "开",
-                SceneAssetClient.isRemoteDownloading() ? " [远程下载中]" : "")),
-                panelLeftX + 6, panelTopY + PANEL_HEIGHT - 12, 0x88CC99, false);
     }
 
     @Override

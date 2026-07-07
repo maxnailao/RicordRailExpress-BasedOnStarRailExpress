@@ -4,12 +4,10 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
-import io.wifi.starrailexpress.content.block_entity.MinigameQuestBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -32,11 +30,24 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.agmas.noellesroles.content.block.scene.DebrisPileBlock;
+import org.agmas.noellesroles.content.block.scene.ReactorBlock;
+import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.OptionalDouble;
 
+// 本类AI禁止修改
+// 本类AI禁止修改
+// 本类AI禁止修改
+// 本类AI禁止修改
+// 本类AI禁止修改
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
 public class TaskBlockOverlayRenderer {
     // 创建带厚度的永远不被遮挡线框
     public static ArrayList<BlockPos> RoomDoorPositions = new ArrayList<>();
@@ -55,7 +66,7 @@ public class TaskBlockOverlayRenderer {
                     .createCompositeState(false));
 
     public static void renderBlockOverlay(WorldRenderContext context,
-            BlockPos blockPos, Color color, float alpha, boolean colorize, float textScale, Component text) {
+            BlockPos blockPos, Color color, float alpha, boolean colorize, float textScale) {
         Minecraft client = Minecraft.getInstance();
         Level world = client.level;
         if (world == null)
@@ -82,27 +93,6 @@ public class TaskBlockOverlayRenderer {
         // ✅ 方块描边：用 context.consumers()，配合 ITEM_ENTITY_TARGET+NO_DEPTH_TEST 实现透视
         // RenderSystem.lineWidth(4);
         LevelRenderer.renderLineBox(matrices, vertexConsumer, localAABB, red, green, blue, alpha);
-
-        // if (text != null) {
-        // if (textScale <= 0) {
-        // double blockWidthX = localAABB.maxX - localAABB.minX;
-        // double blockWidthZ = localAABB.maxZ - localAABB.minZ;
-        // double blockWidth = Math.max(blockWidthX, blockWidthZ);
-        // if (blockWidth <= 0 || blockWidth > 1)
-        // blockWidth = 1.0;
-        // int textPixelWidth = client.font.width(text);
-        // if (textPixelWidth > 0)
-        // textScale = (float) blockWidth * 0.75f / textPixelWidth;
-        // }
-
-        // double centerX = (localAABB.minX + localAABB.maxX) / 2.0;
-        // double centerY = (localAABB.minY + localAABB.maxY) / 2.0;
-        // double centerZ = (localAABB.minZ + localAABB.maxZ) / 2.0;
-        // if (cameraPos.distanceTo(blockPos.getCenter()) <= 3)
-        // renderTextAtAABBCenter(context, blockPos, centerX, centerY, centerZ, text,
-        // textScale, color.getRGB(),
-        // true);
-        // }
 
         matrices.popPose();
     }
@@ -241,16 +231,12 @@ public class TaskBlockOverlayRenderer {
                                 TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, ele,
                                         new Color(255, 247, 155),
                                         1f,
-                                        true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.door"));
+                                        true, 0f);
                             }
                         }
 
                     }
                 }
-            }
-            {
-                shouldDisplay[11] = true;
-                shouldDisplay[12] = true; // 物资箱：生存玩家始终可见
             }
 
             // 拿着钥匙
@@ -338,38 +324,46 @@ public class TaskBlockOverlayRenderer {
         for (var set : NoellesrolesClient.taskBlocks.entrySet()) {
             var pos = set.getKey();
             int type = set.getValue();
+            BlockState block = renderContext.world().getBlockState(pos);
+            if (isActiveSabotageRepairBlock(block)) {
+                TaskInstinctShowableInterface it = (TaskInstinctShowableInterface) block.getBlock();
+                java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
+                float alpha = c.getAlpha() / 255f;
+                TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                        c, alpha,
+                        true, 0f);
+                continue;
+            }
             switch (type) { // 1: 食物 2: 水 3: 洗澡 4: 床 5: 跑步机 6: 讲台
                 case 1:
                     if (shouldDisplay[type])
-                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, Color.GREEN, 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.task.food"));
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, Color.GREEN, 1f, true, 0f);
                     break;
                 case 2:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, new Color(234, 88, 88), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.drink"));
+                                true, 0f);
                     break;
                 case 3:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, new Color(141, 234, 189), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.bathe"));
+                                true, 0f);
                     break;
                 case 4:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, new Color(0, 255, 220), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.bed"));
+                                true, 0f);
                     break;
                 case 5:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos, new Color(255, 242, 0), 1f,
-                                true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.task.running_machine"));
+                                true, 0f);
                     break;
                 case 6:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
                                 new Color(255, 127, 39), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.lecture"));
+                                true, 0f);
                     break;
                 case 7:
                     break;
@@ -377,117 +371,74 @@ public class TaskBlockOverlayRenderer {
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
                                 new Color(255, 174, 201), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.toilet"));
+                                true, 0f);
                     break;
                 case 9:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
                                 new Color(126, 255, 228), 1f,
-                                true, 0f, Component.translatable("hud.noellesroles.task_instinct.render.task.seat"));
+                                true, 0f);
                     break;
                 case 10:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
                                 new Color(121, 148, 255), 1f,
-                                true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.task.note_block"));
+                                true, 0f);
                     break;
                 case 11:
-                    if (shouldDisplay[type]) {
-                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(255, 174, 201), 1f,
-                                true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.vending_machine"));
-                    }
+                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                            new Color(255, 174, 201), 1f,
+                            true, 0f);
                     break;
-                case 12:
-                    if (shouldDisplay[type]) {
-                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(186, 85, 211), 1f,
-                                true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.supply_crate"));
-                    }
+                case 13:
+                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                            new Color(147, 112, 219), 1f,
+                            true, 0f);
                     break;
                 case 16:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(255, 165, 0), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.light_stove"));
+                                new Color(255, 165, 0), 1f, true, 0f);
                     break;
                 case 17:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(192, 192, 192), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.clean_dust"));
+                                new Color(192, 192, 192), 1f, true, 0f);
                     break;
                 case 18:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(0, 255, 100), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.transport_start"));
+                                new Color(0, 150, 50), 1f, true, 0f);
                     break;
                 case 19:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(180, 40, 40), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.transport_end"));
+                                new Color(180, 40, 40), 1f, true, 0f);
                     break;
                 case 20:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(255, 255, 180), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.pray"));
+                                new Color(255, 255, 180), 1f, true, 0f);
                     break;
                 case 21:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(173, 255, 47), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.prune_bush"));
+                                new Color(173, 255, 47), 1f, true, 0f);
                     break;
                 case 22:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                new Color(218, 165, 32), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.harvest_crop"));
+                                new Color(218, 165, 32), 1f, true, 0f);
                     break;
                 default:
-                    BlockState block = renderContext.world().getBlockState(pos);
                     if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务、该点本局未被使用、
-                        // 且该点的 minigameId 与玩家指派的目标类型匹配（或无指定目标）时才金色透视
-                        boolean isMinigamePoint = (type == 14 || type == 15)
-                                && renderContext.world().getBlockEntity(pos) instanceof MinigameQuestBlockEntity;
-                        if (isMinigamePoint) {
-                            var mgComp = SREPlayerMinigameTaskComponent.KEY.get(player);
-                            if (mgComp != null && mgComp.hasPendingTask() && !mgComp.isBlockUsed(pos)) {
-                                // 读取该方块的小游戏类型
-                                boolean typeMatches = true;
-                                if (renderContext.world().getBlockEntity(pos) instanceof MinigameQuestBlockEntity questBe) {
-                                    String blockMgId = questBe.getMinigameId();
-                                    if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
-                                            && !mgComp.targetMinigameId.equals(blockMgId)) {
-                                        typeMatches = false;
-                                    }
-                                }
-                                if (typeMatches) {
-                                    var targetMg = mgComp.getTargetMinigame();
-                                    net.minecraft.network.chat.Component label = targetMg != null
-                                            ? net.minecraft.network.chat.Component.translatable("hud.sre.minigame_task_specific",
-                                                    targetMg.displayName())
-                                            : net.minecraft.network.chat.Component.translatable("hud.sre.minigame_task_any");
-                                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                            new Color(255, 215, 0), 1f,
-                                            true, 0f,
-                                            label);
-                                }
-                            }
-                        } else if (it.shouldRenderTaskInstinct(block, pos, player)) {
+                        // 给我tmd老老实实的用api判断！！！！！！！！！！！！
+                        if (it.shouldRenderTaskInstinct(renderContext.world(), block, pos, player)) {
                             java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
                             float alpha = c.getAlpha() / 255f;
                             TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
                                     c, alpha,
-                                    true, 0f,
-                                    null);
+                                    true, 0f);
                         }
                     }
                     break;
@@ -496,6 +447,19 @@ public class TaskBlockOverlayRenderer {
         // 恢复渲染状态
         // 统一提交线框和文字的批次
         // Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+    }
+
+    private static boolean isActiveSabotageRepairBlock(BlockState state) {
+        if (state.getBlock() instanceof ReactorBlock) {
+            return state.getValue(ReactorBlock.ACTIVE) && !state.getValue(ReactorBlock.CLOSED);
+        }
+        if (state.getBlock() instanceof WaterValveBlock) {
+            return state.getValue(WaterValveBlock.ACTIVE) && !state.getValue(WaterValveBlock.CLOSED);
+        }
+        if (state.getBlock() instanceof DebrisPileBlock) {
+            return state.getValue(DebrisPileBlock.ACTIVE) && !state.getValue(DebrisPileBlock.CLOSED);
+        }
+        return false;
     }
 
 }

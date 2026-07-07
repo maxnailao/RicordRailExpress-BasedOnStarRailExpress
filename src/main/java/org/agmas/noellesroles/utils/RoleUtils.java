@@ -8,14 +8,14 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.stats.PlayerStats;
-import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
+import io.wifi.starrailexpress.stats.PlayerStats;
+import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -35,6 +35,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
@@ -47,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * 角色相关工具
@@ -338,8 +340,10 @@ public class RoleUtils extends MCItemsUtils {
      * 
      * @return 返回Role
      */
-    public static SRERole getRoleFromName(String roleName) {
-        var roles = Noellesroles.id(roleName);
+    public static SRERole getRole(String roleName) {
+        var roles = ResourceLocation.tryParse(roleName);
+        if (roles == null)
+            return null;
         return TMMRoles.ROLES.get(roles);
     }
 
@@ -505,6 +509,14 @@ public class RoleUtils extends MCItemsUtils {
         }
     }
 
+    public static int getRoleOrModifierOrItemColor(Object obj) {
+        if (obj instanceof Item) {
+            return (ChatFormatting.WHITE.getColor());
+        } else {
+            return getRoleOrModifierColor(obj);
+        }
+    }
+
     public static ResourceLocation getRoleOrModifierOrItemIdentifier(Object selectedRole) {
         if (selectedRole instanceof Item it) {
             return BuiltInRegistries.ITEM.getKey(it);
@@ -622,6 +634,34 @@ public class RoleUtils extends MCItemsUtils {
         return getTeamName(roleType);
     }
 
+    public static Set<SREModifier> getPlayerModifier(Player player) {
+        if (player == null)
+            return null;
+        return WorldModifierComponent.KEY.get(player.level()).getModifiers(player);
+    }
+
+    public static boolean isPlayerTheModifier(Player player, Set<SREModifier> modifiers) {
+        if (player == null)
+            return false;
+        var cca = WorldModifierComponent.KEY.get(player.level());
+        for (var i : modifiers) {
+            if (!cca.isModifier(player, i))
+                return false;
+        }
+        return true;
+    }
+
+    public static boolean isPlayerTheModifier(Player player, SREModifier... modifier) {
+        if (player == null)
+            return false;
+        var cca = WorldModifierComponent.KEY.get(player.level());
+        for (var i : modifier) {
+            if (!cca.isModifier(player, i))
+                return false;
+        }
+        return true;
+    }
+
     public static SRERole getPlayerRole(Player player) {
         if (player == null)
             return null;
@@ -633,4 +673,19 @@ public class RoleUtils extends MCItemsUtils {
             return false;
         return SRERoleWorldComponent.KEY.get(player.level()).isRole(player, role);
     }
+
+    public static MutableComponent getRoleGoal(SRERole role) {
+        return role.getGoal().copy();
+    }
+
+    public static Component getRoleNameWithColor(ResourceLocation id) {
+        if (id == null)
+            return null;
+        SRERole role = TMMRoles.ROLES.getOrDefault(id, null);
+        if (role == null) {
+            return Component.translatable("announcement.star.role." + id.getPath());
+        }
+        return role.getName().copy().withColor(role.color());
+    }
+
 }

@@ -1,10 +1,6 @@
 package org.agmas.noellesroles.game.roles.killer.undead_lord;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import io.wifi.starrailexpress.api.NormalRole;
-import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.EggRole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
@@ -20,14 +16,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 亡灵之主（杀手阵营，控场 / 滚雪球）。
  * 专属商店精简为四件核心道具：骨杖、瘟疫之雾、亡者召唤符、感染增幅器（外加通用撬棍）。
  */
-public class UndeadLordRole extends NormalRole {
+public class UndeadLordRole extends EggRole {
 
     public UndeadLordRole(ResourceLocation identifier, int color, boolean isInnocent,
             boolean canUseKiller, MoodType moodType, int maxSprintTime, boolean hideScoreboard) {

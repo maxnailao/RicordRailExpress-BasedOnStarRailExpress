@@ -1,5 +1,6 @@
 package io.wifi;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
@@ -7,7 +8,7 @@ import pro.fazeclan.river.stupid_express.StupidExpress;
 
 public class StarRailExpressID {
     // 验证版本号系统，强制客户端更新。
-    public static final String modPacketVersion = "4.3.0.1";
+    public static final String modPacketVersion = "4.3.1";
 
     // ID
     public final static String MOD_ID = "starrailexpress";
@@ -23,7 +24,6 @@ public class StarRailExpressID {
     public final static String JIALE_MOD_ID = "jiale";
     public final static String NOELLESROLES_ROLE = Noellesroles.MOD_ID;
     public final static String STUPIDEXPRESS = StupidExpress.MOD_ID;
-
 
     public static @NotNull ResourceLocation shortId(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_SHORT_ID, name);
@@ -64,4 +64,12 @@ public class StarRailExpressID {
     public static @NotNull ResourceLocation TMMId(String name) {
         return ResourceLocation.fromNamespaceAndPath(TMM_MOD_ID, name);
     }
+
+    // 从metadata中获取版本
+    public static final String MOD_VERSION = FabricLoader.getInstance()
+            .getModContainer(MOD_ID)
+            .orElseThrow()
+            .getMetadata()
+            .getVersion()
+            .getFriendlyString();
 }

@@ -12,7 +12,6 @@ import net.minecraft.world.entity.MobCategory;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
 import org.agmas.noellesroles.content.entity.*;
-import org.agmas.noellesroles.content.entity.FlareEntity;
 
 public class ModEntities {
     public static final EntityType<RoleMineEntity> ROLE_MINE_ENTITY_ENTITY_TYPE = Registry.register(
@@ -197,8 +196,31 @@ public class ModEntities {
                     .build());
 
     /**
-     * 操纵师本体实体 - 操纵师使用操控技能时生成的本体
+     * 咸鱼假尸体实体 - 咸鱼晒咸鱼技能时生成的假尸体
      */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<SaltedFishBodyEntity> SALTED_FISH_BODY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("salted_fish_body"),
+            FabricEntityTypeBuilder.<SaltedFishBodyEntity>create(MobCategory.MISC, SaltedFishBodyEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.0F, 0.25F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
+     * 宿命的罪人假尸体实体 - 罪人死亡时替换的尸体
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<DoomedSinnerBodyEntity> DOOMED_SINNER_BODY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("doomed_sinner_body"),
+            FabricEntityTypeBuilder.<DoomedSinnerBodyEntity>create(MobCategory.MISC, DoomedSinnerBodyEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.0F, 0.25F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
     // @SuppressWarnings("deprecation")
     // public static final EntityType<ManipulatorBodyEntity> MANIPULATOR_BODY =
     // Registry.register(
@@ -364,6 +386,17 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /** 滚木实体 - 沿方向滚动碾死玩家 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<RollingLogEntity> ROLLING_LOG = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("rolling_log"),
+            FabricEntityTypeBuilder.<RollingLogEntity>create(MobCategory.MISC, RollingLogEntity::new)
+                    .dimensions(EntityDimensions.fixed(2.0F, 2.0F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
     /** 移动平台实体 - 可站立、往返移动 */
     @SuppressWarnings("deprecation")
     public static final EntityType<MovingPlatformEntity> MOVING_PLATFORM = Registry.register(
@@ -397,6 +430,10 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(WHEELCHAIR, WheelchairEntity.createAttributes());
         // 注册傀儡本体实体属性（LivingEntity 必须注册属性才能生成）
         FabricDefaultAttributeRegistry.register(PUPPETEER_BODY, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(SALTED_FISH_BODY,
+                io.wifi.starrailexpress.content.entity.PlayerBodyEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(DOOMED_SINNER_BODY,
+                io.wifi.starrailexpress.content.entity.PlayerBodyEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(PIGEON, PigeonEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性

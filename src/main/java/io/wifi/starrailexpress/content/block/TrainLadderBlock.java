@@ -33,5 +33,4 @@ public class TrainLadderBlock extends LadderBlock {
     protected boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
         return true;
     }
-
 }

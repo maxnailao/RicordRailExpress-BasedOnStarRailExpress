@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.StatusInit.StatusBar;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
-import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
@@ -26,7 +25,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,9 +45,6 @@ import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent
 import java.util.*;
 
 public class StupidExpressClient implements ClientModInitializer {
-
-    public static Player target;
-    public static PlayerBodyEntity targetBody;
 
     public static boolean isSplitPerson = false;
     static boolean isUsedRefugee = false;
@@ -128,6 +123,8 @@ public class StupidExpressClient implements ClientModInitializer {
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             LocalPlayer player = client.player;
+            if (SREClient.gameComponent == null)
+                return;
             if (player != null) {
                 var component = SplitPersonalityComponent.KEY.get(player);
 
@@ -274,12 +271,14 @@ public class StupidExpressClient implements ClientModInitializer {
         });
         // 使用 Fabric Events 来处理按键按下事件
         final ArrayList<StatusBar> LOOSE_END_BARs = new ArrayList<>();
-        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_WORLD_TICK.register(clientWorld -> {
+        ClientTickEvents.END_WORLD_TICK.register(clientWorld -> {
             var instance = Minecraft.getInstance();
             if (instance == null)
                 return;
             var player = instance.player;
             if (player == null)
+                return;
+            if (SREClient.gameComponent == null)
                 return;
             if (LOOSE_END_BARs.size() == 0) {
                 String loose_end_bar_name = Component.translatable("gui.stupid_express.refugee.loose_end_time")

@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.client.screen;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
@@ -8,11 +9,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-
 import org.agmas.noellesroles.game.roles.innocence.great_detective.DetectiveClue;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.packet.GreatDetectiveRevealC2SPacket;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import java.util.List;
 import java.util.UUID;
@@ -117,7 +116,7 @@ public class DeductionBookScreen extends Screen {
         }
         bookWidth = w;
         bookHeight = h;
-        bookX = (width - w) / 2;
+        bookX = (width - w +15) / 2;
         bookY = (height - h) / 2;
 
         scale = (float) bookWidth / ORIG_IMG_WIDTH;

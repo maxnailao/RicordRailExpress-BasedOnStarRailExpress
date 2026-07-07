@@ -20,9 +20,6 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
-
-
-
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -65,6 +62,42 @@ public class SREConfig implements ConfigData {
     @Tooltip
     public boolean hideRandomRoleInRoleRotation = true;
     // 随机地图设置
+
+    @ConfigEntry.Category(value = "commands")
+    public int customRolePermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int startGameRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int stopGameRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int switchMapRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int modifyEnableStatusRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int changeRoleRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int changeModifierRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceRoleRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceModifierRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceTeamRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int spawnInfoConfigRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int killRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int gameKillRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int gameKickRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int gameUtilsRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int forceResetRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int cooldownCommandsRequiredPermission = 2;
+
     @ConfigEntry.Category(value = "map")
     @Tooltip
     public int mapRandomCount = -1;
@@ -201,6 +234,12 @@ public class SREConfig implements ConfigData {
     public int minigameBlockCooldownSeconds = 200;
     // 小游戏任务独立刷新间隔（秒），与 Mood 任务解耦
     public int minigameTaskIntervalSeconds = 75;
+    // 小游戏任务轮换模式：开启后小游戏任务并入 Mood 任务轮换（刷 2~3 个普通任务后替换刷新一个
+    // 小游戏任务，不重复刷新），小游戏任务完成额外获得 minigameRotationCoinBonus 金币，
+    // 全局任务刷新速率减缓 15%；关闭后恢复独立计时刷新逻辑
+    public boolean minigameTaskRotationMode = true;
+    // 轮换模式下小游戏任务完成时的额外金币奖励
+    public int minigameRotationCoinBonus = 15;
     public int moneyPerKill = 100;
     public int grenadeMoneyPerKill = 80;
     public int grenadeMaxMoneyReward = 375;
@@ -224,7 +263,7 @@ public class SREConfig implements ConfigData {
     public boolean enableBrokenGunDropWhenKillerShootsPlayer = false;
     @ConfigEntry.Category(value = "items")
     public int brokenGunDropChanceWhenKillerShootsPlayer = 60;
-    
+
     @ConfigSync(shouldSync = true)
     public boolean disablePlayerMountain = true;
 
@@ -272,7 +311,7 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "presents")
     @Tooltip(count = 2)
-    public boolean enableRoundBasedAutoPreset = true;
+    public boolean enableRoundBasedAutoPreset = false;
 
     // 按游戏轮数自动切换预设配置
     @ConfigEntry.Category(value = "presents")

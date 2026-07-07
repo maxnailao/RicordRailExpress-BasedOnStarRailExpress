@@ -107,7 +107,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
 
     protected void addBanedRoles() {
-        // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，dnf_killer,迷失杀手
+        // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，迷失杀手
         BANED_ROLES.add(ModRoles.WATER_GHOST);
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
         BANED_ROLES.add(BounsRoles.CAT_KILLER);

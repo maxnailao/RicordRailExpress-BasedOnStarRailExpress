@@ -1,35 +1,12 @@
 package org.agmas.noellesroles.client.screen;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
-
-import org.agmas.harpymodloader.SREDisableManager;
-import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modifiers.HMLModifiers;
-import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.init.RoleInitialItems;
-import org.agmas.noellesroles.utils.RoleUtils;
-import org.joml.Matrix4f;
-
 import com.mojang.blaze3d.vertex.VertexConsumer;
-
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.RepairRole;
-import io.wifi.starrailexpress.api.SREAbstractInfoClass;
-import io.wifi.starrailexpress.api.SREGameModes;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
-import io.wifi.starrailexpress.customrole.CustomNormalRole;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
@@ -52,6 +29,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import org.agmas.harpymodloader.SREDisableManager;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import org.agmas.noellesroles.init.RoleInitialItems;
+import org.agmas.noellesroles.utils.FlagUtils;
+import org.agmas.noellesroles.utils.RoleUtils;
+import org.joml.Matrix4f;
+
+import java.util.*;
+import java.util.function.Predicate;
 
 public class RoleIntroduceScreen extends Screen {
     /**
@@ -217,8 +208,8 @@ public class RoleIntroduceScreen extends Screen {
 
     private EditBox searchWidget = null;
     private String searchContent = null;
-    private Object prevRole = null;
-    private int prevRoleTab = 0;
+    private ArrayList<Object> prevRole = new ArrayList<>();
+    private ArrayList<Integer> prevRoleTab = new ArrayList<>();
 
     public RoleIntroduceScreen() {
         super(Component.translatable("gui.roleintroduce.select_role.title"));
@@ -284,9 +275,16 @@ public class RoleIntroduceScreen extends Screen {
         setFocusArea(FocusArea.SEARCH);
     }
 
+    private void removeAPrevStatus() {
+        if (!prevRole.isEmpty())
+            prevRole.removeLast();
+        if (!prevRoleTab.isEmpty())
+            prevRoleTab.removeLast();
+    }
+
     private void clearPrevStatus() {
-        prevRole = null;
-        prevRoleTab = -1;
+        prevRole.clear();
+        prevRoleTab.clear();
     }
 
     private void computeLayout() {
@@ -413,6 +411,12 @@ public class RoleIntroduceScreen extends Screen {
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.modifierComponent == null)
                     yield false;
+                if (!(GameUtils.isPlayerSpectatingOrCreative(this.minecraft.player)
+                        && !DeathPenaltyComponent.hasStrictPenalty(this.minecraft.player))) {
+                    // 未似不可见
+                    if (WorldModifierComponent.isHiddenModifier(mod))
+                        yield false;
+                }
                 yield SREClient.modifierComponent.isModifier(minecraft.player, mod);
             }
         };
@@ -544,6 +548,266 @@ public class RoleIntroduceScreen extends Screen {
         }
 
         protected abstract void prepareLines();
+    }
+
+    private class RelatedObjectTab implements DetailTab {
+        private int scrollOffset = 0;
+        private int maxScroll = 0;
+        private int contentHeight = 0;
+
+        // 三个角色分组
+        private final List<SRERole> occupationRoles = new ArrayList<>();
+        private final List<SRERole> oppositeRoles = new ArrayList<>();
+        private final List<SRERole> otherRoles = new ArrayList<>();
+        // 修饰符和物品
+        private final List<SREModifier> relatedModifiers = new ArrayList<>();
+        private final List<Item> relatedItems = new ArrayList<>();
+        private MutableComponent otherRoleName = Component.translatable("screen.roleintroduce.related.other");
+
+        private static final int ITEM_H = 30;
+        private static final int TITLE_H = 18;
+        private static final int GAP = 4;
+
+        @Override
+        public Component getTitle() {
+            return Component.translatable("screen.roleintroduce.detail.related");
+        }
+
+        @Override
+        public boolean isVisible() {
+            if (selectedRole == null)
+                return false;
+            if (!(selectedRole instanceof SREAbstractInfoClass))
+                return false;
+            fetchRelatedObjects();
+            if (occupationRoles.isEmpty() &&
+                    oppositeRoles.isEmpty() &&
+                    otherRoles.isEmpty() &&
+                    relatedModifiers.isEmpty() &&
+                    relatedItems.isEmpty())
+                return false;
+            return true;
+        }
+
+        @Override
+        public void onSwitchTo() {
+            fetchRelatedObjects();
+            computeContentHeight();
+            scrollOffset = 0;
+        }
+
+        private void fetchRelatedObjects() {
+            occupationRoles.clear();
+            oppositeRoles.clear();
+            otherRoles.clear();
+            relatedModifiers.clear();
+            relatedItems.clear();
+            if (selectedRole instanceof SREAbstractInfoClass abic) {
+                if (abic instanceof SRERole role) {
+                    occupationRoles.addAll(role.getoccupationRoles());
+                    oppositeRoles.addAll(role.getOpposingRoles());
+                }
+                otherRoles.addAll(abic.getRelatedRoles());
+                relatedModifiers.addAll(abic.getRelatedModifiers());
+            }
+            if (occupationRoles.isEmpty() && oppositeRoles.isEmpty()) {
+                otherRoleName = Component.translatable("screen.roleintroduce.related.other.only");
+            } else {
+                otherRoleName = Component.translatable("screen.roleintroduce.related.other");
+            }
+        }
+
+        private void computeContentHeight() {
+            int h = 0;
+            h += getGroupHeight(occupationRoles);
+            h += getGroupHeight(oppositeRoles);
+            h += getGroupHeight(otherRoles);
+            h += getGroupHeight(relatedModifiers);
+            h += getGroupHeight(relatedItems);
+            contentHeight = h;
+        }
+
+        private int getGroupHeight(List<?> list) {
+            if (list.isEmpty())
+                return 0;
+            return TITLE_H + GAP + list.size() * (ITEM_H + GAP);
+        }
+
+        @Override
+        public void render(GuiGraphics g, int x, int y, int w, int h, int mouseX, int mouseY, float partialTick) {
+            g.enableScissor(x, y, x + w, y + h);
+
+            int curY = y - scrollOffset;
+            curY = drawGroup(g, x, y, h, curY, w, occupationRoles,
+                    Component.translatable("screen.roleintroduce.related.occupation").withStyle(ChatFormatting.BOLD,
+                            ChatFormatting.GREEN),
+                    mouseX, mouseY);
+            curY = drawGroup(g, x, y, h, curY, w, oppositeRoles,
+                    Component.translatable("screen.roleintroduce.related.opposite").withStyle(ChatFormatting.BOLD,
+                            ChatFormatting.RED),
+                    mouseX, mouseY);
+            curY = drawGroup(g, x, y, h, curY, w, otherRoles,
+                    otherRoleName.withStyle(ChatFormatting.BOLD,
+                            ChatFormatting.AQUA),
+                    mouseX, mouseY);
+            curY = drawGroup(g, x, y, h, curY, w, relatedModifiers,
+                    Component.translatable("screen.roleintroduce.related.modifiers").withStyle(ChatFormatting.BOLD,
+                            ChatFormatting.LIGHT_PURPLE),
+                    mouseX, mouseY);
+            curY = drawGroup(g, x, y, h, curY, w, relatedItems,
+                    Component.translatable("screen.roleintroduce.related.items").withStyle(ChatFormatting.BOLD,
+                            ChatFormatting.YELLOW),
+                    mouseX, mouseY);
+
+            g.disableScissor();
+            maxScroll = Math.max(0, contentHeight - h);
+        }
+
+        private int drawGroup(GuiGraphics g, int contentX, int contentY, int contentH, int y, int w,
+                List<?> list, Component title, int mouseX, int mouseY) {
+            if (list.isEmpty())
+                return y;
+
+            if (y + TITLE_H > contentY && y < contentY + contentH) {
+                g.drawString(font, title, contentX + 2, y + GAP + TITLE_H / 2 - font.lineHeight / 2, 0xFFFFFF);
+            }
+            y += TITLE_H + GAP;
+            int i = 1;
+            for (Object obj : list) {
+                if (y + ITEM_H > contentY && y < contentY + contentH) {
+                    boolean hovered = isInRect(mouseX, mouseY, contentX, y, w, ITEM_H);
+                    if (hovered) {
+                        g.fill(contentX, y, contentX + w, y + ITEM_H, 0x22FFFFFF);
+                    }
+                    Component name = RoleUtils.getRoleOrModifierOrItemName(obj);
+                    String numText = "" + i;
+                    Component idtext = Component.literal(RoleUtils.getRoleOrModifierOrItemIdentifier(obj).toString());
+                    int num_w = 32;
+                    int color = RoleUtils.getRoleOrModifierOrItemColor(obj);
+                    g.drawString(font,
+                            numText,
+                            contentX + (num_w - font.width(numText)) / 2,
+                            y + (ITEM_H - font.lineHeight) / 2, 0xffffffff);
+                    g.fill(contentX + num_w - 2, y + 2, contentX + num_w - 1, y + ITEM_H - 3, 0x20FFFFFF);
+                    g.drawString(font,
+                            Component.translatable("%s", name.copy().withColor(color))
+                                    .withStyle(ChatFormatting.WHITE),
+                            contentX + 6 + num_w,
+                            y + (ITEM_H / 2 - font.lineHeight - 1), 0xffffffff);
+                    g.drawString(font, idtext.copy()
+                            .withStyle(ChatFormatting.DARK_GRAY),
+                            contentX + 6 + num_w,
+                            y + (ITEM_H / 2 + 1), 0xffffffff);
+                    g.fill(contentX + 4, y + ITEM_H - 1, contentX + w - 4, y + ITEM_H, 0x20FFFFFF);
+                    if (hovered) {
+                        List<FormattedCharSequence> tooltip = new ArrayList<>();
+                        tooltip.addAll(font.split(name, w));
+                        tooltip.addAll(font.split(idtext.copy().withStyle(ChatFormatting.DARK_GRAY), w));
+                        g.renderTooltip(font, tooltip, mouseX, mouseY);
+                    }
+                }
+                i++;
+                y += ITEM_H + GAP;
+            }
+            return y;
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button,
+                int contentX, int contentY, int contentW, int contentH) {
+            if (button != 0)
+                return false;
+
+            int relY = (int) mouseY - contentY + scrollOffset;
+            int curY = 0;
+
+            // 依次检查每个分组，按顺序：relatedRoles → oppositeRoles → otherRoles → modifiers → items
+            if (!occupationRoles.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < occupationRoles.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(occupationRoles.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+                curY += occupationRoles.size() * (ITEM_H + GAP);
+            }
+
+            if (!oppositeRoles.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < oppositeRoles.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(oppositeRoles.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+                curY += oppositeRoles.size() * (ITEM_H + GAP);
+            }
+
+            if (!otherRoles.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < otherRoles.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(otherRoles.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+                curY += otherRoles.size() * (ITEM_H + GAP);
+            }
+
+            if (!relatedModifiers.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < relatedModifiers.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(relatedModifiers.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+                curY += relatedModifiers.size() * (ITEM_H + GAP);
+            }
+
+            if (!relatedItems.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < relatedItems.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(relatedItems.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public int getScrollOffset() {
+            return scrollOffset;
+        }
+
+        @Override
+        public int getMaxScroll() {
+            return maxScroll;
+        }
+
+        @Override
+        public void setScrollOffset(int offset) {
+            this.scrollOffset = Mth.clamp(offset, 0, maxScroll);
+        }
+
+        @Override
+        public int getContentHeight() {
+            return contentHeight;
+        }
+
+        @Override
+        public void onSwitchAway() {
+            // 无需操作
+        }
+
+        @Override
+        public int getColor() {
+            return 0xFFBB88AA;
+        }
     }
 
     private class InitialItemTab implements DetailTab {
@@ -713,19 +977,23 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
-    private boolean navigateToItem(Item item) {
-        // 临时添加
-        // 在过滤后的列表中查找该物品
+    /**
+     * 导航到一个子项目（可返回上级）
+     * 
+     * @param item
+     * @return
+     */
+    private boolean navigateToItem(Object item) {
         int index = -1;
         for (int i = 0; i < filteredItems.size(); i++) {
-            if (filteredItems.get(i) instanceof Item it && it.equals(item)) {
+            if (filteredItems.get(i) != null && filteredItems.get(i).equals(item)) {
                 index = i;
                 break;
             }
         }
 
-        prevRoleTab = activeTabIndex;
-        prevRole = selectedRole;
+        prevRoleTab.add(activeTabIndex);
+        prevRole.add(selectedRole);
         if (index >= 0) {
             selectedRole = filteredItems.get(index);
             onSelectionChanged();
@@ -737,7 +1005,6 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private class ShopTab implements DetailTab {
-
         private int scrollOffset = 0;
         private int maxScroll = 0;
         private final List<ShopEntry> entries = new ArrayList<>();
@@ -909,19 +1176,10 @@ public class RoleIntroduceScreen extends Screen {
                 // 目标
                 lines.add(FormattedCharSequence.EMPTY);
                 if (selectedRole instanceof SRERole role) {
-                    var rid = role.identifier();
-                    String path = rid.getPath();
-                    String goalKey = "announcement.star.goals." + path;
-                    if (selectedRole instanceof CustomNormalRole) {
-                        var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(path);
-                        if (cd == null)
-                            cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(path);
-                        if (cd != null && !cd.goals.isEmpty())
-                            lines.addAll(font.split(Component.literal(cd.goals), textW));
-                        else
-                            lines.addAll(font.split(Component.translatable(goalKey), textW));
-                    } else {
-                        lines.addAll(font.split(Component.translatable(goalKey), textW));
+                    lines.addAll(font.split(role.getGoal(), textW));
+                    if (!role.canBeRandomed()) {
+                        lines.addAll(font.split(Component.translatable("screen.roleintroduce.role.cant_be_randomed")
+                                .withStyle(ChatFormatting.RED), textW));
                     }
                 } else if (selectedRole instanceof Item it) {
                     lines.addAll(font.split(it.getDescription(), textW));
@@ -1051,6 +1309,7 @@ public class RoleIntroduceScreen extends Screen {
                             font.split(Component.translatable(settingsKey).withStyle(ChatFormatting.WHITE), textW));
             }
         });
+        tabs.add(new RelatedObjectTab());
         // 返回
         tabs.add(new AbstractTextTab() {
             @Override
@@ -1068,19 +1327,22 @@ public class RoleIntroduceScreen extends Screen {
             public boolean isVisible() {
                 if (selectedRole == null)
                     return false;
-                if (prevRole == null)
+                if (prevRole.isEmpty())
                     return false;
                 return true;
             }
 
             @Override
             public boolean canSwitchTo() {
-                if (prevRole != null) {
-                    selectedRole = prevRole;
-                    if (prevRoleTab >= 0 && prevRoleTab < tabs.size()) {
-                        onSelectionChanged(prevRoleTab);
+                if (!prevRole.isEmpty()) {
+                    selectedRole = prevRole.getLast();
+                    if (!prevRoleTab.isEmpty()) {
+                        int prevRoleTabN = prevRoleTab.getLast();
+                        if (prevRoleTabN >= 0 && prevRoleTabN < tabs.size()) {
+                            onSelectionChanged(prevRoleTabN);
+                        }
                     }
-                    clearPrevStatus();
+                    removeAPrevStatus();
                 }
                 return false;
             }
@@ -1108,7 +1370,7 @@ public class RoleIntroduceScreen extends Screen {
 
     private static MutableComponent getFlagText(SREAbstractInfoClass flagInfoable) {
         return ComponentUtils.formatList(flagInfoable.getFlags(), Component.literal(", "),
-                t -> Component.translatable("screen.roleintroduce.flag." + t));
+                t -> FlagUtils.getFlagName(t));
     }
 
     private String getObjectPath(Object it) {
@@ -1810,12 +2072,8 @@ public class RoleIntroduceScreen extends Screen {
         LinkedHashMap<String, Component> optionMap = new LinkedHashMap<>();
         optionMap.put("inner.enable", Component.translatable("screen.roleintroduce.flag.inner.enable"));
         optionMap.put("inner.disable", Component.translatable("screen.roleintroduce.flag.inner.disable"));
-        for (var it : TMMRoles.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
-        for (var it : HMLModifiers.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
+        for (var it : FlagUtils.getAllFlagsSorted())
+            optionMap.put(it, FlagUtils.getFlagName(it));
         FilterSelectionScreen screen = FilterSelectionScreen.builder(this)
                 .title(Component.translatable("screen.filter_selection.title"))
                 .subtitle(Component.translatable("screen.filter_selection.tip"))

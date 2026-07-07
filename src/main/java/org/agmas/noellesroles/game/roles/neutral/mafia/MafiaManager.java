@@ -4,7 +4,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
-import io.wifi.starrailexpress.event.OnPlayerKilledPlayer;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -15,8 +15,8 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -26,7 +26,10 @@ import org.agmas.noellesroles.packet.MafiaActionC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public final class MafiaManager {
     private static final Map<UUID, UUID> godfatherByMember = new HashMap<>();
@@ -42,7 +45,7 @@ public final class MafiaManager {
                 consumeBullet(player);
             }
         });
-        OnPlayerKilledPlayer.EVENT.register((victim, killer, reason) -> {
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
             if (killer instanceof ServerPlayer sp) {
                 if (isGodfather(sp)) {
                     SREPlayerShopComponent.KEY.get(sp).addToBalance(50);

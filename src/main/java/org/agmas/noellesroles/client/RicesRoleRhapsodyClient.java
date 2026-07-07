@@ -8,7 +8,6 @@ import io.wifi.starrailexpress.customrole.CustomRoleScreen;
 import io.wifi.starrailexpress.customrole.CustomRoleToolItem;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.ChatFormatting;
@@ -24,7 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-
 import org.agmas.noellesroles.client.renderer.*;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.content.item.ConspiracyPageItem;
@@ -37,9 +35,9 @@ import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlay
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.init.ModEntities;
@@ -70,10 +68,6 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
     private static boolean stalkerChargingLastTick = false;
     // 慕恋者窥视状态
     private static boolean admirerGazingLastTick = false;
-
-    // ==================== 客户端状态 ====================
-    // 当前选中的目标玩家（用于需要选择目标的技能）
-    public static Player targetPlayer;
 
     @Override
     public void onInitializeClient() {
@@ -108,20 +102,6 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
         // // 慕恋者持续按键检测（窥视）
         // handleAdmirerContinuousInput(client);
         // });
-
-        // 检查书页物品使用 - 通过检测物品使用来打开GUI
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.level == null)
-                return;
-
-            // 检查是否是阴谋家
-            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
-            if (!gameWorld.isRole(client.player, ModRoles.CONSPIRATOR))
-                return;
-
-            // 检查是否正在使用书页物品（通过检测使用状态）
-            // 书页物品的使用会在服务端验证后触发
-        });
     }
 
     /**

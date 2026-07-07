@@ -1,0 +1,53 @@
+package org.agmas.noellesroles.client.render;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import org.agmas.noellesroles.content.entity.RollingLogEntity;
+
+/**
+ * 滚木渲染：以原版橡木原木方块渲染，木纹轴横放（垂直于滚动方向），绕自身轴滚动。
+ */
+public class RollingLogRenderer extends EntityRenderer<RollingLogEntity> {
+
+    private final ItemRenderer itemRenderer;
+    private final ItemStack log = new ItemStack(Blocks.OAK_LOG);
+
+    public RollingLogRenderer(EntityRendererProvider.Context ctx) {
+        super(ctx);
+        this.itemRenderer = ctx.getItemRenderer();
+    }
+
+    @Override
+    public void render(RollingLogEntity entity, float yaw, float tickDelta, PoseStack matrices,
+            MultiBufferSource buffers, int light) {
+        matrices.pushPose();
+        matrices.translate(0.0, 0.9, 0.0);
+        float roll = (entity.tickCount + tickDelta) * 18.0F;
+        matrices.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
+        // 绕水平横轴滚动（此时原木轴与滚动轴重合，木纹保持稳定）
+        matrices.mulPose(Axis.XP.rotationDegrees(roll));
+        // 把方块模型的 Y 轴（木纹方向）放倒到横轴上
+        matrices.mulPose(Axis.ZP.rotationDegrees(90.0F));
+        // Y 方向沿木纹拉长，让滚木横跨通道
+        matrices.scale(1.9F, 2.8F, 1.9F);
+        this.itemRenderer.renderStatic(this.log, ItemDisplayContext.FIXED, light, OverlayTexture.NO_OVERLAY,
+                matrices, buffers, entity.level(), entity.getId());
+        matrices.popPose();
+        super.render(entity, yaw, tickDelta, matrices, buffers, light);
+    }
+
+    @Override
+    public ResourceLocation getTextureLocation(RollingLogEntity entity) {
+        return TextureAtlas.LOCATION_BLOCKS;
+    }
+}

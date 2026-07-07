@@ -9,11 +9,7 @@ import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 商店价格同步表：把每个职业（role id）解析后的商店条目压缩成 {@code (itemId, price)} 列表。
@@ -95,9 +91,6 @@ public final class ShopPriceTable {
         List<ShopEntry> entries = ShopContent.getShopEntries(role.getIdentifier());
         if (entries != null && !entries.isEmpty()) {
             return entries;
-        }
-        if (role.canUseKiller()) {
-            return ShopContent.defaultKnifeEntries;
         }
         return List.of();
     }

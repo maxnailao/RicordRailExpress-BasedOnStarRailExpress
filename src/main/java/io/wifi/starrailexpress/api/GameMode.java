@@ -2,51 +2,28 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.DeathInfo;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
-import io.wifi.starrailexpress.api.replay.screen.ReplayScreenService;
-import io.wifi.starrailexpress.cca.AreasWorldComponent;
-import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
-import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
-import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
-import io.wifi.starrailexpress.cca.SREGameTimeComponent;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
-import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.stats.PlayerStats;
-import io.wifi.starrailexpress.stats.PlayerStatsManager;
+import io.wifi.starrailexpress.api.replay.board.ReplayBoardService;
+import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
+import io.wifi.starrailexpress.content.command.ListRoleInRoundCommand;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
-import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeath;
-import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
-import io.wifi.starrailexpress.event.AllowPlayerDeath;
-import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
-import io.wifi.starrailexpress.event.AllowSpectatorPlayerInAreas;
-import io.wifi.starrailexpress.event.EarlyKillPlayer;
-import io.wifi.starrailexpress.event.OnGameTrueStarted;
-import io.wifi.starrailexpress.event.OnGiveKillerBalance;
-import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
-import io.wifi.starrailexpress.event.OnPlayerDeath;
-import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
-import io.wifi.starrailexpress.event.OnPlayerKilledPlayer;
-import io.wifi.starrailexpress.event.OnPlayerKilledPlayerIdentifier;
-import io.wifi.starrailexpress.event.OnShieldBroken;
-import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
+import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.index.SREDataComponentTypes;
-import io.wifi.starrailexpress.index.TMMEntities;
-import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.PlayerDeathPayload;
 import io.wifi.starrailexpress.network.TriggerScreenEdgeEffectPayload;
+import io.wifi.starrailexpress.progression.ProgressionDataManager;
+import io.wifi.starrailexpress.rules.ArmorRules;
+import io.wifi.starrailexpress.rules.ReplayRules;
+import io.wifi.starrailexpress.stats.PlayerStats;
+import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.BrokenGunDropUtils;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -56,19 +33,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.noellesroles.role.TraitorAndModifiers;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class GameMode {
     public final ResourceLocation identifier;
@@ -79,6 +51,13 @@ public abstract class GameMode {
     public boolean canPickBodyContent() {
         return false;
     };
+
+    public boolean shouldGiveKillerBalance(Player victim, Player killer, ResourceLocation deathReason) {
+        var result = ShouldGiveKillerBalance.EVENT.invoker().shouldGiveKillerBalance(victim, killer, deathReason);
+        if (result == TrueFalseResult.FALSE)
+            return false;
+        return true;
+    }
 
     public boolean cantSeeBodyContent() {
         return false;
@@ -213,6 +192,13 @@ public abstract class GameMode {
                 SRE.LOGGER.info("-".repeat(20));
                 SRE.LOGGER.info("Game True Started after Safe Time!");
                 SRE.LOGGER.info("-".repeat(20));
+
+                if (SREConfig.instance().logGameEvent) {
+                    SRE.LOGGER.info("-".repeat(20));
+                    SRE.LOGGER.info(ListRoleInRoundCommand.generateRoleInRoundText(serverWorld).getString()
+                            .replaceAll("\n", "; "));
+                    SRE.LOGGER.info("-".repeat(20));
+                }
             }
         }
     }
@@ -326,7 +312,7 @@ public abstract class GameMode {
         for (ServerPlayer player : world.players()) {
             GameReplayManager.sendSystemMessage(player, text);
         }
-        ReplayScreenService.showDefault(world, SRE.REPLAY_MANAGER);
+        ReplayBoardService.showDefault(world, SRE.REPLAY_MANAGER);
     }
 
     /**
@@ -433,6 +419,7 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         }
@@ -444,6 +431,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (!AllowPlayerDeathWithKiller.EVENT.invoker().allowDeath(victim, killer, deathReason))
@@ -454,6 +443,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (killer != null) {
@@ -478,8 +469,10 @@ public abstract class GameMode {
                             ServerPlayNetworking.send(spkiller,
                                     new BreakArmorPayload(victim.getX(), victim.getY(), victim.getZ()));
                             OnShieldBroken.EVENT.invoker().onShieldBroken(victim, killer);
-                            if (!forceDeath)
+                            if (!forceDeath) {
+                                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                                 return;
+                            }
                         }
                     }
                 }
@@ -508,8 +501,10 @@ public abstract class GameMode {
                 victim.displayClientMessage(Component.translatable("message.bartender.armor_broke_self")
                         .withStyle(ChatFormatting.YELLOW), true);
 
-                if (!forceDeath)
+                if (!forceDeath) {
+                    GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                     return;
+                }
             } else {
                 psychocca.stopPsycho();
                 psychocca.sync();
@@ -523,6 +518,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         }
@@ -534,6 +531,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (!AfterShieldAllowPlayerDeathWithKiller.EVENT.invoker().allowDeath(victim, killer, deathReason))
@@ -544,6 +543,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             } // --- 新增统计数据更新逻辑 (击杀者) ---
         if (killer instanceof ServerPlayer serverKiller) {
@@ -632,48 +633,9 @@ public abstract class GameMode {
                     }
                 }
                 if (spawnBody) {
-                    PlayerBodyEntity body = TMMEntities.PLAYER_BODY.create(victim.level());
-                    if (body != null) {
-                        double scale = victim.getAttributeValue(Attributes.SCALE);
-                        victim.stopRiding();
-                        victim.stopSleeping();
-                        body.getAttribute(Attributes.SCALE).setBaseValue(scale);
-                        PlayerBodyEntityComponent bodycca = body.getComponent();
-                        if (killer != null) {
-                            bodycca.setKillerUuid(killer.getUUID(), false);
-                        }
-                        bodycca.setDeathReason(deathReason.toString(), false);
-                        body.setPlayerUuid(victim.getUUID());
-
-                        // 检查腐化修饰符 - 腐化尸体会直接显示为骷髅
-                        if (victim.level() instanceof ServerLevel serverLevel) {
-                            WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(serverLevel);
-                            if (modifiers != null
-                                    && modifiers.isModifier(victim.getUUID(), TraitorAndModifiers.CORRUPTED)) {
-                                body.setCorrupted(true);
-                            }
-                        }
-
-                        Vec3 spawnPos = victim.position().add(victim.getLookAngle().normalize().scale(1));
-                        body.moveTo(spawnPos.x(), victim.getY(), spawnPos.z(), victim.getYHeadRot(), 0f);
-                        body.setYRot(victim.getYHeadRot());
-                        body.setYHeadRot(victim.getYHeadRot());
-                        victim.level().addFreshEntity(body);
-
-                        if (SREConfig.instance().savePlayerBodyItems) {
-                            body.setCorpseInventoryFromPlayerInventory(victim.getInventory(), false);
-                        }
-
-                        if (role != null) {
-                            bodycca.playerRole = role.identifier();
-                            // 不立即同步
-                        }
-
-                        victimRole.onDeathWithBody(victim, spawnBody, killer, deathReason, body);
-
-                        // 最后统一同步一次
-                        bodycca.sync();
-                    }
+                    PlayerBodyEntity body = GameUtils.spawnBodyEntity(victim, killer, victimRole, deathReason);
+                    victimRole.onDeathWithBody(victim, spawnBody, killer, deathReason, body);
+                    OnDeathWithBody.EVENT.invoker().onDeathWithBody(victim, killer, deathReason, body);
                 }
             }
 
@@ -701,7 +663,7 @@ public abstract class GameMode {
                 }
                 OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
                 OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
-                
+
                 var cantSend = ReplayRules.cantSendReplay.stream().anyMatch((pre) -> {
                     return pre.test(serverPlayerEntity);
                 });
@@ -713,29 +675,20 @@ public abstract class GameMode {
                                     .withStyle(ChatFormatting.DARK_RED));
                 }
             } else {
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
 
             // 杀手击杀获得金钱奖励
-            if (killer != null && SREGameWorldComponent.KEY.get(killer.level()).canUseKillerFeatures(killer)) {
+            if (killer != null && SREGameWorldComponent.KEY.get(killer.level()).canUseKillerFeatures(killer)
+                    && shouldGiveKillerBalance(victim, killer, deathReason)) {
                 int gift = OnGiveKillerBalance.EVENT.invoker().onGiveKillerBalance(victim, killer, deathReason);
                 gift += GameConstants.getMoneyPerKill();
                 SREPlayerShopComponent.KEY.get(killer).addToBalance(gift);
             }
             if (killer != null) {
-                var killerRole = SREGameWorldComponent.KEY.get(killer.level()).getRole(killer);
-                boolean isGodfather = killerRole != null
-                        && killerRole.getIdentifier().toString().equals("noellesroles:godfather");
-                if (!isGodfather) {
-                    inventory_label: for (List<ItemStack> list : killer.getInventory().compartments) {
-                        for (int i = 0; i < list.size(); i++) {
-                            ItemStack stack = list.get(i);
-                            if (stack.is(TMMItems.DERRINGER)) {
-                                stack.set(SREDataComponentTypes.USED, false);
-                                break inventory_label;
-                            }
-                        }
-                    }
+                if (shouldReloadDerringer(victim, killer, deathReason)) {
+                    GameUtils.refillDerringer(victim, true);
                 }
             }
 
@@ -763,7 +716,15 @@ public abstract class GameMode {
             if (!TrainVoicePlugin.isVoiceChatMissing() && victim.isSpectator()) {
                 TrainVoicePlugin.addPlayer(victim.getUUID());
             }
+            GameUtils.recordPlayerKill(killer, victim, deathReason, true);
         }
+    }
+
+    public boolean shouldReloadDerringer(Player victim, Player killer, ResourceLocation deathReason) {
+        var result = ShouldReloadDerringer.EVENT.invoker().shouldReload(victim, killer, deathReason);
+        if (result.equals(TrueFalseResult.FALSE))
+            return false;
+        return true;
     }
 
     /**

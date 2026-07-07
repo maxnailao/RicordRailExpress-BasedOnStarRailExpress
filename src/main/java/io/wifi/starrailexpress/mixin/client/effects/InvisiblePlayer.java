@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress.mixin.client.effects;
 
+import io.wifi.starrailexpress.client.SREClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.world.effect.MobEffects;
@@ -20,7 +22,15 @@ public class InvisiblePlayer {
     private void hideInvisiblePlayer(Entity entity, Frustum frustum, double x, double y, double z,
             CallbackInfoReturnable<Boolean> cir) {
         if (entity instanceof Player player) {
-            if (player.hasEffect(MobEffects.INVISIBILITY))
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return;
+            if (SREClient.gameComponent == null)
+                return;
+
+            if (!SREClient.gameComponent.isRunning())
+                return;
+            if (player.hasEffect(MobEffects.INVISIBILITY) || player.isInvisible())
                 // 完全隐身，其他玩家看不到
                 cir.setReturnValue(false);
         }

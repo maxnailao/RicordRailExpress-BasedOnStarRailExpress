@@ -4,6 +4,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public interface TaskInstinctShowableInterface {
@@ -14,7 +15,7 @@ public interface TaskInstinctShowableInterface {
      * 
      * @return
      */
-    boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player);
+    boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player);
 
     @Environment(EnvType.CLIENT)
 
@@ -30,7 +31,7 @@ public interface TaskInstinctShowableInterface {
      * 
      * @return
      */
-    public default int taskInstinctId(){
-        return 12;
+    public default int taskInstinctId() {
+        return 1145;
     }
 }

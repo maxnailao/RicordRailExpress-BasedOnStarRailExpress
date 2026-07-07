@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ChatDialogueManager {
 
-    private static final LevelResource DIALOGUE_DIR = new LevelResource("chat_dialogues");
+    private static final LevelResource DIALOGUE_DIR = LevelResource.ROOT;
     private final Map<String, ChatDialogueData> dialogues = new ConcurrentHashMap<>();
     private Path dialogueDir;
 
@@ -45,7 +46,7 @@ public class ChatDialogueManager {
      */
     public void load(MinecraftServer server) {
         dialogues.clear();
-        dialogueDir = server.getWorldPath(DIALOGUE_DIR);
+        dialogueDir = server.getWorldPath(DIALOGUE_DIR).resolve(Paths.get("chat_dialogues"));
 
         if (!Files.isDirectory(dialogueDir)) {
             try {
@@ -136,7 +137,8 @@ public class ChatDialogueManager {
         for (ChatDialogueData dialogue : dialogues.values()) {
             for (int lineIndex = 0; lineIndex < dialogue.lines.size(); lineIndex++) {
                 ChatDialogueData.DialogueLine line = dialogue.lines.get(lineIndex);
-                if (!line.hasChoices()) continue;
+                if (!line.hasChoices())
+                    continue;
 
                 for (int choiceIndex = 0; choiceIndex < line.choices.size(); choiceIndex++) {
                     ChatDialogueData.DialogueChoice choice = line.choices.get(choiceIndex);

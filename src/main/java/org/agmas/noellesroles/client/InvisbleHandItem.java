@@ -18,7 +18,17 @@ public class InvisbleHandItem {
     public static void register() {
         // 怀旧者里世界：隐藏手持物品（主手 + 副手）
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (SREClient.gameComponent!=null&&SREClient.gameComponent.getRole(player) != null){
+                if (SREClient.gameComponent.getRole(player).equals(ModRoles.SALTED_FISH)) {
+                    if (player.isInvisible()) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
             if (player.hasEffect(ModEffects.NOSTALGIST_BACKWORLD)) {
+                return ItemStack.EMPTY;
+            }
+            if (player.hasEffect(ModEffects.WRAITH_DIMENSION) && !player.hasEffect(ModEffects.WRAITH_MANIFEST)) {
                 return ItemStack.EMPTY;
             }
             return null; // 不修改

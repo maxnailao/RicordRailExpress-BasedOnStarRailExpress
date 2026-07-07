@@ -1,9 +1,9 @@
 package io.wifi.starrailexpress.mixin.client.restrictions;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import io.wifi.starrailexpress.rules.DropRules;
 import io.wifi.starrailexpress.api.RoleMethodDispatcher;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.rules.DropRules;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -54,6 +54,13 @@ public abstract class KeyBindingMixin {
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()
                 && SREClient.isPlayerAliveAndInSurvival()) {
             if (this.same(options.keyJump)) {
+                if (SREClient.areaComponent.areasSettings.canSwim) {
+                    if (SREClient.cached_player != null && SREClient.cached_player.isInWater()) {
+                        if (!SREClient.gameComponent.isJumpAvailable()) {
+                            return false;
+                        }
+                    }
+                }
                 if (SREClient.gameComponent.isJumpAvailable())
                     return false;
                 return true;

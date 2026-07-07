@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
-
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.util.*;

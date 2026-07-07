@@ -10,10 +10,13 @@ import io.wifi.starrailexpress.util.SREItemUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -31,12 +34,7 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalInt;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Independent neutral role: gains hunting charges from nearby mood recovery.
@@ -49,7 +47,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     private static final int HUNT_TICKS = 120 * 20;
     private static final int COOLDOWN_TICKS = 60 * 20;
     public static final double CHARGE_RADIUS = 8.0;
-    public static final float TASK_COMPLETE_PROGRESS = 0.35f;
+    public static final float TASK_COMPLETE_PROGRESS = 0.5f;
     private static final double MOOD_RADIUS_SQR = CHARGE_RADIUS * CHARGE_RADIUS;
 
     private final Player player;
@@ -270,10 +268,11 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     private void applyHuntEffects() {
-        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, HUNT_TICKS, 3, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, HUNT_TICKS + 6 * 20, 3, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, HUNT_TICKS, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, HUNT_TICKS, 0, false, false, false));
     }
 
     public boolean canKill(Player victim) {
@@ -287,6 +286,21 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         if (!canKill(victim))
             return;
         kills++;
+        // 全场播放烈风死亡音效
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+                    SoundEvents.BREEZE_DEATH, SoundSource.MASTER, 1.0F, 1.0F);
+        }
+        // 击杀正确目标时，充能次数+1（不超过上限）
+        if (charges < MAX_CHARGES) {
+            charges++;
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.displayClientMessage(
+                        Component.translatable("message.noellesroles.raven.charge", charges, MAX_CHARGES)
+                                .withStyle(ChatFormatting.DARK_PURPLE),
+                        true);
+            }
+        }
         if (kills >= requiredKills && player.level() instanceof ServerLevel level) {
             RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM, ModRoles.RAVEN_ID.getPath(),
                     OptionalInt.of(ModRoles.RAVEN.color()));
@@ -297,9 +311,22 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     public void onBodyDeath(Player killer, ResourceLocation reason) {
         if (!isHunting() || !(player instanceof ServerPlayer serverPlayer))
             return;
-        bodyUuid = null;
         endHunt(false);
-        GameUtils.killPlayer(serverPlayer, true, killer, reason);
+        GameUtils.forceKillPlayer(serverPlayer, true, killer, reason);
+    }
+
+    /**
+     * 狩猎期间按技能键主动返回本体，返还35%冷却。
+     */
+    public void returnFromHunt() {
+        if (!isHunting() || !(player instanceof ServerPlayer serverPlayer))
+            return;
+        endHunt(false);
+        cooldownTicks = (int) (COOLDOWN_TICKS * 0.35);
+        serverPlayer.displayClientMessage(
+                Component.translatable("message.noellesroles.raven.return_body").withStyle(ChatFormatting.GOLD),
+                true);
+        sync();
     }
 
     public void endHunt(boolean applyCooldown) {
@@ -310,6 +337,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             serverPlayer.removeEffect(ModEffects.VOICE_SILENCE);
             serverPlayer.removeEffect(ModEffects.NO_COLLIDE);
             serverPlayer.removeEffect(ModEffects.INVINCIBLE);
+            serverPlayer.removeEffect(ModEffects.CHAT_BAN);
 
             // Remove knife and lockpick from all inventory slots.
             SREItemUtils.clearItem(serverPlayer,
@@ -350,28 +378,39 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     @Override
+    public void writeSyncPacket(RegistryFriendlyByteBuf buf, ServerPlayer recipient) {
+        buf.writeVarInt(charges);
+        buf.writeVarInt(cooldownTicks);
+        buf.writeVarInt(huntTicks);
+        buf.writeVarInt(kills);
+        buf.writeVarInt(requiredKills);
+        buf.writeFloat(moodProgress);
+        buf.writeFloat(moodProgressThreshold);
+        boolean hasTarget = targetRoleId != null;
+        buf.writeBoolean(hasTarget);
+        if (hasTarget) buf.writeUtf(targetRoleId.toString());
+    }
+
+    @Override
+    public void applySyncPacket(RegistryFriendlyByteBuf buf) {
+        charges = buf.readVarInt();
+        cooldownTicks = buf.readVarInt();
+        huntTicks = buf.readVarInt();
+        kills = buf.readVarInt();
+        requiredKills = buf.readVarInt();
+        moodProgress = buf.readFloat();
+        moodProgressThreshold = buf.readFloat();
+        targetRoleId = buf.readBoolean() ? ResourceLocation.tryParse(buf.readUtf()) : null;
+    }
+
+    @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        tag.putInt("Charges", charges);
-        tag.putInt("Cooldown", cooldownTicks);
-        tag.putInt("Hunt", huntTicks);
-        tag.putInt("Kills", kills);
-        tag.putInt("RequiredKills", requiredKills);
-        tag.putFloat("Mood", moodProgress);
-        tag.putFloat("MoodThreshold", moodProgressThreshold);
-        if (targetRoleId != null)
-            tag.putString("TargetRole", targetRoleId.toString());
+        // 使用 writeSyncPacket/applySyncPacket 紧凑二进制格式
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        charges = tag.getInt("Charges");
-        cooldownTicks = tag.getInt("Cooldown");
-        huntTicks = tag.getInt("Hunt");
-        kills = tag.getInt("Kills");
-        requiredKills = tag.getInt("RequiredKills");
-        moodProgress = tag.getFloat("Mood");
-        moodProgressThreshold = tag.contains("MoodThreshold") ? tag.getFloat("MoodThreshold") : 1f;
-        targetRoleId = tag.contains("TargetRole") ? ResourceLocation.tryParse(tag.getString("TargetRole")) : null;
+        // 使用 writeSyncPacket/applySyncPacket 紧凑二进制格式
     }
 
     @Override

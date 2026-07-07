@@ -46,7 +46,8 @@ public class RedHouseRoles {
         public InteractionResult rightClickEntity(Player player, Entity target) {
           if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player))
             return InteractionResult.PASS;
-          if (target instanceof PlayerBodyEntity be) {
+          if (target instanceof PlayerBodyEntity be
+              && !org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity.isDoomedSinnerBody(be)) {
             PlayerBodyEntityComponent bdrc = PlayerBodyEntityComponent.KEY.get(be);
             bdrc.playerRole = THEventHandler.getRandomRole().identifier();
             bdrc.sync();
@@ -73,7 +74,7 @@ public class RedHouseRoles {
           // 复用cca
           GhostPlayerComponent.KEY.get(player).checkFuranLastStand(SREGameWorldComponent.KEY.get(player.level()));
         }
-      }, "th_redhouse")
+      }, "th_redhouse").setHiddenForRoleRotation(true)
       .setCanSeeCoin(true).setNeutrals(true).setCanUseInstinct(true).setCanIgnoreBlackout(true);
   // 好人：MAID_SAKUYA 十六夜咲夜
   public static SRERole MAID_SAKUYA = TMMRoles.registerRole(new TouhouRole(
@@ -145,7 +146,7 @@ public class RedHouseRoles {
           }
         }
       }, "th_redhouse")
-      .setCanSeeCoin(true);
+        .setHiddenForRoleRotation(true).setCanSeeCoin(true);
 
   public static void init() {
   }

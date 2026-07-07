@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.game.roles.neutral.mafia;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.event.ShouldReloadDerringer;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -10,6 +12,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -69,4 +73,13 @@ public class GodfatherComponent implements RoleComponent {
     }
     @Override public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider r) {}
     @Override public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider r) {}
+
+    public static void registerEvents(){
+        ShouldReloadDerringer.EVENT.register((victim,killer,deathReason)->{
+            if(RoleUtils.isPlayerTheJob(killer, ModRoles.GODFATHER)){
+                return TrueFalseResult.FALSE;
+            }
+            return TrueFalseResult.PASS;
+        });
+    }
 }

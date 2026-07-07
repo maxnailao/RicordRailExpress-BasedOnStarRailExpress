@@ -6,12 +6,10 @@ import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
 import io.wifi.starrailexpress.index.DevItems;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.index.TMMItems;
-import static io.wifi.starrailexpress.index.TMMItems.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.food.Foods;
@@ -21,15 +19,13 @@ import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
 import org.agmas.noellesroles.content.item.charge_item.*;
-import org.agmas.noellesroles.utils.LocalDateData;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 
 import static io.wifi.starrailexpress.game.GameConstants.getInTicks;
+import static io.wifi.starrailexpress.index.TMMItems.*;
 
 @SuppressWarnings("unchecked")
 
@@ -174,7 +170,8 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
-    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)),
+    public static final Item CAKE_INGREDIENTS = register(
+            new CakeIngredientsItem(new Item.Properties().stacksTo(16)),
             "cake_ingredients", CONSUMABLES_GROUP);
     public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg",
             CONSUMABLES_GROUP);
@@ -186,9 +183,7 @@ public class ModItems {
     public static final Item BUCKET_OF_H2SO4 = register(
             new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4",
             CONSUMABLES_GROUP);
-    public static final Item LETTER_ITEM = register(
-            new LetterItem((new Item.Properties()).stacksTo(1)), "letter",
-            ROLE_ITEMS_GROUP);
+    public static final Item LETTER_ITEM = TMMItems.LETTER;
     public static final Item NINJA_KNIFE = register(
             new NinjaKnifeItem(new Item.Properties().stacksTo(1)),
             "ninja_knife", WEAPONS_GROUP);
@@ -292,9 +287,13 @@ public class ModItems {
             new FakeLockpickItem(new Item.Properties().stacksTo(1)),
             "fake_lockpick", TOOLS_GROUP);
 
+    public static final Item INFERIOR_LOCKPICK = register(
+            new InferiorLockpickItem(new Item.Properties().stacksTo(1)),
+            "inferior_lockpick", TOOLS_GROUP);
+
     public static final Item FAKE_CROWBAR = register(
             new FakeCrowbarItem(new Item.Properties().stacksTo(1)),
-            "fake_crowbar", WEAPONS_GROUP);
+            "fake_crowbar", TOOLS_GROUP);
 
     public static final Item FAKE_BODY_BAG = register(
             new FakeBodyBagItem(new Item.Properties().stacksTo(1)),
@@ -661,6 +660,9 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.MonitoringTerminalItem(
                     new Item.Properties().stacksTo(1)),
             "monitoring_terminal", TOOLS_GROUP);
+    public static final Item DEALER_PACKAGE = register(
+            new DealerPackageItem(new Item.Properties().stacksTo(1)),
+            "dealer_package", ROLE_ITEMS_GROUP);
     /**
      * 锁
      * - 工程师专属物品
@@ -1117,7 +1119,8 @@ public class ModItems {
 
     public static final Item SCARLET_PERCEPTION_SWORD = register(
             new ScarletPerceptionSwordItem(
-                    new Item.Properties().stacksTo(1).attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
+                    new Item.Properties().stacksTo(1)
+                            .attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
             "scarlet_perception_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
@@ -1182,6 +1185,7 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DECOY_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SILENCE_TOTEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PURIFY_BOMB);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.DEALER_PACKAGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.HONORED_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SPIRIT_CLOAK);
         // TMMItems.INVISIBLE_ITEMS.add(TMMItems.KNIFE);
@@ -1191,35 +1195,7 @@ public class ModItems {
 
         TMMItems.INIT_ITEMS.LETTER = LETTER_ITEM;
         TMMItems.INIT_ITEMS.LETTER_UpdateItemFunc = (letter, serverPlayerEntity) -> {
-            Component displayName = serverPlayerEntity.getName();
-            letter.set(DataComponents.ITEM_NAME,
-                    Component.translatable("tip.n.letter.item_name", displayName)
-                            .withStyle(ChatFormatting.AQUA));
 
-            int letterColor = 0xC5AE8B;
-            String tipString = "tip.n.letter.";
-            letter.update(DataComponents.LORE, ItemLore.EMPTY, component -> {
-                List<Component> text = new ArrayList<>();
-                UnaryOperator<Style> stylizer = style -> style.withItalic(false).withColor(letterColor);
-
-                String string = displayName != null ? displayName.getString()
-                        : serverPlayerEntity.getName().getString();
-                if (string.charAt(string.length() - 1) == '\uE780') { // remove ratty supporter icon
-                    string = string.substring(0, string.length() - 1);
-                }
-                text.add(Component
-                        .translatable(tipString + "name", string,
-                                Component.translatable(tipString + "map_name"))
-                        .withStyle(stylizer));
-                text.add(Component.translatable(tipString + "room").withStyle(stylizer));
-                var date = new LocalDateData();
-                text.add(Component.translatable(tipString + "tooltip1",
-                        Component.translatable(tipString + "date", date.getYear(),
-                                date.getMonth(), date.getDay()))
-                        .withStyle(stylizer));
-                text.add(Component.translatable(tipString + "tooltip2").withStyle(stylizer));
-                return new ItemLore(text);
-            });
         };
         ITEM_COOLDOWNS.put(ModItems.ANTIDOTE, getInTicks(1, 0)); // 60秒冷却
         ITEM_COOLDOWNS.put(ModItems.TOXIN, getInTicks(0, 10));

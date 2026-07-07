@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.content.block.SupplyCrateBlock;
 import org.agmas.noellesroles.content.block.VendingMachinesBlock;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.init.ModBlocks;
@@ -63,6 +62,7 @@ public class MapScanner {
         GameUtils.taskBlocks.clear();
         var areas = AreasWorldComponent.KEY.get(serverLevel);
         HashSet<String> collectedMinigameIds = new HashSet<>();
+        HashSet<String> sabotageMinigameIds = new HashSet<>();
         BlockPos backupMinPos = BlockPos.containing(areas.getResetTemplateArea().getMinPosition());
         BlockPos backupMaxPos = BlockPos.containing(areas.getResetTemplateArea().getMaxPosition());
         BoundingBox backupTrainBox = BoundingBox.fromCorners(backupMinPos, backupMaxPos);
@@ -80,6 +80,8 @@ public class MapScanner {
                     if (blockState.is(ModBlocks.VENDING_MACHINES_BLOCK)
                             && blockState.getValue(VendingMachinesBlock.HALF).equals(DoubleBlockHalf.LOWER)) {
                         GameUtils.taskBlocks.put(blockPos6, 11);
+                    } else if (blockState.is(ModBlocks.LOTTERY_MACHINE_BLOCK)) {
+                        GameUtils.taskBlocks.put(blockPos6, 13);
                     } else if (blockState.is(ModBlocks.SUPPLY_CRATE_BLOCK)) {
                         GameUtils.taskBlocks.put(blockPos6, 12);
                     } else if (blockState.is(Blocks.NOTE_BLOCK)) {
@@ -135,7 +137,11 @@ public class MapScanner {
                             if (localLevel.getBlockEntity(blockPos6) instanceof MinigameQuestBlockEntity questBe) {
                                 String mgId = questBe.getMinigameId();
                                 if (mgId != null && !mgId.isEmpty()) {
-                                    collectedMinigameIds.add(mgId);
+                                    if (questBe.isSabotageTrigger()) {
+                                        sabotageMinigameIds.add(mgId);
+                                    } else {
+                                        collectedMinigameIds.add(mgId);
+                                    }
                                 }
                             }
                         }
@@ -162,16 +168,14 @@ public class MapScanner {
             }
         }
         // 将扫描到的小游戏种类 ID 存入 AreasWorldComponent 并同步
+        collectedMinigameIds.removeAll(sabotageMinigameIds);
         areas.availableMinigameIds.clear();
         areas.availableMinigameIds.addAll(collectedMinigameIds);
+        areas.sabotageMinigameIds.clear();
+        areas.sabotageMinigameIds.addAll(sabotageMinigameIds);
         areas.sync();
-        SRE.LOGGER.info("Successed scanned task points! Total {}. Minigame types: {}.", GameUtils.taskBlocks.size(), collectedMinigameIds.size());
-        // Minecraft.getInstance().player.displayClientMessage(
-        // Component
-        // .translatable("msg.noellesroles.taskpoint.available",
-        // Component.keybind("key.noellesroles.taskinstinct"))
-        // .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
-        // true);服务端扫描点位
+        SRE.LOGGER.info("Successed scanned task points! Total {}. Minigame types: {}. Sabotage minigame types: {}.",
+                GameUtils.taskBlocks.size(), collectedMinigameIds.size(), sabotageMinigameIds.size());
     }
 
 }

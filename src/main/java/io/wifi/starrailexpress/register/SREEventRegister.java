@@ -5,14 +5,11 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
-import io.wifi.starrailexpress.api.replay.screen.ReplayScreenService;
-import io.wifi.starrailexpress.cca.*;
+import io.wifi.starrailexpress.api.replay.board.ReplayBoardService;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.content.vote.VoteManager;
-import io.wifi.starrailexpress.event.AFKEventHandler;
-import io.wifi.starrailexpress.event.EntityInteractionHandler;
-import io.wifi.starrailexpress.event.OnGameEnd;
-import io.wifi.starrailexpress.event.OnGameStarted;
-import io.wifi.starrailexpress.event.PlayerInteractionHandler;
+import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.PlayerMountainHandler;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
@@ -79,6 +76,9 @@ public class SREEventRegister {
             return InteractionResult.PASS;
         });
         GameUtils.registerEventForServerTickForDoingResetTasks();
+        ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
+            SRE.SERVER = null;
+        });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             SRE.SERVER = server;
             VoteManager.init(server);
@@ -106,7 +106,7 @@ public class SREEventRegister {
         });
         ServerTickEvents.END_SERVER_TICK.register(serv -> {
             VoteManager.onServerTick();
-            ReplayScreenService.tick(serv);
+            ReplayBoardService.tick(serv);
             SceneAssetServer.tick(serv);
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

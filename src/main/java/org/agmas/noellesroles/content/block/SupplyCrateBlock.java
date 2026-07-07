@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.content.block;
 
 import com.mojang.serialization.MapCodec;
+
+import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,11 +31,14 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+
+import java.awt.Color;
+
 import org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity;
 import org.agmas.noellesroles.packet.OpenSupplyCrateScreenS2CPacket;
 import org.jetbrains.annotations.Nullable;
 
-public class SupplyCrateBlock extends BaseEntityBlock {
+public class SupplyCrateBlock extends BaseEntityBlock implements TaskInstinctShowableInterface {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPENED = BooleanProperty.create("opened");
     private static final MapCodec<SupplyCrateBlock> CODEC = simpleCodec(SupplyCrateBlock::new);
@@ -149,5 +154,15 @@ public class SupplyCrateBlock extends BaseEntityBlock {
         }
 
         return true;
+    }
+
+    @Override
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
+        return true;
+    }
+
+    @Override
+    public Color taskInstinctRenderColor(BlockState state, BlockPos pos, Player player) {
+        return new java.awt.Color(186, 85, 211);
     }
 }

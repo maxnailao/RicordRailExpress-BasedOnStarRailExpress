@@ -37,6 +37,8 @@ import java.util.Random;
 
 public class InitModRolesMax {
     public static Random random = new Random();
+    public static boolean isEggEnabled = false;
+    public static boolean isTouhouEnabled = false;
 
     public static void autoChangePresent() {
         // 自动切换预设：游戏结束时应用配置的预设，使其在下一局游戏中生效
@@ -253,10 +255,10 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.CORONER_ID, 1);
 
         // 同时出现
-        Harpymodloader.setOccupationRole(ModRoles.ENGINEER, ModRoles.LOCKSMITH);
-        Harpymodloader.setOccupationRole(RedHouseRoles.FURANDORU, RedHouseRoles.PACHURI);
-        Harpymodloader.setOccupationRole(ModRoles.MA_CHEN_XU, ModRoles.GUEST_GHOST);
-        Harpymodloader.setOccupationRole(ModRoles.GANGSTERS, ModRoles.FITTER);
+        Harpymodloader.addOccupationRole(ModRoles.ENGINEER, ModRoles.LOCKSMITH);
+        Harpymodloader.addOccupationRole(RedHouseRoles.FURANDORU, RedHouseRoles.PACHURI);
+        Harpymodloader.addOccupationRole(ModRoles.MA_CHEN_XU, ModRoles.GUEST_GHOST);
+        Harpymodloader.addOccupationRole(ModRoles.GANGSTERS, ModRoles.FITTER);
 
         RoleAssignmentManager.addOccupationRole(ModRoles.POISONER, ModRoles.DOCTOR);
         RoleAssignmentManager.addOccupationRole(ModRoles.INFECTED, ModRoles.DOCTOR);
@@ -357,8 +359,8 @@ public class InitModRolesMax {
             // 彩蛋角色/修饰符数量
             if (players_count >= NoellesRolesConfig.instance().minPlayerForEggRoles
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
+                isEggEnabled = true;
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof EggRole) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
@@ -367,7 +369,7 @@ public class InitModRolesMax {
                         }
                     }
                 }
-                
+
                 for (var a : HMLModifiers.MODIFIERS) {
                     if (a instanceof EggModifier) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
@@ -378,8 +380,13 @@ public class InitModRolesMax {
                 }
             } else {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
+                isEggEnabled = false;
 
+                for (var a : HMLModifiers.MODIFIERS) {
+                    if (a instanceof EggModifier) {
+                        Harpymodloader.MODIFIER_MAX.put(a.identifier(), 0);
+                    }
+                }
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof EggRole) {
                         Harpymodloader.setRoleMaximum(a, 0);
@@ -391,7 +398,7 @@ public class InitModRolesMax {
             boolean canJumpMap = false;
             var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel);
             if (areas != null) {
-                canJumpMap = areas.canJump;
+                canJumpMap = areas.areasSettings.canJump;
             }
             {
                 // 杀手中立（只处理没有配置的职业：无概率 且 无显式 setMax）
@@ -426,6 +433,7 @@ public class InitModRolesMax {
 
             // 东方角色/修饰符数量
             if (players_count >= config.minPlayerForTouhouRoles && random.nextInt(0, 100) < TOUHOU_CHANCE) {
+                isTouhouEnabled = true;
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof TouhouRole) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
@@ -442,6 +450,9 @@ public class InitModRolesMax {
                         }
                     }
                 }
+                if (Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.DIO, 0) > 0) {
+                    Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
+                }
                 Harpymodloader.setRoleMaximum(RedHouseRoles.BAKA_ID, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 1);
@@ -452,9 +463,15 @@ public class InitModRolesMax {
                     Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 0);
                 }
             } else {
+                isTouhouEnabled = false;
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof TouhouRole) {
                         Harpymodloader.setRoleMaximum(a, 0);
+                    }
+                }
+                for (var a : HMLModifiers.MODIFIERS) {
+                    if (a instanceof TouhouModifier) {
+                        Harpymodloader.setModifierMaximum(a, 0);
                     }
                 }
             }
@@ -537,12 +554,12 @@ public class InitModRolesMax {
 
     private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
-            case all -> true;
-            case qiyucun -> config.maChenXuMaps.contains(currentMap);
-            case bigmap -> config.swastMaps.contains(currentMap);
-            case underwater -> config.underwaterRolesMaps.contains(currentMap);
-            case fly -> config.airRolesMaps.contains(currentMap);
-            case trap -> config.trapRolesMaps.contains(currentMap);
+            case ALL -> true;
+            case QIYUCUN -> config.maChenXuMaps.contains(currentMap);
+            case BIGMAP -> config.swastMaps.contains(currentMap);
+            case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
+            case FLY -> config.airRolesMaps.contains(currentMap);
+            case TRAP -> config.trapRolesMaps.contains(currentMap);
         };
     }
 
@@ -574,7 +591,7 @@ public class InitModRolesMax {
             if (modifier instanceof EggModifier)
                 continue;
             int count = modifier.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
-            if (count >= 0) {
+            if (count >= 0 || count == -2) {
                 Harpymodloader.MODIFIER_MAX.put(modifier.identifier(), count);
             }
         }
@@ -641,7 +658,7 @@ public class InitModRolesMax {
         }
 
         /// SPLIT_PERSONALITY
-        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier()) > 0) {
+        if (Harpymodloader.MODIFIER_MAX.getOrDefault(SEModifiers.SPLIT_PERSONALITY.identifier(), 0) > 0) {
         } else {
             if (players >= config.minPlayerForLovers
                     && random.nextInt(0, 100) <= config.chanceOfModifierLovers) {

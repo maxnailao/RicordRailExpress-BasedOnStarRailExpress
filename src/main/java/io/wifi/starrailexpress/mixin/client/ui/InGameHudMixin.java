@@ -20,8 +20,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.NotNull;
 import org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -44,6 +44,11 @@ public class InGameHudMixin {
 
     @Inject(method = "renderHotbarAndDecorations", at = @At("TAIL"))
     private void tmm$renderHud(GuiGraphics trueContext, DeltaTracker tickCounter, CallbackInfo ci) {
+
+        if (SREClient.isInLobby)
+            return;
+        if (SREClient.gameComponent == null)
+            return;
         if (!SREClient.shouldUseTrainHud()) {
             return;
         }
@@ -63,7 +68,7 @@ public class InGameHudMixin {
             Operation<Void> original) {
         // 高级运镜动画期间整体跳过物品栏与装饰（含血量 / 经验 / 选中物品名 / 自定义火车 HUD），
         // 呈现与原版 F1 一致的纯净运镜画面。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             return;
         }
         original.call(context, tickCounter);
@@ -72,13 +77,14 @@ public class InGameHudMixin {
     @WrapMethod(method = "renderCrosshair")
     private void tmm$renderHud(GuiGraphics context, DeltaTracker tickCounter, Operation<Void> original) {
         // 运镜动画期间不绘制任何准星。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             return;
         }
         if (SREClient.shouldRenderVanillaHud()) {
             original.call(context, tickCounter);
             return;
         }
+        // 因为wathe资源包的缘故，原版的攻击指示器基本上坏的
         LocalPlayer player = this.minecraft.player;
         if (player == null)
             return;

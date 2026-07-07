@@ -29,7 +29,7 @@ public class RepairRole extends NormalRole{
         setCanUseInstinct(false);
         setCanAutoAddMoney(true);
         setCanBeRandomedByOtherRoles(false);
-        addFlag("repair_gamemode");
+        addFlag("inner.repair_gamemode");
     }
 
     @Override

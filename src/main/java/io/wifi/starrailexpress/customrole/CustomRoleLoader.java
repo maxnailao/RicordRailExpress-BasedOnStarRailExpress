@@ -1,16 +1,19 @@
 package io.wifi.starrailexpress.customrole;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.customrole.CustomRoleData.EffectEntry;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.util.ShopEntry;
-import io.wifi.starrailexpress.customrole.CustomRoleData.EffectEntry;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -19,14 +22,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.fabricmc.loader.api.FabricLoader;
+import org.agmas.harpymodloader.Harpymodloader;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 自定义职业加载器
@@ -48,8 +46,6 @@ public class CustomRoleLoader {
 
     // 游戏结束时自动执行的指令：englishRoleId -> 指令列表
     private static final Map<String, List<String>> gameEndCommandsByRoleId = new HashMap<>();
-    // 跟踪每世界游戏状态，检测 ACTIVE → STOPPING 转换
-    private static final Map<ResourceLocation, Boolean> worldWasActive = new HashMap<>();
 
     /**
      * 重新加载所有自定义职业
@@ -61,7 +57,7 @@ public class CustomRoleLoader {
         // 先清除旧的自定义职业
         List<String> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if ("customrole".equals(entry.getKey().getNamespace())) {
+            if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
                 // 同时清除已注册的技能，避免 re-register 时报 "already registered"
                 RoleSkill.unregister(entry.getKey());
@@ -122,7 +118,7 @@ public class CustomRoleLoader {
         // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
         List<String> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if ("customrole".equals(entry.getKey().getNamespace())) {
+            if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
                 RoleSkill.unregister(entry.getKey());
                 org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
@@ -150,10 +146,11 @@ public class CustomRoleLoader {
                 // 注册报幕文本（客户端），确保欢迎报到能显示自定义职业
                 try {
                     io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts.registerRoleAnnouncementText(
-                        role.identifier(),
-                        new io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts.RoleAnnouncementText(
-                            role.identifier(), role.getColor()));
-                } catch (Throwable ignored) {}
+                            role.identifier(),
+                            new io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts.RoleAnnouncementText(
+                                    role.identifier(), role.getColor()));
+                } catch (Throwable ignored) {
+                }
             } catch (Exception e) {
                 SRE.LOGGER.error("[CustomRole-Client] Failed to register: {}", data.englishId, e);
             }
@@ -171,26 +168,37 @@ public class CustomRoleLoader {
 
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
-        if (result != null) return result;
+        if (result != null)
+            return result;
         // 回退：尝试从 world 存档加载（服务端）
         try {
             if (io.wifi.starrailexpress.SRE.SERVER != null) {
                 var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
                 var found = cfg.findRole(englishId);
-                if (found != null) return found;
+                if (found != null)
+                    return found;
             }
-        } catch (Exception ignored) {}
-        // 客户端回退：尝试从本地 config 目录（网络同步写入的）
-        try {
-            var cfg = CustomRoleConfig.loadFromDefaultPath();
-            var found = cfg.findRole(englishId);
-            if (found != null) return found;
-        } catch (Exception ignored) {}
-        // 最终回退：尝试从客户端内存中的网络同步数据
-        try {
-            var cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(englishId);
-            if (cd != null) return cd;
-        } catch (Throwable ignored) {}
+        } catch (Exception ignored) {
+        }
+
+        if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
+            // 客户端回退：尝试从本地 config 目录（网络同步写入的）
+            try {
+                var cfg = CustomRoleConfig.loadFromDefaultPath();
+                var found = cfg.findRole(englishId);
+                if (found != null)
+                    return found;
+            } catch (Exception ignored) {
+            }
+            // 最终回退：尝试从客户端内存中的网络同步数据
+            try {
+                var cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(englishId);
+                if (cd != null)
+                    return cd;
+            } catch (Throwable ignored) {
+            }
+        }
+
         return null;
     }
 
@@ -210,7 +218,8 @@ public class CustomRoleLoader {
 
         // 解析心情类型
         SRERole.MoodType mood = "FAKE".equalsIgnoreCase(data.moodType)
-            ? SRERole.MoodType.FAKE : SRERole.MoodType.REAL;
+                ? SRERole.MoodType.FAKE
+                : SRERole.MoodType.REAL;
 
         // 解析体力
         int maxSprintTime;
@@ -226,15 +235,17 @@ public class CustomRoleLoader {
         if (!data.initialEffects.isEmpty()) {
             for (EffectEntry effEntry : data.initialEffects) {
                 String cleaned = effEntry.effectId.trim();
-                if (cleaned.isEmpty()) continue;
+                if (cleaned.isEmpty())
+                    continue;
                 try {
                     ResourceLocation effectRL = ResourceLocation.parse(cleaned);
                     var effectHolder = BuiltInRegistries.MOB_EFFECT.getHolder(effectRL);
                     if (effectHolder.isPresent()) {
                         effects.add(new MobEffectInstance(effectHolder.get(),
-                            -1, effEntry.amplifier, false, false, false));
+                                -1, effEntry.amplifier, false, false, false));
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
 
@@ -243,8 +254,8 @@ public class CustomRoleLoader {
 
         // 创建角色（使用 CustomNormalRole 以支持自定义商店）
         SRERole role = new CustomNormalRole(id, color, data.isInnocent, data.canUseKiller,
-            mood, maxSprintTime, data.canSeeTime,
-            effects.isEmpty() ? new ArrayList<>() : effects, shop);
+                mood, maxSprintTime, data.canSeeTime,
+                effects.isEmpty() ? new ArrayList<>() : effects, shop);
 
         // === 高级定义 ===
         role.setCanSeeCoin(data.canSeeCoin);
@@ -255,38 +266,65 @@ public class CustomRoleLoader {
                 try {
                     int maxBlocks = Integer.parseInt(data.instinctMaxRange.trim());
                     instinctMaxRanges.put(data.englishId, maxBlocks * maxBlocks); // 存储平方值
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
             instinctSameColor.put(data.englishId, data.instinctSameColorFrame);
         } else {
             role.setCanUseInstinct(false);
         }
-        if (data.ableToPickUpRevolver != null) role.setAbleToPickUpRevolver(data.ableToPickUpRevolver);
-        if (data.setNeutrals != null) role.setNeutrals(data.setNeutrals);
-        if (data.setNeutralForKiller != null) role.setNeutralForKiller(data.setNeutralForKiller);
-        if (data.setVigilanteTeam != null) role.setVigilanteTeam(data.setVigilanteTeam);
-        if (data.canSeeTeammateKiller != null) role.setCanSeeTeammateKiller(data.canSeeTeammateKiller);
+        if (data.ableToPickUpRevolver != null)
+            role.setAbleToPickUpRevolver(data.ableToPickUpRevolver);
+        if (data.setNeutrals != null)
+            role.setNeutrals(data.setNeutrals);
+        if (data.setNeutralForKiller != null)
+            role.setNeutralForKiller(data.setNeutralForKiller);
+        if (data.setVigilanteTeam != null)
+            role.setVigilanteTeam(data.setVigilanteTeam);
+        if (data.canSeeTeammateKiller != null)
+            role.setCanSeeTeammateKiller(data.canSeeTeammateKiller);
         role.setOccupiedRoleCount(data.occupiedRoleCount);
         role.setDefaultMax(data.maxCount);
-        if (data.canAutoAddMoney != null) role.setCanAutoAddMoney(data.canAutoAddMoney);
+        if (data.canAutoAddMoney != null)
+            role.setCanAutoAddMoney(data.canAutoAddMoney);
         role.setCanBeRandomedByOtherRoles(data.canBeRandomedByOtherRoles);
-        if (data.canIgnoreBlackout != null) role.setCanIgnoreBlackout(data.canIgnoreBlackout);
-        if (data.canSeeBodyItems != null) role.setCanSeeBodyItems(data.canSeeBodyItems);
-        if (data.canSeeBodyRoleInfo != null) role.setCanSeeBodyRoleInfo(data.canSeeBodyRoleInfo);
-        if (data.canSeeBodyDeathReason != null) role.setCanSeeBodyDeathReason(data.canSeeBodyDeathReason);
-        if (data.canSeeBodyKiller != null) role.setCanSeeBodyKiller(data.canSeeBodyKiller);
+        if (data.canIgnoreBlackout != null)
+            role.setCanIgnoreBlackout(data.canIgnoreBlackout);
+        if (data.canSeeBodyItems != null)
+            role.setCanSeeBodyItems(data.canSeeBodyItems);
+        if (data.canSeeBodyRoleInfo != null)
+            role.setCanSeeBodyRoleInfo(data.canSeeBodyRoleInfo);
+        if (data.canSeeBodyDeathReason != null)
+            role.setCanSeeBodyDeathReason(data.canSeeBodyDeathReason);
+        if (data.canSeeBodyKiller != null)
+            role.setCanSeeBodyKiller(data.canSeeBodyKiller);
 
         // === 生成选项 ===
-        if (data.enableChance >= 0 && !data.useRareChance) role.setDefaultEnableChance(data.enableChance * 100);
-        if (data.useRareChance && data.enableRareChance >= 0) role.setDefaultEnableChance(data.enableRareChance);
-        if (data.enableNeededPlayerCount >= 0) role.setDefaultEnableNeededPlayerCount(data.enableNeededPlayerCount);
+        if (data.enableChance >= 0 && !data.useRareChance)
+            role.setDefaultEnableChance(data.enableChance * 100);
+        if (data.useRareChance && data.enableRareChance >= 0)
+            role.setDefaultEnableChance(data.enableRareChance);
+        if (data.enableNeededPlayerCount >= 0)
+            role.setDefaultEnableNeededPlayerCount(data.enableNeededPlayerCount);
 
         // 自定义职业直接设置 spawnInfo 并禁止配置覆盖，确保工具设置的值始终生效
         role.setCanSetSpawnInfoInConfig(false);
         org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo customSpawn = new org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo();
         customSpawn.setMax(role.defaultMaxCount);
-        if (role.defaultEnableNeedPlayerCount >= 0) customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);
-        if (role.defaultEnableChance >= 0) customSpawn.setEnableChance(role.defaultEnableChance);
+        if (role.defaultEnableNeedPlayerCount >= 0)
+            customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);
+        if (role.defaultEnableChance >= 0)
+            customSpawn.setEnableChance(role.defaultEnableChance);
+        if (data.mapRestrictedTo != null) {
+            for (String mapId : data.mapRestrictedTo) {
+                if (mapId == null)
+                    continue;
+                String trimmed = mapId.trim();
+                if (!trimmed.isEmpty()) {
+                    customSpawn.map.add(trimmed);
+                }
+            }
+        }
         role.setSpawnInfo(customSpawn);
 
         // 互斥和绑定生成（需要在所有角色注册完成后处理，这里只存储引用）
@@ -297,7 +335,8 @@ public class CustomRoleLoader {
         if (!data.initialItems.isEmpty()) {
             List<ItemStack> stacks = new ArrayList<>();
             for (CustomRoleData.InitialItemEntry entry : data.initialItems) {
-                if (entry.itemId == null || entry.itemId.isEmpty()) continue;
+                if (entry.itemId == null || entry.itemId.isEmpty())
+                    continue;
                 try {
                     ResourceLocation itemId = ResourceLocation.parse(entry.itemId);
                     Optional<Item> itemOpt = BuiltInRegistries.ITEM.getOptional(itemId);
@@ -305,7 +344,8 @@ public class CustomRoleLoader {
                         int count = Math.max(1, entry.count);
                         stacks.add(new ItemStack(itemOpt.get(), count));
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             if (role instanceof CustomNormalRole customRole) {
                 customRole.setDefaultItems(stacks);
@@ -332,47 +372,40 @@ public class CustomRoleLoader {
                     customSkillId,
                     "skill.sre.custom_role.ability",
                     context -> {
-                ServerPlayer player = context.player();
-                // 死亡/旁观者不能使用技能
-                if (player.isSpectator()) {
-                    return false;
-                }
-                SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-
-                if (ability.cooldown > 0) {
-                    return false;
-                }
-
-                // 执行即时指令（支持 @a @p @r @s 选择器）
-                for (String cmd : commands) {
-                    String processed = processCommandSelectors(cmd
-                        .replace("<player>", player.getGameProfile().getName())
-                        .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                            player.getX(), player.getY(), player.getZ())), player);
-                    player.getServer().getCommands().performPrefixedCommand(
-                        player.createCommandSourceStack(), processed);
-                }
-
-                // 延迟执行指令
-                if (!delayedCommands.isEmpty() && delaySeconds > 0) {
-                    final UUID playerUuid = player.getUUID();
-                    final ServerLevel level = player.serverLevel();
-                    GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(delaySeconds * 20, () -> {
-                        ServerPlayer target = level.getServer().getPlayerList().getPlayer(playerUuid);
-                        if (target == null || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target)) return;
-                        for (String cmd : delayedCommands) {
-                            String processed = processCommandSelectors(cmd
-                                .replace("<player>", target.getGameProfile().getName())
-                                .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                    target.getX(), target.getY(), target.getZ())), target);
-                            target.getServer().getCommands().performPrefixedCommand(
-                                target.createCommandSourceStack(), processed);
+                        ServerPlayer player = context.player();
+                        // 死亡/旁观者不能使用技能
+                        if (player.isSpectator()) {
+                            return false;
                         }
-                    }));
-                }
+                        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
 
-                return true;
-            }).cooldownSeconds(cooldownSeconds).build());
+                        if (ability.cooldown > 0) {
+                            return false;
+                        }
+
+                        // 执行即时指令（支持 @a @p @r @s 选择器）
+                        for (String cmd : commands) {
+                            executeConfiguredCommand(cmd, player);
+                        }
+
+                        // 延迟执行指令
+                        if (!delayedCommands.isEmpty() && delaySeconds > 0) {
+                            final UUID playerUuid = player.getUUID();
+                            final ServerLevel level = player.serverLevel();
+                            GameUtils.serverTaskQueue
+                                    .add(new ServerTaskInfoClasses.SchedulerTask(delaySeconds * 20, () -> {
+                                        ServerPlayer target = level.getServer().getPlayerList().getPlayer(playerUuid);
+                                        if (target == null
+                                                || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target))
+                                            return;
+                                        for (String cmd : delayedCommands) {
+                                            executeConfiguredCommand(cmd, target);
+                                        }
+                                    }));
+                        }
+
+                        return true;
+                    }).cooldownSeconds(cooldownSeconds).build());
 
             // 存储技能初始冷却（游戏开始后首次分配角色时应用）
             if (data.abilityInitialCooldownSeconds > 0) {
@@ -392,44 +425,32 @@ public class CustomRoleLoader {
     // ==================== 游戏结束自动执行指令 ====================
 
     private static void registerGameEndHandlerIfNeeded() {
-        if (gameEndHandlerRegistered || gameEndCommandsByRoleId.isEmpty()) return;
+        if (gameEndHandlerRegistered || gameEndCommandsByRoleId.isEmpty())
+            return;
         gameEndHandlerRegistered = true;
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            for (ServerLevel level : server.getAllLevels()) {
-                var comp = SREGameWorldComponent.KEY.get(level);
-                var status = comp.getGameStatus();
-                var dim = level.dimension().location();
-                Boolean wasActive = worldWasActive.getOrDefault(dim, false);
-
-                // 检测 ACTIVE → STOPPING 转换
-                if (wasActive && status == SREGameWorldComponent.GameStatus.STOPPING) {
-                    executeGameEndCommands(level, comp);
-                }
-                worldWasActive.put(dim, status == SREGameWorldComponent.GameStatus.ACTIVE);
+        OnGameEnd.EVENT.register((level, comp) -> {
+            if (!gameEndCommandsByRoleId.isEmpty()) {
+                executeGameEndCommands(level, comp);
             }
         });
     }
 
     private static void executeGameEndCommands(ServerLevel level, SREGameWorldComponent comp) {
         for (ServerPlayer player : level.players()) {
-            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) continue;
             var role = comp.getRole(player);
-            if (role == null) continue;
+            if (role == null)
+                continue;
             String key = role.identifier().getPath();
-            if ("customrole".equals(role.identifier().getNamespace())) {
+            if (role instanceof CustomNormalRole || "customrole".equals(role.identifier().getNamespace())) {
                 // 自定义职业用 englishId 匹配
                 key = key.substring(key.lastIndexOf('/') + 1); // 去掉路径前缀
             }
             List<String> cmds = gameEndCommandsByRoleId.get(key);
-            if (cmds == null) continue;
+            if (cmds == null)
+                continue;
             for (String cmd : cmds) {
-                String processed = processCommandSelectors(cmd
-                    .replace("<player>", player.getGameProfile().getName())
-                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                        player.getX(), player.getY(), player.getZ())), player);
-                player.getServer().getCommands().performPrefixedCommand(
-                    player.createCommandSourceStack(), processed);
+                executeConfiguredCommand(cmd, player);
             }
         }
     }
@@ -442,13 +463,14 @@ public class CustomRoleLoader {
 
         for (CustomRoleData data : config.roles) {
             SRERole role = registeredRoles.get(data.englishId);
-            if (role == null) continue;
+            if (role == null)
+                continue;
 
             // 双向互斥
             for (String oppId : data.twoWayOpposingJobs) {
                 SRERole oppRole = findRole(oppId);
                 if (oppRole != null) {
-                    role.addTwoWayOpposingJobs(oppRole);
+                    role.addTwoWayOpposingRole(oppRole);
                 }
             }
 
@@ -456,7 +478,7 @@ public class CustomRoleLoader {
             for (String oppId : data.opposingJobs) {
                 SRERole oppRole = findRole(oppId);
                 if (oppRole != null) {
-                    role.addOpposingJobs(oppRole);
+                    role.addOpposingRole(oppRole);
                 }
             }
 
@@ -464,7 +486,7 @@ public class CustomRoleLoader {
             for (String bindId : data.bindWithRoles) {
                 SRERole bindRole = findRole(bindId);
                 if (bindRole != null) {
-                    org.agmas.harpymodloader.modded_murder.RoleAssignmentManager.addOccupationRole(role, bindRole);
+                    Harpymodloader.addOccupationRole(role, bindRole);
                 }
             }
         }
@@ -488,32 +510,36 @@ public class CustomRoleLoader {
      * 如果列表非空且当前地图不在列表中，则将该职业最大数量设为0
      */
     private static void registerMapRestrictionHandler() {
-        org.agmas.harpymodloader.events.GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
-            CustomRoleConfig config = CustomRoleConfig.getInstance();
+        org.agmas.harpymodloader.events.GameInitializeEvent.EVENT
+                .register((serverLevel, gameWorldComponent, players) -> {
+                    CustomRoleConfig config = CustomRoleConfig.getInstance();
 
-            // 获取当前地图ID
-            final String currentMap = getCurrentMapName(serverLevel);
+                    // 获取当前地图ID
+                    final String currentMap = getCurrentMapName(serverLevel);
 
-            for (CustomRoleData data : config.roles) {
-                if (data.mapRestrictedTo == null || data.mapRestrictedTo.isEmpty()) {
-                    continue; // 没有地图限制，所有地图都可以刷新
-                }
+                    for (CustomRoleData data : config.roles) {
+                        if (data.mapRestrictedTo == null || data.mapRestrictedTo.isEmpty()) {
+                            continue; // 没有地图限制，所有地图都可以刷新
+                        }
 
-                SRERole role = registeredRoles.get(data.englishId);
-                if (role == null) continue;
+                        SRERole role = registeredRoles.get(data.englishId);
+                        if (role == null)
+                            continue;
 
-                final String mapName = currentMap;
-                boolean allowed = data.mapRestrictedTo.stream()
-                        .anyMatch(mapId -> mapId.trim().equalsIgnoreCase(mapName));
+                        final String mapName = currentMap == null ? "" : currentMap.trim();
+                        boolean allowed = data.mapRestrictedTo.stream()
+                                .filter(Objects::nonNull)
+                                .map(String::trim)
+                                .anyMatch(mapId -> mapId.equalsIgnoreCase(mapName));
 
-                if (!allowed) {
-                    // 当前地图不在允许列表中，禁用该职业
-                    org.agmas.harpymodloader.Harpymodloader.setRoleMaximum(role.identifier(), 0);
-                    SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
-                            data.englishId, mapName);
-                }
-            }
-        });
+                        if (!allowed) {
+                            // 当前地图不在允许列表中，禁用该职业
+                            org.agmas.harpymodloader.Harpymodloader.setRoleMaximum(role.identifier(), 0);
+                            SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
+                                    data.englishId, mapName);
+                        }
+                    }
+                });
     }
 
     /**
@@ -522,7 +548,8 @@ public class CustomRoleLoader {
      */
     private static void registerInitialCooldownHandler() {
         org.agmas.harpymodloader.events.ModdedRoleAssigned.EVENT.register((player, role) -> {
-            if (!(player instanceof ServerPlayer serverPlayer)) return;
+            if (!(player instanceof ServerPlayer serverPlayer))
+                return;
             Integer cooldownTicks = initialCooldownMap.get(role.identifier());
             if (cooldownTicks != null && cooldownTicks > 0) {
                 SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(serverPlayer);
@@ -580,31 +607,38 @@ public class CustomRoleLoader {
     private static class ClientInstinctHandler {
         static void register() {
             io.wifi.starrailexpress.event.OnGetInstinctHighlight.EVENT.register((target, isInstinctEnabled) -> {
-                if (!(target instanceof net.minecraft.world.entity.player.Player)) return -1;
+                if (!(target instanceof net.minecraft.world.entity.player.Player))
+                    return -1;
                 net.minecraft.world.entity.player.Player targetPlayer = (net.minecraft.world.entity.player.Player) target;
                 net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-                if (client.player == null) return -1;
-                if (!isInstinctEnabled) return -1;
+                if (client.player == null)
+                    return -1;
+                if (!isInstinctEnabled)
+                    return -1;
 
-                io.wifi.starrailexpress.cca.SREGameWorldComponent gameWorld =
-                    io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(client.player.level());
-                if (gameWorld == null) return -1;
+                io.wifi.starrailexpress.cca.SREGameWorldComponent gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY
+                        .get(client.player.level());
+                if (gameWorld == null)
+                    return -1;
                 SRERole role = gameWorld.getRole(client.player);
-                if (role == null) return -1;
-                if (!"customrole".equals(role.identifier().getNamespace())) return -1;
+                if (role == null)
+                    return -1;
+                if (!"customrole".equals(role.identifier().getNamespace()) || !(role instanceof CustomNormalRole))
+                    return -1;
 
                 String englishId = role.identifier().getPath();
 
                 Integer maxRangeSq = instinctMaxRanges.get(englishId);
                 if (maxRangeSq != null) {
                     double distSq = client.player.distanceToSqr(targetPlayer);
-                    if (distSq > maxRangeSq) return -2;
+                    if (distSq > maxRangeSq)
+                        return -2;
                 }
 
                 Boolean sameColor = instinctSameColor.get(englishId);
                 if (sameColor != null && sameColor) {
                     if (io.wifi.starrailexpress.client.SREClient.gameComponent != null
-                        && io.wifi.starrailexpress.client.SREClient.gameComponent.isKillerTeamRole(role)) {
+                            && io.wifi.starrailexpress.client.SREClient.gameComponent.isKillerTeamRole(role)) {
                         return java.awt.Color.RED.getRGB();
                     }
                     return java.awt.Color.GREEN.getRGB();
@@ -631,34 +665,35 @@ public class CustomRoleLoader {
                             if (item.isPresent()) {
                                 final Item theItem = item.get();
                                 entries.add(new ShopEntry(
-                                    new ItemStack(theItem), entry.price, ShopEntry.Type.TOOL
-                                ) {
+                                        new ItemStack(theItem), entry.price, ShopEntry.Type.TOOL) {
                                     @Override
                                     public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                                         // 禁止重复购买：检查快捷栏是否已有该物品
                                         if (!entry.allowDuplicate) {
                                             for (var stack : player.getInventory().items) {
-                                                if (stack.is(theItem)) return false;
+                                                if (stack.is(theItem))
+                                                    return false;
                                             }
                                         }
                                         boolean result = super.onBuy(player);
                                         // 冷却
-                                        if (result && cooldownTicks > 0 && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                                        if (result && cooldownTicks > 0
+                                                && player instanceof net.minecraft.server.level.ServerPlayer sp) {
                                             sp.getCooldowns().addCooldown(theItem, cooldownTicks);
                                         }
                                         return result;
                                     }
                                 });
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     break;
                 }
                 case "psycho":
                     entries.add(new ShopEntry(
-                        io.wifi.starrailexpress.index.TMMItems.PSYCHO_MODE.getDefaultInstance(),
-                        entry.price, ShopEntry.Type.WEAPON
-                    ) {
+                            io.wifi.starrailexpress.index.TMMItems.PSYCHO_MODE.getDefaultInstance(),
+                            entry.price, ShopEntry.Type.WEAPON) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.usePsychoMode(player);
@@ -667,9 +702,8 @@ public class CustomRoleLoader {
                     break;
                 case "blackout":
                     entries.add(new ShopEntry(
-                        io.wifi.starrailexpress.index.TMMItems.BLACKOUT.getDefaultInstance(),
-                        entry.price, ShopEntry.Type.TOOL
-                    ) {
+                            io.wifi.starrailexpress.index.TMMItems.BLACKOUT.getDefaultInstance(),
+                            entry.price, ShopEntry.Type.TOOL) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.useBlackout(player);
@@ -678,13 +712,12 @@ public class CustomRoleLoader {
                     break;
                 case "monitor_fail":
                     entries.add(new ShopEntry(
-                        io.wifi.starrailexpress.index.TMMItems.MONITOR_BROKEN.getDefaultInstance(),
-                        entry.price, ShopEntry.Type.TOOL
-                    ) {
+                            io.wifi.starrailexpress.index.TMMItems.MONITOR_BROKEN.getDefaultInstance(),
+                            entry.price, ShopEntry.Type.TOOL) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.useMonitorBroken(player,
-                                io.wifi.starrailexpress.SREConfig.instance().monitorBrokenDuration * 20);
+                                    io.wifi.starrailexpress.SREConfig.instance().monitorBrokenDuration * 20);
                         }
                     });
                     break;
@@ -698,20 +731,13 @@ public class CustomRoleLoader {
                             // 设置自定义商品名称
                             if (!entry.displayName.isEmpty()) {
                                 display.set(net.minecraft.core.component.DataComponents.ITEM_NAME,
-                                    net.minecraft.network.chat.Component.literal(entry.displayName));
+                                        net.minecraft.network.chat.Component.literal(entry.displayName));
                             }
                             entries.add(new ShopEntry(display, entry.price, ShopEntry.Type.TOOL) {
                                 @Override
                                 public boolean onBuy(net.minecraft.world.entity.player.Player player) {
-                                    if (player.getServer() != null) {
-                                        for (String cmd : cmds) {
-                                            String processed = processCommandSelectors(cmd
-                                                .replace("<player>", player.getGameProfile().getName())
-                                                .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                                    player.getX(), player.getY(), player.getZ())), player);
-                                            player.getServer().getCommands().performPrefixedCommand(
-                                                player.createCommandSourceStack(), processed);
-                                        }
+                                    for (String cmd : cmds) {
+                                        executeConfiguredCommand(cmd, player);
                                     }
                                     // 冷却
                                     if (cooldownTicks > 0 && !display.isEmpty()
@@ -721,7 +747,8 @@ public class CustomRoleLoader {
                                     return true;
                                 }
                             });
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     break;
                 }
@@ -730,12 +757,40 @@ public class CustomRoleLoader {
         return entries;
     }
 
+    private static void executeConfiguredCommand(String cmd, net.minecraft.world.entity.player.Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null || cmd == null
+                || cmd.isBlank()) {
+            return;
+        }
+
+        String processed = processCommandSelectors(cmd
+                .replace("<player>", serverPlayer.getGameProfile().getName())
+                .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
+                        serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ())),
+                serverPlayer);
+        try {
+            serverPlayer.getServer().getCommands().performPrefixedCommand(
+                    serverPlayer.getServer().createCommandSourceStack()
+                            .withPermission(SREConfig.instance().customRolePermission)
+                            .withSuppressedOutput()
+                            .withEntity(serverPlayer)
+                            .withLevel(serverPlayer.serverLevel())
+                            .withPosition(serverPlayer.position())
+                            .withRotation(serverPlayer.getRotationVector()),
+                    processed);
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[CustomRole] Failed to execute configured command '{}': {}", processed, e.getMessage());
+        }
+    }
+
     /**
      * 处理指令中的 @p 选择器（其余 @s @a @r 由 Minecraft 原生解析）
+     * 
      * @p → 距离当前玩家最近的存活玩家（排除自己）
      */
     private static String processCommandSelectors(String cmd, net.minecraft.world.entity.player.Player player) {
-        if (!(player instanceof ServerPlayer sp)) return cmd;
+        if (!(player instanceof ServerPlayer sp))
+            return cmd;
 
         // @p → 最近的其他存活玩家（排除自己）
         if (cmd.contains("@p")) {
@@ -744,11 +799,16 @@ public class CustomRoleLoader {
             ServerPlayer nearest = null;
             double minDist = Double.MAX_VALUE;
             for (ServerPlayer p : alivePlayers) {
-                if (p == sp) continue;
+                if (p == sp)
+                    continue;
                 double dist = sp.distanceToSqr(p);
-                if (dist < minDist) { minDist = dist; nearest = p; }
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = p;
+                }
             }
-            cmd = cmd.replace("@p", nearest != null ? nearest.getGameProfile().getName() : sp.getGameProfile().getName());
+            cmd = cmd.replace("@p",
+                    nearest != null ? nearest.getGameProfile().getName() : sp.getGameProfile().getName());
         }
 
         return cmd;

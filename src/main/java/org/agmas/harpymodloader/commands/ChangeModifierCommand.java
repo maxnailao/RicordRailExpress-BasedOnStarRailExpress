@@ -3,6 +3,8 @@ package org.agmas.harpymodloader.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,7 +22,7 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 public class ChangeModifierCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("changeModifier")
-        .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+        .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().changeModifierRequiredPermission))
         .then(Commands.argument("player", EntityArgument.player())
             .then(Commands.argument("modifier", ModifierArgumentType.create())
                 .executes((ctx) -> execute(ctx, -1))

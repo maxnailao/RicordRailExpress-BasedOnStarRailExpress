@@ -60,7 +60,8 @@ public class GreatDetectiveRole extends NormalRole {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.PASS;
         }
-        if (!(victim instanceof PlayerBodyEntity body)) {
+        if (!(victim instanceof PlayerBodyEntity body)
+                || org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity.isDoomedSinnerBody(victim)) {
             return InteractionResult.PASS;
         }
         Level level = serverPlayer.level();
@@ -79,7 +80,7 @@ public class GreatDetectiveRole extends NormalRole {
         UUID corpseUuid = body.getUUID();
         if (comp.isInCooldown()) {
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.noellesroles.great_detective.cooldown", comp.getCooldownLeftTime())
+                    Component.translatable("message.noellesroles.great_detective.cooldown", comp.getCooldownLeftTime()*0.05)
                             .withStyle(ChatFormatting.RED),
                     true);
             return InteractionResult.FAIL;

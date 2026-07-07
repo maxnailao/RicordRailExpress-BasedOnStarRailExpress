@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.commands;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -18,8 +20,8 @@ public final class RepairStartCommand {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
-                literal("repair")
-                        .requires(source -> source.hasPermission(2))
+                literal("cy:repair")
+                        .requires(source -> source.hasPermission(SREConfig.instance().startGameRequiredPermission))
                         .then(literal("start")
                                 .then(argument("minutes", IntegerArgumentType.integer(1))
                                         .executes(context -> start(context.getSource(),

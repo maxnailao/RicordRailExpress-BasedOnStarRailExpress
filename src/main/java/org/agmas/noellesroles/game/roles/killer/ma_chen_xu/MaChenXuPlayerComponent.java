@@ -37,15 +37,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuEventHandler.HIT_SELF_LOCK_TICKS;
 
@@ -292,17 +284,17 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
 
     public void updateStageNeeds(int playerCount) {
         if (playerCount <= 12) {
-            STAGE_2_THRESHOLD = 500;
-            STAGE_3_THRESHOLD = 800;
-            STAGE_4_THRESHOLD = 1600;
+            STAGE_2_THRESHOLD = 350;
+            STAGE_3_THRESHOLD = 600;
+            STAGE_4_THRESHOLD = 1000;
         } else if (playerCount <= 24) {
             STAGE_2_THRESHOLD = 700;
             STAGE_3_THRESHOLD = 1200;
             STAGE_4_THRESHOLD = 1800;
         } else {
-            STAGE_2_THRESHOLD = 1000;
-            STAGE_3_THRESHOLD = 1500;
-            STAGE_4_THRESHOLD = 2400;
+            STAGE_2_THRESHOLD = 650;
+            STAGE_3_THRESHOLD = 1200;
+            STAGE_4_THRESHOLD = 1600;
         }
     }
 

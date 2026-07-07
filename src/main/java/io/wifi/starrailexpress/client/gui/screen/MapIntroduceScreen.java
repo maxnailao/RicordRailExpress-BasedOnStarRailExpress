@@ -3,6 +3,10 @@ package io.wifi.starrailexpress.client.gui.screen;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.index.SREBlocks;
+import io.wifi.starrailexpress.index.TMMBlocks;
 import io.wifi.starrailexpress.network.MapIntroSyncPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,19 +23,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import io.wifi.starrailexpress.index.SREBlocks;
-import io.wifi.starrailexpress.index.TMMBlocks;
 import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MapIntroduceScreen extends Screen {
     private static final int MAX_WIDTH = 700;
@@ -157,7 +152,7 @@ public class MapIntroduceScreen extends Screen {
             case SCENE_BLOCKS -> sceneBlockItems().forEach(item -> addItemEntry(q, item, tab));
             case QUEST_BLOCKS -> questBlockItems().forEach(item -> addItemEntry(q, item, tab));
             case MECHANICS -> {
-                for (String id : List.of("tasks", "status_bar", "sabotage", "conduit_core", "special_roles")) {
+                for (String id : List.of("tasks", "status_bar", "sabotage", "conduit_core", "game_currency", "train_target", "special_roles")) {
                     Component name = Component.translatable("map_intro.mechanic." + id + ".title");
                     if (matches(q, id, name.getString())) {
                         entries.add(Entry.text(id, name, tab));
@@ -236,6 +231,7 @@ public class MapIntroduceScreen extends Screen {
         JsonObject json = map.json;
         addLine("map_intro.property.room_count", intValue(json, "roomCount", 1), wrapW);
         addTaskSet(json, "disabledTasks", "map_intro.property.disabled_tasks", false, wrapW);
+        addRoleSet(json, "disabledRoles", "map_intro.property.disabled_roles", wrapW);
         addTaskSet(json, "enableSceneTask", "map_intro.property.scene_tasks", true, wrapW);
         if (boolValue(json, "minigameQuestEnabled", false))
             addLine("map_intro.property.minigame_quest", wrapW);
@@ -329,6 +325,34 @@ public class MapIntroduceScreen extends Screen {
         if ("raed_book".equals(normalized))
             normalized = "read_book";
         return Component.translatableWithFallback("task." + normalized, id).getString();
+    }
+
+    private void addRoleSet(JsonObject json, String key, String labelKey, int wrapW) {
+        if (!json.has(key) || !json.get(key).isJsonArray() || json.getAsJsonArray(key).isEmpty())
+            return;
+        List<String> names = new ArrayList<>();
+        for (JsonElement element : json.getAsJsonArray(key)) {
+            names.add(roleName(element.getAsString()));
+        }
+        addLine(labelKey, String.join(", ", names), wrapW);
+    }
+
+    private String roleName(String id) {
+        SRERole role = null;
+        ResourceLocation location = ResourceLocation.tryParse(id);
+        if (location != null) {
+            role = TMMRoles.getRole(location);
+        }
+        if (role == null) {
+            String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
+            for (SRERole candidate : TMMRoles.ROLES.values()) {
+                if (candidate.identifier().getPath().equals(path)) {
+                    role = candidate;
+                    break;
+                }
+            }
+        }
+        return role == null ? id : role.getName().getString();
     }
 
     private void addEffects(JsonObject json, int wrapW) {

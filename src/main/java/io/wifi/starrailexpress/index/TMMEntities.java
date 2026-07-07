@@ -3,12 +3,7 @@ package io.wifi.starrailexpress.index;
 import dev.doctor4t.ratatouille.util.registrar.EntityTypeRegistrar;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block.entity.SeatEntity;
-import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
-import io.wifi.starrailexpress.content.entity.GrenadeEntity;
-import io.wifi.starrailexpress.content.entity.NoteEntity;
-import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
-import io.wifi.starrailexpress.content.entity.StickyGrenadeEntity;
-import io.wifi.starrailexpress.content.entity.TimedGrenadeEntity;
+import io.wifi.starrailexpress.content.entity.*;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -47,6 +42,13 @@ public interface TMMEntities {
             EntityType.Builder.of(TimedGrenadeEntity::new, MobCategory.MISC)
                     .sized(.2f, .2f)
                     .clientTrackingRange(128)
+    );
+
+    EntityType<ZiplineRiderEntity> ZIPLINE_RIDER = registrar.create("zipline_rider",
+            EntityType.Builder.of(ZiplineRiderEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(256)
+                    .noSummon()
     );
 
     static void initialize() {

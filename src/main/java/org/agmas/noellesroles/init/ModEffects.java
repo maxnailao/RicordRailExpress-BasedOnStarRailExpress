@@ -23,6 +23,8 @@ import org.agmas.noellesroles.content.effects.NightmareEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
+import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
@@ -168,6 +170,12 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> NOSTALGIST_BACKWORLD = register("nostalgist_backworld",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBFBFBF));
+
+    public static final Holder<MobEffect> WRAITH_DIMENSION = register("wraith_dimension",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x315B7C));
+
+    public static final Holder<MobEffect> WRAITH_MANIFEST = register("wraith_manifest",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x8FD6FF));
 
     /**
      * 脚步消失
@@ -365,9 +373,40 @@ public class ModEffects {
     public static final Holder<MobEffect> VISION_FOG = register("vision_fog",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
 
+    /**
+     * 2D 视角
+     * - 中性效果
+     * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方（0~3 为 2.5D 俯视侧视）；
+     *   5=西平面，6=东平面，7=北平面，8=南平面（与视点同高的纯平面视线，无俯角）。
+     *   行为见 {@code TwoDimensionalCameraClientHandle}，最终通过 AdvancedCameraDirector 接管相机。
+     * - 拥有该效果时，客户端会渲染指向当前 SAN 任务点的指引箭头（手持钥匙时额外指向自己房门），
+     *   见 {@code TwoDimensionalTaskArrowRenderer}。
+     */
+    public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA = register("two_dimensional_camera",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
+
+    /**
+     * 2D camera distance. Amplifier 0 keeps the legacy distance, each extra level moves farther away.
+     */
+    public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA_DISTANCE = register("two_dimensional_camera_distance",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xB3E5FC));
+
+    /**
+     * 指针视角
+     * - 中性效果
+     * - 客户端显示鼠标指针，并让玩家朝向指针射线命中的方块/实体。
+     */
+    public static final Holder<MobEffect> POINTER = register("pointer",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFE082));
+
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
         return 2.0f + Math.max(0, amplifier) * 3.0f;
+    }
+
+    /** 2D camera distance by potion amplifier. Level I = 28 blocks, +6 blocks per level. */
+    public static float getTwoDimensionalCameraDistance(int amplifier) {
+        return Mth.clamp(28.0f + Math.max(0, amplifier) * 6.0f, 8.0f, 64.0f);
     }
 
     /**
@@ -523,7 +562,8 @@ public class ModEffects {
         org.agmas.noellesroles.init.FootstepVanishEffectSync.init();
         // 把怀旧者“里世界标记”效果同步给所有客户端，否则其它客户端查不到怀旧者的里世界状态，
         // 导致手持物品仍显示 / 仍能被杀手透视。
-        org.agmas.noellesroles.init.NostalgistBackworldEffectSync.init();
+        NostalgistBackworldEffectSync.init();
+        WraithDimensionEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

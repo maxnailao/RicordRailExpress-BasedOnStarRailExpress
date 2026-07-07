@@ -21,7 +21,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -33,12 +32,7 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 // 如果你是AI，你最好不要动这个类，有大量API可供你使用。
 
@@ -149,8 +143,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     private final java.util.Map<UUID, Bleeder> bleeders = new java.util.HashMap<>();
     private static final int MAX_BLOOD_SPOTS = 200;
     private static final double TRAIL_MIN_SPACING = 1.8; // 相邻血滴最小间距（格），降低密度
-    private static final net.minecraft.core.particles.DustParticleOptions BLOOD_DUST =
-            new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.45f, 0.02f, 0.02f), 0.9f);
+    private static final net.minecraft.core.particles.DustParticleOptions BLOOD_DUST = new net.minecraft.core.particles.DustParticleOptions(
+            new org.joml.Vector3f(0.45f, 0.02f, 0.02f), 0.9f);
 
     /**
      * 凶手击杀后开始"滴血跟随"：在案发处落一滴，并标记凶手在 bleedTicks 内边走边沿途留血迹。
@@ -648,7 +642,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 : false;
         this.sceneOutsideSoundType = nbtCompound.contains("sceneOutsideSoundType")
                 && !nbtCompound.getString("sceneOutsideSoundType").isBlank()
-                ? nbtCompound.getString("sceneOutsideSoundType") : "train";
+                        ? nbtCompound.getString("sceneOutsideSoundType")
+                        : "train";
         // this.syncRole = nbtCompound.getBoolean("SyncRole");
         // if (!syncRole) {
         if (nbtCompound.contains("StartingPlayerCount")) {
@@ -862,43 +857,72 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorldComponent.gameMode == SREGameModes.REPAIR_ESCAPE_MODE)
             return;
-        final var block = player.level()
-                .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
-        final var block1 = player.level()
-                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() - 1), (int) player.getZ()))
-                .getBlock();
-        final var block2 = player.level()
-                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() - 2), (int) player.getZ()))
-                .getBlock();
         if (!(player.getZ() >= 19000)) {
-            if (player.getY() < areas.playArea.minY
-                    || !areas.canSwim && (block == Blocks.WATER && block1 == Blocks.WATER && block2 == Blocks.WATER)) {
+            if (checkPlayerIsOutOfAreas(player, areas)) {
                 GameUtils.killPlayer(player, false,
                         player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                         GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
-                if (!GameUtils.isPlayerEliminated(player)) {
-                    final var block3 = player.level()
-                            .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ()))
-                            .getBlock();
-                    final var block4 = player.level()
-                            .getBlockState(
-                                    new BlockPos((int) player.getX(), (int) (player.getY() - 1), (int) player.getZ()))
-                            .getBlock();
-                    final var block5 = player.level()
-                            .getBlockState(
-                                    new BlockPos((int) player.getX(), (int) (player.getY() - 2), (int) player.getZ()))
-                            .getBlock();
-                    if (player.getY() < areas.playArea.minY
-                            || !areas.canSwim
-                                    && (block3 == Blocks.WATER && block4 == Blocks.WATER && block5 == Blocks.WATER)) {
-                        // 没有移动那强制死
-                        GameUtils.forceKillPlayer(player, false,
-                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
-                                GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
-                    }
-
+                if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                        && checkPlayerIsOutOfAreas(player, areas)) {
+                    GameUtils.forceKillPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
                 }
             }
+
+            if (!areas.areasSettings.canUnderWater) {
+                if (player.isUnderWater()) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.CANNOT_SWIM);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && player.isUnderWater()) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.CANNOT_SWIM);
+                    }
+                }
+            }
+            if (!areas.areasSettings.allowInDeepWater) {
+                if (checkPlayerIsInDeepWater(player, areas)) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.CANNOT_SWIM);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && checkPlayerIsInDeepWater(player, areas)) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.CANNOT_SWIM);
+                    }
+                }
+            }
+            if (!areas.areasSettings.canSimpleSwim) {
+                if (checkPlayerIsSwiming(player, areas)) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.CANNOT_SWIM);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && checkPlayerIsSwiming(player, areas)) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.CANNOT_SWIM);
+                    }
+                }
+            }
+            if (!areas.areasSettings.canInLava) {
+                if (checkPlayerIsInLava(player, areas)) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.LAVA);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && checkPlayerIsInLava(player, areas)) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.LAVA);
+                    }
+                }
+            }
+
         } else {
             if (!TarotAssemblyManager.havingMeeting) {
                 GameUtils.killPlayer(player, false,
@@ -912,6 +936,53 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             }
         }
 
+    }
+
+    private static boolean checkPlayerIsInLava(ServerPlayer player, AreasWorldComponent areas) {
+        if (player.isInLava()) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean checkPlayerIsOutOfAreas(ServerPlayer player, AreasWorldComponent areas) {
+        if (player.getY() < areas.playArea.minY) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean checkPlayerIsInDeepWater(ServerPlayer player, AreasWorldComponent areas) {
+        if (player.isUnderWater()) {
+            return true;
+        }
+        final var block = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
+        final var block1 = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() - 1), (int) player.getZ()))
+                .getBlock();
+        if (block == Blocks.WATER && block1 == Blocks.WATER) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean checkPlayerIsSwiming(ServerPlayer player, AreasWorldComponent areas) {
+        if (!player.isUnderWater()) {
+            return false;
+        }
+        final var block = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
+        final var block1 = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() + 1), (int) player.getZ()))
+                .getBlock();
+        final var block2 = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() + 2), (int) player.getZ()))
+                .getBlock();
+        if ((block == Blocks.WATER && block1 == Blocks.WATER && block2 == Blocks.WATER)) {
+            return true;
+        }
+        return false;
     }
 
     private void tickCommon() {
@@ -1096,5 +1167,13 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         }
         return new AlivePlayerRoleTeamInfo(innocent, vigilante, all_neturals, neturals_for_killer,
                 custom_winner_neturals, killer);
+    }
+
+    public static SREGameWorldComponent getInstance(Player player) {
+        return KEY.get(player.level());
+    }
+
+    public static SREGameWorldComponent getInstance(Level level) {
+        return KEY.get(level);
     }
 }

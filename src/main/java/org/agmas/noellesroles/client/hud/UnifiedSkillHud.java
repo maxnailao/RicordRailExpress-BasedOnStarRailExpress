@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
@@ -26,23 +27,23 @@ public final class UnifiedSkillHud {
     }
 
     // ── Colour palette ──────────────────────────────────────────────
-    private static final int BG_READY      = 0x40104018; // translucent green
-    private static final int BG_COOLDOWN   = 0x40402020; // translucent red
-    private static final int BG_EMPTY      = 0x30202020; // translucent grey
-    private static final int FG_READY      = 0xFF55FF55;
-    private static final int FG_COOLDOWN   = 0xFFFF7755;
-    private static final int FG_EMPTY      = 0xFF888888;
-    private static final int FG_MUTED      = 0xFFAAAAAA;
-    private static final int INDICATOR_ON  = 0xFF40E840;
+    private static final int BG_READY = 0x40104018; // translucent green
+    private static final int BG_COOLDOWN = 0x40402020; // translucent red
+    private static final int BG_EMPTY = 0x30202020; // translucent grey
+    private static final int FG_READY = 0xFF55FF55;
+    private static final int FG_COOLDOWN = 0xFFFF7755;
+    private static final int FG_EMPTY = 0xFF888888;
+    private static final int FG_MUTED = 0xFFAAAAAA;
+    private static final int INDICATOR_ON = 0xFF40E840;
     private static final int INDICATOR_OFF = 0xFF555555;
-    private static final int PASSIVE_FG    = 0xFF9A9ACD;
-    private static final int CHARGE_FG     = 0xFFE0C850;
+    private static final int PASSIVE_FG = 0xFF9A9ACD;
+    private static final int CHARGE_FG = 0xFFE0C850;
 
     // ── Layout constants ────────────────────────────────────────────
-    private static final int PAD       = 4;
-    private static final int CARD_H    = 14;
-    private static final int GAP       = 2;
-    private static final int DOT_R     = 2;
+    private static final int PAD = 4;
+    private static final int CARD_H = 14;
+    private static final int GAP = 2;
+    private static final int DOT_R = 2;
 
     public static void register() {
         CommonHudRenderCallback.EVENT.register((graphics, deltaTracker) -> {
@@ -95,9 +96,11 @@ public final class UnifiedSkillHud {
                 RoleSkill.Definition skill = visible.get(i);
                 SREAbilityPlayerComponent.SkillState state = ability.getSkillState(skill.id());
                 boolean selected = skill.equals(visible.get(Math.min(ability.getSelectedSkill(), visible.size() - 1)));
-                if (selected) selectedIdx = idx;
+                if (selected)
+                    selectedIdx = idx;
 
                 Component stateText;
+                boolean isReady = false;
                 int color;
                 int bg;
                 if (state.cooldown > 0) {
@@ -113,6 +116,7 @@ public final class UnifiedSkillHud {
                     stateText = Component.translatable("hud.sre.skill.ready");
                     color = FG_READY;
                     bg = BG_READY;
+                    isReady = true;
                 }
 
                 Component line = Component.translatable(skill.nameKey())
@@ -125,12 +129,18 @@ public final class UnifiedSkillHud {
                             .append(Component.translatable("hud.sre.skill.charges_remaining", state.charges)
                                     .withStyle(s -> s.withColor(CHARGE_FG)));
                 }
+                if (skill.shifted() && isReady) {
+                    line = line.copy()
+                            .append(Component.translatable("hud.sre.skill.shift_to_use"))
+                            .withStyle(ChatFormatting.GRAY);
+                }
 
                 lines[idx] = line;
                 colors[idx] = selected ? color : FG_MUTED;
                 bgColors[idx] = bg;
                 textWidths[idx] = client.font.width(line);
-                if (textWidths[idx] > maxTextW) maxTextW = textWidths[idx];
+                if (textWidths[idx] > maxTextW)
+                    maxTextW = textWidths[idx];
                 idx++;
             }
 
@@ -147,7 +157,8 @@ public final class UnifiedSkillHud {
                 colors[idx] = PASSIVE_FG;
                 bgColors[idx] = 0x30181838;
                 textWidths[idx] = client.font.width(passiveLine);
-                if (textWidths[idx] > maxTextW) maxTextW = textWidths[idx];
+                if (textWidths[idx] > maxTextW)
+                    maxTextW = textWidths[idx];
             }
 
             // Rendering — anchored to bottom-right

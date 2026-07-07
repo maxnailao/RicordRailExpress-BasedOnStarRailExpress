@@ -62,6 +62,10 @@ public enum ForensicCategory {
             return EXPLOSIVE;
         }
         if (reason.equals(GameConstants.DeathReasons.FELL_OUT_OF_TRAIN)
+                || reason.equals(GameConstants.DeathReasons.FALL_DAMAGE)
+                || reason.equals(GameConstants.DeathReasons.CANNOT_SWIM)
+                || reason.equals(GameConstants.DeathReasons.LAVA)
+                || reason.equals(GameConstants.DeathReasons.DROWNED)
                 || reason.equals(GameConstants.DeathReasons.MANHOLE_SUFFOCATION)
                 || reason.equals(GameConstants.DeathReasons.STALACTITE_IMPALE)
                 || reason.equals(GameConstants.DeathReasons.FLAMETHROWER_BURNED)

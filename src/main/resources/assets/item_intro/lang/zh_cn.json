@@ -1,5 +1,5 @@
 {
-  "item.noellesroles.crystal_ball.desc": "占卜家专用。右键对准一具尸体占卜，得知死者的职业与名字（60 秒冷却，已占卜的尸体不可再次占卜）。若占卜对象为亡语杀手伪装的尸体，视为其用刀刺死了自己。",
+  "item.noellesroles.crystal_ball.desc": "占卜家专用。右键对准尸体开始 10 秒施法（期间静止不动），完成后揭示死亡时间 + 随机凶手线索（三选一：凶手存活/死亡+名字、凶手职业、凶手全局高亮1秒）。50% 概率破碎，60 秒冷却。若占卜对象为亡语杀手伪装的尸体，视为其用刀刺死了自己。",
   "item.noellesroles.deduction_book.desc": "大侦探专用。右键打开推理之书查看已掌握的线索；对着尸体右键可推断出凶手的一条特征。每页对应一名凶手，线索≥3条时可点击「目标情况」查明其方位。",
   "item.exposure.photograph_frame.desc": "摄影师专用道具。售价 200 金币，一局最多购买两次。在冒险模式下也可放置。将摄影师拍摄的照片放入画框后，任何玩家穿过画框即可传送到照片的拍摄地点；每次穿越会被致盲 3 秒，且需冷却 3 秒才能再次穿越。局内开始时仅清除摄影师放置的画框。",
   "item.noellesroles.wizard_staff.desc": "巫师专用。右键蓄力释放魔法火焰箭，可穿透多名玩家；同一目标累积 2 次后将在 3 秒后死亡。击杀前无冷却，击杀后进入与刀相同的冷却；左键击退目标。Explosion! 就绪时，下一次施放为可穿墙的九环火球术。",
@@ -7,8 +7,8 @@
   "item.trainmurdermystery.bat.desc": "原版攻击逻辑，左键打人。坐在轮椅上无法攻击。",
   "item.trainmurdermystery.defense_vial.desc": "亡命徒可直接右键饮用获得护盾。\n普通玩家可以右键托盘，将防御药剂倒在托盘上。\n下一个拿取防御药剂的玩家食用/饮用物品后即可获得护盾。\n此方法获得的护盾最多获得1层。",
   "item.noellesroles.bucket_of_h2so4.desc": "清道夫道具。\n右键尸体可以清除。",
-  "item.noellesroles.c4.desc": "右键投掷，若向玩家投掷则会附着在玩家身上，否则附着在落地处的方块。C4被引燃时会发出滴的声音，若期间没有被拆除，则会在数秒后爆炸，炸死6格范围内的玩家。C4被除了钳工以外的玩家使用拆弹钳拆除时，有20%%的概率直接引爆C4。",
-  "item.noellesroles.c4_detonator.desc": "右键使用，引燃场景中最后一个投掷的C4。",
+  "item.noellesroles.c4.desc": "右键投掷，若向玩家投掷则会附着在玩家身上，否则附着在落地处的方块。C4被引燃时会发出滴的声音，若期间没有被拆除，则会在数秒后爆炸，炸死7格范围内的玩家；爆炸可穿透1格厚墙体，但不能穿透2格厚墙体。被绑定C4的玩家死亡时，C4会掉落在地上并按剩余时间继续引爆。C4被除了钳工以外的玩家使用拆弹钳拆除时，有20%%的概率直接引爆C4。",
+  "item.noellesroles.c4_detonator.desc": "右键使用，依次引燃场景中投掷的C4。可同时引爆多个C4。",
   "item.noellesroles.camera_shears.desc": "拥有3点耐久，30秒CD。右键摄像头可使摄像头失灵90秒。",
   "item.noellesroles.cooked_food.desc": "由厨师烹饪。烹饪后带有各种效果。",
   "item.noellesroles.letter.desc": "开启任务点透视时，拿着信封可以看到物品售货机。",
@@ -135,7 +135,7 @@
   "item.noellesroles.mercenary_contract.desc": "雇佣兵职业专属道具，其他人可以右键签订雇佣契约，选择目标并支付175金币，雇佣兵右键已签订的契约能够获得雇佣金并为雇佣兵提供通缉目标。契约可以按Q键丢出。",
   "item.noellesroles.riot_shield.desc": "保安职业专属物品。装备在主手/副手举盾时可以抵挡一次正面的攻击并提供保护。",
   "item.noellesroles.baton.desc": "保安职业专属物品。近战武器，拥有4点耐久。左键攻击，可以使目标眩晕，若目标在4秒内受到两次棍击则造成一次击杀。",
-  "item.noellesroles.bone_staff.desc": "亡灵之主职业专属物品。近战武器，拥有5点耐久。左键攻击玩家可为目标注入20%感染值，每次攻击消耗1点耐久。目标感染值满后会被转化为亡灵。",
+  "item.noellesroles.bone_staff.desc": "亡灵之主职业专属物品。近战武器，拥有5点耐久。左键攻击玩家可为目标注入24%感染值，每次攻击消耗1点耐久。目标感染值满后会被转化为亡灵。",
   "item.noellesroles.leon_blue_herb.desc": "里昂专属物品。右键立即使用，刷新格斗体术的冷却。场上仅剩 6 位玩家时获得；里昂死亡后不会随手枪一起掉落。",
   "item.noellesroles.leon_red_herb.desc": "里昂专属物品。长按右键使用，为自己套上一层护盾（不可叠加）。场上仅剩 3 位玩家时获得；里昂死亡后不会随手枪一起掉落。",
   "item.noellesroles.radio.desc": "右键使用，可以与其他玩家进行远程通讯。",
@@ -157,5 +157,6 @@
   "shop.noellesroles.undead_lord.plague_fog.desc": "在脚下释放毒雾，范围内每秒 +5% 感染，持续 10 秒。",
   "shop.noellesroles.undead_lord.summon_charm.desc": "立即在身边召唤 2 个临时亡灵，持续 45 秒。60 秒冷却，且召唤数量不会超过亡灵上限。",
   "shop.noellesroles.undead_lord.infection_amp.desc": "接下来 60 秒内亡灵攻击的感染值翻倍。",
-  "item.noellesroles.reasoner_compass.desc": "推理师专属物品。游戏开始 2 分钟后自动获得，右键打开罗盘占卜界面。每次提交答案后冷却 35 秒，全部问题推理正确即可独立胜利。"
+  "item.noellesroles.reasoner_compass.desc": "推理师专属物品。游戏开始 2 分钟后自动获得，右键打开罗盘占卜界面。每次提交答案后冷却 35 秒，全部问题推理正确即可独立胜利。",
+  "item.noellesroles.inferior_lockpick.desc": "冤魂专属的劣质开锁器，继承开锁器的开门与封锁特性；每次成功用于开锁后进入 15 秒冷却。"
 }

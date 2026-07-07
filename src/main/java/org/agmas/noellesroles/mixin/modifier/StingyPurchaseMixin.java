@@ -1,9 +1,9 @@
 package org.agmas.noellesroles.mixin.modifier;
 
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -40,9 +40,6 @@ public class StingyPurchaseMixin {
             if (role == null || !GameUtils.isPlayerAliveAndSurvival(sp)) return;
             
             List<ShopEntry> entries = ShopContent.getShopEntries(role.getIdentifier());
-            if (entries.isEmpty() && gameWorld.canUseKillerFeatures(sp)) {
-                entries = ShopContent.defaultKnifeEntries;
-            }
             
             if (index >= 0 && index < entries.size()) {
                 ShopEntry entry = entries.get(index);

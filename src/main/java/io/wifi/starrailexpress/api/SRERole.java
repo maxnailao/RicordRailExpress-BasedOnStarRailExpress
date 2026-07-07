@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
@@ -28,40 +29,32 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
-
+//只要Color别的都不要
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.*;
+import java.util.function.*;
 
 public abstract class SRERole extends SREAbstractInfoClass {
     protected final Random random = new Random();
-    private ResourceLocation identifier;
-    private boolean canSetSpawnInfoInConfig = true;
-    private boolean canSeeCoin = true;
-    private boolean canSeeBodyItems = false;
-    private boolean canGetBodyItems = false;
-    private boolean canBeRandomed = true;
-    private boolean canSeeBodyDeathReason = false;
-    private boolean canSeeBodyRoleInfo = false;
-    private boolean canUseInstinct = false;
-    private boolean canIgnoreBlackout = false;
-    private boolean canUseSkillWhileSpectator = false;
-    private boolean mafiaTeam = false;
+    protected ResourceLocation identifier;
+    protected boolean canSetSpawnInfoInConfig = true;
+    protected boolean canSeeCoin = true;
+    protected boolean canSeeBodyItems = false;
+    protected boolean canGetBodyItems = false;
+    protected boolean canBeRandomed = true;
+    protected boolean canSeeBodyDeathReason = false;
+    protected boolean canSeeBodyRoleInfo = false;
+    protected boolean canUseInstinct = false;
+    protected boolean canIgnoreBlackout = false;
+    protected boolean canUseSkillWhileSpectator = false;
+    protected boolean mafiaTeam = false;
     /**
      * -1
      * 表示不设置。将不会调整普通刷新最大数量。与canSetSpawnInfoInConfig设置为false不同的是，此不会覆盖SpawnInfo。而canSetSpawnInfoInConfig将会覆盖SpawnInfo来达到配置项起作用。
@@ -74,14 +67,164 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
-    private SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.all;
-    private boolean specialVigilante = false;
-    private boolean refreshableSpecialVigilante = false;
-    private int refreshableSpecialVigilanteChance = -1;
-    private int occupiedRoleCount = 1;
+    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.ALL;
+    protected boolean specialVigilante = false;
+    protected boolean refreshableSpecialVigilante = false;
+    protected int refreshableSpecialVigilanteChance = -1;
+    protected int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
-    public HashSet<SRERole> opposingJobs = new HashSet<>();
+
+    public ArrayList<SRERole> occupationRoles = new ArrayList<>();
+    public HashSet<SRERole> opposingRoles = new HashSet<>();
+
+    /**
+     * 删除关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole clearOccupationRole() {
+        for (var i : occupationRoles) {
+            removeOccupationRole(i);
+            i.removeRelatedRole(this);
+        }
+        return this;
+    }
+
+    /**
+     * 删除关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole removeOccupationRole(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.remove(i);
+            i.removeRelatedRole(this);
+        }
+        return this;
+    }
+
+    public boolean isOccupationRole(SRERole... role) {
+        for (var i : role) {
+            if (!this.occupationRoles.contains(i))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * 添加关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole addOccupationRoleOnce(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.add(i);
+            i.addRelatedRole(this);
+        }
+        // 去重。
+        occupationRoles = new ArrayList<>(new LinkedHashSet<>(occupationRoles));
+        return this;
+    }
+
+    /**
+     * 添加关联职业
+     * 
+     * @param role
+     * @return
+     */
+    public SRERole addOccupationRole(SRERole... role) {
+        for (var i : role) {
+            this.occupationRoles.add(i);
+            i.addRelatedRole(this);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的职业。互相添加。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addBothRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null) {
+                this.relatedRoles.add(i);
+                i.addRelatedRole(this);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole removeRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符，并且给修饰符添加此。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addBothRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null) {
+                this.relatedModifiers.add(i);
+                i.addRelatedRole(this);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole addRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null)
+                this.relatedModifiers.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SRERole removeRelatedModifier(SREModifier... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedModifiers.remove(i);
+        }
+        return this;
+    }
 
     /**
      * 添加显示FLAG
@@ -221,6 +364,58 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    // ───────────────────────── 任务刷新控制 / Task Refresh Control ─────────────────────────
+
+    /** 该职业不可刷出的任务类型（黑名单）。 */
+    private final Set<SREPlayerTaskComponent.Task> unrefreshableTasks = new HashSet<>();
+    /** 该职业仅可刷出的任务类型（白名单，为空表示不限制）。 */
+    private final Set<SREPlayerTaskComponent.Task> onlyRefreshableTasks = new HashSet<>();
+
+    /** 指定该职业不可刷出的任务类型（链式，可多次调用叠加）。 */
+    public SRERole addUnrefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        this.unrefreshableTasks.addAll(Arrays.asList(tasks));
+        return this;
+    }
+
+    /** 移除黑名单中的任务类型。 */
+    public SRERole removeUnrefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        Arrays.asList(tasks).forEach(this.unrefreshableTasks::remove);
+        return this;
+    }
+
+    /** 指定该职业仅可刷出的任务类型（白名单，链式，可多次调用叠加；白名单为空时不限制）。 */
+    public SRERole addOnlyRefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        this.onlyRefreshableTasks.addAll(Arrays.asList(tasks));
+        return this;
+    }
+
+    /** 移除白名单中的任务类型。 */
+    public SRERole removeOnlyRefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        Arrays.asList(tasks).forEach(this.onlyRefreshableTasks::remove);
+        return this;
+    }
+
+    /** 获取黑名单（只读）。 */
+    public Set<SREPlayerTaskComponent.Task> getUnrefreshableTasks() {
+        return Collections.unmodifiableSet(this.unrefreshableTasks);
+    }
+
+    /** 获取白名单（只读）。 */
+    public Set<SREPlayerTaskComponent.Task> getOnlyRefreshableTasks() {
+        return Collections.unmodifiableSet(this.onlyRefreshableTasks);
+    }
+
+    /**
+     * 判断该职业玩家能否刷出指定任务。任务生成时对随机池中的每个候选任务调用。
+     * 默认实现：白名单非空时只允许白名单内的任务，其余按黑名单排除；可重写实现动态逻辑。
+     */
+    public boolean canRefreshTask(Player player, SREPlayerTaskComponent.Task taskType) {
+        if (!this.onlyRefreshableTasks.isEmpty() && !this.onlyRefreshableTasks.contains(taskType)) {
+            return false;
+        }
+        return !this.unrefreshableTasks.contains(taskType);
+    }
+
     public SRERole setCanSeeBodyItems(boolean flag) {
         canSeeBodyItems = flag;
         return this;
@@ -288,7 +483,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        all, qiyucun, bigmap, underwater, fly, trap
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
@@ -296,12 +491,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
-        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.all : specialMapRole;
+        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.ALL : specialMapRole;
         return this;
     }
 
     public boolean isSpecialMapRole() {
-        return this.specialMapRole != SpecialMapRoleMap.all;
+        return this.specialMapRole != SpecialMapRoleMap.ALL;
     }
 
     public boolean isSpecialVigilante() {
@@ -337,9 +532,15 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole removeOpposingJobs(SRERole role) {
-        this.opposingJobs.remove(role);
+    public SRERole removeOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.opposingRoles.remove(r);
+        }
         return this;
+    }
+
+    public Set<SRERole> getOpposingRoles() {
+        return new HashSet<>(this.opposingRoles);
     }
 
     /**
@@ -348,9 +549,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole addTwoWayOpposingJobs(SRERole role) {
-        this.opposingJobs.add(role);
-        role.opposingJobs.add(this);
+    public SRERole addTwoWayOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.addOpposingRole(role);
+            r.addOpposingRole(this);
+        }
         return this;
     }
 
@@ -360,8 +563,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param role
      * @return
      */
-    public SRERole addOpposingJobs(SRERole role) {
-        this.opposingJobs.add(role);
+    public SRERole addOpposingRole(SRERole... role) {
+        for (var r : role) {
+            this.opposingRoles.add(r);
+        }
         return this;
     }
 
@@ -371,9 +576,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param roles
      * @return
      */
-    public SRERole setOpposingJobs(List<SRERole> roles) {
-        this.opposingJobs.clear();
-        this.opposingJobs.addAll(roles);
+    public SRERole setOpposingRoles(List<SRERole> roles) {
+        this.opposingRoles.clear();
+        this.opposingRoles.addAll(roles);
         return this;
     }
 
@@ -435,10 +640,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    private int color;
-    private boolean isInnocent;
-    private boolean canUseKiller;
-    private MoodType moodType;
+    protected int color;
+    protected boolean isInnocent;
+    protected boolean canUseKiller;
+    protected MoodType moodType;
 
     public boolean isAutoReset() {
         return autoReset;
@@ -449,14 +654,14 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    private boolean isNeutrals = false;
-    private boolean autoReset = true;
-    private boolean ableToPickUpRevolver;
-    private boolean isNeutralForKiller = false;
-    private boolean canSeeTeammateKiller = true;
-    private boolean canUseSabotage = false;
-    private boolean canJumpManhole = false;
-    private boolean canAcrossFog = false;
+    protected boolean isNeutrals = false;
+    protected boolean autoReset = true;
+    protected boolean ableToPickUpRevolver;
+    protected boolean isNeutralForKiller = false;
+    protected boolean canSeeTeammateKiller = true;
+    protected boolean canUseSabotage = false;
+    protected boolean canJumpManhole = false;
+    protected boolean canAcrossFog = false;
 
     public boolean isNeutrals() {
         return this.isNeutrals;
@@ -548,7 +753,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    private boolean isVigilanteTeam;
+    protected boolean isVigilanteTeam;
 
     public int getColor() {
         return color;
@@ -655,8 +860,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return InteractionResult.PASS;
     }
 
+    @Nullable
     public List<ShopEntry> getShopEntries() {
-        return new ArrayList<>();
+        return null;
     }
 
     /**
@@ -718,7 +924,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     }
 
-    public static SREAbilityPlayerComponent getCooldownComponent(Player player) {
+    public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
         return SREAbilityPlayerComponent.KEY.get(player);
     }
 
@@ -746,20 +952,32 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return InteractionResult.PASS;
     }
 
-    private ComponentKey<? extends RoleComponent> componentKey;
-    private int maxSprintTime;
-    private ToIntFunction<Player> customSprintTimeGetter = null;
-    private boolean canSeeTime;
-    private boolean isOtherModeRole = false;
+    protected ComponentKey<? extends RoleComponent> componentKey;
+    protected int maxSprintTime;
+    protected ToIntFunction<Player> customSprintTimeGetter = null;
+    protected boolean canSeeTime;
+    protected boolean isOtherModeRole = false;
 
     public Consumer<LimitedInventoryScreen> getAddChild() {
         return addChild;
     }
 
-    private Consumer<LimitedInventoryScreen> addChild;
-    private boolean canAutoAddMoney = false;
-    private boolean bodyKillerVisibility = false;
+    protected Consumer<LimitedInventoryScreen> addChild;
+    protected boolean canAutoAddMoney = false;
+    protected boolean bodyKillerVisibility = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
+    protected boolean bodyNameVisibility = false;
+
+    /**
+     * 设置是否允许看到尸体的名字
+     * 
+     * @param flag
+     * @return
+     */
+    public SRERole setCanSeeBodyName(boolean flag) {
+        this.bodyNameVisibility = flag;
+        return this;
+    }
 
     /**
      * 设置是否允许看到尸体的杀手
@@ -939,6 +1157,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = count;
         return this;
     };
 
@@ -950,18 +1169,35 @@ public abstract class SRERole extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
     public SRERole setDefaultEnableMaxPlayerCount(int count) {
         defaultEnableMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
     public SRERole setDefaultEnableNeededPlayerCount(int count) {
         defaultEnableNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
         return this;
     };
+
+    /**
+     * 修饰符普通玩家不可视
+     * 隐藏修饰符
+     * 
+     * @return
+     */
+    public SRERole setHiddenForRoleRotation(boolean flag) {
+        if (flag)
+            this.addFlag("inner.role_rotation.hidden");
+        else
+            this.removeFlag("inner.role_rotation.hidden");
+        return this;
+    }
 
     public SRERole setSpawnInfo(Function<SpawnInfo, SpawnInfo> func) {
         this.spawnInfo = func.apply(this.spawnInfo);
@@ -981,6 +1217,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultEnableChance(int count) {
         defaultEnableChance = count;
+        this.spawnInfo.enableChance = count;
         return this;
     };
 
@@ -1032,6 +1269,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return PlayerRoleWeightManager.getRoleType(this);
     }
 
+    public boolean canSeeBodyName() {
+        return this.bodyNameVisibility;
+    };
+
     public boolean canSeeBodyKiller() {
         return this.bodyKillerVisibility;
     };
@@ -1054,7 +1295,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 
@@ -1148,7 +1389,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public Component getName() {
         String translationKey = "announcement.star.role." + this.identifier().getPath();
         // if (!Language.getInstance().has(translationKey)) {
-        //     return Component.translatable("info.screen.role.name.error", translationKey);
+        // return Component.translatable("info.screen.role.name.error", translationKey);
         // }
         return Component.translatable(translationKey);
     }
@@ -1180,5 +1421,17 @@ public abstract class SRERole extends SREAbstractInfoClass {
             return getDescription();
         }
         return Component.translatable(path);
+    }
+
+    public boolean hasOccupationRole() {
+        return this.occupationRoles.isEmpty();
+    }
+
+    public ArrayList<SRERole> getoccupationRoles() {
+        return new ArrayList<>(this.occupationRoles);
+    }
+
+    public Component getGoal() {
+        return Component.translatable("announcement.star.goals." + this.identifier().getPath());
     }
 }

@@ -10,9 +10,6 @@ import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-
-import java.awt.Color;
-
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
@@ -21,6 +18,8 @@ import org.agmas.noellesroles.role.touhou.ForestRoles;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
+
+import java.awt.*;
 
 /**
  * 彩蛋角色类，受到彩蛋刷新概率影响
@@ -240,7 +239,8 @@ public class BounsRoles {
                     return texture;
                 }
             }, "creator_team")
-            .setDefaultEnableChance(10);
+            .setDefaultEnableChance(10)
+            .addRelatedRole(ModRoles.VOODOO);
 
     public static void init() {
         RedHouseRoles.init();

@@ -3,10 +3,10 @@ package io.wifi.starrailexpress.mixin.entity;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.rules.CollisionRules;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerAFKComponent;
 import io.wifi.starrailexpress.event.CanCollideWith;
+import io.wifi.starrailexpress.rules.CollisionRules;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,9 +68,12 @@ public class EntityMixin {
                     return true;
                 }
                 if (other instanceof Player so) {
-                    // final var role = gameWorldComponent.getRole((Player) self);
-                    // final var role1 = gameWorldComponent.getRole((Player) other);
-                    return CollisionRules.canCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
+                    if (so.level().isClientSide) {
+                        return false;
+                    }
+                    // 此处：渲染进程和服务端不一致。所以判断的时候应该分开判断。
+                    boolean flag = CollisionRules.cantCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
+                    return flag;
                 }
             }
         }

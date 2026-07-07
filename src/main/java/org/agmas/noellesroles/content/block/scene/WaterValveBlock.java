@@ -1,10 +1,6 @@
 package org.agmas.noellesroles.content.block.scene;
 
-import java.awt.Color;
-import java.util.function.Consumer;
-
 import com.mojang.serialization.MapCodec;
-
 import io.wifi.starrailexpress.content.block.PanelBlock;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import net.minecraft.core.BlockPos;
@@ -23,6 +19,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.agmas.noellesroles.content.block_entity.scene.WaterValveBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.jetbrains.annotations.Nullable;
+
+import java.awt.*;
+import java.util.function.Consumer;
 
 /**
  * 水阀装置（镶板方块）：破坏任务激活时漏水，玩家右键打开关闭水阀小游戏。
@@ -55,7 +54,8 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+    protected void createBlockStateDefinition(
+            StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(ACTIVE, CLOSED);
     }
@@ -82,8 +82,10 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state,
             BlockEntityType<T> type) {
-        if (world.isClientSide) return null;
-        if (type != ModSceneBlocks.WATER_VALVE_ENTITY) return null;
+        if (world.isClientSide)
+            return null;
+        if (type != ModSceneBlocks.WATER_VALVE_ENTITY)
+            return null;
         return (lvl, pos, s, be) -> {
             if (be instanceof WaterValveBlockEntity wv) {
                 WaterValveBlockEntity.serverTick(lvl, pos, s, wv);
@@ -99,8 +101,8 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        return true;
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
+        return state.getValue(ACTIVE) && !state.getValue(CLOSED);
     }
 
     @Override

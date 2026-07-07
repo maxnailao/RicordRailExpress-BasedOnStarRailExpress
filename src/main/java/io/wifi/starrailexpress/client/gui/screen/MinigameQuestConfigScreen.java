@@ -269,7 +269,7 @@ public class MinigameQuestConfigScreen extends Screen {
         try {
             markerColor = Integer.parseInt(colorInput.getValue(), 16);
         } catch (NumberFormatException ignored) {
-            markerColor = 0x00FF00;
+            markerColor = 0xFFD700;
         }
 
         CompoundTag data = new CompoundTag();

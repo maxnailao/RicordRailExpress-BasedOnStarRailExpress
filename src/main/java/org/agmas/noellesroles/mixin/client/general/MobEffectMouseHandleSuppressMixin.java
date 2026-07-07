@@ -3,6 +3,7 @@ package org.agmas.noellesroles.mixin.client.general;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
+import org.agmas.noellesroles.client.PointerClientHandle;
 import org.agmas.noellesroles.init.ModEffects;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,10 +20,18 @@ public class MobEffectMouseHandleSuppressMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null)
             return;
-        if (player.hasEffect(ModEffects.TURN_BANED)){
+        if (player.hasEffect(ModEffects.TURN_BANED) || player.hasEffect(ModEffects.POINTER)) {
             ci.cancel();
         }
     }
+
+    @Inject(method = "onMove", at = @At("HEAD"), cancellable = true)
+    private void noe$pointerMouseMove(long window, double x, double y, CallbackInfo ci) {
+        if (PointerClientHandle.onMouseMove(x, y)) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
     private void noe$restrainScroll(long l, double d, double e, CallbackInfo ci) {
 

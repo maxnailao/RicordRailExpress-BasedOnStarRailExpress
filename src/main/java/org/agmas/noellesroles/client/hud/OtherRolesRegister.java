@@ -3,15 +3,14 @@ package org.agmas.noellesroles.client.hud;
 import io.wifi.starrailexpress.customrole.CustomRoleHud;
 import org.agmas.noellesroles.client.hud.modifiers.LoversHud;
 import org.agmas.noellesroles.client.hud.modifiers.RefugeeHud;
+import org.agmas.noellesroles.client.hud.modifiers.ShitSplitHud;
 import org.agmas.noellesroles.client.hud.roles.*;
-import org.agmas.noellesroles.client.hud.roles.CuckooHud;
-
-
 
 public class OtherRolesRegister {
 
     public static void registerSons() {
-    CuckooHud.register();
+        CuckooHud.register();
+        ShitSplitHud.register();
         VoteHud.register();
         GreatDetectiveHud.register();
         CustomPendingHud.register();
@@ -62,6 +61,7 @@ public class OtherRolesRegister {
         WizardHud.register();
         RavenHud.register();
         DoomedSinnerHud.register();
+        WraithAssassinHud.register();
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
         AdventurerHud.register();
         ReasonerHud.register();
@@ -74,6 +74,7 @@ public class OtherRolesRegister {
         UndeadLordHud.register();
         VeteranHud.register();
         CakeMakerHud.register();
+        LeonHud.register();
         BlackkeHud.register();
         GhostofanyingHud.register();
         TegongHud.register();

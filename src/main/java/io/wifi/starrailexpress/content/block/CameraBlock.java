@@ -1,7 +1,6 @@
 package io.wifi.starrailexpress.content.block;
 
 import com.mojang.serialization.MapCodec;
-
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
@@ -32,11 +31,10 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import java.awt.Color;
-
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
+
+import java.awt.*;
 
 public class CameraBlock extends BaseEntityBlock implements TaskInstinctShowableInterface, AutoResetBlockInterface {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -125,8 +123,7 @@ public class CameraBlock extends BaseEntityBlock implements TaskInstinctShowable
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        Level level = player.level();
+    public boolean shouldRenderTaskInstinct(Level level,BlockState state, BlockPos pos, Player player) {
         var roleCCA = SRERoleWorldComponent.KEY.get(level);
         return roleCCA.isRole(player, ModRoles.DELAYER);
     }

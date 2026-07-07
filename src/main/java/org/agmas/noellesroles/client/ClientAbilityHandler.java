@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.client;
 
-import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeTeamsPlayerComponent;
 import io.wifi.starrailexpress.client.gui.screen.gamemode.custom_role.CustomRoleSelectScreen;
@@ -11,11 +11,7 @@ import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
-import org.agmas.noellesroles.packet.AbilityC2SPacket;
-import org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket;
-import org.agmas.noellesroles.packet.RepairPrimarySkillC2SPacket;
-import org.agmas.noellesroles.packet.UnifiedSkillInputC2SPacket;
-import org.agmas.noellesroles.packet.WizardSwitchSpellC2SPacket;
+import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.UUID;
@@ -98,8 +94,9 @@ public class ClientAbilityHandler {
             var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(client.player);
             heldSlot = ability.getSelectedSkill();
             unifiedSkillHeld = true;
+            boolean sneaking = client.player.isShiftKeyDown();
             ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
-                    heldSlot, RoleSkill.Phase.PRESS, findTarget(client)));
+                    heldSlot, RoleSkill.Phase.PRESS, findTarget(client), sneaking));
             return;
         }
 

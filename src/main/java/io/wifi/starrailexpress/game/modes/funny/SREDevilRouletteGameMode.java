@@ -1,7 +1,5 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
-import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -9,6 +7,8 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.rules.ChatHudRules;
+import io.wifi.starrailexpress.rules.ReplayRules;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -19,7 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
-import org.agmas.noellesroles.mini_gme.DevilRouletteGame;
+import org.agmas.noellesroles.minigame.DevilRouletteGame;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
