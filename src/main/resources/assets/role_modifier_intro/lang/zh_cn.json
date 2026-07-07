@@ -407,6 +407,8 @@
   "info.screen.modifier.flexible.simple": "",
   "info.screen.modifier.anti_newton": "修饰符\n你的重力减少20%%。",
   "info.screen.modifier.anti_newton.simple": "",
+  "info.screen.modifier.corruption":"修饰符\n仅在警长和巡警上刷新，当场上有人被小脑时(你小脑别人不算)，你转变为黑警",
+    "info.screen.modifier.corruption.simple":"",
   "=======修机模式=======": "",
   "info.screen.roleid.repair_survivor": "逃脱阵营\n修满 5 台修机方块后，前往逃脱大门离开。可用工具箱、零件加速修机，也能救援笼中的队友。",
   "info.screen.roleid.repair_survivor.simple": "",

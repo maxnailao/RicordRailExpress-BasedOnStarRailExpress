@@ -221,6 +221,13 @@ public class TraitorAndModifiers {
             null, null, false, false))
             .setDefaultEnableChance(3000);
 
+    // 腐败 - 刷新于警长和巡警，小脑时转变为黑警
+    public static SREModifier CORRUPTION = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("corruption"),
+            new Color(128, 128, 128).getRGB(), // 暗血红
+            null, null, false, false))
+            .setDefaultEnableChance(1500).setHidden(true);
+
     // ==================== 运行时数据存储 ====================
 
     // 回光返照 - 被触发的玩家集合
@@ -260,6 +267,9 @@ public class TraitorAndModifiers {
     public static final Map<UUID, Long> LAST_MANIC_TRIGGER_TIME = new ConcurrentHashMap<>();
 
     public static final Map<UUID, Set<UUID>> MANIC_TASK_COMPLETERS = new ConcurrentHashMap<>();
+
+    // 腐败 - 已触发转变的玩家集合
+    public static final Set<UUID> CORRUPTION_TRIGGERED = ConcurrentHashMap.newKeySet();
 
     // ==================== 初始化方法 ====================
     public static void init() {
@@ -346,9 +356,20 @@ public class TraitorAndModifiers {
                 }
             }
 
+            //腐败 - 仅在警长和巡警上生效
+            if (modifier.equals(CORRUPTION)) {
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+                if (gameWorld != null && gameWorld.isRunning()) {
+                    if (!gameWorld.isRole(player, ModRoles.SHERIFF) && !gameWorld.isRole(player, ModRoles.PATROLLER)) {
+                        worldModifierComponent.removeModifier(player.getUUID(), CORRUPTION);
+                    }
+                }
+            }
+
             // 初始化给予金币/苹果计时器
             LAST_GIVE_COIN_TIME.put(player.getUUID(), System.currentTimeMillis());
             LAST_APPLE_TIME.put(player.getUUID(), System.currentTimeMillis());
+
         });
 
         // 修饰符移除事件 - 清理属性修改
@@ -381,6 +402,7 @@ public class TraitorAndModifiers {
             LAST_STINGY_REFUND_TIME.remove(player.getUUID());
             LAST_MANIC_TRIGGER_TIME.remove(player.getUUID());
             MANIC_TASK_COMPLETERS.remove(player.getUUID());
+            CORRUPTION_TRIGGERED.remove(player.getUUID());
         });
     }
 
@@ -628,6 +650,7 @@ public class TraitorAndModifiers {
             LAST_STINGY_REFUND_TIME.clear();
             LAST_MANIC_TRIGGER_TIME.clear();
             MANIC_TASK_COMPLETERS.clear();
+            CORRUPTION_TRIGGERED.clear();
         });
 
         // 游戏结束时重置
@@ -636,6 +659,7 @@ public class TraitorAndModifiers {
             DESPERATE_FAITH_ACTIVATED.clear();
             LAST_MANIC_TRIGGER_TIME.clear();
             MANIC_TASK_COMPLETERS.clear();
+            CORRUPTION_TRIGGERED.clear();
         });
     }
 

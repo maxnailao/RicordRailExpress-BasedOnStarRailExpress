@@ -6,6 +6,8 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.Noellesroles;
@@ -14,6 +16,11 @@ import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
  * 小脑惩罚
@@ -65,6 +72,9 @@ public class XiaoNaoHandler {
                     TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (isXiaoNaoReason(deathReason)) {
+                            // 腐败修饰符：小脑触发转变为黑警
+                            handleCorruptionModifier(killer, gameWorldComponent);
+
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
                             // 仇杀客事件：误杀发生时强化仇杀客
                             for (ServerPlayer player : victim.serverLevel().players()) {
@@ -119,6 +129,31 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("wizard_fire_arrow")
                 || deathReason.getPath().equals("wizard_fireball")
                 || deathReason.getPath().equals("undead_infection");
+    }
+
+    private static void handleCorruptionModifier(ServerPlayer xiaoNaoKiller, SREGameWorldComponent gameWorldComponent) {
+        WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(xiaoNaoKiller.level());
+        for (ServerPlayer p : xiaoNaoKiller.serverLevel().getServer().getPlayerList().getPlayers()) {
+            if (p.getUUID().equals(xiaoNaoKiller.getUUID())) continue;
+            if (TraitorAndModifiers.CORRUPTION_TRIGGERED.contains(p.getUUID())) continue;
+            if (!modifiers.isModifier(p.getUUID(), TraitorAndModifiers.CORRUPTION)) continue;
+
+            TraitorAndModifiers.CORRUPTION_TRIGGERED.add(p.getUUID());
+
+            RoleUtils.clearAllSatisfiedItems(p, TMMItemTags.GUNS);
+
+            RoleUtils.changeRole(p, ModRoles.CORRUPT_COP);
+            RoleUtils.sendWelcomeAnnouncement(p, ModRoles.CORRUPT_COP);
+
+            modifiers.removeModifier(p.getUUID(), TraitorAndModifiers.CORRUPTION);
+
+            for (ServerPlayer target : xiaoNaoKiller.serverLevel().getServer().getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(target, new BroadcastMessageS2CPacket(
+                        Component.translatable("modifier.noellesroles.corruption.trigger")
+                                .withStyle(net.minecraft.ChatFormatting.DARK_RED, net.minecraft.ChatFormatting.BOLD)));
+            }
+            break;
+        }
     }
 
 }

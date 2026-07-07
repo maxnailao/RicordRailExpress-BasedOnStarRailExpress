@@ -448,7 +448,8 @@ public class ModRoles {
             .setComponentKey(ModComponents.CORRUPT_COP)
             .setDefaultMax(1)
             .setDefaultEnableChance(4000)
-            .setDefaultEnableNeededPlayerCount(12);
+            .setDefaultEnableNeededPlayerCount(12)
+            .addBothRelatedModifier(TraitorAndModifiers.CORRUPTION);
 
 
     /**

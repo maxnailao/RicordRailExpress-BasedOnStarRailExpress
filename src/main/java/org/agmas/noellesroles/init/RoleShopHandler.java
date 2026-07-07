@@ -3262,15 +3262,22 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.MOYINGREN_ENDERMAN_ID, ENDERMAN_SHOP);
         }
-      // 特工商店
-      {
-          var SHOP = new ArrayList<ShopEntry>();
-          // 消音手枪子弹 - 100金币
-          SHOP.add(new ShopEntry(
-                  ModItems.SILENCED_PISTOL_BULLET.getDefaultInstance(),
-                  100,
-                  ShopEntry.Type.WEAPON));
-          ShopContent.customEntries.put(ModRoles.TEGONG_ID, SHOP);
-      }
+          // 特工商店
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+            // 消音手枪子弹 - 100金币
+            SHOP.add(new ShopEntry(
+                     ModItems.SILENCED_PISTOL_BULLET.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.WEAPON));
+            ShopContent.customEntries.put(ModRoles.TEGONG_ID, SHOP);
+        }
+        // 黑警商店
+        {
+            var CORRUPT_COP_SHOP = new ArrayList<ShopEntry>();
+            CORRUPT_COP_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
+            CORRUPT_COP_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 400, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.CORRUPT_COP_ID, CORRUPT_COP_SHOP);
+        }
     }
 }
