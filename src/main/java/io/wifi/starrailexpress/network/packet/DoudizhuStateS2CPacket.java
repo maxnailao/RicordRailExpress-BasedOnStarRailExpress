@@ -69,7 +69,7 @@ public record DoudizhuStateS2CPacket(
         buf.writeByte(consecutivePasses);
         writeInts(buf, bids);
         for (int i = 0; i < 3; i++)
-            buf.writeUtf(playerNames[i] != null ? playerNames[i] : "");
+            buf.writeUtf(playerNames[i] != null ? playerNames[i] : "", 64);
         buf.writeByte(winnerSide);
     }
 

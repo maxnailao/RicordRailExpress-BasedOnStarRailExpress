@@ -51,11 +51,11 @@ public record SyncMapConfigPayload(List<MapConfig.MapEntry> maps) implements Cus
         buf.writeInt(payload.maps().size());
         
         for (MapConfig.MapEntry map : payload.maps()) {
-            buf.writeUtf(map.getId());
-            buf.writeUtf(map.getDisplayName());
-            buf.writeUtf(map.getDescription());
+            buf.writeUtf(map.getId(), 256);
+            buf.writeUtf(map.getDisplayName(), 256);
+            buf.writeUtf(map.getDescription(), 1024);
             buf.writeBoolean(map.canSelect);
-            buf.writeUtf(map.getColorStr());
+            buf.writeUtf(map.getColorStr(), 64);
         }
     }
 

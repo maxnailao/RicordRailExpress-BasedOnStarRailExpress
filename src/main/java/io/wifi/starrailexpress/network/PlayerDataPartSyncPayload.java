@@ -13,14 +13,17 @@ public record PlayerDataPartSyncPayload(UUID playerUuid, String part, String jso
     public static final StreamCodec<FriendlyByteBuf, PlayerDataPartSyncPayload> CODEC =
             CustomPacketPayload.codec(PlayerDataPartSyncPayload::write, PlayerDataPartSyncPayload::new);
 
+    /** 协议 VarInt 包长度上限约 2MB，留安全余量设为 500K 字符 */
+    private static final int MAX_JSON_CHARS = 524_288;
+
     private PlayerDataPartSyncPayload(FriendlyByteBuf buffer) {
-        this(buffer.readUUID(), buffer.readUtf(64), buffer.readUtf(1_048_576), buffer.readVarLong());
+        this(buffer.readUUID(), buffer.readUtf(64), buffer.readUtf(MAX_JSON_CHARS), buffer.readVarLong());
     }
 
     private void write(FriendlyByteBuf buffer) {
         buffer.writeUUID(playerUuid);
         buffer.writeUtf(part, 64);
-        buffer.writeUtf(json, 1_048_576);
+        buffer.writeUtf(json, MAX_JSON_CHARS);
         buffer.writeVarLong(updatedAt);
     }
 

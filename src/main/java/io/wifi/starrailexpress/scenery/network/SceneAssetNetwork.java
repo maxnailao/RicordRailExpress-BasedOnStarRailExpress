@@ -155,21 +155,21 @@ public final class SceneAssetNetwork {
                 StreamCodec.ofMember(ManifestS2C::encode, ManifestS2C::decode);
 
         private void encode(FriendlyByteBuf buf) {
-            buf.writeUtf(hash);
-            buf.writeUtf(registryFingerprint);
+            buf.writeUtf(hash, 128);
+            buf.writeUtf(registryFingerprint, 128);
             buf.writeLong(size);
             writeBox(buf, sourceArea);
-            buf.writeUtf(scrollAxis);
-            buf.writeUtf(mapName);
+            buf.writeUtf(scrollAxis, 32);
+            buf.writeUtf(mapName, 256);
             buf.writeBoolean(stale);
             buf.writeBoolean(transientAsset);
-            buf.writeUtf(remoteUrl);
+            buf.writeUtf(remoteUrl, 4096);
             buf.writeBoolean(trustedFastPath);
         }
 
         private static ManifestS2C decode(FriendlyByteBuf buf) {
-            return new ManifestS2C(buf.readUtf(), buf.readUtf(), buf.readLong(), readBox(buf),
-                    buf.readUtf(), buf.readUtf(), buf.readBoolean(), buf.readBoolean(), buf.readUtf(4096),
+            return new ManifestS2C(buf.readUtf(128), buf.readUtf(128), buf.readLong(), readBox(buf),
+                    buf.readUtf(32), buf.readUtf(256), buf.readBoolean(), buf.readBoolean(), buf.readUtf(4096),
                     buf.readBoolean());
         }
 
@@ -185,12 +185,12 @@ public final class SceneAssetNetwork {
                 StreamCodec.ofMember(RequestChunkC2S::encode, RequestChunkC2S::decode);
 
         private void encode(FriendlyByteBuf buf) {
-            buf.writeUtf(hash);
+            buf.writeUtf(hash, 128);
             buf.writeLong(offset);
         }
 
         private static RequestChunkC2S decode(FriendlyByteBuf buf) {
-            return new RequestChunkC2S(buf.readUtf(), buf.readLong());
+            return new RequestChunkC2S(buf.readUtf(128), buf.readLong());
         }
 
         @Override
@@ -206,7 +206,7 @@ public final class SceneAssetNetwork {
                 StreamCodec.ofMember(ChunkS2C::encode, ChunkS2C::decode);
 
         private void encode(FriendlyByteBuf buf) {
-            buf.writeUtf(hash);
+            buf.writeUtf(hash, 128);
             buf.writeLong(offset);
             buf.writeLong(totalSize);
             buf.writeLong(crc32);
@@ -214,7 +214,7 @@ public final class SceneAssetNetwork {
         }
 
         private static ChunkS2C decode(FriendlyByteBuf buf) {
-            return new ChunkS2C(buf.readUtf(), buf.readLong(), buf.readLong(), buf.readLong(),
+            return new ChunkS2C(buf.readUtf(128), buf.readLong(), buf.readLong(), buf.readLong(),
                     buf.readByteArray(SceneAssetServer.CHUNK_BYTES));
         }
 
@@ -230,11 +230,11 @@ public final class SceneAssetNetwork {
                 StreamCodec.ofMember(ReadyC2S::encode, ReadyC2S::decode);
 
         private void encode(FriendlyByteBuf buf) {
-            buf.writeUtf(hash);
+            buf.writeUtf(hash, 128);
         }
 
         private static ReadyC2S decode(FriendlyByteBuf buf) {
-            return new ReadyC2S(buf.readUtf());
+            return new ReadyC2S(buf.readUtf(128));
         }
 
         @Override

@@ -21,17 +21,17 @@ public record SyncMusicBoxS2CPayload(List<String> ownedBoxes, String equippedBox
             (payload, buf) -> {
                 buf.writeVarInt(payload.ownedBoxes.size());
                 for (String id : payload.ownedBoxes) {
-                    buf.writeUtf(id);
+                    buf.writeUtf(id, 128);
                 }
-                buf.writeUtf(payload.equippedBox);
+                buf.writeUtf(payload.equippedBox, 128);
             },
             buf -> {
                 int size = buf.readVarInt();
                 List<String> list = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
-                    list.add(buf.readUtf());
+                    list.add(buf.readUtf(128));
                 }
-                String equipped = buf.readUtf();
+                String equipped = buf.readUtf(128);
                 return new SyncMusicBoxS2CPayload(list, equipped);
             });
 

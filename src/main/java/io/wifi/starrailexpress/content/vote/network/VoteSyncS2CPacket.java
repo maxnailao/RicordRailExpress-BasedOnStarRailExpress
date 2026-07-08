@@ -52,7 +52,7 @@ public record VoteSyncS2CPacket(
                 }
                 buf.writeBoolean(packet.allowReVote);
                 buf.writeVarInt(packet.maxSelectCount);
-                buf.writeUtf(packet.typeId);
+                buf.writeUtf(packet.typeId, 128);
             },
             buf -> {
                 boolean active = buf.readBoolean();
@@ -75,7 +75,7 @@ public record VoteSyncS2CPacket(
                 }
                 boolean allowRe = buf.readBoolean();
                 int maxSelect = buf.readVarInt();
-                String typeId = buf.readUtf();
+                String typeId = buf.readUtf(128);
                 return new VoteSyncS2CPacket(active, title, hasOptions, options, endTick, show, results, totalVotes,
                         allowRe, maxSelect, typeId);
             });

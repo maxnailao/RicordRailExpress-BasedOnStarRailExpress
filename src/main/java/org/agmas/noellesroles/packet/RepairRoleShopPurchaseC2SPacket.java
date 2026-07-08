@@ -22,11 +22,11 @@ public record RepairRoleShopPurchaseC2SPacket(String roleId) implements CustomPa
             .ofMember(RepairRoleShopPurchaseC2SPacket::encode, RepairRoleShopPurchaseC2SPacket::decode);
 
     public void encode(RegistryFriendlyByteBuf buf) {
-        buf.writeUtf(roleId);
+        buf.writeUtf(roleId, 256);
     }
 
     public static RepairRoleShopPurchaseC2SPacket decode(RegistryFriendlyByteBuf buf) {
-        return new RepairRoleShopPurchaseC2SPacket(buf.readUtf());
+        return new RepairRoleShopPurchaseC2SPacket(buf.readUtf(256));
     }
 
     @Override

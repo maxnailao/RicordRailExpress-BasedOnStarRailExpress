@@ -21,14 +21,14 @@ public class MapVotingResultsPayload implements CustomPacketPayload {
 
     // 用于解码的构造函数
     public MapVotingResultsPayload(FriendlyByteBuf buf) {
-        this.result = buf.readUtf();
+        this.result = buf.readUtf(256);
     }
     public MapVotingResultsPayload(String s) {
         this.result = s;
     }
 
     public void write(FriendlyByteBuf buf) {
-        buf.writeUtf( result);
+        buf.writeUtf( result, 256);
     }
 
 

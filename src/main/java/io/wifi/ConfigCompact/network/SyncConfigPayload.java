@@ -13,12 +13,12 @@ public record SyncConfigPayload(String configId, String content) implements Cust
             .ofMember(SyncConfigPayload::encode, SyncConfigPayload::decode);
 
     public static SyncConfigPayload decode(FriendlyByteBuf buf) {
-        return new SyncConfigPayload(buf.readUtf(), buf.readUtf());
+        return new SyncConfigPayload(buf.readUtf(256), buf.readUtf(65536));
     }
 
     public static void encode(SyncConfigPayload payload, FriendlyByteBuf buf) {
-        buf.writeUtf(payload.configId);
-        buf.writeUtf(payload.content);
+        buf.writeUtf(payload.configId, 256);
+        buf.writeUtf(payload.content, 65536);
     }
 
     @Override

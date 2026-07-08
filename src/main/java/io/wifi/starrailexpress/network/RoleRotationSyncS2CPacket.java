@@ -126,13 +126,13 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
         buf.writeInt(selectedRoles.size());
         for (Map.Entry<UUID, String> entry : selectedRoles.entrySet()) {
             buf.writeUUID(entry.getKey());
-            buf.writeUtf(entry.getValue());
+            buf.writeUtf(entry.getValue(), 256);
         }
         
         // 写入currentCandidates
         buf.writeInt(currentCandidates.size());
         for (String rolePath : currentCandidates) {
-            buf.writeUtf(rolePath);
+            buf.writeUtf(rolePath, 256);
         }
         
         // 写入myRotationIndex

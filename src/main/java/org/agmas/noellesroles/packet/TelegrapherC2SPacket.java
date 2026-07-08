@@ -29,11 +29,11 @@ public record TelegrapherC2SPacket(String message) implements CustomPacketPayloa
     }
     
     public void write(FriendlyByteBuf buf) {
-        buf.writeUtf(this.message);
+        buf.writeUtf(this.message, 512);
     }
     
     public static TelegrapherC2SPacket read(FriendlyByteBuf buf) {
-        return new TelegrapherC2SPacket(buf.readUtf());
+        return new TelegrapherC2SPacket(buf.readUtf(512));
     }
     
     public String message() {

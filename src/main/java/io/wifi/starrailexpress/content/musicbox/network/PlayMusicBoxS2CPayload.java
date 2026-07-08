@@ -16,10 +16,10 @@ public record PlayMusicBoxS2CPayload(String musicBoxId, String playerName) imple
     public static final Type<PlayMusicBoxS2CPayload> ID = new Type<>(SRE.id("play_music_box"));
     public static final StreamCodec<FriendlyByteBuf, PlayMusicBoxS2CPayload> CODEC = StreamCodec.ofMember(
             (payload, buf) -> {
-                buf.writeUtf(payload.musicBoxId);
-                buf.writeUtf(payload.playerName);
+                buf.writeUtf(payload.musicBoxId, 128);
+                buf.writeUtf(payload.playerName, 64);
             },
-            buf -> new PlayMusicBoxS2CPayload(buf.readUtf(), buf.readUtf()));
+            buf -> new PlayMusicBoxS2CPayload(buf.readUtf(128), buf.readUtf(64)));
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

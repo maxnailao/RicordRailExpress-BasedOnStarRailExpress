@@ -25,13 +25,13 @@ public record WaypointDeleteC2SPayload(String path, String name, boolean wholePa
             StreamCodec.ofMember(WaypointDeleteC2SPayload::write, WaypointDeleteC2SPayload::read);
 
     public void write(FriendlyByteBuf buf) {
-        buf.writeUtf(path);
-        buf.writeUtf(name);
+        buf.writeUtf(path, 256);
+        buf.writeUtf(name, 256);
         buf.writeBoolean(wholePath);
     }
 
     public static WaypointDeleteC2SPayload read(FriendlyByteBuf buf) {
-        return new WaypointDeleteC2SPayload(buf.readUtf(), buf.readUtf(), buf.readBoolean());
+        return new WaypointDeleteC2SPayload(buf.readUtf(256), buf.readUtf(256), buf.readBoolean());
     }
 
     @Override

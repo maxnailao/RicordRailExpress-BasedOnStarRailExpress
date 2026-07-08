@@ -22,12 +22,12 @@ public record OpenChatDialoguePayload(
             CustomPacketPayload.codec(OpenChatDialoguePayload::write, OpenChatDialoguePayload::read);
 
     private void write(FriendlyByteBuf buf) {
-        buf.writeUtf(dialogueJson);
+        buf.writeUtf(dialogueJson, 32768);
         buf.writeInt(targetEntityId);
     }
 
     private static OpenChatDialoguePayload read(FriendlyByteBuf buf) {
-        return new OpenChatDialoguePayload(buf.readUtf(), buf.readInt());
+        return new OpenChatDialoguePayload(buf.readUtf(32768), buf.readInt());
     }
 
     @Override

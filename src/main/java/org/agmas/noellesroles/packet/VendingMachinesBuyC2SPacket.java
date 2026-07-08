@@ -29,14 +29,14 @@ public record VendingMachinesBuyC2SPacket(BlockPos blockPos, String item, int sl
 
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeBlockPos(this.blockPos);
-        buf.writeUtf(this.item);
+        buf.writeUtf(this.item, 256);
         buf.writeInt(this.slot);
     }
 
     public static VendingMachinesBuyC2SPacket decode(RegistryFriendlyByteBuf buf) {
         return new VendingMachinesBuyC2SPacket(
                 buf.readBlockPos(),
-                buf.readUtf(),
+                buf.readUtf(256),
                 buf.readInt()
         );
     }

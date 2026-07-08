@@ -41,8 +41,8 @@ public record XiangqiStateS2CPacket(
         buf.writeUUID(currentTurn != null ? currentTurn : new UUID(0, 0));
         buf.writeUUID(winner != null ? winner : new UUID(0, 0));
         buf.writeBoolean(isRed);
-        buf.writeUtf(redName != null ? redName : "");
-        buf.writeUtf(blackName != null ? blackName : "");
+        buf.writeUtf(redName != null ? redName : "", 64);
+        buf.writeUtf(blackName != null ? blackName : "", 64);
     }
 
     public static XiangqiStateS2CPacket read(FriendlyByteBuf buf) {

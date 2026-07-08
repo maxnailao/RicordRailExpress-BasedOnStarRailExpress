@@ -42,8 +42,8 @@ public record GomokuStateS2CPacket(
         buf.writeUUID(currentTurn != null ? currentTurn : new UUID(0, 0));
         buf.writeUUID(winner != null ? winner : new UUID(0, 0));
         buf.writeBoolean(isBlack);
-        buf.writeUtf(blackName != null ? blackName : "");
-        buf.writeUtf(whiteName != null ? whiteName : "");
+        buf.writeUtf(blackName != null ? blackName : "", 64);
+        buf.writeUtf(whiteName != null ? whiteName : "", 64);
     }
 
     public static GomokuStateS2CPacket read(FriendlyByteBuf buf) {

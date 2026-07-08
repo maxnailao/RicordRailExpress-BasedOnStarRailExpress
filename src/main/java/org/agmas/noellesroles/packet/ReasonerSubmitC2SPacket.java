@@ -14,11 +14,11 @@ public record ReasonerSubmitC2SPacket(int question, String answer) implements Cu
 
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeVarInt(question);
-        buf.writeUtf(answer);
+        buf.writeUtf(answer, 256);
     }
 
     public static ReasonerSubmitC2SPacket decode(RegistryFriendlyByteBuf buf) {
-        return new ReasonerSubmitC2SPacket(buf.readVarInt(), buf.readUtf());
+        return new ReasonerSubmitC2SPacket(buf.readVarInt(), buf.readUtf(256));
     }
 
     public static void handle(ReasonerSubmitC2SPacket payload, ServerPlayNetworking.Context context) {

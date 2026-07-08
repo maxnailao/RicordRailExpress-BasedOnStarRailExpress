@@ -12,13 +12,16 @@ public record PlayerStatsSyncPayload(UUID playerUuid, String json) implements Cu
     public static final StreamCodec<FriendlyByteBuf, PlayerStatsSyncPayload> CODEC =
             CustomPacketPayload.codec(PlayerStatsSyncPayload::write, PlayerStatsSyncPayload::new);
 
+    /** 协议 VarInt 包长度上限约 2MB，留安全余量设为 500K 字符 */
+    private static final int MAX_JSON_CHARS = 524_288;
+
     private PlayerStatsSyncPayload(FriendlyByteBuf buffer) {
-        this(buffer.readUUID(), buffer.readUtf(1_048_576));
+        this(buffer.readUUID(), buffer.readUtf(MAX_JSON_CHARS));
     }
 
     private void write(FriendlyByteBuf buffer) {
         buffer.writeUUID(playerUuid);
-        buffer.writeUtf(json, 1_048_576);
+        buffer.writeUtf(json, MAX_JSON_CHARS);
     }
 
     @Override

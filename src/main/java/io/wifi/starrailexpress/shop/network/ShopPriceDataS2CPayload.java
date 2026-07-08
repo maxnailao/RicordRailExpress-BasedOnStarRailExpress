@@ -16,12 +16,12 @@ public record ShopPriceDataS2CPayload(String hash, byte[] data) implements Custo
             ShopPriceDataS2CPayload::write, ShopPriceDataS2CPayload::read);
 
     public void write(FriendlyByteBuf buf) {
-        buf.writeUtf(hash);
+        buf.writeUtf(hash, 128);
         buf.writeByteArray(data);
     }
 
     public static ShopPriceDataS2CPayload read(FriendlyByteBuf buf) {
-        return new ShopPriceDataS2CPayload(buf.readUtf(), buf.readByteArray());
+        return new ShopPriceDataS2CPayload(buf.readUtf(128), buf.readByteArray());
     }
 
     @Override

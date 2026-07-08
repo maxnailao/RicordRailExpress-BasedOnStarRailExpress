@@ -24,7 +24,7 @@ public record LotteryMachineResultS2CPacket(BlockPos blockPos, boolean success, 
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeBlockPos(this.blockPos);
         buf.writeBoolean(this.success);
-        buf.writeUtf(this.messageKey);
+        buf.writeUtf(this.messageKey, 256);
         ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, this.itemStack);
     }
 
@@ -32,7 +32,7 @@ public record LotteryMachineResultS2CPacket(BlockPos blockPos, boolean success, 
         return new LotteryMachineResultS2CPacket(
                 buf.readBlockPos(),
                 buf.readBoolean(),
-                buf.readUtf(),
+                buf.readUtf(256),
                 ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
     }
 }

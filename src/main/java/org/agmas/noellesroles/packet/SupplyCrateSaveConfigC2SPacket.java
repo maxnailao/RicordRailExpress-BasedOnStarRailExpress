@@ -41,7 +41,7 @@ public record SupplyCrateSaveConfigC2SPacket(
         buf.writeBlockPos(blockPos);
         buf.writeVarInt(configItems.size());
         for (var entry : configItems) {
-            buf.writeUtf(entry.itemId());
+            buf.writeUtf(entry.itemId(), 256);
             buf.writeVarInt(entry.count());
             buf.writeDouble(entry.probability());
         }
@@ -55,7 +55,7 @@ public record SupplyCrateSaveConfigC2SPacket(
         int size = buf.readVarInt();
         List<SupplyCrateBlockEntity.SupplyCrateEntry> entries = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            String itemId = buf.readUtf();
+            String itemId = buf.readUtf(256);
             int count = buf.readVarInt();
             double prob = buf.readDouble();
             entries.add(new SupplyCrateBlockEntity.SupplyCrateEntry(itemId, count, prob));

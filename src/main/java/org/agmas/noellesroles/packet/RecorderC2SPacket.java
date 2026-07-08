@@ -24,12 +24,12 @@ public record RecorderC2SPacket(UUID targetUuid, String roleId) implements Custo
             RecorderC2SPacket::write, RecorderC2SPacket::new);
 
     public RecorderC2SPacket(FriendlyByteBuf buf) {
-        this(buf.readUUID(), buf.readUtf());
+        this(buf.readUUID(), buf.readUtf(256));
     }
 
     public void write(FriendlyByteBuf buf) {
         buf.writeUUID(targetUuid);
-        buf.writeUtf(roleId);
+        buf.writeUtf(roleId, 256);
     }
 
     @Override

@@ -23,9 +23,9 @@ public record ReasonerOpenScreenS2CPacket(
             .ofMember(ReasonerOpenScreenS2CPacket::encode, ReasonerOpenScreenS2CPacket::decode);
 
     public void encode(RegistryFriendlyByteBuf buf) {
-        buf.writeUtf(roleTargetName);
-        buf.writeUtf(bodyTargetName);
-        buf.writeUtf(taskTargetName);
+        buf.writeUtf(roleTargetName, 64);
+        buf.writeUtf(bodyTargetName, 64);
+        buf.writeUtf(taskTargetName, 64);
         buf.writeBoolean(deathReasonQuestionAvailable);
         buf.writeBoolean(killerQuestionAvailable);
         buf.writeBoolean(solvedAliveCount);
@@ -37,9 +37,9 @@ public record ReasonerOpenScreenS2CPacket(
     }
 
     public static ReasonerOpenScreenS2CPacket decode(RegistryFriendlyByteBuf buf) {
-        String roleTargetName = buf.readUtf();
-        String bodyTargetName = buf.readUtf();
-        String taskTargetName = buf.readUtf();
+        String roleTargetName = buf.readUtf(64);
+        String bodyTargetName = buf.readUtf(64);
+        String taskTargetName = buf.readUtf(64);
         boolean deathReasonQuestionAvailable = buf.readBoolean();
         boolean killerQuestionAvailable = buf.readBoolean();
         boolean solvedAliveCount = buf.readBoolean();

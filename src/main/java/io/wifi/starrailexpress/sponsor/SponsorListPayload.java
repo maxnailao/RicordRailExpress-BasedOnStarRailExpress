@@ -25,7 +25,7 @@ public record SponsorListPayload(List<String> names) implements CustomPacketPayl
         int size = buffer.readVarInt();
         List<String> list = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            list.add(buffer.readUtf());
+            list.add(buffer.readUtf(64));
         }
         return list;
     }
@@ -33,7 +33,7 @@ public record SponsorListPayload(List<String> names) implements CustomPacketPayl
     private void write(FriendlyByteBuf buffer) {
         buffer.writeVarInt(names.size());
         for (String name : names) {
-            buffer.writeUtf(name);
+            buffer.writeUtf(name, 64);
         }
     }
 

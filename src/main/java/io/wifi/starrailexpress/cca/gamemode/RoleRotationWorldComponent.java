@@ -1006,13 +1006,13 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         buf.writeVarInt(selectedRoles.size());
         for (Map.Entry<UUID, SRERole> entry : selectedRoles.entrySet()) {
             buf.writeUUID(entry.getKey());
-            buf.writeUtf(entry.getValue().identifier().toString());
+            buf.writeUtf(entry.getValue().identifier().toString(), 256);
         }
 
         // 当前候选职业
         buf.writeVarInt(currentCandidates.size());
         for (SRERole role : currentCandidates) {
-            buf.writeUtf(role.identifier().toString());
+            buf.writeUtf(role.identifier().toString(), 256);
         }
 
         // 随机选择玩家集合
@@ -1042,7 +1042,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         int selectedSize = buf.readVarInt();
         for (int i = 0; i < selectedSize; i++) {
             UUID uuid = buf.readUUID();
-            String rolePath = buf.readUtf();
+            String rolePath = buf.readUtf(256);
             SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
             if (role != null) {
                 selectedRoles.put(uuid, role);
@@ -1052,7 +1052,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         currentCandidates.clear();
         int candidatesSize = buf.readVarInt();
         for (int i = 0; i < candidatesSize; i++) {
-            String rolePath = buf.readUtf();
+            String rolePath = buf.readUtf(256);
             SRERole role = TMMRoles.ROLES.get(ResourceLocation.parse(rolePath));
             if (role != null) {
                 currentCandidates.add(role);

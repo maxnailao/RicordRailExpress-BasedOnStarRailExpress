@@ -22,17 +22,17 @@ public record DoomedSinnerFateRevealS2CPacket(
             StreamCodec.ofMember(DoomedSinnerFateRevealS2CPacket::encode, DoomedSinnerFateRevealS2CPacket::decode);
 
     public void encode(RegistryFriendlyByteBuf buf) {
-        buf.writeUtf(targetName);
+        buf.writeUtf(targetName, 64);
         buf.writeVarInt(killMethods.size());
-        killMethods.forEach(buf::writeUtf);
+        killMethods.forEach(s -> buf.writeUtf(s, 256));
     }
 
     public static DoomedSinnerFateRevealS2CPacket decode(RegistryFriendlyByteBuf buf) {
-        String targetName = buf.readUtf();
+        String targetName = buf.readUtf(64);
         int size = buf.readVarInt();
         List<String> killMethods = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            killMethods.add(buf.readUtf());
+            killMethods.add(buf.readUtf(256));
         }
         return new DoomedSinnerFateRevealS2CPacket(targetName, killMethods);
     }
