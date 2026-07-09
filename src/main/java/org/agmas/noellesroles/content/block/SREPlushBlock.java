@@ -83,6 +83,12 @@ public class SREPlushBlock extends PlushBlock {
       if (state.getBlock() == SREFumoBlocks.SLHCAT_PLUSH) {
          ret = NRSounds.SLHCAT_SOUND;
       }
+      if (state.getBlock() == SREFumoBlocks.RLINGKONG_PLUSH) {
+         ret = NRSounds.DONG_SOUND;
+      }
+      if (state.getBlock() == SREFumoBlocks.BOX_PLUSH) {
+         ret = NRSounds.DIUDIU_SOUND;
+      }
       return ret;
    }
 

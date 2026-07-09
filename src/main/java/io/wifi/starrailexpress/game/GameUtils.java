@@ -1048,6 +1048,7 @@ public class GameUtils {
         SRE.LOGGER.info("-".repeat(20));
 
         SRE.LOGGER.info("Game Stopped!");
+
         RefugeeComponent.KEY.get(world).reset();
         world.setWeatherParameters(6000, 0, false, false);
         serverTaskQueue.clear();
@@ -1074,6 +1075,15 @@ public class GameUtils {
         isGameStarted = false;
 
         gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
+        // --- 音乐盒抽奖：每局结束通过指令给全服玩家 +1 次抽奖机会 ---
+        try {
+            world.getServer().getCommands().performPrefixedCommand(
+                    world.getServer().createCommandSourceStack().withPermission(4),
+                    "givemusicbox @a chance 1");
+            SRE.LOGGER.info("[MusicBox] 已通过指令给全服玩家发放 1 次抽奖机会");
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[MusicBox] 发放抽奖券指令失败", e);
+        }
         // --- 音乐盒：播放胜利方击杀最多玩家的凯旋音乐 ---
         playVictoryMusicBox(world, roundEnd, gameComponent);
         // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
@@ -1401,7 +1411,7 @@ public class GameUtils {
             }
 
             // 全服广播：立即显示提示，延迟播放音乐（等待客户端 fade 渐暗结束、MASTER 音量恢复）
-            // fade 最大值 60，每 tick 递减 1，约 70 tick 后音量基本恢复
+            // fade 最大值 60，每 tick 递减 1，延迟 130 tick 后 fade=0、MASTER 音量完全恢复
             String playerName = topKiller.getName().getString();
             String boxName = box.displayName().getString();
             SRE.LOGGER.info("[MusicBox] 播放胜利音乐: 玩家={}, 音乐盒={}", playerName, boxName);
@@ -1413,11 +1423,11 @@ public class GameUtils {
                 player.displayClientMessage(actionBarMsg, true);
             }
 
-            // 延迟 ~70 tick (3.5秒) 后发送音效包 + 再次显示 actionbar，此时客户端 fade 已接近 0，MASTER 音量恢复
+            // 延迟 ~130 tick (6.5秒) 后发送音效包 + 再次显示 actionbar，此时客户端 fade 已接近 0，MASTER 音量恢复
             final String finalBoxId = boxId;
             final String finalPlayerName = playerName;
             final String finalBoxName = boxName;
-            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(70, () -> {
+            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(130, () -> {
                 var delayedPayload = new io.wifi.starrailexpress.content.musicbox.network.PlayMusicBoxS2CPayload(
                         finalBoxId, finalPlayerName);
                 Component musicMsg = Component.translatable("message.sre.musicbox.victory",

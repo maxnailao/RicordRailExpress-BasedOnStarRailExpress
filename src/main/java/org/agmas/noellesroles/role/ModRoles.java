@@ -3209,7 +3209,7 @@ public class ModRoles {
      * 末影人 - 杀手阵营
      * - 黑紫色
      * - 虚假心情
-     * - 有限体力
+     * - 无限体力
      * - 隐藏计分板
      * - 技能：无
      * - 商店：同杀手一致，额外可花费100金币购买末影珍珠
@@ -3222,7 +3222,7 @@ public class ModRoles {
             false,  // isInnocent = 非乘客阵营（杀手）
             true,   // canUseKiller = 有杀手能力
             SRERole.MoodType.FAKE, // 虚假心情
-            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            Integer.MAX_VALUE, // 无限体力
             true    // 隐藏计分板
     )).setCanSeeCoin(true)
       .setDefaultMax(1);

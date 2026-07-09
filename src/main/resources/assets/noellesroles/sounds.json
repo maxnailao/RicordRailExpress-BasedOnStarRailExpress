@@ -159,6 +159,22 @@
       }
     ]
   },
+"plush.dong": {
+    "sounds": [
+      {
+        "name": "noellesroles:dong",
+        "stream": false
+      }
+    ]
+  },
+"plush.diudiu": {
+    "sounds": [
+      {
+        "name": "noellesroles:diudiu",
+        "stream": false
+      }
+    ]
+  },
   "noellesroles.oppoafive": {
     "sounds": [
       {

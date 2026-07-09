@@ -45,6 +45,10 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "knife_brokenbottle", QualityColor.COMMON);
         registerSkin(SkinTypes.KNIFE, "knife_ceremonial", QualityColor.RARE);
         registerSkin(SkinTypes.KNIFE, "knife_goldcross", QualityColor.EPIC);
+        registerSkin(SkinTypes.KNIFE, "knife_hammer", QualityColor.COMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_bananaknife", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_yingfeng", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.KNIFE, "knife_beijixing", QualityColor.LEGENDARY);
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤
@@ -83,6 +87,13 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.BAT, "baseball_bat_ice", QualityColor.EPIC);
         registerSkin(SkinTypes.BAT, "baseball_bat_sonic", QualityColor.EPIC);
         registerSkin(SkinTypes.BAT, "baseball_bat_studded", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.BAT, "baseball_bat_dayiwan", QualityColor.EPIC);
+        registerSkin(SkinTypes.BAT, "baseball_bat_hanger", QualityColor.COMMON);
+        registerSkin(SkinTypes.BAT, "baseball_bat_megammer", QualityColor.RARE);
+        registerSkin(SkinTypes.BAT, "baseball_bat_wrench", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.BAT, "baseball_bat_badminton", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.BAT, "baseball_bat_shovel", QualityColor.COMMON);
+        registerSkin(SkinTypes.BAT, "baseball_bat_longaxe", QualityColor.RARE);
 
         // ═══════════════════════════════════════════════════════════════════
         // GRENADE（手雷）皮肤
@@ -100,6 +111,11 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_kanshenmekan", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zisefurui", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zhumei", QualityColor.RARE);
+        registerSkin(SkinTypes.GRENADE, "grenade_toumatou", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_blueberry", QualityColor.RARE);
+        registerSkin(SkinTypes.GRENADE, "grenade_coconut", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.GRENADE, "grenade_explosives", QualityColor.RARE);
+        registerSkin(SkinTypes.GRENADE, "grenade_talisman", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // HAT（帽子）皮肤

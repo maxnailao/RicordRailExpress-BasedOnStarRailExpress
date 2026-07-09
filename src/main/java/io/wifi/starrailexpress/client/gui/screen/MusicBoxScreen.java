@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.client.gui.screen;
 import io.wifi.starrailexpress.content.musicbox.MusicBox;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry;
+import io.wifi.starrailexpress.content.musicbox.network.DrawMusicBoxLotteryC2SPayload;
+import io.wifi.starrailexpress.content.musicbox.network.MusicBoxLotteryResultS2CPayload;
 import io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -40,6 +42,11 @@ public class MusicBoxScreen extends Screen {
     private static List<String> clientOwnedBoxes = null;
     private static String clientEquippedBox = null;
 
+    // 抽奖结果缓存
+    private static String lotteryResultMsg = null;
+    private static long lotteryResultTime = 0;
+    private static int clientLotteryTickets = -1;
+
     private final List<MusicBoxEntry> entries = new ArrayList<>();
     private int scrollOffset = 0;
     private Button backButton;
@@ -55,6 +62,35 @@ public class MusicBoxScreen extends Screen {
     public static void updateCache(io.wifi.starrailexpress.content.musicbox.network.SyncMusicBoxS2CPayload payload) {
         clientOwnedBoxes = new ArrayList<>(payload.ownedBoxes());
         clientEquippedBox = payload.equippedBox().isEmpty() ? null : payload.equippedBox();
+    }
+
+    /**
+     * 抽奖结果回调。
+     */
+    public static void onLotteryResult(MusicBoxLotteryResultS2CPayload payload) {
+        clientLotteryTickets = payload.remainingTickets();
+        if (payload.won()) {
+            lotteryResultMsg = Component.translatable("screen.sre.musicbox.lottery.win", payload.musicBoxName()).getString();
+        } else {
+            lotteryResultMsg = Component.translatable("screen.sre.musicbox.lottery.lose").getString();
+        }
+        lotteryResultTime = System.currentTimeMillis();
+        // 重新初始化界面以刷新显示
+        var mc = Minecraft.getInstance();
+        if (mc.screen instanceof MusicBoxScreen screen) {
+            screen.init();
+        }
+    }
+
+    /**
+     * 由 S2C 网络包调用，强制更新客户端抽奖次数缓存。
+     */
+    public static void setLotteryTickets(int tickets) {
+        clientLotteryTickets = tickets;
+        var mc = Minecraft.getInstance();
+        if (mc.screen instanceof MusicBoxScreen screen) {
+            screen.init();
+        }
     }
 
     private List<String> getOwnedBoxes() {
@@ -76,6 +112,16 @@ public class MusicBoxScreen extends Screen {
             if (comp != null) return comp.getEquippedBox();
         }
         return null;
+    }
+
+    private int getLotteryTickets() {
+        if (clientLotteryTickets >= 0) return clientLotteryTickets;
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            var comp = MusicBoxPlayerComponent.KEY.maybeGet(player).orElse(null);
+            if (comp != null) return comp.getLotteryTickets();
+        }
+        return 0;
     }
 
     @Override
@@ -174,6 +220,18 @@ public class MusicBoxScreen extends Screen {
             }
         }
 
+        // 抽奖按钮
+        int lotteryBtnW = 120;
+        int lotteryBtnH = 20;
+        int tickets = getLotteryTickets();
+        Component lotteryLabel = tickets > 0
+                ? Component.translatable("screen.sre.musicbox.lottery.draw", tickets)
+                : Component.translatable("screen.sre.musicbox.lottery.no_tickets");
+        Button lotteryButton = Button.builder(lotteryLabel, b -> drawLottery())
+                .pos((screenWidth - lotteryBtnW) / 2, screenHeight - 56).size(lotteryBtnW, lotteryBtnH).build();
+        lotteryButton.active = tickets > 0;
+        addRenderableWidget(lotteryButton);
+
         // 取消装备按钮
         int btnW = 100;
         int btnH = 20;
@@ -233,10 +291,24 @@ public class MusicBoxScreen extends Screen {
         this.init();
     }
 
+    private void drawLottery() {
+        ClientPlayNetworking.send(new DrawMusicBoxLotteryC2SPayload());
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
+        // 显示抽奖结果（3秒内显示）
+        if (lotteryResultMsg != null && System.currentTimeMillis() - lotteryResultTime < 3000) {
+            var font = Minecraft.getInstance().font;
+            int tw = font.width(lotteryResultMsg);
+            int x = (width - tw) / 2;
+            int y = height / 2 - 30;
+            boolean isWin = lotteryResultMsg.contains("抽中") || lotteryResultMsg.contains("won");
+            graphics.fill(x - 4, y - 4, x + tw + 4, y + font.lineHeight + 4, 0xCC000000);
+            graphics.drawString(font, lotteryResultMsg, x, y, isWin ? 0xFF00FF00 : 0xFFAAAAAA, false);
+        }
     }
 
     @Override

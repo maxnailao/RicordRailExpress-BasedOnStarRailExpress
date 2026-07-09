@@ -251,7 +251,12 @@ public class ItemSkinManager {
      * @param skinName  皮肤名称
      */
     public static void setEquippedSkin(Player player, ItemStack itemStack, String skinName) {
-        PlayerEconomyManager.setEquippedSkinForItemType(player, getItemTypeName(itemStack), skinName);
+        String itemTypeName = getItemTypeName(itemStack);
+        PlayerEconomyManager.setEquippedSkinForItemType(player, itemTypeName, skinName);
+        // 同步更新 CCA 组件
+        if (player instanceof ServerPlayer serverPlayer) {
+            SREPlayerSkinsComponent.KEY.get(serverPlayer).setEquippedSkinForItemType(itemTypeName, skinName);
+        }
     }
 
     /**

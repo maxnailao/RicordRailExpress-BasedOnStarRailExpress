@@ -48,5 +48,230 @@
         "stream": true
       }
     ]
+  },
+  "musicbox.everybody_dies_in_their_nightmares": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.everybody_dies_in_their_nightmares",
+    "sounds": [{"name": "starrailexpress:musicbox/everybody_dies_in_their_nightmares", "stream": true}]
+  },
+  "musicbox.nevada": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.nevada",
+    "sounds": [{"name": "starrailexpress:musicbox/nevada", "stream": true}]
+  },
+  "musicbox.wasted": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.wasted",
+    "sounds": [{"name": "starrailexpress:musicbox/wasted", "stream": true}]
+  },
+  "musicbox.qinaide_ni_bei_huozang_le": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.qinaide_ni_bei_huozang_le",
+    "sounds": [{"name": "starrailexpress:musicbox/qinaide_ni_bei_huozang_le", "stream": true}]
+  },
+  "musicbox.ni_mishi_le_ma": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.ni_mishi_le_ma",
+    "sounds": [{"name": "starrailexpress:musicbox/ni_mishi_le_ma", "stream": true}]
+  },
+  "musicbox.dongmian": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.dongmian",
+    "sounds": [{"name": "starrailexpress:musicbox/dongmian", "stream": true}]
+  },
+  "musicbox.juedou": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.juedou",
+    "sounds": [{"name": "starrailexpress:musicbox/juedou", "stream": true}]
+  },
+  "musicbox.shuangnan": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.shuangnan",
+    "sounds": [{"name": "starrailexpress:musicbox/shuangnan", "stream": true}]
+  },
+  "musicbox.jita_gudu_yu_lanse_xingqiu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.jita_gudu_yu_lanse_xingqiu",
+    "sounds": [{"name": "starrailexpress:musicbox/jita_gudu_yu_lanse_xingqiu", "stream": true}]
+  },
+  "musicbox.zanmen_jiehunba": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.zanmen_jiehunba",
+    "sounds": [{"name": "starrailexpress:musicbox/zanmen_jiehunba", "stream": true}]
+  },
+  "musicbox.fengchengzhe": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.fengchengzhe",
+    "sounds": [{"name": "starrailexpress:musicbox/fengchengzhe", "stream": true}]
+  },
+  "musicbox.balalaika": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.balalaika",
+    "sounds": [{"name": "starrailexpress:musicbox/balalaika", "stream": true}]
+  },
+  "musicbox.dangni": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.dangni",
+    "sounds": [{"name": "starrailexpress:musicbox/dangni", "stream": true}]
+  },
+  "musicbox.guaiwu_zhige": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.guaiwu_zhige",
+    "sounds": [{"name": "starrailexpress:musicbox/guaiwu_zhige", "stream": true}]
+  },
+  "musicbox.wo_conglai_dou_buhui_shu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.wo_conglai_dou_buhui_shu",
+    "sounds": [{"name": "starrailexpress:musicbox/wo_conglai_dou_buhui_shu", "stream": true}]
+  },
+  "musicbox.xinsanbuqu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.xinsanbuqu",
+    "sounds": [{"name": "starrailexpress:musicbox/xinsanbuqu", "stream": true}]
+  },
+  "musicbox.xingxing_yu_women": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.xingxing_yu_women",
+    "sounds": [{"name": "starrailexpress:musicbox/xingxing_yu_women", "stream": true}]
+  },
+  "musicbox.xingkong_xuaiqu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.xingkong_xuaiqu",
+    "sounds": [{"name": "starrailexpress:musicbox/xingkong_xuaiqu", "stream": true}]
+  },
+  "musicbox.shuishou_dj": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.shuishou_dj",
+    "sounds": [{"name": "starrailexpress:musicbox/shuishou_dj", "stream": true}]
+  },
+  "musicbox.liuguang_sijian": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.liuguang_sijian",
+    "sounds": [{"name": "starrailexpress:musicbox/liuguang_sijian", "stream": true}]
+  },
+  "musicbox.kong_no_xiang": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.kong_no_xiang",
+    "sounds": [{"name": "starrailexpress:musicbox/kong_no_xiang", "stream": true}]
+  },
+  "musicbox.luoshengmen": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.luoshengmen",
+    "sounds": [{"name": "starrailexpress:musicbox/luoshengmen", "stream": true}]
+  },
+  "musicbox.an_ni_tokete_ku": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.an_ni_tokete_ku",
+    "sounds": [{"name": "starrailexpress:musicbox/an_ni_tokete_ku", "stream": true}]
+  },
+  "musicbox.maque": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.maque",
+    "sounds": [{"name": "starrailexpress:musicbox/maque", "stream": true}]
+  },
+  "musicbox.ez4ence": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.ez4ence",
+    "sounds": [{"name": "starrailexpress:musicbox/ez4ence", "stream": true}]
+  },
+  "musicbox.lone_digger": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.lone_digger",
+    "sounds": [{"name": "starrailexpress:musicbox/lone_digger", "stream": true}]
+  },
+  "musicbox.reverse": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.reverse",
+    "sounds": [{"name": "starrailexpress:musicbox/reverse", "stream": true}]
+  },
+  "musicbox.the_wandering_ronin": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.the_wandering_ronin",
+    "sounds": [{"name": "starrailexpress:musicbox/the_wandering_ronin", "stream": true}]
+  },
+  "musicbox.aihei": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.aihei",
+    "sounds": [{"name": "starrailexpress:musicbox/aihei", "stream": true}]
+  },
+  "musicbox.chongjixing": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.chongjixing",
+    "sounds": [{"name": "starrailexpress:musicbox/chongjixing", "stream": true}]
+  },
+  "musicbox.chumo_nengliang": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.chumo_nengliang",
+    "sounds": [{"name": "starrailexpress:musicbox/chumo_nengliang", "stream": true}]
+  },
+  "musicbox.dashang_huahuo": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.dashang_huahuo",
+    "sounds": [{"name": "starrailexpress:musicbox/dashang_huahuo", "stream": true}]
+  },
+  "musicbox.geren_jianjie": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.geren_jianjie",
+    "sounds": [{"name": "starrailexpress:musicbox/geren_jianjie", "stream": true}]
+  },
+  "musicbox.hualian": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.hualian",
+    "sounds": [{"name": "starrailexpress:musicbox/hualian", "stream": true}]
+  },
+  "musicbox.kuchazi": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.kuchazi",
+    "sounds": [{"name": "starrailexpress:musicbox/kuchazi", "stream": true}]
+  },
+  "musicbox.rensheng_hechu_bu_qingshan": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.rensheng_hechu_bu_qingshan",
+    "sounds": [{"name": "starrailexpress:musicbox/rensheng_hechu_bu_qingshan", "stream": true}]
+  },
+  "musicbox.tangping_qingnian": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.tangping_qingnian",
+    "sounds": [{"name": "starrailexpress:musicbox/tangping_qingnian", "stream": true}]
+  },
+  "musicbox.tongxiao_dadan": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.tongxiao_dadan",
+    "sounds": [{"name": "starrailexpress:musicbox/tongxiao_dadan", "stream": true}]
+  },
+  "musicbox.wanzhong_zhumu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.wanzhong_zhumu",
+    "sounds": [{"name": "starrailexpress:musicbox/wanzhong_zhumu", "stream": true}]
+  },
+  "musicbox.yilian_jieyuan": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.yilian_jieyuan",
+    "sounds": [{"name": "starrailexpress:musicbox/yilian_jieyuan", "stream": true}]
+  },
+  "musicbox.youwei_qingnian": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.youwei_qingnian",
+    "sounds": [{"name": "starrailexpress:musicbox/youwei_qingnian", "stream": true}]
+  },
+  "musicbox.zhanwubusheng": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.zhanwubusheng",
+    "sounds": [{"name": "starrailexpress:musicbox/zhanwubusheng", "stream": true}]
+  },
+  "musicbox.zhiyin_ni_tai_mei": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.zhiyin_ni_tai_mei",
+    "sounds": [{"name": "starrailexpress:musicbox/zhiyin_ni_tai_mei", "stream": true}]
+  },
+  "musicbox.aizo": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.aizo",
+    "sounds": [{"name": "starrailexpress:musicbox/aizo", "stream": true}]
+  },
+  "musicbox.dage_xiaoqu": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.dage_xiaoqu",
+    "sounds": [{"name": "starrailexpress:musicbox/dage_xiaoqu", "stream": true}]
   }
 }

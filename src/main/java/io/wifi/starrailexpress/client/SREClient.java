@@ -936,6 +936,18 @@ public class SREClient implements ClientModInitializer {
                 (payload, context) -> context.client().execute(() -> {
                     io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen.updateCache(payload);
                 }));
+        // 音乐盒抽奖结果接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.content.musicbox.network.MusicBoxLotteryResultS2CPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen.onLotteryResult(payload);
+                }));
+        // 抽奖次数强制同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.content.musicbox.network.SyncLotteryTicketsS2CPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen.setLotteryTickets(payload.tickets());
+                }));
 
         // Chat Dialogue
         ClientPlayNetworking.registerGlobalReceiver(

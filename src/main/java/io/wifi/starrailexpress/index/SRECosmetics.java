@@ -16,10 +16,10 @@ public interface SRECosmetics {
     }
 
     static void setSkin(Player player, ItemStack itemStack, String skinName) {
-        // 只有上传数据在客户端，服务器不能datasync
+        // 直接通过 CCA 组件的方法更新，而不是修改 getEquippedSkins() 返回的副本
         final var playerSkinsComponent = KEY.get(player);
-        playerSkinsComponent.getEquippedSkins().put(BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath(),
-                skinName);
+        String itemPath = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
+        playerSkinsComponent.setEquippedSkinForItemType(itemPath, skinName);
         playerSkinsComponent.sync();
     }
 }

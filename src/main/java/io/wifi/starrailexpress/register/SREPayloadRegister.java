@@ -223,5 +223,15 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(
                 io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.ID,
                 io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.CODEC);
+        // 音乐盒抽奖网络包
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.content.musicbox.network.DrawMusicBoxLotteryC2SPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.DrawMusicBoxLotteryC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.content.musicbox.network.MusicBoxLotteryResultS2CPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.MusicBoxLotteryResultS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.content.musicbox.network.SyncLotteryTicketsS2CPayload.ID,
+                io.wifi.starrailexpress.content.musicbox.network.SyncLotteryTicketsS2CPayload.CODEC);
     }
 }

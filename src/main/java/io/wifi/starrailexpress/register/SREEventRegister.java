@@ -44,6 +44,7 @@ public class SREEventRegister {
         OnGameEnd.EVENT.register((serverLevel, __cca) -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
         });
+
         OnGameStarted.EVENT.register(serverLevel -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
             for (ServerPlayer player : serverLevel.players()) {

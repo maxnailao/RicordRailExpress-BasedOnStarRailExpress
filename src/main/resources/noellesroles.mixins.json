@@ -154,7 +154,8 @@
     "client.C4ItemEntityRendererMixin",
     "client.AbstractClientPlayerSkinMixin",
     "client.FishingBobberRendererMixin",
-    "game.PelicanAliveCheckMixin"
+    "game.PelicanAliveCheckMixin",
+    "client.roles.mengyan.MengyanScreenMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

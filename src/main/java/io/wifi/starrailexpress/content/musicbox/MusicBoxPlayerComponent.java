@@ -36,6 +36,9 @@ public class MusicBoxPlayerComponent implements AutoSyncedComponent {
     @Nullable
     private String equippedBox = null;
 
+    /** 音乐盒抽奖次数 */
+    private int lotteryTickets = 0;
+
     public MusicBoxPlayerComponent(Player player) {
         this.player = player;
     }
@@ -57,6 +60,51 @@ public class MusicBoxPlayerComponent implements AutoSyncedComponent {
 
     public Set<String> getOwnedBoxes() {
         return Collections.unmodifiableSet(ownedBoxes);
+    }
+
+    public int getLotteryTickets() {
+        return lotteryTickets;
+    }
+
+    /**
+     * 增加抽奖次数。
+     */
+    public void addLotteryTicket() {
+        this.lotteryTickets++;
+        sync();
+    }
+
+    /**
+     * 执行抽奖：消耗 1 次机会，20% 概率抽中未拥有的音乐盒。
+     * @return 抽中的音乐盒 ID，null 表示未抽中
+     */
+    @Nullable
+    public String drawLottery() {
+        if (lotteryTickets <= 0) return null;
+        lotteryTickets--;
+
+        // 收集未拥有的音乐盒
+        List<String> unowned = new ArrayList<>();
+        for (MusicBox box : MusicBoxRegistry.getAll()) {
+            if (!ownedBoxes.contains(box.id())) {
+                unowned.add(box.id());
+            }
+        }
+        if (unowned.isEmpty()) {
+            sync();
+            return null; // 已拥有全部
+        }
+
+        // 20% 概率抽中
+        java.util.Random random = new java.util.Random();
+        if (random.nextInt(100) < 20) {
+            String wonId = unowned.get(random.nextInt(unowned.size()));
+            ownedBoxes.add(wonId);
+            sync();
+            return wonId;
+        }
+        sync();
+        return null; // 未抽中
     }
 
     // ── 修改 ──
@@ -114,6 +162,7 @@ public class MusicBoxPlayerComponent implements AutoSyncedComponent {
         if (equippedBox != null) {
             tag.putString("EquippedBox", equippedBox);
         }
+        tag.putInt("LotteryTickets", lotteryTickets);
     }
 
     @Override
@@ -124,6 +173,7 @@ public class MusicBoxPlayerComponent implements AutoSyncedComponent {
             ownedBoxes.add(t.getAsString());
         }
         equippedBox = tag.contains("EquippedBox") ? tag.getString("EquippedBox") : null;
+        lotteryTickets = tag.getInt("LotteryTickets");
     }
 
     // AutoSyncedComponent 默认使用 writeToNbt/readFromNbt 进行同步
