@@ -225,7 +225,7 @@ public class TraitorAndModifiers {
     public static SREModifier CORRUPTION = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("corruption"),
             new Color(128, 128, 128).getRGB(), // 暗血红
-            null, null, false, false))
+            null, new HashSet<>(Arrays.asList(ModRoles.SHERIFF, ModRoles.PATROLLER)), false, false))
             .setDefaultEnableChance(1500).setHidden(true);
 
     // ==================== 运行时数据存储 ====================
@@ -352,16 +352,6 @@ public class TraitorAndModifiers {
                         worldModifierComponent.removeModifier(player.getUUID(), REBEL);
                     } else if (!gameWorld.isInnocent(player)) {
                         worldModifierComponent.removeModifier(player.getUUID(), REBEL);
-                    }
-                }
-            }
-
-            //腐败 - 仅在警长和巡警上生效
-            if (modifier.equals(CORRUPTION)) {
-                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-                if (gameWorld != null && gameWorld.isRunning()) {
-                    if (!gameWorld.isRole(player, ModRoles.SHERIFF) && !gameWorld.isRole(player, ModRoles.PATROLLER)) {
-                        worldModifierComponent.removeModifier(player.getUUID(), CORRUPTION);
                     }
                 }
             }

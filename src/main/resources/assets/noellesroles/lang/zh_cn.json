@@ -2589,7 +2589,7 @@
   "modifier.noellesroles.last_gasp.trigger": "你触发了回光返照！",
   "modifier.noellesroles.last_gasp.death": "你已安详的睡去。",
   "modifier.noellesroles.rebel.trigger": "你们当中有人变成了叛徒！",
-  "modifier.noellesroles.corruption.trigger": "有人看不惯警卫们口中的正义!",
+  "modifier.noellesroles.corruption.trigger": "传来了警徽落地的声音!",
   "modifier.noellesroles.rebel.sound": "一个不祥的转变...",
   "modifier.noellesroles.money_grubber.taken": "%s 金币被夺走了！",
   "modifier.noellesroles.desperate_faith.activated": "自绝境中涅槃",
@@ -3667,7 +3667,7 @@
 
 
   "==================== 黑警 ====================": "",
-  "message.noellesroles.corrupt_cop.entry": "空气中有着浓浓的火药味",
+  "message.noellesroles.corrupt_cop.entry": "有人的警徽失去光泽",
   "announcement.star.role.corrupt_cop": "黑警",
   "announcement.star.goals.corrupt_cop": "杀光所有人，让属于你的正义得到伸张！",
   "info.screen.roleid.corrupt_cop": "中立阵营\n你拥有一把左轮手枪和一把撬棍\n杀光所有人即可获胜！\n你对观者的强制掉枪免疫\n你存活时，杀手和乘客都无法获胜。\n你可以看到当前场上存活杀手数量\n若场上无杀手阵营，则触发黑警时刻(亡命徒时刻期间不会触发)，你获得一把巡警手枪和一颗手雷，解锁黑警透视视野\n请在黑警时刻结束前处决所有人，行驶你的正义！",
