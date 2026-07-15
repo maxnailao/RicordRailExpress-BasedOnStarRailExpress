@@ -1479,7 +1479,7 @@ public class ModRolesInitialEventRegister {
                     // 实际逻辑在C2S包处理器中，这里只是标记技能可用
                     // 玩家打开背包后通过选人UI发送C2S包触发
                     return false;
-                }).cooldownSeconds(0).showOnHud(false).build());
+                }).cooldownSeconds(45).showOnHud(false).build());
 
         // 殉道者技能注册：牺牲复活
         RoleSkill.register(ModRoles.XUNDAOZHE, RoleSkill.skill(

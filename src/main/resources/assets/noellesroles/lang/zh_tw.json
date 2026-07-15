@@ -3587,6 +3587,7 @@
   "hud.noellesroles.mengyan.player_selection": "選擇恐懼目標",
   "message.noellesroles.mengyan.fear_already_active": "你已經有活躍的恐懼技能",
   "message.noellesroles.mengyan.target_invalid": "無效目標",
+  "message.noellesroles.mengyan.target_not_innocent": "只能對平民陣營使用恐懼",
   "message.noellesroles.mengyan.fear_applied": "恐懼已施加給 %s",
   "message.noellesroles.mengyan.you_are_feared": "你被夢魘施加了恐懼！快上床睡覺！",
   "message.noellesroles.mengyan.fear_released": "恐懼已解除！",

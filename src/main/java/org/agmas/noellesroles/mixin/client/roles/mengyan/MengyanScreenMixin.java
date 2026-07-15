@@ -15,6 +15,7 @@ import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.MengyanPlayerWidget;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
+import io.wifi.starrailexpress.api.SRERole;
 import org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -111,13 +112,15 @@ public abstract class MengyanScreenMixin extends LimitedHandledScreen<InventoryM
             return List.of();
         }
 
-        // 显示所有存活玩家（排除自己、杀手队友、已死亡玩家）
+        // 显示所有存活的平民阵营玩家（排除自己、已死亡玩家、非平民阵营）
+        var gameWorld = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(client.level);
         return client.getConnection().getOnlinePlayers().stream()
-                .filter(a -> a.getProfile().getId() != player.getUUID()
-                        && a.getGameMode() == GameType.ADVENTURE
-                        && !ModRoles.isVisibleKillerTeammate(
-                                io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY
-                                        .get(client.level).getRole(a.getProfile().getId())))
+                .filter(a -> {
+                    if (a.getProfile().getId() == player.getUUID()) return false;
+                    if (a.getGameMode() != GameType.ADVENTURE) return false;
+                    SRERole role = gameWorld.getRole(a.getProfile().getId());
+                    return role != null && role.isInnocent();
+                })
                 .collect(Collectors.toList());
     }
 

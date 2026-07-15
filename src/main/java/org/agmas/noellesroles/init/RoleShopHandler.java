@@ -3169,6 +3169,7 @@ public class RoleShopHandler {
                 ModItems.HAMMER.getDefaultInstance(),
                 200,
                 ShopEntry.Type.WEAPON));
+        ShopContent.customEntries.put(ModRoles.WORKER_ID, WORKER_SHOP);
         // 情报官商店
         {
             var SHOP = new ArrayList<ShopEntry>();
@@ -3253,12 +3254,12 @@ public class RoleShopHandler {
                       List.of(
                               new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 20, ShopEntry.Type.TOOL)));
           }
-        // 末影人商店 - 同杀手默认商店 + 末影珍珠（100金币）
+        // 末影人商店 - 同杀手默认商店 + 末影珍珠（50金币）
         {
             var ENDERMAN_SHOP = new ArrayList<>(ShopContent.getDefaultKnifeEntries());
             ENDERMAN_SHOP.add(new ShopEntry(
                     Items.ENDER_PEARL.getDefaultInstance(),
-                    100,
+                    50,
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.MOYINGREN_ENDERMAN_ID, ENDERMAN_SHOP);
         }

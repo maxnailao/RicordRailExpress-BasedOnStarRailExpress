@@ -3791,6 +3791,7 @@
   "hud.noellesroles.mengyan.player_selection": "Select Fear Target",
   "message.noellesroles.mengyan.fear_already_active": "You already have an active fear skill",
   "message.noellesroles.mengyan.target_invalid": "Invalid target",
+  "message.noellesroles.mengyan.target_not_innocent": "Fear can only be used on Innocent faction players",
   "message.noellesroles.mengyan.fear_applied": "Fear applied to %s",
   "message.noellesroles.mengyan.you_are_feared": "You have been feared by Nightmare! Go to sleep!",
   "message.noellesroles.mengyan.fear_released": "Fear released!",

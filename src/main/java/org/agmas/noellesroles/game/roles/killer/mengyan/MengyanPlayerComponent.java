@@ -124,6 +124,16 @@ public class MengyanPlayerComponent implements RoleComponent, ServerTickingCompo
             return false;
         }
 
+        // 验证目标必须是平民阵营
+        io.wifi.starrailexpress.api.SRERole targetRole =
+                io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(serverLevel).getRole(target);
+        if (targetRole == null || !targetRole.isInnocent()) {
+            serverPlayer.displayClientMessage(
+                    Component.translatable("message.noellesroles.mengyan.target_not_innocent")
+                            .withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+
         // 设置梦魇侧状态
         this.fearTarget = targetUuid;
         this.fearRemainingTicks = FEAR_DURATION_TICKS;

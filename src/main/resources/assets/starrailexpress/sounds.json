@@ -273,5 +273,20 @@
     "category": "record",
     "subtitle": "subtitle.starrailexpress.musicbox.dage_xiaoqu",
     "sounds": [{"name": "starrailexpress:musicbox/dage_xiaoqu", "stream": true}]
+  },
+  "musicbox.xiang_bendan_yiyang": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.xiang_bendan_yiyang",
+    "sounds": [{"name": "starrailexpress:musicbox/xiang_bendan_yiyang", "stream": true}]
+  },
+  "musicbox.guanyu_zhige": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.guanyu_zhige",
+    "sounds": [{"name": "starrailexpress:musicbox/guanyu_zhige", "stream": true}]
+  },
+  "musicbox.haoxiang_ting_ni_shuo_yuese_zhenmei": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.haoxiang_ting_ni_shuo_yuese_zhenmei",
+    "sounds": [{"name": "starrailexpress:musicbox/haoxiang_ting_ni_shuo_yuese_zhenmei", "stream": true}]
   }
 }

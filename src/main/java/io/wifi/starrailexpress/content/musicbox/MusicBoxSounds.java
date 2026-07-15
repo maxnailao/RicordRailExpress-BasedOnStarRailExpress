@@ -68,6 +68,10 @@ public interface MusicBoxSounds {
     // ── 新增 2 个音乐盒音效 ──
     SoundEvent MUSICBOX_AIZO = registrar.create("musicbox.aizo");
     SoundEvent MUSICBOX_DAGE_XIAOQU = registrar.create("musicbox.dage_xiaoqu");
+    // ── 新增 3 个音乐盒音效 ──
+    SoundEvent MUSICBOX_XIANG_BENDAN_YIYANG = registrar.create("musicbox.xiang_bendan_yiyang");
+    SoundEvent MUSICBOX_GUANYU_ZHIGE = registrar.create("musicbox.guanyu_zhige");
+    SoundEvent MUSICBOX_HAOXIANG_TING_NI_SHUO_YUESE_ZHENMEI = registrar.create("musicbox.haoxiang_ting_ni_shuo_yuese_zhenmei");
 
     static void initialize() {
         registrar.registerEntries();

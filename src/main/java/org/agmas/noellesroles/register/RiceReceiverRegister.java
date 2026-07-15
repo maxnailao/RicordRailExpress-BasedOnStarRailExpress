@@ -15,6 +15,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.resources.ResourceLocation;
+import org.agmas.noellesroles.Noellesroles;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -794,6 +795,18 @@ public class RiceReceiverRegister {
             // 验证玩家存活
             if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
 
+            // 检查技能冷却
+            ResourceLocation mengyanSkillId = ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mengyan_fear");
+            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
+            if (!ability.canUseSkill(mengyanSkillId)) {
+                var state = ability.getSkillState(mengyanSkillId);
+                player.displayClientMessage(
+                        Component.translatable("message.sre.skill.cooldown",
+                                String.format("%.1f", state.cooldown / 20.0F))
+                                .withStyle(ChatFormatting.RED), true);
+                return;
+            }
+
             // 验证目标玩家
             Player target = player.level().getPlayerByUUID(payload.targetUuid());
             if (target == null || target == player) {
@@ -802,19 +815,24 @@ public class RiceReceiverRegister {
                 return;
             }
 
-            // 验证目标不是杀手队友
+            // 验证目标必须是平民阵营
             SRERole targetRole = gameWorld.getRole(target);
-            if (targetRole != null && ModRoles.isVisibleKillerTeammate(targetRole)) {
+            if (targetRole == null || !targetRole.isInnocent()) {
                 player.displayClientMessage(
-                        Component.translatable("message.noellesroles.mengyan.target_teammate"), true);
+                        Component.translatable("message.noellesroles.mengyan.target_not_innocent")
+                                .withStyle(ChatFormatting.RED), true);
                 return;
             }
 
             // 获取梦魇组件并施放恐惧
             org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent mengyanComp =
                     ModComponents.MENGYAN.get(player);
-            mengyanComp.useSkill(payload.targetUuid());
-            ConfigWorldComponent.onPlayerUsedSkill(player);
+            if (mengyanComp.useSkill(payload.targetUuid())) {
+                // 技能成功，设置45秒冷却并触发事件
+                ability.getSkillState(mengyanSkillId).cooldown = 900; // 45s = 900tick
+                ability.sync();
+                ConfigWorldComponent.onPlayerUsedSkill(player);
+            }
         });
 
         // 处理傀儡师技能包
