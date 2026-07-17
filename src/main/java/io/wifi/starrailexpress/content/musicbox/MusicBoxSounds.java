@@ -72,6 +72,9 @@ public interface MusicBoxSounds {
     SoundEvent MUSICBOX_XIANG_BENDAN_YIYANG = registrar.create("musicbox.xiang_bendan_yiyang");
     SoundEvent MUSICBOX_GUANYU_ZHIGE = registrar.create("musicbox.guanyu_zhige");
     SoundEvent MUSICBOX_HAOXIANG_TING_NI_SHUO_YUESE_ZHENMEI = registrar.create("musicbox.haoxiang_ting_ni_shuo_yuese_zhenmei");
+    // ── 新增 2 个音乐盒音效 ──
+    SoundEvent MUSICBOX_DIE_FOR_U = registrar.create("musicbox.die_for_u");
+    SoundEvent MUSICBOX_STYX_HELIX = registrar.create("musicbox.styx_helix");
 
     static void initialize() {
         registrar.registerEntries();

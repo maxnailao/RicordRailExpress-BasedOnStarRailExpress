@@ -156,5 +156,10 @@ public final class MusicBoxRegistry {
                 Component.translatable("musicbox.starrailexpress.guanyu_zhige"), 1.5f));
         register(new MusicBox("haoxiang_ting_ni_shuo_yuese_zhenmei", MusicBoxSounds.MUSICBOX_HAOXIANG_TING_NI_SHUO_YUESE_ZHENMEI,
                 Component.translatable("musicbox.starrailexpress.haoxiang_ting_ni_shuo_yuese_zhenmei"), 1.3f));
+        // ── 新增 2 个音乐盒 ──
+        register(new MusicBox("die_for_u", MusicBoxSounds.MUSICBOX_DIE_FOR_U,
+                Component.translatable("musicbox.starrailexpress.die_for_u"), 1.5f));
+        register(new MusicBox("styx_helix", MusicBoxSounds.MUSICBOX_STYX_HELIX,
+                Component.translatable("musicbox.starrailexpress.styx_helix"), 1.4f));
     }
 }
