@@ -288,5 +288,15 @@
     "category": "record",
     "subtitle": "subtitle.starrailexpress.musicbox.haoxiang_ting_ni_shuo_yuese_zhenmei",
     "sounds": [{"name": "starrailexpress:musicbox/haoxiang_ting_ni_shuo_yuese_zhenmei", "stream": true}]
+  },
+  "musicbox.die_for_u": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.die_for_u",
+    "sounds": [{"name": "starrailexpress:musicbox/die_for_u", "stream": true}]
+  },
+  "musicbox.styx_helix": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.styx_helix",
+    "sounds": [{"name": "starrailexpress:musicbox/styx_helix", "stream": true}]
   }
 }
