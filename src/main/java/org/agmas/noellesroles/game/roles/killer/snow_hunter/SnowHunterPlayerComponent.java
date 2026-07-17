@@ -6,15 +6,14 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
+import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingComponent {
+public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
 
     public static final ComponentKey<SnowHunterPlayerComponent> KEY = ModComponents.SNOW_HUNTER;
 
@@ -25,6 +24,7 @@ public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingCo
 
     public static final int SKILL_DURATION = 8 * 20;
     public static final int SKILL_COOLDOWN = 60 * 20;
+    public static final int SKILL_COST = 80;
 
     public SnowHunterPlayerComponent(@NotNull Player player) {
         this.player = player;
@@ -53,7 +53,6 @@ public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingCo
 
     public void activateSkill() {
         skillActiveTicks = SKILL_DURATION;
-        skillCooldownTicks = SKILL_COOLDOWN;
         sync();
     }
 
@@ -70,16 +69,13 @@ public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingCo
 
         if (skillActiveTicks > 0) {
             skillActiveTicks--;
+            if (skillActiveTicks <= 0) {
+                skillCooldownTicks = SKILL_COOLDOWN;
+                sync();
+            }
         }
         if (skillCooldownTicks > 0) {
             skillCooldownTicks--;
-        }
-
-        if (player.level().getGameTime() % 40 == 0) {
-            if (!sp.hasEffect(MobEffects.NIGHT_VISION)) {
-                sp.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,
-                        Integer.MAX_VALUE, 0, false, false, false));
-            }
         }
 
         if (skillActiveTicks > 0 && skillActiveTicks % 20 == 0) {
@@ -87,6 +83,19 @@ public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingCo
         }
         if (skillCooldownTicks > 0 && skillCooldownTicks % 20 == 0) {
             sync();
+        }
+    }
+
+    @Override
+    public void clientTick() {
+        if (skillActiveTicks > 0) {
+            skillActiveTicks--;
+            if (skillActiveTicks <= 0) {
+                skillCooldownTicks = SKILL_COOLDOWN;
+            }
+        }
+        if (skillCooldownTicks > 0) {
+            skillCooldownTicks--;
         }
     }
 

@@ -84,6 +84,13 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                                 GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0));
                     }
 
+                    if (!player.isCreative()) {
+                        var game = SREGameWorldComponent.KEY.get(player.level());
+                        if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
+                            player.getCooldowns().addCooldown(mainHandStack.getItem(), 600);
+                        }
+                    }
+
                     SniperRifleItem.consumeAmmo(mainHandStack);
 
                     player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
