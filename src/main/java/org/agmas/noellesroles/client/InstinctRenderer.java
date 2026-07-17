@@ -1118,6 +1118,21 @@ public class InstinctRenderer {
                             }
                         }
                     }
+                    // 雪原猎手直觉：同强盗，技能激活时无距离限制
+                    if (SREClient.gameComponent.isRole(self, ModRoles.SNOW_HUNTER)) {
+                        var snowComp = ModComponents.SNOW_HUNTER.maybeGet(self).orElse(null);
+                        boolean skillActive = snowComp != null && snowComp.isSkillActive();
+                        if (!skillActive) {
+                            if (target_role != null && SREClient.gameComponent.isKillerTeamRole(target_role)) {
+                                // 杀手队友和杀手方中立无距离限制
+                            } else {
+                                if (target_player.distanceTo(self) >= 10) {
+                                    return -2;
+                                }
+                            }
+                        }
+                        // 技能激活时不做距离检查，全图透视
+                    }
 
                     // 魔术师：杀手看魔术师时显示红色边框（像看其他杀手一样）
                     if (SREClient.gameComponent.isRole(target_player, ModRoles.MAGICIAN)) {

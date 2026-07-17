@@ -560,6 +560,7 @@ public class InitModRolesMax {
             case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
             case FLY -> config.airRolesMaps.contains(currentMap);
             case TRAP -> config.trapRolesMaps.contains(currentMap);
+            case SNOW -> config.snowRolesMaps.contains(currentMap);
         };
     }
 

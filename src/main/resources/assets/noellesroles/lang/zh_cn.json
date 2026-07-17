@@ -4035,5 +4035,11 @@
 
   "==================== 末影人 ====================": "",
   "announcement.star.role.moyingren_enderman": "末影人",
-  "announcement.star.goals.moyingren_enderman": "穿梭自如"
+  "announcement.star.goals.moyingren_enderman": "穿梭自如",
+
+  "==================== 雪原猎手 ====================": "",
+  "announcement.star.role.snow_hunter": "雪原猎手",
+  "announcement.star.goals.moyingren_enderman": "熟练地狙杀你的目标",
+  "info.screen.roleid.snow_hunter": "杀手阵营\n初始道具：狙击枪和一发马格南子弹\n可在商店购买狙击枪和马格南子弹\n杀手视野只能看见10格以内的乘客和警卫\n使用雷达技能可以获得持续8s的无距离限制透视"
+
 }

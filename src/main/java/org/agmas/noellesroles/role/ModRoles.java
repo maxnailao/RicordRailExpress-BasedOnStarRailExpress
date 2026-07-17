@@ -289,11 +289,12 @@ public class ModRoles {
     public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
     public static final ResourceLocation WRAITH_ASSASSIN_ID = Noellesroles.id("wraith_assassin");
 
-    // 盗猎者角色 ID - 杀手阵营
+    // 盗猎者角色 ID
     public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
     // 召回杀手角色 ID
     public static ResourceLocation RECALL_KILLER_ID = Noellesroles.id("recall_killer");
-
+    // 雪原猎手角色 ID
+    public static final ResourceLocation SNOW_HUNTER_ID = Noellesroles.id("snow_hunter");
 
     // 中立阵营
     public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
@@ -3226,6 +3227,25 @@ public class ModRoles {
             true    // 隐藏计分板
     )).setCanSeeCoin(true)
       .setDefaultMax(1);
+
+    // 雪原猎手
+    public static SRERole SNOW_HUNTER = TMMRoles.registerRole(new NormalRole(
+                    SNOW_HUNTER_ID,
+                    new Color(176, 224, 230).getRGB(),
+                    false,
+                    true,
+                    SRERole.MoodType.FAKE,
+                    Integer.MAX_VALUE,
+                    true
+            )).setComponentKey(ModComponents.SNOW_HUNTER)
+            .setCanSeeCoin(true)
+            .setCanUseInstinct(true)
+            .setCanSeeTeammateKiller(true)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW)
+            .setDefaultMax(1)
+            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableChance(7500);
+
 
     /**
      * 初始化并注册所有角色

@@ -224,9 +224,9 @@ public class TraitorAndModifiers {
     // 腐败 - 刷新于警长和巡警，小脑时转变为黑警
     public static SREModifier CORRUPTION = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("corruption"),
-            new Color(128, 128, 128).getRGB(), // 暗血红
+            new Color(64, 64, 64).getRGB(), // 灰偏黑
             null, new HashSet<>(Arrays.asList(ModRoles.SHERIFF, ModRoles.PATROLLER)), false, false))
-            .setDefaultEnableChance(1500).setHidden(true);
+            .setDefaultEnableChance(10000).setHidden(false);
 
     // ==================== 运行时数据存储 ====================
 

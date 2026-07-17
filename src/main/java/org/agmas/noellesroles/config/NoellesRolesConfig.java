@@ -214,6 +214,11 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> trapRolesMaps = new ArrayList<>(List.of("areas_shamo"));
 
     /**
+     * Areas that will spawn snow-map roles
+     */
+    public ArrayList<String> snowRolesMaps = new ArrayList<>(List.of());
+
+    /**
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")

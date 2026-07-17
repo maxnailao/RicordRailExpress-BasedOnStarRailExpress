@@ -501,6 +501,11 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
+            // 雪原猎手初始化
+            if (role.identifier().equals(ModRoles.SNOW_HUNTER.identifier())) {
+                var comp = ModComponents.SNOW_HUNTER.get(player);
+                comp.init();
+            }
             // 如果不拦截就同步
             abilityPlayerComponent.sync();
         });
@@ -1490,6 +1495,17 @@ public class ModRolesInitialEventRegister {
                     var comp = ModComponents.XUNDAOZHE.get(player);
                     return comp.tryStartRevival();
                 }).cooldownSeconds(0).build());
+        // 雪原猎手技能注册：无距离限制透视8秒，冷却60秒
+        RoleSkill.register(ModRoles.SNOW_HUNTER, RoleSkill.skill(
+                SRE.id("snow_hunter_vision"),
+                "skill.noellesroles.snow_hunter.vision",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = ModComponents.SNOW_HUNTER.get(player);
+                    if (comp.skillCooldownTicks > 0) return false;
+                    comp.activateSkill();
+                    return true;
+                }).cooldownSeconds(60).build());
     }
 
 }
