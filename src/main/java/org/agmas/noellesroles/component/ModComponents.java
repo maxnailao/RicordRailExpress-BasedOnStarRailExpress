@@ -78,6 +78,8 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.snow_hunter.SnowHunterPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
@@ -583,7 +585,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           .getOrCreate(
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "xundaozhe"),
                   XundaozhePlayerComponent.class);
-
+  // 雪原杀手组件 - 杀手阵营，远程狙杀
+  public static final ComponentKey<SnowHunterPlayerComponent> SNOW_HUNTER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snow_hunter"),
+          SnowHunterPlayerComponent.class);
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -1164,6 +1169,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, XUNDAOZHE)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(XundaozhePlayerComponent::new);
+
+    // 注册雪原猎手组件 - 杀手阵营，远程狙杀
+    registry.beginRegistration(Player.class, SNOW_HUNTER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(SnowHunterPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

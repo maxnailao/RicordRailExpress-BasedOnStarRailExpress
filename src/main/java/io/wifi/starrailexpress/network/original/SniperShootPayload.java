@@ -122,11 +122,10 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                                 io.wifi.starrailexpress.event.OnShieldBroken.EVENT.invoker().onShieldBroken(target, player);
                             }
                         }
-
-                        // 击杀逻辑 - 狙击枪对刽子手：不掉落
+                        // 击杀逻辑 - 狙击枪对雪原猎手不掉落
                         if (game.isInnocent(target) && !player.isCreative()) {
-                            // 刽子手使用狙击枪射击时，不触发掉落
-                            if (game.isRole(player, ModRoles.EXECUTIONER)) {
+                            // 雪原猎手使用狙击枪射击时，不触发掉落
+                            if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
                                 // 这里什么都不做，直接继续执行击杀
                             } else if (game.isInnocent(player) && player.getRandom().nextFloat() <= game.getBackfireChance()) {
                                 // 反向击发

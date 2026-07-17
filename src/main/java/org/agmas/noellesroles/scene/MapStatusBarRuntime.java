@@ -23,6 +23,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block.scene.StoveBlock;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.ModSceneBlocks;
@@ -237,6 +238,12 @@ public final class MapStatusBarRuntime {
     }
 
     private static boolean shouldTrack(ServerPlayer player) {
+        if (ModComponents.SNOW_HUNTER.maybeGet(player).isPresent()) {
+            var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            if (game.isRole(player, org.agmas.noellesroles.role.ModRoles.SNOW_HUNTER)) {
+                return false;
+            }
+        }
         return GameUtils.isPlayerAliveAndSurvival(player)
                 && player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE;
     }

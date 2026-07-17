@@ -450,6 +450,13 @@ public class RicesRoleRhapsody implements ModInitializer {
             org.agmas.noellesroles.game.roles.innocence.xundaozhe.XundaozhePlayerComponent xundaozheComponent = org.agmas.noellesroles.component.ModComponents.XUNDAOZHE.get(player);
             xundaozheComponent.init();
         }
+
+        // ==================== 雪原猎手角色处理 ====================
+        if (role.equals(ModRoles.SNOW_HUNTER)) {
+            org.agmas.noellesroles.game.roles.killer.snow_hunter.SnowHunterPlayerComponent snowHunterComponent = org.agmas.noellesroles.component.ModComponents.SNOW_HUNTER.get(player);
+            snowHunterComponent.init();
+        }
+
         // if (role.equals(ModRoles.EXAMPLE_ROLE)) {
         // // 给予物品
         // player.giveItemStack(new ItemStack(Items.PAPER));

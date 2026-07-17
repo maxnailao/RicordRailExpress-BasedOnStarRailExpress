@@ -3280,5 +3280,13 @@ public class RoleShopHandler {
             CORRUPT_COP_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 400, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.CORRUPT_COP_ID, CORRUPT_COP_SHOP);
         }
+        // 雪原猎手商店
+        {
+            var SNOW_HUNTER_SHOP = new ArrayList<ShopEntry>();
+            SNOW_HUNTER_SHOP.add(new KillerKnifeShopEntry(130));
+            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.SCOPE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.MAGNUM_BULLET.getDefaultInstance(), 85, ShopEntry.Type.WEAPON));
+            ShopContent.customEntries.put(ModRoles.SNOW_HUNTER_ID, SNOW_HUNTER_SHOP);
+        }
     }
 }

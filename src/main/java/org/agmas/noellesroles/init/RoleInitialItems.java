@@ -105,6 +105,13 @@ public class RoleInitialItems {
     public static void initializeInitialItems() {
         INITIAL_ITEMS_MAP.clear();
 
+        // 雪原猎手初始物品 - 狙击枪 + 1发子弹
+        {
+            List<Supplier<ItemStack>> snowHunterItems = new ArrayList<>();
+            snowHunterItems.add(() -> TMMItems.SNIPER_RIFLE.getDefaultInstance());
+            snowHunterItems.add(() -> TMMItems.MAGNUM_BULLET.getDefaultInstance());
+            INITIAL_ITEMS_MAP.put(ModRoles.SNOW_HUNTER, snowHunterItems);
+        }
         {
             // baseball
             List<Supplier<ItemStack>> items = new ArrayList<>();
