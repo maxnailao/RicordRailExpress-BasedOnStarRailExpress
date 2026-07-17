@@ -295,6 +295,8 @@ public class ModRoles {
     public static ResourceLocation RECALL_KILLER_ID = Noellesroles.id("recall_killer");
     // 雪原猎手角色 ID
     public static final ResourceLocation SNOW_HUNTER_ID = Noellesroles.id("snow_hunter");
+    // 雪怪角色 ID
+    public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
 
     // 中立阵营
     public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
@@ -3245,6 +3247,32 @@ public class ModRoles {
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(12)
             .setDefaultEnableChance(7500);
+
+    /**
+     * 雪怪 - 独立中立阵营
+     * - 浅灰色
+     * - 虚假心情
+     * - 有限体力
+     * - 可见时间
+     * - 被动：冻死奖励 +150 金币；残局（仅剩杀手/平民阵营）获得速度 III + 发光
+     * - 商店：雪球 15 金币，关灯（3s）100 金币
+     * - 登车标语：让他们在暴风雪中沉睡......
+     */
+    public static SRERole SNOWGUAI_WOW = TMMRoles.registerRole(new NormalRole(
+                    SNOWGUAI_WOW_ID,
+                    new Color(192, 192, 192).getRGB(), // 浅灰色
+                    false,  // isInnocent = false（非乘客阵营）
+                    false,  // canUseKiller = false（无杀手能力）
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力（同平民）
+                    true    // canSeeTime = true（可见时间）
+            )).setComponentKey(ModComponents.SNOWGUAI_WOW)
+            .setNeutrals(true)      // 独立中立阵营
+            .setCanSeeCoin(true)    // 可见金币
+            .setCanSeeTime(true)    // 可见时间
+            .setCanPickUpRevolver(false)  // 不能捡枪
+            .setCanUseInstinct(false)     // 不能使用本能
+            .setDefaultMax(1);
 
 
     /**

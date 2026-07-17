@@ -259,7 +259,8 @@
       "noellesroles:tegong",
       "noellesroles:mengyan",
       "noellesroles:xundaozhe",
-      "noellesroles:snow_hunter"
+      "noellesroles:snow_hunter",
+      "noellesroles:snowguai_wow"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

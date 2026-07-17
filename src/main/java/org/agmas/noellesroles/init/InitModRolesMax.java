@@ -334,6 +334,9 @@ public class InitModRolesMax {
 
         // 梦魇每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.MENGYAN_ID, 1);
+
+        // 雪怪每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.SNOWGUAI_WOW_ID, 1);
     }
 
     public static void registerDynamic() {

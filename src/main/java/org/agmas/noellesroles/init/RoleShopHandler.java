@@ -3288,5 +3288,18 @@ public class RoleShopHandler {
             SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.MAGNUM_BULLET.getDefaultInstance(), 85, ShopEntry.Type.WEAPON));
             ShopContent.customEntries.put(ModRoles.SNOW_HUNTER_ID, SNOW_HUNTER_SHOP);
         }
+        // 雪怪商店
+        {
+            var SNOWGUAI_WOW_SHOP = new ArrayList<ShopEntry>();
+            // 雪球 - 15金币
+            SNOWGUAI_WOW_SHOP.add(new ShopEntry(Items.SNOWBALL.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
+            // 关灯（仅3s）- 100金币
+            SNOWGUAI_WOW_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player, 3 * 20); // 3秒 = 60 ticks
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.SNOWGUAI_WOW_ID, SNOWGUAI_WOW_SHOP);
+        }
     }
 }

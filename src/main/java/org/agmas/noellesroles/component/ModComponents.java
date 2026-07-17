@@ -589,6 +589,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<SnowHunterPlayerComponent> SNOW_HUNTER = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snow_hunter"),
           SnowHunterPlayerComponent.class);
+  // 雪怪组件 - 独立中立阵营，冻死奖励 + 残局加速
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent> SNOWGUAI_WOW = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snowguai_wow"),
+          org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent.class);
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -1174,6 +1178,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SNOW_HUNTER)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(SnowHunterPlayerComponent::new);
+
+    // 注册雪怪组件 - 独立中立阵营，冻死奖励 + 残局加速
+    registry.beginRegistration(Player.class, SNOWGUAI_WOW)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

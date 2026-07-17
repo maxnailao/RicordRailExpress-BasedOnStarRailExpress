@@ -3823,5 +3823,11 @@
 
   "==================== Enderman ====================": "",
   "announcement.star.role.moyingren_enderman": "Enderman",
-  "announcement.star.goals.moyingren_enderman": "Move freely through spaces"
+  "announcement.star.goals.moyingren_enderman": "Move freely through spaces",
+
+  "==================== Snowguai ====================": "",
+  "announcement.star.role.snowguai_wow": "Snowguai",
+  "announcement.star.goals.snowguai_wow": "Let them sleep in the blizzard...",
+  "message.noellesroles.snowguai_wow.frozen_bonus": "§6Someone froze to death! You received 150 coins bonus",
+  "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing"
 }
