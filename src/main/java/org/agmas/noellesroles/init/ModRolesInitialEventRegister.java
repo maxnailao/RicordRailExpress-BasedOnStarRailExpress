@@ -1495,7 +1495,8 @@ public class ModRolesInitialEventRegister {
                     var comp = ModComponents.XUNDAOZHE.get(player);
                     return comp.tryStartRevival();
                 }).cooldownSeconds(0).build());
-        // 雪原猎手技能注册：无距离限制透视8秒，冷却60秒
+
+        // 雪原猎手技能注册：花费80元获得无距离限制透视8秒，冷却60秒（透视结束后开始）
         RoleSkill.register(ModRoles.SNOW_HUNTER, RoleSkill.skill(
                 SRE.id("snow_hunter_vision"),
                 "skill.noellesroles.snow_hunter.vision",
@@ -1503,9 +1504,20 @@ public class ModRolesInitialEventRegister {
                     ServerPlayer player = context.player();
                     var comp = ModComponents.SNOW_HUNTER.get(player);
                     if (comp.skillCooldownTicks > 0) return false;
+                    if (comp.isSkillActive()) return false;
+                    io.wifi.starrailexpress.cca.SREPlayerShopComponent shop = io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < org.agmas.noellesroles.game.roles.killer.snow_hunter.SnowHunterPlayerComponent.SKILL_COST) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds")
+                                        .withStyle(net.minecraft.ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    shop.addToBalance(-org.agmas.noellesroles.game.roles.killer.snow_hunter.SnowHunterPlayerComponent.SKILL_COST);
                     comp.activateSkill();
                     return true;
-                }).cooldownSeconds(60).build());
+                }).cooldownSeconds(0).build());
+
     }
 
 }
