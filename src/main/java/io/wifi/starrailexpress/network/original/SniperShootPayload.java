@@ -83,11 +83,11 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         player.getCooldowns().addCooldown(mainHandStack.getItem(),
                                 GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0));
                     }
-
+                    // 雪原猎手射击冷却
                     if (!player.isCreative()) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
                         if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
-                            player.getCooldowns().addCooldown(mainHandStack.getItem(), 600);
+                            player.getCooldowns().addCooldown(mainHandStack.getItem(),  400);// 20s冷却
                         }
                     }
 

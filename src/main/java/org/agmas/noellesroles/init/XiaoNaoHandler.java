@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -150,7 +151,7 @@ public class XiaoNaoHandler {
             for (ServerPlayer target : xiaoNaoKiller.serverLevel().getServer().getPlayerList().getPlayers()) {
                 ServerPlayNetworking.send(target, new BroadcastMessageS2CPacket(
                         Component.translatable("modifier.noellesroles.corruption.trigger")
-                                .withStyle(net.minecraft.ChatFormatting.DARK_RED, net.minecraft.ChatFormatting.BOLD)));
+                                .withStyle(ChatFormatting.YELLOW)));
             }
             break;
         }
