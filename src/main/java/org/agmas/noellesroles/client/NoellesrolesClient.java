@@ -56,6 +56,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -118,6 +119,14 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static boolean hasInitStatusBar = false;
     public static int insanityTime = 0;
     private static BlockPos repairHeldSearchTarget = null;
+
+    // ──── 雪怪暴风雪 HUD 数据（由 SnowguaiBlizzardInfoS2CPacket 同步） ────
+    /** 距下一次普通暴风雪的 tick */
+    public static int snowguaiNextBlizzardTicks = 0;
+    /** 当前暴风雪类型：0=无, 1=普通/强制, 2=最终 */
+    public static byte snowguaiActiveType = 0;
+    /** 当前暴风雪剩余 tick */
+    public static int snowguaiActiveRemainingTicks = 0;
     public static KeyMapping roleIntroClientBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".role_intro",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "category.starrailexpress.keybinds"));
@@ -693,6 +702,15 @@ public class NoellesrolesClient implements ClientModInitializer {
                 io.wifi.starrailexpress.client.SREClient.blizzardPhase = payload.phase();
                 io.wifi.starrailexpress.client.SREClient.blizzardRemainingTicks = payload.remainingTicks();
                 io.wifi.starrailexpress.client.SREClient.isBlizzardActive = payload.isActive();
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(SnowguaiBlizzardInfoS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                snowguaiNextBlizzardTicks = payload.nextBlizzardInTicks();
+                snowguaiActiveType = payload.activeType();
+                snowguaiActiveRemainingTicks = payload.activeRemainingTicks();
+                SRE.LOGGER.info("[SnowguaiHUD] Received: type={}, remaining={}tick, nextIn={}tick",
+                        snowguaiActiveType, snowguaiActiveRemainingTicks, snowguaiNextBlizzardTicks);
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
@@ -1625,6 +1643,33 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             }
             return null;
+        });
+
+        // ──── 雪怪被动：实时显示暴风雪倒计时 ────
+        OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {
+            if (minecraft.player == null) return null;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning()) return null;
+            if (!SREClient.isPlayerAliveAndInSurvival()) return null;
+            // 仅雪怪角色显示
+            if (!SREClient.gameComponent.isRole(minecraft.player, ModRoles.SNOWGUAI_WOW)) return null;
+
+            MutableComponent text;
+            if (snowguaiActiveType == SnowguaiBlizzardInfoS2CPacket.TYPE_FINAL) {
+                // 最终暴风雪
+                text = Component.translatable("hud.noellesroles.snowguai.blizzard_final")
+                        .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD);
+            } else if (snowguaiActiveType == SnowguaiBlizzardInfoS2CPacket.TYPE_NORMAL) {
+                // 普通/强制暴风雪进行中
+                int seconds = (snowguaiActiveRemainingTicks + 19) / 20;
+                text = Component.translatable("hud.noellesroles.snowguai.blizzard_active", seconds)
+                        .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
+            } else {
+                // 无暴风雪，显示下次来临倒计时
+                int seconds = (snowguaiNextBlizzardTicks + 19) / 20;
+                text = Component.translatable("hud.noellesroles.snowguai.blizzard_countdown", seconds)
+                        .withStyle(ChatFormatting.WHITE);
+            }
+            return new MutableComponentResult(text);
         });
 
         // 5. 注册实体渲染器

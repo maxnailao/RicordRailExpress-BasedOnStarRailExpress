@@ -337,6 +337,8 @@ public class InitModRolesMax {
 
         // 雪怪每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.SNOWGUAI_WOW_ID, 1);
+        // 售衣员每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.SHOUYIYUAN_ID, 1);
     }
 
     public static void registerDynamic() {

@@ -3831,6 +3831,11 @@
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6Someone froze to death! You received 150 coins bonus",
   "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing",
   "message.noellesroles.snowguai_wow.final_blizzard": "§l§3The Final Blizzard has arrived! The entire map enters permanent freeze — no one escapes the cold...",
+  "announcement.star.win.snowguai_wow": "Snowguai Wins!",
+  "game.win.star.snowguai_wow": "The blizzard buried everyone!",
+  "hud.noellesroles.snowguai.blizzard_countdown": "Next blizzard: %ss",
+  "hud.noellesroles.snowguai.blizzard_active": "Blizzard active, remaining: %ss",
+  "hud.noellesroles.snowguai.blizzard_final": "Final Blizzard — no one escapes...",
 
   "==================== Philanthropist ====================": "",
   "announcement.star.role.philanthropist": "Philanthropist",
@@ -3839,6 +3844,12 @@
   "info.screen.roleid.philanthropist": "Civilian team\nOpen inventory to select a player, spend 100 coins to give them 50 coins\n30s cooldown",
   "hud.noellesroles.philanthropist.player_selection": "Select donation target (cost 100 coins → target gets 50 coins)",
   "message.noellesroles.philanthropist.donated": "Donated 50 coins to %s (cost 100 coins)",
-  "message.noellesroles.philanthropist.received": "§6Philanthropist %s donated 50 coins to you!"
+  "message.noellesroles.philanthropist.received": "§6Philanthropist %s donated 50 coins to you!",
+
+  "==================== Clothes Seller Shouyiyuan ====================": "",
+  "announcement.star.role.shouyiyuan": "Clothes Seller",
+  "announcement.star.goals.shouyiyuan": "Solve everyone's warmth problem",
+  "announcement.star.win.shouyiyuan": "Civilian team wins!",
+  "info.screen.roleid.shouyiyuan": "Civilian team\nA clothes seller\nShop offers leather armor (chestplate/leggings/boots, 75 coins each)\nPurchased leather items can be dropped with Q key"
 
 }

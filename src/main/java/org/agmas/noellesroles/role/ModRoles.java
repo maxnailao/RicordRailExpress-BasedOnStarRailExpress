@@ -297,6 +297,8 @@ public class ModRoles {
     public static final ResourceLocation SNOW_HUNTER_ID = Noellesroles.id("snow_hunter");
     // 雪怪角色 ID
     public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
+        // 售衣员角色 ID - 平民阵营
+        public static final ResourceLocation SHOUYIYUAN_ID = Noellesroles.id("shouyiyuan");
     // 慈善家角色 ID - 平民阵营
     public static final ResourceLocation PHILANTHROPIST_ID = Noellesroles.id("philanthropist");
 
@@ -3292,6 +3294,25 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(),
                     false
             )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setDefaultMax(1);
+
+    /**
+     * 售衣员 - 平民阵营
+     * - 在商店中出售皮革护甲（皮革甲/皮革裤/皮革靴，各75金币）
+     * - 仅刷新在雪地地图中
+     * - 无主动技能
+     * - 登车标语：解决大家的保暖问题
+     */
+    public static SRERole SHOUYIYUAN = TMMRoles.registerRole(new NormalRole(
+                    SHOUYIYUAN_ID,
+                    new Color(139, 69, 19).getRGB(), // 棕色
+                    true,   // isInnocent = 平民阵营
+                    false,  // canUseKiller = 无杀手能力
+                    SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+                    false
+            )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW)
             .setDefaultMax(1);
 
 // ... existing code ...

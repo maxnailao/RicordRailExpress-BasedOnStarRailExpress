@@ -193,10 +193,9 @@ public abstract class ClientWorldMixin extends Level {
     @Inject(method = "tick", at = @At("TAIL"))
     public void tmm$addBlizzard(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
         // 仅在暴风雪活跃时生成额外粒子
+        // 注意：不检查 bigsnowsnow，因为强制暴风雪（商店购买）和最终暴风雪（雪怪残局）
+        // 可能在非暴风雪地图上触发，isBlizzardActive 完全由服务端控制
         if (!SREClient.isBlizzardActive) {
-            return;
-        }
-        if (SREClient.areaComponent == null || !SREClient.areaComponent.areasSettings.bigsnowsnow) {
             return;
         }
 

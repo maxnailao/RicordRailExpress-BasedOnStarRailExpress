@@ -193,7 +193,7 @@ public final class MapStatusBarRuntime {
             state.indoorTicks = 0;
         } else if (!canSeeSky) {
             state.skyTicks = 0;
-            if (++state.indoorTicks >= 10 * 20) {
+            if (++state.indoorTicks >= 100) {
                 state.indoorTicks = 0;
                 state.change(1);
             }

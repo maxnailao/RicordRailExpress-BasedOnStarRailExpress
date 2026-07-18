@@ -4053,6 +4053,11 @@
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6有人被冻死了！你获得了 150 金币奖励",
   "message.noellesroles.snowguai_wow.endgame_buff": "§b场上仅剩单一阵营！你获得了速度 III 和发光效果",
   "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最终暴风雪降临！全图进入永冻状态，无人能逃脱严寒的惩罚......",
+    "announcement.star.win.snowguai_wow": "雪怪胜利！",
+    "game.win.star.snowguai_wow": "暴风雪掩埋了所有人！",
+    "hud.noellesroles.snowguai.blizzard_countdown": "下次暴风雪：%s秒",
+    "hud.noellesroles.snowguai.blizzard_active": "暴风雪进行中，剩余：%s秒",
+    "hud.noellesroles.snowguai.blizzard_final": "最终暴风雪，无人能逃脱……",
 
   "==================== 慈善家 Philanthropist ====================": "",
   "announcement.star.role.philanthropist": "慈善家",
@@ -4061,7 +4066,13 @@
   "info.screen.roleid.philanthropist": "平民阵营\n打开背包选择一名玩家，花费100金币使其金币增加50\n技能冷却30秒",
   "hud.noellesroles.philanthropist.player_selection": "选择捐赠目标（花费100金币 → 对方获得50金币）",
   "message.noellesroles.philanthropist.donated": "已向 %s 捐赠50金币（花费100金币）",
-  "message.noellesroles.philanthropist.received": "§6慈善家 %s 向你捐赠了50金币！"
+  "message.noellesroles.philanthropist.received": "§6慈善家 %s 向你捐赠了50金币！",
+
+  "==================== 售衣员 Shouyiyuan ====================": "",
+  "announcement.star.role.shouyiyuan": "售衣员",
+  "announcement.star.goals.shouyiyuan": "解决大家的保暖问题",
+  "announcement.star.win.shouyiyuan": "平民阵营胜利！",
+  "info.screen.roleid.shouyiyuan": "平民阵营\n一名售衣员\n商店中可购买皮革护甲（皮革甲/皮革裤/皮革靴，各75金币）\n购买的皮革物品可按Q键丢出"
 
 
 

@@ -118,6 +118,7 @@ public class ModPackets {
                 RepairCombatFeedbackS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(MapStatusBarSyncS2CPacket.ID, MapStatusBarSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BlizzardStateS2CPacket.ID, BlizzardStateS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SnowguaiBlizzardInfoS2CPacket.ID, SnowguaiBlizzardInfoS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RepairStationActionC2SPacket.ID,
                 RepairStationActionC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(RepairStationActionC2SPacket.ID, RepairStationActionC2SPacket::handle);

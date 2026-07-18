@@ -1306,6 +1306,29 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 雪怪：透视所有存活玩家（常驻，无需本能，白色边框）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            if (Minecraft.getInstance().player == null)
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(Minecraft.getInstance().player))
+                return -1;
+            if (!SREClient.gameComponent.isRole(Minecraft.getInstance().player, ModRoles.SNOWGUAI_WOW))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == Minecraft.getInstance().player)
+                    return -1;
+                if (GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+                    // 不能返回纯白 (0xFFFFFF == -1)，使用近似白
+                    return new java.awt.Color(254, 254, 254).getRGB();
+                }
+            }
+            return -1;
+        });
+
     }
 
     private static int getRoleColor(SRERole target_role) {

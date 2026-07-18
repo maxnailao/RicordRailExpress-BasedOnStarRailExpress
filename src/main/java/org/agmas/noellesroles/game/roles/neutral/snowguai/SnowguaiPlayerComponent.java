@@ -21,6 +21,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.scene.BlizzardManager;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -190,7 +191,7 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
             }
         });
 
-        // 被动 2：当雪怪存活且场上仅剩单一阵营时，阻止游戏结束
+        // 被动 2：当雪怪存活且场上仅剩单一阵营时，阻止游戏结束；仅剩雪怪时独赢
         AllowGameEnd.EVENT.register((serverLevel, winStatus, isLooseEndsMode) -> {
             if (isLooseEndsMode) return GameUtils.WinStatus.NOT_MODIFY;
             // 仅在杀手胜或平民胜时检查是否需要阻止
@@ -202,15 +203,28 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
             if (gameWorld == null) return GameUtils.WinStatus.NOT_MODIFY;
 
-            // 检查是否有存活的雪怪
+            boolean snowguaiAlive = false;
+            int aliveCount = 0;
             for (ServerPlayer p : serverLevel.players()) {
                 if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
+                aliveCount++;
                 if (gameWorld.isRole(p, ModRoles.SNOWGUAI_WOW)) {
-                    // 雪怪存活，阻止游戏结束
-                    return GameUtils.WinStatus.NONE;
+                    snowguaiAlive = true;
                 }
             }
-            return GameUtils.WinStatus.NOT_MODIFY;
+
+            if (!snowguaiAlive) return GameUtils.WinStatus.NOT_MODIFY;
+
+            // 雪怪独赢：仅剩雪怪自己时触发独立胜利
+            if (aliveCount == 1) {
+                RoleUtils.customWinnerWin(serverLevel,
+                        ModRoles.SNOWGUAI_WOW_ID.getPath(),
+                        ModRoles.SNOWGUAI_WOW.color());
+                return GameUtils.WinStatus.CUSTOM;
+            }
+
+            // 雪怪存活且还有其他玩家，阻止游戏结束
+            return GameUtils.WinStatus.NONE;
         });
 
         // 游戏结束时重置最终暴风雪标记

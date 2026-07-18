@@ -3308,5 +3308,16 @@ public class RoleShopHandler {
             });
             ShopContent.customEntries.put(ModRoles.SNOWGUAI_WOW_ID, SNOWGUAI_WOW_SHOP);
         }
+        // 售衣员商店
+        {
+            var SHOUYIYUAN_SHOP = new ArrayList<ShopEntry>();
+            // 皮革甲 - 75金币
+            SHOUYIYUAN_SHOP.add(new ShopEntry(Items.LEATHER_CHESTPLATE.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            // 皮革裤子 - 75金币
+            SHOUYIYUAN_SHOP.add(new ShopEntry(Items.LEATHER_LEGGINGS.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            // 皮革靴子 - 75金币
+            SHOUYIYUAN_SHOP.add(new ShopEntry(Items.LEATHER_BOOTS.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.SHOUYIYUAN_ID, SHOUYIYUAN_SHOP);
+        }
     }
 }
