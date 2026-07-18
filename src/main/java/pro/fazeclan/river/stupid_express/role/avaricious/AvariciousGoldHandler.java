@@ -2,6 +2,7 @@ package pro.fazeclan.river.stupid_express.role.avaricious;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -13,27 +14,34 @@ import net.minecraft.sounds.SoundSource;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 
 public class AvariciousGoldHandler {
 
-    public static long gameStartTime = -1; // 添加游戏开始时间字段
-    public static int TIMER_TICKS = GameConstants.getInTicks(0, 60); // 改为45秒一次，频率加倍
-    public static double MAX_DISTANCE = 8.0; // 扩大距离范围
-    public static int STARTING_BALANCE = 0; // 初始金币翻倍
-    public static int BASE_PAYOUT_PER_PLAYER = 25; // 基础金币提高
-    public static double DISTANCE_MULTIPLIER = 1.5; // 距离奖励系数
+    public static long gameStartTime = -1;
+    public static int TIMER_TICKS = GameConstants.getInTicks(0, 60);
+    public static double MAX_DISTANCE = 8.0;
+    public static int STARTING_BALANCE = 0;
+    public static int BASE_PAYOUT_PER_PLAYER = 25;
+    public static double DISTANCE_MULTIPLIER = 1.5;
+
+    private static final Map<UUID, Integer> pickCountMap = new HashMap<>();
+    private static final int MAX_PICK_COUNT = 2;
+    private static long lastPayoutTick = -1;
 
     public static int calculatePayout(int totalPlayerCount, int nearbyPlayers, double avgDistance) {
         double originalResult = 0;
         if (totalPlayerCount <= 6) {
-            originalResult = (50 * (1 + (nearbyPlayers * 0.1))); // 基础值提高，且根据附近玩家数加成
+            originalResult = (50 * (1 + (nearbyPlayers * 0.1)));
         } else if (totalPlayerCount >= 20) {
-            originalResult = (20 * (1 + (nearbyPlayers * 0.15))); // 提高下限和加成系数
+            originalResult = (20 * (1 + (nearbyPlayers * 0.15)));
         } else {
-            // 优化后的公式：提高基础值和衰减系数，增加附近玩家加成
-            double base = 120.0 * Math.exp(-0.09 * totalPlayerCount) + 15; // 提高基础值和降低衰减
-            double nearbyBonus = 1 + (nearbyPlayers * 0.12); // 附近玩家加成
-            double distanceBonus = 1 + ((MAX_DISTANCE - avgDistance) / MAX_DISTANCE) * 0.3; // 距离奖励
+            double base = 120.0 * Math.exp(-0.09 * totalPlayerCount) + 15;
+            double nearbyBonus = 1 + (nearbyPlayers * 0.12);
+            double distanceBonus = 1 + ((MAX_DISTANCE - avgDistance) / MAX_DISTANCE) * 0.3;
 
             originalResult = (base * nearbyBonus * distanceBonus);
         }
@@ -43,6 +51,13 @@ public class AvariciousGoldHandler {
     public static void registerEvents() {
         OnGameStarted.EVENT.register((ServerLevel) -> {
             AvariciousGoldHandler.gameStartTime = -1;
+            AvariciousGoldHandler.pickCountMap.clear();
+            AvariciousGoldHandler.lastPayoutTick = -1;
+        });
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
+            AvariciousGoldHandler.gameStartTime = -1;
+            AvariciousGoldHandler.pickCountMap.clear();
+            AvariciousGoldHandler.lastPayoutTick = -1;
         });
         ModdedRoleAssigned.EVENT.register(((player, role) -> {
             if (role.equals(SERoles.AVARICIOUS)) {
@@ -76,19 +91,27 @@ public class AvariciousGoldHandler {
             return;
         }
 
+        if (AvariciousGoldHandler.lastPayoutTick == time) {
+            return;
+        }
+        AvariciousGoldHandler.lastPayoutTick = time;
+
         int nearbyPlayers = 0;
         for (ServerPlayer other : serverWorld.players()) {
             if (GameUtils.isPlayerEliminated(other))
                 continue;
             if (other == player)
                 continue;
-            if (other.distanceTo(player) <= AvariciousGoldHandler.MAX_DISTANCE)
-                nearbyPlayers++;
+            if (other.distanceTo(player) <= AvariciousGoldHandler.MAX_DISTANCE) {
+                int pickCount = pickCountMap.getOrDefault(other.getUUID(), 0);
+                if (pickCount < MAX_PICK_COUNT) {
+                    nearbyPlayers++;
+                }
+            }
         }
 
         if (nearbyPlayers > 0) {
             int totalPlayers = serverWorld.players().size();
-            // 计算平均距离
             double totalDistance = 0.0;
             for (ServerPlayer other : serverWorld.players()) {
                 if (GameUtils.isPlayerEliminated(other))
@@ -96,17 +119,33 @@ public class AvariciousGoldHandler {
                 if (other == player)
                     continue;
                 if (other.distanceTo(player) <= AvariciousGoldHandler.MAX_DISTANCE) {
-                    totalDistance += other.distanceTo(player);
+                    int pickCount = pickCountMap.getOrDefault(other.getUUID(), 0);
+                    if (pickCount < MAX_PICK_COUNT) {
+                        totalDistance += other.distanceTo(player);
+                    }
                 }
             }
             double avgDistance = totalDistance / nearbyPlayers;
 
             int payoutPerPlayer = AvariciousGoldHandler.calculatePayout(totalPlayers, nearbyPlayers, avgDistance);
             int totalPayout = nearbyPlayers * payoutPerPlayer;
-            // 确保不超过150金币上限
-            totalPayout = Math.min(totalPayout, 150);
+            totalPayout = Math.min(totalPayout, 175);
             SREPlayerShopComponent.KEY.get(player).addToBalance(totalPayout);
             player.playNotifySound(TMMSounds.UI_SHOP_BUY, SoundSource.PLAYERS, 10.0f, 0.5f);
+
+            for (ServerPlayer other : serverWorld.players()) {
+                if (GameUtils.isPlayerEliminated(other))
+                    continue;
+                if (other == player)
+                    continue;
+                if (other.distanceTo(player) <= AvariciousGoldHandler.MAX_DISTANCE) {
+                    UUID otherUUID = other.getUUID();
+                    int pickCount = pickCountMap.getOrDefault(otherUUID, 0);
+                    if (pickCount < MAX_PICK_COUNT) {
+                        pickCountMap.put(otherUUID, pickCount + 1);
+                    }
+                }
+            }
         }
     }
 

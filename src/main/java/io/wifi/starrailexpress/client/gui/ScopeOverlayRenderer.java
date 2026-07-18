@@ -17,11 +17,13 @@ public class ScopeOverlayRenderer {
 
     public static void setInScopeView(boolean inScopeView) {
         ScopeOverlayRenderer.inScopeView = inScopeView;
-        if (inScopeView) {
+        // 注释掉启用电影视角
+        /*if (inScopeView) {
             Minecraft.getInstance().options.smoothCamera = true;
         } else{
             Minecraft.getInstance().options.smoothCamera = false;
         }
+         */
     }
 
     public static void renderScopeOverlay(GuiGraphics context, DeltaTracker tickCounter) {
@@ -60,7 +62,7 @@ public class ScopeOverlayRenderer {
             // 右边
             context.fill(centerX + xOffset, y, screenWidth, y + 1, 0xFF000000);
         }
-
+        /*
         // 渲染倍镜准星（十字线）
         int crosshairThickness = 2;
         int crosshairLength = 15;
@@ -72,7 +74,7 @@ public class ScopeOverlayRenderer {
         // 垂直线
         context.fill(centerX - crosshairThickness / 2, centerY - crosshairLength,
                 centerX + crosshairThickness / 2, centerY + crosshairLength, 0xFFFFFFFF);
-
+         */
         // 渲染倍镜圆圈（准星圈）
         int circleRadius = viewRadius;
         int circleThickness = 2;
