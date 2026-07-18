@@ -216,7 +216,7 @@ public class NoellesRolesConfig implements ConfigData {
     /**
      * Areas that will spawn snow-map roles
      */
-    public ArrayList<String> snowRolesMaps = new ArrayList<>(List.of());
+    public ArrayList<String> snowRolesMaps = new ArrayList<>(List.of("areas_snow"));
 
     /**
      * Role - The chance of egg roles
