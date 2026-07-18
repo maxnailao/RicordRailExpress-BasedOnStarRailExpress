@@ -139,6 +139,12 @@ public class SREClient implements ClientModInitializer {
     public static AreasWorldComponent areaComponent;
     public static SRETrainWorldComponent trainComponent;
     public static SREPlayerMoodComponent moodComponent;
+    /** 暴风雪是否处于活跃状态（由服务端同步，便捷字段） */
+    public static boolean isBlizzardActive = false;
+    /** 暴风雪当前阶段（0=空闲, 1=预警, 2=活跃） */
+    public static byte blizzardPhase = 0;
+    /** 暴风雪当前阶段剩余 tick（客户端本地倒计时） */
+    public static int blizzardRemainingTicks = 0;
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
     public static Player cached_player = null;
@@ -430,12 +436,26 @@ public class SREClient implements ClientModInitializer {
             trainComponent = SRETrainWorldComponent.KEY.get(clientWorld);
             moodComponent = SREPlayerMoodComponent.KEY.get(Minecraft.getInstance().player);
         });
+        // 暴风雪客户端本地倒计时
+        ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
+            if (blizzardRemainingTicks > 0) {
+                blizzardRemainingTicks--;
+                if (blizzardRemainingTicks <= 0) {
+                    // 本地倒计时耗尽，重置阶段（服务端会发新包校正）
+                    blizzardPhase = 0;
+                    isBlizzardActive = false;
+                }
+            }
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> {
             gameComponent = null;
             modifierComponent = null;
             areaComponent = null;
             trainComponent = null;
             moodComponent = null;
+            isBlizzardActive = false;
+            blizzardPhase = 0;
+            blizzardRemainingTicks = 0;
         });
         // Lock options
         OptionLocker.overrideOption("gamma", 0d);

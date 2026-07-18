@@ -372,6 +372,11 @@ public class MapManager {
             if (jsonObject.has("sandEnabled")) {
                 areas.areasSettings.sandEnabled = jsonObject.get("sandEnabled").getAsBoolean();
             }
+            // 加载暴风雪机制配置（默认关闭）
+            // 旧版格式兼容
+            if (jsonObject.has("bigsnowsnow")) {
+                areas.areasSettings.bigsnowsnow = jsonObject.get("bigsnowsnow").getAsBoolean();
+            }
             // 旧版格式兼容
             if (jsonObject.has("fogEnabled")) {
                 areas.areasSettings.fogEnabled = jsonObject.get("fogEnabled").getAsBoolean();
@@ -434,6 +439,11 @@ public class MapManager {
             // 旧版兼容
             if (jsonObject.has("weatherCycle")) {
                 areas.areasSettings.weatherCycle = jsonObject.get("weatherCycle").getAsBoolean();
+            }
+
+            // 暴风雪启用时自动启用体温状态栏
+            if (areas.areasSettings.bigsnowsnow) {
+                areas.areasSettings.mapStatusBar = io.wifi.starrailexpress.game.data.MapStatusBarType.WARMTH;
             }
 
             // 加载小游戏任务系统开关（默认关闭）

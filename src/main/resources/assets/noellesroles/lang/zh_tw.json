@@ -3625,5 +3625,6 @@
   "announcement.star.role.snowguai_wow": "雪怪",
   "announcement.star.goals.snowguai_wow": "讓他們在暴風雪中沉睡......",
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6有人被凍死了！你獲得了 150 金幣獎勵",
-  "message.noellesroles.snowguai_wow.endgame_buff": "§b場上僅剩單一陣營！你獲得了速度 III 和發光效果"
+  "message.noellesroles.snowguai_wow.endgame_buff": "§b場上僅剩單一陣營！你獲得了速度 III 和發光效果",
+  "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最終暴風雪降臨！全圖進入永凍狀態，無人能逃脫嚴寒的懲罰......"
 }

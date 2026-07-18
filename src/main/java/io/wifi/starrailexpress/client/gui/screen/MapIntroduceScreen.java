@@ -248,6 +248,8 @@ public class MapIntroduceScreen extends Screen {
             addLine("map_intro.property.snow", wrapW);
         if (boolValue(json, "sandEnabled", false))
             addLine("map_intro.property.sand", wrapW);
+        if (boolValue(json, "bigsnowsnow", false))
+            addLine("map_intro.property.bigsnowsnow", wrapW);
         if (!boolValue(json, "fogEnabled", true))
             addLine("map_intro.property.no_fog", wrapW);
         addLine("map_intro.property.fog_end", trimNumber(doubleValue(json, "fogEnd", 200.0D)), wrapW);

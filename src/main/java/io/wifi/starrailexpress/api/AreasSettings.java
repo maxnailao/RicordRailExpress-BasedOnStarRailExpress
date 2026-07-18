@@ -136,6 +136,10 @@ public class AreasSettings {
     @Category("visual")
     public boolean sandEnabled = false;
 
+    // 暴风雪机制配置（默认关闭）
+    @Category("visual")
+    public boolean bigsnowsnow = false;
+
     // 雾气效果配置（默认启用）
     @Category("visual")
     public boolean fogEnabled = true;

@@ -24,7 +24,11 @@ public class VoicechatALSpeakerBaseMixin {
         if (listener == null) {
             return;
         }
-        AL11.alListener3f(AL11.AL_POSITION, (float) listener.x, (float) listener.y, (float) listener.z);
-        SoundManager.checkAlError();
+        try {
+            AL11.alListener3f(AL11.AL_POSITION, (float) listener.x, (float) listener.y, (float) listener.z);
+            SoundManager.checkAlError();
+        } catch (Throwable ignored) {
+            // OpenAL 状态异常时静默处理，避免导致语音播放崩溃
+        }
     }
 }

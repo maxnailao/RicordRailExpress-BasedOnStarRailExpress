@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.neutral.snowguai;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.scene.BlizzardManager;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -27,7 +29,9 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 雪怪（Snowguai）—— 独立中立角色。
  * <p>
  * 被动 1：当有人因冻死而亡时，雪怪获得 +150 金币。
- * 被动 2：当场上仅剩杀手阵营或平民阵营时，雪怪获得速度 III 和发光效果。
+ * 被动 2：当场上仅剩杀手阵营或平民阵营时，雪怪获得速度 III 和发光效果，
+ *          并触发最终暴风雪（游戏不会因此结束）。
+ * 商店：雪球 15、关灯(3s) 100、触发暴风雪 250。
  * </p>
  */
 public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -40,6 +44,9 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
 
     /** 被动 2 是否已激活（仅剩单一阵营时） */
     private boolean endgameBuffActive = false;
+
+    /** 最终暴风雪是否已由雪怪触发（全局标记，游戏结束时重置） */
+    private static boolean finalBlizzardTriggered = false;
 
     public SnowguaiPlayerComponent(Player player) {
         this.player = player;
@@ -70,6 +77,7 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void clear() {
         init();
+        finalBlizzardTriggered = false;
     }
 
     // ── 服务端每 Tick ──────────────────────────────────────────
@@ -116,6 +124,12 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
             serverPlayer.displayClientMessage(
                     Component.translatable("message.noellesroles.snowguai_wow.endgame_buff")
                             .withStyle(ChatFormatting.AQUA), true);
+
+            // 触发最终暴风雪
+            if (!finalBlizzardTriggered) {
+                finalBlizzardTriggered = true;
+                BlizzardManager.activateFinalBlizzard(serverLevel);
+            }
         } else if (!shouldActivate && endgameBuffActive) {
             endgameBuffActive = false;
             serverPlayer.removeEffect(MobEffects.MOVEMENT_SPEED);
@@ -141,6 +155,19 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
         sync();
     }
 
+    // ── 商店：触发暴风雪 ──────────────────────────────────────
+
+    /**
+     * 触发一次 20 秒的暴风雪（商店购买用）。
+     *
+     * @param player 购买者
+     * @return 是否成功触发
+     */
+    public static boolean triggerBlizzard(Player player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return false;
+        return BlizzardManager.triggerForcedBlizzard(serverLevel, 20 * 20);
+    }
+
     /**
      * 注册事件监听器（在组件类加载时通过 static 块执行）。
      */
@@ -161,6 +188,34 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
                     comp.onSomeoneFrozenDeath();
                 }
             }
+        });
+
+        // 被动 2：当雪怪存活且场上仅剩单一阵营时，阻止游戏结束
+        AllowGameEnd.EVENT.register((serverLevel, winStatus, isLooseEndsMode) -> {
+            if (isLooseEndsMode) return GameUtils.WinStatus.NOT_MODIFY;
+            // 仅在杀手胜或平民胜时检查是否需要阻止
+            if (winStatus != GameUtils.WinStatus.KILLERS
+                    && winStatus != GameUtils.WinStatus.PASSENGERS) {
+                return GameUtils.WinStatus.NOT_MODIFY;
+            }
+
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
+            if (gameWorld == null) return GameUtils.WinStatus.NOT_MODIFY;
+
+            // 检查是否有存活的雪怪
+            for (ServerPlayer p : serverLevel.players()) {
+                if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
+                if (gameWorld.isRole(p, ModRoles.SNOWGUAI_WOW)) {
+                    // 雪怪存活，阻止游戏结束
+                    return GameUtils.WinStatus.NONE;
+                }
+            }
+            return GameUtils.WinStatus.NOT_MODIFY;
+        });
+
+        // 游戏结束时重置最终暴风雪标记
+        io.wifi.starrailexpress.event.OnGameEnd.EVENT.register((world, gameWorldComponent) -> {
+            finalBlizzardTriggered = false;
         });
     }
 

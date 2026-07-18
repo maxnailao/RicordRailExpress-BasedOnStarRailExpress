@@ -25,9 +25,13 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.UUID;
 
 public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
+  private static final Logger LOGGER = LoggerFactory.getLogger("NoellesrolesVoiceChat");
   private static VoicechatServerApi SERVER_API;
 
   @Override
@@ -113,48 +117,61 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
   }
 
   public void soundEvent_Static(StaticSoundPacketEvent event) {
-    // VoicechatServerApi api = event.getVoicechat();
-    VoicechatConnection senderConnection = event.getSenderConnection();
-    VoicechatConnection receiverConnection = event.getReceiverConnection();
-    if (shouldBanVoice(senderConnection, receiverConnection)) {
-      event.cancel();
-      return;
+    try {
+      VoicechatConnection senderConnection = event.getSenderConnection();
+      VoicechatConnection receiverConnection = event.getReceiverConnection();
+      if (shouldBanVoice(senderConnection, receiverConnection)) {
+        event.cancel();
+      }
+    } catch (Exception e) {
+      LOGGER.warn("Error in Noellesroles soundEvent_Static", e);
     }
   }
 
   public void soundEvent_Entity(EntitySoundPacketEvent event) {
-    // VoicechatServerApi api = event.getVoicechat();
-    VoicechatConnection senderConnection = event.getSenderConnection();
-    VoicechatConnection receiverConnection = event.getReceiverConnection();
-    if (shouldBanVoice(senderConnection, receiverConnection)) {
-      event.cancel();
-      return;
+    try {
+      VoicechatConnection senderConnection = event.getSenderConnection();
+      VoicechatConnection receiverConnection = event.getReceiverConnection();
+      if (shouldBanVoice(senderConnection, receiverConnection)) {
+        event.cancel();
+      }
+    } catch (Exception e) {
+      LOGGER.warn("Error in Noellesroles soundEvent_Entity", e);
     }
   }
 
   public void soundEvent_Locational(LocationalSoundPacketEvent event) {
-    // VoicechatServerApi api = event.getVoicechat();
-    VoicechatConnection senderConnection = event.getSenderConnection();
-    VoicechatConnection receiverConnection = event.getReceiverConnection();
-    if (shouldBanVoice(senderConnection, receiverConnection)) {
-      event.cancel();
-      return;
+    try {
+      VoicechatConnection senderConnection = event.getSenderConnection();
+      VoicechatConnection receiverConnection = event.getReceiverConnection();
+      if (shouldBanVoice(senderConnection, receiverConnection)) {
+        event.cancel();
+      }
+    } catch (Exception e) {
+      LOGGER.warn("Error in Noellesroles soundEvent_Locational", e);
     }
   }
 
   public void paranoidEvent(MicrophonePacketEvent event) {
+    try {
+      paranoidEventInternal(event);
+    } catch (Exception e) {
+      LOGGER.warn("Error in Noellesroles voice paranoidEvent", e);
+    }
+  }
+
+  private void paranoidEventInternal(MicrophonePacketEvent event) {
     VoicechatServerApi api = event.getVoicechat();
     var connection = event.getSenderConnection();
     if (connection != null && connection.isInstalled() && connection.isConnected()) {
       var vcplayer = connection.getPlayer();
       if (vcplayer != null) {
         var vctplayer = vcplayer.getPlayer();
-        if (vctplayer != null) {
-          var player = (ServerPlayer) vctplayer;
+        if (vctplayer instanceof ServerPlayer player) {
           SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-          if (gameWorldComponent != null) {
-            // 检查沉默语音效果
-            if (player != null && player.hasEffect(ModEffects.VOICE_SILENCE)) {
+            if (gameWorldComponent != null) {
+              // 检查沉默语音效果
+              if (player.hasEffect(ModEffects.VOICE_SILENCE)) {
               event.cancel();
               return;
             }
@@ -275,13 +292,6 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
         }
       }
     }
-
-    // ServerPlayer players = ((ServerPlayer)
-    // event.getSenderConnection().getPlayer().getPlayer());
-
-    // if (players.interactionManager.getGameMode().equals(GameMode.SPECTATOR)) {
-
-    // }
   }
 
   /**

@@ -62,6 +62,11 @@ public abstract class ClientWorldMixin extends Level {
     private static final int SRE_SAND_UPDATE_INTERVAL = 3; // 每3tick更新一次
     private static final int SRE_SAND_PARTICLES_PER_TICK = 500; // 粒子数量（比雪花更密集）
 
+    // 暴风雪效果：节流计数器和参数
+    private static int sre_blizzardFrameCount = 0;
+    private static final int SRE_BLIZZARD_UPDATE_INTERVAL = 2; // 每2tick更新一次（更密集）
+    private static final int SRE_BLIZZARD_PARTICLES_PER_TICK = 200; // 暴风雪粒子数量（密集）
+
     @SuppressWarnings("rawtypes")
     @Inject(method = "<init>", at = @At("TAIL"))
     public void tmm$addCustomBlockMarkers(ClientPacketListener networkHandler, ClientLevel.ClientLevelData properties, ResourceKey registryRef, Holder dimensionTypeEntry, int loadDistance, int simulationDistance, Supplier profiler, LevelRenderer worldRenderer, boolean debugWorld, long seed, CallbackInfo ci) {
@@ -182,6 +187,62 @@ public abstract class ClientWorldMixin extends Level {
                     playerVel.z()
                 );
             }
+        }
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    public void tmm$addBlizzard(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+        // 仅在暴风雪活跃时生成额外粒子
+        if (!SREClient.isBlizzardActive) {
+            return;
+        }
+        if (SREClient.areaComponent == null || !SREClient.areaComponent.areasSettings.bigsnowsnow) {
+            return;
+        }
+
+        // 节流机制
+        sre_blizzardFrameCount++;
+        if (sre_blizzardFrameCount % SRE_BLIZZARD_UPDATE_INTERVAL != 0) {
+            return;
+        }
+
+        LocalPlayer player = minecraft.player;
+        if (player == null) return;
+
+        // 仅露天区域显示暴风雪粒子
+        if (!this.minecraft.level.canSeeSky(player.blockPosition())) {
+            return;
+        }
+
+        RandomSource random = player.getRandom();
+        Vec3 playerVel = player.getKnownMovement();
+
+        double playerX = player.getX();
+        double playerY = player.getY();
+        double playerZ = player.getZ();
+
+        for (int i = 0; i < SRE_BLIZZARD_PARTICLES_PER_TICK; i++) {
+            float randX = random.nextFloat();
+            float randY = random.nextFloat();
+            float randZ = random.nextFloat();
+
+            // 暴风雪粒子：在玩家周围较大范围生成，带有强风偏移
+            double posX = playerX - 25f + randX * 50f;
+            double posY = playerY + (randY * 2 - 1) * 12f;
+            double posZ = playerZ + (randZ * 2 - 1) * 25f;
+
+            // 强风速度模拟暴风雪效果
+            double vx = 4.0 + random.nextDouble() * 3.0;
+            double vy = -1.0 - random.nextDouble() * 1.5;
+            double vz = random.nextDouble() * 2.0 - 1.0;
+
+            this.addParticle(
+                TMMParticles.SNOWFLAKE,
+                posX, posY, posZ,
+                vx + playerVel.x(),
+                vy + playerVel.y(),
+                vz + playerVel.z()
+            );
         }
     }
 }

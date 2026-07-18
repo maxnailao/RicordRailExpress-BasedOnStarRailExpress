@@ -3829,5 +3829,6 @@
   "announcement.star.role.snowguai_wow": "Snowguai",
   "announcement.star.goals.snowguai_wow": "Let them sleep in the blizzard...",
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6Someone froze to death! You received 150 coins bonus",
-  "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing"
+  "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing",
+  "message.noellesroles.snowguai_wow.final_blizzard": "§l§3The Final Blizzard has arrived! The entire map enters permanent freeze — no one escapes the cold..."
 }

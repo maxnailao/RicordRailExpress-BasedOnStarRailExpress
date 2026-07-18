@@ -3300,6 +3300,12 @@ public class RoleShopHandler {
                     return SREPlayerShopComponent.useBlackout(player, 3 * 20); // 3秒 = 60 ticks
                 }
             });
+            // 触发暴风雪 - 250金币（雪块，购买后全图立即进入暴风雪状态20s）
+            SNOWGUAI_WOW_SHOP.add(new ShopEntry(Items.SNOW_BLOCK.getDefaultInstance(), 250, ShopEntry.Type.TOOL) {
+                public boolean onBuy(@NotNull Player player) {
+                    return org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent.triggerBlizzard(player);
+                }
+            });
             ShopContent.customEntries.put(ModRoles.SNOWGUAI_WOW_ID, SNOWGUAI_WOW_SHOP);
         }
     }

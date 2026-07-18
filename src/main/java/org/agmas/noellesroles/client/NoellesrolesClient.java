@@ -688,6 +688,13 @@ public class NoellesrolesClient implements ClientModInitializer {
             context.client().execute(() -> org.agmas.noellesroles.client.hud.MapStatusBarClientState
                     .set(payload.barType(), payload.value(), payload.maxValue()));
         });
+        ClientPlayNetworking.registerGlobalReceiver(BlizzardStateS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                io.wifi.starrailexpress.client.SREClient.blizzardPhase = payload.phase();
+                io.wifi.starrailexpress.client.SREClient.blizzardRemainingTicks = payload.remainingTicks();
+                io.wifi.starrailexpress.client.SREClient.isBlizzardActive = payload.isActive();
+            });
+        });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
             client.execute(() -> {

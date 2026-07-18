@@ -28,6 +28,7 @@ import org.agmas.noellesroles.content.block.scene.StoveBlock;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.packet.MapStatusBarSyncS2CPacket;
+import org.agmas.noellesroles.role.ModRoles;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
 
 import java.util.HashMap;
@@ -91,6 +92,26 @@ public final class MapStatusBarRuntime {
         add(player, MapStatusBarType.WARMTH, delta);
     }
 
+    /**
+     * 强制修改玩家体温值（绕过 shouldTrack 检查）。
+     * 用于最终暴风雪等需要对未追踪玩家也生效的场景。
+     */
+    public static void forceAddWarmth(ServerPlayer player, int delta) {
+        ServerLevel level = (ServerLevel) player.level();
+        if (!isGameRunning(level)) return;
+        State state = STATES.computeIfAbsent(player.getUUID(), id -> new State(MapStatusBarType.WARMTH));
+        if (state.type != MapStatusBarType.WARMTH) {
+            state.reset(MapStatusBarType.WARMTH);
+        }
+        state.change(delta);
+        if (state.value <= 0) {
+            killByStatus(player, MapStatusBarType.WARMTH);
+            STATES.remove(player.getUUID());
+            return;
+        }
+        state.sync(player);
+    }
+
     public static void addThirst(ServerPlayer player, int delta) {
         add(player, MapStatusBarType.THIRST, delta);
     }
@@ -146,15 +167,21 @@ public final class MapStatusBarRuntime {
     }
 
     private static void tickWarmth(ServerLevel level, ServerPlayer player, State state) {
-        if (nearLitStove(level, player.blockPosition())) {
-            state.set(MAX_VALUE);
+        // 最终暴风雪期间火炉回暖失效
+        if (!BlizzardManager.isFinalBlizzardActive() && nearLitStove(level, player.blockPosition())) {
             state.clearTimers();
+            if (++state.stoveTicks >= 20) {
+                state.stoveTicks = 0;
+                state.change(1);
+            }
             return;
+        } else {
+            state.stoveTicks = 0;
         }
 
         int leatherPieces = leatherArmorPieces(player);
         boolean protectedFromCold = leatherPieces >= 3;
-        int coldInterval = 15 * 20 * Math.max(1, leatherPieces + 1);
+        int coldInterval = 3 * 20 * Math.max(1, leatherPieces + 1);
         boolean canSeeSky = level.canSeeSky(player.blockPosition());
         boolean inPowderSnow = level.getBlockState(player.blockPosition()).is(Blocks.POWDER_SNOW);
 
@@ -240,7 +267,14 @@ public final class MapStatusBarRuntime {
     private static boolean shouldTrack(ServerPlayer player) {
         if (ModComponents.SNOW_HUNTER.maybeGet(player).isPresent()) {
             var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
-            if (game.isRole(player, org.agmas.noellesroles.role.ModRoles.SNOW_HUNTER)) {
+            if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
+                return false;
+            }
+        }
+        // 雪怪没有体温机制（同雪原猎手）
+        if (ModComponents.SNOWGUAI_WOW.maybeGet(player).isPresent()) {
+            var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            if (game.isRole(player, ModRoles.SNOWGUAI_WOW)) {
                 return false;
             }
         }
@@ -334,6 +368,7 @@ public final class MapStatusBarRuntime {
         private int passiveTicks;
         private int sprintTicks;
         private int waterTicks;
+        private int stoveTicks;
 
         private State(MapStatusBarType type) {
             this.type = type;
@@ -355,6 +390,7 @@ public final class MapStatusBarRuntime {
             passiveTicks = 0;
             sprintTicks = 0;
             waterTicks = 0;
+            stoveTicks = 0;
         }
 
         private void change(int delta) {
