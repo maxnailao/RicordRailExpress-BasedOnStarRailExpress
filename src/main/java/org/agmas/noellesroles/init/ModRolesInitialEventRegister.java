@@ -1518,6 +1518,54 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(0).build());
 
+        // 慈善家技能注册：花费100金币，使目标玩家金币增加50
+        RoleSkill.register(ModRoles.PHILANTHROPIST, RoleSkill.skill(
+                SRE.id("philanthropist_donate"),
+                "skill.noellesroles.philanthropist.donate",
+                context -> {
+                    ServerPlayer player = context.player();
+                    UUID targetUuid = context.target();
+                    if (targetUuid == null) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.philanthropist.no_target")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    Player target = player.level().getPlayerByUUID(targetUuid);
+                    if (!(target instanceof ServerPlayer targetPlayer))
+                        return false;
+                    if (GameUtils.isPlayerEliminated(targetPlayer)) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.philanthropist.target_invalid")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 100) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds_money", 100)
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    shop.addToBalance(-100);
+                    SREPlayerShopComponent.KEY.get(targetPlayer).addToBalance(50);
+                    player.displayClientMessage(
+                            Component.translatable("message.noellesroles.philanthropist.donated",
+                                            targetPlayer.getName().getString())
+                                    .withStyle(ChatFormatting.GOLD),
+                            true);
+                    targetPlayer.displayClientMessage(
+                            Component.translatable("message.noellesroles.philanthropist.received",
+                                            player.getName().getString())
+                                    .withStyle(ChatFormatting.GOLD),
+                            true);
+                    return true;
+                }).cooldownSeconds(30).build());
+
+
     }
 
 }

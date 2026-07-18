@@ -155,7 +155,8 @@
     "client.AbstractClientPlayerSkinMixin",
     "client.FishingBobberRendererMixin",
     "game.PelicanAliveCheckMixin",
-    "client.roles.mengyan.MengyanScreenMixin"
+    "client.roles.mengyan.MengyanScreenMixin",
+    "client.roles.philanthropist.PhilanthropistScreenMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

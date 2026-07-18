@@ -297,6 +297,8 @@ public class ModRoles {
     public static final ResourceLocation SNOW_HUNTER_ID = Noellesroles.id("snow_hunter");
     // 雪怪角色 ID
     public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
+    // 慈善家角色 ID - 平民阵营
+    public static final ResourceLocation PHILANTHROPIST_ID = Noellesroles.id("philanthropist");
 
     // 中立阵营
     public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
@@ -3274,6 +3276,25 @@ public class ModRoles {
             .setCanUseInstinct(false)     // 不能使用本能
             .setDefaultMax(1);
 
+
+    /**
+     * 慈善家 - 平民阵营
+     * - 打开背包可选择一名玩家，花费100金币使其金币增加50
+     * - 技能冷却30秒
+     * - 登车标语：慷慨解囊，帮助他人
+     */
+    public static SRERole PHILANTHROPIST = TMMRoles.registerRole(new NormalRole(
+                    PHILANTHROPIST_ID,
+                    new Color(255, 215, 0).getRGB(), // 金色
+                    true,   // isInnocent = 平民阵营
+                    false,  // canUseKiller = 无杀手能力
+                    SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(),
+                    false
+            )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setDefaultMax(1);
+
+// ... existing code ...
 
     /**
      * 初始化并注册所有角色

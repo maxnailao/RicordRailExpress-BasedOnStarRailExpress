@@ -55,6 +55,7 @@ import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
 import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.pilot.PilotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.CreeperPlayerComponent;
@@ -379,6 +380,25 @@ public class ModPacketsReciever {
         blackkeComponent.useSkillOnTarget(targetServerPlayer);
       });
     });
+
+
+    // 慈善家捐赠数据包处理
+    ServerPlayNetworking.registerGlobalReceiver(PhilanthropistC2SPacket.ID, (payload, context) -> {
+      var philanthropist = context.player();
+      context.server().execute(() -> {
+        if (philanthropist.hasEffect(ModEffects.SAFE_TIME)) return;
+        if (payload.targetPlayer() == null) return;
+        var target = philanthropist.level().getPlayerByUUID(payload.targetPlayer());
+        if (!(target instanceof ServerPlayer targetPlayer)) return;
+
+        var comp = PhilanthropistPlayerComponent.KEY.get(philanthropist);
+        if (comp != null) {
+          comp.useSkillOnTarget(targetPlayer);
+        }
+      });
+    });
+
+
     // newspaperHandler
     ServerPlayNetworking.registerGlobalReceiver(EditNewspaperPacket.ID, (payload, context) -> {
       var player = context.player();

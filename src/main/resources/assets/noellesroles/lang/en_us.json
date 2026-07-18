@@ -3829,5 +3829,15 @@
   "announcement.star.role.snowguai_wow": "Snowguai",
   "announcement.star.goals.snowguai_wow": "Let them sleep in the blizzard...",
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6Someone froze to death! You received 150 coins bonus",
-  "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing"
+  "message.noellesroles.snowguai_wow.endgame_buff": "§bOnly one faction remains! You gained Speed III and Glowing",
+
+  "==================== Philanthropist ====================": "",
+  "announcement.star.role.philanthropist": "Philanthropist",
+  "announcement.star.goals.philanthropist": "Give generously, help others",
+  "announcement.star.win.philanthropist": "Civilian team wins!",
+  "info.screen.roleid.philanthropist": "Civilian team\nOpen inventory to select a player, spend 100 coins to give them 50 coins\n30s cooldown",
+  "hud.noellesroles.philanthropist.player_selection": "Select donation target (cost 100 coins → target gets 50 coins)",
+  "message.noellesroles.philanthropist.donated": "Donated 50 coins to %s (cost 100 coins)",
+  "message.noellesroles.philanthropist.received": "§6Philanthropist %s donated 50 coins to you!"
+
 }
