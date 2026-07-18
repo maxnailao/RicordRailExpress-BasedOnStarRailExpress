@@ -3626,5 +3626,15 @@
   "announcement.star.goals.snowguai_wow": "讓他們在暴風雪中沉睡......",
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6有人被凍死了！你獲得了 150 金幣獎勵",
   "message.noellesroles.snowguai_wow.endgame_buff": "§b場上僅剩單一陣營！你獲得了速度 III 和發光效果",
-  "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最終暴風雪降臨！全圖進入永凍狀態，無人能逃脫嚴寒的懲罰......"
+  "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最終暴風雪降臨！全圖進入永凍狀態，無人能逃脫嚴寒的懲罰......",
+
+  "==================== 慈善家 Philanthropist ====================": "",
+  "announcement.star.role.philanthropist": "慈善家",
+  "announcement.star.goals.philanthropist": "慷慨解囊，幫助他人",
+  "announcement.star.win.philanthropist": "平民陣營勝利！",
+  "info.screen.roleid.philanthropist": "平民陣營\n打開背包選擇一名玩家，花費100金幣使其金幣增加50\n技能冷卻30秒",
+  "hud.noellesroles.philanthropist.player_selection": "選擇捐贈目標（花費100金幣 → 對方獲得50金幣）",
+  "message.noellesroles.philanthropist.donated": "已向 %s 捐贈50金幣（花費100金幣）",
+  "message.noellesroles.philanthropist.received": "§6慈善家 %s 向你捐贈了50金幣！"
+
 }

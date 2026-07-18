@@ -13,6 +13,7 @@ import org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.witch.WitchPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.tegong.TegongPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
@@ -163,6 +164,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent> BLACKKE =
       org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY;
+
+  public static final ComponentKey<PhilanthropistPlayerComponent> PHILANTHROPIST = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "philanthropist"),
+          PhilanthropistPlayerComponent.class);
 
   public static final ComponentKey<BroadcasterPlayerComponent> BROADCASTER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "broadcaster"),
@@ -674,6 +679,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, BLACKKE)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent::new);
+
+    // 注册慈善家组件
+    registry.beginRegistration(Player.class, PHILANTHROPIST)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(PhilanthropistPlayerComponent::new);
+
 
     registry.beginRegistration(Player.class, panda)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
