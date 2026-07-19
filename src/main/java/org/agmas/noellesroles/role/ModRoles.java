@@ -301,6 +301,8 @@ public class ModRoles {
         public static final ResourceLocation SHOUYIYUAN_ID = Noellesroles.id("shouyiyuan");
     // 慈善家角色 ID - 平民阵营
     public static final ResourceLocation PHILANTHROPIST_ID = Noellesroles.id("philanthropist");
+    // 天气预报员角色 ID - 平民阵营
+    public static final ResourceLocation TIANQIYUBAOYUAN_ID = Noellesroles.id("tianqiyubaoyuan");
 
     // 中立阵营
     public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
@@ -1331,11 +1333,7 @@ public class ModRoles {
      * - 真实心情系统
      * - 标准冲刺时间
      * - 在计分板上显示
-     * - 被动技能：开局仅有 40% 理智值
-     * - 理智不会通过任务来恢复
-     * - 花费 1 金币恢复 1 点理智（每 10 tick / 0.5 秒判定一次）
-     * - 若金币 >= 1，扣除 1 金币恢复 1 点理智值
-     * - 理智值满则不进行置换
+     * - 技能：花费 100 金币恢复 100% 理智值，冷却 90 秒
      */
     public static SRERole ILIKEMONEY = TMMRoles.registerRole(new NormalRole(
             ILIKEMONEY_ID, // 角色 ID
@@ -1345,10 +1343,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setCanSeeCoin(true)
-            .setServerGameTickEvent((player, gameComponent) -> {
-                org.agmas.noellesroles.game.roles.innocence.money_lover.MoneyLoverTickHandler.serverTick(player, gameComponent);
-            });
+    )).setCanSeeCoin(true);
 
     /**
      * 药剂师角色
@@ -3312,6 +3307,24 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
                     false
             )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW)
+            .setDefaultMax(1);
+
+    /**
+     * 天气预报员 - 平民阵营
+     * - 仅刷新在雪地地图中
+     * - 技能：花费125金币得知下一次普通暴风雪到来的时间
+     * - 登车标语：提醒大家下一次暴风雪到来的时间
+     */
+    public static SRERole TIANQIYUBAOYUAN = TMMRoles.registerRole(new NormalRole(
+                    TIANQIYUBAOYUAN_ID,
+                    new Color(135, 206, 235).getRGB(), // 天蓝色
+                    true,   // isInnocent = 平民阵营
+                    false,  // canUseKiller = 无杀手能力
+                    SRERole.MoodType.REAL, // 真实心情
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+                    false
+            )).setCanSeeCoin(true).setCanSeeTime(true)
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW)
             .setDefaultMax(1);
 

@@ -3627,6 +3627,7 @@
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6有人被凍死了！你獲得了 150 金幣獎勵",
   "message.noellesroles.snowguai_wow.endgame_buff": "§b場上僅剩單一陣營！你獲得了速度 III 和發光效果",
   "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最終暴風雪降臨！全圖進入永凍狀態，無人能逃脫嚴寒的懲罰......",
+  "message.noellesroles.snowguai_wow.final_blizzard_alert": "§l§3最終暴風雪到來，快找到雪怪擊殺他！",
   "announcement.star.win.snowguai_wow": "雪怪勝利！",
   "game.win.star.snowguai_wow": "暴風雪掩埋了所有人！",
   "hud.noellesroles.snowguai.blizzard_countdown": "下次暴風雪：%s秒",
@@ -3646,6 +3647,20 @@
   "announcement.star.role.shouyiyuan": "售衣員",
   "announcement.star.goals.shouyiyuan": "解決大家的保暖問題",
   "announcement.star.win.shouyiyuan": "平民陣營勝利！",
-  "info.screen.roleid.shouyiyuan": "平民陣營\n一名售衣員\n商店中可購買皮革護甲（皮革甲/皮革褲/皮革靴，各75金幣）\n購買的皮革物品可按Q鍵丟出"
+  "info.screen.roleid.shouyiyuan": "平民陣營\n一名售衣員\n商店中可購買皮革護甲（皮革甲/皮革褲/皮革靴，各75金幣）\n購買的皮革物品可按Q鍵丟出",
+  "skill.noellesroles.shouyiyuan.give_armor": "贈送皮革護甲",
+  "message.noellesroles.shouyiyuan.no_target": "§c需要對準一名玩家",
+  "message.noellesroles.shouyiyuan.target_invalid": "§c目標玩家無效",
+  "message.noellesroles.shouyiyuan.not_leather": "§c需要手持皮革護甲",
+  "message.noellesroles.shouyiyuan.gave": "§a將 %s 贈送給了 %s",
+  "message.noellesroles.shouyiyuan.received": "§a%s 贈送了你一件 %s",
+
+  "==================== 天氣預報員 Tianqiyubaoyuan ====================": "",
+  "announcement.star.role.tianqiyubaoyuan": "天氣預報員",
+  "announcement.star.goals.tianqiyubaoyuan": "提醒大家下一次暴風雪到來的時間",
+  "announcement.star.win.tianqiyubaoyuan": "平民陣營勝利！",
+  "skill.noellesroles.tianqiyubaoyuan.forecast": "天氣預報",
+  "message.noellesroles.tianqiyubaoyuan.forecast_result_minutes": "§b下一次普通暴風雪將在 %s分%s秒 後到來",
+  "message.noellesroles.tianqiyubaoyuan.forecast_result_seconds": "§b下一次普通暴風雪將在 %s秒 後到來"
 
 }

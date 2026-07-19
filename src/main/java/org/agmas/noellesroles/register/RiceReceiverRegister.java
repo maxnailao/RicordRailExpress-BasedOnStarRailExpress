@@ -828,8 +828,8 @@ public class RiceReceiverRegister {
             org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent mengyanComp =
                     ModComponents.MENGYAN.get(player);
             if (mengyanComp.useSkill(payload.targetUuid())) {
-                // 技能成功，设置45秒冷却并触发事件
-                ability.getSkillState(mengyanSkillId).cooldown = 900; // 45s = 900tick
+                // 技能成功，设置75秒冷却并触发事件
+                ability.getSkillState(mengyanSkillId).cooldown = 1500; // 75s = 1500tick
                 ability.sync();
                 ConfigWorldComponent.onPlayerUsedSkill(player);
             }

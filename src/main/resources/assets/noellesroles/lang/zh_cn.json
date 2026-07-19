@@ -3769,9 +3769,12 @@
   "==================== 敛财者 ====================": "",
   "announcement.star.role.ilikemoney": "敛财者",
   "announcement.star.role.noellesroles.ilikemoney": "敛财者",
-  "announcement.star.goals.ilikemoney": "金钱就是理智，花钱维持神智！",
-  "info.screen.roleid.ilikemoney": "平民阵营\n敛财者会持续将金币转换为san值维持理智",
+  "announcement.star.goals.ilikemoney": "花钱恢复理智，金钱就是力量！",
+  "info.screen.roleid.ilikemoney": "平民阵营\n技能：花费100金币恢复100%理智值（冷協90秒）",
   "announcement.star.win.ilikemoney": "乘客胜利！",
+    "skill.noellesroles.ilikemoney.restore_mood": "恢复理智",
+    "message.noellesroles.ilikemoney.mood_full": "理智值已满，无需恢复！",
+    "message.noellesroles.ilikemoney.mood_restored": "花费 100 金币，理智值已完全恢复！",
   "==================== 工人角色 ====================": "",
   "announcement.star.role.worker": "工人",
   "announcement.star.goals.worker": "劳动最光荣",
@@ -4053,6 +4056,7 @@
   "message.noellesroles.snowguai_wow.frozen_bonus": "§6有人被冻死了！你获得了 150 金币奖励",
   "message.noellesroles.snowguai_wow.endgame_buff": "§b场上仅剩单一阵营！你获得了速度 III 和发光效果",
   "message.noellesroles.snowguai_wow.final_blizzard": "§l§3最终暴风雪降临！全图进入永冻状态，无人能逃脱严寒的惩罚......",
+    "message.noellesroles.snowguai_wow.final_blizzard_alert": "§l§3最终暴风雪到来，快找到雪怪击杀他！",
     "announcement.star.win.snowguai_wow": "雪怪胜利！",
     "game.win.star.snowguai_wow": "暴风雪掩埋了所有人！",
     "hud.noellesroles.snowguai.blizzard_countdown": "下次暴风雪：%s秒",
@@ -4072,8 +4076,20 @@
   "announcement.star.role.shouyiyuan": "售衣员",
   "announcement.star.goals.shouyiyuan": "解决大家的保暖问题",
   "announcement.star.win.shouyiyuan": "平民阵营胜利！",
-  "info.screen.roleid.shouyiyuan": "平民阵营\n一名售衣员\n商店中可购买皮革护甲（皮革甲/皮革裤/皮革靴，各75金币）\n购买的皮革物品可按Q键丢出"
+  "info.screen.roleid.shouyiyuan": "平民阵营\n一名售衣员\n商店中可购买皮革护甲（皮革甲/皮革裤/皮革靴，各75金币）\n购买的皮革物品可按Q键丢出",
+  "skill.noellesroles.shouyiyuan.give_armor": "赠送皮革护甲",
+  "message.noellesroles.shouyiyuan.no_target": "§c需要对准一名玩家",
+  "message.noellesroles.shouyiyuan.target_invalid": "§c目标玩家无效",
+  "message.noellesroles.shouyiyuan.not_leather": "§c需要手持皮革护甲",
+  "message.noellesroles.shouyiyuan.gave": "§a将 %s 赠送给了 %s",
+  "message.noellesroles.shouyiyuan.received": "§a%s 赠送了你一件 %s",
 
-
+  "==================== 天气预报员 Tianqiyubaoyuan ====================": "",
+  "announcement.star.role.tianqiyubaoyuan": "天气预报员",
+  "announcement.star.goals.tianqiyubaoyuan": "提醒大家下一次暴风雪到来的时间",
+  "announcement.star.win.tianqiyubaoyuan": "平民阵营胜利！",
+  "skill.noellesroles.tianqiyubaoyuan.forecast": "天气预报",
+  "message.noellesroles.tianqiyubaoyuan.forecast_result_minutes": "§b下一次普通暴风雪将在 %s分%s秒 后到来",
+  "message.noellesroles.tianqiyubaoyuan.forecast_result_seconds": "§b下一次普通暴风雪将在 %s秒 后到来"
 
 }

@@ -2473,6 +2473,7 @@
     "message.noellesroles.repair.role_unknown":  "Unknown repair role: %s",
     "message.noellesroles.blizzard.warning": "☀ Blizzard arriving in %s seconds, seek shelter indoors!",
     "message.noellesroles.blizzard.started": "❆ Blizzard has arrived! Stay indoors!",
+    "message.noellesroles.blizzard.forced": "❆ Blizzard incoming, RUN!",
     "message.noellesroles.blizzard.ended": "❆ Blizzard has ended.",
     "hud.noellesroles.repair.skill_line":  "G %s  %s",
     "hud.noellesroles.repair.struggle_line":  "L/R Struggle %s%%",

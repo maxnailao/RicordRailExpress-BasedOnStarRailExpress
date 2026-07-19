@@ -10,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -34,8 +35,14 @@ public class RuikePortalEntity extends Entity {
     /** 传送冷却时间（tick） */
     public static final int TELEPORT_COOLDOWN_TICKS = 160; // 8秒
 
+    /** 音效截断延迟（tick）：PORTAL_TRAVEL约70tick，保留前40% */
+    private static final int SOUND_STOP_DELAY_TICKS = 28;
+
     /** 传送冷却追踪：玩家UUID -> 冷却结束tick */
     private static final Map<UUID, Integer> teleportCooldowns = new HashMap<>();
+
+    /** 待截断音效追踪：玩家UUID -> 停止tick */
+    private static final Map<UUID, Integer> pendingSoundStops = new HashMap<>();
 
     // 同步数据：放置者UUID
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID =
@@ -86,12 +93,34 @@ public class RuikePortalEntity extends Entity {
             return;
         }
 
+        // 服务端：检查待截断的音效
+        if (!pendingSoundStops.isEmpty()) {
+            int currentTick = ((ServerLevel) level()).getServer().getTickCount();
+            Iterator<Map.Entry<UUID, Integer>> iter = pendingSoundStops.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<UUID, Integer> entry = iter.next();
+                if (currentTick >= entry.getValue()) {
+                    UUID uuid = entry.getKey();
+                    iter.remove();
+                    ServerPlayer p = ((ServerLevel) level()).getServer().getPlayerList().getPlayer(uuid);
+                    if (p != null) {
+                        p.connection.send(new ClientboundStopSoundPacket(
+                                SoundEvents.PORTAL_TRAVEL.getLocation(), SoundSource.PLAYERS));
+                    }
+                }
+            }
+        }
+
         // 服务端：检测玩家碰撞
         ServerLevel serverLevel = (ServerLevel) level();
         AABB portalBox = getBoundingBox().inflate(0.2); // 稍微扩大检测范围
 
         for (ServerPlayer player : serverLevel.getEntitiesOfClass(ServerPlayer.class, portalBox)) {
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                continue;
+            }
+            // 蹲下状态不会被传送
+            if (player.isShiftKeyDown()) {
                 continue;
             }
             // 检查传送冷却
@@ -137,11 +166,14 @@ public class RuikePortalEntity extends Entity {
 
         player.teleportTo(targetX, targetY, targetZ);
 
-        // 播放传送音效（音量降低60%）
+        // 播放传送音效（音量0.1F，仅保留前40%后截断）
         serverLevel.playSound(null, getX(), getY(), getZ(),
-                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.2F, 1.0F);
+                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.1F, 1.0F);
         serverLevel.playSound(null, targetX, targetY, targetZ,
-                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.2F, 1.0F);
+                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.1F, 1.0F);
+        // 记录音效截断时间（28tick后由tick逻辑发送停止包）
+        int nowTick = serverLevel.getServer().getTickCount();
+        pendingSoundStops.put(player.getUUID(), nowTick + SOUND_STOP_DELAY_TICKS);
 
         // 设置8秒传送冷却
         setTeleportCooldown(player, TELEPORT_COOLDOWN_TICKS);
@@ -177,10 +209,11 @@ public class RuikePortalEntity extends Entity {
     }
 
     /**
-     * 清除所有传送冷却（游戏结束时调用）
+     * 清除所有传送冷却和待截断音效（游戏结束时调用）
      */
     public static void clearAllTeleportCooldowns() {
         teleportCooldowns.clear();
+        pendingSoundStops.clear();
     }
 
     /**

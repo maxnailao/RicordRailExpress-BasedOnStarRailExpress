@@ -94,6 +94,9 @@ public class SnowguaiPlayerComponent implements RoleComponent, ServerTickingComp
         // 检查雪怪自己是否存活
         if (!GameUtils.isPlayerAliveAndSurvival(serverPlayer)) return;
 
+        // 确保当前玩家是雪怪角色（CCA 会为所有玩家创建组件实例）
+        if (!gameWorld.isRole(serverPlayer, ModRoles.SNOWGUAI_WOW)) return;
+
         // 被动 2：判断场上是否仅剩杀手阵营或仅剩平民阵营
         boolean hasAliveKiller = false;
         boolean hasAliveInnocent = false;

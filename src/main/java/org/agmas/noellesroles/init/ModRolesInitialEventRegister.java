@@ -487,13 +487,7 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
-            // 敛财者角色初始化 - 设置初始理智值为 40%
-            if (role.identifier().equals(ModRoles.ILIKEMONEY.identifier())) {
-                var moodComp = SREPlayerMoodComponent.KEY.get(player);
-                moodComp.setMood(0.4f);
-                moodComp.sync();
-                return;
-            }
+
             // 时空旅者角色初始化
             if (role.identifier().equals(ModRoles.RUIKE.identifier())) {
                 var comp = ModComponents.RUIKE.get(player);
@@ -1484,7 +1478,7 @@ public class ModRolesInitialEventRegister {
                     // 实际逻辑在C2S包处理器中，这里只是标记技能可用
                     // 玩家打开背包后通过选人UI发送C2S包触发
                     return false;
-                }).cooldownSeconds(45).showOnHud(false).build());
+                }).cooldownSeconds(75).showOnHud(false).build());
 
         // 殉道者技能注册：牺牲复活
         RoleSkill.register(ModRoles.XUNDAOZHE, RoleSkill.skill(
@@ -1564,6 +1558,139 @@ public class ModRolesInitialEventRegister {
                             true);
                     return true;
                 }).cooldownSeconds(30).build());
+
+        // 敛财者技能注册：花费 100 金币恢复 100% 理智值，冷却 90 秒
+        RoleSkill.register(ModRoles.ILIKEMONEY, RoleSkill.skill(
+                SRE.id("ilikemoney_restore_mood"),
+                "skill.noellesroles.ilikemoney.restore_mood",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
+
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 100) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds_money", 100)
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+
+                    SREPlayerMoodComponent moodComp = SREPlayerMoodComponent.KEY.get(player);
+                    if (moodComp.getMood() >= 1.0f) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.ilikemoney.mood_full")
+                                        .withStyle(ChatFormatting.YELLOW),
+                                true);
+                        return false;
+                    }
+
+                    shop.addToBalance(-100);
+                    moodComp.setMood(1.0f);
+                    player.displayClientMessage(
+                            Component.translatable("message.noellesroles.ilikemoney.mood_restored")
+                                    .withStyle(ChatFormatting.GREEN),
+                            true);
+                    return true;
+                }).cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
+
+        // 售衣员技能注册：手持皮革护甲时对准玩家按G键，将对应物品给予目标玩家，无冷却
+        RoleSkill.register(ModRoles.SHOUYIYUAN, RoleSkill.skill(
+                SRE.id("shouyiyuan_give_armor"),
+                "skill.noellesroles.shouyiyuan.give_armor",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator() || GameUtils.isPlayerEliminated(player)) {
+                        return false;
+                    }
+                    // 获取目标玩家
+                    java.util.UUID targetUuid = context.target();
+                    if (targetUuid == null) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.shouyiyuan.no_target")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    Player target = player.level().getPlayerByUUID(targetUuid);
+                    if (!(target instanceof ServerPlayer targetPlayer) || GameUtils.isPlayerEliminated(targetPlayer)) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.shouyiyuan.target_invalid")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    // 检查手持物品是否为皮革护甲
+                    net.minecraft.world.item.ItemStack held = player.getMainHandItem();
+                    if (held.getItem() != Items.LEATHER_CHESTPLATE
+                            && held.getItem() != Items.LEATHER_LEGGINGS
+                            && held.getItem() != Items.LEATHER_BOOTS) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.shouyiyuan.not_leather")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    // 给予目标玩家一份该物品
+                    net.minecraft.world.item.ItemStack gift = held.copy();
+                    gift.setCount(1);
+                    if (!targetPlayer.getInventory().add(gift)) {
+                        // 物品栏满了就丢在地上
+                        targetPlayer.drop(gift, false);
+                    }
+                    // 获取物品名称（在减少数量前）
+                    String itemName = held.getItem().getDescription().getString();
+                    // 减少手持物品数量
+                    held.shrink(1);
+                    player.displayClientMessage(
+                            Component.translatable("message.noellesroles.shouyiyuan.gave",
+                                            itemName, targetPlayer.getName().getString())
+                                    .withStyle(ChatFormatting.GREEN),
+                            true);
+                    targetPlayer.displayClientMessage(
+                            Component.translatable("message.noellesroles.shouyiyuan.received",
+                                            itemName, player.getName().getString())
+                                    .withStyle(ChatFormatting.GREEN),
+                            true);
+                    return true;
+                }).cooldownSeconds(0).build());
+
+        // 天气预报员技能注册：花费125金币得知下一次普通暴风雪到来的时间
+        RoleSkill.register(ModRoles.TIANQIYUBAOYUAN, RoleSkill.skill(
+                SRE.id("tianqiyubaoyuan_forecast"),
+                "skill.noellesroles.tianqiyubaoyuan.forecast",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+                        return false;
+                    }
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 125) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds_money", 125)
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    shop.addToBalance(-125);
+                    int ticks = org.agmas.noellesroles.scene.BlizzardManager.getNextBlizzardIn();
+                    int seconds = (ticks + 19) / 20;
+                    int minutes = seconds / 60;
+                    int remainSeconds = seconds % 60;
+                    if (minutes > 0) {
+                        String paddedSec = String.format("%02d", remainSeconds);
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.tianqiyubaoyuan.forecast_result_minutes", minutes, paddedSec)
+                                        .withStyle(ChatFormatting.AQUA),
+                                false);
+                    } else {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.tianqiyubaoyuan.forecast_result_seconds", seconds)
+                                        .withStyle(ChatFormatting.AQUA),
+                                false);
+                    }
+                    return true;
+                }).cooldownSeconds(30).showOnHud(true).announceToSelf(false).build());
 
 
     }

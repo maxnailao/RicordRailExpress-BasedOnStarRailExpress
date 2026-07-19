@@ -39,6 +39,23 @@ public abstract class WorldRendererMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null)
             return;
+
+        // ── 暴风雪视觉效果 ──
+        // 最终暴风雪影响全图，普通/强制暴风雪仅影响室外玩家
+        if (SREClient.isBlizzardActive && SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
+            boolean isFinalBlizzard = SREClient.blizzardRemainingTicks == Integer.MAX_VALUE;
+            boolean isOutdoor = player.level().canSeeSky(player.blockPosition().above());
+
+            if (isFinalBlizzard || isOutdoor) {
+                // 最终暴风雪：更密集的雾（能见度约 12 格）
+                // 普通/强制暴风雪：较密集的雾（能见度约 20 格）
+                float fogEnd = isFinalBlizzard ? 12.0f : 20.0f;
+                float fogStart = 0.0f;
+                tmm$doFog(fogStart, fogEnd);
+                return;
+            }
+        }
+
         if (player.hasEffect(ModEffects.VISION_FOG)) {
             var instance = player.getEffect(ModEffects.VISION_FOG);
             float end = ModEffects.getVisionFogDistance(instance.getAmplifier());

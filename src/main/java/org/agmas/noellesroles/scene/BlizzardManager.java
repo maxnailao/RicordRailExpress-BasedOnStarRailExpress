@@ -12,6 +12,7 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.packet.BlizzardStateS2CPacket;
 import org.agmas.noellesroles.packet.SnowguaiBlizzardInfoS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
@@ -99,7 +100,10 @@ public final class BlizzardManager {
      * 每服务端 tick 调用一次（由 {@link SceneRuntimeEvents} 注册在 END_WORLD_TICK）。
      */
     public static void tick(ServerLevel level) {
-        // 1. 游戏未运行时重置
+        // 仅处理主世界，避免多维度 ServerLevel 重复递增 tickCounter
+        if (level.dimension() != Level.OVERWORLD) return;
+
+        // 1. 游戏未运行时跳过
         if (!isGameRunning(level)) {
             return;
         }
@@ -138,7 +142,7 @@ public final class BlizzardManager {
         if (forcedRemainingTicks % WARMTH_INTERVAL_TICKS == 0) {
             for (ServerPlayer player : level.players()) {
                 if (!GameUtils.isPlayerAliveAndSurvival(player)) continue;
-                if (!level.canSeeSky(player.blockPosition())) continue;
+                if (!level.canSeeSky(player.blockPosition().above())) continue;
                 MapStatusBarRuntime.forceAddWarmth(player, -1);
             }
         }
@@ -147,7 +151,7 @@ public final class BlizzardManager {
         if (forcedRemainingTicks % PARTICLE_INTERVAL_TICKS == 0) {
             for (ServerPlayer player : level.players()) {
                 if (!GameUtils.isPlayerAliveAndSurvival(player)) continue;
-                if (!level.canSeeSky(player.blockPosition())) continue;
+                if (!level.canSeeSky(player.blockPosition().above())) continue;
                 spawnBlizzardParticlesAroundPlayer(level, player);
             }
         }
@@ -233,7 +237,7 @@ public final class BlizzardManager {
         if (tickCounter % WARMTH_INTERVAL_TICKS == 0) {
             for (ServerPlayer player : level.players()) {
                 if (!GameUtils.isPlayerAliveAndSurvival(player)) continue;
-                if (!level.canSeeSky(player.blockPosition())) continue;
+                if (!level.canSeeSky(player.blockPosition().above())) continue;
                 MapStatusBarRuntime.forceAddWarmth(player, -1);
             }
         }
@@ -242,7 +246,7 @@ public final class BlizzardManager {
         if (tickCounter % PARTICLE_INTERVAL_TICKS == 0) {
             for (ServerPlayer player : level.players()) {
                 if (!GameUtils.isPlayerAliveAndSurvival(player)) continue;
-                if (!level.canSeeSky(player.blockPosition())) continue;
+                if (!level.canSeeSky(player.blockPosition().above())) continue;
                 spawnBlizzardParticlesAroundPlayer(level, player);
             }
         }
@@ -269,10 +273,11 @@ public final class BlizzardManager {
 
         syncBlizzardState(level, BlizzardStateS2CPacket.active(BLIZZARD_DURATION_TICKS));
 
+        Component startedMsg = Component.translatable("message.noellesroles.blizzard.started")
+                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
         for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(
-                    Component.translatable("message.noellesroles.blizzard.started")
-                            .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+            player.displayClientMessage(startedMsg, true);
+            player.sendSystemMessage(startedMsg);
         }
     }
 
@@ -290,10 +295,11 @@ public final class BlizzardManager {
         restoreWarmthStatusBar(level);
 
         // 播报结束
+        Component endedMsg = Component.translatable("message.noellesroles.blizzard.ended")
+                .withStyle(ChatFormatting.GRAY);
         for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(
-                    Component.translatable("message.noellesroles.blizzard.ended")
-                            .withStyle(ChatFormatting.GRAY));
+            player.displayClientMessage(endedMsg, true);
+            player.sendSystemMessage(endedMsg);
         }
 
         // 计算下一轮冷却（从结束时开始）
@@ -354,10 +360,11 @@ public final class BlizzardManager {
         syncBlizzardState(level, BlizzardStateS2CPacket.active(durationTicks));
 
         // 播报
+        Component forcedMsg = Component.translatable("message.noellesroles.blizzard.forced")
+                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
         for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(
-                    Component.translatable("message.noellesroles.blizzard.started")
-                            .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+            player.displayClientMessage(forcedMsg, true);
+            player.sendSystemMessage(forcedMsg);
         }
         return true;
     }
@@ -383,10 +390,11 @@ public final class BlizzardManager {
         syncBlizzardState(level, BlizzardStateS2CPacket.active(Integer.MAX_VALUE));
 
         // 播报
+        Component finalMsg = Component.translatable("message.noellesroles.snowguai_wow.final_blizzard_alert")
+                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD);
         for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(
-                    Component.translatable("message.noellesroles.snowguai_wow.final_blizzard")
-                            .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD));
+            player.displayClientMessage(finalMsg, true);
+            player.sendSystemMessage(finalMsg);
         }
     }
 
@@ -426,10 +434,11 @@ public final class BlizzardManager {
     // ═══════════════════════════════════════════════════════════════
 
     private static void broadcastWarning(ServerLevel level, int seconds) {
+        Component msg = Component.translatable("message.noellesroles.blizzard.warning", seconds)
+                .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD);
         for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(
-                    Component.translatable("message.noellesroles.blizzard.warning", seconds)
-                            .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+            player.displayClientMessage(msg, true);
+            player.sendSystemMessage(msg);
         }
     }
 
