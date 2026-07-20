@@ -146,9 +146,9 @@ public class RoleInitialItems {
         }
 
         {
-            // 黑警初始物品(左轮手枪和撬棍)
+            // 黑警初始物品(撬棍)
             List<Supplier<ItemStack>> items = new ArrayList<>();
-            items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+            //items.add(() -> TMMItems.REVOLVER.getDefaultInstance());
             items.add(() -> TMMItems.CROWBAR.getDefaultInstance());
             INITIAL_ITEMS_MAP.put(ModRoles.CORRUPT_COP, items);
         }

@@ -3276,7 +3276,7 @@ public class RoleShopHandler {
         // 黑警商店
         {
             var CORRUPT_COP_SHOP = new ArrayList<ShopEntry>();
-            CORRUPT_COP_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
+            CORRUPT_COP_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.WEAPON));
             CORRUPT_COP_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 400, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.CORRUPT_COP_ID, CORRUPT_COP_SHOP);
         }

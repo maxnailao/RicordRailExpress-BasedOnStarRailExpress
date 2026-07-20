@@ -1,6 +1,9 @@
 package io.wifi.starrailexpress.mixin.entity.living;
 
 import io.wifi.starrailexpress.index.TMMSounds;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -17,11 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.Optional;
+import java.util.UUID;
 
 @Mixin(Cat.class)
 public abstract class CatInteractionMixin extends Animal {
+
+    @Unique
+    private static final EntityDataAccessor<Byte> sre$DATA_TILT_STATE =
+            SynchedEntityData.defineId(Cat.class, EntityDataSerializers.BYTE);
+    @Unique
+    private static final EntityDataAccessor<Integer> sre$DATA_INTERACT_PARTNER_ID =
+            SynchedEntityData.defineId(Cat.class, EntityDataSerializers.INT);
 
     @Unique
     private static final HashMap<Cat, Cat> PARTNERS = new HashMap<>();
@@ -33,8 +43,6 @@ public abstract class CatInteractionMixin extends Animal {
     private static final HashMap<Cat, Cat> APPROACH_TARGETS = new HashMap<>();
     @Unique
     private static final HashMap<Cat, Integer> APPROACH_COOLDOWNS = new HashMap<>();
-    @Unique
-    private static final HashMap<Cat, Float> TILT_DIRECTIONS = new HashMap<>();
 
     @Unique
     private static final int COOLDOWN = 20 * 30;
@@ -51,6 +59,12 @@ public abstract class CatInteractionMixin extends Animal {
 
     protected CatInteractionMixin(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Inject(method = "defineSynchedData", at = @At("TAIL"))
+    private void sre$defineSynchedData(SynchedEntityData.Builder builder, CallbackInfo ci) {
+        builder.define(sre$DATA_TILT_STATE, (byte) 0);
+        builder.define(sre$DATA_INTERACT_PARTNER_ID, -1);
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
@@ -77,6 +91,9 @@ public abstract class CatInteractionMixin extends Animal {
                     sre$cleanup(self);
                     return;
                 }
+
+                sre$doLookAndTilt(self, partner);
+                sre$doLookAndTilt(partner, self);
 
                 sre$freezeCat(self);
                 sre$freezeCat(partner);
@@ -107,8 +124,16 @@ public abstract class CatInteractionMixin extends Animal {
                     PARTNERS.put(self, approachTarget);
                     INTERACTION_TICKS.put(approachTarget, DURATION);
                     PARTNERS.put(approachTarget, self);
-                    TILT_DIRECTIONS.put(self, random.nextBoolean() ? 25.0F : -25.0F);
-                    TILT_DIRECTIONS.put(approachTarget, random.nextBoolean() ? 25.0F : -25.0F);
+
+                    float tiltA = random.nextBoolean() ? 25.0F : -25.0F;
+                    float tiltB = random.nextBoolean() ? 25.0F : -25.0F;
+                    sre$setTiltState(self, tiltA);
+                    sre$setTiltState(approachTarget, tiltB);
+                    self.getEntityData().set(sre$DATA_INTERACT_PARTNER_ID, approachTarget.getId());
+                    approachTarget.getEntityData().set(sre$DATA_INTERACT_PARTNER_ID, self.getId());
+
+                    sre$doLookAndTilt(self, approachTarget);
+                    sre$doLookAndTilt(approachTarget, self);
                     sre$freezeCat(self);
                     sre$freezeCat(approachTarget);
                     sre$playRandomSound();
@@ -137,14 +162,26 @@ public abstract class CatInteractionMixin extends Animal {
                     }
                 }
             }
+
+            return;
         }
 
-        // === 客户端：头部朝向和歪头（两侧都需要执行） ===
-        Cat partner = PARTNERS.get(self);
-        int ticks = INTERACTION_TICKS.getOrDefault(self, 0);
-        if (ticks > 0 && partner != null && partner.isAlive()) {
-            sre$doLookAndTilt(self, partner);
+        // === 客户端：通过追踪数据读取互动状态，执行对视和歪头 ===
+        byte tiltState = self.getEntityData().get(sre$DATA_TILT_STATE);
+        if (tiltState != 0) {
+            int partnerId = self.getEntityData().get(sre$DATA_INTERACT_PARTNER_ID);
+            if (partnerId != -1) {
+                net.minecraft.world.entity.Entity partnerEntity = level().getEntity(partnerId);
+                if (partnerEntity instanceof Cat partnerCat && partnerCat.isAlive()) {
+                    sre$doLookAndTilt(self, partnerCat);
+                }
+            }
         }
+    }
+
+    @Unique
+    private void sre$setTiltState(Cat cat, float tilt) {
+        cat.getEntityData().set(sre$DATA_TILT_STATE, (byte) (tilt > 0 ? 1 : -1));
     }
 
     @Unique
@@ -160,16 +197,18 @@ public abstract class CatInteractionMixin extends Animal {
         if (partner != null) {
             INTERACTION_TICKS.put(partner, 0);
             PARTNERS.remove(partner);
-            TILT_DIRECTIONS.remove(partner);
             COOLDOWNS.put(partner, COOLDOWN);
             APPROACH_COOLDOWNS.put(partner, APPROACH_COOLDOWN);
+            partner.getEntityData().set(sre$DATA_TILT_STATE, (byte) 0);
+            partner.getEntityData().set(sre$DATA_INTERACT_PARTNER_ID, -1);
         }
         INTERACTION_TICKS.put(self, 0);
         PARTNERS.remove(self);
         COOLDOWNS.put(self, COOLDOWN);
         APPROACH_TARGETS.remove(self);
-        TILT_DIRECTIONS.remove(self);
         APPROACH_COOLDOWNS.put(self, APPROACH_COOLDOWN);
+        self.getEntityData().set(sre$DATA_TILT_STATE, (byte) 0);
+        self.getEntityData().set(sre$DATA_INTERACT_PARTNER_ID, -1);
     }
 
     @Unique
@@ -182,7 +221,8 @@ public abstract class CatInteractionMixin extends Animal {
         self.yRotO = targetYaw;
         self.yBodyRot = targetYaw;
 
-        float tilt = TILT_DIRECTIONS.getOrDefault(self, 25.0F);
+        byte tiltState = self.getEntityData().get(sre$DATA_TILT_STATE);
+        float tilt = tiltState > 0 ? 25.0F : (tiltState < 0 ? -25.0F : 0.0F);
         self.yHeadRot = targetYaw + tilt;
         self.yHeadRotO = targetYaw + tilt;
         self.setXRot(-20.0F);

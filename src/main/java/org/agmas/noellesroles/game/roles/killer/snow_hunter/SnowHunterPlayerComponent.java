@@ -27,7 +27,7 @@ public class SnowHunterPlayerComponent implements RoleComponent, ServerTickingCo
     public int skillCooldownTicks = 0;
 
     public static final int SKILL_DURATION = 8 * 20;
-    public static final int SKILL_COOLDOWN = 30 * 20;
+    public static final int SKILL_COOLDOWN = 50 * 20;
     public static final int SKILL_COST = 50;
 
     public SnowHunterPlayerComponent(@NotNull Player player) {
