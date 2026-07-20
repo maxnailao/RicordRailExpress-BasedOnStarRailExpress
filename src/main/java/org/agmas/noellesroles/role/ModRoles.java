@@ -3236,7 +3236,7 @@ public class ModRoles {
                     false,
                     true,
                     SRERole.MoodType.FAKE,
-                    Integer.MAX_VALUE,
+                    TMMRoles.CIVILIAN.getMaxSprintTime() * 2,
                     true
             )).setComponentKey(ModComponents.SNOW_HUNTER)
             .setCanSeeCoin(true)
@@ -3245,7 +3245,8 @@ public class ModRoles {
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW)
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(12)
-            .setDefaultEnableChance(7500);
+            .setCanPickUpRevolver(false)
+            .setDefaultEnableChance(10000);
 
     /**
      * 雪怪 - 独立中立阵营

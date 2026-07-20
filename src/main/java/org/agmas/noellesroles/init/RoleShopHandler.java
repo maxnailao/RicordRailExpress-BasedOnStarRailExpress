@@ -3284,8 +3284,8 @@ public class RoleShopHandler {
         {
             var SNOW_HUNTER_SHOP = new ArrayList<ShopEntry>();
             SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.SNIPER_RIFLE.getDefaultInstance(),100,ShopEntry.Type.WEAPON));
-            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.SCOPE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.MAGNUM_BULLET.getDefaultInstance(), 85, ShopEntry.Type.WEAPON));
+            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.SCOPE.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.MAGNUM_BULLET.getDefaultInstance(), 95, ShopEntry.Type.WEAPON));
             ShopContent.customEntries.put(ModRoles.SNOW_HUNTER_ID, SNOW_HUNTER_SHOP);
             SNOW_HUNTER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
         }

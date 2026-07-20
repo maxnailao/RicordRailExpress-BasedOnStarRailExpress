@@ -207,6 +207,13 @@ public class SREMurderGameMode extends GameMode {
         int killerMods = (int) allModifiers.stream().filter(modifier -> modifier.killerOnly).count();
         Collections.shuffle(allModifiers);
 
+        allModifiers.sort(Comparator.comparingInt(mod -> {
+            if (mod.canOnlyBeAppliedTo != null && !mod.canOnlyBeAppliedTo.isEmpty()) {
+                return mod.canOnlyBeAppliedTo.size();
+            }
+            return Integer.MAX_VALUE;
+        }));
+
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
         // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
         // 地图限制也仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
