@@ -61,6 +61,7 @@ public interface TMMSounds {
     SoundEvent LAOWU3 = registrar.create("cat.laowu3");
     SoundEvent LAOWU4 = registrar.create("cat.laowu4");
     SoundEvent LAOWU5 = registrar.create("cat.laowu5");
+    SoundEvent LAOWU6 = registrar.create("cat.laowu6");
     static void initialize() {
         registrar.registerEntries();
     }

@@ -196,7 +196,8 @@ public abstract class CatInteractionMixin extends Animal {
                 TMMSounds.LAOWU2,
                 TMMSounds.LAOWU3,
                 TMMSounds.LAOWU4,
-                TMMSounds.LAOWU5
+                TMMSounds.LAOWU5,
+                TMMSounds.LAOWU6
         );
         SoundEvent sound = sounds.get(random.nextInt(sounds.size()));
         float volume = 0.8F + random.nextFloat() * 0.4F;
