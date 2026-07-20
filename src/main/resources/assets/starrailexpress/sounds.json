@@ -299,6 +299,26 @@
     "subtitle": "subtitle.starrailexpress.musicbox.styx_helix",
     "sounds": [{"name": "starrailexpress:musicbox/styx_helix", "stream": true}]
   },
+  "musicbox.clima_lindo": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.clima_lindo",
+    "sounds": [{"name": "starrailexpress:musicbox/clima_lindo", "stream": true}]
+  },
+  "musicbox.petal_dance": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.petal_dance",
+    "sounds": [{"name": "starrailexpress:musicbox/petal_dance", "stream": true}]
+  },
+  "musicbox.royalty": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.royalty",
+    "sounds": [{"name": "starrailexpress:musicbox/royalty", "stream": true}]
+  },
+  "musicbox.choice": {
+    "category": "record",
+    "subtitle": "subtitle.starrailexpress.musicbox.choice",
+    "sounds": [{"name": "starrailexpress:musicbox/choice", "stream": true}]
+  },
   "cat.laowu1": {
     "sounds": [
       {
