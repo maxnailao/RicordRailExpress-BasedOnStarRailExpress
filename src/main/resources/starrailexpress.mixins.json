@@ -15,6 +15,7 @@
     "entity.ItemFrameMixin",
     "entity.ProjectileUtilMixin",
     "entity.item.ItemEntityMixin",
+    "entity.living.CatInteractionMixin",
     "entity.living.LivingEntityDamageMixin",
     "entity.living.LivingEntityMixin",
     "entity.player.CanRightClickMixin",

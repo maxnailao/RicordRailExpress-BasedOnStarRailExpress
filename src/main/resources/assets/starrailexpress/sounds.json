@@ -298,5 +298,37 @@
     "category": "record",
     "subtitle": "subtitle.starrailexpress.musicbox.styx_helix",
     "sounds": [{"name": "starrailexpress:musicbox/styx_helix", "stream": true}]
+  },
+  "cat.laowu1": {
+    "sounds": [
+      {
+        "name": "starrailexpress:cat/laowu1",
+        "stream": false
+      }
+    ]
+  },
+  "cat.laowu2": {
+    "sounds": [
+      {
+        "name": "starrailexpress:cat/laowu2",
+        "stream": false
+      }
+    ]
+  },
+  "cat.laowu3": {
+    "sounds": [
+      {
+        "name": "starrailexpress:cat/laowu3",
+        "stream": false
+      }
+    ]
+  },
+  "cat.laowu4": {
+    "sounds": [
+      {
+        "name": "starrailexpress:cat/laowu4",
+        "stream": false
+      }
+    ]
   }
 }

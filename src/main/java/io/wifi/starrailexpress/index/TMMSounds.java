@@ -55,6 +55,12 @@ public interface TMMSounds {
     SoundEvent UI_PIANO_STINGER = registrar.create("ui.piano_stinger");
     SoundEvent UI_RISER = registrar.create("ui.riser");
 
+    // Cat interaction
+    SoundEvent LAOWU1 = registrar.create("cat.laowu1");
+    SoundEvent LAOWU2 = registrar.create("cat.laowu2");
+    SoundEvent LAOWU3 = registrar.create("cat.laowu3");
+    SoundEvent LAOWU4 = registrar.create("cat.laowu4");
+
     static void initialize() {
         registrar.registerEntries();
     }
