@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.mixin.entity.living;
 
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -23,13 +24,13 @@ import java.util.WeakHashMap;
 public abstract class CatInteractionMixin extends Animal {
 
     @Unique
-    private static final WeakHashMap<Cat, Cat> PARTNERS = new WeakHashMap<>();
+    private static final HashMap<Cat, Cat> PARTNERS = new HashMap<>();
     @Unique
     private static final HashMap<Cat, Integer> INTERACTION_TICKS = new HashMap<>();
     @Unique
     private static final HashMap<Cat, Integer> COOLDOWNS = new HashMap<>();
     @Unique
-    private static final WeakHashMap<Cat, Cat> APPROACH_TARGETS = new WeakHashMap<>();
+    private static final HashMap<Cat, Cat> APPROACH_TARGETS = new HashMap<>();
     @Unique
     private static final HashMap<Cat, Integer> APPROACH_COOLDOWNS = new HashMap<>();
     @Unique
@@ -46,7 +47,7 @@ public abstract class CatInteractionMixin extends Animal {
     @Unique
     private static final double DETECT_RANGE = 10.0;
     @Unique
-    private static final int APPROACH_COOLDOWN = 20 * 40;
+    private static final int APPROACH_COOLDOWN = 20 * 15;
 
     protected CatInteractionMixin(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
@@ -59,6 +60,9 @@ public abstract class CatInteractionMixin extends Animal {
         if (!level().isClientSide) {
             int cooldown = COOLDOWNS.getOrDefault(self, 0);
             if (cooldown > 0) COOLDOWNS.put(self, cooldown - 1);
+
+            int approachCd = APPROACH_COOLDOWNS.getOrDefault(self, 0);
+            if (approachCd > 0) APPROACH_COOLDOWNS.put(self, approachCd - 1);
 
             int ticks = INTERACTION_TICKS.getOrDefault(self, 0);
             Cat partner = PARTNERS.get(self);
@@ -90,9 +94,6 @@ public abstract class CatInteractionMixin extends Animal {
             // === 自动靠近中 ===
             Cat approachTarget = APPROACH_TARGETS.get(self);
             if (approachTarget != null) {
-                int approachCd = APPROACH_COOLDOWNS.getOrDefault(self, 0);
-                if (approachCd > 0) APPROACH_COOLDOWNS.put(self, approachCd - 1);
-
                 if (!approachTarget.isAlive()
                         || PARTNERS.get(approachTarget) != null
                         || COOLDOWNS.getOrDefault(approachTarget, 0) > 0) {
@@ -121,9 +122,7 @@ public abstract class CatInteractionMixin extends Animal {
             // === 冷却中 ===
             if (cooldown > 0) return;
             if (partner != null) return;
-
-            int approachCooldown = APPROACH_COOLDOWNS.getOrDefault(self, 0);
-            if (approachCooldown > 0) return;
+            if (approachCd > 0) return;
             if (random.nextInt(20) != 0) return;
 
             // === 检测附近猫 ===
@@ -160,12 +159,13 @@ public abstract class CatInteractionMixin extends Animal {
         Cat partner = PARTNERS.get(self);
         if (partner != null) {
             INTERACTION_TICKS.put(partner, 0);
-            PARTNERS.put(partner, null);
+            PARTNERS.remove(partner);
             TILT_DIRECTIONS.remove(partner);
+            COOLDOWNS.put(partner, COOLDOWN);
             APPROACH_COOLDOWNS.put(partner, APPROACH_COOLDOWN);
         }
         INTERACTION_TICKS.put(self, 0);
-        PARTNERS.put(self, null);
+        PARTNERS.remove(self);
         COOLDOWNS.put(self, COOLDOWN);
         APPROACH_TARGETS.remove(self);
         TILT_DIRECTIONS.remove(self);
@@ -195,11 +195,12 @@ public abstract class CatInteractionMixin extends Animal {
                 TMMSounds.LAOWU1,
                 TMMSounds.LAOWU2,
                 TMMSounds.LAOWU3,
-                TMMSounds.LAOWU4
+                TMMSounds.LAOWU4,
+                TMMSounds.LAOWU5
         );
         SoundEvent sound = sounds.get(random.nextInt(sounds.size()));
-        playSound(sound,
-                0.8F + random.nextFloat() * 0.4F,
-                0.9F + random.nextFloat() * 0.2F);
+        float volume = 0.8F + random.nextFloat() * 0.4F;
+        float pitch = 0.9F + random.nextFloat() * 0.2F;
+        level().playSound(null, blockPosition(), sound, SoundSource.NEUTRAL, volume, pitch);
     }
 }

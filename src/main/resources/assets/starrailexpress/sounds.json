@@ -350,5 +350,13 @@
         "stream": false
       }
     ]
+  },
+  "cat.laowu5": {
+    "sounds": [
+      {
+        "name": "starrailexpress:cat/laowu5",
+        "stream": false
+      }
+    ]
   }
 }
