@@ -28,15 +28,25 @@ public abstract class CatInteractionMixin extends Animal {
     private static final HashMap<Cat, Integer> INTERACTION_TICKS = new HashMap<>();
     @Unique
     private static final HashMap<Cat, Integer> COOLDOWNS = new HashMap<>();
+    @Unique
+    private static final WeakHashMap<Cat, Cat> APPROACH_TARGETS = new WeakHashMap<>();
+    @Unique
+    private static final HashMap<Cat, Integer> APPROACH_COOLDOWNS = new HashMap<>();
+    @Unique
+    private static final HashMap<Cat, Float> TILT_DIRECTIONS = new HashMap<>();
 
     @Unique
     private static final int COOLDOWN = 20 * 30;
     @Unique
-    private static final int DURATION = 20 * 20;
+    private static final int DURATION = 20 * 10;
     @Unique
-    private static final double RANGE = 1.0;
+    private static final double RANGE = 1.5;
     @Unique
-    private static final int SOUND_INTERVAL = 20 * 20;
+    private static final int SOUND_INTERVAL = 20 * 10;
+    @Unique
+    private static final double DETECT_RANGE = 10.0;
+    @Unique
+    private static final int APPROACH_COOLDOWN = 20 * 40;
 
     protected CatInteractionMixin(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
@@ -44,58 +54,97 @@ public abstract class CatInteractionMixin extends Animal {
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void sre$onTick(CallbackInfo ci) {
-        if (level().isClientSide) return;
-
         Cat self = (Cat) (Object) this;
 
-        int cooldown = COOLDOWNS.getOrDefault(self, 0);
-        if (cooldown > 0) COOLDOWNS.put(self, cooldown - 1);
+        if (!level().isClientSide) {
+            int cooldown = COOLDOWNS.getOrDefault(self, 0);
+            if (cooldown > 0) COOLDOWNS.put(self, cooldown - 1);
 
-        int ticks = INTERACTION_TICKS.getOrDefault(self, 0);
-        Cat partner = PARTNERS.get(self);
+            int ticks = INTERACTION_TICKS.getOrDefault(self, 0);
+            Cat partner = PARTNERS.get(self);
 
-        if (ticks > 0) {
-            INTERACTION_TICKS.put(self, ticks - 1);
+            // === 互动中 ===
+            if (ticks > 0) {
+                INTERACTION_TICKS.put(self, ticks - 1);
 
-            if (partner == null || !partner.isAlive()
-                    || self.distanceTo(partner) > RANGE * 2
-                    || PARTNERS.get(partner) != self) {
-                sre$cleanup(self);
+                if (partner == null || !partner.isAlive()
+                        || self.distanceTo(partner) > RANGE * 2
+                        || PARTNERS.get(partner) != self) {
+                    sre$cleanup(self);
+                    return;
+                }
+
+                sre$freezeCat(self);
+                sre$freezeCat(partner);
+
+                int newTicks = INTERACTION_TICKS.getOrDefault(self, 0);
+                if (newTicks > 0 && newTicks % SOUND_INTERVAL == 0) {
+                    sre$playRandomSound();
+                }
+                if (newTicks == 0) {
+                    sre$cleanup(self);
+                }
                 return;
             }
 
-            sre$freezeCat(self);
-            sre$freezeCat(partner);
-            sre$doLookAndTilt(self, partner);
+            // === 自动靠近中 ===
+            Cat approachTarget = APPROACH_TARGETS.get(self);
+            if (approachTarget != null) {
+                int approachCd = APPROACH_COOLDOWNS.getOrDefault(self, 0);
+                if (approachCd > 0) APPROACH_COOLDOWNS.put(self, approachCd - 1);
 
-            int newTicks = INTERACTION_TICKS.getOrDefault(self, 0);
-            if (newTicks > 0 && newTicks % SOUND_INTERVAL == 0) {
-                sre$playRandomSound();
-            }
-            if (newTicks == 0) {
-                sre$cleanup(self);
-            }
-            return;
-        }
+                if (!approachTarget.isAlive()
+                        || PARTNERS.get(approachTarget) != null
+                        || COOLDOWNS.getOrDefault(approachTarget, 0) > 0) {
+                    APPROACH_TARGETS.remove(self);
+                    return;
+                }
 
-        if (cooldown > 0) return;
-        if (partner != null) return;
-        if (random.nextInt(20) != 0) return;
-
-        for (net.minecraft.world.entity.Entity entity : level().getEntities(self, self.getBoundingBox().inflate(RANGE))) {
-            if (entity instanceof Cat otherCat && otherCat != self && otherCat.isAlive()) {
-                if (PARTNERS.get(otherCat) == null
-                        && INTERACTION_TICKS.getOrDefault(otherCat, 0) <= 0) {
+                if (self.distanceTo(approachTarget) <= RANGE) {
+                    APPROACH_TARGETS.remove(self);
                     INTERACTION_TICKS.put(self, DURATION);
-                    PARTNERS.put(self, otherCat);
-                    INTERACTION_TICKS.put(otherCat, DURATION);
-                    PARTNERS.put(otherCat, self);
+                    PARTNERS.put(self, approachTarget);
+                    INTERACTION_TICKS.put(approachTarget, DURATION);
+                    PARTNERS.put(approachTarget, self);
+                    TILT_DIRECTIONS.put(self, random.nextBoolean() ? 25.0F : -25.0F);
+                    TILT_DIRECTIONS.put(approachTarget, random.nextBoolean() ? 25.0F : -25.0F);
                     sre$freezeCat(self);
-                    sre$freezeCat(otherCat);
+                    sre$freezeCat(approachTarget);
                     sre$playRandomSound();
-                    break;
+                    return;
+                }
+
+                self.getNavigation().moveTo(approachTarget, 1.0);
+                return;
+            }
+
+            // === 冷却中 ===
+            if (cooldown > 0) return;
+            if (partner != null) return;
+
+            int approachCooldown = APPROACH_COOLDOWNS.getOrDefault(self, 0);
+            if (approachCooldown > 0) return;
+            if (random.nextInt(20) != 0) return;
+
+            // === 检测附近猫 ===
+            for (net.minecraft.world.entity.Entity entity : level().getEntities(self, self.getBoundingBox().inflate(DETECT_RANGE))) {
+                if (entity instanceof Cat otherCat && otherCat != self && otherCat.isAlive()) {
+                    if (PARTNERS.get(otherCat) == null
+                            && INTERACTION_TICKS.getOrDefault(otherCat, 0) <= 0
+                            && COOLDOWNS.getOrDefault(otherCat, 0) <= 0
+                            && !APPROACH_TARGETS.containsKey(otherCat)) {
+                        APPROACH_TARGETS.put(self, otherCat);
+                        break;
+                    }
                 }
             }
+        }
+
+        // === 客户端：头部朝向和歪头（两侧都需要执行） ===
+        Cat partner = PARTNERS.get(self);
+        int ticks = INTERACTION_TICKS.getOrDefault(self, 0);
+        if (ticks > 0 && partner != null && partner.isAlive()) {
+            sre$doLookAndTilt(self, partner);
         }
     }
 
@@ -112,10 +161,15 @@ public abstract class CatInteractionMixin extends Animal {
         if (partner != null) {
             INTERACTION_TICKS.put(partner, 0);
             PARTNERS.put(partner, null);
+            TILT_DIRECTIONS.remove(partner);
+            APPROACH_COOLDOWNS.put(partner, APPROACH_COOLDOWN);
         }
         INTERACTION_TICKS.put(self, 0);
         PARTNERS.put(self, null);
         COOLDOWNS.put(self, COOLDOWN);
+        APPROACH_TARGETS.remove(self);
+        TILT_DIRECTIONS.remove(self);
+        APPROACH_COOLDOWNS.put(self, APPROACH_COOLDOWN);
     }
 
     @Unique
@@ -127,18 +181,10 @@ public abstract class CatInteractionMixin extends Animal {
         self.setYRot(targetYaw);
         self.yRotO = targetYaw;
         self.yBodyRot = targetYaw;
-        self.yHeadRot = targetYaw;
-        self.yHeadRotO = targetYaw;
 
-        int phase = (INTERACTION_TICKS.getOrDefault(self, 0) / 12) % 4;
-        float headTilt;
-        switch (phase) {
-            case 0: headTilt = 25.0F; break;
-            case 1: headTilt = 0.0F; break;
-            case 2: headTilt = -25.0F; break;
-            default: headTilt = 0.0F; break;
-        }
-        self.yHeadRot = targetYaw + headTilt;
+        float tilt = TILT_DIRECTIONS.getOrDefault(self, 25.0F);
+        self.yHeadRot = targetYaw + tilt;
+        self.yHeadRotO = targetYaw + tilt;
         self.setXRot(-20.0F);
         self.xRotO = -20.0F;
     }
