@@ -161,5 +161,14 @@ public final class MusicBoxRegistry {
                 Component.translatable("musicbox.starrailexpress.die_for_u"), 1.5f));
         register(new MusicBox("styx_helix", MusicBoxSounds.MUSICBOX_STYX_HELIX,
                 Component.translatable("musicbox.starrailexpress.styx_helix"), 1.4f));
+        // ── 新增 4 个音乐盒 ──
+        register(new MusicBox("clima_lindo", MusicBoxSounds.MUSICBOX_CLIMA_LINDO,
+                Component.translatable("musicbox.starrailexpress.clima_lindo"), 1.5f));
+        register(new MusicBox("petal_dance", MusicBoxSounds.MUSICBOX_PETAL_DANCE,
+                Component.translatable("musicbox.starrailexpress.petal_dance"), 1.5f));
+        register(new MusicBox("royalty", MusicBoxSounds.MUSICBOX_ROYALTY,
+                Component.translatable("musicbox.starrailexpress.royalty"), 1.5f));
+        register(new MusicBox("choice", MusicBoxSounds.MUSICBOX_CHOICE,
+                Component.translatable("musicbox.starrailexpress.choice"), 1.5f));
     }
 }

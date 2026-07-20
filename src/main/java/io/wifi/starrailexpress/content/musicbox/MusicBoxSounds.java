@@ -75,6 +75,11 @@ public interface MusicBoxSounds {
     // ── 新增 2 个音乐盒音效 ──
     SoundEvent MUSICBOX_DIE_FOR_U = registrar.create("musicbox.die_for_u");
     SoundEvent MUSICBOX_STYX_HELIX = registrar.create("musicbox.styx_helix");
+    // ── 新增 4 个音乐盒音效 ──
+    SoundEvent MUSICBOX_CLIMA_LINDO = registrar.create("musicbox.clima_lindo");
+    SoundEvent MUSICBOX_PETAL_DANCE = registrar.create("musicbox.petal_dance");
+    SoundEvent MUSICBOX_ROYALTY = registrar.create("musicbox.royalty");
+    SoundEvent MUSICBOX_CHOICE = registrar.create("musicbox.choice");
 
     static void initialize() {
         registrar.registerEntries();
