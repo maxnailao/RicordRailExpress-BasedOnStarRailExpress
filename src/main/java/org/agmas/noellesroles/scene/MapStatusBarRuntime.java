@@ -99,6 +99,7 @@ public final class MapStatusBarRuntime {
     public static void forceAddWarmth(ServerPlayer player, int delta) {
         ServerLevel level = (ServerLevel) player.level();
         if (!isGameRunning(level)) return;
+        if (delta < 0 && isColdImmune(player)) return;
         State state = STATES.computeIfAbsent(player.getUUID(), id -> new State(MapStatusBarType.WARMTH));
         if (state.type != MapStatusBarType.WARMTH) {
             state.reset(MapStatusBarType.WARMTH);
@@ -150,6 +151,14 @@ public final class MapStatusBarRuntime {
             return;
         }
         state.sync(player);
+    }
+
+    private static boolean isColdImmune(ServerPlayer player) {
+        var game = SREGameWorldComponent.KEY.get(player.level());
+        if (!game.isRunning()) return false;
+        if (game.isRole(player, ModRoles.SNOW_HUNTER)) return true;
+        if (game.isRole(player, ModRoles.SNOWGUAI_WOW)) return true;
+        return false;
     }
 
     private static void tickPlayer(ServerLevel level, ServerPlayer player, State state) {
