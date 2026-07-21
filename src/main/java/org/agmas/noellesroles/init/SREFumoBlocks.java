@@ -152,6 +152,8 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block CUSTOM_PLAYER_PLUSH = registerSpecialBlock("custom_player_plush",
             new CustomPlayerPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block SHILU_PLUSH = registerSpecialBlock("shilu_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     /**
      * Block Entity
      */
@@ -166,7 +168,8 @@ public interface SREFumoBlocks {
                     JUSTACHEESE_PLUSH, SPBGCP_PLUSH, HUAJI_PLUSH, QINGMEI_PLUSH, JIALE2_PLUSH,
                     EGG_PLUSH, TANGYE_PLUSH, XGD_PLUSH, YCHENNOC_PLUSH, MONGOOSE_PLUSH, XIAOXIAN_PLUSH, LIFELINE_PLUSH,
                     RLINGKONG_PLUSH, X1AOBA_PLUSH, CAIZI_PLUSH, JIALE114514_PLUSH, AKASPING_PLUSH, CHAORENQIANG_PLUSH,
-                    SLHCAT_PLUSH, CRYINGSNOW_PLUSH, CUTEFISH_PLUSH, XITOMAOTSLX_PLUSH, SAN_HUA_AWA_PLUSH, BOX_PLUSH, WHITE_KOSHI_PLUSH, QIVVU_520_PLUSH, CUSTOM_PLAYER_PLUSH }));
+                    SLHCAT_PLUSH, CRYINGSNOW_PLUSH, CUTEFISH_PLUSH, XITOMAOTSLX_PLUSH, SAN_HUA_AWA_PLUSH, BOX_PLUSH, WHITE_KOSHI_PLUSH, QIVVU_520_PLUSH, CUSTOM_PLAYER_PLUSH,
+                    SHILU_PLUSH}));
 
     @SuppressWarnings("unchecked")
     public static <T extends Block> T registerBlock(String id, T block) {
