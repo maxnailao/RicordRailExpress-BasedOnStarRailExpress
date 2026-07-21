@@ -218,9 +218,11 @@ public final class BackpackManager {
     private static void onDisconnect(ServerPlayer player) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
-            // Use async flush to avoid blocking the network thread.
-            // Final data is guaranteed by SERVER_STOPPING → flushAllBlocking.
-            flushAsync(player, entry);
+            if (entry.dirty) {
+                if (!flushBlocking(player.getUUID())) {
+                    SRE.LOGGER.warn("Failed to save backpack for {} on disconnect, data may be lost.", player.getUUID());
+                }
+            }
             ENTRIES.remove(player.getUUID(), entry);
         }
     }

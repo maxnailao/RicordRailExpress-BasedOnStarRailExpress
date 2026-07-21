@@ -65,9 +65,9 @@ public final class ProgressionState {
 
     public enum FactionCardType {
         NONE("sre.pass.faction.none", "none", 0),
-        KILLER("sre.pass.faction.killer", "killer", 1),
-        CIVILIAN("sre.pass.faction.civilian", "civilian", 2),
-        NEUTRAL("sre.pass.faction.neutral", "neutral", 3),
+        KILLER("sre.pass.faction.killer", "killer", 4),
+        CIVILIAN("sre.pass.faction.civilian", "civilian", 1),
+        NEUTRAL("sre.pass.faction.neutral", "neutral", 2),
         NEUTRAL_FOR_KILLER("sre.pass.faction.neutral_for_killer", "neutral_for_killer", 3);
 
         public final String displayName;
