@@ -592,9 +592,10 @@ public class SREMurderGameMode extends GameMode {
                         continue;
                     int roleType = entry.getValue();
                     var roleSelector = roleSelectors.get(roleType);
-                    if (roleSelector == null)
-                        continue;
-                    RoleInstance roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
+                    RoleInstance roleInstant = null;
+                    if (roleSelector != null) {
+                        roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
+                    }
                     SRERole selectedRole = null;
                     if (roleInstant != null) {
                         hashMap.remove(roleInstant);
