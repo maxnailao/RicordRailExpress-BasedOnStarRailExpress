@@ -3272,7 +3272,8 @@ public class ModRoles {
             .setCanSeeTime(true)    // 可见时间
             .setCanPickUpRevolver(false)  // 不能捡枪
             .setCanUseInstinct(false)     // 不能使用本能
-            .setDefaultMax(1);
+            .setDefaultMax(1)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW);
 
 
     /**
