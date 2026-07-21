@@ -87,7 +87,7 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     if (!player.isCreative()) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
                         if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
-                            player.getCooldowns().addCooldown(mainHandStack.getItem(),  20 * 50);// 50s冷却
+                            player.getCooldowns().addCooldown(mainHandStack.getItem(),  20 * 30);// 30s冷却
                         }
                     }
 
