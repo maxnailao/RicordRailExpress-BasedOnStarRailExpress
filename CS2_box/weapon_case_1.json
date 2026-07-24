@@ -1,0 +1,23 @@
+{
+  "box_name": "武器箱I",
+  "key_name": "weapon_key_1",
+  "common": 0.7992,
+  "uncommon": 0.1598,
+  "rare": 0.032,
+  "epic": 0.0064,
+  "legendary": 0.0026,
+  "unbelievable": 0.0,
+  "common_skins": [
+    "knife/knife_default",
+    "revolver/revolver_default"
+  ],
+  "uncommon_skins": [
+    "knife/knife_yingfeng"
+  ],
+  "rare_skins": [
+    "bat/bat_default"
+  ],
+  "epic_skins": [],
+  "legendary_skins": [],
+  "unbelievable_skins": []
+}
