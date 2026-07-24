@@ -82,6 +82,17 @@ public final class PlayerEconomyManager {
         markDirty(player, entry);
     }
 
+    /**
+     * 清空玩家所有皮肤数据（装备+解锁），用于 CS2 新系统迁移
+     */
+    public static void resetSkins(Player player) {
+        Entry entry = get(player.getUUID());
+        entry.state.equipped.clear();
+        entry.state.unlocked.clear();
+        entry.state.lootChance = 0;
+        markDirty(player, entry);
+    }
+
     public static boolean isSkinUnlocked(Player player, ItemStack stack, String skinName) {
         return isSkinUnlockedForItemType(player, itemType(stack), skinName);
     }

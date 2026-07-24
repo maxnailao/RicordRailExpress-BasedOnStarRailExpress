@@ -88,5 +88,9 @@ public class SREComponents
         registry.beginRegistration(Player.class, io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
                 .end(io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent::new);
+        // CS2 仓库组件
+        registry.beginRegistration(Player.class, CS2InventoryComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
+                .end(CS2InventoryComponent::new);
     }
 }

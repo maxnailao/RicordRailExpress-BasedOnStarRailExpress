@@ -233,5 +233,50 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.content.musicbox.network.SyncLotteryTicketsS2CPayload.ID,
                 io.wifi.starrailexpress.content.musicbox.network.SyncLotteryTicketsS2CPayload.CODEC);
+
+        // CS2 开箱系统网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.OpenBoxC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.OpenBoxC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.OpenBoxResultS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.OpenBoxResultS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.CODEC);
+
+        // CS2 商城网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.ShopBuyC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.ShopBuyC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.ShopSellC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.ShopSellC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketListC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketListC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketBuyC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketBuyC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketCancelC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketCancelC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketSyncS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketSyncS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketSyncRequestC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketSyncRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BlackMarketClaimC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BlackMarketClaimC2SPayload.CODEC);
+
+        // CS2 仓库装备网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.EquipSkinC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.EquipSkinC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.CODEC);
     }
 }

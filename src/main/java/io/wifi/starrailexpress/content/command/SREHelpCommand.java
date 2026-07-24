@@ -53,8 +53,6 @@ public class SREHelpCommand {
                 new Entry("/tmm:participate", "tmm.participate"),
                 new Entry("/tmm:entity_interact_cmd", "tmm.entity_interact_cmd"),
                 new Entry("/tmm:reload", "tmm.reload"),
-                new Entry("/tmm:skinsync", "tmm.skinsync"),
-                new Entry("/tmm:skins", "tmm.skins"),
                 new Entry("/forceTeam", "forceteam"),
                 new Entry("/listGameRoles", "listgameroles"),
                 new Entry("/stop_when_over", "stop_when_over"),

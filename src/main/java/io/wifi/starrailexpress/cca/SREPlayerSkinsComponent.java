@@ -43,6 +43,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     private Map<String, Map<String, Boolean>> unlockedSkins; // 存储解锁的皮肤 {itemName -> {skinName -> isUnlocked}}
     private Integer lootChance;
     private Integer coinNum;
+    private boolean cs2Initialized = false; // CS2新系统初始化标记
     private boolean isNetworkSyncEnabled = false;
     private boolean syncMode = false;
     private volatile boolean databaseSyncQueued = false;
@@ -593,6 +594,25 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
                 this.unlockedSkins.put(itemKey, skinsForItem);
             }
         }
+        // 读取 CS2 初始化标记
+        this.cs2Initialized = compoundTag.getBoolean("cs2Initialized");
+    }
+
+    public boolean isCs2Initialized() {
+        return cs2Initialized;
+    }
+
+    public void setCs2Initialized(boolean initialized) {
+        this.cs2Initialized = initialized;
+    }
+
+    /**
+     * 清空所有旧皮肤数据（装备+解锁），用于 CS2 新系统迁移
+     */
+    public void clearAllOldSkins() {
+        this.equippedSkins.clear();
+        this.unlockedSkins.clear();
+        this.lootChance = 0;
     }
 
     @Override
@@ -723,6 +743,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             unlockedSkinsTag.put(itemEntry.getKey(), skinsForItemTag);
         }
         compoundTag.put("unlockedSkins", unlockedSkinsTag);
+        // CS2 初始化标记
+        compoundTag.putBoolean("cs2Initialized", this.cs2Initialized);
         // compoundTag.putBoolean("isNetworkSyncEnabled", isNetworkSyncEnabled);
     }
 }

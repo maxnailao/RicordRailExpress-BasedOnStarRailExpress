@@ -95,6 +95,9 @@ public class SREReceiverRegister {
         io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.registerReceiver();
         io.wifi.starrailexpress.content.musicbox.network.DrawMusicBoxLotteryC2SPayload.registerReceiver();
 
+        // CS2 开箱系统 C2S 接收器
+        org.agmas.noellesroles.cs2.network.CS2ServerReceiverRegister.registerAll();
+
         // 职业轮换系统：管理员编辑名单
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 (payload, context) -> {

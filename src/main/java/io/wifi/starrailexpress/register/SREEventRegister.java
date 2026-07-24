@@ -124,6 +124,22 @@ public class SREEventRegister {
                     java.util.Map.of("player_identity", obj.toString()),
                     System.currentTimeMillis());
         });
+        // CS2 新系统初始化：对未初始化的玩家清空旧皮肤数据
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            io.wifi.starrailexpress.cca.SREPlayerSkinsComponent skinsComp =
+                    io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.get(player);
+            if (!skinsComp.isCs2Initialized()) {
+                // 清空旧皮肤数据（装备 + 解锁）
+                skinsComp.clearAllOldSkins();
+                skinsComp.setCs2Initialized(true);
+                // 同步清空 PlayerEconomyManager 运行时数据
+                io.wifi.starrailexpress.data.PlayerEconomyManager.resetSkins(player);
+                // 同步到客户端
+                io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.sync(player);
+                SRE.LOGGER.info("[CS2] Initialized player {}, cleared old skins", player.getName().getString());
+            }
+        });
     }
 
     public static void registerServerPlayConnectionEvents() {

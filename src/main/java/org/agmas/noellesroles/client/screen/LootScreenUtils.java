@@ -16,6 +16,12 @@ public class LootScreenUtils {
         if (itemName.equals("coin")) {
             ans = StarRailExpressID.watheId("textures/font/coin.png");
         }
+        // 处理 CS2 皮肤格式 "type/skinName" → "textures/item/skins/{type}/{skinName}.png"
+        else if (itemName.contains("/") && itemName.indexOf('/') == itemName.lastIndexOf('/')) {
+            String[] parts = itemName.split("/");
+            ans = ResourceLocation.fromNamespaceAndPath("starrailexpress",
+                    "textures/item/skins/" + parts[0] + "/" + parts[1] + ".png");
+        }
         else {
             ans = ResourceLocation.fromNamespaceAndPath("starrailexpress",
                     "textures/item/" +

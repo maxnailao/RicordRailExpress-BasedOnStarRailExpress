@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBox;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry;
@@ -60,8 +61,10 @@ public final class GiveMusicBoxCommand {
     private static int executeAll(CommandSourceStack source, Collection<ServerPlayer> targets) {
         for (ServerPlayer target : targets) {
             MusicBoxPlayerComponent comp = MusicBoxPlayerComponent.KEY.get(target);
+            CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(target);
             for (MusicBox box : MusicBoxRegistry.getAll()) {
                 comp.addMusicBox(box.id());
+                inv.addMusicBox(box.id(), 1);
             }
         }
         source.sendSuccess(() -> Component.literal("§a已将全部音乐盒赠予 "
@@ -100,6 +103,9 @@ public final class GiveMusicBoxCommand {
         for (ServerPlayer target : targets) {
             MusicBoxPlayerComponent comp = MusicBoxPlayerComponent.KEY.get(target);
             comp.addMusicBox(id);
+            // 同时添加到仓库
+            CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(target);
+            inv.addMusicBox(id, 1);
             target.sendSystemMessage(Component.literal("§6你获得了一个新的音乐盒: ")
                     .append(box.displayName()));
         }

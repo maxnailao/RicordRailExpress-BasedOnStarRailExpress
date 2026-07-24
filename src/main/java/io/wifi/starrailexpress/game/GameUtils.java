@@ -1372,18 +1372,18 @@ public class GameUtils {
                 return;
             }
 
-            // 在胜利方玩家中找击杀最多的
+            // 在胜利方玩家中使用积分制确定 MVP（与 CS2 箱子掉落一致）
             java.util.UUID topKillerUuid = null;
-            int topKills = -1;
+            int topScore = -1;
             for (java.util.UUID winnerUuid : winnerUuids) {
-                int kills = gameComponent.getPlayerKills(winnerUuid);
-                if (kills > topKills) {
-                    topKills = kills;
+                int score = org.agmas.noellesroles.cs2.CS2MvpScoreManager.getScore(winnerUuid);
+                if (score > topScore) {
+                    topScore = score;
                     topKillerUuid = winnerUuid;
                 }
             }
             if (topKillerUuid == null) {
-                SRE.LOGGER.info("[MusicBox] 未找到有效 topKiller，跳过");
+                SRE.LOGGER.info("[MusicBox] 未找到有效 MVP，跳过");
                 return;
             }
 

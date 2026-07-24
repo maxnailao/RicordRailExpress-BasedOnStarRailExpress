@@ -28,6 +28,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class SREWorldBlackoutComponent implements ServerTickingComponent {
     public static final ComponentKey<SREWorldBlackoutComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("blackout"),
@@ -35,6 +36,8 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
     private final Level world;
     public final List<BlackoutDetails> blackouts = new ArrayList<>();
     public int blackOutRemainingTicks = 0;
+    /** 记录最后一次触发关灯的玩家 UUID（用于 MVP 积分） */
+    public UUID lastBlackoutTriggeredBy = null;
 
     public SREWorldBlackoutComponent(Level world) {
         this.world = world;
@@ -45,6 +48,7 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
             detail.end(this.world);
         this.blackouts.clear();
         this.blackOutRemainingTicks = 0;
+        this.lastBlackoutTriggeredBy = null;
     }
 
     @Override

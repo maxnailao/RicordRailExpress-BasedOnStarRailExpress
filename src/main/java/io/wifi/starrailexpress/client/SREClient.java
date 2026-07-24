@@ -172,7 +172,8 @@ public class SREClient implements ClientModInitializer {
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
     public static KeyMapping skinsKeybind; // 新增皮肤管理热键
-    public static KeyMapping musicBoxKeybind; // 音乐盒热键
+    public static KeyMapping musicBoxKeybind; // 音乐盒热键（已禁用，由仓库系统接管）
+    public static KeyMapping warehouseKeybind; // CS2 仓库热键
     public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
     public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
     public static boolean isInstinctToggleEnabled = false; // 新增变量用于跟踪切换状态
@@ -1023,16 +1024,23 @@ public class SREClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_O, // 默认热键 'O'
                 "category." + SRE.MOD_ID + ".keybinds"));
 
-        // Register skins keybind
+        // Register skins keybind（已禁用，由仓库系统接管）
         skinsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".skins",
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_N, // 默认热键 'N'
+                GLFW.GLFW_KEY_UNKNOWN, // 已禁用，由仓库系统接管
                 "category." + SRE.MOD_ID + ".keybinds"));
 
-        // Register music box keybind
+        // Register music box keybind（已禁用，由仓库系统接管）
         musicBoxKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".musicbox",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_UNKNOWN, // 已禁用，由仓库系统接管
+                "category." + SRE.MOD_ID + ".keybinds"));
+
+        // Register CS2 warehouse keybind（仓库热键，默认 ',' 键）
+        warehouseKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".warehouse",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_COMMA, // 默认热键 ',' (即 '、' 键位)
                 "category." + SRE.MOD_ID + ".keybinds"));
@@ -1090,6 +1098,65 @@ public class SREClient implements ClientModInitializer {
             }
         });
 
+        // CS2 开箱系统 S2C 接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.OpenBoxResultS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (payload.success()) {
+                            context.client().setScreen(
+                                    new org.agmas.noellesroles.client.screen.CS2CaseOpeningScreen(
+                                            payload.cardQualities(),
+                                            payload.cardSkinIds(),
+                                            payload.endCardIdx(),
+                                            payload.resultQuality(),
+                                            payload.resultSkinId(),
+                                            payload.isDuplicate()));
+                        } else {
+                            org.agmas.noellesroles.client.screen.CS2WarehouseScreen.isBoxOpening = false;
+                            if (context.client().player != null) {
+                                context.client().player.displayClientMessage(
+                                        Component.literal("§c开箱失败：条件不满足"), true);
+                            }
+                        }
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (context.client().player != null) {
+                            StringBuilder msg = new StringBuilder("§a[掉落] ");
+                            if (!payload.droppedBoxId().isEmpty()) {
+                                msg.append("§e获得箱子: §6").append(payload.droppedBoxId()).append(" ");
+                            }
+                            if (payload.currencyGained() > 0) {
+                                msg.append("§b获得货币: §d").append(payload.currencyGained());
+                            }
+                            if (payload.isMvp()) {
+                                msg.append(" §c(MVP奖励!)");
+                            }
+                            context.client().player.displayClientMessage(
+                                    Component.literal(msg.toString()), true);
+                        }
+                    });
+                });
+
+        // CS2 黑市数据同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.BlackMarketSyncS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        // 将服务端发来的 JSON 数据存入客户端缓存
+                        org.agmas.noellesroles.client.screen.CS2ShopScreen.setMarketDataCache(payload.listingsJson());
+                        org.agmas.noellesroles.client.screen.CS2ShopScreen.setMyPendingCoins(payload.myPendingCoins());
+                        // 如果当前打开的是商店界面，刷新数据
+                        if (context.client().screen instanceof org.agmas.noellesroles.client.screen.CS2ShopScreen shopScreen) {
+                            shopScreen.refreshData();
+                        }
+                    });
+                });
+
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (gameComponent == null || client.level == null)
@@ -1120,10 +1187,14 @@ public class SREClient implements ClientModInitializer {
             }
 
             if (musicBoxKeybind.consumeClick()) {
-                if (client.screen instanceof io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen) {
+                // 已禁用，由仓库系统接管
+            }
+
+            if (warehouseKeybind.consumeClick()) {
+                if (client.screen instanceof org.agmas.noellesroles.client.screen.CS2WarehouseScreen) {
                     client.setScreen(null);
                 } else {
-                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.MusicBoxScreen());
+                    client.setScreen(new org.agmas.noellesroles.client.screen.CS2WarehouseScreen());
                 }
             }
 

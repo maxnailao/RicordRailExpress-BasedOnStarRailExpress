@@ -70,7 +70,6 @@ public class SRECommandRegister {
             NetworkStatsCommand.register(dispatcher);
             FourthRoomCommand.register(dispatcher);
             ReloadMapConfigCommand.register(dispatcher);
-            SkinsCommand.register(dispatcher);
             ProgressionCommand.register(dispatcher);
             BackpackCommand.register(dispatcher);
             BackpackGrantCommand.register(dispatcher);
@@ -87,6 +86,7 @@ public class SRECommandRegister {
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
             io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.GiveMusicBoxCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.GiveCS2BoxCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);

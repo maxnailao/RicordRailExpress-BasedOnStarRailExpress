@@ -30,6 +30,7 @@ import io.wifi.starrailexpress.util.CustomMotdManager;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
@@ -108,6 +109,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
 
+        // CS2 开箱系统初始化
+        initCS2System();
+
     }
 
     private void initCCAAuto() {
@@ -171,6 +175,37 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void initScheduler() {
         Scheduler.init();
+    }
+
+    /**
+     * CS2 开箱系统初始化
+     */
+    private void initCS2System() {
+        // 箱子配置加载
+        org.agmas.noellesroles.cs2.CS2BoxManager.getInstance();
+        // 商店配置加载
+        org.agmas.noellesroles.cs2.ShopConfig.getInstance().load(
+                java.nio.file.Paths.get("config", "shopprice.json"));
+        // 黑市系统初始化
+        org.agmas.noellesroles.cs2.CS2BlackMarketManager.getInstance().init(
+                java.nio.file.Paths.get("config"));
+        // 玩家上线时通知黑市离线收入（需手动领取）
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            server.execute(() -> {
+                var player = handler.getPlayer();
+                int pending = org.agmas.noellesroles.cs2.CS2BlackMarketManager.getInstance()
+                        .getPendingCoins(player.getUUID().toString());
+                if (pending > 0) {
+                    player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    "\uD83D\uDCB0 你有 " + pending + " 黑市离线收入待领取，请前往商店-黑市领取")
+                                    .withStyle(net.minecraft.ChatFormatting.GOLD), false);
+                }
+            });
+        });
+        // 箱子掉落系统注册
+        org.agmas.noellesroles.cs2.CS2BoxDropManager.register();
+        LOGGER.info("[CS2] CS2 开箱系统已初始化");
     }
 
     /**

@@ -34,10 +34,9 @@ public final class SRESkinRegistry {
         LOGGER.info("[SkinRegistry] 开始注册物品皮肤...");
 
         // ═══════════════════════════════════════════════════════════════════
-        // KNIFE（刀）皮肤
+        // KNIFE（刀）皮肤 — 仅保留有贴图+模型资源的皮肤
         // ═══════════════════════════════════════════════════════════════════
         registerSkin(SkinTypes.KNIFE, "testofknifeskin", QualityColor.COMMON);
-        registerSkin(SkinTypes.KNIFE, "test", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.KNIFE, "knife_bunana", QualityColor.EPIC);
         registerSkin(SkinTypes.KNIFE, "knife_tangdao", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.KNIFE, "knife_cheese", QualityColor.RARE);
@@ -49,43 +48,30 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "knife_bananaknife", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.KNIFE, "knife_yingfeng", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.KNIFE, "knife_beijixing", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.KNIFE, "knife_bingzhui", QualityColor.RARE);
+        registerSkin(SkinTypes.KNIFE, "knife_guaizhangtang", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_lianhuadao", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.KNIFE, "knife_luosidao", QualityColor.COMMON);
+        registerSkin(SkinTypes.KNIFE, "knife_gangbi", QualityColor.UNCOMMON);
 
         // ═══════════════════════════════════════════════════════════════════
-        // REVOLVER（左轮）皮肤
+        // REVOLVER（左轮）皮肤 — 仅保留有贴图+模型资源的皮肤
         // ═══════════════════════════════════════════════════════════════════
-        registerSkin(SkinTypes.REVOLVER, "revolver_default", QualityColor.COMMON);
-        registerSkin(SkinTypes.REVOLVER, "revolver_ammo", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.REVOLVER, "revolver_beach", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.REVOLVER, "revolver_no1", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.REVOLVER, "revolver_rose", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.REVOLVER, "revolver_blood", QualityColor.RARE);
-        registerSkin(SkinTypes.REVOLVER, "revolver_circuit", QualityColor.RARE);
-        registerSkin(SkinTypes.REVOLVER, "revolver_neon", QualityColor.RARE);
-        registerSkin(SkinTypes.REVOLVER, "revolver_blossom", QualityColor.EPIC);
-        registerSkin(SkinTypes.REVOLVER, "revolver_frost", QualityColor.EPIC);
-        registerSkin(SkinTypes.REVOLVER, "revolver_jade", QualityColor.EPIC);
-        registerSkin(SkinTypes.REVOLVER, "revolver_sakura", QualityColor.EPIC);
-        registerSkin(SkinTypes.REVOLVER, "revolver_golden", QualityColor.LEGENDARY);
-        registerSkin(SkinTypes.REVOLVER, "revolver_onyx", QualityColor.LEGENDARY);
-        registerSkin(SkinTypes.REVOLVER, "revolver_xiangzadi", QualityColor.EPIC);
         registerSkin(SkinTypes.REVOLVER, "revolver_g7", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.REVOLVER, "revolver_m1911", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.REVOLVER, "revolver_crude", QualityColor.COMMON);
         registerSkin(SkinTypes.REVOLVER, "revolver_liberator", QualityColor.RARE);
         registerSkin(SkinTypes.REVOLVER, "revolver_longbarrel", QualityColor.RARE);
         registerSkin(SkinTypes.REVOLVER, "revolver_banana", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_xiangzadi", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_weilai", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.REVOLVER, "revolver_qidingqiang", QualityColor.RARE);
+        registerSkin(SkinTypes.REVOLVER, "revolver_tugaibandai", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_tangguofasheqi", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
-        // BAT（球棒）皮肤
+        // BAT（球棒）皮肤 — 仅保留有贴图+模型资源的皮肤
         // ═══════════════════════════════════════════════════════════════════
-        registerSkin(SkinTypes.BAT, "baseball_bat_default", QualityColor.COMMON);
-        registerSkin(SkinTypes.BAT, "baseball_bat_wooden", QualityColor.COMMON);
-        registerSkin(SkinTypes.BAT, "baseball_bat_nether", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.BAT, "baseball_bat_burst", QualityColor.RARE);
-        registerSkin(SkinTypes.BAT, "baseball_bat_duck", QualityColor.RARE);
-        registerSkin(SkinTypes.BAT, "baseball_bat_fish", QualityColor.RARE);
-        registerSkin(SkinTypes.BAT, "baseball_bat_ice", QualityColor.EPIC);
-        registerSkin(SkinTypes.BAT, "baseball_bat_sonic", QualityColor.EPIC);
         registerSkin(SkinTypes.BAT, "baseball_bat_studded", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.BAT, "baseball_bat_dayiwan", QualityColor.EPIC);
         registerSkin(SkinTypes.BAT, "baseball_bat_hanger", QualityColor.COMMON);
@@ -94,20 +80,13 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.BAT, "baseball_bat_badminton", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.BAT, "baseball_bat_shovel", QualityColor.COMMON);
         registerSkin(SkinTypes.BAT, "baseball_bat_longaxe", QualityColor.RARE);
+        registerSkin(SkinTypes.BAT, "bat_zuoyeben", QualityColor.COMMON);
+        registerSkin(SkinTypes.BAT, "bat_juxingbangbangtang", QualityColor.EPIC);
+        registerSkin(SkinTypes.BAT, "bat_dianju", QualityColor.RARE);
 
         // ═══════════════════════════════════════════════════════════════════
-        // GRENADE（手雷）皮肤
+        // GRENADE（手雷）皮肤 — 仅保留有贴图+模型资源的皮肤
         // ═══════════════════════════════════════════════════════════════════
-        registerSkin(SkinTypes.GRENADE, "grenade_smoke", QualityColor.COMMON);
-        registerSkin(SkinTypes.GRENADE, "grenade_pineapple", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.GRENADE, "grenade_toxic", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.GRENADE, "grenade_fire", QualityColor.RARE);
-        registerSkin(SkinTypes.GRENADE, "grenade_frost", QualityColor.RARE);
-        registerSkin(SkinTypes.GRENADE, "grenade_skull", QualityColor.RARE);
-        registerSkin(SkinTypes.GRENADE, "grenade_christmas", QualityColor.EPIC);
-        registerSkin(SkinTypes.GRENADE, "grenade_heart", QualityColor.EPIC);
-        registerSkin(SkinTypes.GRENADE, "grenade_star", QualityColor.EPIC);
-        registerSkin(SkinTypes.GRENADE, "grenade_diamond", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.GRENADE, "grenade_kanshenmekan", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zisefurui", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zhumei", QualityColor.RARE);
@@ -116,20 +95,14 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_coconut", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.GRENADE, "grenade_explosives", QualityColor.RARE);
         registerSkin(SkinTypes.GRENADE, "grenade_talisman", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_moshuiping", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.GRENADE, "grenade_huyaoweiyingtang", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.GRENADE, "grenade_jingonglei", QualityColor.RARE);
 
         // ═══════════════════════════════════════════════════════════════════
-        // HAT（帽子）皮肤
+        // HAT（帽子）皮肤 — 暂无贴图资源，全部跳过
         // ═══════════════════════════════════════════════════════════════════
-        registerSkin(SkinTypes.HAT, "hat_cap_blue", QualityColor.COMMON);
-        registerSkin(SkinTypes.HAT, "hat_cap_green", QualityColor.COMMON);
-        registerSkin(SkinTypes.HAT, "hat_cap_purple", QualityColor.COMMON);
-        registerSkin(SkinTypes.HAT, "hat_cap_red", QualityColor.COMMON);
-        registerSkin(SkinTypes.HAT, "hat_tophat", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_witch", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_pirate", QualityColor.EPIC);
-        registerSkin(SkinTypes.HAT, "hat_santa", QualityColor.EPIC);
-        registerSkin(SkinTypes.HAT, "hat_crown", QualityColor.LEGENDARY);
-        registerSkin(SkinTypes.HAT, "hat_halo", QualityColor.LEGENDARY);
+        // 待贴图资源补充后再启用
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }

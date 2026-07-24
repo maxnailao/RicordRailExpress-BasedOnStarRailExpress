@@ -250,6 +250,8 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             return false;
         boolean triggered = blackCCA.triggerBlackout(true, duration);
         if (triggered) {
+            // 记录触发者（用于 MVP 积分系统）
+            blackCCA.lastBlackoutTriggeredBy = player.getUUID();
             // 公共 Cooldown
             player.level().players().forEach(
                     p -> p.getCooldowns().addCooldown(TMMItems.BLACKOUT, GameConstants.getBlackoutCooldownGlobal()));
