@@ -144,9 +144,7 @@ public final class ProgressionDataManager {
         while (entry.state.experience >= entry.state.getExperienceForNextLevel()) {
             entry.state.experience -= entry.state.getExperienceForNextLevel();
             entry.state.level++;
-            int coinReward = 20 + entry.state.level * 2;
-            PlayerEconomyManager.addCoinNum(player, coinReward);
-            entry.state.claimedCoinRewards += coinReward;
+            // 升级不再给予货币奖励，避免与 CS2 掉落系统重复叠加
             if (entry.state.level % 5 == 0) {
                 PlayerEconomyManager.addLootChance(player, 1);
                 entry.state.claimedLootRewards++;
@@ -185,6 +183,12 @@ public final class ProgressionDataManager {
                         }
                         if (throwable != null) {
                             SRE.LOGGER.warn("Failed to load progression part for {}", player.getUUID(), throwable);
+                            return;
+                        }
+                        // 如果 entry 已被修改（如游戏结束奖励），跳过旧数据库数据覆盖
+                        if (entry.dirty) {
+                            SRE.LOGGER.debug("[Progression] Skip stale DB reload for {} (entry is dirty)", player.getUUID());
+                            entry.loaded = true;
                             return;
                         }
                         MysqlPlayerDataStore.SyncRecord record = records.get(PART);
@@ -237,9 +241,9 @@ public final class ProgressionDataManager {
                         entry.dirty = true;
                         if (throwable != null) {
                             SRE.LOGGER.warn("Failed to save progression part for {}", player.getUUID(), throwable);
-                        } else {
-                            reloadFromDatabase(player, entry);
                         }
+                        // 不在此处 reloadFromDatabase，避免覆盖内存中更新的数据
+                        // dirty=true 确保下次 tick 会重试保存
                     }
                 });
     }

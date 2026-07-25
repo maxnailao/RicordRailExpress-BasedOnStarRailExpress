@@ -142,6 +142,52 @@ public class ShopConfig {
         }
     }
 
+    /**
+     * 从 JSON 字符串加载商店配置（客户端网络接收用）
+     */
+    public void loadFromJson(String json) {
+        shopItems.clear();
+        try {
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            if (root.has("shopprice")) {
+                JsonObject shopObj = root.getAsJsonObject("shopprice");
+                for (String key : shopObj.keySet()) {
+                    JsonObject item = shopObj.getAsJsonObject(key);
+                    String name = item.has("name") ? item.get("name").getAsString() : "";
+                    String type = item.has("type") ? item.get("type").getAsString() : "";
+                    String id = item.has("id") ? item.get("id").getAsString() : "";
+                    int price = item.has("price") ? item.get("price").getAsInt() : 0;
+                    if (!type.isEmpty() && !id.isEmpty()) {
+                        shopItems.add(new ShopItem(name, type, id, price));
+                    }
+                }
+            }
+            if (root.has("sellprice")) {
+                JsonObject sellObj = root.getAsJsonObject("sellprice");
+                if (sellObj.has("common_skinsprice"))
+                    sellPriceConfig.commonSkinPrice = sellObj.get("common_skinsprice").getAsInt();
+                if (sellObj.has("uncommon_skinsprice"))
+                    sellPriceConfig.uncommonSkinPrice = sellObj.get("uncommon_skinsprice").getAsInt();
+                if (sellObj.has("rare_skinsprice"))
+                    sellPriceConfig.rareSkinPrice = sellObj.get("rare_skinsprice").getAsInt();
+                if (sellObj.has("epic_skinsprice"))
+                    sellPriceConfig.epicSkinPrice = sellObj.get("epic_skinsprice").getAsInt();
+                if (sellObj.has("legendary_skinsprice"))
+                    sellPriceConfig.legendarySkinPrice = sellObj.get("legendary_skinsprice").getAsInt();
+                if (sellObj.has("unbelievable_skinsprice"))
+                    sellPriceConfig.unbelievableSkinPrice = sellObj.get("unbelievable_skinsprice").getAsInt();
+                if (sellObj.has("box_price")) {
+                    JsonObject boxPrices = sellObj.getAsJsonObject("box_price");
+                    for (String boxId : boxPrices.keySet()) {
+                        sellPriceConfig.boxPrices.put(boxId, boxPrices.get(boxId).getAsInt());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Noellesroles.LOGGER.error("[CS2Shop] Failed to parse shop config from JSON", e);
+        }
+    }
+
     private void createDefaultConfig(Path configFile) {
         try {
             Files.createDirectories(configFile.getParent());

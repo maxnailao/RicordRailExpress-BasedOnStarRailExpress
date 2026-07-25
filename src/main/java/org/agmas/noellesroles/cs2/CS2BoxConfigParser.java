@@ -104,6 +104,40 @@ public class CS2BoxConfigParser {
         }
     }
 
+    /**
+     * 从 JSON 字符串解析箱子配置（客户端网络接收用）
+     *
+     * @param json  JSON 字符串
+     * @param boxId 箱子 ID
+     * @return 解析后的箱子配置，失败返回 null
+     */
+    public static CS2BoxConfig parseFromJson(String json, String boxId) {
+        try {
+            JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
+            String boxName = getStringOrDefault(obj, "box_name", boxId);
+            String keyName = getStringOrDefault(obj, "key_name", "");
+            double common = getDoubleOrDefault(obj, "common", 0.0);
+            double uncommon = getDoubleOrDefault(obj, "uncommon", 0.0);
+            double rare = getDoubleOrDefault(obj, "rare", 0.0);
+            double epic = getDoubleOrDefault(obj, "epic", 0.0);
+            double legendary = getDoubleOrDefault(obj, "legendary", 0.0);
+            double unbelievable = getDoubleOrDefault(obj, "unbelievable", 0.0);
+            List<String> commonSkins = getStringList(obj, "common_skins");
+            List<String> uncommonSkins = getStringList(obj, "uncommon_skins");
+            List<String> rareSkins = getStringList(obj, "rare_skins");
+            List<String> epicSkins = getStringList(obj, "epic_skins");
+            List<String> legendarySkins = getStringList(obj, "legendary_skins");
+            List<String> unbelievableSkins = getStringList(obj, "unbelievable_skins");
+            return new CS2BoxConfig(boxId, boxName, keyName,
+                    common, uncommon, rare, epic, legendary, unbelievable,
+                    commonSkins, uncommonSkins, rareSkins, epicSkins,
+                    legendarySkins, unbelievableSkins);
+        } catch (Exception e) {
+            Noellesroles.LOGGER.error("[CS2Box] Failed to parse box config from JSON: {}", boxId, e);
+            return null;
+        }
+    }
+
     private static String getStringOrDefault(JsonObject obj, String key, String defaultValue) {
         if (obj.has(key) && obj.get(key).isJsonPrimitive()) {
             return obj.get(key).getAsString();

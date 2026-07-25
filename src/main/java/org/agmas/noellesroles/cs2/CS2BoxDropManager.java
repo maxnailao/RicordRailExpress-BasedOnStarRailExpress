@@ -59,15 +59,16 @@ public class CS2BoxDropManager {
     private static void processBoxDrops(ServerLevel world, SREGameWorldComponent gameComponent) {
         CS2BoxManager boxManager = CS2BoxManager.getInstance();
         Collection<CS2BoxConfig> allBoxes = boxManager.getAllBoxes();
-        if (allBoxes.isEmpty()) {
-            Noellesroles.LOGGER.info("[CS2Drop] No box configs loaded, skipping drops");
-            return;
-        }
+        boolean hasBoxConfigs = !allBoxes.isEmpty();
 
-        // 构建可用箱子列表
+        // 构建可用箱子列表（仅在有配置时）
         List<String> availableBoxIds = new ArrayList<>();
-        for (CS2BoxConfig config : allBoxes) {
-            availableBoxIds.add(config.getBoxId());
+        if (hasBoxConfigs) {
+            for (CS2BoxConfig config : allBoxes) {
+                availableBoxIds.add(config.getBoxId());
+            }
+        } else {
+            Noellesroles.LOGGER.info("[CS2Drop] No box configs loaded, skipping box drops (currency rewards still active)");
         }
 
         // 确定 MVP（使用积分制）
@@ -92,31 +93,33 @@ public class CS2BoxDropManager {
         // 使用当前世界的玩家而非全局玩家列表（避免多世界重复发放）
         for (ServerPlayer player : world.players()) {
             boolean isMvp = player.getUUID().equals(mvpUuid);
-            CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
-
-            // 箱子掉落判定
-            int dropChance = inv.getBoxDropChance();
-            if (isMvp) {
-                dropChance += MVP_BONUS;
-            }
-
             String droppedBoxId = null;
-            if (random.nextInt(100) < dropChance) {
-                // 掉落成功
-                droppedBoxId = availableBoxIds.get(random.nextInt(availableBoxIds.size()));
-                inv.addBox(droppedBoxId, 1);
-                inv.resetBoxDropChance();
 
-                player.displayClientMessage(
-                        Component.literal("🎁 你获得了一个箱子: " + boxManager.getBox(droppedBoxId).getBoxName())
-                                .withStyle(ChatFormatting.GOLD), true);
-            } else {
-                // 未掉落，概率累加
-                inv.addBoxDropChance(MISS_INCREMENT);
+            // 箱子掉落判定（仅在有箱子配置时）
+            if (hasBoxConfigs) {
+                CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                int dropChance = inv.getBoxDropChance();
+                if (isMvp) {
+                    dropChance += MVP_BONUS;
+                }
+
+                if (random.nextInt(100) < dropChance) {
+                    // 掉落成功
+                    droppedBoxId = availableBoxIds.get(random.nextInt(availableBoxIds.size()));
+                    inv.addBox(droppedBoxId, 1);
+                    inv.resetBoxDropChance();
+
+                    player.displayClientMessage(
+                            Component.literal("🎁 你获得了一个箱子: " + boxManager.getBox(droppedBoxId).getBoxName())
+                                    .withStyle(ChatFormatting.GOLD), true);
+                } else {
+                    // 未掉落，概率累加
+                    inv.addBoxDropChance(MISS_INCREMENT);
+                }
+                inv.sync();
             }
-            inv.sync();
 
-            // 货币掉落
+            // 货币掉落（始终执行，不依赖箱子配置）
             int currency = random.nextInt(CURRENCY_MIN, CURRENCY_MAX + 1);
             if (isMvp) {
                 currency += MVP_CURRENCY_BONUS;
@@ -129,6 +132,11 @@ public class CS2BoxDropManager {
                             droppedBoxId != null ? droppedBoxId : "",
                             currency,
                             isMvp));
+
+            // 货币提示
+            player.displayClientMessage(
+                    Component.literal("💰 对局奖励: +" + currency + " 货币")
+                            .withStyle(ChatFormatting.GOLD), true);
 
             // MVP 额外提示
             if (isMvp) {

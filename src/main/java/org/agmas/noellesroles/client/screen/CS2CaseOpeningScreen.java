@@ -49,14 +49,14 @@ public class CS2CaseOpeningScreen extends Screen {
 
     // 动画状态
     private float scrollPosition = 0f;
-    private float scrollSpeed = 0f;
+    private float scrollSpeed = 10f;  // 初始速度，避免开头停滞
     private float maxSpeed = 25f;
-    private float accelerationRate = 0.6f;
+    private float accelerationRate = 1.2f;  // 加速更快，减少开头等待
     private boolean phase_accel = true;
     private boolean phase_cruise = false;
     private boolean phase_decel = false;
     private boolean phase_done = false;
-    private int cruiseTicks = 50;
+    private int cruiseTicks = 40;  // 巡航缩短，整体节奏更紧凑
     private int cruiseCounter = 0;
     private float decelTarget = 0f; // 减速阶段的目标位置
     private int lastPassedCardIdx = -1;
@@ -83,6 +83,11 @@ public class CS2CaseOpeningScreen extends Screen {
         for (int i = 0; i < cardQualities.size(); i++) {
             cards.add(new CardData(cardQualities.get(i), cardSkinIds.get(i)));
         }
+
+        // 确保指针所指卡片与服务端结果完全一致
+        if (endCardIdx >= 0 && endCardIdx < cards.size()) {
+            cards.set(endCardIdx, new CardData(resultQuality, resultSkinId));
+        }
     }
 
     @Override
@@ -108,11 +113,13 @@ public class CS2CaseOpeningScreen extends Screen {
         // 动画阶段
         if (phase_accel) {
             scrollSpeed = Mth.clamp(scrollSpeed + accelerationRate, 0, maxSpeed);
+            scrollPosition += scrollSpeed;
             if (scrollSpeed >= maxSpeed) {
                 phase_accel = false;
                 phase_cruise = true;
             }
         } else if (phase_cruise) {
+            scrollPosition += scrollSpeed;
             cruiseCounter++;
             if (cruiseCounter >= cruiseTicks) {
                 phase_cruise = false;
@@ -134,14 +141,12 @@ public class CS2CaseOpeningScreen extends Screen {
                             SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f));
                 }
             } else {
-                // 以剩余距离的 4% 速度逼近（平缓指数衰减曲线，保证精确停止）
-                scrollSpeed = remaining * 0.04f;
+                // 以剩余距离的 8% 速度逼近（指数衰减曲线，精确停止）
+                scrollSpeed = remaining * 0.08f;
                 // 限制最大减速速度，避免减速初期速度突变
                 if (scrollSpeed > maxSpeed) scrollSpeed = maxSpeed;
                 scrollPosition += scrollSpeed;
             }
-        } else {
-            scrollPosition += scrollSpeed;
         }
 
         // Tick 音效：每当经过一张新卡片
@@ -270,20 +275,12 @@ public class CS2CaseOpeningScreen extends Screen {
         guiGraphics.fill(x - 2, y, x, y + size, borderColor);
         guiGraphics.fill(x + size, y, x + size + 2, y + size, borderColor);
 
-        // 皮肤物品渲染（使用指针所指卡片的真实数据）
-        String actualResultSkinId2 = resultSkinId;
-        if (endCardIdx >= 0 && endCardIdx < cards.size()) {
-            actualResultSkinId2 = cards.get(endCardIdx).skinId;
-        }
-        renderSkinCard(guiGraphics, actualResultSkinId2, x + 10, y + 8, size - 20);
+        // 皮肤物品渲染（始终使用服务端权威结果）
+        renderSkinCard(guiGraphics, resultSkinId, x + 10, y + 8, size - 20);
 
-        // 结果文本（使用指针所指卡片的真实数据）
+        // 结果文本（始终使用服务端权威结果，保证给予物品与显示一致）
         String actualResultSkinId = resultSkinId;
         int actualResultQuality = resultQuality;
-        if (endCardIdx >= 0 && endCardIdx < cards.size()) {
-            actualResultSkinId = cards.get(endCardIdx).skinId;
-            actualResultQuality = cards.get(endCardIdx).quality;
-        }
 
         if (resultAnimProgress > 0.5f) {
             float textAlpha = Mth.clamp((resultAnimProgress - 0.5f) * 2f, 0f, 1f);
@@ -354,6 +351,7 @@ public class CS2CaseOpeningScreen extends Screen {
             scrollPosition = decelTarget; // 直接跳转到目标位置
             scrollSpeed = 0;
             resultAnimProgress = 0f;
+            CS2WarehouseScreen.isBoxOpening = false; // 跳过时也重置开箱锁
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -362,6 +360,12 @@ public class CS2CaseOpeningScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void removed() {
+        // 无论以任何方式关闭界面（点击、ESC、其他），都确保重置开箱锁
+        CS2WarehouseScreen.isBoxOpening = false;
     }
 
     /** 卡片数据 */

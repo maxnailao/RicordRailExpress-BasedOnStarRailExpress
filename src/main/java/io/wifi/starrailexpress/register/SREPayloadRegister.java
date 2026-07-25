@@ -278,5 +278,23 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.CODEC);
+
+        // CS2 箱子预览网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.BoxPreviewRequestC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.BoxPreviewRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.BoxPreviewS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.BoxPreviewS2CPayload.CODEC);
+
+        // CS2 箱子名称配置同步
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.BoxConfigSyncS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.BoxConfigSyncS2CPayload.CODEC);
+
+        // CS2 商店配置同步
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.CODEC);
     }
 }

@@ -38,6 +38,7 @@ public class CS2ServerReceiverRegister {
         registerBlackMarketClaim();
         registerEquipSkin();
         registerEquipMusicBox();
+        registerBoxPreviewRequest();
     }
 
     // ── 开箱 ──
@@ -194,14 +195,19 @@ public class CS2ServerReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(BlackMarketListC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                boolean success = CS2BlackMarketManager.getInstance().list(
-                        player, payload.itemType(), payload.itemId(), payload.price());
-                if (success) {
-                    player.displayClientMessage(
-                            Component.literal("§a上架成功，价格: " + payload.price() + " 货币"), true);
-                } else {
-                    player.displayClientMessage(
-                            Component.literal("§c上架失败（物品不足或参数无效）"), true);
+                try {
+                    boolean success = CS2BlackMarketManager.getInstance().list(
+                            player, payload.itemType(), payload.itemId(), payload.price());
+                    if (success) {
+                        player.displayClientMessage(
+                                Component.literal("§a上架成功，价格: " + payload.price() + " 货币"), true);
+                    } else {
+                        player.displayClientMessage(
+                                Component.literal("§c上架失败（物品不足或参数无效）"), true);
+                    }
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[CS2Market] Error in list operation", e);
+                    player.displayClientMessage(Component.literal("§c黑市上架出错: " + e.getMessage()), true);
                 }
             });
         });
@@ -213,13 +219,18 @@ public class CS2ServerReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(BlackMarketBuyC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                boolean success = CS2BlackMarketManager.getInstance().buy(player, payload.listingId());
-                if (success) {
-                    player.displayClientMessage(
-                            Component.literal("§a购买成功"), true);
-                } else {
-                    player.displayClientMessage(
-                            Component.literal("§c购买失败（物品已售出或货币不足）"), true);
+                try {
+                    boolean success = CS2BlackMarketManager.getInstance().buy(player, payload.listingId());
+                    if (success) {
+                        player.displayClientMessage(
+                                Component.literal("§a购买成功"), true);
+                    } else {
+                        player.displayClientMessage(
+                                Component.literal("§c购买失败（物品已售出或货币不足）"), true);
+                    }
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[CS2Market] Error in buy operation", e);
+                    player.displayClientMessage(Component.literal("§c黑市购买出错: " + e.getMessage()), true);
                 }
             });
         });
@@ -249,7 +260,11 @@ public class CS2ServerReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(BlackMarketSyncRequestC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                CS2BlackMarketManager.getInstance().syncToPlayer(player);
+                try {
+                    CS2BlackMarketManager.getInstance().syncToPlayer(player);
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[CS2Market] Error in sync request", e);
+                }
             });
         });
     }
@@ -346,6 +361,29 @@ public class CS2ServerReceiverRegister {
 
                 Noellesroles.LOGGER.info("[CS2Warehouse] {} equipped musicbox: {}",
                         player.getName().getString(), musicBoxId);
+            });
+        });
+    }
+
+    // ── 箱子预览请求 ──
+
+    private static void registerBoxPreviewRequest() {
+        ServerPlayNetworking.registerGlobalReceiver(BoxPreviewRequestC2SPayload.ID, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                String boxId = payload.boxId();
+                // 读取原始 JSON 文件发送给客户端
+                java.nio.file.Path configFile = java.nio.file.Paths.get("CS2_box", boxId + ".json");
+                if (!java.nio.file.Files.exists(configFile)) {
+                    Noellesroles.LOGGER.warn("[CS2Box] Box config file not found: {}", configFile);
+                    return;
+                }
+                try {
+                    String json = java.nio.file.Files.readString(configFile);
+                    ServerPlayNetworking.send(player, new BoxPreviewS2CPayload(json));
+                } catch (java.io.IOException e) {
+                    Noellesroles.LOGGER.error("[CS2Box] Failed to read box config: {}", configFile, e);
+                }
             });
         });
     }

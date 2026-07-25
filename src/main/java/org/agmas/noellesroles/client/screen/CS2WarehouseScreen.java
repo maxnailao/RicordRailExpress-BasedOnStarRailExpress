@@ -38,6 +38,17 @@ public class CS2WarehouseScreen extends Screen {
     /** 客户端开箱锁，防止重复发送请求 */
     public static boolean isBoxOpening = false;
 
+    /** 待预览的箱子 ID（双击时设置，收到服务端响应后清除） */
+    private static String pendingPreviewBoxId = null;
+
+    public static String getPendingPreviewBoxId() {
+        return pendingPreviewBoxId;
+    }
+
+    public static void clearPendingPreviewBoxId() {
+        pendingPreviewBoxId = null;
+    }
+
     // 品质颜色 ARGB
     private static final int[] QUALITY_COLORS = {
             0xFFEEEEEE, // 0: common
@@ -63,6 +74,7 @@ public class CS2WarehouseScreen extends Screen {
     private final List<WarehouseItem> items = new ArrayList<>();
     private WarehouseItem hoveredItem = null;
     private WarehouseItem selectedItem = null;
+    private int selectedIndex = -1;  // 用索引追踪选中项，避免相同ID全部高亮
     private long lastClickTime = 0;
     private String lastClickItemId = null;
 
@@ -82,6 +94,7 @@ public class CS2WarehouseScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        isBoxOpening = false; // 安全重置：仓库界面重新打开时始终解锁
         sidebarWidth = width / 6;
         gridStartX = sidebarWidth + 16;
         gridStartY = 40;
@@ -123,6 +136,8 @@ public class CS2WarehouseScreen extends Screen {
 
     private void refreshItems() {
         items.clear();
+        selectedItem = null;
+        selectedIndex = -1;
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
@@ -132,10 +147,9 @@ public class CS2WarehouseScreen extends Screen {
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
             for (Map.Entry<String, Integer> entry : inv.getBoxes().entrySet()) {
                 String boxId = entry.getKey();
-                // 从箱子配置获取中文名称
-                CS2BoxConfig config = CS2BoxManager.getInstance().getBox(boxId);
-                String name = (config != null && !config.getBoxName().isEmpty())
-                        ? config.getBoxName() : formatBoxId(boxId);
+                // 从客户端缓存获取中文名称（服务端登录时同步）
+                String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(boxId);
+                String name = !cachedName.isEmpty() ? cachedName : formatBoxId(boxId);
                 for (int i = 0; i < entry.getValue(); i++) {
                     items.add(new WarehouseItem("box", boxId, name, "", 1, 0));
                 }
@@ -258,7 +272,7 @@ public class CS2WarehouseScreen extends Screen {
 
             WarehouseItem item = items.get(i);
             boolean hovered = mouseX >= x && mouseX < x + cardSize && mouseY >= y && mouseY < y + cardSize;
-            boolean isSelected = selectedItem != null && selectedItem.id.equals(item.id);
+            boolean isSelected = selectedIndex == i;
 
             if (hovered) hoveredItem = item;
 
@@ -393,10 +407,10 @@ public class CS2WarehouseScreen extends Screen {
         }
 
         if ("box".equals(hoveredItem.type)) {
-            // 显示所需钥匙
-            CS2BoxConfig boxConfig = CS2BoxManager.getInstance().getBox(hoveredItem.id);
-            if (boxConfig != null && boxConfig.getKeyName() != null && !boxConfig.getKeyName().isEmpty()) {
-                String keyDisplayName = boxConfig.getKeyName().replace('_', ' ');
+            // 显示所需钥匙（从客户端缓存读取）
+            String keyName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getKeyName(hoveredItem.id);
+            if (keyName != null && !keyName.isEmpty()) {
+                String keyDisplayName = keyName.replace('_', ' ');
                 tooltip.add(Component.literal("需要钥匙: " + keyDisplayName).withStyle(
                         net.minecraft.ChatFormatting.AQUA));
             }
@@ -476,14 +490,14 @@ public class CS2WarehouseScreen extends Screen {
 
             if (button == 0) { // 左键
                 if (isDoubleClick && "box".equals(hoveredItem.type)) {
-                    // 双击箱子 → 打开奖池预览UI
-                    CS2BoxConfig config = CS2BoxManager.getInstance().getBox(hoveredItem.id);
-                    if (config != null) {
-                        minecraft.setScreen(new CS2BoxPreviewScreen(config, this));
-                    }
+                    // 双击箱子 → 向服务端请求奖池数据，收到后打开预览UI
+                    pendingPreviewBoxId = hoveredItem.id;
+                    ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.cs2.network.BoxPreviewRequestC2SPayload(hoveredItem.id));
                     return true;
                 }
                 selectedItem = hoveredItem;
+                selectedIndex = items.indexOf(hoveredItem);
             } else if (button == 1) { // 右键装备/卸下 → 发送 C2S 网络包
                 if ("skin".equals(hoveredItem.type)) {
                     String[] parts = hoveredItem.id.split("/");

@@ -171,8 +171,6 @@ public class SREClient implements ClientModInitializer {
 
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
-    public static KeyMapping skinsKeybind; // 新增皮肤管理热键
-    public static KeyMapping musicBoxKeybind; // 音乐盒热键（已禁用，由仓库系统接管）
     public static KeyMapping warehouseKeybind; // CS2 仓库热键
     public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
     public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
@@ -839,9 +837,9 @@ public class SREClient implements ClientModInitializer {
                     payload.result);
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenSkinScreenPaylod.ID, (payload, context) -> {
-
+            // 皮肤菜单已移除，重定向到仓库系统
             context.client().execute(() -> {
-                context.client().setScreen(new SkinManagementScreen());
+                context.client().setScreen(new org.agmas.noellesroles.client.screen.CS2WarehouseScreen());
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenProgressionScreenPayload.ID, (payload, context) -> {
@@ -1024,20 +1022,6 @@ public class SREClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_O, // 默认热键 'O'
                 "category." + SRE.MOD_ID + ".keybinds"));
 
-        // Register skins keybind（已禁用，由仓库系统接管）
-        skinsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".skins",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN, // 已禁用，由仓库系统接管
-                "category." + SRE.MOD_ID + ".keybinds"));
-
-        // Register music box keybind（已禁用，由仓库系统接管）
-        musicBoxKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".musicbox",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN, // 已禁用，由仓库系统接管
-                "category." + SRE.MOD_ID + ".keybinds"));
-
         // Register CS2 warehouse keybind（仓库热键，默认 ',' 键）
         warehouseKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".warehouse",
@@ -1157,6 +1141,62 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // CS2 箱子预览数据接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.BoxPreviewS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        // 解析服务端发来的箱子配置 JSON，打开预览界面
+                        String json = payload.configJson();
+                        String boxId = org.agmas.noellesroles.client.screen.CS2WarehouseScreen.getPendingPreviewBoxId();
+                        if (boxId == null) return;
+                        org.agmas.noellesroles.cs2.CS2BoxConfig config =
+                                org.agmas.noellesroles.cs2.CS2BoxConfigParser.parseFromJson(json, boxId);
+                        org.agmas.noellesroles.client.screen.CS2WarehouseScreen.clearPendingPreviewBoxId();
+                        if (config != null) {
+                            context.client().setScreen(
+                                    new org.agmas.noellesroles.client.screen.CS2BoxPreviewScreen(config,
+                                            new org.agmas.noellesroles.client.screen.CS2WarehouseScreen()));
+                        }
+                    });
+                });
+
+        // CS2 箱子名称配置同步接收器（登录时服务端推送）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.BoxConfigSyncS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        try {
+                            com.google.gson.JsonObject root = com.google.gson.JsonParser
+                                    .parseString(payload.configJson()).getAsJsonObject();
+                            java.util.Map<String, String> names = new java.util.HashMap<>();
+                            java.util.Map<String, String> keys = new java.util.HashMap<>();
+                            if (root.has("boxNames")) {
+                                for (var entry : root.getAsJsonObject("boxNames").entrySet()) {
+                                    names.put(entry.getKey(), entry.getValue().getAsString());
+                                }
+                            }
+                            if (root.has("keyNames")) {
+                                for (var entry : root.getAsJsonObject("keyNames").entrySet()) {
+                                    keys.put(entry.getKey(), entry.getValue().getAsString());
+                                }
+                            }
+                            org.agmas.noellesroles.client.data.CS2ClientBoxCache.set(names, keys);
+                        } catch (Exception e) {
+                            io.wifi.starrailexpress.SRE.LOGGER.warn("[CS2] Failed to parse box config sync", e);
+                        }
+                    });
+                });
+
+        // CS2 商店配置同步接收器（登录时服务端推送）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        org.agmas.noellesroles.cs2.ShopConfig.getInstance().loadFromJson(payload.configJson());
+                    });
+                });
+
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (gameComponent == null || client.level == null)
@@ -1176,18 +1216,6 @@ public class SREClient implements ClientModInitializer {
                     }
                 }
 
-            }
-
-            if (skinsKeybind.consumeClick()) {
-                if (client.screen instanceof SkinManagementScreen) {
-                    client.setScreen(null);
-                } else {
-                    client.setScreen(new SkinManagementScreen());
-                }
-            }
-
-            if (musicBoxKeybind.consumeClick()) {
-                // 已禁用，由仓库系统接管
             }
 
             if (warehouseKeybind.consumeClick()) {

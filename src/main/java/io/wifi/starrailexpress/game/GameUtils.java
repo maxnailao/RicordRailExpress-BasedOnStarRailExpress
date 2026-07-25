@@ -1075,15 +1075,6 @@ public class GameUtils {
         isGameStarted = false;
 
         gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
-        // --- 音乐盒抽奖：每局结束通过指令给全服玩家 +1 次抽奖机会 ---
-        try {
-            world.getServer().getCommands().performPrefixedCommand(
-                    world.getServer().createCommandSourceStack().withPermission(4),
-                    "givemusicbox @a chance 1");
-            SRE.LOGGER.info("[MusicBox] 已通过指令给全服玩家发放 1 次抽奖机会");
-        } catch (Exception e) {
-            SRE.LOGGER.warn("[MusicBox] 发放抽奖券指令失败", e);
-        }
         // --- 音乐盒：播放胜利方击杀最多玩家的凯旋音乐 ---
         playVictoryMusicBox(world, roundEnd, gameComponent);
         // --- 结束新增统计数据更新逻辑 (胜利/失败) ---

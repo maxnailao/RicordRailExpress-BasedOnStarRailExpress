@@ -189,7 +189,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         // 黑市系统初始化
         org.agmas.noellesroles.cs2.CS2BlackMarketManager.getInstance().init(
                 java.nio.file.Paths.get("config"));
-        // 玩家上线时通知黑市离线收入（需手动领取）
+        // 玩家上线时通知黑市离线收入（需手动领取）+ 同步箱子名称配置
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             server.execute(() -> {
                 var player = handler.getPlayer();
@@ -200,6 +200,39 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                             net.minecraft.network.chat.Component.literal(
                                     "\uD83D\uDCB0 你有 " + pending + " 黑市离线收入待领取，请前往商店-黑市领取")
                                     .withStyle(net.minecraft.ChatFormatting.GOLD), false);
+                }
+
+                // 同步所有箱子名称配置到客户端
+                try {
+                    var boxManager = org.agmas.noellesroles.cs2.CS2BoxManager.getInstance();
+                    com.google.gson.JsonObject root = new com.google.gson.JsonObject();
+                    com.google.gson.JsonObject namesObj = new com.google.gson.JsonObject();
+                    com.google.gson.JsonObject keysObj = new com.google.gson.JsonObject();
+                    for (org.agmas.noellesroles.cs2.CS2BoxConfig cfg : boxManager.getAllBoxes()) {
+                        namesObj.addProperty(cfg.getBoxId(), cfg.getBoxName());
+                        keysObj.addProperty(cfg.getBoxId(), cfg.getKeyName() != null ? cfg.getKeyName() : "");
+                    }
+                    root.add("boxNames", namesObj);
+                    root.add("keyNames", keysObj);
+                    String json = new com.google.gson.Gson().toJson(root);
+                    net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
+                            player,
+                            new org.agmas.noellesroles.cs2.network.BoxConfigSyncS2CPayload(json));
+                } catch (Exception e) {
+                    LOGGER.warn("[CS2] Failed to sync box config to player {}", player.getName().getString(), e);
+                }
+
+                // 同步商店配置到客户端
+                try {
+                    java.nio.file.Path shopFile = java.nio.file.Paths.get("config", "shopprice.json");
+                    if (java.nio.file.Files.exists(shopFile)) {
+                        String shopJson = java.nio.file.Files.readString(shopFile);
+                        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
+                                player,
+                                new org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload(shopJson));
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("[CS2] Failed to sync shop config to player {}", player.getName().getString(), e);
                 }
             });
         });

@@ -86,7 +86,18 @@ public class CS2BlackMarketManager {
      */
     public void init(Path dataDir) {
         this.dataFile = dataDir.resolve("black_market_data.json");
+        Noellesroles.LOGGER.info("[CS2Market] Data file path: {}", dataFile.toAbsolutePath());
+        try {
+            Files.createDirectories(dataDir);
+        } catch (IOException e) {
+            Noellesroles.LOGGER.error("[CS2Market] Failed to create data directory: {}", dataDir.toAbsolutePath(), e);
+        }
         load();
+        // 如果文件不存在，创建空数据文件以便确认路径正确
+        if (!Files.exists(dataFile)) {
+            save();
+            Noellesroles.LOGGER.info("[CS2Market] Created initial data file at: {}", dataFile.toAbsolutePath());
+        }
     }
 
     public List<MarketListing> getListings() {
@@ -313,15 +324,20 @@ public class CS2BlackMarketManager {
     }
 
     private void save() {
-        if (dataFile == null) return;
+        if (dataFile == null) {
+            Noellesroles.LOGGER.warn("[CS2Market] save() called but dataFile is null!");
+            return;
+        }
         try {
             Files.createDirectories(dataFile.getParent());
             BlackMarketData data = new BlackMarketData();
             data.listings = new ArrayList<>(listings);
             data.pendingCoins = new HashMap<>(pendingCoins);
             Files.writeString(dataFile, GSON.toJson(data));
+            Noellesroles.LOGGER.debug("[CS2Market] Saved {} listings, {} pending to {}",
+                    listings.size(), pendingCoins.size(), dataFile.toAbsolutePath());
         } catch (IOException e) {
-            Noellesroles.LOGGER.error("[CS2Market] Failed to save black market data", e);
+            Noellesroles.LOGGER.error("[CS2Market] Failed to save black market data to {}", dataFile.toAbsolutePath(), e);
         }
     }
 }

@@ -147,9 +147,9 @@ public class CS2ShopScreen extends Screen {
             for (Map.Entry<String, Integer> entry : inv.getBoxes().entrySet()) {
                 int price = ShopConfig.getInstance().getSellPriceConfig()
                         .boxPrices.getOrDefault(entry.getKey(), 10);
-                CS2BoxConfig boxCfg = CS2BoxManager.getInstance().getBox(entry.getKey());
-                String boxName = (boxCfg != null && !boxCfg.getBoxName().isEmpty())
-                        ? boxCfg.getBoxName() : entry.getKey().replace('_', ' ');
+                String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(entry.getKey());
+                String boxName = !cachedName.isEmpty()
+                        ? cachedName : entry.getKey().replace('_', ' ');
                 ShopDisplayItem item = new ShopDisplayItem(
                         boxName,
                         "box", entry.getKey(), price, -1);
@@ -182,9 +182,9 @@ public class CS2ShopScreen extends Screen {
                 for (MarketListingData d : serverListings) {
                     String displayName;
                     if ("box".equals(d.itemType)) {
-                        CS2BoxConfig boxCfg = CS2BoxManager.getInstance().getBox(d.itemId);
-                        displayName = (boxCfg != null && !boxCfg.getBoxName().isEmpty())
-                                ? boxCfg.getBoxName() : d.itemId.replace('_', ' ');
+                        String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(d.itemId);
+                        displayName = !cachedName.isEmpty()
+                                ? cachedName : d.itemId.replace('_', ' ');
                     } else {
                         displayName = CS2SkinInfo.getName(d.itemId);
                     }
@@ -202,9 +202,9 @@ public class CS2ShopScreen extends Screen {
             CS2InventoryComponent listInv = CS2InventoryComponent.KEY.get(player);
             for (Map.Entry<String, Integer> entry : listInv.getBoxes().entrySet()) {
                 if (entry.getValue() <= 0) continue;
-                CS2BoxConfig boxCfg = CS2BoxManager.getInstance().getBox(entry.getKey());
-                String boxName = (boxCfg != null && !boxCfg.getBoxName().isEmpty())
-                        ? boxCfg.getBoxName() : entry.getKey().replace('_', ' ');
+                String cachedName2 = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(entry.getKey());
+                String boxName = !cachedName2.isEmpty()
+                        ? cachedName2 : entry.getKey().replace('_', ' ');
                 ShopDisplayItem item = new ShopDisplayItem(boxName, "box", entry.getKey(), 0, -1);
                 item.count = entry.getValue();
                 listableItems.add(item);

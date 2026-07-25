@@ -42,10 +42,18 @@ public final class PlayerEconomyManager {
     }
 
     public static int getLootChance(Player player) {
+        if (player.level().isClientSide()) {
+            return io.wifi.starrailexpress.client.data.ClientPlayerDataCache
+                    .economy(player.getUUID()).lootChance;
+        }
         return get(player.getUUID()).state.lootChance;
     }
 
     public static int getCoinNum(Player player) {
+        if (player.level().isClientSide()) {
+            return io.wifi.starrailexpress.client.data.ClientPlayerDataCache
+                    .economy(player.getUUID()).coinNum;
+        }
         return get(player.getUUID()).state.coinNum;
     }
 
@@ -215,6 +223,11 @@ public final class PlayerEconomyManager {
                             SRE.LOGGER.warn("Failed to load economy part for {}", player.getUUID(), throwable);
                             return;
                         }
+                        // 如果 entry 已被修改（如游戏结束奖励），跳过旧数据库数据覆盖
+                        if (entry.dirty) {
+                            SRE.LOGGER.debug("[Economy] Skip stale DB reload for {} (entry is dirty)", player.getUUID());
+                            return;
+                        }
                         MysqlPlayerDataStore.SyncRecord record = records.get(PART);
                         if (record != null && record.payload() != null && !record.payload().isBlank()) {
                             EconomyState loaded = fromJson(record.payload());
@@ -264,9 +277,9 @@ public final class PlayerEconomyManager {
                         entry.dirty = true;
                         if (throwable != null) {
                             SRE.LOGGER.warn("Failed to save economy part for {}", player.getUUID(), throwable);
-                        } else {
-                            reloadFromDatabase(player, entry);
                         }
+                        // 不在此处 reloadFromDatabase，避免覆盖内存中更新的数据（如游戏结束奖励）
+                        // dirty=true 确保下次 tick 会重试保存
                     }
                 });
     }
