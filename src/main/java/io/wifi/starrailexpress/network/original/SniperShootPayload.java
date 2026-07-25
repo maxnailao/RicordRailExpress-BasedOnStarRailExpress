@@ -68,6 +68,8 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
         @Override
         public void receive(@NotNull SniperShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (!GameUtils.isPlayerAliveAndSurvival(player))
+                return;
             ItemStack mainHandStack = player.getMainHandItem();
 
             if (!mainHandStack.is(TMMItems.SNIPER_RIFLE))

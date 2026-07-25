@@ -52,7 +52,7 @@ public class SilencerPlayerComponent implements RoleComponent, ServerTickingComp
     public static final int PHASE1_DURATION = 45 * 20;
     public static final int PHASE2_DURATION = 30 * 20;
     public static final int SKILL_COOLDOWN = 130 * 20;
-    public static final int INITIAL_COOLDOWN = 155 * 20;
+    public static final int INITIAL_COOLDOWN = 100 * 20;
     // Reduced phase 1 when few innocents
     public static final int PHASE1_REDUCED_DURATION = 40 * 20;
 

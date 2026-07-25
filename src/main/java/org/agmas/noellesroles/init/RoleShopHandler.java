@@ -2028,8 +2028,8 @@ public class RoleShopHandler {
             // 手里剑 - 275金币
             NINJA_SHOP.add(new ShopEntry(ModItems.NINJA_SHURIKEN.getDefaultInstance(), 275, ShopEntry.Type.WEAPON));
 
-            // 关灯 - 50金币
-            NINJA_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+            // 关灯 - 65金币
+            NINJA_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 65, ShopEntry.Type.TOOL) {
                 public boolean onBuy(@NotNull Player player) {
                     if (SREPlayerShopComponent.useBlackoutWithMultiplier(player, 0.4)) {
                         player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
@@ -3318,6 +3318,12 @@ public class RoleShopHandler {
             // 皮革靴子 - 75金币
             SHOUYIYUAN_SHOP.add(new ShopEntry(Items.LEATHER_BOOTS.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.SHOUYIYUAN_ID, SHOUYIYUAN_SHOP);
+        }
+        // 净化者商店：奶桶
+        {
+            var shop = new ArrayList<ShopEntry>();
+            shop.add(new ShopEntry(Items.MILK_BUCKET.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.JINGHUAZHE_ID, shop);
         }
     }
 }
