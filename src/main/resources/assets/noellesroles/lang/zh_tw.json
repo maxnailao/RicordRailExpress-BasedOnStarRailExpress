@@ -2150,6 +2150,7 @@
   "hud.noellesroles.ma_chen_xu.ghost_skill_cooldown": "詭術冷卻: %s秒",
   "hud.noellesroles.ma_chen_xu.ghost_skill_ready": "詭術就緒",
   "message.noellesroles.ma_chen_xu.prayer_rain_cooldown": "大招冷卻剩餘 %ss",
+  "hud.noellesroles.ma_chen_xu.skill.ultimate": "裏世界·百鬼夜行",
   "message.noellesroles.ma_chen_xu.prayer_rain_activated": "詭舍·雨夜已啟動！裏世界降臨！",
   "message.noellesroles.ma_chen_xu.into_cooldown_by_guest": "你所有技能都增加30s冷卻！失去護盾！",
   "==================== 布袋鬼詭術 ====================": "",

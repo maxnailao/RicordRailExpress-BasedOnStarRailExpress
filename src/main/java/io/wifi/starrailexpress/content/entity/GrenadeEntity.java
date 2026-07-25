@@ -34,7 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 
 public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
-    private static final float EXPLOSION_RADIUS = 4f;
+    private static final float EXPLOSION_RADIUS = 4.5f;
 
     /**
      * 空间视线模拟的最小可见性阈值

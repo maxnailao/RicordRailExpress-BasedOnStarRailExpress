@@ -907,7 +907,7 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(130).build());
 
-        // 侍者技能注册：开启灯光，冷却60秒
+        // 侍者技能注册：开启灯光，冷却45秒
         RoleSkill.register(ModRoles.ATTENDANT, RoleSkill.skill(
                 SRE.id("attendant_light"),
                 "skill.noellesroles.attendant.light",
@@ -915,7 +915,7 @@ public class ModRolesInitialEventRegister {
                     ServerPlayer player = context.player();
                     AttendantHandler.openLight(player);
                     return true;
-                }).cooldownSeconds(60).build());
+                }).cooldownSeconds(45).build());
 
         // 守望者技能注册：切换姿态
         RoleSkill.register(ModRoles.WATCHER, RoleSkill.skill(
@@ -1185,17 +1185,21 @@ public class ModRolesInitialEventRegister {
         // announceToSelf(false) 由组件自定义提示。槽位顺序须与 MaChenXuPlayerComponent.ART_ORDER 一致。
         RoleSkill.register(ModRoles.MA_CHEN_XU,
                 RoleSkill.skill(SRE.id("ma_chen_xu_veil"), "hud.noellesroles.ma_chen_xu.skill.veil",
-                        context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("veil"))
+                                context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("veil"))
                         .announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("ma_chen_xu_effigy"), "hud.noellesroles.ma_chen_xu.skill.effigy",
-                        context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("effigy"))
+                                context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("effigy"))
                         .announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("ma_chen_xu_wail"), "hud.noellesroles.ma_chen_xu.skill.wail",
-                        context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("wail"))
+                                context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("wail"))
                         .announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("ma_chen_xu_seize"), "hud.noellesroles.ma_chen_xu.skill.seize",
-                        context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("seize"))
-                        .announceToSelf(false).build());
+                                context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("seize"))
+                        .announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("ma_chen_xu_ultimate"), "hud.noellesroles.ma_chen_xu.skill.ultimate",
+                                context -> MaChenXuPlayerComponent.KEY.get(context.player()).usePrayerRain())
+                        .shifted(true).announceToSelf(false).build());
+
 
         RoleSkill.register(ModRoles.WRAITH_ASSASSIN,
                 RoleSkill.skill(SRE.id("wraith_assault"), "skill.noellesroles.wraith_assassin.assault",
@@ -1340,7 +1344,7 @@ public class ModRolesInitialEventRegister {
                     return comp.activateSkill();
                 }).cooldownSeconds(90).announceToSelf(true).showOnHud(true).build());
 
-        // 净化者技能注册：花费150金币清空准心对准的玩家身上所有效果，射程6格，冷却30秒
+        // 净化者技能注册：花费75金币清空准心对准的玩家身上所有效果，射程6格，冷却30秒
         RoleSkill.register(ModRoles.JINGHUAZHE, RoleSkill.skill(
                 SRE.id("jinghuazhe_purify"),
                 "skill.noellesroles.jinghuazhe.purify",
@@ -1372,7 +1376,7 @@ public class ModRolesInitialEventRegister {
                         return false;
                     }
                     SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                    if (shop.balance < 150) {
+                    if (shop.balance < 75) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.insufficient_funds")
                                         .withStyle(ChatFormatting.RED),
@@ -1392,7 +1396,7 @@ public class ModRolesInitialEventRegister {
                     player.level().playSound(null, player.blockPosition(),
                             SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.5F);
                     return true;
-                }).cooldownSeconds(30).build());
+                }).cooldownSeconds(5).build());
 
         // 时空旅者技能注册：花费125金币在原地放置传送门
         RoleSkill.register(ModRoles.RUIKE, RoleSkill.skill(

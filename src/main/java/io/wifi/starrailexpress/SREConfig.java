@@ -197,7 +197,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "cooldowns")
     public int blackoutCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
-    public int blackoutCooldownGlobal = 40;
+    public int blackoutCooldownGlobal = 50;
     @ConfigEntry.Category(value = "cooldowns")
     public int monitorBrokenCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")

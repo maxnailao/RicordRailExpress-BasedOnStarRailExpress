@@ -129,7 +129,7 @@ public class AvariciousGoldHandler {
 
             int payoutPerPlayer = AvariciousGoldHandler.calculatePayout(totalPlayers, nearbyPlayers, avgDistance);
             int totalPayout = nearbyPlayers * payoutPerPlayer;
-            totalPayout = Math.min(totalPayout, 175);
+            totalPayout = Math.min(totalPayout, 150);
             SREPlayerShopComponent.KEY.get(player).addToBalance(totalPayout);
             player.playNotifySound(TMMSounds.UI_SHOP_BUY, SoundSource.PLAYERS, 10.0f, 0.5f);
 

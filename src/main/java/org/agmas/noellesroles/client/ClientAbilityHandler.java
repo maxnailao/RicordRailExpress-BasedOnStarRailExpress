@@ -162,10 +162,11 @@ public class ClientAbilityHandler {
         }
 
         var definitions = RoleSkill.getDefinitions(role);
-        if (!definitions.isEmpty()) {
+        var selectableDefs = RoleSkill.getSelectableDefinitions(role);
+        if (!definitions.isEmpty() && selectableDefs.size() < 2) {
             var shiftedDefs = definitions.stream().filter(RoleSkill.Definition::shifted).toList();
             if (!shiftedDefs.isEmpty()) {
-                // 存在模式切换技能，Y 键触发模式切换
+                // 存在模式切换技能且可选技能不足2个，V 键触发模式切换
                 ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
                         definitions.indexOf(shiftedDefs.getFirst()),
                         RoleSkill.Phase.PRESS,
@@ -177,7 +178,6 @@ public class ClientAbilityHandler {
         if (definitions.size() < 2) {
             return;
         }
-        var selectableDefs = RoleSkill.getSelectableDefinitions(role);
         if (selectableDefs.size() < 2) {
             return;
         }

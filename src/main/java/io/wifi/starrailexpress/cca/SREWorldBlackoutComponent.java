@@ -143,9 +143,9 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
                         if ((!role.canUseKiller() && !role.isNeutralForKiller()
                                 && !role.canIgnoreBlackout(player))) {
                             player.addEffect(
-                                    new MobEffectInstance(MobEffects.BLINDNESS, 200, 0, false, false, false));
+                                    new MobEffectInstance(MobEffects.BLINDNESS, 140, 0, false, false, false));
                             player.addEffect(
-                                    new MobEffectInstance(MobEffects.DARKNESS, 200, 0, false, false, false));
+                                    new MobEffectInstance(MobEffects.DARKNESS, 140, 0, false, false, false));
                         }
                     }
                     player.connection.send(new ClientboundSoundPacket(

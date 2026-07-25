@@ -1985,7 +1985,20 @@ public class ModEventsRegister {
                     sniperRifleCount--;
                 }
             }
-
+            if (gameWorldComponent.isRole(player, ModRoles.TEGONG)) {
+                int silencedPistolCount = SREItemUtils.clearItem(player, org.agmas.noellesroles.init.ModItems.SILENCED_PISTOL);
+                while (silencedPistolCount > 0) {
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    silencedPistolCount--;
+                }
+            }
+            if (gameWorldComponent.isRole(player, ModRoles.THE_FOOL)) {
+                int gunCount = SREItemUtils.clearItem(player, org.agmas.noellesroles.init.ModItems.EXECUTIONER_GUN);
+                while (gunCount > 0) {
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    gunCount--;
+                }
+            }
             if (gameWorldComponent.isRole(player, ModRoles.BETTER_VIGILANTE)) {
                 final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(player);
                 betterVigilantePlayerComponent.init();

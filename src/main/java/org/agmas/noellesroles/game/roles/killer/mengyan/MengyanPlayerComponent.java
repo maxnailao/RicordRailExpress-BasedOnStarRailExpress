@@ -61,14 +61,14 @@ public class MengyanPlayerComponent implements RoleComponent, ServerTickingCompo
     public UUID fearedBy;
 
     // ========== 常量 ==========
-    /** 恐惧倒计时总时长 (20秒 = 400tick) */
-    private static final int FEAR_DURATION_TICKS = 400;
-    /** 需要睡满的时间 (10秒 = 200tick) */
-    private static final int REQUIRED_SLEEP_TICKS = 200;
+    /** 恐惧倒计时总时长 (25秒 = 500tick) */
+    private static final int FEAR_DURATION_TICKS = 500;
+    /** 需要睡满的时间 (5秒 = 100tick) */
+    private static final int REQUIRED_SLEEP_TICKS = 100;
     /** 恐惧失败惩罚：降低理智百分比 */
     private static final float FEAR_PENALTY_MOOD = 0.75f;
     /** 恐惧失败奖励金币 */
-    private static final int FEAR_REWARD_COINS = 75;
+    private static final int FEAR_REWARD_COINS = 50;
     /** 噩梦效果持续时间（足够长以覆盖整局，用tick表示，约30分钟） */
     private static final int NIGHTMARE_DURATION_TICKS = 36000;
 
