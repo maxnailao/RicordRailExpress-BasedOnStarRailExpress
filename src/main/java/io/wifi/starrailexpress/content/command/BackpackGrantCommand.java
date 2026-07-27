@@ -14,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 public final class BackpackGrantCommand {
     private BackpackGrantCommand() {}
@@ -32,29 +34,31 @@ public final class BackpackGrantCommand {
                         .then(Commands.argument("type", StringArgumentType.word())
                                 .suggests(CARD_TYPE_SUGGESTIONS)
                                 .executes(context -> grant(
-                                        context.getSource().getPlayerOrException(),
+                                        List.of(context.getSource().getPlayerOrException()),
                                         StringArgumentType.getString(context, "type"),
                                         1))
                                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 99))
                                         .executes(context -> grant(
-                                                context.getSource().getPlayerOrException(),
+                                                List.of(context.getSource().getPlayerOrException()),
                                                 StringArgumentType.getString(context, "type"),
                                                 IntegerArgumentType.getInteger(context, "count")))
-                                        .then(Commands.argument("target", EntityArgument.player())
+                                        .then(Commands.argument("target", EntityArgument.players())
                                                 .executes(context -> grant(
-                                                        EntityArgument.getPlayer(context, "target"),
+                                                        EntityArgument.getPlayers(context, "target"),
                                                         StringArgumentType.getString(context, "type"),
                                                         IntegerArgumentType.getInteger(context, "count"))))))));
     }
 
-    private static int grant(ServerPlayer target, String rawType, int count) {
+    private static int grant(Collection<ServerPlayer> targets, String rawType, int count) {
         FactionCardType type = FactionCardType.fromString(rawType);
         if (type == FactionCardType.NONE) {
             return 0;
         }
-        BackpackManager.addCard(target, type, count);
-        target.sendSystemMessage(Component.literal(
-                "§a获得 " + count + " 张 " + Component.translatable(type.displayName).getString() + " 卡"));
-        return 1;
+        for (ServerPlayer target : targets) {
+            BackpackManager.addCard(target, type, count);
+            target.sendSystemMessage(Component.literal(
+                    "§a获得 " + count + " 张 " + Component.translatable(type.displayName).getString() + " 卡"));
+        }
+        return targets.size();
     }
 }
