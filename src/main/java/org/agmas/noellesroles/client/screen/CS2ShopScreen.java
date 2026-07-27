@@ -169,6 +169,16 @@ public class CS2ShopScreen extends Screen {
                 item.count = count;
                 sellItems.add(item);
             }
+            // 音乐盒
+            for (Map.Entry<String, Integer> entry : inv.getMusicBoxes().entrySet()) {
+                if (entry.getValue() <= 0) continue;
+                String musicBoxId = entry.getKey();
+                int price = ShopConfig.getInstance().getSellPriceConfig().musicBoxSellPrice;
+                String displayName = getMusicBoxName(musicBoxId);
+                ShopDisplayItem item = new ShopDisplayItem(displayName, "musicbox", musicBoxId, price, -1);
+                item.count = entry.getValue();
+                sellItems.add(item);
+            }
         }
 
         // 黑市商品 (从服务端缓存解析)
@@ -185,6 +195,8 @@ public class CS2ShopScreen extends Screen {
                         String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(d.itemId);
                         displayName = !cachedName.isEmpty()
                                 ? cachedName : d.itemId.replace('_', ' ');
+                    } else if ("musicbox".equals(d.itemType)) {
+                        displayName = getMusicBoxName(d.itemId);
                     } else {
                         displayName = CS2SkinInfo.getName(d.itemId);
                     }
@@ -196,7 +208,7 @@ public class CS2ShopScreen extends Screen {
             }
         } catch (Exception ignored) {}
 
-        // 可上架物品（玩家仓库中的箱子+皮肤）
+        // 可上架物品（玩家仓库中的箱子+皮肤+音乐盒）
         listableItems.clear();
         if (player != null) {
             CS2InventoryComponent listInv = CS2InventoryComponent.KEY.get(player);
@@ -214,6 +226,13 @@ public class CS2ShopScreen extends Screen {
                 String displayName = CS2SkinInfo.getName(entry.getKey());
                 int quality = getSkinQuality(entry.getKey());
                 ShopDisplayItem item = new ShopDisplayItem(displayName, "skin", entry.getKey(), 0, quality);
+                item.count = entry.getValue();
+                listableItems.add(item);
+            }
+            for (Map.Entry<String, Integer> entry : listInv.getMusicBoxes().entrySet()) {
+                if (entry.getValue() <= 0) continue;
+                String displayName = getMusicBoxName(entry.getKey());
+                ShopDisplayItem item = new ShopDisplayItem(displayName, "musicbox", entry.getKey(), 0, -1);
                 item.count = entry.getValue();
                 listableItems.add(item);
             }
@@ -391,9 +410,12 @@ public class CS2ShopScreen extends Screen {
         } else {
             // === 浏览模式 ===
             // 上架按钮
+            int ownCount = ownListingIds != null ? ownListingIds.size() : 0;
+            boolean atLimit = ownCount >= 2;
             boolean listBtnHovered = mouseX >= width / 2 - 50 && mouseX < width / 2 + 50 && mouseY >= listStartY && mouseY < listStartY + 22;
-            guiGraphics.fill(width / 2 - 50, listStartY, width / 2 + 50, listStartY + 22, listBtnHovered ? 0x804488FF : 0x604488FF);
-            guiGraphics.drawCenteredString(font, "+ 上架物品", width / 2, listStartY + 7, 0xFFFFFFFF);
+            int btnColor = atLimit ? 0x60888888 : (listBtnHovered ? 0x804488FF : 0x604488FF);
+            guiGraphics.fill(width / 2 - 50, listStartY, width / 2 + 50, listStartY + 22, btnColor);
+            guiGraphics.drawCenteredString(font, "+ 上架物品 (" + ownCount + "/2)", width / 2, listStartY + 7, atLimit ? 0xFF888888 : 0xFFFFFFFF);
 
             // 领取收入按钮（有待领货币时显示）
             int contentStartY = listStartY + 30;
@@ -570,6 +592,14 @@ public class CS2ShopScreen extends Screen {
             // "上架物品" 按钮
             if (mouseX >= width / 2 - 50 && mouseX < width / 2 + 50
                     && mouseY >= listStartY && mouseY < listStartY + 22) {
+                int ownCount = ownListingIds != null ? ownListingIds.size() : 0;
+                if (ownCount >= 2) {
+                    var p = Minecraft.getInstance().player;
+                    if (p != null) {
+                        p.displayClientMessage(Component.literal("§c上架数量已达上限（最多 2 件），请先下架其他商品"), true);
+                    }
+                    return true;
+                }
                 listingMode = true;
                 scrollOffset = 0;
                 return true;
@@ -605,15 +635,25 @@ public class CS2ShopScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         scrollOffset -= (int) deltaY * 2;
-        int maxItems = (height - listStartY - 40) / itemHeight;
         int total;
+        int effectiveStartY;
         if (selectedTab == Tab.BUY) {
             total = buyItems.size();
+            effectiveStartY = listStartY;
         } else if (selectedTab == Tab.MARKET) {
-            total = listingMode ? listableItems.size() : marketItems.size();
+            if (listingMode) {
+                total = listableItems.size();
+                effectiveStartY = listStartY;
+            } else {
+                total = marketItems.size();
+                // 浏览模式下商品列表从 contentStartY 开始渲染
+                effectiveStartY = listStartY + 30;
+            }
         } else {
             total = sellItems.size();
+            effectiveStartY = listStartY;
         }
+        int maxItems = (height - effectiveStartY - 40) / itemHeight;
         scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, total - maxItems)));
         return true;
     }
@@ -706,5 +746,16 @@ public class CS2ShopScreen extends Screen {
             if (QUALITY_COLORS[i] == (color | 0xFF000000)) return i;
         }
         return 0;
+    }
+
+    /**
+     * 获取音乐盒显示名称
+     */
+    private static String getMusicBoxName(String musicBoxId) {
+        var box = io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry.get(musicBoxId);
+        if (box != null) {
+            return box.displayName().getString();
+        }
+        return musicBoxId.replace('_', ' ');
     }
 }

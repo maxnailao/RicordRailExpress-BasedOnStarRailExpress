@@ -152,6 +152,9 @@
       "noellesroles:food_drink",
       "noellesroles:diver",
       "noellesroles:shooting_frenzy",
+      "noellesroles:phantom_frenzy",
+      "noellesroles:silencer_frenzy",
+      "noellesroles:stalker_frenzy",
       "noellesroles:watcher",
       "noellesroles:mortician",
       "noellesroles:super_loose_end",
@@ -166,6 +169,9 @@
       "noellesroles:embalmer",
       "noellesroles:skincrawler",
       "noellesroles:ruike",
+      "noellesroles:niyanjingshibushixiale",
+      "noellesroles:pathfinder",
+      "noellesroles:weixiugong",
       "starrailexpress:minigame_task",
       "noellesroles:better_killer_ghost",
       "noellesroles:poacher",
@@ -262,7 +268,10 @@
       "noellesroles:xundaozhe",
       "noellesroles:snow_hunter",
       "noellesroles:snowguai_wow",
-      "noellesroles:philanthropist"
+      "noellesroles:philanthropist",
+      "noellesroles:ghoul",
+      "noellesroles:eling_apex",
+      "noellesroles:cowboy"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

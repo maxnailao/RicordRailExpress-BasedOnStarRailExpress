@@ -17,6 +17,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -83,7 +84,11 @@ public abstract class StalkerLeftClickKillMixin {
         // 二阶段：左键直接击杀
         GameUtils.killPlayer(targetPlayer, true, attacker, GameConstants.DeathReasons.KNIFE);
 
-        attacker.getCooldowns().addCooldown(mainHand.getItem(), GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
+        // 疯魔（猎影狂奔）期间主手刀冷却2秒，否则为原版刀冷却的1/3
+        int stalkerKnifeCooldown = StalkerFrenzyPlayerComponent.isInFrenzy(attacker)
+                ? StalkerFrenzyPlayerComponent.FRENZY_KNIFE_CD
+                : GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3;
+        attacker.getCooldowns().addCooldown(mainHand.getItem(), stalkerKnifeCooldown);
         // 触发攻击冷却
 //        stalkerComp.triggerAttackCooldown();
 

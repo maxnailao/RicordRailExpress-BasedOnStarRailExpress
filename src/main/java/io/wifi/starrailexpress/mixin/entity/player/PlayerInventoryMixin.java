@@ -40,8 +40,12 @@ public class PlayerInventoryMixin {
                 psychoItem = role.getPsychoItem();
             }
             if (((this.player.getInventory().getItem(oldSlot).is(psychoItem)) &&
-                    (!this.player.getInventory().getItem(this.player.getInventory().selected).is(psychoItem))))
-                this.player.getInventory().selected = oldSlot;
+                    (!this.player.getInventory().getItem(this.player.getInventory().selected).is(psychoItem)))) {
+                // 幽灵幻影疯魔(type=2)：允许滚轮切换到空手
+                if (!(component.type == 2
+                        && this.player.getInventory().getItem(this.player.getInventory().selected).isEmpty()))
+                    this.player.getInventory().selected = oldSlot;
+            }
         }
 
     }

@@ -265,6 +265,12 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
      * 添加能量
      */
     public void addEnergy(int amount) {
+        // 潜行者疯魔（猎影狂奔）期间：杀戮欲望锁定为0，避免进阶三阶段
+        if (StalkerFrenzyPlayerComponent.isInFrenzy(this.player)) {
+            this.energy = 0;
+            this.sync();
+            return;
+        }
         this.energy += amount;
         checkPhaseAdvance();
         this.sync();
@@ -413,6 +419,10 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
      * 开始窥视
      */
     public void startGazing() {
+        // 潜行者疯魔期间：凝视默认关闭且无法开启
+        if (StalkerFrenzyPlayerComponent.isInFrenzy(this.player)) {
+            return;
+        }
         this.isGazing = true;
         this.sync();
     }

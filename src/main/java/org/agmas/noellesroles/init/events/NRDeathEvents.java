@@ -742,6 +742,15 @@ public class NRDeathEvents {
                 dropCount--;
             }
         }
+        if (gameWorldComponent.isRole(player, ModRoles.LIEMOREN)) {
+            int bowcount = SREItemUtils.clearItem(player, Items.BOW);
+            int crossbowcount = SREItemUtils.clearItem(player, Items.CROSSBOW);
+            int dropCount = bowcount + crossbowcount;
+            while (dropCount > 0) {
+                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                dropCount--;
+            }
+        }
         if (gameWorldComponent.isRole(player, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
             int nunchuckCount = SREItemUtils.clearItem(player, TMMItems.NUNCHUCK);
             while (nunchuckCount > 0) {

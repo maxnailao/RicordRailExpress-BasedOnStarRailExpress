@@ -69,6 +69,7 @@
     "roles.adventurer.AdventurerDeathImmunityMixin",
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",
+    "roles.phantom.PhantomFrenzyKnifeCooldownMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
     "roles.veteran.VeteranKnifeLeftClickMixin",

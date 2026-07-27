@@ -157,10 +157,17 @@ public class CS2BoxManager {
         // 将结果品质映射回原始6级品质（考虑跳过空品质的偏移）
         int trueQuality = mapToTrueQuality(config, qualityIdx);
 
-        // 解锁皮肤并添加到仓库
+        // 解锁物品并添加到仓库
         boolean isDuplicate = false;
-        String[] parts = skinId.split("/");
-        if (parts.length >= 2) {
+        String[] parts = skinId.split("/", 2);
+        if (parts.length >= 2 && "musicbox".equals(parts[0])) {
+            // 音乐盒：直接添加到音乐盒仓库
+            String musicBoxId = parts[1];
+            if (inv.hasMusicBox(musicBoxId)) {
+                isDuplicate = true;
+            }
+            inv.addMusicBox(musicBoxId, 1);
+        } else if (parts.length >= 2) {
             String itemType = parts[0];
             String skinName = parts[1];
             if (ItemSkinManager.isSkinUnlocked(player, 

@@ -139,6 +139,25 @@ public class SREEventRegister {
                 io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.sync(player);
                 SRE.LOGGER.info("[CS2] Initialized player {}, cleared old skins", player.getName().getString());
             }
+            // 货币系统初始化：一次性重置旧货币残留
+            if (!skinsComp.isCurrencyReset()) {
+                skinsComp.setCurrencyReset(true);
+                skinsComp.setCoinNumDirect(0);
+                skinsComp.setLootChanceDirect(0);
+                // 同步到 PlayerEconomyManager 运行时数据
+                io.wifi.starrailexpress.data.PlayerEconomyManager.resetCurrency(player);
+                io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.sync(player);
+                SRE.LOGGER.info("[CS2] Reset currency for player {}", player.getName().getString());
+            }
+            // 音乐盒系统初始化：一次性清空旧音乐盒数据
+            if (!skinsComp.isMusicBoxReset()) {
+                skinsComp.setMusicBoxReset(true);
+                io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
+                        io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY.get(player);
+                musicComp.clearAllData();
+                io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY.sync(player);
+                SRE.LOGGER.info("[CS2] Reset music boxes for player {}", player.getName().getString());
+            }
         });
     }
 

@@ -5,7 +5,6 @@ import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.gui.screen.BackpackScreen;
 import io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen;
-import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.content.mail.MailboxScreen;
@@ -111,11 +110,7 @@ public class GameMenuEntries {
 //            minecraft.setScreen(new LootInfoScreen(0, 0, 0, parent));
 //            toggleViewMenu.accept(false);
 //        }));
-        // 皮肤管理
-        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.skin_manage"), (btn) -> {
-            minecraft.setScreen(new SkinManagementScreen(parent));
-            toggleViewMenu.accept(false);
-        }));
+        // 皮肤管理已迁移至仓库系统（CS2WarehouseScreen）
         // 库存管理
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
             minecraft.setScreen(new BackpackScreen(parent));

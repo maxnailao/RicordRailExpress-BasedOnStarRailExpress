@@ -207,6 +207,9 @@ public class InitModRolesMax {
 
         // 游侠
 
+        // 猎魔人每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.LIEMOREN_ID, 1);
+
         // 巡警
 
         // 特警（默认为0，在动态设置中根据地图判断）
@@ -339,6 +342,8 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.SNOWGUAI_WOW_ID, 1);
         // 售衣员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.SHOUYIYUAN_ID, 1);
+        // 盲人每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.NIYAJINGSHIBUSHIXIALE_ID, 1);
     }
 
     public static void registerDynamic() {

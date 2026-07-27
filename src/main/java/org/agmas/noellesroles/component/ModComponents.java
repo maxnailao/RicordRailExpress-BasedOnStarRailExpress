@@ -6,6 +6,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.roles.innocence.niyanjingshibushixiale.NiyajingshiPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.pathfinder.PathfinderPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.weixiugong.WeixiugongPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.ghoul.GhoulPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.eling_apex.ElingApexPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
@@ -62,6 +67,9 @@ import org.agmas.noellesroles.game.roles.killer.creeper.CreeperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.silencer.SilencerFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -102,6 +110,7 @@ import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
+import org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyPlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
@@ -257,6 +266,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       .getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "better_vigilante"),
           BetterVigilantePlayerComponent.class);
+  public static final ComponentKey<CowboyPlayerComponent> COWBOY = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "cowboy"),
+          CowboyPlayerComponent.class);
   public static final ComponentKey<RecorderPlayerComponent> RECORDER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "recorder"),
       RecorderPlayerComponent.class);
@@ -364,6 +377,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<ShootingFrenzyPlayerComponent> SHOOTING_FRENZY = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "shooting_frenzy"),
       ShootingFrenzyPlayerComponent.class);
+
+  public static final ComponentKey<PhantomFrenzyPlayerComponent> PHANTOM_FRENZY = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_frenzy"),
+      PhantomFrenzyPlayerComponent.class);
+
+  public static final ComponentKey<SilencerFrenzyPlayerComponent> SILENCER_FRENZY = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "silencer_frenzy"),
+      SilencerFrenzyPlayerComponent.class);
+
+  public static final ComponentKey<StalkerFrenzyPlayerComponent> STALKER_FRENZY = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "stalker_frenzy"),
+      StalkerFrenzyPlayerComponent.class);
 
   public static final ComponentKey<WatcherPlayerComponent> WATCHER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "watcher"),
@@ -598,6 +623,30 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent> SNOWGUAI_WOW = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snowguai_wow"),
           org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent.class);
+
+  // 盲人组件 - 平民阵营，黑暗效果+脚步声纹感知
+  public static final ComponentKey<NiyajingshiPlayerComponent> NIYAJINGSHIBUSHIXIALE = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "niyanjingshibushixiale"),
+          NiyajingshiPlayerComponent.class);
+
+  // 探路者组件 - 平民阵营，放置临时照明灯
+  public static final ComponentKey<PathfinderPlayerComponent> PATHFINDER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pathfinder"),
+          PathfinderPlayerComponent.class);
+
+  // 维修工组件 - 平民阵营，维护灯光
+  public static final ComponentKey<WeixiugongPlayerComponent> WEIXIUGONG = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "weixiugong"),
+          WeixiugongPlayerComponent.class);
+
+  // 食尸鬼组件 - 杀手阵营，搜刮尸体道具+获取金钱
+  public static final ComponentKey<GhoulPlayerComponent> GHOUL = GhoulPlayerComponent.KEY;
+
+  // 恶灵组件 - 杀手阵营，相位转移技能（隐身+速度+粒子+按键禁用）
+  public static final ComponentKey<ElingApexPlayerComponent> ELING_APEX = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "eling_apex"),
+          ElingApexPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -815,6 +864,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, BETTER_VIGILANTE)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BetterVigilantePlayerComponent::new);
+    registry.beginRegistration(Player.class, COWBOY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(CowboyPlayerComponent::new);
 
     // 注册记录员组件 - 存储猜测记录和可用角色
     registry.beginRegistration(Player.class, hoan_meirin)
@@ -961,6 +1013,21 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SHOOTING_FRENZY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ShootingFrenzyPlayerComponent::new);
+
+    // 注册幽灵幻影组件 - 幽灵的特殊疯魔模式
+    registry.beginRegistration(Player.class, PHANTOM_FRENZY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PhantomFrenzyPlayerComponent::new);
+
+    // 注册静语者疯魔组件 - 静语者的特殊疯魔模式
+    registry.beginRegistration(Player.class, SILENCER_FRENZY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(SilencerFrenzyPlayerComponent::new);
+
+    // 注册潜行者疯魔组件 - 潜行者的特殊疯魔模式
+    registry.beginRegistration(Player.class, STALKER_FRENZY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(StalkerFrenzyPlayerComponent::new);
 
     registry.beginRegistration(Player.class, WATCHER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1194,6 +1261,31 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SNOWGUAI_WOW)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent::new);
+
+    // 注册盲人组件 - 平民阵营，黑暗效果+脚步声纹感知
+    registry.beginRegistration(Player.class, NIYAJINGSHIBUSHIXIALE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(NiyajingshiPlayerComponent::new);
+
+    // 注册探路者组件 - 平民阵营，放置临时照明灯
+    registry.beginRegistration(Player.class, PATHFINDER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(PathfinderPlayerComponent::new);
+
+    // 注册维修工组件 - 平民阵营，维护灯光
+    registry.beginRegistration(Player.class, WEIXIUGONG)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(WeixiugongPlayerComponent::new);
+
+    // 注册食尸鬼组件 - 杀手阵营，搜刮尸体道具+获取金钱
+    registry.beginRegistration(Player.class, GHOUL)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(GhoulPlayerComponent::new);
+
+    // 注册恶灵组件 - 杀手阵营，相位转移技能
+    registry.beginRegistration(Player.class, ELING_APEX)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(ElingApexPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

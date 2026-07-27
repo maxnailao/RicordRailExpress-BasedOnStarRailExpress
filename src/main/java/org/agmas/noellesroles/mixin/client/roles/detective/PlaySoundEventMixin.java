@@ -55,7 +55,7 @@ public class PlaySoundEventMixin {
         double y = sound.getY();
         double z = sound.getZ();
 
-        double dis = 25d;
+        double dis = AgentListenStepHandler.getListenRange();
         if (playerPos.distanceToSqr(sound.getX(), sound.getY(), sound.getZ()) >= dis * dis) {
             return;
         }

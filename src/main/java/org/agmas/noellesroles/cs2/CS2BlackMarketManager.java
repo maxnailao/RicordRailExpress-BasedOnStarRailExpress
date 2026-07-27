@@ -29,6 +29,9 @@ public class CS2BlackMarketManager {
 
     private static CS2BlackMarketManager instance;
 
+    /** 每人最大上架数量 */
+    public static final int MAX_LISTINGS_PER_PLAYER = 2;
+
     /** 黑市挂单列表 */
     private final List<MarketListing> listings = new CopyOnWriteArrayList<>();
 
@@ -105,6 +108,17 @@ public class CS2BlackMarketManager {
     }
 
     /**
+     * 获取指定玩家的当前上架数量
+     */
+    public int getPlayerListingCount(String playerUuid) {
+        int count = 0;
+        for (MarketListing l : listings) {
+            if (l.sellerUuid.equals(playerUuid)) count++;
+        }
+        return count;
+    }
+
+    /**
      * 获取当前黑市税率
      */
     public double getTaxRate() {
@@ -152,6 +166,20 @@ public class CS2BlackMarketManager {
     public boolean list(ServerPlayer seller, String itemType, String itemId, int price) {
         if (price <= 0) return false;
 
+        // 检查上架数量限制
+        String sellerUuid = seller.getUUID().toString();
+        int currentCount = 0;
+        for (MarketListing l : listings) {
+            if (l.sellerUuid.equals(sellerUuid)) currentCount++;
+        }
+        if (currentCount >= MAX_LISTINGS_PER_PLAYER) {
+            seller.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal(
+                            "§c上架数量已达上限（最多 " + MAX_LISTINGS_PER_PLAYER + " 件），请先下架其他商品"),
+                    true);
+            return false;
+        }
+
         CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(seller);
 
         // 验证物品所有权
@@ -171,6 +199,15 @@ public class CS2BlackMarketManager {
                     ItemSkinManager.setEquippedSkinForItemType(seller, equipItemType, "default");
                     ItemSkinManager.sync(seller);
                 }
+            }
+        } else if ("musicbox".equals(itemType)) {
+            if (!inv.hasMusicBox(itemId)) return false;
+            inv.removeMusicBox(itemId, 1);
+            // 如果上架的音乐盒正在装备中，自动卸下
+            io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
+                    io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY.get(seller);
+            if (itemId.equals(musicComp.getEquippedBox())) {
+                musicComp.setEquippedBox(null);
             }
         } else {
             return false; // 不支持的类型
@@ -220,6 +257,8 @@ public class CS2BlackMarketManager {
             buyerInv.addBox(listing.itemId, 1);
         } else if ("skin".equals(listing.itemType)) {
             buyerInv.addSkin(listing.itemId, 1);
+        } else if ("musicbox".equals(listing.itemType)) {
+            buyerInv.addMusicBox(listing.itemId, 1);
         }
         buyerInv.sync();
 
@@ -257,6 +296,8 @@ public class CS2BlackMarketManager {
             inv.addBox(listing.itemId, 1);
         } else if ("skin".equals(listing.itemType)) {
             inv.addSkin(listing.itemId, 1);
+        } else if ("musicbox".equals(listing.itemType)) {
+            inv.addMusicBox(listing.itemId, 1);
         }
         inv.sync();
 

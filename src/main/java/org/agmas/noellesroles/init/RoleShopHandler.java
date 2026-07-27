@@ -44,8 +44,11 @@ import org.agmas.noellesroles.content.item.ToxinShopEntry;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.silencer.SilencerFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
@@ -2173,6 +2176,43 @@ public class RoleShopHandler {
                     ModRoles.ELF_ID, shopEntries);
         }
 
+        // 猎魔人商店
+        {
+            var shopEntries = new ArrayList<ShopEntry>();
+
+            // 毒箭 - 50金币
+            final var PoisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
+            PoisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.liemoren_poison_arrow.name"));
+            PoisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
+            PoisonArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+            shopEntries.add(new ShopEntry(PoisonArrow, 50, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    int itemCount = SREItemUtils.countItem(player, Items.TIPPED_ARROW);
+                    if (itemCount >= 2)
+                        return false;
+                    return RoleUtils.insertStackInFreeSlot(player, PoisonArrow.copy());
+                }
+            });
+
+            // 猎魔箭（原版缓慢箭）- 200金币
+            final var HuntArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
+            HuntArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.liemoren_hunt_arrow.name"));
+            HuntArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+            shopEntries.add(new ShopEntry(HuntArrow, 200, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    int itemCount = SREItemUtils.countItem(player, Items.SPECTRAL_ARROW);
+                    if (itemCount >= 1)
+                        return false;
+                    return RoleUtils.insertStackInFreeSlot(player, HuntArrow.copy());
+                }
+            });
+
+            ShopContent.customEntries.put(
+                    ModRoles.LIEMOREN_ID, shopEntries);
+        }
+
         // 丘比特商店
         {
             var shopEntries = new ArrayList<ShopEntry>();
@@ -2224,6 +2264,74 @@ public class RoleShopHandler {
                     ModRoles.EXECUTIONER_ID, 柜子区的商店);
         }
 
+        // 幽灵商店（手动构建，用幽灵幻影替代普通疯魔）
+        {
+            var phantomShop = new ArrayList<ShopEntry>();
+            phantomShop.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
+            phantomShop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
+                    SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
+            phantomShop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(),
+                    SREConfig.instance().grenadePrice, ShopEntry.Type.WEAPON));
+            phantomShop.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(),
+                    SREConfig.instance().shortShotgunPrice, ShopEntry.Type.WEAPON));
+            // 幽灵幻影 - 400金币（特殊疯魔模式，替代普通疯魔）
+            {
+                var phantomPsycho = TMMItems.PSYCHO_MODE.getDefaultInstance();
+                phantomPsycho.set(DataComponents.ITEM_NAME,
+                        Component.translatable("itemstack.phantom.psychoitem.item_name"));
+                var lore = new ItemLore(List.of(
+                        Component.translatable("itemstack.phantom.psychoitem.item_lore.1")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+                        Component.translatable("itemstack.phantom.psychoitem.item_lore.2")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+                phantomPsycho.set(DataComponents.LORE, lore);
+                phantomShop.add(new ShopEntry(
+                        phantomPsycho,
+                        400,
+                        ShopEntry.Type.WEAPON) {
+                    @Override
+                    public boolean canBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        return super.canBuy(player);
+                    }
+
+                    @Override
+                    public boolean onBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        PhantomFrenzyPlayerComponent frenzyComponent = PhantomFrenzyPlayerComponent.KEY.get(player);
+                        boolean success = frenzyComponent.startFrenzy();
+                        if (success) {
+                            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 6000));
+                        }
+                        return success;
+                    }
+                });
+            }
+            phantomShop.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(),
+                    SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL));
+            phantomShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(),
+                    SREConfig.instance().lockpickPrice, ShopEntry.Type.TOOL));
+            phantomShop.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+            phantomShop.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
+                    SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
+            phantomShop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
+                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            phantomShop.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.PHANTOM_ID, phantomShop);
+        }
+
         // 变形者商店
         {
             List<ShopEntry> entries = ShopContent.getDefaultKnifeEntries();
@@ -2236,10 +2344,72 @@ public class RoleShopHandler {
                     ModRoles.MORPHLING_ID, entries);
         }
 
-        // 静语者商店：默认杀手刀具列表
+        // 静语者商店（手动构建，用静语者疯魔替代普通疯魔）
         {
-            ShopContent.customEntries.put(
-                    ModRoles.SILENCER_ID, ShopContent.getDefaultKnifeEntries());
+            var silencerShop = new ArrayList<ShopEntry>();
+            silencerShop.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
+            silencerShop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
+                    SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
+            silencerShop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(),
+                    SREConfig.instance().grenadePrice, ShopEntry.Type.WEAPON));
+            silencerShop.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(),
+                    SREConfig.instance().shortShotgunPrice, ShopEntry.Type.WEAPON));
+            // 静语者疯魔 - 350金币（特殊疯魔模式，替代普通疯魔）
+            {
+                var silencerPsycho = TMMItems.PSYCHO_MODE.getDefaultInstance();
+                silencerPsycho.set(DataComponents.ITEM_NAME,
+                        Component.translatable("itemstack.silencer.psychoitem.item_name"));
+                var lore = new ItemLore(List.of(
+                        Component.translatable("itemstack.silencer.psychoitem.item_lore.1")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+                        Component.translatable("itemstack.silencer.psychoitem.item_lore.2")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+                silencerPsycho.set(DataComponents.LORE, lore);
+                silencerShop.add(new ShopEntry(
+                        silencerPsycho,
+                        350,
+                        ShopEntry.Type.WEAPON) {
+                    @Override
+                    public boolean canBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        return super.canBuy(player);
+                    }
+
+                    @Override
+                    public boolean onBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        SilencerFrenzyPlayerComponent frenzyComponent = SilencerFrenzyPlayerComponent.KEY.get(player);
+                        boolean success = frenzyComponent.startFrenzy();
+                        if (success) {
+                            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 6000));
+                        }
+                        return success;
+                    }
+                });
+            }
+            silencerShop.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(),
+                    SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL));
+            silencerShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(),
+                    SREConfig.instance().lockpickPrice, ShopEntry.Type.TOOL));
+            silencerShop.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+            silencerShop.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
+                    SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
+            silencerShop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
+                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            silencerShop.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.SILENCER_ID, silencerShop);
         }
 
         // 毒师商店
@@ -2641,34 +2811,82 @@ public class RoleShopHandler {
                             ShopEntry.Type.TOOL)));
         }
 
-        // 潜行者商店
+        // 潜行者商店（手动构建，添加潜行者疯魔）
         {
-            ShopContent.customEntries.put(
-                    ModRoles.STALKER_ID,
-                    List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75,
-                                    ShopEntry.Type.TOOL),
-                            new ShopEntry(ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance(), 325,
-                                    ShopEntry.Type.WEAPON) {
-                                @Override
-                                public boolean canBuy(@NotNull Player player) {
-                                    return !(player.getOffhandItem().getItem() instanceof KnifeItem);
-                                }
+            var stalkerShop = new ArrayList<ShopEntry>();
+            stalkerShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75,
+                    ShopEntry.Type.TOOL));
+            stalkerShop.add(new ShopEntry(ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance(), 325,
+                    ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    return !(player.getOffhandItem().getItem() instanceof KnifeItem);
+                }
 
-                                @Override
-                                public boolean canDisplay(@NotNull Player player) {
-                                    return StalkerPlayerComponent.KEY.get(player).phase >= 2;
-                                }
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return StalkerPlayerComponent.KEY.get(player).phase >= 2;
+                }
 
-                                @Override
-                                public boolean onBuy(@NotNull Player player) {
-                                    boolean b = player.getOffhandItem().getItem() instanceof KnifeItem;
-                                    if (!b) {
-                                        player.setItemInHand(InteractionHand.OFF_HAND,
-                                                ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance());
-                                    }
-                                    return b;
-                                }
-                            }));
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    boolean b = player.getOffhandItem().getItem() instanceof KnifeItem;
+                    if (!b) {
+                        player.setItemInHand(InteractionHand.OFF_HAND,
+                                ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance());
+                    }
+                    return b;
+                }
+            });
+            // 潜行者疯魔 - 325金币（特殊疯魔模式，需三阶段才能开启）
+            {
+                var stalkerPsycho = TMMItems.PSYCHO_MODE.getDefaultInstance();
+                stalkerPsycho.set(DataComponents.ITEM_NAME,
+                        Component.translatable("itemstack.stalker.psychoitem.item_name"));
+                var lore = new ItemLore(List.of(
+                        Component.translatable("itemstack.stalker.psychoitem.item_lore.1")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+                        Component.translatable("itemstack.stalker.psychoitem.item_lore.2")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+                stalkerPsycho.set(DataComponents.LORE, lore);
+                stalkerShop.add(new ShopEntry(
+                        stalkerPsycho,
+                        325,
+                        ShopEntry.Type.WEAPON) {
+                    @Override
+                    public boolean canBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        // 开启条件：必须处于三阶段
+                        if (StalkerPlayerComponent.KEY.get(player).phase != 3) {
+                            return false;
+                        }
+                        return super.canBuy(player);
+                    }
+
+                    @Override
+                    public boolean canDisplay(@NotNull Player player) {
+                        // 仅在三阶段时显示
+                        return StalkerPlayerComponent.KEY.get(player).phase == 3;
+                    }
+
+                    @Override
+                    public boolean onBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        StalkerFrenzyPlayerComponent frenzyComponent = StalkerFrenzyPlayerComponent.KEY.get(player);
+                        boolean success = frenzyComponent.startFrenzy();
+                        if (success) {
+                            // 购买CD：150秒 = 3000 ticks
+                            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 150 * 20);
+                        }
+                        return success;
+                    }
+                });
+            }
+            ShopContent.customEntries.put(ModRoles.STALKER_ID, stalkerShop);
         }
 
         // 心理学家商店
@@ -3324,6 +3542,29 @@ public class RoleShopHandler {
             var shop = new ArrayList<ShopEntry>();
             shop.add(new ShopEntry(Items.MILK_BUCKET.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.JINGHUAZHE_ID, shop);
+        }
+        // 探路者商店：照明弹
+        {
+            var PATHFINDER_SHOP = new ArrayList<ShopEntry>();
+            // 照明弹 - 30金币
+            PATHFINDER_SHOP.add(new ShopEntry(ModItems.RESCUE_FLARE.getDefaultInstance(), 30, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.PATHFINDER_ID, PATHFINDER_SHOP);
+        }
+        // 食尸鬼商店
+        {
+            var GHOUL_SHOP = new ArrayList<ShopEntry>();
+            // 刀 - 130金币
+            GHOUL_SHOP.add(new KillerKnifeShopEntry(130));
+            // 黑灯 - 165金币
+            GHOUL_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 165, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            // 短管霰弹枪 - 285金币
+            GHOUL_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 285, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.GHOUL_ID, GHOUL_SHOP);
         }
     }
 }

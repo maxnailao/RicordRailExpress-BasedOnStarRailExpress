@@ -131,6 +131,8 @@ public class CS2ServerReceiverRegister {
                     inv.addBox(itemId, 1);
                 } else if ("key".equals(itemType)) {
                     inv.addKey(itemId, 1);
+                } else if ("musicbox".equals(itemType)) {
+                    inv.addMusicBox(itemId, 1);
                 }
                 inv.sync();
 
@@ -173,6 +175,19 @@ public class CS2ServerReceiverRegister {
                     int quality = CS2BoxManager.getInstance().findSkinQuality(itemId);
                     sellPrice = ShopConfig.getInstance().getSellPriceConfig()
                             .getSkinPriceByQuality(quality);
+                } else if ("musicbox".equals(itemType)) {
+                    if (!inv.hasMusicBox(itemId)) {
+                        player.displayClientMessage(Component.literal("§c你没有该音乐盒"), true);
+                        return;
+                    }
+                    inv.removeMusicBox(itemId, 1);
+                    // 如果出售的音乐盒正在装备中，自动卸下
+                    io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
+                            io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY.get(player);
+                    if (itemId.equals(musicComp.getEquippedBox())) {
+                        musicComp.setEquippedBox(null);
+                    }
+                    sellPrice = ShopConfig.getInstance().getSellPriceConfig().musicBoxSellPrice;
                 } else {
                     player.displayClientMessage(Component.literal("§c暂不支持出售该类型物品"), true);
                     return;

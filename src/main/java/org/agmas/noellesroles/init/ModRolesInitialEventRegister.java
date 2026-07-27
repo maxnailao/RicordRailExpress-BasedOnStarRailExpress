@@ -55,6 +55,7 @@ import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.eling_apex.ElingApexPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
@@ -412,6 +413,12 @@ public class ModRolesInitialEventRegister {
                 shopComponent.setBalance(45);
                 return;
             }
+            // 猎魔人角色初始化 - 初始金币45（同游侠）
+            if (role.identifier().equals(ModRoles.LIEMOREN.identifier())) {
+                SREPlayerShopComponent shopComponent = SREPlayerShopComponent.KEY.get(player);
+                shopComponent.setBalance(45);
+                return;
+            }
 
             // 纵火犯物品初始化
             if (role.equals(SERoles.ARSONIST)) {
@@ -499,6 +506,12 @@ public class ModRolesInitialEventRegister {
             if (role.identifier().equals(ModRoles.SNOW_HUNTER.identifier())) {
                 var comp = ModComponents.SNOW_HUNTER.get(player);
                 comp.init();
+            }
+            // 恶灵角色初始化
+            if (role.identifier().equals(ModRoles.ELING_APEX.identifier())) {
+                var comp = ModComponents.ELING_APEX.get(player);
+                comp.init();
+                comp.sync();
             }
             // 如果不拦截就同步
             abilityPlayerComponent.sync();
@@ -1041,6 +1054,106 @@ public class ModRolesInitialEventRegister {
                             org.agmas.noellesroles.component.ModComponents.HOUSEKEEPER.get(context.player()).cycleType();
                             return true;
                         }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 探路者技能注册：按 G 放置照明灯 ====================
+        RoleSkill.register(ModRoles.PATHFINDER,
+                RoleSkill.skill(SRE.id("pathfinder_place_light"),
+                        "skill.noellesroles.pathfinder.place_light",
+                        context -> {
+                            var comp = org.agmas.noellesroles.component.ModComponents.PATHFINDER.get(context.player());
+                            return comp.placeLight();
+                        }).showOnHud(true).announceToSelf(true).build());
+
+        // ==================== 维修工技能注册：按 G 维护灯光 ====================
+        RoleSkill.register(ModRoles.WEIXIUGONG,
+                RoleSkill.skill(SRE.id("weixiugong_maintain_light"),
+                        "skill.noellesroles.weixiugong.maintain_light",
+                        context -> {
+                            var comp = org.agmas.noellesroles.component.ModComponents.WEIXIUGONG.get(context.player());
+                            return comp.maintainLight();
+                        }).showOnHud(true).announceToSelf(true).build());
+
+        // ==================== 信徒技能注册：祷告，随机效果，花费125金币，CD90s ====================
+        RoleSkill.register(ModRoles.BELIEVER,
+                RoleSkill.skill(SRE.id("believer_pray"),
+                        "skill.noellesroles.believer.pray",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+
+                            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                            if (shop.balance < 125) {
+                                player.displayClientMessage(
+                                        Component.translatable("hud.noellesroles.believer.not_enough_money")
+                                                .withStyle(ChatFormatting.RED), true);
+                                return false;
+                            }
+                            shop.addToBalance(-125);
+
+                            int roll = player.level().random.nextInt(7);
+                            String effectKey;
+
+                            switch (roll) {
+                                case 0:
+                                    effectKey = "hud.noellesroles.believer.effect.none";
+                                    break;
+                                case 1: {
+                                    effectKey = "hud.noellesroles.believer.effect.blackout";
+                                    io.wifi.starrailexpress.cca.SREWorldBlackoutComponent blackout =
+                                            io.wifi.starrailexpress.cca.SREWorldBlackoutComponent.KEY.get(player.level());
+                                    blackout.blackOutRemainingTicks = Math.max(0, blackout.blackOutRemainingTicks - 7 * 20);
+                                    break;
+                                }
+                                case 2: {
+                                    effectKey = "hud.noellesroles.believer.effect.night_vision";
+                                    player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 25 * 20, 0, false, false, true));
+                                    break;
+                                }
+                                case 3: {
+                                    effectKey = "hud.noellesroles.believer.effect.shield";
+                                    io.wifi.starrailexpress.cca.SREArmorPlayerComponent armor =
+                                            io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(player);
+                                    armor.giveArmor();
+                                    player.getServer().tell(new net.minecraft.server.TickTask(
+                                            player.getServer().getTickCount() + 30 * 20,
+                                            () -> {
+                                                if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                                                    armor.removeArmor();
+                                                }
+                                            }));
+                                    break;
+                                }
+                                case 4: {
+                                    effectKey = "hud.noellesroles.believer.effect.blizzard";
+                                    org.agmas.noellesroles.scene.BlizzardManager.delayNextBlizzard(45 * 20);
+                                    break;
+                                }
+                                case 5: {
+                                    effectKey = "hud.noellesroles.believer.effect.speed";
+                                    player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 45 * 20, 0, false, false, true));
+                                    break;
+                                }
+                                case 6: {
+                                    effectKey = "hud.noellesroles.believer.effect.glowing";
+                                    for (Player p : player.level().players()) {
+                                        if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)) {
+                                            sp.addEffect(new MobEffectInstance(MobEffects.GLOWING, 3 * 20, 0, false, false, true));
+                                        }
+                                    }
+                                    break;
+                                }
+                                default:
+                                    effectKey = "hud.noellesroles.believer.effect.none";
+                            }
+
+                            player.displayClientMessage(
+                                    Component.translatable("hud.noellesroles.believer.pray_complete")
+                                            .append(Component.translatable(effectKey))
+                                            .withStyle(ChatFormatting.GOLD), true);
+                            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                                    SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 1.0f, 1.0f);
+                            return true;
+                        }).cooldownSeconds(90).showOnHud(true).announceToSelf(true).build());
 
         // ==================== 葬仪技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式 ====================
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER,
@@ -1695,6 +1808,17 @@ public class ModRolesInitialEventRegister {
                     }
                     return true;
                 }).cooldownSeconds(30).showOnHud(true).announceToSelf(false).build());
+
+        // ==================== 恶灵技能注册：相位转移（1.5s前摇+8s空间状态+1.5s后摇，CD 45s） ====================
+        RoleSkill.register(ModRoles.ELING_APEX, RoleSkill.skill(
+                SRE.id("eling_apex_phase_shift"),
+                "skill.noellesroles.eling_apex.phase_shift",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var comp = ModComponents.ELING_APEX.get(player);
+                    if (comp == null) return false;
+                    return comp.usePhaseShift();
+                }).cooldownSeconds(45).toggleable(true).showOnHud(true).announceToSelf(false).build());
 
 
     }

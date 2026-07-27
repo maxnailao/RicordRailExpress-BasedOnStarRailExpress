@@ -180,6 +180,8 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               event.cancel();
               return;
             }
+            // 静语者疯魔期间：对说话的玩家施加缓慢惩罚（语音监听）
+            org.agmas.noellesroles.game.roles.killer.silencer.SilencerFrenzyPlayerComponent.onPlayerSpeak(player);
             // 如果发送者被鹈鹕吞噬，单独处理路由：只转发给鹈鹕和肚内玩家，避免默认逻辑忽略旁观者
             if (PelicanManager.isStashed(player)) {
               var bellyReceivers = PelicanManager.getBellyReceivers(player.getUUID());

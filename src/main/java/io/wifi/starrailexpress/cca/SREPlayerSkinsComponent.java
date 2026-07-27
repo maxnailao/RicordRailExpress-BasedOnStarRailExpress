@@ -44,6 +44,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     private Integer lootChance;
     private Integer coinNum;
     private boolean cs2Initialized = false; // CS2新系统初始化标记
+    private boolean currencyReset = false; // 货币系统初始化标记（一次性重置旧货币）
+    private boolean musicBoxReset = false; // 音乐盒系统初始化标记（一次性清空旧音乐盒数据）
     private boolean isNetworkSyncEnabled = false;
     private boolean syncMode = false;
     private volatile boolean databaseSyncQueued = false;
@@ -138,6 +140,18 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     public void addCoinNum(Integer num) {
         this.coinNum += num;
         // 触发网络同步
+        markSkinDataChanged();
+    }
+
+    /** 直接设置货币值（用于与 PlayerEconomyManager 同步） */
+    public void setCoinNumDirect(int value) {
+        this.coinNum = value;
+        markSkinDataChanged();
+    }
+
+    /** 直接设置抽奖概率值（用于与 PlayerEconomyManager 同步） */
+    public void setLootChanceDirect(int value) {
+        this.lootChance = value;
         markSkinDataChanged();
     }
 
@@ -596,6 +610,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         }
         // 读取 CS2 初始化标记
         this.cs2Initialized = compoundTag.getBoolean("cs2Initialized");
+        this.currencyReset = compoundTag.getBoolean("currencyReset");
+        this.musicBoxReset = compoundTag.getBoolean("musicBoxReset");
     }
 
     public boolean isCs2Initialized() {
@@ -604,6 +620,22 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
 
     public void setCs2Initialized(boolean initialized) {
         this.cs2Initialized = initialized;
+    }
+
+    public boolean isCurrencyReset() {
+        return currencyReset;
+    }
+
+    public void setCurrencyReset(boolean reset) {
+        this.currencyReset = reset;
+    }
+
+    public boolean isMusicBoxReset() {
+        return musicBoxReset;
+    }
+
+    public void setMusicBoxReset(boolean reset) {
+        this.musicBoxReset = reset;
     }
 
     /**
@@ -722,12 +754,9 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             equippedSkinsTag.putString(entry.getKey(), entry.getValue());
         }
         compoundTag.put("equippedSkins", equippedSkinsTag);
-        if (this.coinNum > 0) {
-            compoundTag.putInt("coinNum", this.coinNum);
-        }
-        if (this.lootChance > 0) {
-            compoundTag.putInt("lootChance", this.lootChance);
-        }
+        // 始终写入 coinNum 和 lootChance，避免花费完时旧值残留
+        compoundTag.putInt("coinNum", this.coinNum);
+        compoundTag.putInt("lootChance", this.lootChance);
         if (syncMode) {
             if (!SREConfig.instance().isItemSkinManagementEnabled) {
                 return;
@@ -745,6 +774,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         compoundTag.put("unlockedSkins", unlockedSkinsTag);
         // CS2 初始化标记
         compoundTag.putBoolean("cs2Initialized", this.cs2Initialized);
+        compoundTag.putBoolean("currencyReset", this.currencyReset);
+        compoundTag.putBoolean("musicBoxReset", this.musicBoxReset);
         // compoundTag.putBoolean("isNetworkSyncEnabled", isNetworkSyncEnabled);
     }
 }

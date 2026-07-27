@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,7 +37,11 @@ public class ThrowingKnifeCooldownMixin {
             performDashOnHit(serverLevel, player, serverLevel.getEntity(payload.target()));
         }else if (player.getMainHandItem().getItem() == ModItems.STALKER_KNIFE) {
             boolean isThirdPhase = SREGameWorldComponent.KEY.get(player.serverLevel()).isRole(player, ModRoles.STALKER) && StalkerPlayerComponent.KEY.get(player).phase == 3;
-            player.getCooldowns().addCooldown(ModItems.STALKER_KNIFE, isThirdPhase ? GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE): GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE)-200 );
+            // 疯魔（猎影狂奔）期间主手刀冷却2秒
+            int stalkerKnifeCd = StalkerFrenzyPlayerComponent.isInFrenzy(player)
+                    ? StalkerFrenzyPlayerComponent.FRENZY_KNIFE_CD
+                    : (isThirdPhase ? GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) : GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) - 200);
+            player.getCooldowns().addCooldown(ModItems.STALKER_KNIFE, stalkerKnifeCd);
 
             player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY,15,0));
             // ── 击中后向前突进 ────────────────────────────────────────────

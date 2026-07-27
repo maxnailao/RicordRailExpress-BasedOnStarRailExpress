@@ -334,6 +334,14 @@ public class RicesRoleRhapsody implements ModInitializer {
             detectiveComponent.init();
         }
 
+        // ==================== 盲人角色处理 ====================
+        if (role.equals(ModRoles.NIYAJINGSHIBUSHIXIALE)) {
+            // 重置盲人组件
+            org.agmas.noellesroles.game.roles.innocence.niyanjingshibushixiale.NiyajingshiPlayerComponent niyajingshiComponent =
+                ModComponents.NIYAJINGSHIBUSHIXIALE.get(player);
+            niyajingshiComponent.init();
+        }
+
         // ==================== 电报员角色处理 ====================
         if (role.equals(BounsRoles.TELEGRAPHER)) {
             // 重置电报员组件

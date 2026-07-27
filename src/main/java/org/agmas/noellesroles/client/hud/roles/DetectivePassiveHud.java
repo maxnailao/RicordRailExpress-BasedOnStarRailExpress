@@ -29,7 +29,7 @@ public class DetectivePassiveHud {
 
             float minScale = 0.1f;
             float maxScale = 1f;
-            double maxDis = 25;
+            double maxDis = AgentListenStepHandler.getListenRange();
 
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();

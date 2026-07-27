@@ -88,6 +88,22 @@ public class XiaoNaoHandler {
                             }
                         }
                     }
+                    // 西部牛仔德林加误杀惩罚（不影响红海军）
+                    if (gameWorldComponent.isRole(killer, ModRoles.NIUZAI_JUEDOUBA)
+                            && deathReason.getPath().equals("derringer_shot")) {
+                        if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
+                            handleCorruptionModifier(killer, gameWorldComponent);
+                            GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
+                            for (ServerPlayer player : victim.serverLevel().players()) {
+                                if (gameWorldComponent.isRole(player, ModRoles.BLOOD_FEUDIST)) {
+                                    BloodFeudistPlayerComponent bfComp = ModComponents.BLOOD_FEUDIST.get(player);
+                                    if (bfComp != null) {
+                                        bfComp.onAccidentalKill();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -106,6 +122,7 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("gun_shot")
                 || deathReason.getPath().equals("hoan_meirin_attack")
                 || deathReason.getPath().equals("arrow")
+                || deathReason.getPath().equals("hunt_arrow")
                 || deathReason.getPath().equals("trident")
                 || deathReason.getPath().equals("knife_stab")
                 || deathReason.getPath().equals("stalker_knife")

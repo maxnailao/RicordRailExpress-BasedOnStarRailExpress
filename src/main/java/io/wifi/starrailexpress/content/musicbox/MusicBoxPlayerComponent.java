@@ -142,6 +142,16 @@ public class MusicBoxPlayerComponent implements AutoSyncedComponent {
         return removed;
     }
 
+    /**
+     * 清空所有音乐盒数据（拥有列表 + 装备 + 抽奖券），用于系统迁移
+     */
+    public void clearAllData() {
+        ownedBoxes.clear();
+        equippedBox = null;
+        lotteryTickets = 0;
+        sync();
+    }
+
     // ── 同步 ──
 
     public void sync() {

@@ -66,8 +66,11 @@ public class MinecraftClientMixin {
                 psychoItem = role.getPsychoItem();
             }
             if ((instance.getItem(oldSlot).is(psychoItem)) &&
-                    (!instance.getItem(value).is(psychoItem)))
-                return;
+                    (!instance.getItem(value).is(psychoItem))) {
+                // 幽灵幻影疯魔(type=2)：允许切换到空手
+                if (!(component.type == 2 && instance.getItem(value).isEmpty()))
+                    return;
+            }
         }
         original.call(instance, value);
 

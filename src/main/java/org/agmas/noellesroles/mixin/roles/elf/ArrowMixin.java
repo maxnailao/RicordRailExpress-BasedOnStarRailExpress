@@ -44,6 +44,15 @@ public class ArrowMixin {
                             ci.cancel();
                             return;
                         }
+                    } else if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
+                        // 猎魔人的猎魔箭 - 强制击杀（无视护盾和无敌）
+                        if (entityHitResult.getEntity() instanceof ServerPlayer target) {
+                            isHit = true;
+                            GameUtils.forceKillPlayer(target, true, serverPlayer, SRE.id("hunt_arrow"));
+                            arrow.discard();
+                            ci.cancel();
+                            return;
+                        }
                     } else {
                         // 游侠的光灵箭 - 显示发光效果
                         player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 20 * 20, 0, false, false, true));
@@ -73,6 +82,15 @@ public class ArrowMixin {
                     if (gameWorld.isRole(serverPlayer, ModRoles.ELF)) {
                         isHit = true;
                         GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                    }
+
+                    // 猎魔人毒箭 - 击杀玩家
+                    if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
+                        isHit = true;
+                        GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                        arrow.discard();
+                        ci.cancel();
+                        return;
                     }
                 }
             }
@@ -119,7 +137,13 @@ public class ArrowMixin {
 
         if (arrow instanceof SpectralArrow arrow1) {
             if (arrow.getOwner() instanceof ServerPlayer serverPlayer) {
-                if (SREGameWorldComponent.KEY.get(serverPlayer.serverLevel()).isRole(serverPlayer, ModRoles.ELF)) {
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.serverLevel());
+                if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
+                    // 猎魔人的猎魔箭命中方块 - 直接销毁
+                    arrow1.discard();
+                    return;
+                }
+                if (gameWorld.isRole(serverPlayer, ModRoles.ELF)) {
                     // 获取箭矢击中的位置
                     BlockPos hitPos = blockHitResult.getBlockPos();
                     // 获取附近玩家列表(例如半径为5格)

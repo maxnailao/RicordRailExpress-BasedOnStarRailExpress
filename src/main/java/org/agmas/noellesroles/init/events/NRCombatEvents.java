@@ -200,6 +200,8 @@ public class NRCombatEvents {
         ShootingFrenzyPlayerComponent.registerGunNoDropEvent();
         ExecutionerPlayerComponent.registerBackfireEvent();
         ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();
+        org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent.registerKillEffectEvent();
+        org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent.registerKillEffectEvent();
         org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         VoodooDeathHandler.registerEvents();
     }

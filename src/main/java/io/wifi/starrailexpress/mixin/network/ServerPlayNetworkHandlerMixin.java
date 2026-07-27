@@ -34,8 +34,11 @@ public class ServerPlayNetworkHandlerMixin {
             if (role != null) {
                 psychoItem = role.getPsychoItem();
             }
-            if (!this.player.getInventory().getItem(packet.getSlot()).is(psychoItem))
-                return;
+            if (!this.player.getInventory().getItem(packet.getSlot()).is(psychoItem)) {
+                // 幽灵幻影疯魔(type=2)：允许切换到空手
+                if (!(component.type == 2 && this.player.getInventory().getItem(packet.getSlot()).isEmpty()))
+                    return;
+            }
         }
         original.call(packet);
     }

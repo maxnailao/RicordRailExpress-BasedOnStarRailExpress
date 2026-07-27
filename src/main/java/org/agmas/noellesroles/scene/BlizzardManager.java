@@ -417,6 +417,16 @@ public final class BlizzardManager {
         return Math.max(0, nextBlizzardIn);
     }
 
+    /**
+     * 推迟下一次普通暴风雪到来时间。
+     * 通过增加 {@link #nextBlizzardIn} 实现。
+     *
+     * @param ticks 推迟的 tick 数（例如 45 * 20 = 45秒）
+     */
+    public static void delayNextBlizzard(int ticks) {
+        nextBlizzardIn += ticks;
+    }
+
     /** 获取当前暴风雪剩余 tick（普通/强制） */
     public static int getActiveRemainingTicks() {
         if (finalBlizzardActive) {

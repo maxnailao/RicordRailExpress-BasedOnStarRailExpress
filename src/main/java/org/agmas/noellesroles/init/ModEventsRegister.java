@@ -128,6 +128,7 @@ import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
+import org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyPlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
 import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
@@ -1936,6 +1937,15 @@ public class ModEventsRegister {
                     dropCount--;
                 }
             }
+            if (gameWorldComponent.isRole(player, ModRoles.LIEMOREN)) {
+                int bowcount = SREItemUtils.clearItem(player, Items.BOW);
+                int crossbowcount = SREItemUtils.clearItem(player, Items.CROSSBOW);
+                int dropCount = bowcount + crossbowcount;
+                while (dropCount > 0) {
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    dropCount--;
+                }
+            }
 
             if (gameWorldComponent.isRole(player, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
                 int nunchuckCount = SREItemUtils.clearItem(player, TMMItems.NUNCHUCK);
@@ -2002,6 +2012,10 @@ public class ModEventsRegister {
             if (gameWorldComponent.isRole(player, ModRoles.BETTER_VIGILANTE)) {
                 final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(player);
                 betterVigilantePlayerComponent.init();
+            }
+            if (gameWorldComponent.isRole(player, ModRoles.NIUZAI_JUEDOUBA)) {
+                final var cowboyPlayerComponent = CowboyPlayerComponent.KEY.get(player);
+                cowboyPlayerComponent.init();
             }
         });
         AfterShieldAllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {

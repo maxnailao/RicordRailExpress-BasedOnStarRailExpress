@@ -16,7 +16,7 @@ public class ShopConfig {
     /** 商品项 */
     public static class ShopItem {
         public final String name;
-        public final String type; // "box", "key", "skin"
+        public final String type; // "box", "key", "skin", "musicbox"
         public final String id;
         public final int price;
 
@@ -38,6 +38,8 @@ public class ShopConfig {
         public int unbelievableSkinPrice = 2000;
         /** 箱子出售价格 {boxId: price} */
         public Map<String, Integer> boxPrices = new HashMap<>();
+        /** 音乐盒出售价格（统一价格，因为音乐盒没有品质） */
+        public int musicBoxSellPrice = 30;
 
         /**
          * 根据品质获取皮肤出售价格
@@ -133,6 +135,8 @@ public class ShopConfig {
                         sellPriceConfig.boxPrices.put(boxId, boxPrices.get(boxId).getAsInt());
                     }
                 }
+                if (sellObj.has("musicbox_price"))
+                    sellPriceConfig.musicBoxSellPrice = sellObj.get("musicbox_price").getAsInt();
             }
 
             Noellesroles.LOGGER.info("[CS2Shop] Loaded {} shop items", shopItems.size());
@@ -182,6 +186,8 @@ public class ShopConfig {
                         sellPriceConfig.boxPrices.put(boxId, boxPrices.get(boxId).getAsInt());
                     }
                 }
+                if (sellObj.has("musicbox_price"))
+                    sellPriceConfig.musicBoxSellPrice = sellObj.get("musicbox_price").getAsInt();
             }
         } catch (Exception e) {
             Noellesroles.LOGGER.error("[CS2Shop] Failed to parse shop config from JSON", e);
@@ -220,6 +226,7 @@ public class ShopConfig {
             JsonObject boxPrice = new JsonObject();
             boxPrice.addProperty("weapon_case_1", 20);
             sellprice.add("box_price", boxPrice);
+            sellprice.addProperty("musicbox_price", 30);
             root.add("sellprice", sellprice);
 
             Gson gson = new GsonBuilder().setPrettyPrinting().create();

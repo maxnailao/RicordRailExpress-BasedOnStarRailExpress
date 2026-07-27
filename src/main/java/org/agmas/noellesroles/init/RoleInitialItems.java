@@ -170,6 +170,15 @@ public class RoleInitialItems {
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
 
+        // 猎魔人初始物品
+        List<Supplier<ItemStack>> liemorenItems = new ArrayList<>();
+        liemorenItems.add(() -> {
+            var item = Items.CROSSBOW.getDefaultInstance();
+            item.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            return item;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.LIEMOREN, liemorenItems);
+
         List<Supplier<ItemStack>> cupidItems = new ArrayList<>();
         cupidItems.add(() -> {
             var item = Items.BOW.getDefaultInstance();

@@ -89,6 +89,9 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         }
         if (this.player.getMainHandItem().is(psychoItem))
             return;
+        // 幽灵幻影疯魔(type=2)：允许切换空手，不强制切回刀
+        if (this.type == 2 && this.player.getMainHandItem().isEmpty())
+            return;
         if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
             for (int i = 0; i < 9; i++) {
                 if (!this.player.getInventory().getItem(i).is(psychoItem))

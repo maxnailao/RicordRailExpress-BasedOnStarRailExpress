@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -63,6 +64,23 @@ public class AgentListenStepHandler {
             }
             LocalPlayer player = mc.player;
 
+            // 盲人角色：不需要蹲下，存活时始终监听
+            if (gameWorldComponent.isRole(player, ModRoles.NIYAJINGSHIBUSHIXIALE)) {
+                if (io.wifi.starrailexpress.client.SREClient.isPlayerSpectator()) {
+                    listening = false;
+                    inListen = false;
+                    return;
+                }
+                if (!listening) {
+                    startListenTime = mc.level.getGameTime();
+                    listening = true;
+                }
+                if (mc.level.getGameTime() - startListenTime >= 15) {
+                    inListen = true;
+                }
+                return;
+            }
+
             if (player.isCrouching()) {
                 if (!listening) {
                     startListenTime = mc.level.getGameTime();
@@ -86,6 +104,9 @@ public class AgentListenStepHandler {
         if (SREClient.gameComponent.isRole(player, ModRoles.AGENT)) {
             return true;
         }
+        if (SREClient.gameComponent.isRole(player, ModRoles.NIYAJINGSHIBUSHIXIALE)) {
+            return true;
+        }
         if (SREClient.gameComponent.isRole(player, RepairRoles.REPAIR_HUNTER)) {
             return true;
         }
@@ -93,6 +114,20 @@ public class AgentListenStepHandler {
         return RepairRoleDefinition.byId(component.activeRole)
                 .map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER)
                 .orElse(false);
+    }
+
+    /**
+     * 获取当前玩家的声音检测范围（方块数）
+     * 盲人角色为 10 格，其他角色为 25 格
+     */
+    public static double getListenRange() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return 25d;
+        var gameComponent = SREClient.gameComponent;
+        if (gameComponent != null && gameComponent.isRole(mc.player, ModRoles.NIYAJINGSHIBUSHIXIALE)) {
+            return 10d;
+        }
+        return 25d;
     }
 
     public static Vector3f worldToScreen(double worldX, double worldY, double worldZ) {

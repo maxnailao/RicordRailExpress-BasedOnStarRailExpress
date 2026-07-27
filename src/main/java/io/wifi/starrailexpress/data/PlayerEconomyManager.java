@@ -61,12 +61,29 @@ public final class PlayerEconomyManager {
         Entry entry = get(player.getUUID());
         entry.state.lootChance = Math.max(0, entry.state.lootChance + delta);
         markDirty(player, entry);
+        // 同步到 CCA 组件以便 NBT 持久化
+        syncToCCA(player, entry);
     }
 
     public static void addCoinNum(Player player, int delta) {
         Entry entry = get(player.getUUID());
         entry.state.coinNum = Math.max(0, entry.state.coinNum + delta);
         markDirty(player, entry);
+        // 同步到 CCA 组件以便 NBT 持久化
+        syncToCCA(player, entry);
+    }
+
+    /**
+     * 将内存中的经济数据同步到 CCA 组件，确保 NBT 持久化正确
+     */
+    private static void syncToCCA(Player player, Entry entry) {
+        if (!(player instanceof ServerPlayer)) return;
+        try {
+            SREPlayerSkinsComponent cca = SREPlayerSkinsComponent.KEY.get(player);
+            // 直接设置最终值，避免 delta 累加导致的数值不一致
+            cca.setCoinNumDirect(entry.state.coinNum);
+            cca.setLootChanceDirect(entry.state.lootChance);
+        } catch (Exception ignored) {}
     }
 
     public static String getEquippedSkin(Player player, ItemStack stack) {
@@ -97,6 +114,16 @@ public final class PlayerEconomyManager {
         Entry entry = get(player.getUUID());
         entry.state.equipped.clear();
         entry.state.unlocked.clear();
+        entry.state.lootChance = 0;
+        markDirty(player, entry);
+    }
+
+    /**
+     * 重置玩家货币和抽奖概率（用于旧货币系统迁移，仅执行一次）
+     */
+    public static void resetCurrency(Player player) {
+        Entry entry = get(player.getUUID());
+        entry.state.coinNum = 0;
         entry.state.lootChance = 0;
         markDirty(player, entry);
     }
@@ -175,10 +202,11 @@ public final class PlayerEconomyManager {
     private static void onJoin(ServerPlayer player) {
         Entry entry = get(player.getUUID());
         entry.online = true;
-        // 如果内存中没有数据，从 CCA 组件恢复（服务器重启后 NBT 持久化的数据）
-        if (entry.state.equipped.isEmpty() && entry.state.unlocked.isEmpty()) {
-            try {
-                SREPlayerSkinsComponent cca = SREPlayerSkinsComponent.KEY.get(player);
+        // 从 CCA 组件恢复数据（服务器重启后 NBT 持久化的数据）
+        try {
+            SREPlayerSkinsComponent cca = SREPlayerSkinsComponent.KEY.get(player);
+            // 恢复皮肤数据
+            if (entry.state.equipped.isEmpty() && entry.state.unlocked.isEmpty()) {
                 Map<String, String> ccaEquipped = cca.getEquippedSkins();
                 if (!ccaEquipped.isEmpty()) {
                     entry.state.equipped.putAll(ccaEquipped);
@@ -188,13 +216,21 @@ public final class PlayerEconomyManager {
                     ccaUnlocked.forEach((type, skins) ->
                             entry.state.unlocked.put(type, new ConcurrentHashMap<>(skins)));
                 }
-                if (!ccaEquipped.isEmpty() || !ccaUnlocked.isEmpty()) {
-                    entry.updatedAt = System.currentTimeMillis();
-                    entry.dirty = true;
-                }
-            } catch (Exception e) {
-                SRE.LOGGER.warn("从 CCA 组件恢复玩家 {} 的皮肤数据失败", player.getUUID(), e);
             }
+            // 恢复货币和抽奖概率（无论皮肤是否为空都要恢复）
+            if (entry.state.coinNum == 0 && cca.getCoinNum() != null && cca.getCoinNum() > 0) {
+                entry.state.coinNum = cca.getCoinNum();
+            }
+            if (entry.state.lootChance == 0 && cca.getLootChance() != null && cca.getLootChance() > 0) {
+                entry.state.lootChance = cca.getLootChance();
+            }
+            if (!entry.state.equipped.isEmpty() || !entry.state.unlocked.isEmpty()
+                    || entry.state.coinNum > 0 || entry.state.lootChance > 0) {
+                entry.updatedAt = System.currentTimeMillis();
+                entry.dirty = true;
+            }
+        } catch (Exception e) {
+            SRE.LOGGER.warn("从 CCA 组件恢复玩家 {} 的数据失败", player.getUUID(), e);
         }
         send(player, entry);
         if (!isDatabaseEnabled()) {
