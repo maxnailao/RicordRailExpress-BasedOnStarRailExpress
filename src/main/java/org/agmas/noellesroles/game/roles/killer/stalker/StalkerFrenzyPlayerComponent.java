@@ -1,5 +1,8 @@
 package org.agmas.noellesroles.game.roles.killer.stalker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -17,12 +20,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -35,7 +38,8 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * - 开启条件：必须处于三阶段
  * - 开启后自动退回二阶段，杀戮欲望锁定为0（避免疯魔期间进阶三阶段）
  * - 获得速度IV效果
- * - 物品锁定为潜行者主手刀（STALKER_KNIFE），主手刀CD仅2秒
+ * - 开启时清空玩家身上所有刀（主手刀+副手刀）并保存，给予一把CD仅2秒的主手刀并锁定
+ * - 疯魔结束后清空手上主手刀，再返还保存的刀
  * - 凝视状态默认关闭且无法开启
  * - 无护盾（armour=0）
  * - 击杀爆出华丽粒子特效（仿刽子手）
@@ -56,6 +60,9 @@ public class StalkerFrenzyPlayerComponent implements RoleComponent, ServerTickin
 
     private final Player player;
     public boolean inFrenzy = false;
+
+    /** 疯魔开始前保存的刀（主手刀+副手刀），结束后返还 */
+    private final List<ItemStack> savedKnives = new ArrayList<>();
 
     public StalkerFrenzyPlayerComponent(Player player) {
         this.player = player;
@@ -117,12 +124,13 @@ public class StalkerFrenzyPlayerComponent implements RoleComponent, ServerTickin
         stalker.energy = 0;
         stalker.sync();
 
-        // 确保拥有主手刀（psycho系统会锁定该物品）
-        if (!playerHasStalkerKnife()) {
-            if (!RoleUtils.insertStackInFreeSlot(player, new ItemStack(ModItems.STALKER_KNIFE))) {
-                return false;
-            }
-        }
+        // 清空并保存所有刀（主手刀+副手刀），疯魔结束后返还
+        removeAllStalkerKnives(true);
+
+        // 给予一把主手刀（疯魔期间CD仅2秒），直接放入主手并由psycho系统锁定
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.STALKER_KNIFE));
+        // 清除主手刀冷却，确保疯魔开始后立即可左键击杀
+        player.getCooldowns().removeCooldown(ModItems.STALKER_KNIFE);
 
         // 设置psycho模式（不使用startPsycho避免给球棒）
         psychoComponent.setPsychoTicks(FRENZY_DURATION);
@@ -170,15 +178,39 @@ public class StalkerFrenzyPlayerComponent implements RoleComponent, ServerTickin
     }
 
     /**
-     * 检查玩家物品栏是否拥有潜行者主手刀
+     * 移除玩家身上所有潜行者刀（主手刀+副手刀），覆盖主手、副手与物品栏。
+     * @param save 是否保存被移除的刀（用于疯魔结束后返还）
      */
-    private boolean playerHasStalkerKnife() {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            if (player.getInventory().getItem(i).is(ModItems.STALKER_KNIFE)) {
-                return true;
+    private void removeAllStalkerKnives(boolean save) {
+        if (save) {
+            this.savedKnives.clear();
+        }
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.is(ModItems.STALKER_KNIFE) || stack.is(ModItems.STALKER_KNIFE_OFFHAND)) {
+                if (save) {
+                    this.savedKnives.add(stack.copy());
+                }
+                inv.setItem(i, ItemStack.EMPTY);
             }
         }
-        return false;
+    }
+
+    /**
+     * 返还保存的刀（优先放回原主手/副手，否则放入物品栏）
+     */
+    private void returnSavedKnives() {
+        for (ItemStack stack : this.savedKnives) {
+            if (stack.is(ModItems.STALKER_KNIFE) && player.getMainHandItem().isEmpty()) {
+                player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+            } else if (stack.is(ModItems.STALKER_KNIFE_OFFHAND) && player.getOffhandItem().isEmpty()) {
+                player.setItemInHand(InteractionHand.OFF_HAND, stack);
+            } else {
+                player.addItem(stack);
+            }
+        }
+        this.savedKnives.clear();
     }
 
     /**
@@ -193,10 +225,14 @@ public class StalkerFrenzyPlayerComponent implements RoleComponent, ServerTickin
         // 移除速度效果
         player.removeEffect(MobEffects.MOVEMENT_SPEED);
 
-        // 重置psycho type
+        // 重置psycho type（解除物品锁定）
         SREPlayerPsychoComponent psychoComponent = SREPlayerPsychoComponent.KEY.get(player);
         psychoComponent.type = -1;
         psychoComponent.sync();
+
+        // 先清空手上的疯魔主手刀，再返还保存的刀
+        removeAllStalkerKnives(false);
+        returnSavedKnives();
 
         this.sync();
     }
