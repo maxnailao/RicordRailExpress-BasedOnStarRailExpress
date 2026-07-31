@@ -98,6 +98,8 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
         if (!RoleUtils.insertStackInFreeSlot(player, new ItemStack(TMMItems.KNIFE))) {
             return false;
         }
+        // 清除刀的冷却，避免疯魔前刀人留下的CD保留到疯魔期间
+        player.getCooldowns().removeCooldown(TMMItems.KNIFE);
 
         // 设置psycho模式（不使用startPsycho避免给球棒）
         psychoComponent.setPsychoTicks(FRENZY_DURATION);
@@ -189,6 +191,13 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
         if (psychoComponent.getPsychoTicks() <= 0) {
             stopFrenzy();
             return;
+        }
+
+        // 疯魔期间强制保持隐身（避免被技能或其他途径移除导致与技能隐身冲突）
+        if (!player.hasEffect(MobEffects.INVISIBILITY)) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.INVISIBILITY, FRENZY_DURATION + 20, 0,
+                    false, false, false));
         }
 
         // 每3秒发送一次环绕粒子（黑色烟雾）+ 环境音效

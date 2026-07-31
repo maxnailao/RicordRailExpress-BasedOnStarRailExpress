@@ -68,6 +68,9 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.REVOLVER, "revolver_qidingqiang", QualityColor.RARE);
         registerSkin(SkinTypes.REVOLVER, "revolver_tugaibandai", QualityColor.EPIC);
         registerSkin(SkinTypes.REVOLVER, "revolver_tangguofasheqi", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_shengxuan", QualityColor.UNBELIEVABLE);
+        registerSkin(SkinTypes.REVOLVER, "revolver_shengxuan_1", QualityColor.UNBELIEVABLE); // 圣宣形态1
+        registerSkin(SkinTypes.REVOLVER, "revolver_shengxuan_2", QualityColor.UNBELIEVABLE); // 圣宣形态2
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）皮肤 — 仅保留有贴图+模型资源的皮肤

@@ -34,5 +34,8 @@ public class NRCommandRegister {
 
         // 注册疫使测试指令
         org.agmas.noellesroles.commands.InfectedCommand.register();
+
+        // 强制停止暴风雪指令
+        StopSnowCommand.register();
     }
 }

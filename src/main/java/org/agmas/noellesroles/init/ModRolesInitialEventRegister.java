@@ -1209,6 +1209,10 @@ public class ModRolesInitialEventRegister {
                 "skill.noellesroles.phantom.invisibility",
                 context -> {
                     ServerPlayer player = context.player();
+                    // 疯魔（幽灵幻影）期间强制隐身，禁用技能切换避免冲突
+                    if (org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent.isInFrenzy(player)) {
+                        return false;
+                    }
                     if (context.skillReady()) {
                         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY,
                                 NoellesRolesConfig.HANDLER.instance().phantomInvisibilityDuration * 20,

@@ -45,6 +45,7 @@ public final class CS2SkinInfo {
         register("revolver/revolver_longbarrel", "长管左轮", "加长枪管提供更远的射程和精准度");
         register("revolver/revolver_banana", "香蕉左轮", "外表滑稽，但子弹可不会拐弯");
         register("revolver/revolver_xiangzadi", "象鼻左轮", "独特象鼻造型的异域风格手枪");
+        register("revolver/revolver_shengxuan", "圣宣", "黑枪敬向逝者白枪指向生者");
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）

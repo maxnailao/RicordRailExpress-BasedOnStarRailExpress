@@ -16,6 +16,7 @@ import io.wifi.starrailexpress.network.PacketTracker;
 import io.wifi.starrailexpress.util.BrokenGunDropUtils;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.Scheduler;
+import io.wifi.starrailexpress.util.ShengxuanSkinHandler;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -66,9 +67,18 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     SheriffRevolverItem.markEmpty(mainHandStack);
                 }
             }
-            player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
-                    TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
-                    1f + player.getRandom().nextFloat() * .1f - .05f);
+            
+            // 圣宣皮肤特殊处理：不播放扳机声，避免与专属枪声叠加产生延迟感
+            boolean hasShengxuanSkin = ShengxuanSkinHandler.hasShengxuanSkinEquipped(player, mainHandStack);
+            io.wifi.starrailexpress.SRE.LOGGER.info("[圣宣] 玩家 {} 射击，持有物品: {}, 圣宣皮肤判定: {}",
+                    player.getName().getString(),
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(mainHandStack.getItem()),
+                    hasShengxuanSkin);
+            if (!hasShengxuanSkin) {
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+            }
 
             // 检查是否是鬼魅幻影实体
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
@@ -202,6 +212,11 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                         mainHandStack.set(SREDataComponentTypes.USED, false);
                     }
                     GameUtils.killPlayer(target, true, player, deathReason);
+                    
+                    // 圣宣皮肤特殊逻辑：击杀后切换形态（复用开头的判定结果，确保与其他特殊逻辑一致）
+                    if (hasShengxuanSkin) {
+                        ShengxuanSkinHandler.switchForm(player);
+                    }
                 }
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, target);
 
@@ -209,9 +224,24 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, null);
             }
 
-            player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
-                    TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
-                    1f + player.getRandom().nextFloat() * .1f - .05f);
+            // 圣宣皮肤特殊音效：仅对射击者本人播放专属枪声，其他玩家听到普通枪声
+            if (hasShengxuanSkin) {
+                // 对射击者本人播放专属枪声
+                ShengxuanSkinHandler.playShootSound(player, player.getX(), player.getEyeY(), player.getZ());
+                // 对其他玩家播放普通枪声
+                for (ServerPlayer tracking : PlayerLookup.tracking(player)) {
+                    if (tracking != player) {
+                        tracking.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                                TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                                1f + player.getRandom().nextFloat() * .1f - .05f);
+                    }
+                }
+            } else {
+                // 普通皮肤：所有人听到相同枪声
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+            }
 
             for (ServerPlayer tracking : PlayerLookup.tracking(player))
                 PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));

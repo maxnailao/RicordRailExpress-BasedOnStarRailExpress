@@ -313,8 +313,18 @@ public final class BlizzardManager {
 
     /**
      * 游戏结束时调用，清理所有状态。
+     * <p>
+     * 注意：必须在重置字段之前发送 idle 包并恢复 mapStatusBar，
+     * 否则客户端会残留上一局的暴风雪状态（最终暴风雪的
+     * {@code Integer.MAX_VALUE} 倒计时在客户端永远不会自然耗尽）。
      */
-    public static void reset() {
+    public static void reset(ServerLevel level) {
+        // 通知所有客户端暴风雪已结束（必须在重置字段之前发送）
+        syncBlizzardState(level, BlizzardStateS2CPacket.idle());
+
+        // 恢复被覆盖的 mapStatusBar（必须在清空 originalStatusBar 之前）
+        restoreWarmthStatusBar(level);
+
         tickCounter = 0;
         blizzardActive = false;
         blizzardStartTick = 0;
@@ -396,6 +406,39 @@ public final class BlizzardManager {
             player.displayClientMessage(finalMsg, true);
             player.sendSystemMessage(finalMsg);
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  管理员强制停止（/stopsnow_now 指令用）
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * 强制停止所有类型的暴风雪（普通/强制/最终）。
+     * <p>
+     * 停止后普通暴风雪冷却重新计算；最终暴风雪不会重新触发
+     * （因为 {@code SnowguaiPlayerComponent.finalBlizzardTriggered} 仍为 true）。
+     *
+     * @return 停止前是否有暴风雪处于活跃状态
+     */
+    public static boolean forceStopAll(ServerLevel level) {
+        boolean wasActive = blizzardActive || forcedRemainingTicks > 0 || finalBlizzardActive;
+
+        finalBlizzardActive = false;
+        forcedRemainingTicks = 0;
+        blizzardActive = false;
+
+        // 通知客户端暴风雪已结束
+        syncBlizzardState(level, BlizzardStateS2CPacket.idle());
+
+        // 恢复被覆盖的 mapStatusBar
+        restoreWarmthStatusBar(level);
+
+        // 重新计算普通暴风雪冷却
+        nextBlizzardIn = COOLDOWN_MIN_TICKS
+                + RANDOM.nextInt(COOLDOWN_MAX_TICKS - COOLDOWN_MIN_TICKS + 1);
+
+        SRE.LOGGER.info("[Blizzard] 管理员强制停止所有暴风雪. wasActive={}", wasActive);
+        return wasActive;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -503,6 +546,7 @@ public final class BlizzardManager {
         SnowguaiBlizzardInfoS2CPacket packet = new SnowguaiBlizzardInfoS2CPacket(
                 nextIn, activeType, activeRemaining);
         var gameWorld = SREGameWorldComponent.KEY.get(level);
+        if (gameWorld == null) return;
         int sentCount = 0;
         for (ServerPlayer player : level.players()) {
             if (gameWorld.isRole(player, ModRoles.SNOWGUAI_WOW)) {
@@ -515,11 +559,13 @@ public final class BlizzardManager {
     }
 
     private static boolean isGameRunning(ServerLevel level) {
-        return SREGameWorldComponent.KEY.get(level).isRunning();
+        var gameWorld = SREGameWorldComponent.KEY.get(level);
+        return gameWorld != null && gameWorld.isRunning();
     }
 
     private static boolean isBlizzardEnabled(ServerLevel level) {
-        return AreasWorldComponent.KEY.get(level).areasSettings.bigsnowsnow;
+        var areas = AreasWorldComponent.KEY.get(level);
+        return areas != null && areas.areasSettings.bigsnowsnow;
     }
 
     /**

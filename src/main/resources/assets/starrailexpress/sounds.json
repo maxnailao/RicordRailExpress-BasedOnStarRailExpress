@@ -366,5 +366,15 @@
         "stream": false
       }
     ]
+  },
+  "item.revolver.shengxuan": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.item.revolver.shengxuan",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/revolver/shengxuan",
+        "stream": false
+      }
+    ]
   }
 }

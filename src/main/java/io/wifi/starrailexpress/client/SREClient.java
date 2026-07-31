@@ -744,6 +744,16 @@ public class SREClient implements ClientModInitializer {
             });
 
         });
+        // 圣宣皮肤形态同步接收器：服务器击杀后切换形态时更新客户端本地状态
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.ShengxuanFormS2CPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var player = context.client().player;
+                        if (player != null) {
+                            io.wifi.starrailexpress.util.ShengxuanSkinHandler.setClientForm(player, payload.form());
+                        }
+                    });
+                });
         ClientPlayNetworking.registerGlobalReceiver(SniperScopeStateS2CPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 // 如果倍镜被卸下，退出开镜状态

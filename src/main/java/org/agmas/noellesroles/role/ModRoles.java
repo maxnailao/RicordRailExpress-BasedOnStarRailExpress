@@ -1320,8 +1320,18 @@ public class ModRoles {
                             sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                                     net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN,
                                     120, 0));
-                            // 启动弹药重置计时器
-                            org.agmas.noellesroles.component.ModComponents.COWBOY.get(sp).startAmmoReset();
+                            // 6 秒后通过 serverTaskQueue 延迟重置德林加弹药
+                            io.wifi.starrailexpress.game.GameUtils.serverTaskQueue.add(
+                                    new io.wifi.starrailexpress.game.ServerTaskInfoClasses.SchedulerTask(120, () -> {
+                                        if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(sp))
+                                            return;
+                                        io.wifi.starrailexpress.cca.SREGameWorldComponent gw =
+                                                io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level());
+                                        if (!gw.isRole(sp, ModRoles.NIUZAI_JUEDOUBA))
+                                            return;
+                                        org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyPlayerComponent
+                                                .resetDerringerAmmo(sp);
+                                    }));
                             return true;
                         }
                     });
