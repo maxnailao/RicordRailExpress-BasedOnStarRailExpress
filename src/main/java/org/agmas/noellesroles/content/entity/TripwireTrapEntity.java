@@ -175,6 +175,11 @@ public class TripwireTrapEntity extends Entity {
                         return false;
                     }
 
+                    // 坠木和皮革嘎的免疫设陷者陷阱
+                    if (gameWorld.isRole(player, ModRoles.ZHUIMU) || gameWorld.isRole(player, ModRoles.PIGE)) {
+                        return false;
+                    }
+
                     return true;
                 });
 

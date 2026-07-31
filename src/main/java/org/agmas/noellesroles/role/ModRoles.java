@@ -297,12 +297,16 @@ public class ModRoles {
 
     // 盗猎者角色 ID
     public static final ResourceLocation POACHER_ID = Noellesroles.id("poacher");
+    // 掠夺者角色 ID - 杀手阵营
+    public static final ResourceLocation LUEDUOZHE_ID = Noellesroles.id("lueduozhe");
     // 召回杀手角色 ID
     public static ResourceLocation RECALL_KILLER_ID = Noellesroles.id("recall_killer");
     // 雪原猎手角色 ID
     public static final ResourceLocation SNOW_HUNTER_ID = Noellesroles.id("snow_hunter");
     // 食尸鬼角色 ID - 杀手阵营
     public static final ResourceLocation GHOUL_ID = Noellesroles.id("ghoul");
+    // 幻魔者角色 ID - 杀手阵营
+    public static final ResourceLocation HUANMOZHE_ID = Noellesroles.id("huanmozhe");
     // 雪怪角色 ID
     public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
         // 售衣员角色 ID - 平民阵营
@@ -323,6 +327,11 @@ public class ModRoles {
     public static final ResourceLocation LIEMOREN_ID = Noellesroles.id("liemoren_killmohuman");
     // 恶灵角色 ID - 杀手阵营
     public static final ResourceLocation ELING_APEX_ID = Noellesroles.id("eling_apex");
+
+    // 坠木角色 ID - 独立中立
+    public static final ResourceLocation ZHUIMU_ID = Noellesroles.id("zhuimu_dream");
+    // 皮革嘎的角色 ID - 独立中立
+    public static final ResourceLocation PIGE_ID = Noellesroles.id("pigegade_piggod");
 
     // 中立阵营
     public static final ResourceLocation CORRUPT_COP_ID = Noellesroles.id("corrupt_cop");
@@ -430,6 +439,29 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
     )).setComponentKey(ModComponents.POACHER).setCanSeeCoin(true).setCanSeeTime(true);
+
+    /**
+     * 掠夺者 - 杀手阵营
+     * - 初始道具：弩
+     * - 弩击杀后30秒冷却
+     * - 箭矢飞行15格后自动销毁
+     * - 商店：关灯(150g)、撬锁器(80g)、毒箭(50g)、特殊疯魔(350g)
+     * - 疯魔模式：快速装填3弩+2毒箭，锁定主手，无击杀冷却，自定义皮肤
+     */
+    public static SRERole LUEDUOZHE = TMMRoles.registerRole(new NormalRole(
+            LUEDUOZHE_ID,
+            new Color(64, 64, 64).getRGB(), // 深灰色
+            false, // isInnocent = 非平民阵营（杀手）
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺时间
+            true // 隐藏计分板
+    ) {
+        @Override
+        public ResourceLocation getPsychoSkin(Player player, boolean isSlim) {
+            return Noellesroles.id("textures/entity/custom_psycho/raider.png");
+        }
+    }).setComponentKey(ModComponents.RAIDER).setCanSeeCoin(true).setCanSeeTime(true);
 
     /**
      *  鬼魅 - 杀手阵营
@@ -3591,6 +3623,26 @@ public class ModRoles {
             .setCanSeeCoin(true);
 
     /**
+     * 幻魔者 - 杀手阵营
+     * - 技能1：向前8格召唤地刺，击杀路径上的玩家，最多击杀2名，施法前摇2s
+     * - 技能2：选择一个玩家，在其周围释放3个恼鬼，恼鬼存在15s，半径5格内玩家每秒掉2点理智+缓慢I
+     * - 被动：不死图腾，死亡15秒后复活，复活无声音，10秒无敌，一局一次
+     * - 技能存储：商店购买80金币一次，最多3次，初始不给予
+     * - 登车标语：劫掠的号角已经吹响
+     */
+    public static SRERole HUANMOZHE = TMMRoles.registerRole(new NormalRole(
+            HUANMOZHE_ID,
+            new Color(64, 64, 64).getRGB(), // 深灰色
+            false,  // 杀手阵营
+            true,   // 可以使用杀手能力
+            SRERole.MoodType.FAKE, // 虚假心情
+            Integer.MAX_VALUE, // 无限体力
+            true    // 隐藏计分板
+    )).setComponentKey(ModComponents.HUANMOZHE)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true);
+
+    /**
      * 恶灵 - 杀手阵营
      *
      * - 虚假心情
@@ -3614,6 +3666,64 @@ public class ModRoles {
     ).setComponentKey(ModComponents.ELING_APEX)
             .setCanSeeTime(true)
             .setCanSeeCoin(true);
+
+    /**
+     * 坠木角色 - 独立中立
+     * - 皮肤变为指定皮肤(dream.png)
+     * - 虚假心情，无限体力，可见时间
+     * - 胜利条件：存活到游戏结束（跟随胜利）
+     * - 与皮革嘎的绑定生成，不占用中立位
+     * - 被动：无法被除了皮革嘎的和亡命徒击杀，每20s获50金币，仅透视皮革嘎的
+     */
+    public static SRERole ZHUIMU = TMMRoles.registerRole(
+            new NormalRole(
+                    ZHUIMU_ID,
+                    new Color(100, 200, 100).getRGB(), // 绿色
+                    false,  // 非乘客阵营
+                    false,  // 无杀手能力
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    Integer.MAX_VALUE, // 无限体力
+                    true    // 隐藏计分板
+            )
+    ).setComponentKey(ModComponents.ZHUIMU)
+            .setNeutrals(true)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true)
+            .setOccupiedRoleCount(0)
+            .setCanAutoAddMoney(false);
+
+    /**
+     * 皮革嘎的角色 - 独立中立
+     * - 模型变为一头猪
+     * - 虚假心情，无限体力，可见时间
+     * - 胜利条件：击杀坠木（若坠木不是皮革嘎的所杀也判定为皮革嘎的胜利）
+     * - 与坠木绑定生成，不占用中立位
+     * - 被动：无法被除了亡命徒击杀，每20s获50金币，仅透视坠木
+     * - 初始道具：皮革嘎的的铁剑（3击击杀坠木）
+     */
+    public static SRERole PIGE = TMMRoles.registerRole(
+            new NormalRole(
+                    PIGE_ID,
+                    new Color(255, 150, 150).getRGB(), // 粉色
+                    false,  // 非乘客阵营
+                    false,  // 无杀手能力
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    Integer.MAX_VALUE, // 无限体力
+                    true    // 隐藏计分板
+            ) {
+                @Override
+                public java.util.List<net.minecraft.world.item.ItemStack> getDefaultItems() {
+                    java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>();
+                    items.add(org.agmas.noellesroles.init.ModItems.PIGE_SWORD.getDefaultInstance());
+                    return items;
+                }
+            }
+    ).setComponentKey(ModComponents.PIGE)
+            .setNeutrals(true)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true)
+            .setOccupiedRoleCount(0)
+            .setCanAutoAddMoney(false);
 
 // ... existing code ...
 

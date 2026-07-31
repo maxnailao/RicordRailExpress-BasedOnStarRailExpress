@@ -3783,6 +3783,20 @@
   "message.noellesroles.poacher.crossbow_limit": "你已持有弩，无法购买第二个",
   "message.noellesroles.poacher.bow_cooldown": "弓正在冷却中，剩余 %d 秒",
 
+  "==================== 掠夺者 ====================": "",
+  "announcement.star.role.lueduozhe": "掠夺者",
+  "role.noellesroles.lueduozhe": "掠夺者",
+  "announcement.star.goals.lueduozhe": "劫掠的号角已经吹响，消灭所有乘客。",
+  "info.screen.roleid.lueduozhe": "杀手阵营\n初始道具：弩\n商店可购买：关灯(150g)、撬锁器(80g)、毒箭(50g)、特殊疯魔(350g)\n弩击杀玩家后进入30秒冷却\n箭矢飞行18格后自动销毁\n疯魔模式：获得快速装填3的弩和5根临时毒箭，锁定主手，疯魔期间弩击杀无冷却",
+  "item.raider_poison_arrow.name": "毒箭",
+  "item.raider_frenzy_crossbow.name": "掠夺之弩",
+  "item.raider_frenzy_poison_arrow.name": "掠夺毒箭",
+  "message.noellesroles.raider.poison_arrow_limit": "你已持有2个毒箭，无法购买更多",
+  "message.noellesroles.raider.crossbow_cooldown": "弩正在冷却中，剩余 %d 秒",
+  "itemstack.raider.psychoitem.item_name": "劫掠狂暴",
+  "itemstack.raider.psychoitem.item_lore.1": "获得快速装填3的弩和5根临时毒箭",
+  "itemstack.raider.psychoitem.item_lore.2": "疯魔期间弩击杀无冷却，持续30秒",
+
   "==================== 哑女 ====================": "",
   "announcement.star.role.dumb_woman": "哑女",
   "announcement.star.goals.dumb_woman": "利用你的夜视在黑暗中抓住凶手",
@@ -4179,6 +4193,34 @@
   "hud.noellesroles.weixiugong.no_light_targeted": "需要对准灯光方块才能进行维护",
   "hud.noellesroles.weixiugong.already_maintained": "这盏灯已经被维护过了",
   "hud.noellesroles.weixiugong.maintained": "灯光维护成功！下一次关灯后将自动亮起",
-  "skill.noellesroles.weixiugong.maintain_light": "维护灯光"
+  "skill.noellesroles.weixiugong.maintain_light": "维护灯光",
+
+  "==================== 坠木 ====================": "",
+  "announcement.star.role.zhuimu_dream": "坠木",
+  "announcement.star.goals.zhuimu_dream": "皮革噶的 dont kill me!",
+  "message.noellesroles.zhuimu.trap_placed": "§a陷阱已部署！皮革嘎的踩到后将受到缓慢和失明效果",
+
+  "==================== 皮革嘎的 ====================": "",
+  "announcement.star.role.pigegade_piggod": "皮革嘎的",
+  "announcement.star.goals.pigegade_piggod": "坠木！还我十万美刀！",
+  "message.noellesroles.pige.sword_hit": "§a铁剑命中坠木！(%s/%s)",
+  "message.noellesroles.pige.sword_invalid_target": "§c铁剑仅对坠木生效！",
+  "item.noellesroles.pige_sword": "皮革嘎的的铁剑",
+
+  "==================== 幻魔者 Huanmozhe ====================": "",
+  "announcement.star.role.huanmozhe": "幻魔者",
+  "announcement.star.role.noellesroles.huanmozhe": "幻魔者",
+  "announcement.star.goals.huanmozhe": "劫掠的号角已经吹响",
+  "announcement.star.win.huanmozhe": "杀手阵营胜利！",
+  "skill.noellesroles.huanmozhe.spike": "地刺",
+  "skill.noellesroles.huanmozhe.vex": "恼鬼召唤",
+  "message.noellesroles.huanmozhe.no_storage": "§c技能存储不足！请在商店购买技能存储",
+  "message.noellesroles.huanmozhe.no_target": "§c没有有效目标！请对准一个玩家",
+  "message.noellesroles.huanmozhe.target_not_innocent": "§c只能对平民阵营玩家释放恼鬼！",
+  "message.noellesroles.huanmozhe.storage_full": "§c技能存储已满！",
+  "message.noellesroles.huanmozhe.revival_triggered": "§6不死图腾触发！15秒后将复活...",
+  "message.noellesroles.huanmozhe.revived": "§6你已复活！获得10秒无敌效果",
+  "message.noellesroles.huanmozhe.invincible_end": "无敌效果已结束",
+  "hud.noellesroles.huanmozhe.vex_tip": "点选玩家释放恼鬼"
 
 }

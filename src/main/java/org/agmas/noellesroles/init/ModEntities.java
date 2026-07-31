@@ -421,6 +421,19 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /** 幻魔者恼鬼实体 - 不攻击玩家，仅作为视觉效果 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity> HUANMOZHE_VEX = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "huanmozhe_vex"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity>create(
+                    MobCategory.MONSTER,
+                    org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.4F, 0.8F))
+                    .trackRangeBlocks(32)
+                    .trackedUpdateRate(3)
+                    .build());
+
     /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
@@ -441,5 +454,8 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
         FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MORPHLING_KNIFE_DUMMY, MorphlingKnifeDummyEntity.createAttributes());
+        // 幻魔者恼鬼实体属性
+        FabricDefaultAttributeRegistry.register(HUANMOZHE_VEX,
+                org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity.createAttributes());
     }
 }

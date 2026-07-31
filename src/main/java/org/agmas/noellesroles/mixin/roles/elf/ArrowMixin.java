@@ -7,18 +7,27 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.SpectralArrow;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -27,6 +36,33 @@ import java.util.List;
 
 @Mixin(AbstractArrow.class)
 public class ArrowMixin {
+
+    /** 掠夺者箭矢起始位置（用于15格距离判定） */
+    @Unique
+    private Vec3 noellesroles$raiderArrowStartPos = null;
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void noellesroles$onArrowTick(CallbackInfo ci) {
+        if (SRE.isLobby)
+            return;
+        AbstractArrow arrow = (AbstractArrow) (Object) this;
+        if (arrow.level().isClientSide)
+            return;
+        // 掠夺者箭矢15格距离限制
+        if (arrow.getOwner() instanceof ServerPlayer shooter) {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(shooter.serverLevel());
+            if (gameWorld.isRole(shooter, ModRoles.LUEDUOZHE)) {
+                if (noellesroles$raiderArrowStartPos == null) {
+                    noellesroles$raiderArrowStartPos = arrow.position();
+                } else {
+                    double dist = arrow.position().distanceTo(noellesroles$raiderArrowStartPos);
+                    if (dist > 15.0) {
+                        arrow.discard();
+                    }
+                }
+            }
+        }
+    }
     @Inject(method = "onHitEntity", at = @At("HEAD"), cancellable = true)
     private void noellesroles$onHitEntity(EntityHitResult entityHitResult, CallbackInfo ci) {
         if (SRE.isLobby)
@@ -88,6 +124,39 @@ public class ArrowMixin {
                     if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
                         isHit = true;
                         GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                        arrow.discard();
+                        ci.cancel();
+                        return;
+                    }
+
+                    // 掠夺者毒箭 - 击杀玩家
+                    if (gameWorld.isRole(serverPlayer, ModRoles.LUEDUOZHE)) {
+                        isHit = true;
+                        GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                        RaiderPlayerComponent raiderComp = ModComponents.RAIDER.get(serverPlayer);
+                        if (raiderComp.inFrenzy) {
+                            // 疯魔期间击杀特效：粒子 + 号角音效
+                            if (serverPlayer.level() instanceof ServerLevel sl) {
+                                sl.sendParticles(ParticleTypes.FLAME,
+                                        player.getX(), player.getY() + 1, player.getZ(),
+                                        15, 0.3, 0.5, 0.3, 0.1);
+                                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                                        player.getX(), player.getY() + 1, player.getZ(),
+                                        12, 0.3, 0.5, 0.3, 0.05);
+                                sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
+                                        player.getX(), player.getY() + 1.5, player.getZ(),
+                                        20, 0.5, 0.8, 0.5, 0.3);
+                                sl.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                        SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 0.8F, 1.2F);
+                                sl.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                        SoundEvents.PILLAGER_CELEBRATE, SoundSource.PLAYERS, 1.0F, 0.8F);
+                            }
+                        } else {
+                            // 非疯魔：施加原版弩冷却30秒
+                            serverPlayer.getCooldowns().addCooldown(Items.CROSSBOW, RaiderPlayerComponent.CROSSBOW_KILL_COOLDOWN);
+                            raiderComp.crossbowKillCooldown = RaiderPlayerComponent.CROSSBOW_KILL_COOLDOWN;
+                            raiderComp.sync();
+                        }
                         arrow.discard();
                         ci.cancel();
                         return;

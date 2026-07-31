@@ -11,6 +11,7 @@ import org.agmas.noellesroles.game.roles.innocence.pathfinder.PathfinderPlayerCo
 import org.agmas.noellesroles.game.roles.innocence.weixiugong.WeixiugongPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ghoul.GhoulPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.eling_apex.ElingApexPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
@@ -262,6 +263,14 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       .getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "panda"),
           PandaComponent.class);
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent> ZHUIMU = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "zhuimu_dream"),
+          org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent.class);
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent> PIGE = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pigegade_piggod"),
+          org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.class);
   public static final ComponentKey<BetterVigilantePlayerComponent> BETTER_VIGILANTE = ComponentRegistry
       .getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "better_vigilante"),
@@ -647,6 +656,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "eling_apex"),
           ElingApexPlayerComponent.class);
 
+  // 掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
+  public static final ComponentKey<RaiderPlayerComponent> RAIDER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "raider"),
+          RaiderPlayerComponent.class);
+
+  // 幻魔者组件 - 杀手阵营，地刺+恼鬼召唤+不死图腾被动
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent> HUANMOZHE = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "huanmozhe"),
+          org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -738,6 +757,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, panda)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(PandaComponent::new);
+
+    // 注册坠木组件 - 独立中立，存活跟随胜利
+    registry.beginRegistration(Player.class, ZHUIMU)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent::new);
+
+    // 注册皮革嘎的组件 - 独立中立，猪模型，击杀坠木跟随胜利
+    registry.beginRegistration(Player.class, PIGE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent::new);
 
     // 注册电报员组件 - 存储使用次数
     registry.beginRegistration(Player.class, BROADCASTER)
@@ -1286,6 +1315,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, ELING_APEX)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(ElingApexPlayerComponent::new);
+
+    // 注册掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
+    registry.beginRegistration(Player.class, RAIDER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(RaiderPlayerComponent::new);
+
+    // 注册幻魔者组件 - 杀手阵营，地刺+恼鬼召唤+不死图腾被动
+    registry.beginRegistration(Player.class, HUANMOZHE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

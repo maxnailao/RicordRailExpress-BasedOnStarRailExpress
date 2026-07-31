@@ -83,6 +83,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(MorphC2SPacket.ID, MorphC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.ID,
                 org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.ID,
+                org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(SilencerC2SPacket.ID, SilencerC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(SilencerHelpC2SPacket.ID, SilencerHelpC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenIntroPayload.ID, OpenIntroPayload.CODEC);

@@ -2532,6 +2532,94 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(ModRoles.POACHER_ID, shopEntries);
     }
 
+    // 掠夺者商店
+    {
+      var shopEntries = new ArrayList<ShopEntry>();
+
+      // 关灯 - 150金币
+      shopEntries.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+        public boolean onBuy(@NotNull Player player) {
+          return SREPlayerShopComponent.useBlackout(player);
+        }
+      });
+
+      // 撬锁器 - 80金币
+      shopEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+
+      // 毒箭 - 50金币（最多持有2个）
+      shopEntries.add(new ShopEntry(Items.TIPPED_ARROW.getDefaultInstance(), 50, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          if (!(player instanceof ServerPlayer sp)) return false;
+
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isRole(player, ModRoles.LUEDUOZHE)) return false;
+
+          // 检查背包内毒箭数量（最多2个）
+          int itemCount = 0;
+          for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(Items.TIPPED_ARROW)) {
+              var potionContents = stack.get(DataComponents.POTION_CONTENTS);
+              if (potionContents != null && potionContents.potion().isPresent()) {
+                var potion = potionContents.potion().get();
+                if (potion.value().getEffects().stream()
+                        .anyMatch(effect -> effect.getEffect().value() == MobEffects.POISON)) {
+                  itemCount++;
+                }
+              }
+            }
+          }
+          if (itemCount >= 2) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.raider.poison_arrow_limit")
+                .withStyle(ChatFormatting.RED), true);
+            return false;
+          }
+
+          ItemStack poisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
+          poisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.raider_poison_arrow.name"));
+          poisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
+          poisonArrow.set(DataComponents.MAX_STACK_SIZE, 1);
+
+          return RoleUtils.insertStackInFreeSlot(player, poisonArrow);
+        }
+      });
+
+      // 特殊疯魔 - 350金币
+      var raiderPsycho = TMMItems.PSYCHO_MODE.getDefaultInstance();
+      raiderPsycho.set(DataComponents.ITEM_NAME,
+              Component.translatable("itemstack.raider.psychoitem.item_name"));
+      var raiderLore = new ItemLore(List.of(
+              Component.translatable("itemstack.raider.psychoitem.item_lore.1")
+                      .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+              Component.translatable("itemstack.raider.psychoitem.item_lore.2")
+                      .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+      raiderPsycho.set(DataComponents.LORE, raiderLore);
+      shopEntries.add(new ShopEntry(raiderPsycho, 350, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean canBuy(@NotNull Player player) {
+          if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+            return false;
+          }
+          return super.canBuy(player);
+        }
+
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+            return false;
+          }
+          var raiderComp = ModComponents.RAIDER.get(player);
+          boolean success = raiderComp.startFrenzy();
+          if (success) {
+            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 150 * 20);
+          }
+          return success;
+        }
+      });
+
+      ShopContent.customEntries.put(ModRoles.LUEDUOZHE_ID, shopEntries);
+    }
+
     // 仇杀客商店
     ShopContent.customEntries.put(
         ModRoles.BLOOD_FEUDIST_ID, BLOOD_FEUDIST_SHOP);
@@ -3574,5 +3662,142 @@ public class RoleShopHandler {
             GHOUL_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 285, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.GHOUL_ID, GHOUL_SHOP);
         }
+        // 幻魔者商店：技能存储 - 80金币一次，最多3次
+        {
+            var HUANMOZHE_SHOP = new ArrayList<ShopEntry>();
+            HUANMOZHE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE.getDefaultInstance(), 80, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    var comp = ModComponents.HUANMOZHE.get(player);
+                    if (comp == null) return false;
+                    if (comp.skillStorage >= org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent.MAX_SKILL_STORAGE) {
+                        player.displayClientMessage(
+                                net.minecraft.network.chat.Component.translatable("message.noellesroles.huanmozhe.storage_full")
+                                        .withStyle(net.minecraft.ChatFormatting.RED), true);
+                        return false;
+                    }
+                    return comp.buySkillStorage();
+                }
+
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    var comp = ModComponents.HUANMOZHE.get(player);
+                    return comp != null && comp.skillStorage < org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent.MAX_SKILL_STORAGE;
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.HUANMOZHE_ID, HUANMOZHE_SHOP);
+        }
+        // 坠木商店
+        {
+            var ZHUIMU_SHOP = new ArrayList<ShopEntry>();
+            // 陷阱 - 30金币（对皮革嘎的施加缓慢2+失明5秒）
+            ZHUIMU_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.HEAVY_WEIGHTED_PRESSURE_PLATE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    var comp = ModComponents.ZHUIMU.get(player);
+                    if (comp instanceof org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent zhuimu) {
+                        // 在玩家脚下记录陷阱位置
+                        zhuimu.trapPositions.add(player.blockPosition());
+                        zhuimu.sync();
+                        player.displayClientMessage(
+                            net.minecraft.network.chat.Component.translatable("message.noellesroles.zhuimu.trap_placed")
+                                .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+                        return true;
+                    }
+                    return false;
+                }
+            });
+            // 鞘翅 - 75金币（20耐久，CD 90s）
+            ZHUIMU_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.ELYTRA.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    net.minecraft.world.item.ItemStack elytra = net.minecraft.world.item.Items.ELYTRA.getDefaultInstance();
+                    elytra.setDamageValue(elytra.getMaxDamage() - 20);
+                    return RoleUtils.insertStackInFreeSlot(player, elytra);
+                }
+            });
+            // 烟花火箭 - 10金币（飞行时间3）
+            ZHUIMU_SHOP.add(new ShopEntry(createFireworkRocket(3), 10, ShopEntry.Type.TOOL));
+            // 速度2药水 10s - 50金币
+            ZHUIMU_SHOP.add(new ShopEntry(createPotion(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 1, 200), 50, ShopEntry.Type.TOOL));
+            // 跳跃提升3药水 10s - 50金币
+            ZHUIMU_SHOP.add(new ShopEntry(createPotion(net.minecraft.world.effect.MobEffects.JUMP, 2, 200), 50, ShopEntry.Type.TOOL));
+            // 喷溅缓慢3药水 8s - 50金币
+            ZHUIMU_SHOP.add(new ShopEntry(createSplashPotion(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 2, 160), 50, ShopEntry.Type.TOOL));
+            // 末影珍珠 - 50金币（限购3个）
+            ZHUIMU_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.ENDER_PEARL.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    int count = io.wifi.starrailexpress.util.SREItemUtils.countItem(player, net.minecraft.world.item.Items.ENDER_PEARL);
+                    return super.canBuy(player) && count < 3;
+                }
+            });
+            // 闪光弹 - 20金币
+            ZHUIMU_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 20, ShopEntry.Type.TOOL));
+            // 风弹 - 35金币
+            ZHUIMU_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.WIND_CHARGE.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.ZHUIMU_ID, ZHUIMU_SHOP);
+        }
+        // 皮革嘎的商店（同坠木但没有陷阱）
+        {
+            var PIGE_SHOP = new ArrayList<ShopEntry>();
+            // 鞘翅 - 75金币（20耐久，CD 90s）
+            PIGE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.ELYTRA.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    net.minecraft.world.item.ItemStack elytra = net.minecraft.world.item.Items.ELYTRA.getDefaultInstance();
+                    elytra.setDamageValue(elytra.getMaxDamage() - 20);
+                    return RoleUtils.insertStackInFreeSlot(player, elytra);
+                }
+            });
+            // 烟花火箭 - 10金币
+            PIGE_SHOP.add(new ShopEntry(createFireworkRocket(3), 10, ShopEntry.Type.TOOL));
+            // 速度2药水 10s - 50金币
+            PIGE_SHOP.add(new ShopEntry(createPotion(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 1, 200), 50, ShopEntry.Type.TOOL));
+            // 跳跃提升3药水 10s - 50金币
+            PIGE_SHOP.add(new ShopEntry(createPotion(net.minecraft.world.effect.MobEffects.JUMP, 2, 200), 50, ShopEntry.Type.TOOL));
+            // 喷溅缓慢3药水 8s - 50金币
+            PIGE_SHOP.add(new ShopEntry(createSplashPotion(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 2, 160), 50, ShopEntry.Type.TOOL));
+            // 末影珍珠 - 50金币（限购3个）
+            PIGE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.ENDER_PEARL.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    int count = io.wifi.starrailexpress.util.SREItemUtils.countItem(player, net.minecraft.world.item.Items.ENDER_PEARL);
+                    return super.canBuy(player) && count < 3;
+                }
+            });
+            // 闪光弹 - 20金币
+            PIGE_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 20, ShopEntry.Type.TOOL));
+            // 风弹 - 35金币
+            PIGE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.WIND_CHARGE.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.PIGE_ID, PIGE_SHOP);
+        }
+    }
+
+    private static net.minecraft.world.item.ItemStack createFireworkRocket(int flightDuration) {
+        net.minecraft.world.item.ItemStack stack = net.minecraft.world.item.Items.FIREWORK_ROCKET.getDefaultInstance();
+        var fireworks = new net.minecraft.world.item.component.Fireworks(flightDuration, java.util.List.of());
+        stack.set(net.minecraft.core.component.DataComponents.FIREWORKS, fireworks);
+        return stack;
+    }
+
+    private static net.minecraft.world.item.ItemStack createPotion(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int amplifier, int duration) {
+        net.minecraft.world.item.ItemStack stack = net.minecraft.world.item.Items.POTION.getDefaultInstance();
+        stack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+            new net.minecraft.world.item.alchemy.PotionContents(
+                java.util.Optional.empty(),
+                java.util.Optional.empty(),
+                java.util.List.of(new net.minecraft.world.effect.MobEffectInstance(effect, duration, amplifier))));
+        return stack;
+    }
+
+    private static net.minecraft.world.item.ItemStack createSplashPotion(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int amplifier, int duration) {
+        net.minecraft.world.item.ItemStack stack = net.minecraft.world.item.Items.SPLASH_POTION.getDefaultInstance();
+        stack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+            new net.minecraft.world.item.alchemy.PotionContents(
+                java.util.Optional.empty(),
+                java.util.Optional.empty(),
+                java.util.List.of(new net.minecraft.world.effect.MobEffectInstance(effect, duration, amplifier))));
+        return stack;
     }
 }

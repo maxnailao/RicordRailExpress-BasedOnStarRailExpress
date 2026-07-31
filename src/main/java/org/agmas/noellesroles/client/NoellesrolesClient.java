@@ -420,6 +420,9 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 注册时空旅者传送门实体渲染器
         EntityRendererRegistry.register(ModEntities.RUIKE_PORTAL,
                 org.agmas.noellesroles.client.render.RuikePortalRenderer::new);
+        // 注册幻魔者恼鬼实体渲染器（使用原版恼鬼模型和贴图）
+        EntityRendererRegistry.register(ModEntities.HUANMOZHE_VEX,
+                net.minecraft.client.renderer.entity.VexRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);
@@ -444,6 +447,17 @@ public class NoellesrolesClient implements ClientModInitializer {
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
+        // 坠木角色皮肤替换
+        io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return null;
+            if (SREClient.gameComponent.isRole(player, org.agmas.noellesroles.role.ModRoles.ZHUIMU)) {
+                return io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult.playerSkin(
+                        org.agmas.noellesroles.Noellesroles.id("textures/entity/zhuimu_dream.png"),
+                        net.minecraft.client.resources.PlayerSkin.Model.WIDE);
+            }
+            return null;
+        });
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);

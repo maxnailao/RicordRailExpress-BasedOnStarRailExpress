@@ -1196,6 +1196,19 @@ public class GameUtils {
                                     isWinner = true;
                                 }
                             }
+                            // 坠木跟随胜利：存活即跟随
+                            if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
+                                if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                                    isWinner = true;
+                                }
+                            }
+                            // 皮革嘎的跟随胜利：坠木已死即跟随
+                            if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
+                                var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
+                                if (pigeComp != null && pigeComp.isZhuimuDead()) {
+                                    isWinner = true;
+                                }
+                            }
                             break;
                         case LOOSE_END:
                             if (winStatus == WinStatus.LOOSE_END) {
@@ -1236,6 +1249,19 @@ public class GameUtils {
                             if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
                                 var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
                                 if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                                    isWinner = true;
+                                }
+                            }
+                            // 坠木跟随胜利：存活即跟随
+                            if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
+                                if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                                    isWinner = true;
+                                }
+                            }
+                            // 皮革嘎的跟随胜利：坠木已死即跟随
+                            if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
+                                var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
+                                if (pigeComp != null && pigeComp.isZhuimuDead()) {
                                     isWinner = true;
                                 }
                             }

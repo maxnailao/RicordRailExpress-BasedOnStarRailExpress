@@ -1139,6 +1139,62 @@ public class NRDeathEvents {
             }
             return true;
         });
+
+        // 坠木死亡免疫：仅允许皮革嘎的和亡命徒击杀，环境死因仍允许
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (!gameWorld.isRole(victim, ModRoles.ZHUIMU))
+                return true;
+            // 环境/自然死因始终放行
+            if (isEnvironmentalDeath(deathReason))
+                return true;
+            // 无杀手（环境）放行
+            if (killer == null)
+                return true;
+            // 皮革嘎的可以击杀
+            if (gameWorld.isRole(killer, ModRoles.PIGE))
+                return true;
+            // 亡命徒可以击杀
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+                    || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
+                return true;
+            // 其他来源免疫
+            return false;
+        });
+
+        // 皮革嘎的死亡免疫：仅允许亡命徒击杀，环境死因仍允许
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (!gameWorld.isRole(victim, ModRoles.PIGE))
+                return true;
+            // 环境/自然死因始终放行
+            if (isEnvironmentalDeath(deathReason))
+                return true;
+            // 无杀手（环境）放行
+            if (killer == null)
+                return true;
+            // 亡命徒可以击杀
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+                    || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
+                return true;
+            // 其他来源免疫
+            return false;
+        });
+    }
+
+    /**
+     * 判断是否为环境/自然死因（掉下列车、冻僵、焚化炉等）
+     */
+    private static boolean isEnvironmentalDeath(ResourceLocation deathReason) {
+        if (deathReason == null) return false;
+        String path = deathReason.getPath();
+        return path.equals("fell_out_of_train")
+                || path.equals("freeze")
+                || path.equals("incinerator")
+                || path.equals("disconnected")
+                || path.equals("heart_attack")
+                || path.equals("ignited")
+                || path.equals("failed_ignite");
     }
 
     // --- AfterShieldAllowPlayerDeathWithKiller ---

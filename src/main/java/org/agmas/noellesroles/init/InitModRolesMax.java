@@ -344,6 +344,12 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.SHOUYIYUAN_ID, 1);
         // 盲人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.NIYAJINGSHIBUSHIXIALE_ID, 1);
+
+        // 坠木和皮革嘎的默认为0（概率刷新）
+        Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
+        Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
+        // 绑定生成：坠木刷新时皮革嘎的也刷新
+        RoleAssignmentManager.addOccupationRole(ModRoles.ZHUIMU, ModRoles.PIGE);
     }
 
     public static void registerDynamic() {
@@ -488,6 +494,15 @@ public class InitModRolesMax {
 
             applySpecialMapRoles(currentMap, config);
             applySpecialVigilanteRoles(players_count, config, random, currentMap);
+
+            // 坠木和皮革嘎的：每把概率刷新，不占用中立位
+            if (players_count >= 8 && random.nextInt(0, 100) < 5) {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 1);
+                Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 1);
+            } else {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
+                Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
+            }
         });
     }
 

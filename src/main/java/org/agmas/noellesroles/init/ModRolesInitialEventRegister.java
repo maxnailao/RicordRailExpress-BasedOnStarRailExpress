@@ -109,6 +109,8 @@ public class ModRolesInitialEventRegister {
         org.agmas.noellesroles.game.roles.innocence.child.ChildPunchHandler.register();
         // 初始化武术家击打事件
         org.agmas.noellesroles.game.roles.innocence.wushujia.WushujiaPunchHandler.register();
+        // 初始化皮革嘎的的铁剑攻击事件
+        org.agmas.noellesroles.game.roles.neutral.pigegade.PigeSwordHandler.register();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
@@ -191,6 +193,23 @@ public class ModRolesInitialEventRegister {
                 var mercenary = MercenaryPlayerComponent.KEY.get(player);
                 mercenary.init();
                 mercenary.sync();
+            }
+            // 坠木角色初始化
+            if (role.identifier().equals(ModRoles.ZHUIMU.identifier())) {
+                var zhuimu = org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent.KEY.get(player);
+                zhuimu.init();
+                zhuimu.sync();
+            }
+            // 皮革嘎的角色初始化（设置猪形态）
+            if (role.identifier().equals(ModRoles.PIGE.identifier())) {
+                var pige = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.get(player);
+                pige.init();
+                pige.sync();
+            }
+            // 将坠木和皮革嘎的加入同一个 team，确保互相可见（seeFriendlyInvisibles 保障透视）
+            if (role.identifier().equals(ModRoles.ZHUIMU.identifier())
+                    || role.identifier().equals(ModRoles.PIGE.identifier())) {
+                joinZhuimuPigeTeam(player);
             }
             if (role.identifier().equals(ModRoles.WAYFARER.identifier())) {
                 MCItemsUtils.clearItem(player);
@@ -1824,7 +1843,49 @@ public class ModRolesInitialEventRegister {
                     return comp.usePhaseShift();
                 }).cooldownSeconds(45).toggleable(true).showOnHud(true).announceToSelf(false).build());
 
+        // ==================== 幻魔者技能注册：地刺(G)，CD30s；恼鬼召唤通过背包界面点选玩家触发 ====================
+        RoleSkill.register(ModRoles.HUANMOZHE,
+                RoleSkill.skill(SRE.id("huanmozhe_spike"),
+                        "skill.noellesroles.huanmozhe.spike",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.HUANMOZHE.get(player);
+                            if (comp == null) return false;
+                            // 检查技能存储
+                            if (comp.skillStorage <= 0) {
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.huanmozhe.no_storage")
+                                                .withStyle(ChatFormatting.RED), true);
+                                return false;
+                            }
+                            boolean success = comp.startSpikeCast(player);
+                            if (success) {
+                                comp.skillStorage--;
+                                comp.sync();
+                            }
+                            return success;
+                        }).cooldownSeconds(30).showOnHud(true).announceToSelf(true).build());
 
+
+    }
+
+    /**
+     * 将坠木和皮革嘎的玩家加入同一个 scoreboard team，
+     * 并开启 seeFriendlyInvisibles，确保坠木能透视到隐身的皮革嘎的。
+     */
+    private static void joinZhuimuPigeTeam(ServerPlayer player) {
+        try {
+            var scoreboard = player.serverLevel().getScoreboard();
+            net.minecraft.world.scores.PlayerTeam team = scoreboard.getPlayerTeam("zhuimu_pige");
+            if (team == null) {
+                team = scoreboard.addPlayerTeam("zhuimu_pige");
+                team.setSeeFriendlyInvisibles(true);
+            }
+            scoreboard.addPlayerToTeam(player.getScoreboardName(), team);
+        } catch (Exception e) {
+            org.agmas.noellesroles.Noellesroles.LOGGER.error("Failed to join zhuimu_pige team", e);
+        }
     }
 
 }

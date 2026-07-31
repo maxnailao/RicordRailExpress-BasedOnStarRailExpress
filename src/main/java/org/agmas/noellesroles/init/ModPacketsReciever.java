@@ -381,6 +381,38 @@ public class ModPacketsReciever {
       });
     });
 
+    // 幻魔者恼鬼召唤目标选择包处理
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.ID, (payload, context) -> {
+      var caster = context.player();
+      context.server().execute(() -> {
+        if (caster.hasEffect(ModEffects.SAFE_TIME)) return;
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(caster.level());
+        if (!gameWorldComponent.isRunning()) return;
+        if (!gameWorldComponent.isRole(caster, ModRoles.HUANMOZHE)) return;
+
+        if (payload.target() == null) return;
+        var target = caster.level().getPlayerByUUID(payload.target());
+        if (target == null) return;
+        if (!(target instanceof ServerPlayer targetServerPlayer)) return;
+
+        var comp = org.agmas.noellesroles.component.ModComponents.HUANMOZHE.get(caster);
+        if (comp == null) return;
+        if (comp.skillStorage <= 0 || comp.vexDurationTimer > 0) return;
+        // 仅可对平民阵营释放
+        if (!gameWorldComponent.isInnocent(targetServerPlayer)) {
+          caster.displayClientMessage(
+              net.minecraft.network.chat.Component.translatable("message.noellesroles.huanmozhe.target_not_innocent")
+                  .withStyle(net.minecraft.ChatFormatting.RED), true);
+          return;
+        }
+        boolean success = comp.summonVexes(caster, targetServerPlayer);
+        if (success) {
+          comp.skillStorage--;
+          comp.sync();
+        }
+      });
+    });
+
 
     // 慈善家捐赠数据包处理
     ServerPlayNetworking.registerGlobalReceiver(PhilanthropistC2SPacket.ID, (payload, context) -> {

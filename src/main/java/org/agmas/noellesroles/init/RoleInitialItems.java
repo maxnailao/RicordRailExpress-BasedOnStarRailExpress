@@ -221,6 +221,15 @@ public class RoleInitialItems {
         });
         INITIAL_ITEMS_MAP.put(ModRoles.POACHER, poacherItems);
 
+        // 掠夺者初始物品 - 弩
+        List<Supplier<ItemStack>> raiderItems = new ArrayList<>();
+        raiderItems.add(() -> {
+            var item = Items.CROSSBOW.getDefaultInstance();
+            item.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            return item;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.LUEDUOZHE, raiderItems);
+
 //        //黑白
 //        List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();
 //        elfItems.add(TMMItems.REVOLVER::getDefaultInstance);

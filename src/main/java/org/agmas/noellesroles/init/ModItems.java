@@ -58,6 +58,10 @@ public class ModItems {
     public static final Item DEDUCTION_BOOK = register(
             new DeductionBookItem(new Item.Properties().stacksTo(1)),
             "deduction_book", ROLE_ITEMS_GROUP);
+    // 皮革嘎的的铁剑 - 皮革嘎的专属，仅对坠木生效，3击击杀
+    public static final Item PIGE_SWORD = register(
+            new PigeSwordItem(),
+            "pige_sword", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);

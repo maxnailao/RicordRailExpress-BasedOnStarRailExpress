@@ -1327,6 +1327,54 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 坠木：仅透视皮革嘎的（常驻，无需本能）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.ZHUIMU))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.PIGE)
+                        && GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+                    return ModRoles.PIGE.color();
+                }
+                // 仅透视皮革嘎的，其他玩家禁用
+                return -2;
+            }
+            return -1;
+        });
+
+        // 皮革嘎的：仅透视坠木（常驻，无需本能）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.PIGE))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.ZHUIMU)
+                        && GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+                    return ModRoles.ZHUIMU.color();
+                }
+                // 仅透视坠木，其他玩家禁用
+                return -2;
+            }
+            return -1;
+        });
+
     }
 
     private static int getRoleColor(SRERole target_role) {
