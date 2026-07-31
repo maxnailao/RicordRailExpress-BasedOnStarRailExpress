@@ -3714,12 +3714,13 @@
   "==================== 熊孩子 ====================":"",
   "announcement.star.role.child": "熊孩子",
   "role.noellesroles.child": "熊孩子",
+  "info.screen.roleid.child": "平民阵营，你可以尽情殴打其他玩家(不会导致死亡)，或者放出音频来捉弄别人\n你的体型会比别人小得多，并无法获得一系列改变体型的修饰词\n你说话会拥有派对客的氦气声，木嘿嘿嘿。\n商店可购买零食、假枪和假刀",
   "message.noellesroles.child.ability_used": "熊孩子技能发动！",
   "message.child.ability.cooldown": "技能冷却中，剩余 %s 秒",
   "message.child.ability.ready": "熊孩子技能就绪",
   "hud.child.ability": "熊孩子技能",
   "announcement.star.goals.child":"作为一个孩子，用你的音频来糊弄所有人！",
-  "message.child.sound.current":"当前声音列表:%s",
+  "message.child.sound.current":"当前声音列表:%s(shift+技能键切换)",
   "message.noellesroles.child.sound_switched": "切换到声音列表：%s",
 
 

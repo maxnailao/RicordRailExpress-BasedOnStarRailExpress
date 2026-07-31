@@ -15,6 +15,7 @@ import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -89,6 +90,7 @@ public class NRModifiers {
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;
         excludeLeonFromAllModifiers();
+        excludeChildFromScaleModifiers();
         assignModifierComponents();
         TaxedModifier.init();
     }
@@ -107,6 +109,21 @@ public class NRModifiers {
                     modifier.cannotBeAppliedTo = new HashSet<>();
                 }
                 modifier.cannotBeAppliedTo.add(ModRoles.LEON);
+            }
+        });
+    }
+
+    private static void excludeChildFromScaleModifiers() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            for (SREModifier modifier : HMLModifiers.MODIFIERS) {
+                if (modifier.equals(pro.fazeclan.river.stupid_express.constants.SEModifiers.TINY)
+                        || modifier.equals(pro.fazeclan.river.stupid_express.constants.SEModifiers.TALL)
+                        || modifier.equals(TraitorAndModifiers.DWARF)) {
+                    if (modifier.cannotBeAppliedTo == null) {
+                        modifier.cannotBeAppliedTo = new HashSet<>();
+                    }
+                    modifier.cannotBeAppliedTo.add(ModRoles.CHILD);
+                }
             }
         });
     }
