@@ -134,6 +134,13 @@ public class NRGameStateEvents {
             RoleShopHandler.resetOldmanEasterEggState();
             DelayerPlayerComponent.timeBoostTriggered = false;
 
+            // 清除熊孩子体型缩小
+            for (ServerPlayer player : world.players()) {
+                player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE)
+                        .removeModifier(org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent.CHILD_SCALE_MODIFIER);
+                org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent.KEY.get(player).clear();
+            }
+
             // 清除感染状态
             for (ServerPlayer player : world.players()) {
                 InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(player);

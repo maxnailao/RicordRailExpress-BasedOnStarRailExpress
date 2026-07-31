@@ -75,6 +75,7 @@
     "roles.veteran.VeteranKnifeLeftClickMixin",
     "roles.writter.WrittenBookMixin",
     "roles.wushujia.WushujiaHurtMixin",
+    "roles.jinghuazhe.MilkBucketNoLeftoverMixin",
     "time_stop.PlayerMixin",
     "time_stop.ServerPacketBlocker"
   ],
