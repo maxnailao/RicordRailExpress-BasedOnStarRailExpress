@@ -3543,6 +3543,14 @@ public class RoleShopHandler {
             shop.add(new ShopEntry(Items.MILK_BUCKET.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.JINGHUAZHE_ID, shop);
         }
+        // 熊孩子商店：薯片、假刀、假左轮
+        {
+            var shop = new ArrayList<ShopEntry>();
+            shop.add(new ShopEntry(ModItems.LINGSHI.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            shop.add(new ShopEntry(ModItems.FAKE_KNIFE.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            shop.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.CHILD_ID, shop);
+        }
         // 探路者商店：照明弹
         {
             var PATHFINDER_SHOP = new ArrayList<ShopEntry>();

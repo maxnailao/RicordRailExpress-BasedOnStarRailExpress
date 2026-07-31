@@ -53,6 +53,14 @@ public class ChildPunchHandler {
 
         if (!level.isClientSide) {
             RECENT_CHILD_PUNCHES.put(victim.getUUID(), new PunchMarker(attacker.getUUID(), level.getGameTime()));
+
+            double dx = victim.getX() - attacker.getX();
+            double dz = victim.getZ() - attacker.getZ();
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist > 0) {
+                victim.push(dx / dist * 0.5, 0.1, dz / dist * 0.5);
+                victim.hurtMarked = true;
+            }
         }
 
         return level.isClientSide ? InteractionResult.SUCCESS : InteractionResult.PASS;
