@@ -430,6 +430,10 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.PHANTOM)) {
+            // 疯魔（幽灵幻影）期间强制隐身，禁用技能切换避免冲突
+            if (org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent.isInFrenzy(player)) {
+                return;
+            }
             if (abilityPlayerComponent.cooldown <= 0) {
                 player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY,
                         NoellesRolesConfig.HANDLER.instance().phantomInvisibilityDuration * 20, 0, true, false,

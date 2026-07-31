@@ -702,6 +702,11 @@ public class NoellesrolesClient implements ClientModInitializer {
                 io.wifi.starrailexpress.client.SREClient.blizzardPhase = payload.phase();
                 io.wifi.starrailexpress.client.SREClient.blizzardRemainingTicks = payload.remainingTicks();
                 io.wifi.starrailexpress.client.SREClient.isBlizzardActive = payload.isActive();
+                // 防御性重置：收到 idle 包时清除雪怪 HUD 残留状态（游戏结束场景）
+                if (payload.phase() == BlizzardStateS2CPacket.PHASE_IDLE) {
+                    snowguaiActiveType = 0;
+                    snowguaiActiveRemainingTicks = 0;
+                }
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(SnowguaiBlizzardInfoS2CPacket.ID, (payload, context) -> {

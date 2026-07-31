@@ -28,6 +28,7 @@ public interface TMMSounds {
     SoundEvent ITEM_KNIFE_STAB = registrar.create("item.knife.stab");
     SoundEvent ITEM_REVOLVER_CLICK = registrar.create("item.revolver.click");
     SoundEvent ITEM_REVOLVER_SHOOT = registrar.create("item.revolver.shoot");
+    SoundEvent ITEM_REVOLVER_SHENGXUAN = registrar.create("item.revolver.shengxuan");
     SoundEvent ITEM_DERRINGER_RELOAD = registrar.create("item.derringer.reload");
     SoundEvent ITEM_SNIPER_RIFLE_SHOOT = registrar.create("item.sniper_rifle.shoot");
     SoundEvent ITEM_SNIPER_RIFLE_RELOAD = registrar.create("item.sniper_rifle.reload");

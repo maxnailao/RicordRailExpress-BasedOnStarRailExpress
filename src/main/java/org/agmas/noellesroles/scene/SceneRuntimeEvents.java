@@ -30,7 +30,7 @@ public final class SceneRuntimeEvents {
             ZERO_AIR_TICKS.clear();
             MapStatusBarRuntime.clear(world);
             SceneEventManager.clear(world);
-            BlizzardManager.reset();
+            BlizzardManager.reset(world);
             resetSabotageMinigameQuestCooldowns(world);
         });
         ServerTickEvents.END_WORLD_TICK.register(level -> {

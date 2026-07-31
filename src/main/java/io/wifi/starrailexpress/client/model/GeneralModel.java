@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.client.model;
 import io.wifi.starrailexpress.index.SRECosmetics;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import io.wifi.starrailexpress.util.ShengxuanSkinHandler;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -94,6 +95,22 @@ public class GeneralModel implements UnbakedModel, BakedModel {
             skinName = getSkinFromPlayerComponent(stack);
         }
         var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
+
+        // 圣宣皮肤特殊处理：根据当前形态选择模型
+        if (skin != null && ShengxuanSkinHandler.SKIN_ID.equals(skin.getName())) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                String formSuffix = ShengxuanSkinHandler.getCurrentFormSuffix(player);
+                String formSkinName = skin.getName() + formSuffix;
+                if (bakeModels.containsKey(formSkinName)) {
+                    var variantMap = bakeModels.get(formSkinName);
+                    if (variantMap != null && variantMap.containsKey(variant)) {
+                        variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
+                        return;
+                    }
+                }
+            }
+        }
 
         if (skin != null && bakeModels.containsKey(skin.getName())) {
             var variantMap = bakeModels.get(skin.getName());
