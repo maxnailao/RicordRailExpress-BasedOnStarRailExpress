@@ -45,6 +45,10 @@
   "==================== 正文 ====================": "",
   "announcement.star.role.super_loose_end": "Super Outlaw",
   "announcement.star.goals.super_loose_end": "You have gained all the power...",
+  "announcement.star.role.tufu_morelooseend": "Butcher",
+  "announcement.star.goals.tufu_morelooseend": "Smash everything with bat and crowbar!",
+  "announcement.star.role.qingsuanzhe_morelooseend": "Liquidator",
+  "announcement.star.goals.qingsuanzhe_morelooseend": "One shot, one kill. Precise liquidation.",
   "announcement.star.role.dirt_id": "Clod",
   "announcement.star.goals.dirt_id": "Become the last winner through roulette duels!",
   "announcement.star.role.guest_ghost": "Guest Ghost",
@@ -4006,6 +4010,19 @@
   "skill.noellesroles.huanshushi.skill3": "Phantom Trap",
   "message.noellesroles.huanshushi.skill1_used": "§7Phantom Rush!",
   "message.noellesroles.huanshushi.skill2_used": "§7Phantom Follow!",
-  "message.noellesroles.huanshushi.skill3_used": "§7Phantom Trap!"
+  "message.noellesroles.huanshushi.skill3_used": "§7Phantom Trap!",
+
+  "==================== Jiahao Role ====================": "",
+  "announcement.star.role.jiahao_wanglihao": "Jiahao",
+  "announcement.star.goals.jiahao_wanglihao": "Wang Li Hao! You are Jiahao, inspire those around you with music!",
+  "announcement.star.win.jiahao_wanglihao": "Passengers win!",
+  "skill.noellesroles.jiahao.music_1": "Song 1",
+  "skill.noellesroles.jiahao.music_2": "Song 2",
+  "skill.noellesroles.jiahao.music_3": "Song 3",
+  "skill.noellesroles.jiahao.spotlight": "Spotlight",
+  "message.noellesroles.jiahao.music_played": "♫ Now playing song %s",
+  "message.noellesroles.jiahao.music_switched": "♫ Switched to song %s",
+  "message.noellesroles.jiahao.spotlight_used": "♫ Spotlight! Attracted %s audience members",
+  "message.noellesroles.jiahao.not_enough_coins": "Not enough coins! Need %s coins"
 
 }

@@ -461,6 +461,20 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return null;
         });
+        // 嘉豪角色皮肤替换（技能激活期间变为嘉豪史蒂夫）
+        io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return null;
+            if (SREClient.gameComponent.isRole(player, org.agmas.noellesroles.role.ModRoles.JIAHAO)) {
+                var comp = org.agmas.noellesroles.component.ModComponents.JIAHAO.get(player);
+                if (comp != null && comp.isSkinActive()) {
+                    return io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult.playerSkin(
+                            org.agmas.noellesroles.Noellesroles.id("textures/entity/jiahao_steve.png"),
+                            net.minecraft.client.resources.PlayerSkin.Model.WIDE);
+                }
+            }
+            return null;
+        });
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);

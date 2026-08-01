@@ -667,7 +667,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             List<ServerPlayer> lastLooseEnds = new ArrayList<>();
 
             for (ServerPlayer player : serverWorld.players()) {
-                if ((gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
+                if ((ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))
                         || gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END))
                         && !GameUtils.isPlayerEliminated(player)) {
                     hasLooseEndAlive = true;
@@ -680,7 +680,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 // 检查是否有其他非亡命徒的存活玩家
                 boolean hasOtherAlive = false;
                 for (ServerPlayer player : serverWorld.players()) {
-                    if ((!gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
+                    if ((!ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))
                             && !gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END))
                             && !GameUtils.isPlayerEliminated(player)) {
                         hasOtherAlive = true;

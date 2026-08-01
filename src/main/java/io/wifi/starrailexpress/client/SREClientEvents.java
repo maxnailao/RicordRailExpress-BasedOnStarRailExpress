@@ -124,7 +124,7 @@ public class SREClientEvents {
             if (DeathPenaltyComponent.hasPenalty(player))
                 return TrueFalseResult.FALSE;
             // 亡命徒也是
-            if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(RoleUtils.getPlayerRole(player))
                     && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
                 return TrueFalseResult.FALSE;
             }

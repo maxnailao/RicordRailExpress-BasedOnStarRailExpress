@@ -29,6 +29,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import org.agmas.noellesroles.game.roles.neutral.corruptcop.CorruptCopPlayerComponent;
@@ -253,7 +254,8 @@ public class StupidExpressClient implements ClientModInitializer {
         });
         // 难民时旁观看时全员皮肤改为默认的皮肤
         OnGettingPlayerSkin.EVENT.register((player) -> {
-            if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
+            var playerRole = RoleUtils.getPlayerRole(player);
+            if (ModRoles.isLooseEndVariant(playerRole)
                     || RoleUtils.isPlayerTheJob(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 return OnGettingPlayerSkin.PlayerSkinResult
                         .playerSkin(SRE.id("textures/entity/custom_psycho/th_sariel.png"), Model.SLIM);

@@ -91,6 +91,10 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
                             player.getCooldowns().addCooldown(mainHandStack.getItem(),  20 * 30);// 30s冷却
                         }
+                        // 清算者射击冷却：未击杀1秒，击杀后3秒（先设置1秒，击杀后再覆盖）
+                        if (game.isRole(player, ModRoles.LIQUIDATOR_LOOSE_END)) {
+                            player.getCooldowns().addCooldown(mainHandStack.getItem(), 20); // 1s冷却
+                        }
                     }
 
                     SniperRifleItem.consumeAmmo(mainHandStack);
@@ -154,6 +158,14 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
 
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
+
+                        // 清算者击杀后覆盖冷却为3秒
+                        if (!player.isCreative()) {
+                            var game2 = SREGameWorldComponent.KEY.get(player.level());
+                            if (game2.isRole(player, ModRoles.LIQUIDATOR_LOOSE_END)) {
+                                player.getCooldowns().addCooldown(mainHandStack.getItem(), 60); // 3s冷却
+                            }
+                        }
                     }
                 }
                 case RELOAD -> {

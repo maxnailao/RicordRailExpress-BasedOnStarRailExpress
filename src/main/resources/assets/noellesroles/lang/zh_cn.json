@@ -62,6 +62,10 @@
   "==================== 正文 ====================": "",
   "announcement.star.role.super_loose_end": "超级亡命徒",
   "announcement.star.goals.super_loose_end": "你获得了全部的力量...",
+  "announcement.star.role.tufu_morelooseend": "屠夫",
+  "announcement.star.goals.tufu_morelooseend": "用球棒和撬棍砸碎一切！",
+  "announcement.star.role.qingsuanzhe_morelooseend": "清算者",
+  "announcement.star.goals.qingsuanzhe_morelooseend": "一枪一个，精准清算。",
   "announcement.star.role.dirt_id": "土块",
   "announcement.star.goals.dirt_id": "通过轮盘赌对决，成为最后的赢家！",
   "announcement.star.role.guest_ghost": "诡客",
@@ -4233,6 +4237,19 @@
   "skill.noellesroles.huanshushi.skill3": "幻影陷阱",
   "message.noellesroles.huanshushi.skill1_used": "§7幻影突袭！",
   "message.noellesroles.huanshushi.skill2_used": "§7幻影随行！",
-  "message.noellesroles.huanshushi.skill3_used": "§7幻影陷阱！"
+  "message.noellesroles.huanshushi.skill3_used": "§7幻影陷阱！",
+
+  "==================== 嘉豪角色 ====================": "",
+  "announcement.star.role.jiahao_wanglihao": "嘉豪",
+  "announcement.star.goals.jiahao_wanglihao": "往里豪！你是嘉豪，用音乐感染周围的人！",
+  "announcement.star.win.jiahao_wanglihao": "乘客胜利！",
+  "skill.noellesroles.jiahao.music_1": "歌曲一",
+  "skill.noellesroles.jiahao.music_2": "歌曲二",
+  "skill.noellesroles.jiahao.music_3": "歌曲三",
+  "skill.noellesroles.jiahao.spotlight": "聚光灯",
+  "message.noellesroles.jiahao.music_played": "♫ 正在播放第 %s 首歌曲",
+  "message.noellesroles.jiahao.music_switched": "♫ 切换到第 %s 首歌曲",
+  "message.noellesroles.jiahao.spotlight_used": "♫ 聚光灯！吸引了 %s 位观众的注意",
+  "message.noellesroles.jiahao.not_enough_coins": "金币不足！需要 %s 金币"
 
 }

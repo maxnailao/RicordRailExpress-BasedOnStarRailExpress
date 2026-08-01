@@ -181,7 +181,7 @@ public class CustomWinnerClass {
                 var players = serverLevel.players();
                 for (var player : players) {
                     if (GameUtils.isPlayerAliveAndSurvival(player))
-                        if (gameComponent.isRole(player, TMMRoles.LOOSE_END)) {
+                        if (ModRoles.isLooseEndVariant(gameComponent.getRole(player))) {
                             return WinStatus.LOOSE_END;
                         }
                 }

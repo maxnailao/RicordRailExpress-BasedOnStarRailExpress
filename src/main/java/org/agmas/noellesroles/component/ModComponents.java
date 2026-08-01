@@ -595,6 +595,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "guardian"),
                   org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent.class);
 
+  // 嘉豪组件 - 平民阵营，音乐播放+皮肤变换+聚光灯
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.jiahao.JiahaoPlayerComponent> JIAHAO = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "jiahao_wanglihao"),
+                  org.agmas.noellesroles.game.roles.innocence.jiahao.JiahaoPlayerComponent.class);
+
   // 武术家组件 - 平民阵营，心流状态+连击debuff
   public static final ComponentKey<WushujiaPlayerComponent> WUSHUJIA = ComponentRegistry
           .getOrCreate(
@@ -1266,6 +1272,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, GUARDIAN)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.innocence.guardian.GuardianPlayerComponent::new);
+
+    // 注册嘉豪组件 - 平民阵营，音乐播放+皮肤变换+聚光灯
+    registry.beginRegistration(Player.class, JIAHAO)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocence.jiahao.JiahaoPlayerComponent::new);
 
     // 注册武术家组件 - 平民阵营，心流状态+连击debuff
     registry.beginRegistration(Player.class, WUSHUJIA)

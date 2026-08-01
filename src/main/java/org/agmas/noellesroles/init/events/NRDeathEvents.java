@@ -1155,7 +1155,7 @@ public class NRDeathEvents {
             if (gameWorld.isRole(killer, ModRoles.PIGE))
                 return true;
             // 亡命徒可以击杀
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(gameWorld.getRole(killer))
                     || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
                 return true;
             // 其他来源免疫
@@ -1174,7 +1174,7 @@ public class NRDeathEvents {
             if (killer == null)
                 return true;
             // 亡命徒可以击杀
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(gameWorld.getRole(killer))
                     || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
                 return true;
             // 其他来源免疫

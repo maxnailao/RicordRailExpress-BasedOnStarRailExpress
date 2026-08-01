@@ -1217,7 +1217,7 @@ public class GameUtils {
                                         isWinner = true;
                                     }
                                 } else {
-                                    if (playerRole.identifier().equals(TMMRoles.LOOSE_END.identifier())) {
+                                    if (ModRoles.isLooseEndVariant(playerRole)) {
                                         isWinner = true;
                                     }
                                 }
@@ -1352,7 +1352,7 @@ public class GameUtils {
                             isWinner = SREGameWorldComponent.isKillerTeamRoleStatic(role) && !role.isInnocent();
                             break;
                         case LOOSE_END:
-                            isWinner = role.identifier().equals(TMMRoles.LOOSE_END.identifier());
+                            isWinner = ModRoles.isLooseEndVariant(role);
                             break;
                         case NIAN_SHOU:
                             isWinner = "nianshou".equals(role.identifier().getPath());

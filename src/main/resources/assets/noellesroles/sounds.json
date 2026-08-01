@@ -218,5 +218,29 @@
         "pitch": 0.8
       }
     ]
+  },
+  "noellesroles.jiahao_music_1": {
+    "sounds": [
+      {
+        "name": "noellesroles:jiahao_music_1",
+        "stream": true
+      }
+    ]
+  },
+  "noellesroles.jiahao_music_2": {
+    "sounds": [
+      {
+        "name": "noellesroles:jiahao_music_2",
+        "stream": true
+      }
+    ]
+  },
+  "noellesroles.jiahao_music_3": {
+    "sounds": [
+      {
+        "name": "noellesroles:jiahao_music_3",
+        "stream": true
+      }
+    ]
   }
 }

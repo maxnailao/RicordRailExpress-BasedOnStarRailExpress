@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent;
@@ -62,11 +63,11 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     }
     // 亡命徒期间活人玩家不可听话
     if (RefugeeComponent.KEY.get(senderPlayer.level()).isAnyRevivals) {
-      if (RoleUtils.isPlayerTheJob(senderPlayer, TMMRoles.LOOSE_END)
+      if (ModRoles.isLooseEndVariant(RoleUtils.getPlayerRole(senderPlayer))
           && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(senderPlayer)) {
         return true;
       }
-      if (RoleUtils.isPlayerTheJob(receiverPlayer, TMMRoles.LOOSE_END)
+      if (ModRoles.isLooseEndVariant(RoleUtils.getPlayerRole(receiverPlayer))
           && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(receiverPlayer)) {
         return true;
       }

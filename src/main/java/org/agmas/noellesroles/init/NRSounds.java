@@ -85,6 +85,11 @@ public class NRSounds {
     public static final SoundEvent DESERT_EAGLE_SHOOT = registrar.create("noellesroles.shaying");
     public static final SoundEvent DESERT_EAGLE_RELOAD = registrar.create("noellesroles.desert_eagle_reload");
 
+    // 嘉豪音乐
+    public static final SoundEvent JIAHAO_MUSIC_1 = registrar.create("noellesroles.jiahao_music_1");
+    public static final SoundEvent JIAHAO_MUSIC_2 = registrar.create("noellesroles.jiahao_music_2");
+    public static final SoundEvent JIAHAO_MUSIC_3 = registrar.create("noellesroles.jiahao_music_3");
+
     public static void initialize() {
         registrar.registerEntries();
     }

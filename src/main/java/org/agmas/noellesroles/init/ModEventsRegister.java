@@ -458,7 +458,7 @@ public class ModEventsRegister {
                 if (victim instanceof ServerPlayer sp) {
                     for (var p : sp.getServer().getPlayerList().getPlayers()) {
                         if (GameUtils.isPlayerAliveAndSurvival(p)) {
-                            if (gameWorldComponent.isRole(p, TMMRoles.LOOSE_END)) {
+                            if (ModRoles.isLooseEndVariant(gameWorldComponent.getRole(p))) {
                                 refugeePlayer = p;
                                 break;
                             }
@@ -910,7 +910,7 @@ public class ModEventsRegister {
             }
 
             // 亡命徒职业：肉汁不免疫来自亡命徒角色的伤害
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(gameWorld.getRole(killer))
                     || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 return true;
             }

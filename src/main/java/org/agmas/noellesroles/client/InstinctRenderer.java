@@ -1061,7 +1061,7 @@ public class InstinctRenderer {
                 }
                 // 小丑&LOOSE END
                 if ((SREClient.gameComponent.isRole(self, ModRoles.JESTER)
-                        || SREClient.gameComponent.isRole(self, TMMRoles.LOOSE_END)
+                        || ModRoles.isLooseEndVariant(SREClient.gameComponent.getRole(self))
                         || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END)
                         || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.DIRT))
                         && SREClient.isPlayerAliveAndInSurvival()) {

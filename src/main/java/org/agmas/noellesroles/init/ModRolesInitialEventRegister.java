@@ -532,6 +532,12 @@ public class ModRolesInitialEventRegister {
                 comp.init();
                 comp.sync();
             }
+            // 嘉豪角色初始化
+            if (role.identifier().equals(ModRoles.JIAHAO.identifier())) {
+                var comp = ModComponents.JIAHAO.get(player);
+                comp.init();
+                comp.sync();
+            }
             // 如果不拦截就同步
             abilityPlayerComponent.sync();
         });
@@ -1894,6 +1900,44 @@ public class ModRolesInitialEventRegister {
                             return comp.useSkill3();
                         }).showOnHud(true).announceToSelf(true).build());
 
+        // ==================== 嘉豪技能注册：V/Y切换歌曲，G键播放当前歌曲，Shift+G聚光灯+播放音乐 ====================
+        RoleSkill.register(ModRoles.JIAHAO,
+                RoleSkill.skill(SRE.id("jiahao_music_1"),
+                        "skill.noellesroles.jiahao.music_1",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.JIAHAO.get(player);
+                            if (comp == null) return false;
+                            return comp.usePlayMusic(0);
+                        }).cooldownSeconds(100).showOnHud(true).announceToSelf(true).build(),
+                RoleSkill.skill(SRE.id("jiahao_music_2"),
+                        "skill.noellesroles.jiahao.music_2",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.JIAHAO.get(player);
+                            if (comp == null) return false;
+                            return comp.usePlayMusic(1);
+                        }).cooldownSeconds(100).showOnHud(true).announceToSelf(true).build(),
+                RoleSkill.skill(SRE.id("jiahao_music_3"),
+                        "skill.noellesroles.jiahao.music_3",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.JIAHAO.get(player);
+                            if (comp == null) return false;
+                            return comp.usePlayMusic(2);
+                        }).cooldownSeconds(100).showOnHud(true).announceToSelf(true).build(),
+                RoleSkill.skill(SRE.id("jiahao_spotlight"),
+                        "skill.noellesroles.jiahao.spotlight",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.JIAHAO.get(player);
+                            if (comp == null) return false;
+                            return comp.useSpotlight();
+                        }).cooldownSeconds(100).shifted(true).showOnHud(true).announceToSelf(true).build());
 
     }
 

@@ -240,6 +240,10 @@ public class ModRoles {
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
 
+    // 亡命徒阵营变体角色 ID
+    public static final ResourceLocation BUTCHER_LOOSE_END_ID = Noellesroles.id("tufu_morelooseend");
+    public static final ResourceLocation LIQUIDATOR_LOOSE_END_ID = Noellesroles.id("qingsuanzhe_morelooseend");
+
     // 悍匪角色 ID
     public static final ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
     // 钳工角色 ID
@@ -398,6 +402,8 @@ public class ModRoles {
     public static final ResourceLocation JIALIEBIADAO_ID = Noellesroles.id("jialebihaidao");
     // 黑白 (中立阵营)
     public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
+    // 嘉豪 (平民阵营)
+    public static final ResourceLocation JIAHAO_ID = Noellesroles.id("jiahao_wanglihao");
 
     /**
      *  情报官 - 平民阵营
@@ -3749,7 +3755,77 @@ public class ModRoles {
             .setOccupiedRoleCount(0)
             .setCanAutoAddMoney(false);
 
-// ... existing code ...
+    /**
+     * 嘉豪角色
+     * - 属于好人阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限体力（标准冲刺时间）
+     * - 可见时间
+     * - 技能（G键）：选择歌曲播放，播放期间皮肤变为嘉豪史蒂夫贴图，持续30秒，CD100秒
+     * - 副技能（Shift+G）：花费300金币，使半径8格玩家视角注视于自己，自身高亮15秒
+     */
+    public static SRERole JIAHAO = TMMRoles.registerRole(new NormalRole(
+            JIAHAO_ID,
+            new Color(60, 60, 60).getRGB(), // 黑灰色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 有限体力
+            false   // 显示计分板
+    ).setComponentKey(ModComponents.JIAHAO))
+            .setCanSeeTime(true)
+            .setDefaultMax(1);
+
+    // ==================== 亡命徒阵营变体角色 ====================
+
+    /**
+     * 屠夫 - 亡命徒阵营变体
+     * - 速度 V + 急迫 II
+     * - 初始道具：球棒 + 撬棍
+     */
+    public static SRERole BUTCHER_LOOSE_END = TMMRoles.registerRole(
+            new LooseEndRole(BUTCHER_LOOSE_END_ID, 0x9F0000, false, false, SRERole.MoodType.NONE, -1, false,
+                    new ArrayList<>(List.of(
+                            new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 4, true, false, true),
+                            new MobEffectInstance(MobEffects.DIG_SPEED, 30 * 20, 1, true, false, true)
+                    ))))
+            .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(0).setOtherModeRole(true);
+
+    /**
+     * 清算者 - 亡命徒阵营变体
+     * - 速度 II
+     * - 初始道具：狙击枪(已装倍镜+满弹) + 64发子弹 + 2手雷 + 撬棍
+     * - 狙击枪击杀后3秒冷却，未击杀1秒冷却
+     */
+    public static SRERole LIQUIDATOR_LOOSE_END = TMMRoles.registerRole(
+            new LooseEndRole(LIQUIDATOR_LOOSE_END_ID, 0x9F0000, false, false, SRERole.MoodType.NONE, -1, false,
+                    new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 1, true, false, true)))
+            .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(0).setOtherModeRole(true);
+
+    /**
+     * 判断角色是否为亡命徒阵营变体（亡命徒/屠夫/清算者）
+     */
+    public static boolean isLooseEndVariant(SRERole role) {
+        if (role == null) return false;
+        var id = role.identifier();
+        return id.equals(TMMRoles.LOOSE_END.identifier())
+                || id.equals(BUTCHER_LOOSE_END_ID)
+                || id.equals(LIQUIDATOR_LOOSE_END_ID);
+    }
+
+    /**
+     * 判断角色是否为亡命徒阵营变体（通过路径字符串比较）
+     */
+    public static boolean isLooseEndVariantPath(SRERole role) {
+        if (role == null) return false;
+        String path = role.identifier().getPath();
+        return path.equals(TMMRoles.LOOSE_END.identifier().getPath())
+                || path.equals(BUTCHER_LOOSE_END_ID.getPath())
+                || path.equals(LIQUIDATOR_LOOSE_END_ID.getPath());
+    }
 
     /**
      * 初始化并注册所有角色

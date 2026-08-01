@@ -2,6 +2,7 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
@@ -259,6 +260,33 @@ public class RoleInitialItems {
         looseItems.add(TMMItems.DERRINGER::getDefaultInstance);
         looseItems.add(TMMItems.KNIFE::getDefaultInstance);
         INITIAL_ITEMS_MAP.put(TMMRoles.LOOSE_END, looseItems);
+
+        // 屠夫初始物品：球棒 + 撬棍
+        List<Supplier<ItemStack>> butcherItems = new ArrayList<>();
+        butcherItems.add(TMMItems.BAT::getDefaultInstance);
+        butcherItems.add(TMMItems.CROWBAR::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.BUTCHER_LOOSE_END, butcherItems);
+
+        // 清算者初始物品：狙击枪(已装倍镜+满弹) + 64发狙击枪子弹 + 2手雷 + 撬棍
+        List<Supplier<ItemStack>> liquidatorItems = new ArrayList<>();
+        liquidatorItems.add(() -> {
+            ItemStack sniper = TMMItems.SNIPER_RIFLE.getDefaultInstance();
+            SniperRifleItem.setScopeAttached(sniper, true);
+            SniperRifleItem.setAmmoCount(sniper, SniperRifleItem.MAX_AMMO);
+            return sniper;
+        });
+        liquidatorItems.add(() -> {
+            ItemStack bullets = TMMItems.MAGNUM_BULLET.getDefaultInstance();
+            bullets.setCount(64);
+            return bullets;
+        });
+        liquidatorItems.add(() -> {
+            ItemStack grenades = TMMItems.GRENADE.getDefaultInstance();
+            grenades.setCount(2);
+            return grenades;
+        });
+        liquidatorItems.add(TMMItems.CROWBAR::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.LIQUIDATOR_LOOSE_END, liquidatorItems);
 
         // 红尘客
         List<Supplier<ItemStack>> wayfarerItems = new ArrayList<>();

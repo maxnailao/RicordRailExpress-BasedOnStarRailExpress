@@ -2,6 +2,7 @@ package pro.fazeclan.river.stupid_express.modifier.refugee.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
@@ -202,9 +203,13 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         bodiesToRemove.forEach(Entity::discard);
         player.getInventory().clearContent();
 
-        // Change role to LOOSE_END and remove REFUGEE modifier
-        StupidRoleUtils.changeRole(player, TMMRoles.LOOSE_END, false, false);
-        SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), TMMRoles.LOOSE_END);
+        // 随机选择亡命徒阵营角色：亡命徒/屠夫/清算者
+        SRERole[] looseEndVariants = { TMMRoles.LOOSE_END, ModRoles.BUTCHER_LOOSE_END, ModRoles.LIQUIDATOR_LOOSE_END };
+        SRERole selectedRole = looseEndVariants[player.getRandom().nextInt(looseEndVariants.length)];
+
+        // Change role to selected loose end variant and remove REFUGEE modifier
+        StupidRoleUtils.changeRole(player, selectedRole, false, false);
+        SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), selectedRole);
         StupidRoleUtils.sendWelcomeAnnouncement(player);
 
         // 亡命徒复活倒计时归零时，释放鹈鹕肚子里的所有玩家
@@ -297,7 +302,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             }
             var r = gameWorldComponent.getRole(player);
             if (r != null) {
-                if (r.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())
+                if (ModRoles.isLooseEndVariantPath(r)
                         || r.identifier().getPath().equals(ModRoles.MONOKUMA.identifier().getPath())) {
                     continue;
                 }
@@ -329,12 +334,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 return false;
             }
             var r = gameWorldComponent.getRole(p);
-            if (r != null) {
-                if (r.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
-                    return true;
-                }
-            }
-            return false;
+            return ModRoles.isLooseEndVariantPath(r);
         });
         if (a) {
             return;
@@ -359,12 +359,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 return false;
             }
             var r = gameWorldComponent.getRole(p);
-            if (r != null) {
-                if (r.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
-                    return true;
-                }
-            }
-            return false;
+            return ModRoles.isLooseEndVariantPath(r);
         });
         if (a) {
             return;
@@ -521,7 +516,9 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
     public static void register() {
         ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
-            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END)
+            var gameWorld = SREGameWorldComponent.KEY.get(sender.level());
+            var role = gameWorld.getRole(sender);
+            if (ModRoles.isLooseEndVariant(role)
                     && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(sender))
                 return false;
             return true;
