@@ -1305,6 +1305,13 @@ public class ModEventsRegister {
         // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
         org.agmas.noellesroles.content.item.GroselleJourneyManager.register();
         VoodooDeathHandler.registerEvents();
+
+        // 幽灵/潜行者疯魔击杀特效
+        org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent.registerKillEffectEvent();
+        org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent.registerKillEffectEvent();
+        // 掠夺者击杀冷却
+        org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent.registerKillCooldownEvent();
+
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
         };

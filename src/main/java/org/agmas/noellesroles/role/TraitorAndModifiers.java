@@ -225,7 +225,7 @@ public class TraitorAndModifiers {
     public static SREModifier CORRUPTION = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("corruption"),
             new Color(64, 64, 64).getRGB(), // 灰偏黑
-            null, new HashSet<>(Arrays.asList(ModRoles.GUARD, ModRoles.PATROLLER)), false, false))
+            null, new HashSet<>(Arrays.asList(ModRoles.SHERIFF, ModRoles.PATROLLER)), false, false))
             .setDefaultEnableChance(10000).setHidden(false);
 
     // ==================== 运行时数据存储 ====================

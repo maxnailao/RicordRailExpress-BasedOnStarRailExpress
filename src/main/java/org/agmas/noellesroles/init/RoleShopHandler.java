@@ -2180,12 +2180,12 @@ public class RoleShopHandler {
         {
             var shopEntries = new ArrayList<ShopEntry>();
 
-            // 毒箭 - 50金币
+            // 毒箭 - 65金币
             final var PoisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
             PoisonArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.liemoren_poison_arrow.name"));
             PoisonArrow.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.POISON));
             PoisonArrow.set(DataComponents.MAX_STACK_SIZE, 1);
-            shopEntries.add(new ShopEntry(PoisonArrow, 50, ShopEntry.Type.WEAPON) {
+            shopEntries.add(new ShopEntry(PoisonArrow, 65, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     int itemCount = SREItemUtils.countItem(player, Items.TIPPED_ARROW);

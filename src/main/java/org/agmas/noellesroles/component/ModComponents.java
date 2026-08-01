@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.roles.innocence.conductor.ConductorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.niyanjingshibushixiale.NiyajingshiPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.pathfinder.PathfinderPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.weixiugong.WeixiugongPlayerComponent;
@@ -322,6 +323,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<GlitchRobotPlayerComponent> GLITCH_ROBOT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "glitch_robot"),
       GlitchRobotPlayerComponent.class);
+
+  // 列车长组件 - 望远镜瞄准高亮
+  public static final ComponentKey<ConductorPlayerComponent> CONDUCTOR = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "conductor"),
+          ConductorPlayerComponent.class);
 
   public static final ComponentKey<NianShouPlayerComponent> NIAN_SHOU = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "nianshou"),
@@ -952,6 +958,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, GLITCH_ROBOT)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(GlitchRobotPlayerComponent::new);
+
+    // 注册列车长组件 - 望远镜持续瞄准3秒使目标高亮5秒
+    registry.beginRegistration(Player.class, CONDUCTOR)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(ConductorPlayerComponent::new);
 
     // 注册年兽组件
     registry.beginRegistration(Player.class, NIAN_SHOU)

@@ -1293,6 +1293,7 @@ public class ModRoles {
             .setDefaultEnableChance(8000)
             .setRefreshableSpecialVigilante(2000, true);
 
+
     /**
      * 里昂（警长阵营）。
      * - 警长阵营（isInnocent = true, setVigilanteTeam = true），不能使用杀手能力。
@@ -1336,10 +1337,10 @@ public class ModRoles {
                 @Override
                 public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
                     java.util.ArrayList<io.wifi.starrailexpress.util.ShopEntry> shop = new java.util.ArrayList<>();
-                    // 绳索 - 75金币
+                    // 绳索 - 125金币
                     shop.add(new io.wifi.starrailexpress.util.ShopEntry(
                             org.agmas.noellesroles.init.ModItems.ROPE.getDefaultInstance(),
-                            75,
+                            125,
                             io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
                     // 德林加弹药重置 - 150金币（图标为德林加手枪）
                     shop.add(new io.wifi.starrailexpress.util.ShopEntry(

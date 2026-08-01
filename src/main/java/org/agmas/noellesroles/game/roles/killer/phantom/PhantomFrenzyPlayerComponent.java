@@ -52,6 +52,9 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
     private final Player player;
     public boolean inFrenzy = false;
 
+    /** 疯魔开始前保存的刀数量（stopPsycho会清除所有刀，结束后按此数量返还再扣一把） */
+    private int savedKnifeCount = 0;
+
     public PhantomFrenzyPlayerComponent(Player player) {
         this.player = player;
     }
@@ -92,6 +95,16 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
         SREPlayerPsychoComponent psychoComponent = SREPlayerPsychoComponent.KEY.get(player);
         if (psychoComponent.getPsychoTicks() > 0) {
             return false;
+        }
+
+        // 保存当前背包中刀的数量（stopPsycho会清除所有刀，结束后用于返还）
+        savedKnifeCount = 0;
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.is(TMMItems.KNIFE)) {
+                savedKnifeCount += stack.getCount();
+            }
         }
 
         // 给予一把刀
@@ -158,6 +171,14 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
             return;
 
         this.inFrenzy = false;
+
+        // stopPsycho 已经清除了所有刀，返还玩家原有的刀再没收一把
+        // giveBack = savedKnifeCount - 1（至少为0）
+        int giveBack = Math.max(0, savedKnifeCount - 1);
+        for (int i = 0; i < giveBack; i++) {
+            RoleUtils.insertStackInFreeSlot(player, new ItemStack(TMMItems.KNIFE));
+        }
+        savedKnifeCount = 0;
 
         // 移除隐身和速度效果
         player.removeEffect(MobEffects.INVISIBILITY);

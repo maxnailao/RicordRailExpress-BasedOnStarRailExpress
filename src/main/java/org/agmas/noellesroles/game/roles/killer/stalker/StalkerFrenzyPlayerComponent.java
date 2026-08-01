@@ -134,7 +134,7 @@ public class StalkerFrenzyPlayerComponent implements RoleComponent, ServerTickin
 
         // 设置psycho模式（不使用startPsycho避免给球棒）
         psychoComponent.setPsychoTicks(FRENZY_DURATION);
-        psychoComponent.setArmour(0); // 无护盾
+        psychoComponent.setArmour(1); // 一层护盾
         psychoComponent.type = 3; // 潜行者专属疯魔类型
         psychoComponent.sync();
 
