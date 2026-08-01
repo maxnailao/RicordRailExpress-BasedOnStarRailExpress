@@ -240,7 +240,7 @@ public class SREConfig implements ConfigData {
     public boolean minigameTaskRotationMode = true;
     // 轮换模式下小游戏任务完成时的额外金币奖励
     public int minigameRotationCoinBonus = 15;
-    public int moneyPerKill = 100;
+    public int moneyPerKill = 200;
     public int grenadeMoneyPerKill = 80;
     public int grenadeMaxMoneyReward = 375;
     public int grenadeMaxHurtPlayers = 8;

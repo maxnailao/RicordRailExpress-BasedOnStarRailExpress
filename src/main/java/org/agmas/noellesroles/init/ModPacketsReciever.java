@@ -1181,9 +1181,9 @@ public class ModPacketsReciever {
             PartyPlayerComponent pc = PartyPlayerComponent.KEY.get(player);
             int threshold = pc.getThreshold();
 
-            // 为目标设置氦气变声（4分钟 = 240秒 = 4800 ticks）
+            // 为目标设置氦气变声（2分40秒 = 160秒 = 3200 ticks）
             HeliumBuzzPlayerComponent buzz = HeliumBuzzPlayerComponent.KEY.get(target);
-            buzz.apply(4 * 60 * 20, 1); // 4分钟，强度1
+            buzz.apply(160 * 20, 1); // 2分40秒，强度1
 
             // 记录到组件
             pc.addAffectedTarget(target.getUUID());

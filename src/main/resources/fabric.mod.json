@@ -275,7 +275,8 @@
       "noellesroles:philanthropist",
       "noellesroles:ghoul",
       "noellesroles:eling_apex",
-      "noellesroles:cowboy"
+      "noellesroles:cowboy",
+      "noellesroles:conductor"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

@@ -158,6 +158,7 @@ public final class MapStatusBarRuntime {
         if (!game.isRunning()) return false;
         if (game.isRole(player, ModRoles.SNOW_HUNTER)) return true;
         if (game.isRole(player, ModRoles.SNOWGUAI_WOW)) return true;
+        if (game.isRole(player, ModRoles.GLITCH_ROBOT)) return true;
         return false;
     }
 
@@ -190,7 +191,7 @@ public final class MapStatusBarRuntime {
 
         int leatherPieces = leatherArmorPieces(player);
         boolean protectedFromCold = leatherPieces >= 3;
-        int coldInterval = 3 * 20 * Math.max(1, leatherPieces + 1);
+        int coldInterval = 6 * 20 * Math.max(1, leatherPieces + 1);
         boolean canSeeSky = level.canSeeSky(player.blockPosition());
         boolean inPowderSnow = level.getBlockState(player.blockPosition()).is(Blocks.POWDER_SNOW);
 
@@ -284,6 +285,13 @@ public final class MapStatusBarRuntime {
         if (ModComponents.SNOWGUAI_WOW.maybeGet(player).isPresent()) {
             var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
             if (game.isRole(player, ModRoles.SNOWGUAI_WOW)) {
+                return false;
+            }
+        }
+        // 故障机器人不受冻死影响
+        if (ModComponents.GLITCH_ROBOT.maybeGet(player).isPresent()) {
+            var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            if (game.isRole(player, ModRoles.GLITCH_ROBOT)) {
                 return false;
             }
         }

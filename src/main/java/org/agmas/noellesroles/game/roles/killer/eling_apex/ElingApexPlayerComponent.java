@@ -189,7 +189,7 @@ public class ElingApexPlayerComponent implements RoleComponent, ServerTickingCom
 
         // 施加空间状态效果（含无敌）
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, PHASE_TICKS + 2, 0, false, false, true));
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, PHASE_TICKS + 2, 0, false, false, true));
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, PHASE_TICKS + 2, 1, false, false, true));
         player.addEffect(new MobEffectInstance(ModEffects.USED_BANED, PHASE_TICKS + 2, 0, false, false, true));
         player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, PHASE_TICKS + 2, 0, false, false, true));
 

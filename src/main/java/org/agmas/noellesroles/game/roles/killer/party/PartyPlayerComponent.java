@@ -119,7 +119,7 @@ public class PartyPlayerComponent implements RoleComponent, ServerTickingCompone
             pendingPartySoundTicks--;
             if (pendingPartySoundTicks == 0 && pendingPartySoundPos != null) {
                 ServerLevel level = (ServerLevel) sp.level();
-                level.playSound(null, pendingPartySoundPos, NRSounds.PARTY_SKILL, SoundSource.PLAYERS, 2.0F, 1.0F);
+                level.playSound(null, pendingPartySoundPos, NRSounds.PARTY_SKILL, SoundSource.PLAYERS, 3.3F, 1.0F);
             }
         }
     }
