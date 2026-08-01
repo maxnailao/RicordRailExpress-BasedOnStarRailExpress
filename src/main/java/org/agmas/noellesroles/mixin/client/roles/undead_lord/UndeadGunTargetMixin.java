@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.phys.HitResult;
+import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity;
 import org.agmas.noellesroles.content.entity.PigeonEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
@@ -28,7 +29,9 @@ public class UndeadGunTargetMixin {
                         || entity instanceof PuppeteerBodyEntity
                         || entity instanceof PigeonEntity
                         || entity instanceof MorphlingKnifeDummyEntity
-                        || entity instanceof UndeadEntity,
+                        || entity instanceof UndeadEntity
+                        || entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity
+                        || entity instanceof IllusionDecoyEntity,
                 20f);
         cir.setReturnValue(result);
     }

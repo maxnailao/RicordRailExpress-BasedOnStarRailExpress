@@ -307,6 +307,8 @@ public class ModRoles {
     public static final ResourceLocation GHOUL_ID = Noellesroles.id("ghoul");
     // 幻魔者角色 ID - 杀手阵营
     public static final ResourceLocation HUANMOZHE_ID = Noellesroles.id("huanmozhe");
+    // 幻术师角色 ID - 杀手阵营
+    public static final ResourceLocation HUANSHUSHI_ID = Noellesroles.id("huanshushi");
     // 雪怪角色 ID
     public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
         // 售衣员角色 ID - 平民阵营
@@ -3639,6 +3641,27 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限体力
             true    // 隐藏计分板
     )).setComponentKey(ModComponents.HUANMOZHE)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true);
+
+    /**
+     * 幻术师 - 杀手阵营
+     * - 技能1：半径6格内随机释放4个同皮肤举刀假人，向最近平民靠拢，存在10s，被击中释放闪光弹
+     * - 技能2：释放4个假人跟随，与玩家行动一致（含视角），被击中释放闪光弹+击中者失明10s
+     * - 技能3：释放1个原地假人，被击中释放闪光弹，10格内玩家受黑暗I+失明I+缓慢I 8s + 扣25%理智值
+     * - 三个技能共用CD 30s
+     * - 被动：免疫霉运效果
+     * - 登车标语：劫掠的号角已经吹响
+     */
+    public static SRERole HUANSHUSHI = TMMRoles.registerRole(new NormalRole(
+            HUANSHUSHI_ID,
+            new Color(64, 64, 64).getRGB(), // 深灰色
+            false,  // 杀手阵营
+            true,   // 可以使用杀手能力
+            SRERole.MoodType.FAKE, // 虚假心情
+            Integer.MAX_VALUE, // 无限体力
+            true    // 隐藏计分板
+    )).setComponentKey(ModComponents.HUANSHUSHI)
             .setCanSeeTime(true)
             .setCanSeeCoin(true);
 

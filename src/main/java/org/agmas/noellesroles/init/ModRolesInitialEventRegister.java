@@ -1867,6 +1867,33 @@ public class ModRolesInitialEventRegister {
                             return success;
                         }).cooldownSeconds(30).showOnHud(true).announceToSelf(true).build());
 
+        // ==================== 幻术师技能注册：三个技能通过V键切换，G键释放，共用CD 30s ====================
+        RoleSkill.register(ModRoles.HUANSHUSHI,
+                RoleSkill.skill(SRE.id("huanshushi_skill1"),
+                        "skill.noellesroles.huanshushi.skill1",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            var comp = ModComponents.HUANSHUSHI.get(player);
+                            if (comp == null) return false;
+                            return comp.useSkill1();
+                        }).showOnHud(true).announceToSelf(true).build(),
+                RoleSkill.skill(SRE.id("huanshushi_skill2"),
+                        "skill.noellesroles.huanshushi.skill2",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            var comp = ModComponents.HUANSHUSHI.get(player);
+                            if (comp == null) return false;
+                            return comp.useSkill2();
+                        }).showOnHud(true).announceToSelf(true).build(),
+                RoleSkill.skill(SRE.id("huanshushi_skill3"),
+                        "skill.noellesroles.huanshushi.skill3",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            var comp = ModComponents.HUANSHUSHI.get(player);
+                            if (comp == null) return false;
+                            return comp.useSkill3();
+                        }).showOnHud(true).announceToSelf(true).build());
+
 
     }
 

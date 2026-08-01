@@ -666,6 +666,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "huanmozhe"),
           org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent.class);
 
+  // 幻术师组件 - 杀手阵营，假人释放+闪光弹+霉运免疫被动
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent> HUANSHUSHI = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "huanshushi"),
+          org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -1325,6 +1330,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, HUANMOZHE)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozhePlayerComponent::new);
+
+    // 注册幻术师组件 - 杀手阵营，假人释放+闪光弹+霉运免疫被动
+    registry.beginRegistration(Player.class, HUANSHUSHI)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

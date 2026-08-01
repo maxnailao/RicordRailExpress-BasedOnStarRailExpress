@@ -435,6 +435,19 @@ public class ModEntities {
                     .build());
 
     /**
+     * 幻术师假人实体 - 三种行为模式（追击/跟随/静止），被击中释放闪光弹
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<IllusionDecoyEntity> ILLUSION_DECOY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("illusion_decoy"),
+            FabricEntityTypeBuilder.<IllusionDecoyEntity>create(MobCategory.MISC, IllusionDecoyEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */
@@ -457,5 +470,7 @@ public class ModEntities {
         // 幻魔者恼鬼实体属性
         FabricDefaultAttributeRegistry.register(HUANMOZHE_VEX,
                 org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity.createAttributes());
+        // 幻术师假人实体属性
+        FabricDefaultAttributeRegistry.register(ILLUSION_DECOY, IllusionDecoyEntity.createAttributes());
     }
 }

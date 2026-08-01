@@ -85,6 +85,9 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
             if (entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) {
                 return true;
             }
+            if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
+                return true;
+            }
             return false;
         }, RANGE);
     }

@@ -4221,6 +4221,18 @@
   "message.noellesroles.huanmozhe.revival_triggered": "§6不死图腾触发！15秒后将复活...",
   "message.noellesroles.huanmozhe.revived": "§6你已复活！获得10秒无敌效果",
   "message.noellesroles.huanmozhe.invincible_end": "无敌效果已结束",
-  "hud.noellesroles.huanmozhe.vex_tip": "点选玩家释放恼鬼"
+  "hud.noellesroles.huanmozhe.vex_tip": "点选玩家释放恼鬼",
+
+  "==================== 幻术师 Huanshushi ====================": "",
+  "announcement.star.role.huanshushi": "幻术师",
+  "announcement.star.role.noellesroles.huanshushi": "幻术师",
+  "announcement.star.goals.huanshushi": "劫掠的号角已经吹响",
+  "announcement.star.win.huanshushi": "杀手阵营胜利！",
+  "skill.noellesroles.huanshushi.skill1": "幻影突袭",
+  "skill.noellesroles.huanshushi.skill2": "幻影随行",
+  "skill.noellesroles.huanshushi.skill3": "幻影陷阱",
+  "message.noellesroles.huanshushi.skill1_used": "§7幻影突袭！",
+  "message.noellesroles.huanshushi.skill2_used": "§7幻影随行！",
+  "message.noellesroles.huanshushi.skill3_used": "§7幻影陷阱！"
 
 }

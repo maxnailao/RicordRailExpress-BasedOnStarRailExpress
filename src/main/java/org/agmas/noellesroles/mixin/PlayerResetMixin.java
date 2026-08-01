@@ -104,6 +104,9 @@ public abstract class PlayerResetMixin {
         SkinSplitPersonalityComponent.KEY.get(player).clear();
         SkinSplitPersonalityComponent.KEY.get(player).sync();
         MonokumaPlayerComponent.KEY.get(player).clear();
+        // 清除坠木与皮革嘎的组件状态（防止猪建模/隐身效果残留到下一局）
+        org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent.KEY.get(player).clear();
+        org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.get(player).clear();
         (PlayerVolumeComponent.KEY.get(player)).clear();
         (WayfarerPlayerComponent.KEY.get(player)).clear();
         (HoanMeirinPlayerComponent.KEY.get(player)).clear();

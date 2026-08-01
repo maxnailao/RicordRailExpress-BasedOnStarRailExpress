@@ -109,7 +109,11 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     }
 
                     // 处理实体命中
-                    if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof Player target
+                    // 检查是否是幻术师假人
+                    if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity illusionDecoy
+                            && illusionDecoy.distanceTo(player) < 200.0) {
+                        illusionDecoy.playerHurt(player);
+                    } else if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof Player target
                             && target.distanceTo(player) < 200.0) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
 

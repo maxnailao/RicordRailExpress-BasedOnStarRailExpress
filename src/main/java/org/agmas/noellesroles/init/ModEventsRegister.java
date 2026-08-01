@@ -1116,6 +1116,39 @@ public class ModEventsRegister {
             }
             return true;
         });
+
+        // 坠木死亡免疫：仅允许皮革嘎的和亡命徒击杀，环境死因仍允许
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (!gameWorld.isRole(victim, ModRoles.ZHUIMU))
+                return true;
+            if (isZhuimuPigeEnvironmentalDeath(deathReason))
+                return true;
+            if (killer == null)
+                return true;
+            if (gameWorld.isRole(killer, ModRoles.PIGE))
+                return true;
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+                    || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
+                return true;
+            return false;
+        });
+
+        // 皮革嘎的死亡免疫：仅允许亡命徒击杀，环境死因仍允许
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (!gameWorld.isRole(victim, ModRoles.PIGE))
+                return true;
+            if (isZhuimuPigeEnvironmentalDeath(deathReason))
+                return true;
+            if (killer == null)
+                return true;
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+                    || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
+                return true;
+            return false;
+        });
+
         MaChenXuEventHandler.register();
         VeteranKnifeHandler.register();
         GamblerHandler.register();
@@ -2564,6 +2597,23 @@ public class ModEventsRegister {
             ModEventsRegister.handleDeathPenalty(player, true, true);
             sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
         });
+    }
+
+    /**
+     * 判断是否为环境/自然死因（掉下列车、冻僵、焚化炉等），
+     * 用于坠木与皮革嘎的的死亡免疫：环境死因始终放行。
+     */
+    private static boolean isZhuimuPigeEnvironmentalDeath(ResourceLocation deathReason) {
+        if (deathReason == null)
+            return false;
+        String path = deathReason.getPath();
+        return path.equals("fell_out_of_train")
+                || path.equals("freeze")
+                || path.equals("incinerator")
+                || path.equals("disconnected")
+                || path.equals("heart_attack")
+                || path.equals("ignited")
+                || path.equals("failed_ignite");
     }
 
     public static void registerPredicate() {

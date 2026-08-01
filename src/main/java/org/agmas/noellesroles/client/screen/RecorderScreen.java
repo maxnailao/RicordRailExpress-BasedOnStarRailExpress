@@ -275,6 +275,8 @@ public class RecorderScreen extends Screen {
         roles.clear();
         roles.addAll(availableRoleIds);
         roles.removeIf(r -> r != null && r.identifier().equals(org.agmas.noellesroles.role.ModRoles.MERCENARY_ID));
+        roles.removeIf(r -> r != null && r.identifier().equals(org.agmas.noellesroles.role.ModRoles.ZHUIMU_ID));
+        roles.removeIf(r -> r != null && r.identifier().equals(org.agmas.noellesroles.role.ModRoles.PIGE_ID));
         // 排除所有DNF职业
         roles.removeIf(r -> r != null && IGNORED_ROLE_IDS.contains(r.identifier()));
         // 排除所有修机模式职业

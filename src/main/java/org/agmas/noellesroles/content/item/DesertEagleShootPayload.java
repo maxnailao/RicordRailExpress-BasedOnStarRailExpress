@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
@@ -99,6 +100,14 @@ public record DesertEagleShootPayload(Action action, int targetId, boolean isHea
 
             // 处理命中逻辑
             Entity targetEntity = player.serverLevel().getEntity(targetId);
+
+            // 检查是否是幻术师假人
+            if (targetEntity instanceof IllusionDecoyEntity illusionDecoy
+                    && illusionDecoy.distanceToSqr(player) < DesertEagleItem.RANGE * DesertEagleItem.RANGE) {
+                illusionDecoy.playerHurt(player);
+                return;
+            }
+
             if (targetEntity instanceof ServerPlayer target
                     && target.distanceToSqr(player) < DesertEagleItem.RANGE * DesertEagleItem.RANGE) {
 

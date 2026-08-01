@@ -95,7 +95,8 @@ public class RevolverItem extends SkinableItem implements HeldLikeRevolver {
                             || entity instanceof PuppeteerBodyEntity
                             || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity
                             || entity instanceof org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity
-                            || entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity;
+                            || entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity
+                            || entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
                 }, 20f);
     }
 

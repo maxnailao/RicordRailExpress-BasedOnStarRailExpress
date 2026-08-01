@@ -111,6 +111,9 @@ public class SheriffRevolverItem extends SkinableItem {
             if (entity instanceof Player player) {
                 return GameUtils.isPlayerAliveAndSurvival(player);
             }
+            if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
+                return true;
+            }
             return false;
         }, 15.0);
     }

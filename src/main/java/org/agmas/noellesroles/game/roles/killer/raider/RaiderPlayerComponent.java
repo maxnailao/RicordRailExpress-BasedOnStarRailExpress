@@ -219,7 +219,7 @@ public class RaiderPlayerComponent implements RoleComponent, ServerTickingCompon
 
         // 设置psycho模式（锁定主手）
         psychoComponent.setPsychoTicks(FRENZY_DURATION);
-        psychoComponent.setArmour(0);
+        psychoComponent.setArmour(1); // 一层护盾
         psychoComponent.type = 4; // 掠夺者专属疯魔类型
         psychoComponent.sync();
 

@@ -3994,6 +3994,18 @@
   "message.noellesroles.huanmozhe.revival_triggered": "§6Undying Totem triggered! Reviving in 15s...",
   "message.noellesroles.huanmozhe.revived": "§6You have revived! 10s invincibility granted",
   "message.noellesroles.huanmozhe.invincible_end": "Invincibility has ended",
-  "hud.noellesroles.huanmozhe.vex_tip": "Click a player to summon vexes"
+  "hud.noellesroles.huanmozhe.vex_tip": "Click a player to summon vexes",
+
+  "==================== Illusionist Huanshushi ====================": "",
+  "announcement.star.role.huanshushi": "Illusionist",
+  "announcement.star.role.noellesroles.huanshushi": "Illusionist",
+  "announcement.star.goals.huanshushi": "The horn of plunder has sounded",
+  "announcement.star.win.huanshushi": "Killer Faction wins!",
+  "skill.noellesroles.huanshushi.skill1": "Phantom Rush",
+  "skill.noellesroles.huanshushi.skill2": "Phantom Follow",
+  "skill.noellesroles.huanshushi.skill3": "Phantom Trap",
+  "message.noellesroles.huanshushi.skill1_used": "§7Phantom Rush!",
+  "message.noellesroles.huanshushi.skill2_used": "§7Phantom Follow!",
+  "message.noellesroles.huanshushi.skill3_used": "§7Phantom Trap!"
 
 }

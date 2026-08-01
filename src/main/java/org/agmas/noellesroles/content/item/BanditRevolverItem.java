@@ -63,16 +63,15 @@ public class BanditRevolverItem extends SkinableItem {
 
     public static HitResult getGunTarget(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user, (entity) -> {
-            boolean var10000;
             if (entity instanceof Player player) {
                 if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                    var10000 = true;
-                    return var10000;
+                    return true;
                 }
             }
-
-            var10000 = false;
-            return var10000;
+            if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
+                return true;
+            }
+            return false;
         }, (double) 20.0F);
     }
 

@@ -13,6 +13,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +48,12 @@ public record ZeroOneFiveShootPayload(int target, boolean isAutoSecondShot) impl
 
             // 检查目标并处理命中
             boolean hit = false;
-            if (player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
+            // 检查是否是幻术师假人
+            if (player.serverLevel().getEntity(payload.target()) instanceof IllusionDecoyEntity illusionDecoy
+                    && illusionDecoy.distanceToSqr(player) < 30 * 30) {
+                illusionDecoy.playerHurt(player);
+                hit = true;
+            } else if (player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
                     && target.distanceToSqr(player) < 30 * 30) {
                 // 处理命中
                 ZeroOneFiveGunItem.onHit(player, target);

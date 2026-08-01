@@ -192,6 +192,17 @@ public class RoleInitialItems {
         cakeMakerItems.add(Items.BUNDLE::getDefaultInstance);
         INITIAL_ITEMS_MAP.put(ModRoles.CAKE_MAKER, cakeMakerItems);
 
+        // 坠木初始物品 - 收纳袋（仿照蛋糕师）
+        List<Supplier<ItemStack>> zhuimuItems = new ArrayList<>();
+        zhuimuItems.add(Items.BUNDLE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.ZHUIMU, zhuimuItems);
+
+        // 皮革嘎的初始物品 - 铁剑 + 收纳袋（仿照蛋糕师）
+        List<Supplier<ItemStack>> pigeItems = new ArrayList<>();
+        pigeItems.add(ModItems.PIGE_SWORD::getDefaultInstance);
+        pigeItems.add(Items.BUNDLE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.PIGE, pigeItems);
+
         List<Supplier<ItemStack>> doomedSinnerItems = new ArrayList<>();
         doomedSinnerItems.add(Items.BUNDLE::getDefaultInstance);
         INITIAL_ITEMS_MAP.put(ModRoles.DOOMED_SINNER, doomedSinnerItems);

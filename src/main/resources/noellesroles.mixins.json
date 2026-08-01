@@ -63,6 +63,7 @@
     "roles.puppeteer.PuppeteerBodyKnifePayloadMixin",
     "roles.courier.PigeonGunPayloadMixin",
     "roles.morphling.MorphlingDummyGunPayloadMixin",
+    "roles.huanshushi.IllusionDecoyGunPayloadMixin",
     "roles.undead_lord.UndeadGunPayloadMixin",
     "roles.nostalgist.NostalgistKnifeImmuneMixin",
     "roles.stalker.StalkerLeftClickKillMixin",

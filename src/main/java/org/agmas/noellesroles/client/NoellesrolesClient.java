@@ -411,6 +411,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.renderer.UndeadEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MORPHLING_KNIFE_DUMMY,
                 org.agmas.noellesroles.client.renderer.MorphlingKnifeDummyRenderer::new);
+        // 注册幻术师假人实体渲染器
+        EntityRendererRegistry.register(ModEntities.ILLUSION_DECOY,
+                org.agmas.noellesroles.client.renderer.IllusionDecoyRenderer::new);
         EntityRendererRegistry.register(ModEntities.DOOMED_SINNER_BODY,
                 context -> new io.wifi.starrailexpress.client.render.entity.PlayerBodyEntityRenderer<>(context, false));
         EntityRendererRegistry.register(ModEntities.SALTED_FISH_BODY,
