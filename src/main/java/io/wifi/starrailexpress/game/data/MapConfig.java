@@ -50,6 +50,9 @@ public class MapConfig {
         @SerializedName("repair")
         public RepairConfig repair;
 
+        @SerializedName("werewolf")
+        public WerewolfConfig werewolf;
+
         // 用于运行时转换颜色值
         public transient int parsedColor;
 
@@ -125,6 +128,15 @@ public class MapConfig {
         public List<Pos> hunterSpawns = new ArrayList<>();
         @SerializedName("survivorSpawns")
         public List<Pos> survivorSpawns = new ArrayList<>();
+    }
+
+    /**
+     * 狼人杀模式配置
+     */
+    public static class WerewolfConfig {
+        /** 座位坐标映射："1"~"12" -> 坐标 */
+        @SerializedName("seats")
+        public java.util.Map<String, Pos> seats = new java.util.HashMap<>();
     }
 
     public static class CloneEntry {

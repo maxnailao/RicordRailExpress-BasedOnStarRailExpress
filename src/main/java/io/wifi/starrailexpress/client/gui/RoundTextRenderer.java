@@ -29,6 +29,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -237,7 +238,7 @@ public class RoundTextRenderer {
                 for (SREGameRoundEndComponent.RoundEndData entry : roundEnd.players) {
                     final var role1 = lastRole.get(entry.player().getId());
                     if (role1 != null)
-                        if (role1.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
+                        if (ModRoles.isLooseEndVariant(role1)) {
                             loose_endsTotal++;
                         } else if (role1.isVigilanteTeam()) {
                             vigilanteTotal += 1;
@@ -296,7 +297,7 @@ public class RoundTextRenderer {
                         civilians++;
                     } else {
                         if (role2 != null) {
-                            if (role2.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
+                            if (ModRoles.isLooseEndVariant(role2)) {
                                 translateX = -63 + (loose_ends % 2) * 12;
                                 translateY = 14 + (loose_ends / 2) * 16;
                                 loose_ends++;

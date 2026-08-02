@@ -683,6 +683,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "huanshushi"),
           org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent.class);
 
+  // 狼人杀组件 - 狼人杀模式专用
+  public static final ComponentKey<org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent> WEREWOLF = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "werewolf"),
+          org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -1373,6 +1378,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     // registry.beginRegistration(PlayerEntity.class, EXAMPLE)
     // .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
     // .end(ExampleRoleComponent::new);
+
+    // 狼人杀组件注册
+    registry.beginRegistration(Player.class, WEREWOLF)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent::new);
 
   }
 }

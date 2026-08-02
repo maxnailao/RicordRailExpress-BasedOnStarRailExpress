@@ -343,5 +343,22 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(ScoreboardDataS2CPacket.TYPE, ScoreboardDataS2CPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ScoreboardSubmitC2SPacket.TYPE, ScoreboardSubmitC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(ScoreboardRequestC2SPacket.TYPE, ScoreboardRequestC2SPacket::handle);
+
+        // === 狼人杀模式网络包 ===
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfActionC2SPacket.TYPE,
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfActionC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfVoteC2SPacket.TYPE,
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfVoteC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket.TYPE,
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfActionC2SPacket.TYPE,
+                (payload, context) -> context.player().server.execute(() -> payload.handle(context.player())));
+        ServerPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfVoteC2SPacket.TYPE,
+                (payload, context) -> context.player().server.execute(() -> payload.handle(context.player())));
     }
 }

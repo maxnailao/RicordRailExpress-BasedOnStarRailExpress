@@ -712,6 +712,7 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
             ClientSkincrawlerState.clearAll();
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
+            org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.reset();
             SceneAssetClient.clearRuntime();
             ClientPlayerStatsCache.clear();
             RoleRotationCache.clear();
@@ -1078,7 +1079,23 @@ public class SREClient implements ClientModInitializer {
             // 滞时雷引爆倒计时 HUD
             io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
+            
+            // 狼人杀 HUD
+            org.agmas.noellesroles.game.modes.werewolf.client.WerewolfHudRenderer.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
         });
+        
+        // === 狼人杀 S2C 接收器 ===
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    // GAME_OVER 时完全重置客户端状态
+                    if (payload.phaseId() == (byte) org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.GAME_OVER.ordinal()) {
+                        org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.reset();
+                    } else {
+                        org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.updatePhase(
+                                payload.phaseId(), payload.currentActorSeat(), payload.deadlineTick(), payload.round());
+                    }
+                }));
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointsPacket.ID, SyncWaypointsPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointVisibilityPacket.ID,
                 SyncWaypointVisibilityPacket::handle);

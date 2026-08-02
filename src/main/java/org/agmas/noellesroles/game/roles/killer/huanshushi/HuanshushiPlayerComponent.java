@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.killer.huanshushi;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,7 @@ import net.minecraft.core.HolderLookup;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.init.ModEntities;
+import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.ArrayList;
@@ -244,9 +246,9 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
     }
 
     /**
-     * 被动：施加霉运免疫
+     * 被动：免疫霉运（unluck）与闪光弹致盲（RAID_OMEN）效果
      */
-    public void applyUnluckImmunity() {
+    public void applyPassiveImmunities() {
         if (player.hasEffect(MobEffects.BAD_OMEN)) {
             player.removeEffect(MobEffects.BAD_OMEN);
         }
@@ -255,11 +257,19 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
         if (unluckEffect != null) {
             player.removeEffect(MobEffects.UNLUCK);
         }
+        // 免疫闪光弹致盲（RAID_OMEN 会使屏幕渐黑）
+        if (player.hasEffect(MobEffects.RAID_OMEN)) {
+            player.removeEffect(MobEffects.RAID_OMEN);
+        }
     }
 
     @Override
     public void serverTick() {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+
+        // 角色判定：仅幻术师生效（参照血仇者组件模式）
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (!gameWorld.isRole(player, ModRoles.HUANSHUSHI)) return;
 
         // 延迟设置共享CD（在框架 markSkillUsed 之后执行）
         if (pendingSharedCooldown) {
@@ -267,8 +277,8 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
             pendingSharedCooldown = false;
         }
 
-        // 被动：每 tick 检查并移除霉运
-        applyUnluckImmunity();
+        // 被动：每 tick 检查并移除霉运与闪光弹致盲
+        applyPassiveImmunities();
 
         // 清理已失效的假人 UUID
         if (player.level() instanceof ServerLevel serverLevel) {

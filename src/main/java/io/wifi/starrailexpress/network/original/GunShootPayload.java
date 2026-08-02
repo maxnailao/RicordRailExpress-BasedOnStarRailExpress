@@ -251,16 +251,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
             // 圣宣皮肤特殊音效：仅对射击者本人播放专属枪声，其他玩家听到普通枪声
             if (hasShengxuanSkin) {
-                // 对射击者本人播放专属枪声
+                // 对射击者本人播放专属枪声（ClientboundSoundPacket 仅发送给射击者）
                 ShengxuanSkinHandler.playShootSound(player, player.getX(), player.getEyeY(), player.getZ());
-                // 对其他玩家播放普通枪声
-                for (ServerPlayer tracking : PlayerLookup.tracking(player)) {
-                    if (tracking != player) {
-                        tracking.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
-                                TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
-                                1f + player.getRandom().nextFloat() * .1f - .05f);
-                    }
-                }
+                // 对其他玩家播放普通枪声：传入 player 作为排除对象，确保射击者不会听到原版枪声
+                player.level().playSound(player, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
             } else {
                 // 普通皮肤：所有人听到相同枪声
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),

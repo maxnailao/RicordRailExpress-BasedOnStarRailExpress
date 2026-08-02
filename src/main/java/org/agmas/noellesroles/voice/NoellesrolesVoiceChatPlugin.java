@@ -181,6 +181,55 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               event.cancel();
               return;
             }
+            
+            // === 狼人杀语音路由 ===
+            if (org.agmas.noellesroles.game.modes.werewolf.WerewolfGameState.isActive(player.serverLevel())) {
+              var wwState = org.agmas.noellesroles.game.modes.werewolf.WerewolfGameState.get(player.serverLevel());
+              var wwComp = ModComponents.WEREWOLF.get(player);
+              
+              // 死亡玩家不能说话
+              if (!wwComp.alive) {
+                event.cancel();
+                return;
+              }
+              
+              // 夜晚狼方阶段：狼方语音只路由给狼方
+              if (wwState.phase == org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.NIGHT_WOLVES) {
+                if (wwComp.isWolf()) {
+                  // 狼方玩家：只发送给其他狼方
+                  event.cancel();
+                  var wolves = wwState.getAlivePlayersByFaction(player.serverLevel(), 
+                          org.agmas.noellesroles.game.modes.werewolf.WerewolfRoleDef.Faction.WOLF);
+                  for (UUID wolfUuid : wolves) {
+                    if (!wolfUuid.equals(player.getUUID())) {
+                      ServerPlayer wolf = player.serverLevel().getServer().getPlayerList().getPlayer(wolfUuid);
+                      if (wolf != null) {
+                        VoicechatConnection con = api.getConnectionOf(wolfUuid);
+                        if (con != null && con.isInstalled() && con.isConnected()) {
+                          api.sendLocationalSoundPacketTo(con, event.getPacket()
+                              .locationalSoundPacketBuilder()
+                              .position(api.createPosition(wolf.getX(), wolf.getY(), wolf.getZ()))
+                              .distance((float) api.getVoiceChatDistance())
+                              .build());
+                        }
+                      }
+                    }
+                  }
+                  return;
+                } else {
+                  // 非狼方玩家夜晚不能说话
+                  event.cancel();
+                  return;
+                }
+              }
+              
+              // 夜晚其他阶段：所有人不能说话
+              if (wwState.phase.isNight()) {
+                event.cancel();
+                return;
+              }
+            }
+            
             // 静语者疯魔期间：对说话的玩家施加缓慢惩罚（语音监听）
             org.agmas.noellesroles.game.roles.killer.silencer.SilencerFrenzyPlayerComponent.onPlayerSpeak(player);
             // 如果发送者被鹈鹕吞噬，单独处理路由：只转发给鹈鹕和肚内玩家，避免默认逻辑忽略旁观者

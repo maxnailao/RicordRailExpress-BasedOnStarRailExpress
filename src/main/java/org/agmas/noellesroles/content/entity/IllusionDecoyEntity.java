@@ -320,9 +320,12 @@ public class IllusionDecoyEntity extends PathfinderMob {
             // 技能三：半径10格内玩家受到黑暗I+失明I+缓慢I 8s，扣除25%理智值
             applySkill3Effects(serverLevel, attacker);
         } else {
-            // 技能一/二：击中者受到失明10s
+            // 技能一/二：击中者受到失明10s（不对杀手阵营生效）
             if (attacker != null && attacker.isAlive()) {
-                attacker.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 200, 0));
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
+                if (!gameWorld.isKillerTeam(attacker)) {
+                    attacker.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 200, 0));
+                }
             }
         }
 
@@ -335,6 +338,15 @@ public class IllusionDecoyEntity extends PathfinderMob {
             }
         }
 
+        // 召唤闪光弹（参照变形者举刀假人 burstIntoFlash）
+        FlashGrenadeEntity flash = new FlashGrenadeEntity(ModEntities.FLASH_GRENADE, serverLevel);
+        if (owner != null) {
+            flash.setOwner(owner);
+        }
+        flash.setPosRaw(getX(), getY() + 0.5D, getZ());
+        flash.setDeltaMovement(0.0D, -0.2D, 0.0D);
+        serverLevel.addFreshEntity(flash);
+
         discard();
     }
 
@@ -342,9 +354,12 @@ public class IllusionDecoyEntity extends PathfinderMob {
      * 技能三特殊效果：黑暗+失明+缓慢+扣理智
      */
     private void applySkill3Effects(ServerLevel serverLevel, Player attacker) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
         double radius = 10.0;
         for (Player p : serverLevel.players()) {
             if (!p.isAlive() || p.isSpectator()) continue;
+            // 不对杀手阵营生效
+            if (gameWorld.isKillerTeam(p)) continue;
             if (p.distanceToSqr(this) <= radius * radius) {
                 // 黑暗I + 失明I + 缓慢I 8秒 = 160 tick
                 p.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 160, 0));

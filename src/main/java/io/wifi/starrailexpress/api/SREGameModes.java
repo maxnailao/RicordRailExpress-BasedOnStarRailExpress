@@ -56,6 +56,8 @@ public class SREGameModes {
     // Author: jiale
     public static final ResourceLocation PSYCHO_BRAWL_ID = SRE.jialeId("fengmoluandoushashashashasha");
     public static final ResourceLocation DESERT_EAGLE_KING_ID = SRE.jialeId("nikoplaynikonikoniniko");
+    public static final ResourceLocation WEREWOLF_MODE_ID = SRE.jialeId("werewolf");
+    public static final ResourceLocation PIRATE_BATTLE_ID = SRE.jialeId("pirate_battle");
 
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
@@ -106,6 +108,14 @@ public class SREGameModes {
     // Desert Eagle King Mode (jiale)
     public static final GameMode DESERT_EAGLE_KING_MODE = registerGameMode(
             new SREDesertEagleKingGameMode(DESERT_EAGLE_KING_ID));
+
+    // Werewolf Mode (jiale)
+    public static final GameMode WEREWOLF_MODE = registerGameMode(
+            new org.agmas.noellesroles.game.modes.werewolf.WerewolfGameMode(WEREWOLF_MODE_ID));
+
+    // Pirate Battle Mode (jiale)
+    public static final GameMode PIRATE_BATTLE_MODE = registerGameMode(
+            new SREPirateBattleGameMode(PIRATE_BATTLE_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {

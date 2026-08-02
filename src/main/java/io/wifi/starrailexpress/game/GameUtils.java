@@ -430,6 +430,12 @@ public class GameUtils {
             trueStartGame(world, gameMode, time);
             return;
         }
+        // 狼人杀模式：跳过正常 Areas 加载
+        if (gameMode == SREGameModes.WEREWOLF_MODE) {
+            SRE.LOGGER.info("Werewolf mode - skipping area loading");
+            trueStartGame(world, gameMode, time);
+            return;
+        }
         AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
         if (areas.mapName == null) {
             MapManager.loadRandomMap(world);

@@ -139,11 +139,13 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                                 io.wifi.starrailexpress.event.OnShieldBroken.EVENT.invoker().onShieldBroken(target, player);
                             }
                         }
-                        // 击杀逻辑 - 狙击枪对雪原猎手不掉落
+                        // 击杀逻辑 - 狙击枪对雪原猎手和亡命徒变体不掉落
                         if (game.isInnocent(target) && !player.isCreative()) {
                             // 雪原猎手使用狙击枪射击时，不触发掉落
                             if (game.isRole(player, ModRoles.SNOW_HUNTER)) {
                                 // 这里什么都不做，直接继续执行击杀
+                            } else if (ModRoles.isLooseEndVariant(game.getRole(player))) {
+                                // 亡命徒阵营变体不触发掉落
                             } else if (game.isInnocent(player) && player.getRandom().nextFloat() <= game.getBackfireChance()) {
                                 // 反向击发
                                 GameUtils.killPlayer(player, true, player, GameConstants.DeathReasons.SNIPER_RIFLE_BACKFIRE);

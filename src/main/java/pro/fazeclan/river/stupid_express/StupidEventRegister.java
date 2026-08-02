@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.rules.ReplayRules;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
+import org.agmas.noellesroles.role.ModRoles;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.cursed.cca.CursedComponent;
 import pro.fazeclan.river.stupid_express.modifier.lovers.LoversWinCheckEvent;
@@ -46,7 +47,7 @@ public class StupidEventRegister {
             if (gameWorldComponent != null) {
                 SRERole role = gameWorldComponent.getRole(victim);
                 if (role != null) {
-                    if (role.identifier().getPath().equals(TMMRoles.LOOSE_END.identifier().getPath())) {
+                    if (ModRoles.isLooseEndVariantPath(role)) {
                         var refugeeComponent = RefugeeComponent.KEY.get(victim.level());
                         refugeeComponent.onLooseEndDeath(victim, deathReason);
                     }

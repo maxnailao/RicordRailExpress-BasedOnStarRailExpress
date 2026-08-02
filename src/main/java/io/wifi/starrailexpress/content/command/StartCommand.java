@@ -68,7 +68,7 @@ public class StartCommand {
     }
     // 检查当前地图是否支持该游戏模式
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
-    if (gameMode != SREGameModes.REPAIR_ESCAPE_MODE && areas.gameModes != null && !areas.gameModes.isEmpty()) {
+    if (gameMode != SREGameModes.REPAIR_ESCAPE_MODE && gameMode != SREGameModes.WEREWOLF_MODE && areas.gameModes != null && !areas.gameModes.isEmpty()) {
       String modeId = gameMode.identifier.getPath();
       boolean isSupported = areas.gameModes.contains(modeId);
       if (!isSupported) {
