@@ -143,6 +143,12 @@ public class PigegadePlayerComponent implements RoleComponent, ServerTickingComp
                 PigegadeClientHandle.removePig(this.getPlayer().getUUID());
                 return;
             }
+            // 方案1：本地玩家自己的客户端不显示猪（猪始终位于自身坐标，
+            // 鞘翅飞行时会遮挡第一人称视野）；其他玩家的客户端正常显示
+            if (player == net.minecraft.client.Minecraft.getInstance().player) {
+                PigegadeClientHandle.removePig(this.getPlayer().getUUID());
+                return;
+            }
             PigegadeClientHandle.getOrCreatePig(this.getPlayer(),
                     net.minecraft.client.Minecraft.getInstance().level);
             PigegadeClientHandle.tickPig(this.getPlayer());

@@ -67,6 +67,27 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        // 坠木/皮革嘎的被动：无法被任何角色透视到（必须最先注册，首个非-1返回值生效）
+        // 例外：坠木与皮革嘎的可以互相透视（透传给后续处理器）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            boolean targetIsZhuimu = SREClient.gameComponent.isRole(targetPlayer, ModRoles.ZHUIMU);
+            boolean targetIsPige = SREClient.gameComponent.isRole(targetPlayer, ModRoles.PIGE);
+            if (!targetIsZhuimu && !targetIsPige)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            // 观察者自己也是坠木/皮革嘎的时透传，允许互相透视
+            if (SREClient.gameComponent.isRole(self, ModRoles.ZHUIMU)
+                    || SREClient.gameComponent.isRole(self, ModRoles.PIGE))
+                return -1;
+            // 其他任何观察者均无法透视到这两个角色
+            return -2;
+        });
         TouhouInstincts.registerEvents();
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {

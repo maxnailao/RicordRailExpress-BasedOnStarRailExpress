@@ -2546,8 +2546,8 @@ public class RoleShopHandler {
       // 撬锁器 - 80金币
       shopEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
 
-      // 毒箭 - 50金币（最多持有2个）
-      shopEntries.add(new ShopEntry(Items.TIPPED_ARROW.getDefaultInstance(), 50, ShopEntry.Type.WEAPON) {
+      // 毒箭 - 65金币（最多持有2个）
+      shopEntries.add(new ShopEntry(Items.TIPPED_ARROW.getDefaultInstance(), 65, ShopEntry.Type.WEAPON) {
         @Override
         public boolean onBuy(@NotNull Player player) {
           if (!(player instanceof ServerPlayer sp)) return false;
@@ -3732,8 +3732,6 @@ public class RoleShopHandler {
                     return super.canBuy(player) && count < 3;
                 }
             });
-            // 闪光弹 - 20金币
-            ZHUIMU_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 20, ShopEntry.Type.TOOL));
             // 风弹 - 35金币
             ZHUIMU_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.WIND_CHARGE.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.ZHUIMU_ID, ZHUIMU_SHOP);
@@ -3766,8 +3764,6 @@ public class RoleShopHandler {
                     return super.canBuy(player) && count < 3;
                 }
             });
-            // 闪光弹 - 20金币
-            PIGE_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 20, ShopEntry.Type.TOOL));
             // 风弹 - 35金币
             PIGE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.WIND_CHARGE.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.PIGE_ID, PIGE_SHOP);

@@ -196,19 +196,19 @@ public class RaiderPlayerComponent implements RoleComponent, ServerTickingCompon
             this.savedCrossbow = findAndRemoveNormalCrossbow();
         }
 
-        // 给予快速装填3的掠夺之弩并锁定主手
+        // 给予快速装填1的掠夺之弩并锁定主手
         ItemStack frenzyCrossbow = Items.CROSSBOW.getDefaultInstance();
         frenzyCrossbow.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
         frenzyCrossbow.set(DataComponents.ITEM_NAME,
                 Component.translatable("item.raider_frenzy_crossbow.name").withStyle(ChatFormatting.DARK_RED));
-        // 添加快速装填3附魔
+        // 添加快速装填1附魔
         if (player.level() instanceof ServerLevel serverLevel) {
             var quickChargeHolder = serverLevel.registryAccess()
                     .registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
                     .holders()
                     .filter(holder -> holder.is(Enchantments.QUICK_CHARGE))
                     .findFirst();
-            quickChargeHolder.ifPresent(holder -> frenzyCrossbow.enchant(holder, 3));
+            quickChargeHolder.ifPresent(holder -> frenzyCrossbow.enchant(holder, 1));
         }
 
         player.setItemInHand(InteractionHand.MAIN_HAND, frenzyCrossbow);
@@ -272,10 +272,11 @@ public class RaiderPlayerComponent implements RoleComponent, ServerTickingCompon
 
     /**
      * 判断是否为掠夺之弩（疯魔弩）
+     * 通过附魔检测：疯魔弩带有快速装填附魔，普通弩无附魔
      */
     private boolean isFrenzyCrossbow(ItemStack stack) {
-        var name = stack.get(DataComponents.ITEM_NAME);
-        return name != null && name.getString().contains("掠夺");
+        var enchantments = stack.get(DataComponents.ENCHANTMENTS);
+        return enchantments != null && !enchantments.isEmpty();
     }
 
     /**
