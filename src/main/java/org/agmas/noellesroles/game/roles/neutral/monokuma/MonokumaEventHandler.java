@@ -125,7 +125,7 @@ public class MonokumaEventHandler {
                 if (!flag) {
                     if (killer != null) {
                         if (gameCCA.isRole(player, ModRoles.MONOKUMA)) {
-                            if (gameCCA.isRole(killer, TMMRoles.LOOSE_END)) {
+                            if (ModRoles.isLooseEndVariant(gameCCA.getRole(killer))) {
                                 return true;
                             }
                         }

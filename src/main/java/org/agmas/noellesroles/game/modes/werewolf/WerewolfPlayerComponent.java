@@ -129,12 +129,18 @@ public class WerewolfPlayerComponent implements AutoSyncedComponent {
         this.lastGuardTarget = buf.readInt();
         this.killedByPoison = buf.readBoolean();
         
-        // 同步到客户端状态缓存（仅客户端侧执行）
-        try {
-            org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.updateMyInfo(
-                    this.seatNumber, this.roleId, this.alive);
-        } catch (Exception ignored) {
-            // 服务端侧忽略
+        // 同步到客户端状态缓存：仅限本地玩家自己的组件！
+        // 修复：附近其他玩家的组件同步也会触发 applySyncPacket，
+        // 若不判断会导致自己的编号/身份被其他玩家数据覆盖（编号莫名变化问题）
+        if (this.player.level().isClientSide) {
+            try {
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc.player == this.player) {
+                    org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.updateMyInfo(
+                            this.seatNumber, this.roleId, this.alive, this.usedAntidote, this.usedPoison);
+                }
+            } catch (Throwable ignored) {
+            }
         }
     }
 }

@@ -56,12 +56,22 @@ public class ZhuimuPlayerComponent implements RoleComponent, ServerTickingCompon
     public void init() {
         coinTimer = 0;
         trapPositions.clear();
+        // 被动：抗性255，防止鞘翅飞行中因动能（碰撞/摔落）导致原版死亡
+        if (player instanceof ServerPlayer) {
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, -1, 255, true, false, false));
+        }
         sync();
     }
 
     @Override
     public void clear() {
-        init();
+        // 移除抗性效果
+        if (player.hasEffect(MobEffects.DAMAGE_RESISTANCE)) {
+            player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
+        }
+        coinTimer = 0;
+        trapPositions.clear();
+        sync();
     }
 
     @Override
@@ -75,6 +85,11 @@ public class ZhuimuPlayerComponent implements RoleComponent, ServerTickingCompon
             coinTimer = 0;
             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
             shop.addToBalance(50);
+        }
+
+        // 保障：维持抗性255效果
+        if (!player.hasEffect(MobEffects.DAMAGE_RESISTANCE)) {
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, -1, 255, true, false, false));
         }
 
         // 检查陷阱触发：皮革嘎的踩到陷阱位置

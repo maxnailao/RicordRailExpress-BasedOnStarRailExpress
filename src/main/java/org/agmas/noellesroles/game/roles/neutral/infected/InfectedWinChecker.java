@@ -240,7 +240,7 @@ public class InfectedWinChecker {
                         || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT))) {
                     hasDoctor = true;
                 }
-                if (!hasLooseEnd && gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
+                if (!hasLooseEnd && ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))) {
                     hasLooseEnd = true;
                 }
                 // 检查是否处于安全时间（游戏开始安全时间、阳光自选、职业轮抽的选择阶段）
@@ -391,7 +391,7 @@ public class InfectedWinChecker {
                     || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT))) {
                 hasDoctor = true;
             }
-            if (!hasLooseEnd && gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
+            if (!hasLooseEnd && ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))) {
                 hasLooseEnd = true;
             }
             if (!hasSafeTime && player.hasEffect(ModEffects.SAFE_TIME)) {

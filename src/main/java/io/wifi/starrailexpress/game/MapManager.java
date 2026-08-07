@@ -465,6 +465,17 @@ public class MapManager {
                 SRE.LOGGER.info("Loaded initialItems: " + areas.initialItems);
             }
 
+            // 加载狼人杀模式配置
+            areas.werewolfConfig = null;
+            if (jsonObject.has("werewolf")) {
+                try {
+                    areas.werewolfConfig = gson.fromJson(jsonObject.get("werewolf"), io.wifi.starrailexpress.game.data.MapConfig.WerewolfConfig.class);
+                    SRE.LOGGER.info("Loaded werewolf config with " + areas.werewolfConfig.seats.size() + " seats");
+                } catch (Exception e) {
+                    SRE.LOGGER.error("Error while loading werewolf config", e);
+                }
+            }
+
             // 应用配置到AreasWorldComponent，使用新的嵌套结构
             if (jsonObject.has("spawnPos")) {
                 JsonObject spawnPosObj = jsonObject.getAsJsonObject("spawnPos");

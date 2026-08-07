@@ -235,6 +235,45 @@ public class NRInteractionEvents {
             }
             return true;
         });
+
+        // 狼人杀模式聊天限制：夜晚禁止文字聊天（防泄密），死亡玩家全程禁言
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, serverPlayer, bound) -> {
+            var level = serverPlayer.serverLevel();
+            if (!org.agmas.noellesroles.game.modes.werewolf.WerewolfGameState.isActive(level)) {
+                return true;
+            }
+            var wwState = org.agmas.noellesroles.game.modes.werewolf.WerewolfGameState.get(level);
+            if (!wwState.players.contains(serverPlayer.getUUID())) {
+                return true; // 非参战玩家（如旁观者）不限制
+            }
+            var wwComp = org.agmas.noellesroles.component.ModComponents.WEREWOLF.get(serverPlayer);
+            if (!wwComp.alive) {
+                // 例外：被票出玩家在遗言阶段可以说遗言
+                boolean lastWordsException = wwState.phase == org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.DAY_LAST_WORDS
+                        && serverPlayer.getUUID().equals(wwState.votedOutPlayer);
+                if (!lastWordsException) {
+                    serverPlayer.displayClientMessage(
+                            Component.translatable("werewolf.msg.dead_no_chat").withStyle(ChatFormatting.RED), true);
+                    return false; // 死亡玩家不能发言
+                }
+            }
+            if (wwState.phase.isNight()) {
+                serverPlayer.displayClientMessage(
+                        Component.translatable("werewolf.msg.night_no_chat").withStyle(ChatFormatting.RED), true);
+                return false; // 夜晚禁止文字聊天
+            }
+            // 轮流发言阶段：仅当前发言者可以打字（自由发言/PK/遗言阶段不限制）
+            if (wwState.phase == org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.DAY_SPEECH) {
+                boolean isSpeaker = wwState.currentActor != null
+                        && serverPlayer.getUUID().equals(wwState.currentActor);
+                if (!isSpeaker) {
+                    serverPlayer.displayClientMessage(
+                            Component.translatable("werewolf.msg.not_speech_turn").withStyle(ChatFormatting.RED), true);
+                    return false;
+                }
+            }
+            return true;
+        });
     }
 
     // --- 掉落规则 ---

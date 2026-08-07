@@ -5,6 +5,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent;
@@ -17,7 +18,7 @@ import org.agmas.noellesroles.game.roles.killer.mengyan.MengyanPlayerComponent;
  */
 public class MengyanHud {
 
-    private static final int FEAR_DURATION_TICKS = 1200;
+    private static final int FEAR_DURATION_TICKS = 400;
     private static final int REQUIRED_SLEEP_TICKS = 200;
 
     public static void register() {
@@ -67,28 +68,40 @@ public class MengyanHud {
                 context.drawString(font, sleepText, x - font.width(sleepText), y, 0xFFFFFF);
             }
 
-            // 目标侧 HUD：显示被恐惧状态
-            if (comp.isUnderFear) {
-                long gameTime = client.level != null ? client.level.getGameTime() : 0;
-                int remaining = (int) Math.max(0, comp.fearEndTime - gameTime);
-                int remainingSeconds = remaining / 20;
+            // 目标侧 HUD 不在这里渲染（已移到 CommonHudRenderCallback）
+        });
 
-                // 判断是否正在睡觉
-                boolean isSleeping = client.player.isSleeping();
+        // 目标侧 HUD：对所有玩家渲染，检查是否被施加恐惧
+        CommonHudRenderCallback.EVENT.register((context, deltaTracker) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null) return;
+            if (SREClient.gameComponent == null) return;
+            if (!SREClient.isPlayerAliveAndInSurvival()) return;
 
-                Component fearedText;
-                if (isSleeping) {
-                    // 睡觉中显示睡眠进度
-                    // 这里无法直接获取梦魇侧的 fearSleepAccumulated，用简单倒计时显示
-                    fearedText = Component.translatable("hud.noellesroles.mengyan.sleeping", remainingSeconds)
-                            .withStyle(ChatFormatting.GREEN);
-                } else {
-                    fearedText = Component.translatable("hud.noellesroles.mengyan.feared_timer", remainingSeconds)
-                            .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD);
-                }
-                int textY = screenHeight - 20;
-                context.drawString(font, fearedText, x - font.width(fearedText), textY, 0xFFFFFF);
+            MengyanPlayerComponent comp = ModComponents.MENGYAN.get(client.player);
+            if (comp == null || !comp.isUnderFear) return;
+
+            long gameTime = client.level != null ? client.level.getGameTime() : 0;
+            int remaining = (int) Math.max(0, comp.fearEndTime - gameTime);
+            int remainingSeconds = remaining / 20;
+
+            int screenWidth = context.guiWidth();
+            int screenHeight = context.guiHeight();
+            int x = screenWidth - 10;
+            int textY = screenHeight - 20;
+            var font = client.font;
+
+            boolean isSleeping = client.player.isSleeping();
+
+            Component fearedText;
+            if (isSleeping) {
+                fearedText = Component.translatable("hud.noellesroles.mengyan.sleeping", remainingSeconds)
+                        .withStyle(ChatFormatting.GREEN);
+            } else {
+                fearedText = Component.translatable("hud.noellesroles.mengyan.feared_timer", remainingSeconds)
+                        .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD);
             }
+            context.drawString(font, fearedText, x - font.width(fearedText), textY, 0xFFFFFF);
         });
     }
 }

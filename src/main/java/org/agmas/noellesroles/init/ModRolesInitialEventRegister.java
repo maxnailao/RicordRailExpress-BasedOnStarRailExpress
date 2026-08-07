@@ -168,6 +168,10 @@ public class ModRolesInitialEventRegister {
             if (role.identifier().equals(ModRoles.JOJO.identifier())) {
                 SREPlayerShopComponent.KEY.get(player).setBalance(100);
             }
+            // 怀旧者不给予初始金币（覆盖杀手默认初始金币，该事件晚于杀手初始金币发放）
+            if (role.identifier().equals(ModRoles.NOSTALGIST.identifier())) {
+                SREPlayerShopComponent.KEY.get(player).setBalance(0);
+            }
             // 初始化记录员
             if (role.identifier().equals(ModRoles.RECORDER.identifier())) {
                 var tpc = RecorderPlayerComponent.KEY.get(player);

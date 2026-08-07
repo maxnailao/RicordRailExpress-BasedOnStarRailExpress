@@ -74,8 +74,10 @@ public class PigegadePlayerComponent implements RoleComponent, ServerTickingComp
         isPig = true;
         zhuimuDead = false;
         // 服务端给予隐身效果（同黑白逻辑），使玩家本体对所有玩家不可见，只显示猪
+        // 被动：抗性255，防止鞘翅飞行中因动能（碰撞/摔落）导致原版死亡
         if (player instanceof ServerPlayer) {
             player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, -1, 0, true, false, false));
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, -1, 255, true, false, false));
         }
         sync();
     }
@@ -87,9 +89,12 @@ public class PigegadePlayerComponent implements RoleComponent, ServerTickingComp
                 PigegadeClientHandle.removePig(this.getPlayer().getUUID());
             }
         }
-        // 移除隐身效果
+        // 移除隐身效果和抗性效果
         if (player.hasEffect(MobEffects.INVISIBILITY)) {
             player.removeEffect(MobEffects.INVISIBILITY);
+        }
+        if (player.hasEffect(MobEffects.DAMAGE_RESISTANCE)) {
+            player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
         }
         coinTimer = 0;
         swordHitCount = 0;
@@ -123,9 +128,12 @@ public class PigegadePlayerComponent implements RoleComponent, ServerTickingComp
             shop.addToBalance(50);
         }
 
-        // 保障：维持服务端隐身效果（同黑白逻辑）
+        // 保障：维持服务端隐身效果和抗性255效果（同黑白逻辑）
         if (!player.hasEffect(MobEffects.INVISIBILITY)) {
             player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, -1, 0, true, false, false));
+        }
+        if (!player.hasEffect(MobEffects.DAMAGE_RESISTANCE)) {
+            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, -1, 255, true, false, false));
         }
     }
 

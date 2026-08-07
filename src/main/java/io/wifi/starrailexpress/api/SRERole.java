@@ -635,6 +635,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    public SRERole setStaminaRecoveryMultiplier(float staminaRecoveryMultiplier) {
+        this.staminaRecoveryMultiplier = staminaRecoveryMultiplier;
+        return this;
+    }
+
     public SRERole setCanSeeTime(boolean canSeeTime) {
         this.canSeeTime = canSeeTime;
         return this;
@@ -954,6 +959,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     protected ComponentKey<? extends RoleComponent> componentKey;
     protected int maxSprintTime;
+    protected float staminaRecoveryMultiplier = 1f;
     protected ToIntFunction<Player> customSprintTimeGetter = null;
     protected boolean canSeeTime;
     protected boolean isOtherModeRole = false;
@@ -1068,6 +1074,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public int getMaxSprintTime() {
         return maxSprintTime;
+    }
+
+    public float getStaminaRecoveryMultiplier() {
+        return staminaRecoveryMultiplier;
     }
 
     public boolean canSeeTime() {

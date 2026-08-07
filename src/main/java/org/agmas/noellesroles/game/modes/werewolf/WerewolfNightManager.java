@@ -97,6 +97,7 @@ public class WerewolfNightManager {
         }
 
         // 3. 处理骑士决斗
+        UUID knightDuelDeath = null; // 骑士决斗导致的死亡（狼或骑士自己）
         if (state.knightTarget != null) {
             ServerPlayer knight = findPlayerByRole(level, state, WerewolfRoleDef.KNIGHT);
             if (knight != null) {
@@ -104,9 +105,11 @@ public class WerewolfNightManager {
                 if (targetIsWolf) {
                     // 目标是狼方，目标死亡
                     state.nightDeaths.add(state.knightTarget);
+                    knightDuelDeath = state.knightTarget;
                 } else {
                     // 目标是好人，骑士死亡
                     state.nightDeaths.add(knight.getUUID());
+                    knightDuelDeath = knight.getUUID();
                 }
             }
         }
@@ -114,13 +117,21 @@ public class WerewolfNightManager {
         // 去重
         state.nightDeaths = new ArrayList<>(new LinkedHashSet<>(state.nightDeaths));
 
-        // 执行淘汰
+        // 执行淘汰（按死因分类记录到回放）
         for (UUID deathUuid : state.nightDeaths) {
             var player = level.getPlayerByUUID(deathUuid);
             if (player instanceof ServerPlayer deadPlayer) {
                 WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(deadPlayer);
                 comp.killedByPoison = state.poisonDeaths.contains(deathUuid);
-                WerewolfGameMode.eliminatePlayer(deadPlayer);
+                net.minecraft.resources.ResourceLocation reason;
+                if (comp.killedByPoison) {
+                    reason = WerewolfGameMode.DEATH_WOLF_POISON;
+                } else if (deathUuid.equals(knightDuelDeath)) {
+                    reason = WerewolfGameMode.DEATH_KNIGHT_DUEL;
+                } else {
+                    reason = WerewolfGameMode.DEATH_WOLF_BITE;
+                }
+                WerewolfGameMode.eliminatePlayer(deadPlayer, reason);
             }
         }
 
@@ -132,7 +143,7 @@ public class WerewolfNightManager {
             return;
         }
 
-        // 进入白天公示
+        // 进入白天公示（保留完整 5 秒公示期，超时后由 WerewolfGameMode 调用 checkHunterShot）
         state.startPhase(WerewolfPhase.DAY_ANNOUNCE, currentTick);
         WerewolfGameMode.broadcastPhaseStatic(level, state);
         announceDeaths(level, state);
@@ -168,15 +179,12 @@ public class WerewolfNightManager {
                         false);
             }
         }
-
-        // 检查猎人是否需要开枪
-        checkHunterShot(level, state);
     }
 
     /**
-     * 检查猎人开枪
+     * 检查猎人开枪（公示期结束后由 WerewolfGameMode 调用）
      */
-    private static void checkHunterShot(ServerLevel level, WerewolfGameState state) {
+    public static void checkHunterShot(ServerLevel level, WerewolfGameState state) {
         long currentTick = level.getGameTime();
 
         for (UUID deathUuid : state.nightDeaths) {
@@ -232,7 +240,7 @@ public class WerewolfNightManager {
                 if (!targetComp.alive) {
                     targetUuid = null; // 不能射击已死亡玩家，视为不开枪
                 } else {
-                    WerewolfGameMode.eliminatePlayer(target);
+                    WerewolfGameMode.eliminatePlayer(target, WerewolfGameMode.DEATH_HUNTER_SHOT);
                     int targetSeat = state.getSeatNumber(targetUuid);
 
                     for (ServerPlayer player : level.players()) {
@@ -251,6 +259,15 @@ public class WerewolfNightManager {
                     }
                 }
             }
+        }
+
+        // 处决猎人开枪后进入遗言；夜晚死亡猎人开枪后进入发言
+        long currentTick = level.getGameTime();
+        if (state.hunterDiedByExecution) {
+            state.hunterDiedByExecution = false;
+            state.startPhase(WerewolfPhase.DAY_LAST_WORDS, currentTick);
+            WerewolfGameMode.broadcastPhaseStatic(level, state);
+            return;
         }
 
         // 继续进入发言阶段（委托给 WerewolfGameMode 以正确设置发言者）

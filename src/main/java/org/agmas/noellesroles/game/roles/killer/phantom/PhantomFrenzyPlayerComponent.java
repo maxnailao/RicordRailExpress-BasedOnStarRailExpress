@@ -33,7 +33,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 幽灵幻影组件
  * 幽灵(PHANTOM)的商店购买特殊疯魔技能
  * - 持续25秒
- * - 获得隐身 + 速度II效果
+ * - 获得隐身 + 速度I效果
  * - 临时获得一把无限耐久的刀（3秒CD）
  * - 仅可在物品栏中切换空手和这把刀（由psycho系统的getPsychoItem锁定实现）
  * - 无护盾（armour=0）
@@ -86,7 +86,7 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
 
     /**
      * 启动幽灵幻影模式
-     * - 给予隐身 + 速度II
+     * - 给予隐身 + 速度I
      * - 给予一把刀（psycho系统会锁定物品栏）
      * - 无护盾（armour=0）
      * - 持续25秒
@@ -134,9 +134,9 @@ public class PhantomFrenzyPlayerComponent implements RoleComponent, ServerTickin
                 MobEffects.INVISIBILITY, FRENZY_DURATION + 20, 0,
                 false, false, false));
 
-        // 给予速度II效果（25秒，无粒子）
+        // 给予速度I效果（25秒，无粒子）
         player.addEffect(new MobEffectInstance(
-                MobEffects.MOVEMENT_SPEED, FRENZY_DURATION + 20, 1,
+                MobEffects.MOVEMENT_SPEED, FRENZY_DURATION + 20, 0,
                 false, false, false));
 
         this.inFrenzy = true;

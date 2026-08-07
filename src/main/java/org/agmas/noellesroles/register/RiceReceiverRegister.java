@@ -48,6 +48,7 @@ import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.GreatDetectiveRevealC2SPacket;
+import org.agmas.noellesroles.packet.VeteranRollS2CPacket;
 import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
@@ -68,7 +69,7 @@ import static org.agmas.noellesroles.RicesRoleRhapsody.*;
  */
 public class RiceReceiverRegister {
 
-    private static final int VETERAN_DASH_COOLDOWN_TICKS = 60 * 20;
+    private static final int VETERAN_DASH_COOLDOWN_TICKS = 30 * 20;
     private static final double VETERAN_DASH_SPEED = 1.25D;
 
     public static void registerReceivers() {
@@ -987,6 +988,13 @@ public class RiceReceiverRegister {
         player.hurtMarked = true;
         player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), dashMotion));
         player.level().playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.7F, 1.4F);
+
+        // 广播翻滚动画给周围跟踪该实体的玩家（包括自己）
+        var rollPacket = new VeteranRollS2CPacket(player.getId(), (float) direction.x, (float) direction.z);
+        for (ServerPlayer tracking : net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
+            ServerPlayNetworking.send(tracking, rollPacket);
+        }
+        ServerPlayNetworking.send(player, rollPacket);
 
         ability.setCooldown(VETERAN_DASH_COOLDOWN_TICKS);
         ConfigWorldComponent.onPlayerUsedSkill(player);

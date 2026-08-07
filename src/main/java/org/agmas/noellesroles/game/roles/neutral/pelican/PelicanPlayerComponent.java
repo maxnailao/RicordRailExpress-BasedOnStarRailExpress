@@ -138,7 +138,7 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         if (gameWorld.isRole(target, ModRoles.PELICAN)) return false;
         if (gameWorld.isRole(target, ModRoles.RAVEN)) return false;
         if (gameWorld.isRole(target, ModRoles.MONOKUMA)) return false;
-        if (gameWorld.isRole(target, TMMRoles.LOOSE_END)) return false;
+        if (ModRoles.isLooseEndVariant(gameWorld.getRole(target))) return false;
         WorldModifierComponent worldModifier = WorldModifierComponent.KEY.get(target.level());
         if (worldModifier.isModifier(target, SEModifiers.SPLIT_PERSONALITY)) return false;
 

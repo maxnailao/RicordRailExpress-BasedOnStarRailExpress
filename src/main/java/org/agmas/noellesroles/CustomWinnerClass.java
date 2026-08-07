@@ -34,6 +34,18 @@ public class CustomWinnerClass {
             }
             var gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
 
+            // 亡命徒变体（屠夫/清算者）在场时，拦截杀手/乘客的常规胜利与超时结局，让游戏继续；
+            // 亡命徒死亡后不再拦截，恢复正常胜负判定
+            if (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS
+                    || winStatus == WinStatus.TIME) {
+                for (var player : serverLevel.players()) {
+                    if (GameUtils.isPlayerAliveAndSurvival(player)
+                            && ModRoles.isLooseEndVariant(gameComponent.getRole(player))) {
+                        return WinStatus.NONE;
+                    }
+                }
+            }
+
             // 检查是否有小偷存活
             boolean hasFurandoru = false;
             // 检查是否有小偷存活

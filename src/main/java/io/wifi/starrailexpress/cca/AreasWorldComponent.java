@@ -195,6 +195,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
 
     // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
     public boolean minigameQuestEnabled = false;
+    /** 狼人杀模式配置（座位坐标等） */
+    public io.wifi.starrailexpress.game.data.MapConfig.WerewolfConfig werewolfConfig;
     /** 当前地图中存在的小游戏种类 ID 集合（由 MapScanner 扫描填充），用于小游戏任务刷新时随机选取。 */
     public final HashSet<String> availableMinigameIds = new HashSet<>();
     public final HashSet<String> sabotageMinigameIds = new HashSet<>();

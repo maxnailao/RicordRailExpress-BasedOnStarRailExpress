@@ -697,27 +697,31 @@ public class SREMurderGameMode extends GameMode {
             }
         }
 
-        // 检查场上是否存在亡命徒
+        // check if out of time
+        // 注意：亡命徒（含变体）在场时会把 winStatus 重置为 NONE 让游戏继续，
+        // 因此超时判定必须放在亡命徒检查之前，避免覆盖掉亡命徒的拦截结果
+        if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
+            winStatus = GameUtils.WinStatus.TIME;
+
+        // 检查场上是否存在亡命徒（含屠夫、清算者等变体）
         if (winStatus != GameUtils.WinStatus.NONE) {
             boolean hasLooseEndAlive = false;
-            ServerPlayer lastLooseEnd = null;
-            int looseEndCount = 0;
+            List<ServerPlayer> lastLooseEnds = new ArrayList<>();
 
             for (ServerPlayer player : serverWorld.players()) {
-                if (gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
+                if (ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))
                         && !GameUtils.isPlayerEliminated(player)) {
                     hasLooseEndAlive = true;
-                    looseEndCount++;
-                    lastLooseEnd = player;
+                    lastLooseEnds.add(player);
                 }
             }
 
-            // 如果只有一名亡命徒存活，且没有其他存活玩家，触发亡命徒获胜
-            if (hasLooseEndAlive && looseEndCount == 1 && lastLooseEnd != null) {
+            // 如果只有亡命徒存活，且没有其他存活玩家，触发亡命徒获胜
+            if (hasLooseEndAlive) {
                 // 检查是否有其他非亡命徒的存活玩家
                 boolean hasOtherAlive = false;
                 for (ServerPlayer player : serverWorld.players()) {
-                    if (!gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
+                    if (!ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))
                             && !GameUtils.isPlayerEliminated(player)) {
                         hasOtherAlive = true;
                         break;
@@ -728,20 +732,14 @@ public class SREMurderGameMode extends GameMode {
                     // 补充 CustomWinnerID: loose_end
                     var roundEnd = SREGameRoundEndComponent.KEY.get(serverWorld);
                     roundEnd.CustomWinnerID = "loose_end";
-                    roundEnd.CustomWinnerPlayers.add(lastLooseEnd.getUUID());
+                    for (ServerPlayer looseEnd : lastLooseEnds)
+                        roundEnd.CustomWinnerPlayers.add(looseEnd.getUUID());
                 } else {
                     // 有其他玩家存活，游戏继续
                     winStatus = GameUtils.WinStatus.NONE;
                 }
-            } else if (hasLooseEndAlive) {
-                // 有多个亡命徒或其他情况，游戏继续
-                winStatus = GameUtils.WinStatus.NONE;
             }
         }
-
-        // check if out of time
-        if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
-            winStatus = GameUtils.WinStatus.TIME;
 
         // game end on win and display
         GameUtils.WinStatus modifiedWinStatus = allowGameEnd(serverWorld, winStatus, false, gameWorldComponent);

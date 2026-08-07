@@ -7,6 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.game.modes.werewolf.*;
+import org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPrivateInfoS2CPacket;
 
 /**
  * 狼人杀夜晚行动 C2S 包
@@ -72,16 +73,18 @@ public record WerewolfActionC2SPacket(
                 if (!wolfComp.isWolf()) {
                     return; // 非狼方不能投票
                 }
-                // 狼方投票
-                if (targetUuid != null) {
+                if (!state.getAlivePlayers(level).contains(player.getUUID())) {
+                    return; // 死亡狼人不能投票
+                }
+                // 狼方投票（不能投自己，不能投已死亡玩家；可反复修改直至阶段结束）
+                if (targetUuid != null && !targetUuid.equals(player.getUUID())
+                        && state.getAlivePlayers(level).contains(targetUuid)) {
                     state.wolfVotes.put(player.getUUID(), targetUuid);
+                } else {
+                    // 弃票：移除已有投票
+                    state.wolfVotes.remove(player.getUUID());
                 }
-                // 检查是否所有狼人都已投票
-                var wolves = state.getAlivePlayersByFaction(level, WerewolfRoleDef.Faction.WOLF);
-                if (state.wolfVotes.size() >= wolves.size()) {
-                    WerewolfNightManager.resolveWolfVotes(level, state);
-                    advanceToNextPhase(level, state);
-                }
+                // 不提前结算：等待阶段时间结束后统一统计最高票
             }
             case NIGHT_ALCHEMIST -> {
                 var alchComp = org.agmas.noellesroles.component.ModComponents.WEREWOLF.get(player);
@@ -110,7 +113,7 @@ public record WerewolfActionC2SPacket(
             }
             case NIGHT_PROPHET -> {
                 state.prophetTarget = targetUuid;
-                // 发送查验结果给预言家
+                // 发送查验结果给预言家（聊天消息 + 私有包供 HUD 显示）
                 if (targetUuid != null) {
                     boolean isTargetWolf = state.isWolf(level, targetUuid);
                     int targetSeatNum = state.getSeatNumber(targetUuid);
@@ -119,12 +122,22 @@ public record WerewolfActionC2SPacket(
                             net.minecraft.network.chat.Component.translatable(resultKey, targetSeatNum)
                                     .withStyle(isTargetWolf ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN),
                             false);
+                    net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                            new WerewolfPrivateInfoS2CPacket((byte) (isTargetWolf ? 1 : 2), targetSeatNum));
                 }
                 advanceToNextPhase(level, state);
             }
             case NIGHT_KNIGHT -> {
                 state.knightTarget = targetUuid;
                 advanceToNextPhase(level, state);
+            }
+            case DAY_SPEECH -> {
+                // 发言者主动跳过自己的发言（仅当前发言者可用）
+                if (!player.getUUID().equals(state.currentActor)) return;
+                var gm = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(level).getGameMode();
+                if (gm instanceof WerewolfGameMode wwMode) {
+                    wwMode.advanceSpeechPublic(level, state);
+                }
             }
             case DAY_HUNTER_SHOT -> {
                 WerewolfNightManager.handleHunterShot(level, state, targetUuid);

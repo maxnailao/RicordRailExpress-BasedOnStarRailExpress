@@ -84,12 +84,12 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
     /** 恼鬼存在倒计时（tick） */
     public int vexDurationTimer = 0;
 
-    /** 施法前摇时间：2秒 = 40 ticks */
-    public static final int SPIKE_CAST_TIME = 40;
-    /** 地刺总格数 */
-    public static final int SPIKE_RANGE = 8;
-    /** 地刺推进间隔：3 ticks（同原版幻魔者地刺节奏） */
-    public static final int SPIKE_ADVANCE_INTERVAL = 3;
+    /** 施法前摇时间：1.2秒 = 24 ticks */
+    public static final int SPIKE_CAST_TIME = 24;
+    /** 地刺总格数（8+3=11） */
+    public static final int SPIKE_RANGE = 11;
+    /** 地刺推进间隔：2 ticks（原3tick，速度+50%） */
+    public static final int SPIKE_ADVANCE_INTERVAL = 2;
     /** 地刺最大击杀数 */
     public static final int SPIKE_MAX_KILLS = 2;
     /** 恼鬼持续时间：15秒 = 300 ticks */
@@ -267,14 +267,21 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
         // 播放地刺音效
         level.playSound(null, groundPos, SoundEvents.EVOKER_FANGS_ATTACK, SoundSource.PLAYERS, 0.8f, 1.0f);
 
-        // 检测该位置附近的玩家（1.5格范围内）
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level);
+
+        // 检测该位置附近的玩家（2.0格范围内，左右各加宽了1/4格）
         if (spikeKillCount < SPIKE_MAX_KILLS) {
             for (ServerPlayer target : level.players()) {
                 if (target == caster) continue;
                 if (!GameUtils.isPlayerAliveAndSurvival(target)) continue;
                 if (target.isSpectator()) continue;
+
+                // 无法击杀杀手阵营和偏狼中立玩家
+                var targetRole = gameWorld.getRole(target);
+                if (targetRole != null && (targetRole.canUseKiller() || targetRole.isNeutralForKiller())) continue;
+
                 double dist = target.distanceToSqr(spikeX, spikeY, spikeZ);
-                if (dist <= 2.25) { // 1.5格半径
+                if (dist <= 4.0) { // 2.0格半径 (1.75 + 0.25)
                     // 击杀玩家
                     GameUtils.killPlayer(target, true, caster, GameConstants.DeathReasons.GENERIC);
                     spikeKillCount++;

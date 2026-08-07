@@ -430,9 +430,16 @@ public class GameUtils {
             trueStartGame(world, gameMode, time);
             return;
         }
-        // 狼人杀模式：跳过正常 Areas 加载
+        // 狼人杀模式：加载地图配置但跳过区域重置
+        // 玩家收集使用默认流程：准备区域内且参与游戏的玩家入局，其余玩家旁观
         if (gameMode == SREGameModes.WEREWOLF_MODE) {
-            SRE.LOGGER.info("Werewolf mode - skipping area loading");
+            SRE.LOGGER.info("Werewolf mode - loading map config without area reset");
+            AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
+            boolean loaded = areas.mapName != null && MapManager.loadMap(world, areas.mapName);
+            // 当前地图加载失败或没有狼人杀座位配置时，兑底加载狼人杀专用地图
+            if (!loaded || areas.werewolfConfig == null || areas.werewolfConfig.seats.isEmpty()) {
+                MapManager.loadMap(world, "langrensha");
+            }
             trueStartGame(world, gameMode, time);
             return;
         }

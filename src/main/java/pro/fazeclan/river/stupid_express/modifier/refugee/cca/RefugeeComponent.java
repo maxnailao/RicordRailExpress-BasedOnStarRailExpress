@@ -209,6 +209,10 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
         // Change role to selected loose end variant and remove REFUGEE modifier
         StupidRoleUtils.changeRole(player, selectedRole, false, false);
+        // 屠夫额外 +1 层护盾（在上方按存活人数给予的基础护盾之上叠加）
+        if (selectedRole == ModRoles.BUTCHER_LOOSE_END) {
+            bartenderPlayerComponent.removeArmor(-1);
+        }
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), selectedRole);
         StupidRoleUtils.sendWelcomeAnnouncement(player);
 

@@ -22,6 +22,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -327,8 +328,7 @@ public class GameReplayManager implements IGameReplayRecorder {
         .map(Map.Entry::getKey)
         .collect(java.util.ArrayList::new, java.util.ArrayList::add, java.util.ArrayList::addAll));
     currentReplayData.setLooseEndPlayers(roles.entrySet().stream()
-        .filter(entry -> entry.getValue().identifier()
-            .equals(io.wifi.starrailexpress.api.TMMRoles.LOOSE_END.identifier()))
+        .filter(entry -> ModRoles.isLooseEndVariant(entry.getValue()))
         .map(Map.Entry::getKey)
         .collect(java.util.ArrayList::new, java.util.ArrayList::add, java.util.ArrayList::addAll));
 
@@ -358,8 +358,12 @@ public class GameReplayManager implements IGameReplayRecorder {
         .setKillerPlayers(component.getAllWithRole(io.wifi.starrailexpress.api.TMMRoles.KILLER));
     currentReplayData
         .setVigilantePlayers(component.getAllWithRole(io.wifi.starrailexpress.api.TMMRoles.VIGILANTE));
-    currentReplayData
-        .setLooseEndPlayers(component.getAllWithRole(io.wifi.starrailexpress.api.TMMRoles.LOOSE_END));
+    // 亡命徒列表需包含全部变体（原始亡命徒、屠夫、清算者）
+    java.util.List<java.util.UUID> looseEndPlayers = new java.util.ArrayList<>(
+        component.getAllWithRole(io.wifi.starrailexpress.api.TMMRoles.LOOSE_END));
+    looseEndPlayers.addAll(component.getAllWithRole(ModRoles.BUTCHER_LOOSE_END));
+    looseEndPlayers.addAll(component.getAllWithRole(ModRoles.LIQUIDATOR_LOOSE_END));
+    currentReplayData.setLooseEndPlayers(looseEndPlayers);
 
     Map<UUID, String> roleMap = new HashMap<>();
     for (Map.Entry<UUID, io.wifi.starrailexpress.api.SRERole> entry : component.getRoles().entrySet()) {

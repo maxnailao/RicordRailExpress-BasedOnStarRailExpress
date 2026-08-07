@@ -159,8 +159,6 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
 
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
 
-                        GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
-
                         // 清算者击杀后覆盖冷却为3秒
                         if (!player.isCreative()) {
                             var game2 = SREGameWorldComponent.KEY.get(player.level());

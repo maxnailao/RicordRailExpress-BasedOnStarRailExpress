@@ -233,6 +233,16 @@ public class NostalgistPlayerComponent implements RoleComponent, ServerTickingCo
                 40, 0.5, 1.0, 0.5, 0.4);
 
         player.removeEffect(ModEffects.NO_COLLIDE);
+        // 退出里世界后：全场播报异样提示，并让怀旧者发光 20 秒暴露位置
+        if (serverPlayer.getServer() != null) {
+            for (ServerPlayer p : serverPlayer.getServer().getPlayerList().getPlayers()) {
+                p.displayClientMessage(
+                        Component.translatable("message.noellesroles.nostalgist.collapse_broadcast")
+                                .withStyle(ChatFormatting.GRAY),
+                        false);
+            }
+        }
+        serverPlayer.addEffect(new MobEffectInstance(MobEffects.GLOWING, 20 * 20, 0, false, false, true));
         // 离开里世界奖励金币
         int reward = NoellesRolesConfig.HANDLER.instance().nostalgistCollapseReward;
         if (reward > 0) {

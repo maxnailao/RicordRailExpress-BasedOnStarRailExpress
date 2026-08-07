@@ -1128,7 +1128,7 @@ public class ModEventsRegister {
                 return true;
             if (gameWorld.isRole(killer, ModRoles.PIGE))
                 return true;
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(gameWorld.getRole(killer))
                     || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
                 return true;
             return false;
@@ -1143,7 +1143,7 @@ public class ModEventsRegister {
                 return true;
             if (killer == null)
                 return true;
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
+            if (ModRoles.isLooseEndVariant(gameWorld.getRole(killer))
                     || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END))
                 return true;
             return false;

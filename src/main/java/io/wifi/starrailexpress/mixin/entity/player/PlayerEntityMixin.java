@@ -132,7 +132,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
                 }
                 float maxStaminaMultiplier = ModEffects.getStaminaCapacityMultiplier(player);
                 float maxSprintTimeWithEffects = maxSprintTime * maxStaminaMultiplier;
-                float staminaRecoveryRate = 0.4f * ModEffects.getStaminaRecoveryMultiplier(player);
+                float staminaRecoveryRate = 0.4f * ModEffects.getStaminaRecoveryMultiplier(player)
+                        * role.getStaminaRecoveryMultiplier();
 
                 if (this.isSprinting()) {
                     sprintingTicks = Math.max(sprintingTicks - 1, 0);

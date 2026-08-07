@@ -25,6 +25,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public record KnifeStabPayload(int target) implements CustomPacketPayload {
@@ -128,7 +129,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 applyKnifeCooldown(player);
                 consumePirateCutlass(player);
             } else if (!player.isCreative()
-                    && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, TMMRoles.LOOSE_END)
+                    && !ModRoles.isLooseEndVariant(SREGameWorldComponent.KEY.get(player.level()).getRole(player))
                     && !SREGameWorldComponent.KEY.get(player.level()).isRole(player,
                             SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 var cooldowns = player.getCooldowns();

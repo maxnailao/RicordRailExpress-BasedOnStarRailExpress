@@ -145,6 +145,7 @@
     "client.roles.voodoo.LengxiaoScreenMixin",
     "client.roles.shikieiki.ShikieikiScreenMixin",
     "client.roles.vulture.VultureEatenBodyMixin",
+    "client.roles.veteran.VeteranRollRenderMixin",
     "client.time_stop.CantControlMixin",
     "client.time_stop.EntityCantUpdatePositionMixin",
     "client.time_stop.GameRendererMixin",

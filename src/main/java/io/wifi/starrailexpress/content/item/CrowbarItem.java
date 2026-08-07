@@ -21,6 +21,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 
 public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpenItem {
@@ -52,7 +53,7 @@ public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpen
                 if (SRE.REPLAY_MANAGER != null) {
                     SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(), BuiltInRegistries.ITEM.getKey(this));
                 }
-                if (gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
+                if (ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))) {
                     player.getCooldowns().addCooldown(this,
                             GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.CROWBAR, 45 * 20) / 4);
                 } else if (gameWorldComponent.isRole(player, RedHouseRoles.FURANDORU)) {

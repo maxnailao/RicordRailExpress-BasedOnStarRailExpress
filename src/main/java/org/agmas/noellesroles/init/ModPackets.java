@@ -354,6 +354,9 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(
                 org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket.TYPE,
                 org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPrivateInfoS2CPacket.TYPE,
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPrivateInfoS2CPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.game.modes.werewolf.network.WerewolfActionC2SPacket.TYPE,
                 (payload, context) -> context.player().server.execute(() -> payload.handle(context.player())));

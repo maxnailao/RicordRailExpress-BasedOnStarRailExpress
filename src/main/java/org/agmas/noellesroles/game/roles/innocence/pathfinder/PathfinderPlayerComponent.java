@@ -30,7 +30,7 @@ import java.util.*;
  * 管理探路者技能：花费75金币在原地放置一盏灯（服务端真实方块）
  * - 按 G 放置灯（花费75金币，无放置冷却）
  * - 灯存在75秒后消失（服务端移除方块）
- * - 灯使用海晶灯方块，为周围提供照明
+ * - 灯使用原版火把方块，为周围提供照明
  */
 public class PathfinderPlayerComponent implements RoleComponent, ServerTickingComponent {
 
@@ -44,8 +44,8 @@ public class PathfinderPlayerComponent implements RoleComponent, ServerTickingCo
     /** 灯存在时间（75秒 = 1500 tick） */
     public static final int LIGHT_DURATION = 1500;
 
-    /** 灯方块：海晶灯（发光方块，亮度等级15） */
-    private static final Block LIGHT_BLOCK = Blocks.SEA_LANTERN;
+    /** 灯方块：火把（原版发光方块，亮度等级14） */
+    private static final Block LIGHT_BLOCK = Blocks.TORCH;
 
     // ==================== 状态变量 ====================
 

@@ -661,6 +661,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             winStatus = GameUtils.WinStatus.KILLERS;
         }
 
+        // check if out of time
+        // 注意：超时判定必须放在亡命徒检查之前，避免覆盖亡命徒（含变体）在场时的拦截结果
+        if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
+            winStatus = GameUtils.WinStatus.TIME;
+
         // 检查场上是否存在亡命徒
         if (winStatus != GameUtils.WinStatus.NONE) {
             boolean hasLooseEndAlive = false;
@@ -701,15 +706,6 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             }
         }
 
-        // check if out of time
-        if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
-            winStatus = GameUtils.WinStatus.TIME;
-
-        // GameUtils.WinStatus modifiedWinStatus =
-        // AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld, winStatus, false);
-        // if (!modifiedWinStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {
-        // winStatus = modifiedWinStatus;
-        // }
         // game end on win and display
         if (winStatus != GameUtils.WinStatus.NONE
                 && gameWorldComponent.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE) {

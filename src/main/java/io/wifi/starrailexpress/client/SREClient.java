@@ -172,6 +172,18 @@ public class SREClient implements ClientModInitializer {
     public static KeyMapping instinctKeybind;
     public static KeyMapping statsKeybind; // 新增统计面板热键
     public static KeyMapping warehouseKeybind; // CS2 仓库热键
+    public static KeyMapping werewolfUiKeybind; // 狼人杀操作界面热键
+
+    /**
+     * 打开狼人杀操作界面（根据当前阶段选择投票界面或行动界面）
+     */
+    private static void openWerewolfUi(net.minecraft.client.Minecraft client) {
+        if (org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.shouldShowVoteUI()) {
+            client.setScreen(new org.agmas.noellesroles.game.modes.werewolf.client.WerewolfVoteScreen());
+        } else {
+            client.setScreen(new org.agmas.noellesroles.game.modes.werewolf.client.WerewolfActionScreen());
+        }
+    }
     public static KeyMapping manageWaypointsKeybind; // 路径点管理 GUI 热键（默认未绑定）
     public static KeyMapping deleteLookedWaypointKeybind; // 看向删除路径点热键（默认未绑定）
     public static boolean isInstinctToggleEnabled = false; // 新增变量用于跟踪切换状态
@@ -713,6 +725,7 @@ public class SREClient implements ClientModInitializer {
             ClientSkincrawlerState.clearAll();
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
             org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.reset();
+            org.agmas.noellesroles.game.modes.werewolf.client.WerewolfSeatButton.clearSkinCache();
             SceneAssetClient.clearRuntime();
             ClientPlayerStatsCache.clear();
             RoleRotationCache.clear();
@@ -1040,6 +1053,13 @@ public class SREClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_COMMA, // 默认热键 ',' (即 '、' 键位)
                 "category." + SRE.MOD_ID + ".keybinds"));
 
+        // 狼人杀操作界面热键（默认 '='）
+        werewolfUiKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key." + SRE.MOD_ID + ".werewolf_ui",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_EQUAL,
+                "category." + SRE.MOD_ID + ".keybinds"));
+
         // 路径点管理 GUI（默认未绑定，OP 在按键设置里自行绑定）
         manageWaypointsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".manage_waypoints",
@@ -1093,9 +1113,46 @@ public class SREClient implements ClientModInitializer {
                         org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.reset();
                     } else {
                         org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.updatePhase(
-                                payload.phaseId(), payload.currentActorSeat(), payload.deadlineTick(), payload.round());
+                                payload.phaseId(), payload.currentActorSeat(), payload.deadlineTick(), payload.round(),
+                                payload.aliveSeats(), payload.seatNames());
                     }
                 }));
+
+        // === 狼人杀私有信息接收器（炼药师受害者/预言家查验结果） ===
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPrivateInfoS2CPacket.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState
+                            .handlePrivateInfo(payload.infoType(), payload.seat());
+                }));
+
+        // === 狼人杀操作界面自动打开 + 热键重开 ===
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (!org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.active) return;
+            if (client.player == null || client.level == null) return;
+
+            boolean shouldOpen = org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.shouldOpenActionUI();
+
+            // 热键手动打开/重新打开
+            if (werewolfUiKeybind != null && werewolfUiKeybind.consumeClick() && shouldOpen && client.screen == null) {
+                openWerewolfUi(client);
+                return;
+            }
+
+            // 自动打开：阶段或行动者变化时弹窗（发言轮换时每个发言者都会弹窗）
+            var wwCS = org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.class;
+            boolean phaseChanged = org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.lastOpenedUiPhase
+                    != org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.phase;
+            boolean actorChanged = org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.lastOpenedUiActor
+                    != org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.currentActorSeat;
+            if (shouldOpen && client.screen == null && (phaseChanged || actorChanged)) {
+                org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.lastOpenedUiPhase =
+                        org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.phase;
+                org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.lastOpenedUiActor =
+                        org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.currentActorSeat;
+                openWerewolfUi(client);
+            }
+        });
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointsPacket.ID, SyncWaypointsPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(SyncWaypointVisibilityPacket.ID,
                 SyncWaypointVisibilityPacket::handle);

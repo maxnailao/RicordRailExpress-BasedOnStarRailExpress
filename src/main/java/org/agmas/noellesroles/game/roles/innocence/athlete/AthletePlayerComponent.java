@@ -41,8 +41,8 @@ public class AthletePlayerComponent implements RoleComponent, ServerTickingCompo
     /** 速度效果持续时间（20秒 = 400 tick） */
     public static final int SPEED_DURATION = 400;
 
-    /** 速度效果等级（1级，索引为0，对应 Speed I） */
-    public static final int SPEED_AMPLIFIER = 4;
+    /** 速度效果等级（4级，索引为3，对应 Speed IV） */
+    public static final int SPEED_AMPLIFIER = 3;
 
     // ==================== 状态变量 ====================
 

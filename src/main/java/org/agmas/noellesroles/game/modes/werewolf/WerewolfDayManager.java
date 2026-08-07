@@ -24,13 +24,29 @@ public class WerewolfDayManager {
         if (targetUuid != null && !state.getAlivePlayers(level).contains(targetUuid)) {
             return; // 不能投给死亡玩家
         }
+        if (targetUuid != null && targetUuid.equals(voterUuid)) {
+            return; // 不能自投
+        }
+        if (state.isPkVote && state.pkPlayers.contains(voterUuid)) {
+            return; // PK玩家不能参与PK投票
+        }
 
         state.votes.put(voterUuid, targetUuid);
 
-        // 检查是否所有存活玩家都已投票
+        // 检查是否所有有投票资格的玩家都已投票（PK轮中PK玩家无投票资格）
         List<UUID> alivePlayers = state.getAlivePlayers(level);
-        if (state.votes.size() >= alivePlayers.size()) {
-            resolveVote(level, state);
+        int eligibleVoters = alivePlayers.size();
+        if (state.isPkVote) {
+            for (UUID pk : state.pkPlayers) {
+                if (alivePlayers.contains(pk)) eligibleVoters--;
+            }
+        }
+        if (state.votes.size() >= eligibleVoters) {
+            if (state.isPkVote) {
+                resolvePkVote(level, state);
+            } else {
+                resolveVote(level, state);
+            }
         }
     }
 
@@ -167,9 +183,29 @@ public class WerewolfDayManager {
                     Component.translatable("werewolf.msg.wolf_king_shot_available")
                             .withStyle(ChatFormatting.RED),
                     false);
+        } else if (roleDef == WerewolfRoleDef.HUNTER && !comp.usedDeathShot) {
+            // 被票出的猎人也能开枪（标准规则）：先淘汰→判胜→开枪
+            WerewolfGameMode.eliminatePlayer(target, WerewolfGameMode.DEATH_EXECUTE);
+
+            String hunterWinner = WerewolfWinChecker.checkWinner(level, state);
+            if (hunterWinner != null) {
+                WerewolfGameMode hunterGm = (WerewolfGameMode) io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(level).getGameMode();
+                hunterGm.endGame(level, state, hunterWinner);
+                return;
+            }
+
+            state.hunterDiedByExecution = true;
+            state.currentActor = targetUuid;
+            state.startPhase(WerewolfPhase.DAY_HUNTER_SHOT, currentTick);
+            WerewolfGameMode.broadcastPhaseStatic(level, state);
+
+            target.displayClientMessage(
+                    Component.translatable("werewolf.msg.hunter_shot_available")
+                            .withStyle(ChatFormatting.GOLD),
+                    false);
         } else {
             // 直接淘汰
-            WerewolfGameMode.eliminatePlayer(target);
+            WerewolfGameMode.eliminatePlayer(target, WerewolfGameMode.DEATH_EXECUTE);
 
             // 检查胜负
             String winner = WerewolfWinChecker.checkWinner(level, state);
@@ -198,8 +234,8 @@ public class WerewolfDayManager {
         wolfKingComp.usedDeathShot = true;
         wolfKingComp.sync();
 
-        // 淘汰白狼王
-        WerewolfGameMode.eliminatePlayer(wolfKing);
+        // 淘汰白狼王（本身是被票出）
+        WerewolfGameMode.eliminatePlayer(wolfKing, WerewolfGameMode.DEATH_EXECUTE);
 
         if (targetUuid != null) {
             var targetPlayer = level.getPlayerByUUID(targetUuid);
@@ -207,7 +243,7 @@ public class WerewolfDayManager {
                 // 验证目标是否存活
                 WerewolfPlayerComponent targetComp = ModComponents.WEREWOLF.get(target);
                 if (targetComp.alive) {
-                    WerewolfGameMode.eliminatePlayer(target);
+                    WerewolfGameMode.eliminatePlayer(target, WerewolfGameMode.DEATH_WOLF_KING);
                     int targetSeat = state.getSeatNumber(targetUuid);
 
                     for (ServerPlayer player : level.players()) {

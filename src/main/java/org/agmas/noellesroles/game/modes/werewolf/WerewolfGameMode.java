@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.modes.werewolf;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -21,6 +22,28 @@ import java.util.*;
  * Author: jiale
  */
 public class WerewolfGameMode extends GameMode {
+
+    // === 狼人杀死亡原因（供回放时间线显示） ===
+    public static final ResourceLocation DEATH_WOLF_BITE = SRE.jialeId("werewolf_bite");
+    public static final ResourceLocation DEATH_WOLF_POISON = SRE.jialeId("werewolf_poison");
+    public static final ResourceLocation DEATH_EXECUTE = SRE.jialeId("werewolf_execute");
+    public static final ResourceLocation DEATH_HUNTER_SHOT = SRE.jialeId("werewolf_hunter_shot");
+    public static final ResourceLocation DEATH_WOLF_KING = SRE.jialeId("werewolf_wolf_king");
+    public static final ResourceLocation DEATH_KNIGHT_DUEL = SRE.jialeId("werewolf_knight_duel");
+
+    static {
+        // 注册狼人杀自定义胜利判定谓词（供 GameUtils CUSTOM 分支统计胜负/MVP 使用）
+        // CustomWinnerID 为 werewolf_good / werewolf_wolf，按玩家狼人杀组件阵营判定
+        GameUtils.CustomWinnersPredicates.add(entry -> {
+            String winnerId = entry.getValue();
+            if (winnerId == null || !winnerId.startsWith("werewolf_")) return false;
+            WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(entry.getKey());
+            if (comp.seatNumber < 0) return false; // 非参战玩家
+            String faction = winnerId.substring("werewolf_".length());
+            return ("good".equals(faction) && comp.isGood())
+                    || ("wolf".equals(faction) && comp.isWolf());
+        });
+    }
 
     public WerewolfGameMode(ResourceLocation identifier) {
         super(identifier, 0, 6); // 无全局计时，最少6人
@@ -79,6 +102,10 @@ public class WerewolfGameMode extends GameMode {
         serverWorld.setDayTime(18000);
         serverWorld.getServer().setDifficulty(net.minecraft.world.Difficulty.PEACEFUL, true);
 
+        // 将玩家从大厅/准备区传送到地图出生点（修复"未在地图内游玩"问题）
+        var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverWorld);
+        var spawnPos = areas.getSpawnPos();
+
         // 清空玩家背包和冷却
         for (ServerPlayer player : players) {
             player.getInventory().clearContent();
@@ -91,6 +118,13 @@ public class WerewolfGameMode extends GameMode {
             }
             // 初始化狼人杀组件
             ModComponents.WEREWOLF.get(player).init();
+            // 社交推理游戏：禁止环境伤害致死（摔落/窒息等）
+            player.setInvulnerable(true);
+            // 传送到地图出生点
+            if (spawnPos != null) {
+                player.teleportTo(serverWorld, spawnPos.pos.x(), spawnPos.pos.y(), spawnPos.pos.z(),
+                        spawnPos.yaw, spawnPos.pitch);
+            }
         }
 
         // 清除角色映射
@@ -108,9 +142,28 @@ public class WerewolfGameMode extends GameMode {
         state.reset();
         state.active = true;
 
+        // 获取地图配置中的座位坐标
+        var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverWorld);
+        var werewolfConfig = areas.werewolfConfig;
+
         // 打乱玩家顺序
         List<ServerPlayer> shuffled = new ArrayList<>(players);
         Collections.shuffle(shuffled);
+
+        // 匹配座位：玩家数超过座位数时截取前 N 名，多余玩家转为旁观
+        if (werewolfConfig != null && !werewolfConfig.seats.isEmpty()
+                && shuffled.size() > werewolfConfig.seats.size()) {
+            int maxSeats = werewolfConfig.seats.size();
+            List<ServerPlayer> excluded = new ArrayList<>(shuffled.subList(maxSeats, shuffled.size()));
+            shuffled = new ArrayList<>(shuffled.subList(0, maxSeats));
+            for (ServerPlayer ex : excluded) {
+                ex.setGameMode(GameType.SPECTATOR);
+                ex.displayClientMessage(
+                        Component.translatable("werewolf.msg.seats_full")
+                                .withStyle(ChatFormatting.RED),
+                        false);
+            }
+        }
 
         // 获取角色配置
         List<WerewolfRoleDef> roleConfig = WerewolfRoleDef.getRoleConfig(shuffled.size());
@@ -122,8 +175,8 @@ public class WerewolfGameMode extends GameMode {
             WerewolfRoleDef roleDef = roleConfig.get(i);
             int seatNumber = i + 1;
 
-            // 设置框架角色（空壳）
-            gameWorldComponent.addRole(player, roleDef.isWolf() ? WerewolfRoles.WOLF : WerewolfRoles.GOOD, false);
+            // 设置框架角色（每个狼人杀身份独立注册，参考修机模式）
+            gameWorldComponent.addRole(player, WerewolfRoles.forDef(roleDef), false);
 
             // 设置狼人杀组件
             WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(player);
@@ -137,6 +190,14 @@ public class WerewolfGameMode extends GameMode {
             state.players.add(player.getUUID());
             state.seatToPlayer.put(seatNumber, player.getUUID());
             state.playerToSeat.put(player.getUUID(), seatNumber);
+
+            // 传送玩家到对应座位并坐上沙发（修复"未在地图内游玩"问题）
+            if (werewolfConfig != null) {
+                var seatPos = werewolfConfig.seats.get(String.valueOf(seatNumber));
+                if (seatPos != null) {
+                    sitPlayerOnSeat(player, new net.minecraft.core.BlockPos(seatPos.x, seatPos.y, seatPos.z));
+                }
+            }
 
             // 发送角色通知
             player.displayClientMessage(
@@ -181,7 +242,8 @@ public class WerewolfGameMode extends GameMode {
     @Override
     public void afterInitializeGame(ServerLevel serverWorld, SREGameWorldComponent gameComponent,
             ArrayList<ServerPlayer> readyPlayerList) {
-        // 不调用 super（跳过回放系统初始化）
+        // 调用 super 初始化回放系统，记录游戏过程
+        super.afterInitializeGame(serverWorld, gameComponent, readyPlayerList);
     }
 
     @Override
@@ -228,6 +290,9 @@ public class WerewolfGameMode extends GameMode {
             case DAY_SPEECH -> {
                 // 发言阶段（超时自动切换）
             }
+            case DAY_FREE_SPEECH -> {
+                // 自由发言阶段（超时进入投票）
+            }
             case DAY_VOTE, DAY_VOTE_PK_RESULT -> {
                 // 投票阶段
             }
@@ -242,9 +307,41 @@ public class WerewolfGameMode extends GameMode {
             }
         }
 
-        // 座位锁定：每 40 tick 检查位置
-        if (currentTick % 40 == 0) {
-            enforceSeatPositions(serverWorld, state);
+        // 座位锁定：每 tick 即时检测，离座立即传回
+        enforceSeatPositions(serverWorld, state);
+
+        // 夜晚致盲：非行动玩家夜晚致盲，行动/白天解除（每 20 tick 刷新）
+        if (currentTick % 20 == 0) {
+            updateNightBlindness(serverWorld, state);
+        }
+    }
+
+    /**
+     * 夜晚致盲管理：夜晚阶段非行动者施加致盲（闪光弹式全屏黑幕，由 BlindnessEffectMixin 对 UNLUCK 效果渲染）；
+     * 行动者/白天解除。黑幕覆盖世界与 HUD，但操作界面（Screen）绘制在其上层，仍可正常操作。
+     */
+    private void updateNightBlindness(ServerLevel serverWorld, WerewolfGameState state) {
+        boolean isNightPhase = state.phase.isNight();
+        for (UUID uuid : state.players) {
+            var player = serverWorld.getPlayerByUUID(uuid);
+            if (!(player instanceof ServerPlayer sp)) continue;
+            WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(sp);
+            if (!comp.alive) continue;
+
+            // 行动者判定：当前行动者，或狼方阶段的狼人们
+            boolean isActor = uuid.equals(state.currentActor)
+                    || (state.phase == WerewolfPhase.NIGHT_WOLVES && comp.isWolf());
+
+            if (isNightPhase && !isActor) {
+                if (!sp.hasEffect(net.minecraft.world.effect.MobEffects.UNLUCK)) {
+                    sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                            net.minecraft.world.effect.MobEffects.UNLUCK, 60, 0, false, false, false));
+                }
+            } else {
+                if (sp.hasEffect(net.minecraft.world.effect.MobEffects.UNLUCK)) {
+                    sp.removeEffect(net.minecraft.world.effect.MobEffects.UNLUCK);
+                }
+            }
         }
     }
 
@@ -282,16 +379,33 @@ public class WerewolfGameMode extends GameMode {
                 advanceNightPhase(serverWorld, state);
             }
             case DAY_ANNOUNCE -> {
-                // 公示结束，进入发言
-                startDaySpeech(serverWorld, state);
+                // 公示期结束：检查猎人开枪或直接进入发言
+                WerewolfNightManager.checkHunterShot(serverWorld, state);
             }
             case DAY_HUNTER_SHOT -> {
-                // 猎人超时，不开枪
-                proceedAfterHunterShot(serverWorld, state);
+                // 猎人超时不开枪：处决猎人进遗言，夜晚死亡猎人进发言
+                if (state.hunterDiedByExecution) {
+                    state.hunterDiedByExecution = false;
+                    startLastWords(serverWorld, state);
+                } else {
+                    proceedAfterHunterShot(serverWorld, state);
+                }
             }
             case DAY_SPEECH -> {
                 // 发言超时，切换下一位
                 advanceSpeech(serverWorld, state);
+            }
+            case DAY_FREE_SPEECH -> {
+                // 自由发言超时，进入投票
+                state.currentActor = null;
+                state.startPhase(WerewolfPhase.DAY_VOTE, currentTick);
+                broadcastPhase(serverWorld, state);
+                for (ServerPlayer player : serverWorld.players()) {
+                    player.displayClientMessage(
+                            Component.translatable("werewolf.msg.vote_started")
+                                    .withStyle(ChatFormatting.GOLD),
+                            false);
+                }
             }
             case DAY_VOTE -> {
                 // 投票超时，统计结果
@@ -343,11 +457,14 @@ public class WerewolfGameMode extends GameMode {
         }
         
         state.startPhase(nextPhase, currentTick);
-        broadcastPhase(serverWorld, state);
 
-        // 通知当前行动者
+        // 顺序：分配行动者 → 广播阶段包（携带正确 actorSeat）→ 发送通知（聊天/私有包必须在阶段包之后，避免被重置）
         if (nextPhase != WerewolfPhase.NIGHT_RESOLVE) {
+            assignCurrentActor(serverWorld, state);
+            broadcastPhase(serverWorld, state);
             notifyCurrentActor(serverWorld, state);
+        } else {
+            broadcastPhase(serverWorld, state);
         }
     }
 
@@ -384,11 +501,14 @@ public class WerewolfGameMode extends GameMode {
      */
     public void startNight(ServerLevel serverWorld, WerewolfGameState state) {
         long currentTick = serverWorld.getGameTime();
-        
+
+        // 重置夜晚数据并递增轮次（即使跳过守护者阶段也必须执行）
+        state.beginNewNight();
+
         // 广播夜晚开始
         for (ServerPlayer player : serverWorld.players()) {
             player.displayClientMessage(
-                    Component.translatable("werewolf.msg.night_falls", state.round + 1)
+                    Component.translatable("werewolf.msg.night_falls", state.round)
                             .withStyle(ChatFormatting.DARK_BLUE),
                     false);
         }
@@ -400,10 +520,14 @@ public class WerewolfGameMode extends GameMode {
         }
         
         state.startPhase(firstPhase, currentTick);
-        broadcastPhase(serverWorld, state);
-        
+
+        // 顺序：分配行动者 → 广播阶段包 → 发送通知（私有包必须在阶段包之后）
         if (firstPhase != WerewolfPhase.NIGHT_RESOLVE) {
+            assignCurrentActor(serverWorld, state);
+            broadcastPhase(serverWorld, state);
             notifyCurrentActor(serverWorld, state);
+        } else {
+            broadcastPhase(serverWorld, state);
         }
     }
 
@@ -457,6 +581,13 @@ public class WerewolfGameMode extends GameMode {
     }
 
     /**
+     * 推进发言（公开方法，供网络包调用：发言者主动跳过）
+     */
+    public void advanceSpeechPublic(ServerLevel serverWorld, WerewolfGameState state) {
+        advanceSpeech(serverWorld, state);
+    }
+
+    /**
      * 推进发言
      */
     private void advanceSpeech(ServerLevel serverWorld, WerewolfGameState state) {
@@ -485,14 +616,14 @@ public class WerewolfGameMode extends GameMode {
             nextSeat++;
         }
 
-        // 所有存活玩家都发言完毕，进入投票
+        // 所有存活玩家都发言完毕，进入自由发言阶段
         state.currentActor = null;
-        state.startPhase(WerewolfPhase.DAY_VOTE, currentTick);
+        state.startPhase(WerewolfPhase.DAY_FREE_SPEECH, currentTick);
         broadcastPhase(serverWorld, state);
 
         for (ServerPlayer player : serverWorld.players()) {
             player.displayClientMessage(
-                    Component.translatable("werewolf.msg.vote_started")
+                    Component.translatable("werewolf.msg.free_speech_started")
                             .withStyle(ChatFormatting.GOLD),
                     false);
         }
@@ -515,7 +646,28 @@ public class WerewolfGameMode extends GameMode {
     }
 
     /**
-     * 通知当前行动者
+     * 分配当前行动者（仅设置状态，不发包；供阶段包携带 actorSeat）
+     */
+    private void assignCurrentActor(ServerLevel serverWorld, WerewolfGameState state) {
+        WerewolfRoleDef targetRole = switch (state.phase) {
+            case NIGHT_GUARDIAN -> WerewolfRoleDef.GUARDIAN;
+            case NIGHT_ALCHEMIST -> WerewolfRoleDef.ALCHEMIST;
+            case NIGHT_PROPHET -> WerewolfRoleDef.PROPHET;
+            case NIGHT_KNIGHT -> WerewolfRoleDef.KNIGHT;
+            default -> null;
+        };
+
+        if (targetRole != null) {
+            List<UUID> actors = state.getAlivePlayersByRole(serverWorld, targetRole);
+            state.currentActor = actors.isEmpty() ? null : actors.get(0);
+        } else {
+            // 狼方阶段无单一行动者
+            state.currentActor = null;
+        }
+    }
+
+    /**
+     * 通知当前行动者（发送聊天与私有包；必须在 broadcastPhase 之后调用）
      */
     private void notifyCurrentActor(ServerLevel serverWorld, WerewolfGameState state) {
         WerewolfRoleDef targetRole = switch (state.phase) {
@@ -527,15 +679,28 @@ public class WerewolfGameMode extends GameMode {
         };
 
         if (targetRole != null) {
-            List<UUID> actors = state.getAlivePlayersByRole(serverWorld, targetRole);
-            if (!actors.isEmpty()) {
-                state.currentActor = actors.get(0);
+            if (state.currentActor != null) {
                 var actorPlayer = serverWorld.getPlayerByUUID(state.currentActor);
                 if (actorPlayer instanceof ServerPlayer actor) {
                     actor.displayClientMessage(
                             Component.translatable("werewolf.msg.your_turn")
                                     .withStyle(ChatFormatting.GREEN),
                             true);
+
+                    // 炼药师阶段：告知昨夜被狼杀的玩家（仅炼药师可见，私有包防泄密；仅持有解药时显示）
+                    if (state.phase == WerewolfPhase.NIGHT_ALCHEMIST && state.wolfTarget != null
+                            && !ModComponents.WEREWOLF.get(actor).usedAntidote) {
+                        int victimSeat = state.getSeatNumber(state.wolfTarget);
+                        if (victimSeat > 0) {
+                            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(actor,
+                                    new org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPrivateInfoS2CPacket(
+                                            (byte) 0, victimSeat));
+                            actor.displayClientMessage(
+                                    Component.translatable("werewolf.msg.alchemist_victim", victimSeat)
+                                            .withStyle(ChatFormatting.LIGHT_PURPLE),
+                                    false);
+                        }
+                    }
                 }
             }
         } else if (state.phase == WerewolfPhase.NIGHT_WOLVES) {
@@ -565,40 +730,170 @@ public class WerewolfGameMode extends GameMode {
      */
     public static void broadcastPhaseStatic(ServerLevel serverWorld, WerewolfGameState state) {
         int actorSeat = state.currentActor != null ? state.getSeatNumber(state.currentActor) : -1;
+
+        // 收集存活玩家座位列表（供客户端 UI 使用）
+        List<Integer> aliveSeats = new ArrayList<>();
+        for (UUID uuid : state.getAlivePlayers(serverWorld)) {
+            int seat = state.getSeatNumber(uuid);
+            if (seat > 0) aliveSeats.add(seat);
+        }
+        Collections.sort(aliveSeats);
+
+        // 收集座位→玩家名映射（供客户端显示头像）
+        List<String> seatNames = new ArrayList<>();
+        for (int s = 1; s <= state.players.size(); s++) {
+            UUID uuid = state.getPlayerBySeat(s);
+            String name = "";
+            if (uuid != null) {
+                var p = serverWorld.getServer().getPlayerList().getPlayer(uuid);
+                if (p != null) name = p.getGameProfile().getName();
+            }
+            seatNames.add(name);
+        }
+
         var packet = new org.agmas.noellesroles.game.modes.werewolf.network.WerewolfPhaseS2CPacket(
                 (byte) state.phase.ordinal(),
                 actorSeat,
                 state.phaseDeadlineTick,
-                state.round
+                state.round,
+                aliveSeats,
+                seatNames
         );
         
         for (ServerPlayer player : serverWorld.players()) {
-            // 发送 S2C 包
+            // 发送 S2C 包（客户端 HUD 根据是否行动者决定显示真实阶段名还是“等待其他玩家行动”，
+            // 不在此处广播阶段名文本，避免泄露当前行动角色身份）
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, packet);
-            // 同时发送聊天消息（备用）
-            player.displayClientMessage(
-                    Component.translatable(state.phase.translationKey)
-                            .withStyle(ChatFormatting.GRAY),
-                    true);
         }
     }
 
     /**
-     * 强制座位位置
+     * 强制座位位置（确保玩家坐在对应座位方块上）
      */
     private void enforceSeatPositions(ServerLevel serverWorld, WerewolfGameState state) {
-        // TODO: 实现座位锁定逻辑
-        // 需要地图配置中的座位坐标
+        // 从 AreasWorldComponent 获取狼人杀配置
+        var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverWorld);
+        if (areas.werewolfConfig == null || areas.werewolfConfig.seats.isEmpty()) {
+            return; // 没有配置座位，跳过
+        }
+
+        for (UUID uuid : state.players) {
+            var player = serverWorld.getPlayerByUUID(uuid);
+            if (!(player instanceof ServerPlayer sp)) continue;
+
+            WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(sp);
+            if (!comp.alive) continue; // 死亡玩家不强制座位
+
+            int seat = comp.seatNumber;
+            var seatPos = areas.werewolfConfig.seats.get(String.valueOf(seat));
+            if (seatPos == null) continue;
+
+            net.minecraft.core.BlockPos blockPos = new net.minecraft.core.BlockPos(seatPos.x, seatPos.y, seatPos.z);
+
+            // 已坐在正确座位上，跳过
+            if (sp.getVehicle() instanceof io.wifi.starrailexpress.content.block.entity.SeatEntity seatEntity
+                    && blockPos.equals(seatEntity.getSeatPos())) {
+                continue;
+            }
+
+            // 未坐在正确座位上，重新入座
+            sitPlayerOnSeat(sp, blockPos);
+        }
+    }
+
+    /**
+     * 让玩家坐上指定座位方块（复用 MountableBlock/SeatEntity 座位系统）
+     */
+    private static void sitPlayerOnSeat(ServerPlayer player, net.minecraft.core.BlockPos seatBlockPos) {
+        ServerLevel level = player.serverLevel();
+
+        // 已坐在正确座位上
+        if (player.getVehicle() instanceof io.wifi.starrailexpress.content.block.entity.SeatEntity existingSeat
+                && seatBlockPos.equals(existingSeat.getSeatPos())) {
+            return;
+        }
+
+        // 计算所有座位的几何中心，入座后面向桌子中心
+        float faceYaw = player.getYRot();
+        var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(level);
+        if (areas.werewolfConfig != null && !areas.werewolfConfig.seats.isEmpty()) {
+            double cx = 0, cz = 0;
+            for (var p : areas.werewolfConfig.seats.values()) {
+                cx += p.x + 0.5;
+                cz += p.z + 0.5;
+            }
+            cx /= areas.werewolfConfig.seats.size();
+            cz /= areas.werewolfConfig.seats.size();
+            double dx = cx - (seatBlockPos.getX() + 0.5);
+            double dz = cz - (seatBlockPos.getZ() + 0.5);
+            if (dx * dx + dz * dz > 0.01) {
+                faceYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            }
+        }
+
+        net.minecraft.world.level.block.state.BlockState blockState = level.getBlockState(seatBlockPos);
+        if (!(blockState.getBlock() instanceof io.wifi.starrailexpress.content.block.MountableBlock mountable)) {
+            // 非可骑坐方块：降级为传送到方块上方
+            player.teleportTo(level, seatBlockPos.getX() + 0.5D, seatBlockPos.getY() + 1.0D,
+                    seatBlockPos.getZ() + 0.5D, faceYaw, player.getXRot());
+            return;
+        }
+
+        // 座位已被占用（存在存活的座位实体）
+        if (!level.getEntitiesOfClass(io.wifi.starrailexpress.content.block.entity.SeatEntity.class,
+                net.minecraft.world.phys.AABB.ofSize(seatBlockPos.getCenter(), 1, 1, 1),
+                net.minecraft.world.entity.Entity::isAlive).isEmpty()) {
+            return;
+        }
+
+        io.wifi.starrailexpress.content.block.entity.SeatEntity seatEntity =
+                io.wifi.starrailexpress.index.TMMEntities.SEAT.create(level);
+        if (seatEntity == null) return;
+
+        // 先离开当前载具
+        if (player.getVehicle() != null) {
+            player.stopRiding();
+        }
+
+        // 先传送到座位旁并面向桌子中心（startRiding 有距离判定）
+        player.teleportTo(level, seatBlockPos.getX() + 0.5D, seatBlockPos.getY() + 1.0D,
+                seatBlockPos.getZ() + 0.5D, faceYaw, player.getXRot());
+
+        // 按方块自身的坐点偏移创建座位实体（与右键坐下逻辑一致）
+        net.minecraft.world.phys.Vec3 sitPos = mountable.getSitPos(level, blockState, seatBlockPos);
+        net.minecraft.world.phys.Vec3 entityPos = net.minecraft.world.phys.Vec3.atLowerCornerOf(seatBlockPos).add(sitPos);
+        seatEntity.moveTo(entityPos.x, entityPos.y, entityPos.z, 0, 0);
+        seatEntity.setSeatPos(seatBlockPos);
+
+        level.addFreshEntity(seatEntity);
+        player.startRiding(seatEntity);
     }
 
     /**
      * 淘汰玩家（不使用 killPlayer）
      */
     public static void eliminatePlayer(ServerPlayer player) {
+        eliminatePlayer(player, DEATH_EXECUTE);
+    }
+
+    /**
+     * 淘汰玩家（携带死亡原因，供回放时间线显示）
+     */
+    public static void eliminatePlayer(ServerPlayer player, ResourceLocation deathReason) {
         player.setGameMode(GameType.SPECTATOR);
         WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(player);
         comp.alive = false;
         comp.sync();
+
+        // 记录到回放系统（itemUsed 传死亡原因，回放会显示对应翻译文本）
+        try {
+            if (io.wifi.starrailexpress.SRE.REPLAY_MANAGER != null) {
+                io.wifi.starrailexpress.SRE.REPLAY_MANAGER.addEvent(
+                        io.wifi.starrailexpress.api.replay.GameReplayData.EventType.PLAYER_KILL,
+                        null, player.getUUID(), deathReason.toString(), null);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     /**
@@ -610,6 +905,8 @@ public class WerewolfGameMode extends GameMode {
 
         SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(serverWorld);
         roundEnd.CustomWinnerID = "werewolf_" + winnerFaction;
+        // 结算界面文字颜色：好人绿 / 狼方红（默认 0 会显示为黑色）
+        roundEnd.CustomWinnerColor = winnerFaction.equals("good") ? 0x55FF55 : 0xFF5555;
 
         // 添加胜利方玩家
         for (UUID uuid : state.players) {
@@ -624,14 +921,43 @@ public class WerewolfGameMode extends GameMode {
             }
         }
 
-        // 揭示所有玩家身份
+        // 结算界面标题：胜利阵营
+        String winKey = winnerFaction.equals("good") ? "werewolf.msg.good_wins" : "werewolf.msg.wolf_wins";
+        roundEnd.CustomWinnerTitle = Component.translatable(winKey);
+        // 结算界面副标题：全员身份揭示（多行）
+        roundEnd.CustomWinnerSubtitle = buildRoleRevealComponent(serverWorld, state);
+
+        // 聊天频道同步揭示
         revealAllRoles(serverWorld, state, winnerFaction);
 
         // 广播 GAME_OVER 阶段（触发客户端状态重置）
         broadcastPhase(serverWorld, state);
 
-        roundEnd.setRoundEndData(serverWorld.players(), GameUtils.WinStatus.CUSTOM);
+        // CUSTOM_COMPONENT：结算界面直接显示 Title(胜利信息) + Subtitle(身份列表)
+        roundEnd.setRoundEndData(serverWorld.players(), GameUtils.WinStatus.CUSTOM_COMPONENT);
         GameUtils.stopGame(serverWorld);
+    }
+
+    /**
+     * 构建身份揭示组件（结算界面副标题，多行）
+     */
+    private Component buildRoleRevealComponent(ServerLevel serverWorld, WerewolfGameState state) {
+        net.minecraft.network.chat.MutableComponent reveal = Component.empty();
+        for (UUID uuid : state.players) {
+            var player = serverWorld.getPlayerByUUID(uuid);
+            if (player instanceof ServerPlayer sp) {
+                WerewolfPlayerComponent comp = ModComponents.WEREWOLF.get(sp);
+                int seat = comp.seatNumber;
+                ChatFormatting color = comp.isWolf() ? ChatFormatting.RED : ChatFormatting.GREEN;
+                reveal.append(Component.literal("\n" + seat + "号 ").withStyle(ChatFormatting.WHITE)
+                        .append(sp.getDisplayName().copy().withStyle(ChatFormatting.YELLOW))
+                        .append(Component.literal(" · ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.translatable(comp.getRoleDef().getTranslationKey()).withStyle(color))
+                        .append(comp.alive ? Component.empty()
+                                : Component.translatable("werewolf.reveal.dead_tag").withStyle(ChatFormatting.GRAY)));
+            }
+        }
+        return reveal;
     }
 
     /**
@@ -655,14 +981,14 @@ public class WerewolfGameMode extends GameMode {
                 int seat = comp.seatNumber;
                 String roleName = comp.getRoleDef().getTranslationKey();
                 ChatFormatting color = comp.isWolf() ? ChatFormatting.RED : ChatFormatting.GREEN;
-                String aliveStatus = comp.alive ? "" : " (已死亡)";
 
                 for (ServerPlayer viewer : serverWorld.players()) {
                     viewer.displayClientMessage(
                             Component.literal(seat + "号: ")
                                     .withStyle(ChatFormatting.WHITE)
                                     .append(Component.translatable(roleName).withStyle(color))
-                                    .append(Component.literal(aliveStatus).withStyle(ChatFormatting.GRAY)),
+                                    .append(comp.alive ? Component.empty()
+                                            : Component.translatable("werewolf.reveal.dead_tag").withStyle(ChatFormatting.GRAY)),
                             false);
                 }
             }
@@ -671,6 +997,16 @@ public class WerewolfGameMode extends GameMode {
 
     @Override
     public void stopGame(ServerLevel world) {
+        // 让所有坐在座位上的玩家离开座位，并还原无敌/致盲状态
+        for (ServerPlayer player : world.players()) {
+            if (player.getVehicle() instanceof io.wifi.starrailexpress.content.block.entity.SeatEntity) {
+                player.stopRiding();
+            }
+            player.setInvulnerable(false);
+            if (player.hasEffect(net.minecraft.world.effect.MobEffects.UNLUCK)) {
+                player.removeEffect(net.minecraft.world.effect.MobEffects.UNLUCK);
+            }
+        }
         WerewolfGameState state = WerewolfGameState.get(world);
         state.reset();
         WerewolfGameState.remove(world);

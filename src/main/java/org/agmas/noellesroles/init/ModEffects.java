@@ -25,6 +25,7 @@ import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
+import org.agmas.noellesroles.role.ModRoles;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
@@ -574,7 +575,7 @@ public class ModEffects {
             }
             if (player.hasEffect(ModEffects.INVINCIBLE)) {
                 var gameComponent = SREGameWorldComponent.KEY.get(player.level());
-                if (gameComponent.isRole(killer, TMMRoles.LOOSE_END)) {
+                if (ModRoles.isLooseEndVariant(gameComponent.getRole(killer))) {
                     return true;
                 }
                 return false;

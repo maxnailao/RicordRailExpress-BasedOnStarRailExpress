@@ -3639,11 +3639,11 @@ public class RoleShopHandler {
             shop.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.CHILD_ID, shop);
         }
-        // 探路者商店：照明弹
+        // 探路者商店：照明灯
         {
             var PATHFINDER_SHOP = new ArrayList<ShopEntry>();
-            // 照明弹 - 30金币
-            PATHFINDER_SHOP.add(new ShopEntry(ModItems.RESCUE_FLARE.getDefaultInstance(), 30, ShopEntry.Type.TOOL));
+            // 照明灯 - 30金币
+            PATHFINDER_SHOP.add(new ShopEntry(ModItems.FLARE.getDefaultInstance(), 30, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.PATHFINDER_ID, PATHFINDER_SHOP);
         }
         // 食尸鬼商店

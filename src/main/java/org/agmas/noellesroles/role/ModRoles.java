@@ -875,18 +875,11 @@ public class ModRoles {
             .setDefaultMax(0);
 
     public static SRERole OLDMAN = TMMRoles.registerRole(
-            new ExtraEffectRole(OLDMAN_ID, new Color(112, 146, 190).getRGB(),
+            new NormalRole(OLDMAN_ID, new Color(112, 146, 190).getRGB(),
                     true, false, SRERole.MoodType.REAL,
-                    TMMRoles.CIVILIAN.getMaxSprintTime(), false).addEffect(
-                            new MobEffectInstance(
-                                    MobEffects.MOVEMENT_SLOWDOWN,
-                                    30 * 20, // 持续时间 60s（tick）
-                                    1, // 等级（0 = 速度 I）
-                                    true, // ambient（环境效果，如信标）
-                                    false, // showParticles（显示粒子）
-                                    true // showIcon（显示图标）
-                            )))
-            .setCanSeeCoin(true).setServerGameTickEvent((p, g) -> RoleTickers.oldmanTick(p, g));
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 0.5f), false))
+            .setCanSeeCoin(true).setStaminaRecoveryMultiplier(0.5f)
+            .setServerGameTickEvent((p, g) -> RoleTickers.oldmanTick(p, g));
     // 算命大师
     public static SRERole FORTUNETELLER = TMMRoles.registerRole(
             new NormalRole(FORTUNETELLER_ID, new Color(239, 228, 176).getRGB(),
@@ -3781,14 +3774,15 @@ public class ModRoles {
 
     /**
      * 屠夫 - 亡命徒阵营变体
-     * - 速度 V + 急迫 II
+     * - 速度 VI + 急迫 III
+     * - 复活时在基础护盾上额外 +1 层护盾
      * - 初始道具：球棒 + 撬棍
      */
     public static SRERole BUTCHER_LOOSE_END = TMMRoles.registerRole(
             new LooseEndRole(BUTCHER_LOOSE_END_ID, 0x9F0000, false, false, SRERole.MoodType.NONE, -1, false,
                     new ArrayList<>(List.of(
-                            new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 4, true, false, true),
-                            new MobEffectInstance(MobEffects.DIG_SPEED, 30 * 20, 1, true, false, true)
+                            new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 5, true, false, true),
+                            new MobEffectInstance(MobEffects.DIG_SPEED, 30 * 20, 2, true, false, true)
                     ))))
             .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(0).setOtherModeRole(true);

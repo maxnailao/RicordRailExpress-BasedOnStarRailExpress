@@ -17,6 +17,7 @@ public enum WerewolfPhase {
     DAY_ANNOUNCE(5 * 20, "werewolf.phase.day_announce"),           // 公示死亡（5s）
     DAY_HUNTER_SHOT(10 * 20, "werewolf.phase.day_hunter_shot"),    // 猎人开枪（10s，条件触发）
     DAY_SPEECH(20 * 20, "werewolf.phase.day_speech"),              // 轮流发言（每人20s）
+    DAY_FREE_SPEECH(30 * 20, "werewolf.phase.day_free_speech"),    // 自由发言（30s，所有人可说话）
     DAY_VOTE(30 * 20, "werewolf.phase.day_vote"),                  // 投票（30s）
     DAY_VOTE_PK(10 * 20, "werewolf.phase.day_vote_pk"),            // PK发言（10s）
     DAY_VOTE_PK_RESULT(30 * 20, "werewolf.phase.day_vote_pk_result"), // PK投票（30s）

@@ -119,8 +119,8 @@ public class RuikePortalEntity extends Entity {
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
                 continue;
             }
-            // 蹲下状态不会被传送
-            if (player.isShiftKeyDown()) {
+            // 必须蹲下才能被传送
+            if (!player.isShiftKeyDown()) {
                 continue;
             }
             // 检查传送冷却

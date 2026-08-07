@@ -47,6 +47,8 @@ public class WerewolfGameState {
     public UUID wolfTarget = null;
     /** 狼方投票（狼人UUID -> 目标UUID） */
     public Map<UUID, UUID> wolfVotes = new HashMap<>();
+    /** 已提交选择的狼人（含弃票者，用于提前结算判定） */
+    public Set<UUID> wolfVoters = new HashSet<>();
     /** 守护者守护目标 */
     public UUID guardianTarget = null;
     /** 炼药师毒药目标 */
@@ -73,6 +75,8 @@ public class WerewolfGameState {
     public List<UUID> pkPlayers = new ArrayList<>();
     /** 是否是 PK 投票轮 */
     public boolean isPkVote = false;
+    /** 猎人是否因被票出而开枪（决定开枪后进入遗言还是发言） */
+    public boolean hunterDiedByExecution = false;
 
     // === 玩家列表 ===
     /** 所有参战玩家 UUID */
@@ -95,6 +99,7 @@ public class WerewolfGameState {
         this.speechSeatIndex = 0;
         this.wolfTarget = null;
         this.wolfVotes.clear();
+        this.wolfVoters.clear();
         this.guardianTarget = null;
         this.alchemistPoisonTarget = null;
         this.alchemistSaveTarget = null;
@@ -107,9 +112,30 @@ public class WerewolfGameState {
         this.votedOutPlayer = null;
         this.pkPlayers.clear();
         this.isPkVote = false;
+        this.hunterDiedByExecution = false;
         this.players.clear();
         this.seatToPlayer.clear();
         this.playerToSeat.clear();
+    }
+
+    /**
+     * 开始新夜晚：重置所有夜晚数据并递增轮次
+     * 注意：startNight 可能跳过守护者阶段（守护者死亡），
+     * 因此不能把夜晚重置绑定在 startPhase(NIGHT_GUARDIAN) 分支里
+     */
+    public void beginNewNight() {
+        this.wolfTarget = null;
+        this.wolfVotes.clear();
+        this.wolfVoters.clear();
+        this.guardianTarget = null;
+        this.alchemistPoisonTarget = null;
+        this.alchemistSaveTarget = null;
+        this.prophetTarget = null;
+        this.knightTarget = null;
+        this.nightDeaths.clear();
+        this.poisonDeaths.clear();
+        this.nightResolved = false;
+        this.round++;
     }
 
     /**
@@ -123,26 +149,16 @@ public class WerewolfGameState {
                 : Long.MAX_VALUE;
         
         // 重置阶段相关数据
-        if (newPhase == WerewolfPhase.NIGHT_GUARDIAN) {
-            // 新夜晚开始，重置夜晚数据
-            this.wolfTarget = null;
-            this.wolfVotes.clear();
-            this.guardianTarget = null;
-            this.alchemistPoisonTarget = null;
-            this.alchemistSaveTarget = null;
-            this.prophetTarget = null;
-            this.knightTarget = null;
-            this.nightDeaths.clear();
-            this.poisonDeaths.clear();
-            this.nightResolved = false;
-            this.round++;
-        } else if (newPhase == WerewolfPhase.DAY_VOTE) {
+        if (newPhase == WerewolfPhase.DAY_VOTE) {
             this.votes.clear();
             this.votedOutPlayer = null;
             this.isPkVote = false;
         } else if (newPhase == WerewolfPhase.DAY_VOTE_PK_RESULT) {
             this.votes.clear();
             this.isPkVote = true;
+        } else if (newPhase == WerewolfPhase.DAY_ANNOUNCE) {
+            // 新白天开始，重置处决猎人标记
+            this.hunterDiedByExecution = false;
         }
     }
 

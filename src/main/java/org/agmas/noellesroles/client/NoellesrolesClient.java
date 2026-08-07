@@ -511,6 +511,22 @@ public class NoellesrolesClient implements ClientModInitializer {
                     ClientWallManager.removeWall(payload.wallId());
                 });
 
+        // 退伍军人冲刺翻滚动画S2C包
+        ClientPlayNetworking.registerGlobalReceiver(VeteranRollS2CPacket.ID, (payload, context) -> {
+            var level = context.client().level;
+            if (level != null) {
+                VeteranRollTracker.startRoll(payload.entityId(),
+                        new Vec3(payload.dirX(), 0.0D, payload.dirZ()), level.getGameTime());
+            }
+        });
+
+        // 每 tick 清理过期的翻滚动画状态
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level != null) {
+                VeteranRollTracker.cleanup(client.level.getGameTime());
+            }
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
             final var p = context.player();
             final var level = context.client().level;

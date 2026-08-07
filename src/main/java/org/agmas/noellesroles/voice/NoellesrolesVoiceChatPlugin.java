@@ -187,10 +187,39 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               var wwState = org.agmas.noellesroles.game.modes.werewolf.WerewolfGameState.get(player.serverLevel());
               var wwComp = ModComponents.WEREWOLF.get(player);
               
-              // 死亡玩家不能说话
+              // 死亡玩家不能说话（例外：被票出玩家在遗言阶段可以说遗言，显式路由给所有存活玩家）
               if (!wwComp.alive) {
+                boolean lastWordsException = wwState.phase == org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.DAY_LAST_WORDS
+                        && player.getUUID().equals(wwState.votedOutPlayer);
+                if (lastWordsException) {
+                  // 显式路由：旁观者默认语音可能被限制，强制发送给所有存活玩家
+                  event.cancel();
+                  for (UUID aliveUuid : wwState.getAlivePlayers(player.serverLevel())) {
+                    ServerPlayer alivePlayer = player.serverLevel().getServer().getPlayerList().getPlayer(aliveUuid);
+                    if (alivePlayer != null) {
+                      VoicechatConnection con = api.getConnectionOf(aliveUuid);
+                      if (con != null && con.isInstalled() && con.isConnected()) {
+                        api.sendLocationalSoundPacketTo(con, event.getPacket()
+                            .locationalSoundPacketBuilder()
+                            .position(api.createPosition(alivePlayer.getX(), alivePlayer.getY(), alivePlayer.getZ()))
+                            .distance((float) api.getVoiceChatDistance())
+                            .build());
+                      }
+                    }
+                  }
+                  return;
+                }
                 event.cancel();
                 return;
+              }
+              
+              // 轮流发言阶段：仅当前发言者可以说话
+              if (wwState.phase == org.agmas.noellesroles.game.modes.werewolf.WerewolfPhase.DAY_SPEECH) {
+                if (wwState.currentActor == null || !player.getUUID().equals(wwState.currentActor)) {
+                  event.cancel();
+                  return;
+                }
+                // 发言者正常广播
               }
               
               // 夜晚狼方阶段：狼方语音只路由给狼方

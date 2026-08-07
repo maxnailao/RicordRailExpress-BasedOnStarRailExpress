@@ -187,7 +187,7 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
                 continue;
             }
             SRERole role = SRERoleWorldComponent.KEY.get(serverWorld).getRole(player);
-            if (role == TMMRoles.LOOSE_END
+            if (ModRoles.isLooseEndVariant(role)
                     || role == ModRoles.BETTER_VIGILANTE
                     || role == TraitorAndModifiers.TRAITOR
                     || role == TMMRoles.KILLER

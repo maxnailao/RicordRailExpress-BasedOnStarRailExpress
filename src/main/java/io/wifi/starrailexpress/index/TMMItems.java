@@ -21,6 +21,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.LetterItem;
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.ArrayList;
 
@@ -170,6 +171,8 @@ public interface TMMItems {
 
         // 亡命徒，超级亡命徒，土块 可以直接使用防御药剂
         DefenseItem.canUseByRightClickRolePaths.add(TMMRoles.LOOSE_END.identifier().getPath());
+        DefenseItem.canUseByRightClickRolePaths.add(ModRoles.BUTCHER_LOOSE_END_ID.getPath());
+        DefenseItem.canUseByRightClickRolePaths.add(ModRoles.LIQUIDATOR_LOOSE_END_ID.getPath());
         DefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.SUPER_LOOSE_END.identifier().getPath());
         DefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.DIRT.identifier().getPath());
 
