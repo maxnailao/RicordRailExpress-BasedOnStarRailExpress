@@ -148,6 +148,14 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new VultureEatC2SPacket(NoellesrolesClient.targetBody.getUUID()));
             return true;
         });
+        // 乌鸦：食用技能同秃鹫，对尸体按技能键食用
+        register(ModRoles.WUYAGE_NANBANJIUUBIEBAN, false, (client, gameWorld) -> {
+            if (NoellesrolesClient.targetBody == null) {
+                return true;
+            }
+            ClientPlayNetworking.send(new VultureEatC2SPacket(NoellesrolesClient.targetBody.getUUID()));
+            return true;
+        });
         register(ModRoles.PELICAN, true, (client, gameWorld) -> {
             // 蹲下释放，否则对鼠标准星目标吞噬
             if (client.player.isShiftKeyDown()) {

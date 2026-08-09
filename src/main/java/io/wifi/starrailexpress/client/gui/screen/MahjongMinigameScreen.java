@@ -128,10 +128,7 @@ public class MahjongMinigameScreen extends Screen {
         super.init();
         ClientPlayNetworking.send(new MahjongJoinC2SPacket(MahjongJoinC2SPacket.ACTION_JOIN));
 
-        btnLeave = Button.builder(Component.literal("离开"), b -> {
-            ClientPlayNetworking.send(new MahjongJoinC2SPacket(MahjongJoinC2SPacket.ACTION_LEAVE));
-            onClose();
-        }).pos(5, 5).size(50, 20).build();
+        btnLeave = Button.builder(Component.literal("离开"), b -> onClose()).pos(5, 5).size(50, 20).build();
         addRenderableWidget(btnLeave);
     }
 
@@ -983,7 +980,11 @@ public class MahjongMinigameScreen extends Screen {
     }
 
     @Override
-    public void onClose() { super.onClose(); }
+    public void onClose() {
+        // 通知服务端离开（含 ESC 关闭），避免玩家滞留队列/会话
+        ClientPlayNetworking.send(new MahjongJoinC2SPacket(MahjongJoinC2SPacket.ACTION_LEAVE));
+        super.onClose();
+    }
 
     @Override
     public boolean isPauseScreen() { return false; }

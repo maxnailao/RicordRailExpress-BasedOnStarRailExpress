@@ -202,6 +202,10 @@ public class SREEventRegister {
                             handler.player.getScoreboardName());
                 }
             }
+            // 玩家掉线时清理小游戏队列/会话，避免幽灵玩家占座
+            io.wifi.starrailexpress.content.minigame.mahjong.MahjongSessionManager.INSTANCE.handleLeave(handler.player);
+            io.wifi.starrailexpress.content.minigame.doudizhu.DoudizhuSessionManager.INSTANCE.handleLeave(handler.player);
+            io.wifi.starrailexpress.content.minigame.gomoku.GomokuSessionManager.INSTANCE.handleLeave(handler.player);
         });
     }
 

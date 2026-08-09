@@ -62,6 +62,10 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "knife_yaoshijian", QualityColor.RARE);
         registerSkin(SkinTypes.KNIFE, "knife_yinren", QualityColor.EPIC);
         registerSkin(SkinTypes.KNIFE, "knife_yingren", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.KNIFE, "knife_sushuikunai", QualityColor.UNBELIEVABLE); // 特别皮肤：专属切刀/击杀音效
+        registerSkin(SkinTypes.KNIFE, "knife_anxing", QualityColor.UNBELIEVABLE); // 特别皮肤：双形态+专属切刀音效
+        registerSkin(SkinTypes.KNIFE, "knife_anxing_1", QualityColor.UNBELIEVABLE); // 暗星形态1（天使）
+        registerSkin(SkinTypes.KNIFE, "knife_anxing_2", QualityColor.UNBELIEVABLE); // 暗星形态2（恶魔）
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤 — 仅保留有贴图+模型资源的皮肤
@@ -102,6 +106,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.BAT, "bat_jita", QualityColor.RARE);
         registerSkin(SkinTypes.BAT, "bat_kanglongjian", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.BAT, "bat_pobanwangzheren", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.BAT, "bat_sushuiren", QualityColor.UNBELIEVABLE); // 特别皮肤：专属击打音效
 
         // ═══════════════════════════════════════════════════════════════════
         // GRENADE（手雷）皮肤 — 仅保留有贴图+模型资源的皮肤
@@ -123,9 +128,12 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_zuzhouzhiyan", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
-        // HAT（帽子）皮肤 — 暂无贴图资源，全部跳过
+        // HAT（帽子）皮肤
+        // 帽子皮肤没有实体物品载体，建模/贴图直接复用现有资源，
+        // 由 HatSkinRenderer 渲染在玩家头顶（见 client/render/entity/HatSkinRenderer）
         // ═══════════════════════════════════════════════════════════════════
-        // 待贴图资源补充后再启用
+        // JiaLe114514 玩偶帽：模型与贴图复用 JiaLe114514 玩偶方块
+        registerSkin(SkinTypes.HAT, "hat_jiale114514", QualityColor.LEGENDARY);
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }

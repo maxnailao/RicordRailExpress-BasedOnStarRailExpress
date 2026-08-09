@@ -84,6 +84,12 @@ public class CS2ServerReceiverRegister {
 
                     Noellesroles.LOGGER.info("[CS2Box] Sent result to {}: quality={}, skin={}",
                             player.getName().getString(), result.quality, result.skinId);
+                } catch (Exception e) {
+                    // 异常兜底：通知客户端开箱失败，避免客户端 isBoxOpening 锁死
+                    Noellesroles.LOGGER.error("[CS2Box] Unexpected error opening box for {}",
+                            player.getName().getString(), e);
+                    ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
+                            false, 0, "", false, 0, List.of(), List.of()));
                 } finally {
                     openingBoxPlayers.remove(player.getUUID());
                 }
@@ -328,6 +334,8 @@ public class CS2ServerReceiverRegister {
                     player.displayClientMessage(
                             Component.literal("§a已装备皮肤: §e" + skinName.replace('_', ' ')), true);
                 }
+                Noellesroles.LOGGER.info("[CS2Warehouse] {} equip request: {}/{} -> applied",
+                        player.getName().getString(), itemType, skinName);
                 ItemSkinManager.sync(player);
 
                 Noellesroles.LOGGER.info("[CS2Warehouse] {} equipped skin: {}/{}",

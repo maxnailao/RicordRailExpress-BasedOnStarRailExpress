@@ -3,6 +3,9 @@ package org.agmas.noellesroles.cs2;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.init.SREFumoBlocks;
+
 /**
  * CS2 皮肤中文名称和介绍信息
  * <p>
@@ -43,6 +46,8 @@ public final class CS2SkinInfo {
         register("knife/knife_yaoshijian", "钥匙剑", "剑柄如钥匙般精巧，开启胜利之门的利刃");
         register("knife/knife_yinren", "银刃", "纯银打造的利刃，在月光下闪耀着冷冽光芒");
         register("knife/knife_yingren", "影刃", "藏于暗影中的传说之刃，出鞘必见血");
+        register("knife/knife_sushuikunai", "塑水苦无", "以流水塑形的苦无，切刀与击杀之时，唯有持者能听见它的潮鸣");
+        register("knife/knife_anxing", "暗星", "天使与恶魔交织的双生之刃，饮血之后光暗逆转");
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）
@@ -74,6 +79,7 @@ public final class CS2SkinInfo {
         register("bat/bat_jita", "吉他", "用吉他奏响战斗的乐章");
         register("bat/bat_kanglongjian", "亢龙锏", "传说中的亢龙锏，威力无穷");
         register("bat/bat_pobanwangzheren", "破败王者之刃", "破败王者遗留的传说之刃，蕴含王者之力");
+        register("bat/bat_sushuiren", "塑水刃", "以流水塑形的利刃，挥动时水光潋滟，唯有持刃者能听见它的潮声");
 
         // ═══════════════════════════════════════════════════════════════════
         // GRENADE（手雷）
@@ -90,6 +96,11 @@ public final class CS2SkinInfo {
         register("grenade/grenade_fennujiweiniao", "愤怒几维鸟", "愤怒的几维鸟，爆炸时发出尖啸");
         register("grenade/grenade_heidong", "黑洞", "仿佛能吞噬一切的黑洞手雷");
         register("grenade/grenade_zuzhouzhiyan", "诅咒之眼", "被诅咒的邪眼，注视着它的爆炸");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // HAT（帽子）
+        // ═══════════════════════════════════════════════════════════════════
+        register("hat/hat_jiale114514", "JiaLe114514 玩偶帽", "把 JiaLe114514 玩偶戴在头上，全场最靓的崽");
     }
 
     private static void register(String skinId, String name, String description) {
@@ -115,6 +126,17 @@ public final class CS2SkinInfo {
     public static String getDescription(String skinId) {
         if (skinId == null) return "";
         return DESCRIPTIONS.getOrDefault(skinId, "");
+    }
+
+    /**
+     * 获取皮肤在仓库/开箱界面中的图标物品。
+     * 帽子皮肤无对应武器物品，用复用的玩偶物品作为图标；返回 null 表示使用默认映射。
+     */
+    public static ItemStack getIconStack(String skinId) {
+        if ("hat/hat_jiale114514".equals(skinId)) {
+            return new ItemStack(SREFumoBlocks.JIALE114514_PLUSH.asItem());
+        }
+        return null;
     }
 
     /**

@@ -37,5 +37,11 @@ public class NRCommandRegister {
 
         // 强制停止暴风雪指令
         StopSnowCommand.register();
+
+        // 旁观者小游戏掌机面板指令
+        SpectorLittleGamesCommand.register();
+
+        // 对话 NPC 管理指令
+        DialogNpcCommand.register();
     }
 }

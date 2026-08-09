@@ -381,6 +381,11 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             return new ManicTask();
         }
 
+        // 病娇角色：唯一任务始终为观察爱慕对象
+        if (isYanderePlayer()) {
+            return new YandereObserveTask();
+        }
+
         return generateTaskInternal();
     }
 
@@ -393,6 +398,10 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         if (isManicPlayer()) {
             // 狂躁症玩家直接获得乱码任务
             return new ManicTask();
+        }
+        // 病娇角色：不会生成观察任务以外的任何任务（同键覆盖，保持唯一）
+        if (isYanderePlayer()) {
+            return new YandereObserveTask();
         }
         return generateTaskInternal();
     }
@@ -408,6 +417,16 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             }
         }
         return false;
+    }
+
+    /**
+     * 检查玩家是否为病娇角色
+     */
+    private boolean isYanderePlayer() {
+        if (this.player.level().isClientSide)
+            return false;
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(this.player.level());
+        return gameWorld != null && gameWorld.isRole(this.player, ModRoles.YANDERE);
     }
 
     public @Nullable TrainTask generateTaskInternal() {
@@ -615,7 +634,8 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
 
         // ───────── 不可刷新任务 ─────────
         CUSTOM(nbt -> new CustomTask(nbt.getString("customName"), nbt.getString("customId")), TaskCategory.NON_REFRESHABLE),
-        MANIC(nbt -> new ManicTask(), TaskCategory.NON_REFRESHABLE);
+        MANIC(nbt -> new ManicTask(), TaskCategory.NON_REFRESHABLE),
+        YANDERE_OBSERVE(nbt -> new YandereObserveTask(), TaskCategory.NON_REFRESHABLE);
 
         /**
          * 任务种类：用于任务生成时的权重调整。
@@ -1343,6 +1363,35 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         public CompoundTag toNbt() {
             CompoundTag nbt = new CompoundTag();
             nbt.putInt("type", Task.MANIC.ordinal());
+            return nbt;
+        }
+    }
+
+    /**
+     * 病娇观察任务类
+     * 病娇角色专属的唯一任务，永远无法完成
+     */
+    public static class YandereObserveTask implements TrainTask {
+        @Override
+        public boolean isFulfilled(Player player) {
+            // 观察爱慕对象永无止境
+            return false;
+        }
+
+        @Override
+        public String getName() {
+            return "yandere.observe";
+        }
+
+        @Override
+        public Task getType() {
+            return Task.YANDERE_OBSERVE;
+        }
+
+        @Override
+        public CompoundTag toNbt() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.putInt("type", Task.YANDERE_OBSERVE.ordinal());
             return nbt;
         }
     }

@@ -39,6 +39,16 @@ public class ModItems {
             new GameConsoleItem(new Item.Properties().stacksTo(1)),
             "game_console");
 
+    // 对话角色 - 右键放置玩家形态的可对话 NPC
+    public static final Item DIALOG_NPC_ITEM = register(
+            new DialogNpcItem(new Item.Properties().stacksTo(16)),
+            "dialog_npc");
+
+    // JiaLe 引导员 - 固定绑定 JiaLe 新手教程对话的专属 NPC 物品
+    public static final Item JIALE_NPC_ITEM = register(
+            new JialeDialogNpcItem(new Item.Properties().stacksTo(16)),
+            "jiale_npc");
+
     public static final Item FISHER_ROD = register(
             new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
             "fisher_rod");
@@ -208,6 +218,10 @@ public class ModItems {
             WEAPONS_GROUP);
     public static final Item HANDCUFFS = register(
             new HandCuffsItem((new Item.Properties()).stacksTo(1)), "handcuffs",
+            TOOLS_GROUP);
+    // 玩具手铐 - 机制与普通手铐相同，但只有1点耐久
+    public static final Item TOY_HANDCUFFS = register(
+            new HandCuffsItem((new Item.Properties()).stacksTo(1), 1), "toy_handcuffs",
             TOOLS_GROUP);
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
@@ -723,6 +737,15 @@ public class ModItems {
     public static final Item DOGSKIN_PLASTER = register(
             new DogskinPlasterItem(new Item.Properties().stacksTo(1)),
             "dogskin_plaster", SANITY_GROUP);
+
+    /**
+     * 前辈的照片
+     * - 病娇商店专属道具
+     * - 右键凝视照片，恢复 30 点 SAN 值后照片损毁
+     */
+    public static final Item SENPAI_PHOTO = register(
+            new SenpaiPhotoItem(new Item.Properties().stacksTo(1)),
+            "senpai_photo", SANITY_GROUP);
 
     /**
      * 维生素

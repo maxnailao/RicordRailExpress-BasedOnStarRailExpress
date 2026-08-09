@@ -25,7 +25,7 @@ import java.util.*;
  */
 public class DoudizhuMinigameScreen extends Screen {
 
-    // ── 常量 ──
+    // ── 常量（设计基准尺寸，实际布局按屏幕自适应缩放） ──
     private static final int CARD_W = 40;
     private static final int CARD_H = 56;
     private static final int CARD_SPACING = 20; // 每张牌占用的水平空间
@@ -72,6 +72,36 @@ public class DoudizhuMinigameScreen extends Screen {
     // ── 选中的牌 ──
     private final Set<Integer> selectedIndices = new LinkedHashSet<>();
 
+    // ── 自适应布局缓存（随界面尺寸变化重算） ──
+    private int cardW, cardH, cardSpacing, handStartX, handBaseY, selectOffset;
+    private int playedCardW, playedCardH, playedCardOverlap;
+
+    /** 根据当前屏幕尺寸计算手牌/出牌区布局，保证任意分辨率下不超出屏幕 */
+    private void computeLayout() {
+        // 手牌：以设计尺寸为准，超出可用宽度时整体等比缩小
+        cardW = CARD_W;
+        cardH = CARD_H;
+        cardSpacing = CARD_SPACING;
+        int handCount = Math.max(myHand.length, 1);
+        int availW = Math.max(width - 20, 60); // 左右各留 10px 边距
+        int designW = (handCount - 1) * cardSpacing + cardW;
+        if (designW > availW) {
+            double scale = (double) availW / designW;
+            cardW = Math.max(12, (int) (CARD_W * scale));
+            cardH = Math.max(17, (int) (CARD_H * scale));
+            cardSpacing = Math.max(6, (int) (CARD_SPACING * scale));
+        }
+        int totalW = (handCount - 1) * cardSpacing + cardW;
+        handStartX = (width - totalW) / 2;
+        // 垂直：手牌底边距屏幕底 26px（留出按钮区），选中上移量随牌高缩放
+        handBaseY = Math.max(40, height - cardH - 26);
+        selectOffset = Math.max(6, cardH / 4);
+        // 出牌区：小牌尺寸随手牌等比缩放，重叠间距保证长牌型不超宽
+        playedCardW = Math.max(12, cardW * 7 / 10);
+        playedCardH = Math.max(17, cardH * 5 / 7);
+        playedCardOverlap = Math.max(10, playedCardW * 9 / 14);
+    }
+
     // ── 按钮 ──
     private Button btnBid1, btnBid2, btnBid3, btnBidPass;
     private Button btnPlay, btnPass;
@@ -95,7 +125,6 @@ public class DoudizhuMinigameScreen extends Screen {
     private void createButtons() {
         int cx = width / 2;
         int by = height - 22;
-
         // 叫地主按钮
         btnBidPass = Button.builder(Component.literal("不叫"), b -> sendBid(0))
                 .bounds(cx - 110, by, 50, 18).build();
@@ -241,6 +270,9 @@ public class DoudizhuMinigameScreen extends Screen {
         // 深绿背景
         g.fill(0, 0, width, height, BG_COLOR);
 
+        // 每帧重算自适应布局（覆盖界面缩放/窗口拉伸后的尺寸变化）
+        computeLayout();
+
         updateButtonVisibility();
 
         switch (phase) {
@@ -277,23 +309,26 @@ public class DoudizhuMinigameScreen extends Screen {
         renderMyHand(g);
         // 对手信息
         renderOpponents(g);
-        // 叫地主信息
+        // 叫地主信息（居中于出牌区上方，避免与对手面板重叠）
         int cx = width / 2;
+        int cy = height / 2 - 30;
         if (currentTurn == playerIndex) {
-            g.drawString(font, "轮到你叫分", cx - 30, 10, 0xFFFFFF00, true);
+            g.drawString(font, "轮到你叫分", cx - font.width("轮到你叫分") / 2, cy, 0xFFFFFF00, true);
         } else {
-            String name = getPlayerName(currentTurn);
-            g.drawString(font, name + " 正在叫分...", cx - 40, 10, 0xFFCCCCCC, true);
+            String txt = getPlayerName(currentTurn) + " 正在叫分...";
+            g.drawString(font, txt, cx - font.width(txt) / 2, cy, 0xFFCCCCCC, true);
         }
         // 显示已叫分
+        int bidY = cy + 14;
         for (int i = 0; i < 3; i++) {
             if (bids[i] > 0) {
                 String txt = getPlayerName(i) + ": " + bids[i] + "分";
-                g.drawString(font, txt, cx - 30, 26 + i * 12, 0xFFAAAAFF, true);
+                g.drawString(font, txt, cx - font.width(txt) / 2, bidY, 0xFFAAAAFF, true);
+                bidY += 12;
             }
         }
         // 底牌预览（叫地主阶段不显示，或显示牌背）
-        g.drawString(font, "[ 底牌 ]", cx - 20, 60, 0xFF888888, true);
+        g.drawString(font, "[ 底牌 ]", cx - 20, bidY + 4, 0xFF888888, true);
     }
 
     private void renderPlaying(GuiGraphics g) {
@@ -311,12 +346,15 @@ public class DoudizhuMinigameScreen extends Screen {
         } else {
             g.drawString(font, getPlayerName(currentTurn) + " 出牌中...", width / 2 - 40, 4, 0xFFCCCCCC, true);
         }
-        // 底牌（地主确定后显示）
+        // 底牌（地主确定后显示），尺寸随屏幕自适应
         if (landlordIndex >= 0 && bottomCards.length == 3) {
             int cx = width / 2;
-            g.drawString(font, "底牌:", cx - 50, 18, 0xFF888888, true);
+            int bcW = Math.max(14, Math.min(28, width / 20));
+            int bcH = bcW * 10 / 7;
+            int bcStep = bcW + 4;
+            g.drawString(font, "底牌:", cx - font.width("底牌:") - 4, 18, 0xFF888888, true);
             for (int i = 0; i < 3; i++) {
-                drawCardFace(g, cx - 42 + i * 28, 30, bottomCards[i], 28, 40);
+                drawCardFace(g, cx + i * bcStep, 12, bottomCards[i], bcW, bcH);
             }
         }
     }
@@ -345,17 +383,14 @@ public class DoudizhuMinigameScreen extends Screen {
 
     private void renderMyHand(GuiGraphics g) {
         if (myHand.length == 0) return;
-        int totalW = (myHand.length - 1) * CARD_SPACING + CARD_W;
-        int startX = (width - totalW) / 2;
-        int baseY = height - CARD_H - 28; // 按钮上方
 
         for (int i = 0; i < myHand.length; i++) {
-            int x = startX + i * CARD_SPACING;
-            int y = selectedIndices.contains(i) ? baseY - SELECT_OFFSET : baseY;
-            drawCardFace(g, x, y, myHand[i], CARD_W, CARD_H);
+            int x = handStartX + i * cardSpacing;
+            int y = selectedIndices.contains(i) ? handBaseY - selectOffset : handBaseY;
+            drawCardFace(g, x, y, myHand[i], cardW, cardH);
             // 选中高亮
             if (selectedIndices.contains(i)) {
-                g.fill(x, y, x + CARD_W, y + CARD_H, 0x30FFFF00);
+                g.fill(x, y, x + cardW, y + cardH, 0x30FFFF00);
             }
         }
     }
@@ -450,16 +485,22 @@ public class DoudizhuMinigameScreen extends Screen {
         int cx = width / 2;
         int cy = height / 2 - 20;
 
+        // 出牌堆叠总宽（重叠绘制），并保证不超出屏幕
+        int playedW = playedCardW;
+        if (lastPlayed.length > 1)
+            playedW = Math.min(playedW, (width - 40 - playedCardW) / (lastPlayed.length - 1));
+        int stackW = playedCardW + Math.max(playedW, 1) * (lastPlayed.length - 1);
+
         // 确定出牌者的屏幕位置
         int playX, playY;
         if (lastPlayedBy == playerIndex) {
-            playX = cx - (lastPlayed.length * 18) / 2;
+            playX = cx - stackW / 2;
             playY = cy + 30;
         } else if (lastPlayedBy == (playerIndex + 1) % 3) {
             playX = 60;
             playY = cy - 10;
         } else {
-            playX = width - 60 - lastPlayed.length * 18;
+            playX = width - 60 - stackW;
             playY = cy - 10;
         }
 
@@ -477,7 +518,7 @@ public class DoudizhuMinigameScreen extends Screen {
         int[] sorted = Arrays.copyOf(lastPlayed, lastPlayed.length);
         sortClientHand(sorted);
         for (int i = 0; i < sorted.length; i++) {
-            drawCardFace(g, playX + i * 18, playY, sorted[i], 28, 40);
+            drawCardFace(g, playX + i * playedW, playY, sorted[i], playedCardW, playedCardH);
         }
     }
 
@@ -486,9 +527,8 @@ public class DoudizhuMinigameScreen extends Screen {
     private void renderLandlordBadge(GuiGraphics g) {
         if (landlordIndex < 0) return;
         if (landlordIndex == playerIndex) {
-            int handW = (myHand.length - 1) * CARD_SPACING + CARD_W;
-            int sx = (width - handW) / 2;
-            int sy = height - CARD_H - 42;
+            int sx = handStartX;
+            int sy = handBaseY - selectOffset - 14;
             g.fill(sx, sy - 2, sx + 30, sy + 10, 0xFFCC0000);
             g.drawString(font, "地主", sx + 2, sy, 0xFFFFFFFF, true);
         }
@@ -506,15 +546,11 @@ public class DoudizhuMinigameScreen extends Screen {
 
         // 手牌点击（仅在叫分或出牌阶段）
         if ((phase == Phase.BIDDING || phase == Phase.PLAYING) && myHand.length > 0) {
-            int totalW = (myHand.length - 1) * CARD_SPACING + CARD_W;
-            int startX = (width - totalW) / 2;
-            int baseY = height - CARD_H - 28;
-
             // 从右到左检查（后绘制的在上面）
             for (int i = myHand.length - 1; i >= 0; i--) {
-                int x = startX + i * CARD_SPACING;
-                int y = selectedIndices.contains(i) ? baseY - SELECT_OFFSET : baseY;
-                if (mouseX >= x && mouseX <= x + CARD_W && mouseY >= y && mouseY <= y + CARD_H) {
+                int x = handStartX + i * cardSpacing;
+                int y = selectedIndices.contains(i) ? handBaseY - selectOffset : handBaseY;
+                if (mouseX >= x && mouseX <= x + cardW && mouseY >= y && mouseY <= y + cardH) {
                     if (selectedIndices.contains(i)) selectedIndices.remove(i);
                     else selectedIndices.add(i);
                     return true;

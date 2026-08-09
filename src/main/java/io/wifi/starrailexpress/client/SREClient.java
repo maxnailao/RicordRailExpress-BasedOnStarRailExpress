@@ -148,6 +148,8 @@ public class SREClient implements ClientModInitializer {
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
     public static Player cached_player = null;
+    /** 调试诊断：上一次记录的本地玩家帽子实体数据值（值变化时才打印） */
+    private static String hatDebugLastLogged = "";
     public static Narrator narrator = Narrator.getNarrator();
     // HUD/API 缓存：在 END_CLIENT_TICK 统一更新，在渲染 mixin 中仅做读取，避免渲染流程重复判断。
     private static boolean cachedPlayerAliveAndInSurvival;
@@ -446,6 +448,19 @@ public class SREClient implements ClientModInitializer {
             areaComponent = AreasWorldComponent.KEY.get(clientWorld);
             trainComponent = SRETrainWorldComponent.KEY.get(clientWorld);
             moodComponent = SREPlayerMoodComponent.KEY.get(Minecraft.getInstance().player);
+        });
+        // 调试诊断：每秒检查本地玩家帽子实体数据是否同步到位（值变化时打印）
+        ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
+            var localPlayer = Minecraft.getInstance().player;
+            if (localPlayer == null || clientWorld.getGameTime() % 20 != 0) {
+                return;
+            }
+            String hat = io.wifi.starrailexpress.util.PlayerHatSync.getHat(localPlayer);
+            if (!hat.equals(hatDebugLastLogged)) {
+                hatDebugLastLogged = hat;
+                SRE.LOGGER.info("[HatSync] client world tick: local hat='{}', invisible={}, camera={}",
+                        hat, localPlayer.isInvisible(), Minecraft.getInstance().options.getCameraType());
+            }
         });
         // 暴风雪客户端本地倒计时
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
@@ -765,6 +780,16 @@ public class SREClient implements ClientModInitializer {
                         var player = context.client().player;
                         if (player != null) {
                             io.wifi.starrailexpress.util.ShengxuanSkinHandler.setClientForm(player, payload.form());
+                        }
+                    });
+                });
+        // 暗星皮肤形态同步接收器：服务器击杀后切换形态时更新客户端本地状态
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.AnxingFormS2CPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var player = context.client().player;
+                        if (player != null) {
+                            io.wifi.starrailexpress.util.AnxingSkinHandler.setClientForm(player, payload.form());
                         }
                     });
                 });

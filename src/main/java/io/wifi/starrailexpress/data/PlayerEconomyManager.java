@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -36,6 +37,9 @@ public final class PlayerEconomyManager {
     public static void registerEvents() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> onJoin(handler.getPlayer()));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onDisconnect(handler.getPlayer()));
+        // 重生后实体数据会重建，需重新写入已装备的帽子皮肤
+        ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> io.wifi.starrailexpress.util.PlayerHatSync
+                .setHat(newPlayer, getEquippedSkinForItemType(newPlayer, "hat")));
         ServerTickEvents.END_SERVER_TICK.register(PlayerEconomyManager::tick);
         ServerLifecycleEvents.SERVER_STOPPING.register(PlayerEconomyManager::flushAllBlocking);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ENTRIES.clear());
@@ -233,6 +237,9 @@ public final class PlayerEconomyManager {
             SRE.LOGGER.warn("从 CCA 组件恢复玩家 {} 的数据失败", player.getUUID(), e);
         }
         send(player, entry);
+        // 登录时恢复帽子实体数据（帽子无物品载体，依赖实体数据跨客户端同步）
+        io.wifi.starrailexpress.util.PlayerHatSync.setHat(player,
+                entry.state.equipped.getOrDefault("hat", io.wifi.starrailexpress.util.PlayerHatSync.DEFAULT));
         if (!isDatabaseEnabled()) {
             return;
         }

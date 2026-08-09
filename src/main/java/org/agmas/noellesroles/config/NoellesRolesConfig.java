@@ -579,6 +579,13 @@ public class NoellesRolesConfig implements ConfigData {
     public int vultureEatCooldown = 3;
 
     /**
+     * Wuyage - Eat body cooldown in seconds
+     * 乌鸦 - 食用尸体技能冷却（秒）
+     */
+
+    public int wuyageEatCooldown = 90;
+
+    /**
      * Swapper - Swap cooldown in seconds
      */
 
@@ -684,6 +691,18 @@ public class NoellesRolesConfig implements ConfigData {
     public int godfatherStartingBullets = 1;
     public int godfatherMaxLoadedBullets = 3;
     public int mafiaRecruitRange = 16;
+
+    // ==================== Manager (经纪人) 配置 ====================
+    /**
+     * Manager - Cost in coins to sign a star/singer
+     */
+    public int managerSignCost = 200;
+
+    /**
+     * Manager - Coins awarded to both the manager and each signed singer
+     * when a signed star uses their skill
+     */
+    public int managerStarSkillReward = 25;
 
     /**
      * (Client Side) Welcome Voice - Play welcome voice

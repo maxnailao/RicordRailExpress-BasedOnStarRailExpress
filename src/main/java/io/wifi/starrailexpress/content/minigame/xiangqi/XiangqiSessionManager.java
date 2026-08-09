@@ -26,8 +26,22 @@ public class XiangqiSessionManager {
 
     public void handleJoin(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        if (activeGames.containsKey(uuid)) return;
-        if (waitingPlayer != null && waitingPlayer.getUUID().equals(uuid)) return;
+        // 已在游戏中：重发当前状态（客户端重连/重开界面时补发，避免卡在等待界面）
+        XiangqiSession existing = activeGames.get(uuid);
+        if (existing != null) {
+            existing.resyncTo(player);
+            return;
+        }
+
+        // 等待玩家已断线时清理，防止幽灵玩家被匹配
+        if (waitingPlayer != null && (waitingPlayer.connection == null || waitingPlayer.hasDisconnected()))
+            waitingPlayer = null;
+
+        // 自己已在等待：重发等待状态
+        if (waitingPlayer != null && waitingPlayer.getUUID().equals(uuid)) {
+            ServerPlayNetworking.send(player, XiangqiStateS2CPacket.waiting());
+            return;
+        }
 
         if (waitingPlayer != null && !waitingPlayer.getUUID().equals(uuid)) {
             ServerPlayer redPlayer = waitingPlayer;  // 先等待 = 红方

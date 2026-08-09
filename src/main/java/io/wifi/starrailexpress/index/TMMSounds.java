@@ -26,6 +26,9 @@ public interface TMMSounds {
     SoundEvent ITEM_LOCKPICK_DOOR = registrar.create("item.lockpick.door");
     SoundEvent ITEM_KNIFE_PREPARE = registrar.create("item.knife.prepare");
     SoundEvent ITEM_KNIFE_STAB = registrar.create("item.knife.stab");
+    SoundEvent ITEM_KNIFE_SUSHUIKUNAI_SWITCH = registrar.create("item.knife.sushuikunai.switch");
+    SoundEvent ITEM_KNIFE_SUSHUIKUNAI_KILL = registrar.create("item.knife.sushuikunai.kill");
+    SoundEvent ITEM_KNIFE_ANXING_SWITCH = registrar.create("item.knife.anxing.switch");
     SoundEvent ITEM_REVOLVER_CLICK = registrar.create("item.revolver.click");
     SoundEvent ITEM_REVOLVER_SHOOT = registrar.create("item.revolver.shoot");
     SoundEvent ITEM_REVOLVER_SHENGXUAN = registrar.create("item.revolver.shengxuan");
@@ -35,6 +38,7 @@ public interface TMMSounds {
     SoundEvent ITEM_SCOPE_ATTACH = registrar.create("item.scope.attach");
     SoundEvent ITEM_SCOPE_DETACH = registrar.create("item.scope.detach");
     SoundEvent ITEM_BAT_HIT = registrar.create("item.bat.hit");
+    SoundEvent ITEM_BAT_SUSHUIREN = registrar.create("item.bat.sushuiren");
     SoundEvent ITEM_CROWBAR_PRY = registrar.create("item.crowbar.pry");
     SoundEvent ITEM_GRENADE_THROW = registrar.create("item.grenade.throw");
     SoundEvent ITEM_GRENADE_EXPLODE = registrar.create("item.grenade.explode");

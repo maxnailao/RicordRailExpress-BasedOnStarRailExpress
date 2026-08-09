@@ -82,9 +82,10 @@ public class XiangqiMinigameScreen extends Screen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
+        // 仅在界面真正关闭时通知服务端离开（removed() 在打开暂停菜单等临时覆盖时也会触发，会导致误判负）
         ClientPlayNetworking.send(new XiangqiJoinC2SPacket(XiangqiJoinC2SPacket.ACTION_LEAVE));
-        super.removed();
+        super.onClose();
     }
 
     @Override

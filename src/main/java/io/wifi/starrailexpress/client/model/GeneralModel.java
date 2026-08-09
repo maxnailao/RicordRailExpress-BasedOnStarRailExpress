@@ -112,6 +112,22 @@ public class GeneralModel implements UnbakedModel, BakedModel {
             }
         }
 
+        // 暗星皮肤特殊处理：根据当前形态选择模型（天使⇄恶魔）
+        if (skin != null && io.wifi.starrailexpress.util.AnxingSkinHandler.SKIN_ID.equals(skin.getName())) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                String formSuffix = io.wifi.starrailexpress.util.AnxingSkinHandler.getCurrentFormSuffix(player);
+                String formSkinName = skin.getName() + formSuffix;
+                if (bakeModels.containsKey(formSkinName)) {
+                    var variantMap = bakeModels.get(formSkinName);
+                    if (variantMap != null && variantMap.containsKey(variant)) {
+                        variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
+                        return;
+                    }
+                }
+            }
+        }
+
         if (skin != null && bakeModels.containsKey(skin.getName())) {
             var variantMap = bakeModels.get(skin.getName());
             if (variantMap != null && variantMap.containsKey(variant)) {

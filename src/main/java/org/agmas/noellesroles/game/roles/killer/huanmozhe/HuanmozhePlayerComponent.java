@@ -152,6 +152,15 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
 
         // ========== 被动：复活倒计时 ==========
         if (waitingForRevival) {
+            // 防御：若当前不再是幻魔者（跨局残留状态），立即清除，避免在下一局误触发复活
+            if (!gameWorld.isRole(serverPlayer, ModRoles.HUANMOZHE)) {
+                revivalUsed = false;
+                waitingForRevival = false;
+                revivalTimer = 0;
+                invincibleTimer = 0;
+                sync();
+                return;
+            }
             revivalTimer--;
             if (revivalTimer <= 0) {
                 performRevival(serverPlayer, level);
@@ -567,15 +576,27 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
             return true;
         });
 
-        // 游戏结束时清除恼鬼
+        // 游戏结束时完整清除状态（不能依赖 isRole 判定，结束时角色可能已被清除）
         io.wifi.starrailexpress.event.OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
             for (ServerPlayer p : serverLevel.players()) {
-                SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(serverLevel);
-                if (gw.isRole(p, ModRoles.HUANMOZHE)) {
-                    HuanmozhePlayerComponent comp = KEY.get(p);
-                    comp.discardVexes();
+                HuanmozhePlayerComponent comp = KEY.maybeGet(p).orElse(null);
+                if (comp == null) continue;
+                comp.discardVexes();
+                // 重置被动/技能状态，防止复活状态残留到下一局
+                if (comp.revivalUsed || comp.waitingForRevival || comp.revivalTimer > 0
+                        || comp.invincibleTimer > 0 || comp.skillStorage > 0
+                        || comp.spikeCasting || comp.spikeAdvancing || comp.vexDurationTimer > 0) {
+                    comp.init();
                 }
             }
+        });
+
+        // 玩家重置时也清除状态（双重保障，玩家重进/游戏重置时触发）
+        org.agmas.harpymodloader.events.ResetPlayerEvent.EVENT.register(player -> {
+            HuanmozhePlayerComponent comp = KEY.maybeGet(player).orElse(null);
+            if (comp == null) return;
+            comp.discardVexes();
+            comp.init();
         });
     }
 }

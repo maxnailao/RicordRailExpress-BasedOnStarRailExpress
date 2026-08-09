@@ -664,6 +664,13 @@ public class MahjongSession {
         }
     }
 
+    /** 向指定玩家重发当前游戏状态（客户端重连/重开界面时补发） */
+    public void resyncTo(ServerPlayer player) {
+        int pi = getPlayerIndex(player);
+        if (pi < 0) return;
+        ServerPlayNetworking.send(player, buildStateFor(pi));
+    }
+
     private MahjongStateS2CPacket buildStateFor(int playerIdx) {
         byte phaseByte = switch (phase) {
             case WAITING -> 0;

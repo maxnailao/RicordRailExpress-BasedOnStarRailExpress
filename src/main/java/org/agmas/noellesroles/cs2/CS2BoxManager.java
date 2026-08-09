@@ -130,6 +130,27 @@ public class CS2BoxManager {
             inv.removeKey(keyName, 1);
         }
 
+        // 抽奖 + 发放（异常时返还箱子和钥匙，防止玩家损失材料）
+        try {
+            return rollAndGrant(config, boxId, player, inv);
+        } catch (Exception e) {
+            inv.addBox(boxId, 1);
+            if (keyName != null && !keyName.isEmpty()) {
+                inv.addKey(keyName, 1);
+            }
+            Noellesroles.LOGGER.error("[CS2Box] Error opening box '{}' for player {}, refunded box and key",
+                    boxId, player.getName().getString(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 抽奖并发放物品（在箱子/钥匙已消耗后调用）
+     */
+    private BoxRollResult rollAndGrant(CS2BoxConfig config, String boxId, ServerPlayer player,
+                                       CS2InventoryComponent inv) {
+        List<Pair<Double, List<String>>> qualityGroups = config.getQualityListGroup();
+
         // 抽奖
         RandomSource random = player.getRandom();
         int curNum = random.nextInt(10000); // 粒度 10000
@@ -170,9 +191,10 @@ public class CS2BoxManager {
         } else if (parts.length >= 2) {
             String itemType = parts[0];
             String skinName = parts[1];
-            if (ItemSkinManager.isSkinUnlocked(player, 
-                    org.agmas.noellesroles.utils.lottery.LotteryManager.LotteryPool.getSkinItemStack(skinId),
-                    skinName)) {
+            // 直接使用物品类型字符串查询，避免 getSkinItemStack 对 revolver/ 等前缀
+            // 返回 null 导致空指针异常（曾造成开箱后箱子钥匙被吞且无物品发放）
+            if (io.wifi.starrailexpress.data.PlayerEconomyManager
+                    .isSkinUnlockedForItemType(player, itemType, skinName)) {
                 isDuplicate = true;
             } else {
                 ItemSkinManager.unlockSkinForItemType(player, itemType, skinName);

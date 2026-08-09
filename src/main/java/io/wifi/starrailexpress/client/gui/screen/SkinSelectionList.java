@@ -49,12 +49,22 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
     public SkinSelectionList(SkinManagementScreen parentScreen, Minecraft mc,
             int x, int width, int height, int y, ItemStack itemType,
             SREPlayerSkinsComponent skinsComponent, Consumer<String> onSkinSelected) {
+        this(parentScreen, mc, x, width, height, y, itemType, null, skinsComponent, onSkinSelected);
+    }
+
+    /**
+     * @param explicitTypeName 显式指定的皮肤类型名（如 "hat"）；为 null 时从物品注册名推导，
+     *                         用于帽子等没有 SkinableItem 载体的皮肤类型
+     */
+    public SkinSelectionList(SkinManagementScreen parentScreen, Minecraft mc,
+            int x, int width, int height, int y, ItemStack itemType, String explicitTypeName,
+            SREPlayerSkinsComponent skinsComponent, Consumer<String> onSkinSelected) {
         super(mc, width, height, y, ENTRY_HEIGHT);
         this.setX(x);
 
         this.parentScreen = parentScreen;
         this.itemType = itemType;
-        this.itemTypeName = getItemTypeName(itemType);
+        this.itemTypeName = explicitTypeName != null ? explicitTypeName : getItemTypeName(itemType);
         this.skinsComponent = skinsComponent;
         this.onSkinSelected = onSkinSelected;
 
@@ -91,13 +101,14 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
         for (var entry : unlockedSkins.entrySet()) {
             availableSkins.add(entry.getKey());
         }
-        if (itemType.getItem() instanceof SkinableItem it) {
-            var allSkins = ItemSkinManager.getSkins(it.getItemSkinType());
-            if (allSkins != null) {
-                for (String skinName : allSkins.keySet()) {
-                    if (!availableSkins.contains(skinName)) {
-                        availableSkins.add(skinName);
-                    }
+        String skinTypeKey = itemType.getItem() instanceof SkinableItem it
+                ? it.getItemSkinType()
+                : itemTypeName;
+        var allSkins = ItemSkinManager.getSkins(skinTypeKey);
+        if (allSkins != null) {
+            for (String skinName : allSkins.keySet()) {
+                if (!availableSkins.contains(skinName)) {
+                    availableSkins.add(skinName);
                 }
             }
         }
@@ -194,6 +205,11 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             int sskinColor = java.awt.Color.WHITE.getRGB();
             if (itemType.getItem() instanceof SkinableItem it) {
                 var skin = ItemSkinManager.Skin.fromString(it.getItemSkinType(), skinName);
+                if (skin != null)
+                    sskinColor = skin.getColor();
+            } else {
+                // 非 SkinableItem 载体（如帽子），直接按类型名查找品质颜色
+                var skin = ItemSkinManager.Skin.fromString(itemTypeName, skinName);
                 if (skin != null)
                     sskinColor = skin.getColor();
             }

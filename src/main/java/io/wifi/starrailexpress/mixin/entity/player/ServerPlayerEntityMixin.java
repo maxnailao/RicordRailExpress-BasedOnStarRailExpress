@@ -73,7 +73,17 @@ public class ServerPlayerEntityMixin {
                 ghostPhantomEntity.playerHurt(self, GameConstants.DeathReasons.BAT);
             }
             CrosshairaddonsCompat.onAttack(target);
-            self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
+            // 塑水刃特别皮肤：专属击打音效仅对攻击者本人播放，其他玩家听到正常球棒击打音效
+            if (io.wifi.starrailexpress.util.SushuirenSkinHandler.hasSushuirenSkinEquipped(self, mainhandItem)) {
+                io.wifi.starrailexpress.util.SushuirenSkinHandler.playHitSound(
+                        self, self.getX(), self.getY(), self.getZ());
+                // 传入 self 作为排除对象，确保攻击者不会听到原版击打音效
+                self.level().playSound(self, self.blockPosition(), TMMSounds.ITEM_BAT_HIT,
+                        SoundSource.PLAYERS, 3f, 1f);
+            } else {
+                self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT,
+                        SoundSource.PLAYERS, 3f, 1f);
+            }
             ci.cancel();
             return;
         } else if (mainhandItem.getItem() instanceof SREItemProperties.LeftClickHurtable htit) {

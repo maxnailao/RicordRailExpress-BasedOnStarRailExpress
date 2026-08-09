@@ -213,6 +213,21 @@ public class GomokuSession {
                 GomokuStateS2CPacket.gameStart(flat, currentTurn, false, bName, wName));
     }
 
+    /** 向指定玩家重发当前棋盘状态（客户端重连/重开界面时补发） */
+    public void resyncTo(ServerPlayer player) {
+        byte[] flat = flattenBoard();
+        String bName = blackPlayer.getName().getString();
+        String wName = whitePlayer.getName().getString();
+        boolean isBlack = isBlackPlayer(player);
+        if (finished) {
+            ServerPlayNetworking.send(player,
+                    GomokuStateS2CPacket.win(flat, winner, isBlack, bName, wName));
+        } else {
+            ServerPlayNetworking.send(player,
+                    GomokuStateS2CPacket.gameStart(flat, currentTurn, isBlack, bName, wName));
+        }
+    }
+
     private void broadcastWin() {
         byte[] flat = flattenBoard();
         String bName = blackPlayer.getName().getString();

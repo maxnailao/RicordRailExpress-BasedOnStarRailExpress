@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.UpdateNameTagSelectedPayload;
 import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -267,17 +268,40 @@ public class SkinManagementScreen extends Screen {
         }
 
         CategoryTabData selectedTab = categories.get(selectedCategory);
-        if (selectedTab.isHatTab()) {
-            addRenderableWidget(new CenteredText(
-                    listX + listWidth / 2,
-                    listTop + listHeight / 2,
-                    Component.translatable("screen.sre.skins.hat_title"),
-                    0xFFCCCCCC));
-            return;
-        }
-
         Item selectedItem = selectedTab.iconItem;
         ItemStack itemStack = new ItemStack(selectedItem);
+
+        if (selectedTab.isHatTab()) {
+            // 帽子皮肤没有物品载体，仅在已注册帽子皮肤时展示列表
+            if (ItemSkinManager.getSkins(ItemSkinManager.SkinTypes.HAT).isEmpty()) {
+                addRenderableWidget(new CenteredText(
+                        listX + listWidth / 2,
+                        listTop + listHeight / 2,
+                        Component.translatable("screen.sre.skins.hat_title"),
+                        0xFFCCCCCC));
+                return;
+            }
+
+            skinList = new SkinSelectionList(
+                    this,
+                    Minecraft.getInstance(),
+                    listX,
+                    listWidth,
+                    listHeight,
+                    listTop,
+                    itemStack,
+                    ItemSkinManager.SkinTypes.HAT,
+                    skinsComponent,
+                    skinName -> {
+                        this.selectedHat = skinName;
+                        skinsComponent.setEquippedSkinForItemType(ItemSkinManager.SkinTypes.HAT, skinName);
+                        ClientPlayNetworking.send(
+                                new UpdateSkinSelectedPayload(ItemSkinManager.SkinTypes.HAT, skinName));
+                    });
+
+            addRenderableWidget(skinList);
+            return;
+        }
 
         skinList = new SkinSelectionList(
                 this,

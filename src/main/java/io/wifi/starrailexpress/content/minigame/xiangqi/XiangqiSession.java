@@ -406,6 +406,21 @@ public class XiangqiSession {
                 XiangqiStateS2CPacket.gameStart(flat, currentTurn, false, rN, bN));
     }
 
+    /** 向指定玩家重发当前棋盘状态（客户端重连/重开界面时补发） */
+    public void resyncTo(ServerPlayer player) {
+        byte[] flat = flattenBoard();
+        String rN = redPlayer.getName().getString();
+        String bN = blackPlayer.getName().getString();
+        boolean isRed = player.getUUID().equals(redPlayer.getUUID());
+        if (finished) {
+            ServerPlayNetworking.send(player,
+                    XiangqiStateS2CPacket.win(flat, winner, isRed, rN, bN));
+        } else {
+            ServerPlayNetworking.send(player,
+                    XiangqiStateS2CPacket.gameStart(flat, currentTurn, isRed, rN, bN));
+        }
+    }
+
     private void broadcastWin() {
         byte[] flat = flattenBoard();
         String rN = redPlayer.getName().getString();

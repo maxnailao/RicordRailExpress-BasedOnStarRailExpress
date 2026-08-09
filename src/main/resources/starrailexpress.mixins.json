@@ -66,6 +66,7 @@
     "client.MinecraftClientMixin",
     "client.MixinGameRenderer",
     "client.PlayerEntityRendererMixin",
+    "client.PlayerRendererHatLayerMixin",
     "client.DefaultPlayerSkinMixin",
     "client.PlayerSkinManagerMixin",
     "client.ResourceTextureMixin",

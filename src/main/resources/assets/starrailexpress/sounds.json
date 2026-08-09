@@ -376,5 +376,45 @@
         "stream": false
       }
     ]
+  },
+  "item.bat.sushuiren": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.item.bat.sushuiren",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/bat/sushuiren",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.sushuikunai.switch": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.item.knife.sushuikunai.switch",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/sushuikunai_switch",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.sushuikunai.kill": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.item.knife.sushuikunai.kill",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/sushuikunai_kill",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.anxing.switch": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.item.knife.anxing.switch",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/anxing_switch",
+        "stream": false
+      }
+    ]
   }
 }

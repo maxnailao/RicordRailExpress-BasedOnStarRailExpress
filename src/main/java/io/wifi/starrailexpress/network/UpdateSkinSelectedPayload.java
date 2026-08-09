@@ -32,12 +32,28 @@ public record UpdateSkinSelectedPayload(String id, String name) implements Custo
     public static void registerReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) -> {
             context.server().execute(() -> {
-                if (!PlayerEconomyManager.isSkinUnlockedForItemType(context.player(), payload.id, payload.name)) {
+                var player = context.player();
+                boolean unlocked = PlayerEconomyManager.isSkinUnlockedForItemType(player, payload.id, payload.name);
+                if (!unlocked) {
+                    // 回退：命令/黑市等途径获得的皮肤可能仅存在于 CS2 仓库而未写入旧解锁表，
+                    // 以仓库持有为准并补录解锁，避免装备请求被静默拒绝
+                    var cs2Inv = io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player);
+                    if (cs2Inv.hasSkin(payload.id + "/" + payload.name)) {
+                        unlocked = true;
+                        ItemSkinManager.unlockSkinForItemType(player, payload.id, payload.name);
+                    }
+                }
+                if (!unlocked) {
+                    io.wifi.starrailexpress.SRE.LOGGER.info("[SkinSelect] rejected {}/{} for {} (not unlocked)",
+                            payload.id, payload.name, player.getName().getString());
                     return;
                 }
-                // 同时更新 EconomyManager 和 CCA 组件，确保 NBT 持久化数据一致
-                ItemSkinManager.setEquippedSkinForItemType(context.player(), payload.id, payload.name);
-                ItemSkinManager.sync(context.player());
+                io.wifi.starrailexpress.SRE.LOGGER.info("[SkinSelect] accepted {}/{} for {}",
+                        payload.id, payload.name, player.getName().getString());
+                // 同时更新 EconomyManager 和 CCA 组件，确保 NBT 持久化数据一致；
+                // 帽子皮肤会额外写入实体数据供渲染同步
+                ItemSkinManager.setEquippedSkinForItemType(player, payload.id, payload.name);
+                ItemSkinManager.sync(player);
             });
         });
     }

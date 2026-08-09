@@ -82,6 +82,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // 必须在任何实体构造前完成帽子实体数据 ID 分配，否则首个玩家（如 FakePlayer）构造时数组越界崩溃
+        io.wifi.starrailexpress.util.PlayerHatSync.ensureInitialized();
         CustomMotdManager.init();
         initConfig();
         initConstants();

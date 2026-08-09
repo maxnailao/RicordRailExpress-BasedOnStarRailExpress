@@ -1,0 +1,8 @@
+{
+	"credit": "JiaLe114514 玩偶帽：建模复用 JiaLe114514 玩偶（baka_plush 几何），贴图指向皮肤目录",
+	"parent": "noellesroles:block/jiale114514_plush",
+	"textures": {
+		"0": "starrailexpress:item/skins/hat/hat_jiale114514",
+		"particle": "starrailexpress:item/skins/hat/hat_jiale114514"
+	}
+}

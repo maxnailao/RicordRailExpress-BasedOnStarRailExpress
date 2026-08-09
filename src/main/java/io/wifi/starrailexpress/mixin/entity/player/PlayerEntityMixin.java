@@ -17,12 +17,14 @@ import io.wifi.starrailexpress.event.IsPlayerPunchable;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.util.PlayerHatSync;
 import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Unit;
@@ -72,8 +74,26 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
     @Unique
     private Scheduler.ScheduledTask poisonSleepTask;
 
+    /**
+     * 病娇角色 SAN 值过低不受减速影响
+     */
+    @Unique
+    private boolean tmm$isYandere(Player player) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        return gameWorld != null
+                && gameWorld.isRole(player, org.agmas.noellesroles.role.ModRoles.YANDERE);
+    }
+
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, Level world) {
         super(entityType, world);
+    }
+
+    /**
+     * 注册帽子皮肤实体数据，使装备的帽子对所有客户端可见
+     */
+    @Inject(method = "defineSynchedData", at = @At("TAIL"))
+    private void sre$defineHatSkinData(SynchedEntityData.Builder builder, CallbackInfo ci) {
+        PlayerHatSync.define(builder);
     }
 
     @ModifyReturnValue(method = "getSpeed", at = @At("RETURN"))
@@ -86,7 +106,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             float speedModifier = 1.0f;
 
             SREPlayerMoodComponent srePlayerMoodComponent = SREPlayerMoodComponent.KEY.get(player);
-            if (srePlayerMoodComponent.isLowerThanDepressed()) {
+            if (srePlayerMoodComponent.isLowerThanDepressed() && !tmm$isYandere(player)) {
+                // 病娇 SAN 值过低不会造成减速
                 speedModifier *= 0.8f;
             } else if (srePlayerMoodComponent.isHigherThanAngry()) {
                 speedModifier *= 1.2f;

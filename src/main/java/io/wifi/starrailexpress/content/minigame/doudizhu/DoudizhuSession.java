@@ -621,6 +621,13 @@ public class DoudizhuSession {
         }
     }
 
+    /** 向指定玩家重发当前游戏状态（客户端重连/重开界面时补发） */
+    public void resyncTo(ServerPlayer player) {
+        int pi = getPlayerIndex(player);
+        if (pi < 0 || isAI[pi]) return;
+        ServerPlayNetworking.send(player, buildStateForPlayer(pi));
+    }
+
     private DoudizhuStateS2CPacket buildStateForPlayer(int pi) {
         int oppCount1 = hands[(pi + 1) % 3].length;
         int oppCount2 = hands[(pi + 2) % 3].length;

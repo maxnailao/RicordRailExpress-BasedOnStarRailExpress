@@ -28,33 +28,42 @@ public class DoudizhuSessionManager {
 
     public void handleJoin(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        if (activeGames.containsKey(uuid)) return;
-        for (ServerPlayer w : waitingQueue) if (w.getUUID().equals(uuid)) return;
+        // 已在游戏中：重发当前状态（客户端重连/重开界面时补发，避免卡在等待界面）
+        DoudizhuSession existing = activeGames.get(uuid);
+        if (existing != null) {
+            existing.resyncTo(player);
+            return;
+        }
+        // 清理已断开连接的队列玩家，防止幽灵玩家占用座位
+        waitingQueue.removeIf(w -> w.connection == null || w.hasDisconnected());
+        // 自己已在等待队列：重发等待状态
+        for (ServerPlayer w : waitingQueue) if (w.getUUID().equals(uuid)) {
+            broadcastWaitingState();
+            return;
+        }
 
         waitingQueue.add(player);
 
-        if (waitingQueue.size() >= 3) {
-            ServerPlayer p0 = waitingQueue.remove(0);
-            ServerPlayer p1 = waitingQueue.remove(0);
-            ServerPlayer p2 = waitingQueue.remove(0);
+        // 循环开局，支持多桌同时进行
+        if (tryStartGames()) {
             firstWaitTime = 0;
-            startGame(p0, p1, p2);
+            // 若队列中仍有等待玩家，同步最新队列状态
+            broadcastWaitingState();
         } else {
             if (waitingQueue.size() == 1) firstWaitTime = System.currentTimeMillis();
-            // 发送等待状态
-            int playerIndex = waitingQueue.indexOf(player);
-            String[] names = new String[3];
-            for (int i = 0; i < waitingQueue.size(); i++)
-                names[i] = waitingQueue.get(i).getName().getString();
-            for (int i = waitingQueue.size(); i < 3; i++) names[i] = "";
-            DoudizhuStateS2CPacket pkt = DoudizhuStateS2CPacket.waiting(playerIndex, names, waitingQueue.size());
-            ServerPlayNetworking.send(player, pkt);
+            // 向所有等待玩家广播最新队列状态
+            broadcastWaitingState();
         }
     }
 
     public void handleLeave(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        waitingQueue.removeIf(w -> w.getUUID().equals(uuid));
+        boolean wasInWaitingQueue = waitingQueue.removeIf(w -> w.getUUID().equals(uuid));
+        // 有玩家离开队列时，向剩余等待玩家同步最新队列状态
+        if (wasInWaitingQueue) {
+            if (!waitingQueue.isEmpty()) firstWaitTime = System.currentTimeMillis();
+            broadcastWaitingState();
+        }
 
         DoudizhuSession session = activeGames.get(uuid);
         if (session != null && !session.isFinished()) {
@@ -73,13 +82,16 @@ public class DoudizhuSessionManager {
             if (waitingQueue.get(i).getUUID().equals(uuid)) { idx = i; break; }
         if (idx < 0) return;
 
-        // 用AI补齐剩余位置
-        while (waitingQueue.size() < 3) waitingQueue.add(null);
-        ServerPlayer p0 = waitingQueue.remove(0);
-        ServerPlayer p1 = waitingQueue.remove(0);
-        ServerPlayer p2 = waitingQueue.remove(0);
+        // 用AI补齐剩余位置（仅在队列凑不满一桌时才需要AI补位）
+        if (!tryStartGames()) {
+            while (waitingQueue.size() < 3) waitingQueue.add(null);
+            ServerPlayer p0 = waitingQueue.remove(0);
+            ServerPlayer p1 = waitingQueue.remove(0);
+            ServerPlayer p2 = waitingQueue.remove(0);
+            startGame(p0, p1, p2);
+        }
         firstWaitTime = 0;
-        startGame(p0, p1, p2);
+        broadcastWaitingState();
     }
 
     // ── 叫分/出牌 ──
@@ -102,6 +114,23 @@ public class DoudizhuSessionManager {
         if (session.isFinished()) cleanupSession(session);
     }
 
+    /**
+     * 尽可能从队列中凑满并开始多桌游戏（支持多组玩家同时游玩）
+     *
+     * @return 是否至少开始了一桌
+     */
+    private boolean tryStartGames() {
+        boolean started = false;
+        while (waitingQueue.size() >= 3) {
+            ServerPlayer p0 = waitingQueue.remove(0);
+            ServerPlayer p1 = waitingQueue.remove(0);
+            ServerPlayer p2 = waitingQueue.remove(0);
+            startGame(p0, p1, p2);
+            started = true;
+        }
+        return started;
+    }
+
     // ── 内部方法 ──
 
     private void startGame(ServerPlayer p0, ServerPlayer p1, ServerPlayer p2) {
@@ -120,10 +149,25 @@ public class DoudizhuSessionManager {
         }
     }
 
+    /** 向队列中所有等待玩家广播最新的等待状态（各自携带正确的座位索引） */
+    private void broadcastWaitingState() {
+        if (waitingQueue.isEmpty()) return;
+        String[] names = new String[3];
+        for (int i = 0; i < waitingQueue.size(); i++)
+            names[i] = waitingQueue.get(i).getName().getString();
+        for (int i = waitingQueue.size(); i < 3; i++) names[i] = "";
+        for (int i = 0; i < waitingQueue.size(); i++) {
+            ServerPlayer w = waitingQueue.get(i);
+            ServerPlayNetworking.send(w, DoudizhuStateS2CPacket.waiting(i, names, waitingQueue.size()));
+        }
+    }
+
     /** 由服务端 tick 事件调用，驱动 AI 行动 */
     public void tick() {
+        // activeGames 中每个会话被多名玩家共享，需去重避免同一会话被多次 tick
+        Set<DoudizhuSession> processed = new HashSet<>();
         for (DoudizhuSession session : activeGames.values()) {
-            if (!session.isFinished() && session.hasAIPlayers()) {
+            if (!session.isFinished() && session.hasAIPlayers() && processed.add(session)) {
                 session.tickAI();
             }
         }

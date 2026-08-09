@@ -338,6 +338,8 @@ public class ItemSkinManager {
         if (player instanceof ServerPlayer serverPlayer) {
             SREPlayerSkinsComponent.KEY.get(serverPlayer).setEquippedSkinForItemType(itemTypeName, skinName);
         }
+        // 帽子皮肤无物品载体，需通过实体数据同步给其他客户端
+        PlayerHatSync.onSkinEquipped(player, itemTypeName, skinName);
     }
 
     /**

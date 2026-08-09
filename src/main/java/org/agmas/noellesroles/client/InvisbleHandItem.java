@@ -38,7 +38,7 @@ public class InvisbleHandItem {
             if (mainHand)
                 return null;
             var item = ExtraSlotComponent.getSlot(player, HandCuffsItem.SLOT_HANDCUFFS);
-            if (item.is(ModItems.HANDCUFFS)) {
+            if (item.getItem() instanceof HandCuffsItem) {
                 return item;
             }
             return null; // 不修改

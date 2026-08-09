@@ -420,6 +420,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 context -> new io.wifi.starrailexpress.client.render.entity.PlayerBodyEntityRenderer<>(context, false));
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
+        // 注册对话 NPC 实体渲染器
+        EntityRendererRegistry.register(ModEntities.DIALOG_NPC,
+                org.agmas.noellesroles.client.renderer.DialogNpcEntityRenderer::new);
         // 注册时空旅者传送门实体渲染器
         EntityRendererRegistry.register(ModEntities.RUIKE_PORTAL,
                 org.agmas.noellesroles.client.render.RuikePortalRenderer::new);
@@ -485,6 +488,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
+
+        // 对话 NPC：收到 S2C 包后打开对话界面
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.OpenDialogNpcScreenS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> context.client()
+                            .setScreen(new org.agmas.noellesroles.client.screen.DialogNpcScreen(payload)));
+                });
 
         ClientPlayNetworking.registerGlobalReceiver(DoomedSinnerFateRevealS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client()
@@ -764,6 +774,11 @@ public class NoellesrolesClient implements ClientModInitializer {
                 SRE.LOGGER.info("[SnowguaiHUD] Received: type={}, remaining={}tick, nextIn={}tick",
                         snowguaiActiveType, snowguaiActiveRemainingTicks, snowguaiNextBlizzardTicks);
             });
+        });
+        // 旁观者小游戏掌机面板：收到后打开游戏选择界面
+        ClientPlayNetworking.registerGlobalReceiver(OpenGameConsoleS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() ->
+                    context.client().setScreen(new io.wifi.starrailexpress.client.gui.screen.GameConsoleScreen()));
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
@@ -1722,6 +1737,16 @@ public class NoellesrolesClient implements ClientModInitializer {
                         .withStyle(ChatFormatting.WHITE);
             }
             return new MutableComponentResult(text);
+        });
+
+        // ──── 旁观者提示：输入 /spectorlittlegames 打开小游戏面板 ────
+        OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {
+            if (minecraft.player == null) return null;
+            if (!minecraft.player.isSpectator()) return null;
+            return new MutableComponentResult(
+                    Component.translatable("message.tip.spector_little_games",
+                                    Component.literal("/spectorlittlegames").withStyle(ChatFormatting.GREEN))
+                            .withStyle(ChatFormatting.WHITE));
         });
 
         // 5. 注册实体渲染器

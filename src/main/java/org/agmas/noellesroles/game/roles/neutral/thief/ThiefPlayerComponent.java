@@ -479,6 +479,8 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true; // 纸条
         if (stack.is(ModItems.HANDCUFFS))
             return true; // 手铐
+        if (stack.is(ModItems.TOY_HANDCUFFS))
+            return true; // 玩具手铐
 
         // 特殊物品类（来自HSRItems）
         if (stack.is(ModItems.TOXIN))
@@ -790,6 +792,8 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true; // 纸条
         if (stack.is(ModItems.HANDCUFFS))
             return true; // 手铐
+        if (stack.is(ModItems.TOY_HANDCUFFS))
+            return true; // 玩具手铐
 
         // 特殊物品类（来自HSRItems）
         if (stack.is(ModItems.TOXIN))

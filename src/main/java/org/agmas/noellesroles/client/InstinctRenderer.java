@@ -89,6 +89,32 @@ public class InstinctRenderer {
             return -2;
         });
         TouhouInstincts.registerEvents();
+        // 病娇：本能仅可透视爱慕对象（粉色）与目标（红色），其余玩家一律不透视
+        // 高亮不依赖本能开关，目标在病娇视角下始终发光
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.YANDERE))
+                return -1;
+            // 病娇死亡/旁观后透传给默认逻辑（旁观者可查看角色颜色）
+            if (!GameUtils.isPlayerAliveAndSurvival(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer) || targetPlayer == self)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            var yandere = ModComponents.YANDERE.maybeGet(self).orElse(null);
+            if (yandere == null)
+                return -1;
+            if (yandere.isCrush(targetPlayer.getUUID()))
+                return new Color(255, 105, 180).getRGB(); // 爱慕对象：粉色
+            if (yandere.isTarget(targetPlayer.getUUID()))
+                return new Color(255, 60, 60).getRGB(); // 目标：红色发光
+            return -2; // 其余玩家禁止透视
+        });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {
                 return -1;
@@ -1322,6 +1348,65 @@ public class InstinctRenderer {
                 // 监护人只能透视智力障碍患者，其他玩家禁用透视
                 return -2;
             }
+            return -1;
+        });
+
+        // 经纪人：透视歌手与明星（常驻，无需本能）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            if (Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.JINGJIREN_WOW))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                    return -2;
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.SINGER)) {
+                    return ModRoles.SINGER.color();
+                }
+                if (SREClient.gameComponent.isRole(targetPlayer, ModRoles.SUPERSTAR)) {
+                    return ModRoles.SUPERSTAR.color();
+                }
+                // 经纪人只能透视歌手与明星，其他玩家禁用透视
+                return -2;
+            }
+            return -1;
+        });
+
+        // 被签约的歌手/明星：透视签约自己的经纪人（常驻，无需本能）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            if (Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            java.util.UUID managerUuid = null;
+            if (SREClient.gameComponent.isRole(self, ModRoles.SINGER)) {
+                managerUuid = ModComponents.SINGER.get(self).signedManagerUuid;
+            } else if (SREClient.gameComponent.isRole(self, ModRoles.SUPERSTAR)) {
+                managerUuid = ModComponents.STAR.get(self).signedManagerUuid;
+            }
+            if (managerUuid == null)
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer.getUUID().equals(managerUuid)
+                        && GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+                    return ModRoles.JINGJIREN_WOW.color();
+                }
+            }
+            // 不阻断歌手/明星的其他高亮来源
             return -1;
         });
 

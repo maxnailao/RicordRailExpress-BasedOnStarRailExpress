@@ -62,7 +62,8 @@ public class ReasonerCompassScreen extends Screen {
     private List<String> allTaskIds() {
         List<String> tasks = new ArrayList<>();
         for (SREPlayerTaskComponent.Task task : SREPlayerTaskComponent.Task.values()) {
-            if (task != SREPlayerTaskComponent.Task.CUSTOM && task != SREPlayerTaskComponent.Task.MANIC) {
+            if (task != SREPlayerTaskComponent.Task.CUSTOM && task != SREPlayerTaskComponent.Task.MANIC
+                    && task != SREPlayerTaskComponent.Task.YANDERE_OBSERVE) {
                 tasks.add(task.name());
             }
         }

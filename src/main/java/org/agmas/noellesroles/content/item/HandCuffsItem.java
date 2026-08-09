@@ -16,11 +16,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.init.ModItems;
 
 public class HandCuffsItem extends Item {
     public HandCuffsItem(Item.Properties settings) {
-        super(settings.durability(10));
+        this(settings, 10);
+    }
+
+    public HandCuffsItem(Item.Properties settings, int durability) {
+        super(settings.durability(durability));
     }
 
     public static final ResourceLocation SLOT_HANDCUFFS = SRE.id("handcuffs");
@@ -38,12 +41,12 @@ public class HandCuffsItem extends Item {
     }
 
     public static boolean hasHandCuff(Player player) {
-        return ExtraSlotComponent.getSlot(player, SLOT_HANDCUFFS).is(ModItems.HANDCUFFS);
+        return ExtraSlotComponent.getSlot(player, SLOT_HANDCUFFS).getItem() instanceof HandCuffsItem;
     }
 
     @Override
     public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int slot, boolean bl) {
-        if (itemStack.is(ModItems.HANDCUFFS)) {
+        if (itemStack.getItem() instanceof HandCuffsItem) {
             if (entity instanceof Player player) {
                 if (hasHandCuff(player)) {
                     if (!player.isSpectator()) {
@@ -70,9 +73,9 @@ public class HandCuffsItem extends Item {
 
         if (hasHandCuff(user))
             return InteractionResultHolder.pass(user.getItemInHand(interactionHand));
-        if (user.getCooldowns().isOnCooldown(ModItems.HANDCUFFS))
+        if (user.getCooldowns().isOnCooldown(this))
             return InteractionResultHolder.pass(user.getItemInHand(interactionHand));
-        user.getCooldowns().addCooldown(ModItems.HANDCUFFS, 20);
+        user.getCooldowns().addCooldown(this, 20);
 
         return super.use(level, user, interactionHand);
     }
@@ -82,9 +85,9 @@ public class HandCuffsItem extends Item {
             InteractionHand hand) {
         if (hasHandCuff(user))
             return InteractionResult.PASS;
-        if (user.getCooldowns().isOnCooldown(ModItems.HANDCUFFS))
+        if (user.getCooldowns().isOnCooldown(this))
             return InteractionResult.PASS;
-        user.getCooldowns().addCooldown(ModItems.HANDCUFFS, 20);
+        user.getCooldowns().addCooldown(this, 20);
         if (user.level().isClientSide)
             return InteractionResult.SUCCESS;
         if (entity instanceof Player target) {

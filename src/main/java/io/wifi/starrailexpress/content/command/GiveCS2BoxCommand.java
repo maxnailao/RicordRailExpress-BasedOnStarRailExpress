@@ -133,13 +133,11 @@ public final class GiveCS2BoxCommand {
                 inv.addKey(id, 1);
             } else if ("skin".equals(type)) {
                 inv.addSkin(id, 1);
-                // 同时解锁皮肤
+                // 同时解锁皮肤（双系统：PlayerEconomyManager + CCA 组件，避免皮肤界面装备校验被拒）
                 String[] parts = id.split("/");
                 if (parts.length >= 2) {
-                    io.wifi.starrailexpress.cca.SREPlayerSkinsComponent skinsComp =
-                            io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.get(target);
-                    skinsComp.unlockSkinForItemType(parts[0], parts[1]);
-                    skinsComp.syncSkinsToClient();
+                    io.wifi.starrailexpress.util.ItemSkinManager.unlockSkinForItemType(target, parts[0], parts[1]);
+                    io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.get(target).syncSkinsToClient();
                 }
             } else if ("music".equals(type)) {
                 inv.addMusicBox(id, 1);

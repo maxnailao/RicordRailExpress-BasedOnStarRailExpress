@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.innocence.super_star;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -16,10 +17,14 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.game.roles.innocence.jingjiren_wow.JingjirenWowPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import java.util.UUID;
 
 /**
  * 明星组件
@@ -65,6 +70,9 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
     /** 是否已激活（角色分配后） */
     public boolean isActive = false;
 
+    /** 签约自己的经纪人 UUID（未签约时为 null，每局重置） */
+    public UUID signedManagerUuid = null;
+
     /**
      * 构造函数
      */
@@ -82,6 +90,7 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
         this.glowTicksRemaining = 0;
         this.abilityCooldown = 0;
         this.isActive = true;
+        this.signedManagerUuid = null;
         this.sync();
     }
 
@@ -98,6 +107,7 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
         this.glowTicksRemaining = 0;
         this.abilityCooldown = 0;
         this.isActive = false;
+        this.signedManagerUuid = null;
         // 移除发光效果
         if (player != null) {
             player.removeEffect(MobEffects.GLOWING);
@@ -194,6 +204,8 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
             balanceAwardCount = 150;
         }
         SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(balanceAwardCount);
+        // 经纪人联动：被签约后释放技能，被签约的歌手与经纪人同时获得金钱
+        rewardSignedPartners(serverPlayer);
         // 发送消息给明星玩家
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.star.ability_used", affectedCount)
@@ -202,6 +214,49 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
 
         this.sync();
         return true;
+    }
+
+    /**
+     * 经纪人联动：明星被签约后释放技能，
+     * 签约自己的经纪人与该经纪人签约的歌手同时获得金钱
+     */
+    private void rewardSignedPartners(ServerPlayer star) {
+        if (signedManagerUuid == null)
+            return;
+        if (!(star.level().getPlayerByUUID(signedManagerUuid) instanceof ServerPlayer manager))
+            return;
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(star.level());
+        if (!gameWorld.isRole(manager, ModRoles.JINGJIREN_WOW))
+            return;
+        if (!GameUtils.isPlayerAliveAndSurvival(manager))
+            return;
+
+        int reward = NoellesRolesConfig.HANDLER.instance().managerStarSkillReward;
+        if (reward <= 0)
+            return;
+
+        // 经纪人获得金钱
+        SREPlayerShopComponent.KEY.get(manager).addToBalance(reward);
+        manager.displayClientMessage(
+                Component.translatable("message.noellesroles.jingjiren_wow.skill_reward", reward)
+                        .withStyle(ChatFormatting.GOLD),
+                true);
+
+        // 经纪人签约的歌手获得金钱
+        JingjirenWowPlayerComponent managerComp = ModComponents.JINGJIREN_WOW.get(manager);
+        for (UUID uuid : managerComp.signedPlayers) {
+            if (!(star.level().getPlayerByUUID(uuid) instanceof ServerPlayer singer))
+                continue;
+            if (!gameWorld.isRole(singer, ModRoles.SINGER))
+                continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(singer))
+                continue;
+            SREPlayerShopComponent.KEY.get(singer).addToBalance(reward);
+            singer.displayClientMessage(
+                    Component.translatable("message.noellesroles.jingjiren_wow.singer_skill_reward", reward)
+                            .withStyle(ChatFormatting.GOLD),
+                    true);
+        }
     }
 
     /**
@@ -290,6 +345,9 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
         tag.putInt("glowTicksRemaining", this.glowTicksRemaining);
         tag.putInt("abilityCooldown", this.abilityCooldown);
         tag.putBoolean("isActive", this.isActive);
+        if (this.signedManagerUuid != null) {
+            tag.putString("signedManagerUuid", this.signedManagerUuid.toString());
+        }
     }
 
     @Override
@@ -298,6 +356,12 @@ public class SuperStarPlayerComponent implements RoleComponent, ServerTickingCom
         this.glowTicksRemaining = tag.contains("glowTicksRemaining") ? tag.getInt("glowTicksRemaining") : 0;
         this.abilityCooldown = tag.contains("abilityCooldown") ? tag.getInt("abilityCooldown") : 0;
         this.isActive = tag.contains("isActive") && tag.getBoolean("isActive");
+        UUID oldManager = this.signedManagerUuid;
+        this.signedManagerUuid = tag.contains("signedManagerUuid") ? UUID.fromString(tag.getString("signedManagerUuid")) : null;
+        // 签约状态变化时清除本能透视缓存，确保经纪人高亮即时更新
+        if ((oldManager == null) != (this.signedManagerUuid == null)) {
+            SREClient.cachedHighLightMap.clear();
+        }
     }
 
     

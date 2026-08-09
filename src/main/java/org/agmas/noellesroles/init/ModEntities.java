@@ -448,6 +448,20 @@ public class ModEntities {
                     .build());
 
     /**
+     * 对话 NPC 实体 - 玩家人物形态，右键打开分支对话界面
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.content.entity.DialogNpcEntity> DIALOG_NPC = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("dialog_npc"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.content.entity.DialogNpcEntity>create(MobCategory.MISC,
+                    org.agmas.noellesroles.content.entity.DialogNpcEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */
@@ -464,6 +478,9 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
+        // 注册对话 NPC 实体属性
+        FabricDefaultAttributeRegistry.register(DIALOG_NPC,
+                org.agmas.noellesroles.content.entity.DialogNpcEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MUMMY, net.minecraft.world.entity.monster.Husk.createAttributes());
         FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MORPHLING_KNIFE_DUMMY, MorphlingKnifeDummyEntity.createAttributes());

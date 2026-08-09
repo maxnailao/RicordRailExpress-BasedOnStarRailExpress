@@ -1852,6 +1852,19 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.DELAYER.getIdentifier(), SHOP);
         }
 
+        // 病娇商店：刀、左轮手枪、撬棍、前辈的照片（恢复 SAN）
+        {
+            var YANDERE_SHOP = new ArrayList<ShopEntry>();
+            YANDERE_SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(),
+                    SREConfig.instance().knifePrice, ShopEntry.Type.WEAPON));
+            YANDERE_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
+                    SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
+            YANDERE_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+            YANDERE_SHOP.add(new ShopEntry(ModItems.SENPAI_PHOTO.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.YANDERE.getIdentifier(), YANDERE_SHOP);
+        }
+
         // BAKA的商店 (Superstar)
         {
             var SHOP = new ArrayList<ShopEntry>();

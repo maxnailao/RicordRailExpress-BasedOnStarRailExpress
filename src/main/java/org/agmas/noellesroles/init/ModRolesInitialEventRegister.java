@@ -37,6 +37,7 @@ import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
+import org.agmas.noellesroles.game.roles.innocence.coroner.CoronerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
@@ -533,6 +534,12 @@ public class ModRolesInitialEventRegister {
             // 恶灵角色初始化
             if (role.identifier().equals(ModRoles.ELING_APEX.identifier())) {
                 var comp = ModComponents.ELING_APEX.get(player);
+                comp.init();
+                comp.sync();
+            }
+            // 诱杀者角色初始化
+            if (role.identifier().equals(ModRoles.KILLMAN.identifier())) {
+                var comp = ModComponents.KILLMAN.get(player);
                 comp.init();
                 comp.sync();
             }
@@ -1093,6 +1100,20 @@ public class ModRolesInitialEventRegister {
                             return comp.placeLight();
                         }).showOnHud(true).announceToSelf(true).build());
 
+        // ==================== 经纪人技能注册：按 G 对准明星/歌手签约 ====================
+        RoleSkill.register(ModRoles.JINGJIREN_WOW,
+                RoleSkill.skill(SRE.id("jingjiren_wow_sign"),
+                        "skill.noellesroles.jingjiren_wow.sign",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (context.target() == null)
+                                return false;
+                            if (!(player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer target))
+                                return false;
+                            var comp = org.agmas.noellesroles.component.ModComponents.JINGJIREN_WOW.get(player);
+                            return comp.trySign(player, target);
+                        }).cooldownSeconds(3).showOnHud(true).build());
+
         // ==================== 维修工技能注册：按 G 维护灯光 ====================
         RoleSkill.register(ModRoles.WEIXIUGONG,
                 RoleSkill.skill(SRE.id("weixiugong_maintain_light"),
@@ -1197,6 +1218,14 @@ public class ModRolesInitialEventRegister {
                             MorticianBodyMakerPlayerComponent.KEY.get(context.player()).toggleMode();
                             return true;
                         }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 验尸官技能注册：搬尸（参照葬仪曳柩，10秒自动落下，90秒冷却） ====================
+        RoleSkill.register(ModRoles.CORONER,
+                RoleSkill.skill(SRE.id("coroner_carry_body"),
+                        "skill.noellesroles.coroner.carry_body",
+                        context -> {
+                            return CoronerPlayerComponent.KEY.get(context.player()).useAbility();
+                        }).build());
 
         // ==================== 设陷者技能注册：普通按 G 使用技能，按技能切换键(Y) 切换陷阱类型 ====================
         RoleSkill.register(ModRoles.TRAPPER,
@@ -1852,6 +1881,18 @@ public class ModRolesInitialEventRegister {
                     if (comp == null) return false;
                     return comp.usePhaseShift();
                 }).cooldownSeconds(45).toggleable(true).showOnHud(true).announceToSelf(false).build());
+
+        // ==================== 诱杀者技能注册：诱杀左轮（花费75金币原地放置陷阱左轮，CD 100s） ====================
+        RoleSkill.register(ModRoles.KILLMAN, RoleSkill.skill(
+                SRE.id("killman_trap_revolver"),
+                "skill.noellesroles.killman.trap",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    var comp = ModComponents.KILLMAN.get(player);
+                    if (comp == null) return false;
+                    return comp.useTrapRevolver();
+                }).cooldownSeconds(100).showOnHud(true).announceToSelf(false).build());
 
         // ==================== 幻魔者技能注册：地刺(G)，CD30s；恼鬼召唤通过背包界面点选玩家触发 ====================
         RoleSkill.register(ModRoles.HUANMOZHE,

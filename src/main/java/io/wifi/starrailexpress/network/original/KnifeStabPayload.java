@@ -116,7 +116,20 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 }
             }
             GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.KNIFE);
-            target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+            // 塑水苦无特别皮肤：击杀音效仅对击杀者播放，其他玩家仍听见正常音效
+            if (io.wifi.starrailexpress.util.SushuiKunaiSkinHandler.hasKunaiSkinEquipped(player, knife)) {
+                io.wifi.starrailexpress.util.SushuiKunaiSkinHandler.playKillSound(
+                        player, target.getX(), target.getY(), target.getZ());
+                // 传入 player 作为排除对象，确保击杀者不会听到原版刺击音效
+                player.level().playSound(player, target.blockPosition(), TMMSounds.ITEM_KNIFE_STAB,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+            } else {
+                target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+            }
+            // 暗星特别皮肤：击杀玩家后切换形态（天使⇄恶魔）
+            if (io.wifi.starrailexpress.util.AnxingSkinHandler.hasAnxingSkinEquipped(player, knife)) {
+                io.wifi.starrailexpress.util.AnxingSkinHandler.switchForm(player);
+            }
             // 成功捅人后消耗 1 点耐久；耗尽时提示重新购买。
             // Consume one durability after a successful stab; warn when it becomes depleted.
             if (durabilityKnife && KillerKnifeDurability.consumeOne(knife,player)) {

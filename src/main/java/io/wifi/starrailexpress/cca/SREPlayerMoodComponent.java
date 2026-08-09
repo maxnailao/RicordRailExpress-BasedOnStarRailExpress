@@ -120,6 +120,11 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
         }
         if (!this.playerTaskComponent.tasks.isEmpty()) {
             float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
+            // 病娇：SAN 值消耗速度为正常的 2 倍
+            if (SREClient.gameComponent != null
+                    && SREClient.gameComponent.isRole(this.player, org.agmas.noellesroles.role.ModRoles.YANDERE)) {
+                drainMultiplier *= 2f;
+            }
             if (this.mood > 0) {
                 this.mood = this.mood
                         - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;
@@ -178,6 +183,10 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
         if (gameWorldComponent.gameMode.hasMood()) {
             if (!this.playerTaskComponent.tasks.isEmpty()) {
                 float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
+                // 病娇：SAN 值消耗速度为正常的 2 倍
+                if (gameWorldComponent.isRole(this.player, org.agmas.noellesroles.role.ModRoles.YANDERE)) {
+                    drainMultiplier *= 2f;
+                }
                 if (this.mood > 0) {
                     this.mood = this.mood
                             - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;

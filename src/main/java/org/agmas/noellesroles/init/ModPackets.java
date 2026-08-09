@@ -43,6 +43,11 @@ public class ModPackets {
     public static void registerPackets() {
         PayloadTypeRegistry.playS2C().register(ProblemScreenOpenC2SPacket.ID,
                 ProblemScreenOpenC2SPacket.CODEC);
+        // 对话 NPC：打开对话界面（S2C）与选项选择（C2S）
+        PayloadTypeRegistry.playS2C().register(OpenDialogNpcScreenS2CPacket.ID,
+                OpenDialogNpcScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(DialogSelectC2SPacket.ID,
+                DialogSelectC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ExecutionerSelectTargetC2SPacket.ID,
                 ExecutionerSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ProblemSetEventC2SPacket.ID,
@@ -121,6 +126,7 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(MapStatusBarSyncS2CPacket.ID, MapStatusBarSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BlizzardStateS2CPacket.ID, BlizzardStateS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SnowguaiBlizzardInfoS2CPacket.ID, SnowguaiBlizzardInfoS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenGameConsoleS2CPacket.ID, OpenGameConsoleS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RepairStationActionC2SPacket.ID,
                 RepairStationActionC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(RepairStationActionC2SPacket.ID, RepairStationActionC2SPacket::handle);

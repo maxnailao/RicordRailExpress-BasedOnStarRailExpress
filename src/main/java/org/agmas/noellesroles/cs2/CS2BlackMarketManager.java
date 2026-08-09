@@ -257,6 +257,11 @@ public class CS2BlackMarketManager {
             buyerInv.addBox(listing.itemId, 1);
         } else if ("skin".equals(listing.itemType)) {
             buyerInv.addSkin(listing.itemId, 1);
+            // 同步双系统解锁（PlayerEconomyManager + CCA），否则皮肤界面装备校验会被拒
+            String[] parts = listing.itemId.split("/");
+            if (parts.length >= 2) {
+                io.wifi.starrailexpress.util.ItemSkinManager.unlockSkinForItemType(buyer, parts[0], parts[1]);
+            }
         } else if ("musicbox".equals(listing.itemType)) {
             buyerInv.addMusicBox(listing.itemId, 1);
         }

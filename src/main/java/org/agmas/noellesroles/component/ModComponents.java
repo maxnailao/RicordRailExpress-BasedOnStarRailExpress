@@ -12,6 +12,7 @@ import org.agmas.noellesroles.game.roles.innocence.pathfinder.PathfinderPlayerCo
 import org.agmas.noellesroles.game.roles.innocence.weixiugong.WeixiugongPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ghoul.GhoulPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.eling_apex.ElingApexPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.killman.KillmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.coward.CowardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.dumb_woman.DumbWomanPlayerComponent;
@@ -226,6 +227,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<SingerPlayerComponent> SINGER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "singer"),
       SingerPlayerComponent.class);
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.jingjiren_wow.JingjirenWowPlayerComponent> JINGJIREN_WOW = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "jingjiren_wow"),
+      org.agmas.noellesroles.game.roles.innocence.jingjiren_wow.JingjirenWowPlayerComponent.class);
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent> WARLOCK = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "warlock"),
@@ -519,6 +524,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
       org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent.class);
 
+  // 验尸官组件 - 乘客阵营，搬尸技能（参照葬仪曳柩）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.coroner.CoronerPlayerComponent> CORONER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "coroner"),
+      org.agmas.noellesroles.game.roles.innocence.coroner.CoronerPlayerComponent.class);
+
   // 幻音师组件 - 杀手方中立阵营，音效商店+传送技能
   public static final ComponentKey<PhantomMusicianPlayerComponent> PHANTOM_MUSICIAN = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
@@ -645,6 +655,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snowguai_wow"),
           org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent.class);
 
+  // 病娇组件 - 独立中立阵营，爱慕对象 + 目标标记 + 疯魔联动
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent> YANDERE = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "yandere"),
+          org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent.class);
+
   // 盲人组件 - 平民阵营，黑暗效果+脚步声纹感知
   public static final ComponentKey<NiyajingshiPlayerComponent> NIYAJINGSHIBUSHIXIALE = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "niyanjingshibushixiale"),
@@ -667,6 +682,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<ElingApexPlayerComponent> ELING_APEX = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "eling_apex"),
           ElingApexPlayerComponent.class);
+
+  // 诱杀者组件 - 杀手阵营，诱杀左轮技能（放置陷阱左轮，开枪炸膛击杀）
+  public static final ComponentKey<KillmanPlayerComponent> KILLMAN = KillmanPlayerComponent.KEY;
 
   // 掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
   public static final ComponentKey<RaiderPlayerComponent> RAIDER = ComponentRegistry.getOrCreate(
@@ -839,6 +857,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SINGER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SingerPlayerComponent::new);
+
+    // 注册经纪人组件 - 存储签约状态
+    registry.beginRegistration(Player.class, JINGJIREN_WOW)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.jingjiren_wow.JingjirenWowPlayerComponent::new);
 
     // 注册心理学家组件 - 存储治疗状态和冷却
     registry.beginRegistration(Player.class, PSYCHOLOGIST)
@@ -1186,6 +1209,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent::new);
 
+    // 注册验尸官组件 - 乘客阵营，搬尸技能（参照葬仪曳柩）
+    registry.beginRegistration(Player.class, CORONER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.coroner.CoronerPlayerComponent::new);
+
     // 注册幻音师组件 - 杀手方中立阵营，音效商店+传送技能
     registry.beginRegistration(Player.class, PHANTOM_MUSICIAN)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1323,6 +1351,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent::new);
 
+    // 注册病娇组件 - 独立中立阵营，爱慕对象 + 目标标记 + 疯魔联动
+    registry.beginRegistration(Player.class, YANDERE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent::new);
+
     // 注册盲人组件 - 平民阵营，黑暗效果+脚步声纹感知
     registry.beginRegistration(Player.class, NIYAJINGSHIBUSHIXIALE)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1347,6 +1380,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, ELING_APEX)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(ElingApexPlayerComponent::new);
+
+    // 注册诱杀者组件 - 杀手阵营，诱杀左轮技能
+    registry.beginRegistration(Player.class, KILLMAN)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(KillmanPlayerComponent::new);
 
     // 注册掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
     registry.beginRegistration(Player.class, RAIDER)

@@ -45,8 +45,19 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
         // make sure all models get loaded
         for (var entry : ItemSkinManager.getSkins().entrySet()) {
             for (ItemSkinManager.Skin skin : entry.getValue().values()) {
+                if (ItemSkinManager.SkinTypes.HAT.equals(entry.getKey())) {
+                    // 帽子皮肤无物品载体，直接注册 models/item/skins/hat/{name}.json 进行烘焙，
+                    // 运行时通过 FabricBakedModelManager.getModel(同一 ID) 获取
+                    pluginContext.addModels(SRE.id("item/skins/hat/%s".formatted(skin.getName())));
+                    continue;
+                }
                 for (Variant variant : Variant.values()) {
-                    pluginContext.addModels(getModelLocation(entry.getKey(), skin.getName(), variant));
+                    // 无物品载体的皮肤类型在 MODEL_IDS 中没有映射，跳过避免空指针
+                    var modelLocation = getModelLocation(entry.getKey(), skin.getName(), variant);
+                    if (modelLocation == null) {
+                        continue;
+                    }
+                    pluginContext.addModels(modelLocation);
                 }
             }
         }

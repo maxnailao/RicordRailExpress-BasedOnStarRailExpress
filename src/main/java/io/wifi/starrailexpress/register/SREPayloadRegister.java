@@ -83,6 +83,7 @@ public class SREPayloadRegister {
                 PoisonComponentUtils.PoisonOverlayPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(GunDropPayload.ID, GunDropPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ShengxuanFormS2CPayload.ID, ShengxuanFormS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(AnxingFormS2CPayload.ID, AnxingFormS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TaskCompletePayload.ID, TaskCompletePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnnounceWelcomePayload.ID, AnnounceWelcomePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnnounceEndingPayload.ID, AnnounceEndingPayload.CODEC);

@@ -155,6 +155,9 @@ public class InitModRolesMax {
         // 歌手每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 1);
 
+        // 经纪人每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.JINGJIREN_WOW_ID, 1);
+
         // 心理学家每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.PSYCHOLOGIST_ID, 1);
 

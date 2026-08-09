@@ -84,6 +84,43 @@ import java.util.function.Predicate;
 public class ModPacketsReciever {
   public static void registerPackets() {
 
+    // 对话 NPC：客户端选择对话选项，服务端校验后执行选项配置的命令（如有）
+    ServerPlayNetworking.registerGlobalReceiver(DialogSelectC2SPacket.ID, (payload, context) -> {
+      context.server().execute(() -> {
+        ServerPlayer player = context.player();
+        net.minecraft.world.entity.Entity entity = player.serverLevel().getEntity(payload.entityId());
+        if (!(entity instanceof org.agmas.noellesroles.content.entity.DialogNpcEntity npc)) {
+          return;
+        }
+        com.google.gson.JsonObject json = org.agmas.noellesroles.dialog.DialogDataManager
+            .load(player.server, npc.getDialogId());
+        if (json == null || !json.has("nodes") || !json.get("nodes").isJsonObject()) {
+          return;
+        }
+        com.google.gson.JsonObject nodes = json.getAsJsonObject("nodes");
+        if (!nodes.has(payload.nodeId()) || !nodes.get(payload.nodeId()).isJsonObject()) {
+          return;
+        }
+        com.google.gson.JsonObject node = nodes.getAsJsonObject(payload.nodeId());
+        if (!node.has("options") || !node.get("options").isJsonArray()) {
+          return;
+        }
+        com.google.gson.JsonArray options = node.getAsJsonArray("options");
+        if (payload.optionIndex() < 0 || payload.optionIndex() >= options.size()) {
+          return;
+        }
+        com.google.gson.JsonElement element = options.get(payload.optionIndex());
+        if (!element.isJsonObject()) {
+          return;
+        }
+        com.google.gson.JsonObject option = element.getAsJsonObject();
+        if (option.has("command") && option.get("command").isJsonPrimitive()) {
+          String command = option.get("command").getAsString();
+          player.server.getCommands().performPrefixedCommand(player.createCommandSourceStack(), command);
+        }
+      });
+    });
+
     ServerPlayNetworking.registerGlobalReceiver(VendingMachinesBuyC2SPacket.TYPE, (payload, context) -> {
       context.server().execute(() -> {
         try {
@@ -707,7 +744,9 @@ public class ModPacketsReciever {
       SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
           .get(player);
 
-      if (gameWorldComponent.isRole(player, ModRoles.VULTURE)
+      boolean isVulture = gameWorldComponent.isRole(player, ModRoles.VULTURE);
+      boolean isWuyage = gameWorldComponent.isRole(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN);
+      if ((isVulture || isWuyage)
           && GameUtils.isPlayerAliveAndSurvival(player)) {
         if (abilityPlayerComponent.cooldown > 0)
           return;
@@ -722,44 +761,47 @@ public class ModPacketsReciever {
               .get(playerBodyEntities.getFirst());
           if (!bodyDeathReasonComponent.vultured) {
             abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
-                NoellesRolesConfig.HANDLER.instance().vultureEatCooldown);
-            VulturePlayerComponent vulturePlayerComponent = VulturePlayerComponent.KEY
-                .get(player);
-            vulturePlayerComponent.bodiesEaten++;
-            vulturePlayerComponent.sync();
+                isVulture ? NoellesRolesConfig.HANDLER.instance().vultureEatCooldown
+                    : NoellesRolesConfig.HANDLER.instance().wuyageEatCooldown);
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2));
-            if (vulturePlayerComponent.bodiesEaten >= vulturePlayerComponent.bodiesRequired) {
-              ArrayList<SRERole> shuffledKillerRoles = new ArrayList<>(Noellesroles.getEnableKillerRoles());
-              shuffledKillerRoles.removeIf(role -> role.identifier().equals(ModRoles.EXECUTIONER_ID)
-                  || role.identifier().equals(ModRoles.POISONER_ID)
-                  || role.identifier().equals(ModRoles.WATER_GHOST_ID)
-                  || role.identifier().equals(ModRoles.DIO_ID)
-                  || Harpymodloader.VANNILA_ROLES.contains(role) || !role.canUseKiller()
-                  || HarpyModLoaderConfig.HANDLER.instance().getDisabled()
-                      .contains(role.identifier().getPath()));
-              if (shuffledKillerRoles.isEmpty())
-                shuffledKillerRoles.add(TMMRoles.KILLER);
-              Collections.shuffle(shuffledKillerRoles);
-
-              SREPlayerShopComponent playerShopComponent = (SREPlayerShopComponent) SREPlayerShopComponent.KEY
+            if (isVulture) {
+              VulturePlayerComponent vulturePlayerComponent = VulturePlayerComponent.KEY
                   .get(player);
-              // 保存变成杀手之前的金币数量
-              int originalBalance = playerShopComponent.balance;
-              final var first = shuffledKillerRoles.getFirst();
-              // gameWorldComponent.addRole(player, first);
-              // ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player,
-              // first);
-              RoleUtils.changeRole(player, first);
-              // 继承变成杀手之前的40%金币 + 100 金币
-              playerShopComponent.setBalance((int) ((float) originalBalance * 0.4));
-              playerShopComponent.addToBalance(100);
+              vulturePlayerComponent.bodiesEaten++;
+              vulturePlayerComponent.sync();
+              if (vulturePlayerComponent.bodiesEaten >= vulturePlayerComponent.bodiesRequired) {
+                ArrayList<SRERole> shuffledKillerRoles = new ArrayList<>(Noellesroles.getEnableKillerRoles());
+                shuffledKillerRoles.removeIf(role -> role.identifier().equals(ModRoles.EXECUTIONER_ID)
+                    || role.identifier().equals(ModRoles.POISONER_ID)
+                    || role.identifier().equals(ModRoles.WATER_GHOST_ID)
+                    || role.identifier().equals(ModRoles.DIO_ID)
+                    || Harpymodloader.VANNILA_ROLES.contains(role) || !role.canUseKiller()
+                    || HarpyModLoaderConfig.HANDLER.instance().getDisabled()
+                        .contains(role.identifier().getPath()));
+                if (shuffledKillerRoles.isEmpty())
+                  shuffledKillerRoles.add(TMMRoles.KILLER);
+                Collections.shuffle(shuffledKillerRoles);
 
-              // 播放全场音效
-              player.level().playSound(null, player.blockPosition(),
-                  SoundEvents.HOGLIN_CONVERTED_TO_ZOMBIFIED,
-                  SoundSource.MASTER, 2.0F, 1.0F);
+                SREPlayerShopComponent playerShopComponent = (SREPlayerShopComponent) SREPlayerShopComponent.KEY
+                    .get(player);
+                // 保存变成杀手之前的金币数量
+                int originalBalance = playerShopComponent.balance;
+                final var first = shuffledKillerRoles.getFirst();
+                // gameWorldComponent.addRole(player, first);
+                // ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player,
+                // first);
+                RoleUtils.changeRole(player, first);
+                // 继承变成杀手之前的40%金币 + 100 金币
+                playerShopComponent.setBalance((int) ((float) originalBalance * 0.4));
+                playerShopComponent.addToBalance(100);
 
-              RoleUtils.sendWelcomeAnnouncement(player);
+                // 播放全场音效
+                player.level().playSound(null, player.blockPosition(),
+                    SoundEvents.HOGLIN_CONVERTED_TO_ZOMBIFIED,
+                    SoundSource.MASTER, 2.0F, 1.0F);
+
+                RoleUtils.sendWelcomeAnnouncement(player);
+              }
             }
 
             bodyDeathReasonComponent.vultured = true;

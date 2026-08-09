@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -29,6 +30,8 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import java.util.UUID;
 
 /**
  * 歌手组件
@@ -107,6 +110,9 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
     /** 音乐类型 - 用于追踪音乐播放状态和给予效果 */
     public int musicType = -1;
 
+    /** 签约自己的经纪人 UUID（未签约时为 null，每局重置） */
+    public UUID signedManagerUuid = null;
+
     /**
      * 构造函数
      */
@@ -124,6 +130,7 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
         this.isActive = true;
         this.currentMusicIndex = -1;
         this.musicRemainingTicks = 0;
+        this.signedManagerUuid = null;
         this.sync();
     }
 
@@ -140,6 +147,7 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
         this.isActive = false;
         this.currentMusicIndex = -1;
         this.musicRemainingTicks = 0;
+        this.signedManagerUuid = null;
         this.sync();
     }
 
@@ -381,6 +389,9 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
         tag.putInt("currentMusicIndex", this.currentMusicIndex);
         tag.putInt("musicRemainingTicks", this.musicRemainingTicks);
         tag.putInt("musicType", this.musicType);
+        if (this.signedManagerUuid != null) {
+            tag.putString("signedManagerUuid", this.signedManagerUuid.toString());
+        }
     }
 
     @Override
@@ -390,6 +401,12 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
         this.isActive = tag.contains("isActive") && tag.getBoolean("isActive");
         this.currentMusicIndex = tag.contains("currentMusicIndex") ? tag.getInt("currentMusicIndex") : -1;
         this.musicRemainingTicks = tag.contains("musicRemainingTicks") ? tag.getInt("musicRemainingTicks") : 0;
+        UUID oldManager = this.signedManagerUuid;
+        this.signedManagerUuid = tag.contains("signedManagerUuid") ? UUID.fromString(tag.getString("signedManagerUuid")) : null;
+        // 签约状态变化时清除本能透视缓存，确保经纪人高亮即时更新
+        if ((oldManager == null) != (this.signedManagerUuid == null)) {
+            SREClient.cachedHighLightMap.clear();
+        }
     }
 
     @Override

@@ -263,7 +263,7 @@ public class PlayerBodyHud {
                     context.drawString(renderer, evidenceInfo, -renderer.width(evidenceInfo) / 2, evidenceY,
                             CommonColors.WHITE);
                 }
-                if (SREClient.isRole(ModRoles.VULTURE)) {
+                if (SREClient.isRole(ModRoles.VULTURE) || SREClient.isRole(ModRoles.WUYAGE_NANBANJIUUBIEBAN)) {
                     if (bodyDeathReasonComponent.vultured) {
                         Component roleInfo = Component.translatable("hud.vulture.already_consumed")
                                 .withColor(ModRoles.VULTURE.color());

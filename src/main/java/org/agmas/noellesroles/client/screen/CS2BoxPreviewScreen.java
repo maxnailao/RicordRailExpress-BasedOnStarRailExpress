@@ -265,7 +265,11 @@ public class CS2BoxPreviewScreen extends Screen {
         if (skinId.startsWith("revolver/")) return TMMItems.REVOLVER.getDefaultInstance();
         if (skinId.startsWith("bat/")) return TMMItems.BAT.getDefaultInstance();
         if (skinId.startsWith("grenade/")) return TMMItems.GRENADE.getDefaultInstance();
-        if (skinId.startsWith("hat/")) return new ItemStack(Items.LEATHER_HELMET);
+        if (skinId.startsWith("hat/")) {
+            // 帽子皮肤优先使用 CS2SkinInfo 提供的专属图标（如玩偶物品），否则回退为皮革头盔
+            ItemStack icon = CS2SkinInfo.getIconStack(skinId);
+            return icon != null ? icon : new ItemStack(Items.LEATHER_HELMET);
+        }
         return null;
     }
 

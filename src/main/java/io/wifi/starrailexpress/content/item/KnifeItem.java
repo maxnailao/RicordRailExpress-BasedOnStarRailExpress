@@ -52,7 +52,28 @@ public class KnifeItem extends SkinableItem {
                 return InteractionResultHolder.fail(itemStack);
             }
         }
-        user.playSound(TMMSounds.ITEM_KNIFE_PREPARE, 1.0f, 1.0f);
+        // 特别皮肤专属切刀音效：仅对持刀者播放，其他玩家听到正常切刀音效
+        boolean hasKunaiSkin = io.wifi.starrailexpress.util.SushuiKunaiSkinHandler
+                .hasKunaiSkinEquipped(user, itemStack);
+        boolean hasAnxingSkin = io.wifi.starrailexpress.util.AnxingSkinHandler
+                .hasAnxingSkinEquipped(user, itemStack);
+        if (hasKunaiSkin || hasAnxingSkin) {
+            if (user instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                // 服务端：专属音效仅发给持刀者，正常切刀声排除持刀者
+                if (hasKunaiSkin) {
+                    io.wifi.starrailexpress.util.SushuiKunaiSkinHandler.playSwitchSound(
+                            serverPlayer, user.getX(), user.getY(), user.getZ());
+                } else {
+                    io.wifi.starrailexpress.util.AnxingSkinHandler.playSwitchSound(
+                            serverPlayer, user.getX(), user.getY(), user.getZ());
+                }
+                user.level().playSound(serverPlayer, user.blockPosition(), TMMSounds.ITEM_KNIFE_PREPARE,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+            }
+            // 客户端：跳过本地普通音效，等待服务端专属音效包，避免双重播放
+        } else {
+            user.playSound(TMMSounds.ITEM_KNIFE_PREPARE, 1.0f, 1.0f);
+        }
         user.startUsingItem(hand);
         return InteractionResultHolder.consume(itemStack);
     }
