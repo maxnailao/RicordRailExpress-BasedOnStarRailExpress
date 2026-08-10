@@ -50,6 +50,11 @@ public class C4Item extends Item {
             return InteractionResultHolder.success(stack);
         }
 
+        // 蹲下时不丢出C4，防止丢歪浪费
+        if (player.isCrouching()) {
+            return InteractionResultHolder.pass(stack);
+        }
+
         if (!level.isClientSide) {
             ItemStack thrownStack = stack.copyWithCount(1);
             Vec3 eye = player.getEyePosition();
