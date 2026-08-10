@@ -226,7 +226,7 @@ public class TraitorAndModifiers {
             Noellesroles.id("corruption"),
             new Color(64, 64, 64).getRGB(), // 灰偏黑
             null, new HashSet<>(Arrays.asList(ModRoles.SHERIFF, ModRoles.PATROLLER)), false, false))
-            .setDefaultEnableChance(10000).setHidden(false);
+            .setDefaultEnableChance(10000).setHidden(true);
 
     // ==================== 运行时数据存储 ====================
 
