@@ -350,6 +350,9 @@ public class GameConstants {
             return parsed != null ? parsed : GENERIC;
         }
         public static ResourceLocation PIRATE_FLINTLOCK = SRE.id("pirate_flintlock_shot");
+        // 幻魔者地刺
+        public static ResourceLocation HUANMOZHE_SPIKE = Noellesroles.id("huanmozhe_spike");
+
         // 黑警未能击杀所有玩家
         public static ResourceLocation BLACKOUT_TIMEOUT = SRE.id("blackout_timeout");
         // 鬼魅幻影被摧毁
