@@ -35,7 +35,7 @@ import java.util.UUID;
  * - 获取尸体生前40%的金钱
  * - CD 30秒
  * - 不可拾取：保安盾、画板
- * - 拾取德林加和双截棍自动转化为左轮手枪
+ * - 拾取德林加、双截棍、处刑者手枪自动转化为左轮手枪
  */
 public class GhoulRole extends NormalRole {
 
@@ -162,8 +162,8 @@ public class GhoulRole extends NormalRole {
                         }
                         ghoulTookItem(player);
 
-                        // 德林加和双截棍自动转化为左轮手枪
-                        if (stack.is(TMMItems.DERRINGER) || stack.is(TMMItems.NUNCHUCK)) {
+                        // 德林加、双截棍、处刑者手枪自动转化为左轮手枪
+                        if (stack.is(TMMItems.DERRINGER) || stack.is(TMMItems.NUNCHUCK) || stack.is(ModItems.EXECUTIONER_GUN)) {
                             MCItemsUtils.insertStackInFreeSlot(player, TMMItems.REVOLVER.getDefaultInstance());
                         } else {
                             MCItemsUtils.insertStackInFreeSlot(player, stack.copy());
