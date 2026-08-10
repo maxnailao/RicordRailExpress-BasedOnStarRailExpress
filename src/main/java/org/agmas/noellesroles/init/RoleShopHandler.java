@@ -1708,8 +1708,8 @@ public class RoleShopHandler {
                     ShopEntry.Type.WEAPON));
             SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), SREConfig.instance().grenadePrice,
                     ShopEntry.Type.WEAPON));
-            SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 130, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 30, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
             // 关灯 - 使用配置价格
             SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
                     ShopEntry.Type.TOOL) {
