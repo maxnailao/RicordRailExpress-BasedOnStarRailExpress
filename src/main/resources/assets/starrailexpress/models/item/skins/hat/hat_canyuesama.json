@@ -1,0 +1,8 @@
+﻿{
+	"credit": "玩偶帽批量生成：建模复用 canyuesama_plush，贴图指向皮肤目录",
+	"parent": "noellesroles:block/canyuesama_plush",
+	"textures": {
+		"0": "starrailexpress:item/skins/hat/hat_canyuesama",
+		"particle": "starrailexpress:item/skins/hat/hat_canyuesama"
+	}
+}

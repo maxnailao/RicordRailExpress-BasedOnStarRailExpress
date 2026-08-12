@@ -3,8 +3,10 @@ package org.agmas.noellesroles.cs2;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.init.SREFumoBlocks;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * CS2 皮肤中文名称和介绍信息
@@ -98,9 +100,75 @@ public final class CS2SkinInfo {
         register("grenade/grenade_zuzhouzhiyan", "诅咒之眼", "被诅咒的邪眼，注视着它的爆炸");
 
         // ═══════════════════════════════════════════════════════════════════
-        // HAT（帽子）
+        // HAT（帽子）— 瑞科德列车玩偶帽系列
         // ═══════════════════════════════════════════════════════════════════
         register("hat/hat_jiale114514", "JiaLe114514 玩偶帽", "把 JiaLe114514 玩偶戴在头上，全场最靓的崽");
+        // 特殊玩偶帽
+        registerHat("justacheese", "cheese");
+        registerHat("spbgcp", "spbgcp");
+        registerHat("huaji", "huaji");
+        registerHat("qingmei", "qingmei");
+        registerHat("jiale2", "jiale2");
+        registerHat("egg", "蛋黄派");
+        registerHat("tangye", "tangye");
+        registerHat("xgd", "xgd");
+        registerHat("ychennoc", "ychennoc");
+        registerHat("mongoose", "mongoose");
+        registerHat("xiaoxian", "xiaoxian");
+        registerHat("lifeline", "lifeline");
+        registerHat("rlingkong", "Rlingkong");
+        registerHat("x1aoba", "X1aoBa");
+        registerHat("caizi", "caizi");
+        registerHat("akasping", "AKASPING");
+        registerHat("chaorenqiang", "chaorenqiang");
+        registerHat("slhcat", "SLHCAT");
+        registerHat("cryingsnow", "cryingsnow");
+        registerHat("cutefish", "cutefish");
+        registerHat("xitomaotslx", "xItomaotslx");
+        registerHat("san_hua_awa", "三花awa");
+        registerHat("box", "box");
+        registerHat("white_koshi", "white koshi");
+        registerHat("qivvu_520", "Qivvu_520");
+        registerHat("shilu", "shilu");
+        registerHat("fetal_error", "fetal error");
+        registerHat("hengzai", "hengzai");
+        // 普通玩偶帽
+        registerHat("milk_dragon", "奶龙");
+        registerHat("baka", "蓝色冰妖精大笨蛋");
+        registerHat("furandoru", "淘气鬼");
+        registerHat("remilia", "威严满满的大小姐");
+        registerHat("mystia", "小脆骨");
+        registerHat("marisa", "借书总不还的魔法使");
+        registerHat("reimu", "爱钱的巫女");
+        registerHat("kaoruko", "小混沌");
+        registerHat("bamboo", "像乌龟的WIFI竹子");
+        registerHat("backvoice", "遗溯");
+        registerHat("biantwin", "希儿");
+        registerHat("canyuesama", "残月");
+        registerHat("dio", "迪奥");
+        registerHat("fushimi_koniro", "伏见绀");
+        registerHat("guanzheqwq", "观者");
+        registerHat("haiman233", "海曼");
+        registerHat("lengxiaocn", "冷笑");
+        registerHat("licraftlq", "璃清");
+        registerHat("luoyeruoshui", "落叶若水");
+        registerHat("mifan520", "米饭");
+        registerHat("none", "黑白");
+        registerHat("otith", "Otith");
+        registerHat("thef0rs4ken", "黑白熊");
+        registerHat("tomato", "久住");
+        registerHat("xiao_hei_hand", "小黑手");
+        registerHat("xiaozhanqwq", "老张");
+        registerHat("allintokyo", "allinTOKYO");
+        registerHat("aqiong", "阿琼");
+        registerHat("haozi", "皓子");
+        registerHat("liangjie", "凉介");
+        registerHat("liyu", "liyu");
+    }
+
+    /** 批量注册玩偶帽皮肤的中文名与介绍（skinId 格式：hat/hat_{base}） */
+    private static void registerHat(String base, String displayName) {
+        register("hat/hat_" + base, displayName + " 玩偶帽", "把" + displayName + "玩偶戴在头上");
     }
 
     private static void register(String skinId, String name, String description) {
@@ -130,13 +198,21 @@ public final class CS2SkinInfo {
 
     /**
      * 获取皮肤在仓库/开箱界面中的图标物品。
-     * 帽子皮肤无对应武器物品，用复用的玩偶物品作为图标；返回 null 表示使用默认映射。
+     * 帽子皮肤无对应武器物品，按皮肤名反查对应玩偶方块物品作为图标；
+     * 返回 null 表示使用默认映射。
      */
     public static ItemStack getIconStack(String skinId) {
-        if ("hat/hat_jiale114514".equals(skinId)) {
-            return new ItemStack(SREFumoBlocks.JIALE114514_PLUSH.asItem());
+        if (skinId == null || !skinId.startsWith("hat/")) {
+            return null;
         }
-        return null;
+        String skinName = skinId.substring("hat/".length());
+        String base = skinName.startsWith("hat_") ? skinName.substring("hat_".length()) : skinName;
+        var block = BuiltInRegistries.BLOCK
+                .get(ResourceLocation.fromNamespaceAndPath("noellesroles", base + "_plush"));
+        if (block == null || block == Blocks.AIR) {
+            return null;
+        }
+        return new ItemStack(block.asItem());
     }
 
     /**

@@ -128,12 +128,70 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_zuzhouzhiyan", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
-        // HAT（帽子）皮肤
-        // 帽子皮肤没有实体物品载体，建模/贴图直接复用现有资源，
-        // 由 HatSkinRenderer 渲染在玩家头顶（见 client/render/entity/HatSkinRenderer）
+        // HAT（帽子）皮肤 — 瑞科德列车玩偶帽系列（全部为金色品质 LEGENDARY）
+        // 建模/贴图照搬玩偶方块（models/item/skins/hat/），
+        // 由 HatFeatureRenderer 渲染在玩家头顶
         // ═══════════════════════════════════════════════════════════════════
-        // JiaLe114514 玩偶帽：模型与贴图复用 JiaLe114514 玩偶方块
         registerSkin(SkinTypes.HAT, "hat_jiale114514", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_justacheese", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_spbgcp", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_huaji", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_qingmei", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_jiale2", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_egg", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_tangye", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_xgd", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_ychennoc", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_mongoose", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_xiaoxian", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_lifeline", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_rlingkong", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_x1aoba", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_caizi", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_akasping", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_chaorenqiang", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_slhcat", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_cryingsnow", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_cutefish", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_xitomaotslx", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_san_hua_awa", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_box", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_white_koshi", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_qivvu_520", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_shilu", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_fetal_error", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_hengzai", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_milk_dragon", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_baka", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_furandoru", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_remilia", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_mystia", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_marisa", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_reimu", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_bamboo", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_kaoruko", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_backvoice", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_biantwin", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_canyuesama", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_dio", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_fushimi_koniro", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_guanzheqwq", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_haiman233", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_lengxiaocn", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_licraftlq", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_luoyeruoshui", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_mifan520", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_none", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_otith", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_thef0rs4ken", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_tomato", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_xiao_hei_hand", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_xiaozhanqwq", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_allintokyo", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_aqiong", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_haozi", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_liangjie", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_liyu", QualityColor.LEGENDARY);
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }
