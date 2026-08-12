@@ -507,32 +507,6 @@ public class ModRoles {
             .setComponentKey(ModComponents.BETTER_KILLER_GHOST)
             .setCanSeeTime(true);
 
-    /**
-     *  黑警 - 中立阵营
-     * - 属于平民阵营 (isInnocent = true)
-     * - 不能使用杀手能力 (canUseKiller = false)
-     * - 真实心情系统
-     * - 标准冲刺时间
-     * - 在计分板上显示
-     * - 无技能
-     */
-    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
-                    CORRUPT_COP_ID,
-                    new Color(0, 0, 0).getRGB(),
-                    false, // isInnocent：不是平民
-                    false, // canUseKiller：不能使用杀手技能
-                    SRERole.MoodType.FAKE, // 假心情条
-                    Integer.MAX_VALUE, // 无限冲刺时间
-                    false // 是否隐藏计分板（按你需求改）
-            ))
-            .setNeutrals(true) // 中立阵营
-            .setCanSeeCoin(true)
-            .setCanSeeTime(true)
-            .setComponentKey(ModComponents.CORRUPT_COP)
-            .setDefaultMax(1)
-            .setDefaultEnableChance(4000)
-            .setDefaultEnableNeededPlayerCount(12)
-            .addBothRelatedModifier(TraitorAndModifiers.CORRUPTION);
 
 
     /**
@@ -1327,6 +1301,34 @@ public class ModRoles {
             .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(5000)
             .setDefaultEnableNeededPlayerCount(12)
             .setSpecialVigilante(true);
+
+    /**
+     *  黑警 - 中立阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 无技能
+     */
+    public static SRERole CORRUPT_COP = TMMRoles.registerRole(new NormalRole(
+                    CORRUPT_COP_ID,
+                    new Color(0, 0, 0).getRGB(),
+                    false, // isInnocent：不是平民
+                    false, // canUseKiller：不能使用杀手技能
+                    SRERole.MoodType.FAKE, // 假心情条
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    false // 是否隐藏计分板（按你需求改）
+            ))
+            .setNeutrals(true) // 中立阵营
+            .setCanSeeCoin(true)
+            .setCanSeeTime(true)
+            .setComponentKey(ModComponents.CORRUPT_COP)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(4000)
+            .setDefaultEnableNeededPlayerCount(12)
+            .addBothRelatedModifier(TraitorAndModifiers.CORRUPTION);
+
 
     /**
      * 西部牛仔（警长阵营）。

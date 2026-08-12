@@ -120,6 +120,15 @@ public class ArrowMixin {
                         GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
                     }
 
+                    // 食尸鬼毒箭 - 击杀玩家
+                    if (gameWorld.isRole(serverPlayer, ModRoles.GHOUL)) {
+                        isHit = true;
+                        GameUtils.killPlayer(player, true, serverPlayer, SRE.id("arrow"));
+                        arrow.discard();
+                        ci.cancel();
+                        return;
+                    }
+
                     // 猎魔人毒箭 - 击杀玩家
                     if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
                         isHit = true;

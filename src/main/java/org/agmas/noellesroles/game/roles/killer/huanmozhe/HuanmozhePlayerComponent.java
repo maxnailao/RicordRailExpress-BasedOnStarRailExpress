@@ -292,7 +292,7 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
                 double dist = target.distanceToSqr(spikeX, spikeY, spikeZ);
                 if (dist <= 4.0) { // 2.0格半径 (1.75 + 0.25)
                     // 击杀玩家
-                    GameUtils.killPlayer(target, true, caster, GameConstants.DeathReasons.GENERIC);
+                    GameUtils.killPlayer(target, true, caster, GameConstants.DeathReasons.HUANMOZHE_SPIKE);
                     spikeKillCount++;
                     if (spikeKillCount >= SPIKE_MAX_KILLS) break;
                 }

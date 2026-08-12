@@ -32,9 +32,10 @@ import java.util.UUID;
  * 技能同殡仪员，可以拾取尸体上的道具
  * - 最多拿取2个物品
  * - 对尸体使用技能后，尸体变为骨架，留下黑色粒子
- * - 获取尸体生前20%的金钱
- * - CD 60秒
- * - 不可拾取：双节棍、德林加手枪、保安盾、画板
+ * - 获取尸体生前40%的金钱
+ * - CD 30秒
+ * - 不可拾取：保安盾、画板
+ * - 拾取德林加、双截棍、处刑者手枪自动转化为左轮手枪
  */
 public class GhoulRole extends NormalRole {
 
@@ -95,13 +96,13 @@ public class GhoulRole extends NormalRole {
                     }
                 }
 
-                // 获取尸体生前20%的金钱
+                // 获取尸体生前40%的金钱
                 UUID deadPlayerUuid = corpseEntity.getPlayerUuid();
                 if (deadPlayerUuid != null && player instanceof ServerPlayer serverPlayer) {
                     ServerPlayer deadPlayer = serverPlayer.server.getPlayerList().getPlayer(deadPlayerUuid);
                     if (deadPlayer != null) {
                         int deadPlayerCoins = PlayerEconomyManager.getCoinNum(deadPlayer);
-                        int gainedCoins = (int) (deadPlayerCoins * 0.2);
+                        int gainedCoins = (int) (deadPlayerCoins * 0.4);
                         if (gainedCoins > 0) {
                             PlayerEconomyManager.addCoinNum(serverPlayer, gainedCoins);
                             serverPlayer.displayClientMessage(
@@ -161,6 +162,13 @@ public class GhoulRole extends NormalRole {
                         }
                         ghoulTookItem(player);
 
+                        // 德林加、双截棍、处刑者手枪自动转化为左轮手枪
+                        if (stack.is(TMMItems.DERRINGER) || stack.is(TMMItems.NUNCHUCK) || stack.is(ModItems.EXECUTIONER_GUN)) {
+                            MCItemsUtils.insertStackInFreeSlot(player, TMMItems.REVOLVER.getDefaultInstance());
+                        } else {
+                            MCItemsUtils.insertStackInFreeSlot(player, stack.copy());
+                        }
+
                         // 检查是否已经拿够了2个物品
                         if (!canGhoulTakeMore(player)) {
                             // 关闭菜单
@@ -168,7 +176,6 @@ public class GhoulRole extends NormalRole {
                                 serverPlayer.closeContainer();
                             }
                         }
-                        MCItemsUtils.insertStackInFreeSlot(player, stack.copy());
                         slot.set(ItemStack.EMPTY);
                         slots.set(slotId, slot);
                         return false;
@@ -188,19 +195,12 @@ public class GhoulRole extends NormalRole {
 
     /**
      * 检查物品是否是食尸鬼不可拿取的物品
-     * 不可拾取：双节棍、德林加手枪、保安盾、画板
+     * 不可拾取：保安盾、画板
+     * 德林加和双截棍可拾取但自动转化为左轮手枪
      */
     private boolean isBannedItem(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
-        }
-        // 双节棍
-        if (stack.is(TMMItems.NUNCHUCK)) {
-            return true;
-        }
-        // 德林加手枪
-        if (stack.is(TMMItems.DERRINGER)) {
-            return true;
         }
         // 保安盾（防暴盾牌）
         if (stack.is(ModItems.RIOT_SHIELD)) {

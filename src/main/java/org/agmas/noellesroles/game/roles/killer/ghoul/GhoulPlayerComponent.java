@@ -29,11 +29,12 @@ import java.util.UUID;
  * 技能：搜刮尸体
  * - 打开尸体的物品栏
  * - 最多拿取2个物品
- * - 无法拿取双节棍、德林加手枪、保安盾、画板
+ * - 无法拿取保安盾、画板
+ * - 德林加和双截棍自动转化为左轮手枪
  * - 拿取后物品放到物品栏
  * - 使用后尸体变为骨架，留下黑色粒子
- * - 获取尸体生前20%的金钱
- * - CD 60秒
+ * - 获取尸体生前40%的金钱
+ * - CD 30秒
  */
 public class GhoulPlayerComponent implements RoleComponent, ServerTickingComponent {
 
@@ -47,8 +48,8 @@ public class GhoulPlayerComponent implements RoleComponent, ServerTickingCompone
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghoul"),
             GhoulPlayerComponent.class);
 
-    /** 技能冷却时间（60秒 = 1200 tick） */
-    public static final int ABILITY_COOLDOWN = 60 * 20;
+    /** 技能冷却时间（30秒 = 600 tick） */
+    public static final int ABILITY_COOLDOWN = 30 * 20;
 
     private final Player player;
 
