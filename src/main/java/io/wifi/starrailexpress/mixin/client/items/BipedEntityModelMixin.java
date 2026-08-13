@@ -35,12 +35,16 @@ public class BipedEntityModelMixin<T extends LivingEntity> {
     private void tmm$holdRevolverRightArm(T entity, CallbackInfo ci) {
         if (isHoldingGun(entity) && entity.getMainArm() == HumanoidArm.RIGHT) {
             holdGun(this.rightArm, this.leftArm, this.head, true);
+        } else if (entity.getMainArm() != HumanoidArm.RIGHT && isGunLikeItem(entity.getOffhandItem())) {
+            holdGun(this.rightArm, this.leftArm, this.head, true);
         }
     }
 
     @Inject(method = "poseLeftArm", at = @At("TAIL"))
     private void tmm$tmm$holdRevolverLeftArm(T entity, CallbackInfo ci) {
         if (isHoldingGun(entity) && entity.getMainArm() != HumanoidArm.RIGHT) {
+            holdGun(this.rightArm, this.leftArm, this.head, false);
+        } else if (entity.getMainArm() == HumanoidArm.RIGHT && isGunLikeItem(entity.getOffhandItem())) {
             holdGun(this.rightArm, this.leftArm, this.head, false);
         }
     }
