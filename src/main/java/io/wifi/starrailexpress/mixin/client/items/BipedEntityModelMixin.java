@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.mixin.client.items;
 
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeRevolver;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.minecraft.client.Minecraft;
@@ -33,16 +34,31 @@ public class BipedEntityModelMixin<T extends LivingEntity> {
 
     @Inject(method = "poseRightArm", at = @At("TAIL"))
     private void tmm$holdRevolverRightArm(T entity, CallbackInfo ci) {
-        if (isHoldingGun(entity) && entity.getMainArm() == HumanoidArm.RIGHT) {
+        if ((isHoldingGun(entity) || isShootingFrenzy(entity)) && entity.getMainArm() == HumanoidArm.RIGHT) {
+            holdGun(this.rightArm, this.leftArm, this.head, true);
+        } else if (entity.getMainArm() != HumanoidArm.RIGHT
+                && (isGunLikeItem(entity.getOffhandItem()) || isShootingFrenzy(entity))) {
             holdGun(this.rightArm, this.leftArm, this.head, true);
         }
     }
 
     @Inject(method = "poseLeftArm", at = @At("TAIL"))
     private void tmm$tmm$holdRevolverLeftArm(T entity, CallbackInfo ci) {
-        if (isHoldingGun(entity) && entity.getMainArm() != HumanoidArm.RIGHT) {
+        if ((isHoldingGun(entity) || isShootingFrenzy(entity)) && entity.getMainArm() != HumanoidArm.RIGHT) {
+            holdGun(this.rightArm, this.leftArm, this.head, false);
+        } else if (entity.getMainArm() == HumanoidArm.RIGHT
+                && (isGunLikeItem(entity.getOffhandItem()) || isShootingFrenzy(entity))) {
             holdGun(this.rightArm, this.leftArm, this.head, false);
         }
+    }
+
+    @Unique
+    private boolean isShootingFrenzy(T entity) {
+        // 刺子手射击狂热：psycho type=1 期间双手渲染为左轮（见 InvisbleHandItem），姿势同步伸直
+        if (!(entity instanceof net.minecraft.world.entity.player.Player player))
+            return false;
+        var psycho = SREPlayerPsychoComponent.KEY.get(player);
+        return psycho.psychoTicks > 0 && psycho.type == 1;
     }
 
     @Unique

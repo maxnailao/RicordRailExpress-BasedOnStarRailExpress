@@ -88,6 +88,7 @@
     "LivingEntityAccessor",
     "client.general.AmonHideTargetMixin",
     "client.HandCuffsKeyBindingMixin",
+    "client.HandCuffsPoseMixin",
     "client.InstinctMixin",
     "client.LamBugFix",
     "client.game.ChairWheelKeyMappingMixin",
