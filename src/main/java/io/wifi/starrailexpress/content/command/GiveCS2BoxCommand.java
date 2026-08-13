@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * /giveCS2box &lt;player&gt; box|key|skin|music &lt;id&gt;
  * <p>
  * 给予玩家 CS2 仓库系统中的箱子、钥匙、皮肤或音乐盒。
+ * 特殊分支: /giveCS2box &lt;player&gt; skin all 发放除帽子分类外的所有皮肤。
  * 仅 OP（权限等级≥2）可用。
  * </p>
  * <p>回退策略：整个文件删除即可。</p>
@@ -48,10 +49,11 @@ public final class GiveCS2BoxCommand {
                 return SharedSuggestionProvider.suggest(keyIds, builder);
             };
 
-    /** 皮肤 ID 自动补全（格式: itemType/skinName） */
+    /** 皮肤 ID 自动补全（格式: itemType/skinName，另支持 all 发放全部） */
     private static final SuggestionProvider<CommandSourceStack> SKIN_ID_SUGGESTIONS =
             (context, builder) -> {
                 var skinIds = new java.util.ArrayList<String>();
+                skinIds.add("all");
                 for (var entry : ItemSkinManager.getSkins().entrySet()) {
                     String itemType = entry.getKey();
                     for (String skinName : entry.getValue().keySet()) {
@@ -94,6 +96,10 @@ public final class GiveCS2BoxCommand {
     
                         // skin 子命令（greedyString 支持 knife/skinName 格式，无需引号）
                         .then(Commands.literal("skin")
+                                // skin all 分支：发放除帽子分类外的所有皮肤
+                                .then(Commands.literal("all")
+                                        .executes(ctx -> executeAllSkins(ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "player"))))
                                 .then(Commands.argument("skinId", StringArgumentType.greedyString())
                                         .suggests(SKIN_ID_SUGGESTIONS)
                                         .executes(ctx -> execute(ctx.getSource(),
@@ -169,6 +175,61 @@ public final class GiveCS2BoxCommand {
         final String typeLabelFinal = typeLabel;
         source.sendSuccess(() -> Component.literal("§a[CS2] 已将 " + typeLabelFinal + " [" + id + "] 赠予 "
                 + targets.size() + " 名玩家"), true);
+        return targets.size();
+    }
+
+    /**
+     * skin all 分支：发放除帽子分类外的所有皮肤
+     * <p>
+     * 排除规则：
+     * 1. 帽子分类（hat）整体排除
+     * 2. default 默认皮肤排除
+     * 3. 双形态特别皮肤的内部形态变体排除（如 revolver_shengxuan_1、knife_anxing_2，
+     *    其基础皮肤已存在时变体仅供渲染使用，不可单独装备）
+     * </p>
+     */
+    private static int executeAllSkins(CommandSourceStack source, Collection<ServerPlayer> targets) {
+        // 收集所有可发放皮肤 [itemType, skinName]
+        var allSkins = new java.util.ArrayList<String[]>();
+        for (var entry : ItemSkinManager.getSkins().entrySet()) {
+            String itemType = entry.getKey();
+            if (ItemSkinManager.SkinTypes.HAT.equals(itemType)) {
+                continue; // 排除帽子分类
+            }
+            for (String skinName : entry.getValue().keySet()) {
+                if ("default".equals(skinName)) {
+                    continue;
+                }
+                // 跳过双形态特别皮肤的形态变体（基础皮肤已注册时）
+                if ((skinName.endsWith("_1") || skinName.endsWith("_2"))
+                        && entry.getValue().containsKey(skinName.substring(0, skinName.length() - 2))) {
+                    continue;
+                }
+                allSkins.add(new String[]{itemType, skinName});
+            }
+        }
+        if (allSkins.isEmpty()) {
+            source.sendFailure(Component.literal("§c未找到可发放的皮肤"));
+            return 0;
+        }
+
+        int total = allSkins.size();
+        for (ServerPlayer target : targets) {
+            CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(target);
+            // 批量添加到仓库（组件内部仅同步一次）
+            inv.addSkins(allSkins.stream().map(p -> p[0] + "/" + p[1]).toList());
+            // 双系统解锁：PlayerEconomyManager + CCA 组件，避免皮肤界面装备校验被拒
+            for (String[] pair : allSkins) {
+                ItemSkinManager.unlockSkinForItemType(target, pair[0], pair[1]);
+            }
+            io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.get(target).syncSkinsToClient();
+            target.displayClientMessage(
+                    Component.literal("§6[CS2] §a你获得了全部皮肤（共 §e" + total + "§a 款，不含帽子分类）")
+                            .withStyle(ChatFormatting.GOLD), true);
+        }
+
+        source.sendSuccess(() -> Component.literal("§a[CS2] 已将全部皮肤（共 " + total
+                + " 款，不含帽子分类）赠予 " + targets.size() + " 名玩家"), true);
         return targets.size();
     }
 }

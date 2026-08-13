@@ -96,6 +96,10 @@ public interface SREFumoBlocks {
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
     Block ALLINTOKYO_PLUSH = registerBlock("allintokyo_plush",
             new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block YANXIAO1145141_PLUSH = registerBlock("yanxiao1145141_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
+    Block FISCHEREN_PLUSH = registerBlock("fischeren_plush",
+            new SREPlushBlock(Properties.ofFullCopy(Blocks.LIGHT_BLUE_WOOL).noOcclusion()));
 
     // === 特殊Fumo玩偶===
     Block JUSTACHEESE_PLUSH = registerSpecialBlock("justacheese_plush",
@@ -168,7 +172,7 @@ public interface SREFumoBlocks {
                     DIO_PLUSH, FUSHIMI_KONIRO_PLUSH, GUANZHEQWQ_PLUSH, HAIMAN233_PLUSH,
                     LENGXIAOCN_PLUSH, LICRAFTLQ_PLUSH, LUOYERUOSHUI_PLUSH, MIFAN520_PLUSH,
                     NONE_PLUSH, OTITH_PLUSH, THEF0RS4KEN_PLUSH, TOMATO_PLUSH,
-                    XIAO_HEI_HAND_PLUSH, XIAOZHANQWQ_PLUSH, ALLINTOKYO_PLUSH, MILK_DRAGON_PLUSH,
+                    XIAO_HEI_HAND_PLUSH, XIAOZHANQWQ_PLUSH, ALLINTOKYO_PLUSH, YANXIAO1145141_PLUSH, FISCHEREN_PLUSH, MILK_DRAGON_PLUSH,
                     JUSTACHEESE_PLUSH, SPBGCP_PLUSH, HUAJI_PLUSH, QINGMEI_PLUSH, JIALE2_PLUSH,
                     EGG_PLUSH, TANGYE_PLUSH, XGD_PLUSH, YCHENNOC_PLUSH, MONGOOSE_PLUSH, XIAOXIAN_PLUSH, LIFELINE_PLUSH,
                     RLINGKONG_PLUSH, X1AOBA_PLUSH, CAIZI_PLUSH, JIALE114514_PLUSH, AKASPING_PLUSH, CHAORENQIANG_PLUSH,

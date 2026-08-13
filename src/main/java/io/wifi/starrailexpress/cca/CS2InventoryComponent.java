@@ -121,6 +121,20 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         sync();
     }
 
+    /**
+     * 批量添加皮肤（各 1 个，仅同步一次，用于指令批量发放等场景）
+     */
+    public void addSkins(java.util.Collection<String> skinIds) {
+        boolean changed = false;
+        for (String skinId : skinIds) {
+            skins.merge(skinId, 1, Integer::sum);
+            changed = true;
+        }
+        if (changed) {
+            sync();
+        }
+    }
+
     public boolean removeSkin(String skinId, int count) {
         int current = skins.getOrDefault(skinId, 0);
         if (current < count) return false;
