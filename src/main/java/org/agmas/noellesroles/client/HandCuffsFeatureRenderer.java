@@ -104,10 +104,6 @@ public class HandCuffsFeatureRenderer extends RenderLayer<AbstractClientPlayer, 
         ItemRenderer ir = Minecraft.getInstance().getItemRenderer();
         ir.renderStatic(this.handcuffStack, ItemDisplayContext.FIXED, light,
                 OverlayTexture.NO_OVERLAY, poseStack, buffer, player.level(), 0);
-        // 物品模型单面贴图，翻转180°再渲染一遍保证双面可见
-        poseStack.mulPose(Axis.YP.rotationDegrees(180F));
-        ir.renderStatic(this.handcuffStack, ItemDisplayContext.FIXED, light,
-                OverlayTexture.NO_OVERLAY, poseStack, buffer, player.level(), 0);
         poseStack.popPose();
     }
 
