@@ -126,6 +126,9 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.GRENADE, "grenade_fennujiweiniao", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.GRENADE, "grenade_heidong", QualityColor.EPIC);
         registerSkin(SkinTypes.GRENADE, "grenade_zuzhouzhiyan", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_zhuzhu", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_yanxiao114514", QualityColor.EPIC);
+        registerSkin(SkinTypes.GRENADE, "grenade_hongwen", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // HAT（帽子）皮肤 — 瑞科德列车玩偶帽系列（全部为金色品质 LEGENDARY）

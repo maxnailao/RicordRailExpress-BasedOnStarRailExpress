@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -62,6 +63,10 @@ public class KillmanPlayerComponent implements RoleComponent {
     private static final int DROP_PICKUP_DELAY = 40;
 
     static {
+        // 开枪触雷：被标记的玩家开枪后清除左轮并以"手枪炸膛"击杀
+        // （注册在组件 static 块，类被 ModComponents 引用时即加载生效，不依赖外部注册入口）
+        OnRevolverUsed.EVENT.register((shooter, target) -> handleTrapShot(shooter));
+
         // 游戏结束时重置：清除场上残留的诱杀左轮掉落物并清空标记记录；
         // 额外扫除所有玩家背包中残留的诱杀左轮（兼容被标记者离线等边缘情况，确保每局彻底重置）
         OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
