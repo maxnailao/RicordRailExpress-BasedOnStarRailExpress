@@ -52,6 +52,9 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
     
     /** 技能冷却总时间（120秒 = 2400 tick） */
     public static final int COOLDOWN_TIME = 120 * 20;
+
+    /** 退出幽影模式后的按键禁用时间（3秒 = 60 tick） */
+    public static final int EXIT_KEY_BAN_TICKS = 3 * 20;
     
     /** 最大距离（格） */
     public static final double MAX_DISTANCE = 20.0;
@@ -446,6 +449,9 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         this.phantomUuid = null;
         this.teleportCount = 3;
 
+        // 退出技能状态后3秒按键禁用
+        applyExitKeyBan();
+
         sync();
     }
 
@@ -519,6 +525,9 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         this.phantomUuid = null;
         this.teleportCount = 2; // 修改为2次
 
+        // 退出技能状态后3秒按键禁用
+        applyExitKeyBan();
+
         // 发送消息
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.displayClientMessage(
@@ -529,6 +538,15 @@ public class BetterKillerGhostComponent implements RoleComponent, ServerTickingC
         }
 
         sync();
+    }
+
+    /**
+     * 退出幽影模式后施加3秒按键禁用效果
+     */
+    private void applyExitKeyBan() {
+        if (player instanceof ServerPlayer) {
+            player.addEffect(new MobEffectInstance(ModEffects.USED_BANED, EXIT_KEY_BAN_TICKS, 0, false, false, true));
+        }
     }
 
     /**

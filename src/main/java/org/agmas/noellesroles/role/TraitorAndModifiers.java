@@ -142,11 +142,11 @@ public class TraitorAndModifiers {
             null, null, false, false))
             .setDefaultEnableChance(500);
 
-    // 起义军 - 被同阵营误杀时变为叛徒
+    // 起义军 - 被同阵营误杀时变为叛徒（不刷新在巫毒师身上）
     public static SREModifier REBEL = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("rebel"),
             new Color(0, 100, 0).getRGB(), // 暗绿色
-            null, null, false, true))
+            new HashSet<>(Arrays.asList(ModRoles.VOODOO)), null, false, true))
             .setDefaultEnableChance(2500).setHidden(true);
 
     // 晕血症 - 看到死亡获得缓慢和反胃

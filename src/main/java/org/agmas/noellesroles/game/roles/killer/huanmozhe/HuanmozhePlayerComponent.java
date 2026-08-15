@@ -34,7 +34,7 @@ import java.util.UUID;
  * 幻魔者玩家组件
  *
  * 技能1 - 地刺：向前8格召唤地刺，击杀路径上的玩家，最多击杀2名，施法前摇2s
- * 技能2 - 恼鬼召唤：选择一个玩家，在其周围释放3个恼鬼，恼鬼存在15s，半径5格内玩家每秒掉2点理智+缓慢I
+ * 技能2 - 恼鬼召唤：选择一个玩家，在其周围释放3个恼鬼，恼鬼存在15s，半径5格内玩家每秒掉5点理智+缓慢II
  * 被动 - 不死图腾：死亡15秒后复活，复活无声音，复活后10秒无敌，一局一次
  * 技能存储：商店购买，80金币一次，最多3次，初始不给予
  */
@@ -406,11 +406,11 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
             }
 
             if (inRange) {
-                // 每秒掉2点理智（1点=0.01 mood）
+                // 每秒掉5点理智（1点=0.01 mood）
                 SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(target);
-                mood.addMood(-0.02f);
-                // 缓慢I效果（等级0 = 缓慢I），持续2秒（40tick），每秒刷新
-                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, false, true));
+                mood.addMood(-0.05f);
+                // 缓慢II效果（等级1 = 缓慢II），持续2秒（40tick），每秒刷新
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 1, false, false, true));
             }
         }
     }
