@@ -115,7 +115,7 @@ public final class BackpackManager {
 
     /**
      * 把通行证的 {@code factionCards} 计数搬入背包并清零通行证侧。须在背包与通行证两侧 DB 记录都加载完成后调用，
-     * 在 {@link ProgressionDataManager#reloadFromDatabase} 与本类 {@link #reloadFromDatabase} 完成时各触发一次。
+     * 在 {@code ProgressionDataManager#reloadFromDatabase} 与本类 {@link #reloadFromDatabase} 完成时各触发一次。
      * 严格顺序：先落背包并置 migrated，再清/落通行证 —— 任一步失败都不会丢卡或重复计数。
      */
     public static void migrateIfNeeded(ServerPlayer player) {
@@ -173,12 +173,18 @@ public final class BackpackManager {
     private static void onJoin(ServerPlayer player) {
         Entry entry = getEntry(player.getUUID());
         entry.online = true;
-        send(player, entry);
         if (!isDatabaseEnabled()) {
+            // 未启用 MySQL：从本地 NBT 持久化组件加载（同 CS 仓库，随玩家存档保存，重进不丢）
+            entry.state = BackpackState.createDefault();
+            entry.state.copyFrom(BackpackPersistenceComponent.KEY.get(player).getState());
+            entry.updatedAt = Math.max(entry.updatedAt, entry.state.version);
             entry.loaded = true;
+            entry.dirty = false;
+            send(player, entry);
             migrateIfNeeded(player);
             return;
         }
+        send(player, entry);
         reloadFromDatabase(player, entry);
     }
 
@@ -209,6 +215,8 @@ public final class BackpackManager {
                             entry.dirty = false;
                         }
                         entry.loaded = true;
+                        // 本地 NBT 镜像备份：数据库故障时可作兜底
+                        BackpackPersistenceComponent.KEY.get(player).setState(entry.state);
                         send(player, entry);
                         migrateIfNeeded(player);
                     });
@@ -275,6 +283,8 @@ public final class BackpackManager {
         entry.updatedAt = Math.max(System.currentTimeMillis(), entry.updatedAt + 1L);
         entry.state.version = entry.updatedAt;
         entry.dirty = true;
+        // 同步写入本地 NBT 组件（同 CS 仓库持久化方式），未启用 MySQL 时即为主存储
+        BackpackPersistenceComponent.KEY.get(player).setState(entry.state);
         send(player, entry);
     }
 
