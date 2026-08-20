@@ -723,9 +723,10 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         // 移除物品
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 
-        // 给予50金币
+        // 给予金币（导盲杖100，其他50）
+        int sellPrice = org.agmas.noellesroles.compat.BlindnessCompat.isGuidanceCane(heldItem) ? 100 : 50;
         SREPlayerShopComponent thiefShop = SREPlayerShopComponent.KEY.get(player);
-        thiefShop.balance += 50;
+        thiefShop.balance += sellPrice;
         thiefShop.sync();
 
         // 获取物品名称
@@ -733,7 +734,7 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
 
         // 通知小偷
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.thief.item_sold", itemName, 50)
+                Component.translatable("message.noellesroles.thief.item_sold", itemName, sellPrice)
                         .withStyle(ChatFormatting.GREEN),
                 true);
 
@@ -747,6 +748,10 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
     private boolean canSellItem(ItemStack stack, SREGameWorldComponent gameWorldComponent) {
         if (stack.isEmpty())
             return false;
+
+        // 导盲杖（失明症模组）
+        if (org.agmas.noellesroles.compat.BlindnessCompat.isGuidanceCane(stack))
+            return true;
 
         // 禁止偷取/出售的物品
         // 金锭（小偷的荣誉）

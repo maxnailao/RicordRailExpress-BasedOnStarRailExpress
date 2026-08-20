@@ -5,57 +5,71 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 /**
- * “失明症”模组（ikunkk02-afk/blindness）兼容桥接。
- * 所有对 blindness 类的实际引用都放在内部类 BlindnessCompatImpl 中，
- * 由外层先做 isLoaded() 判断——模组缺失时内部类不会被类加载，避免 NoClassDefFoundError。
+ * 失明症模组兼容桥：所有对 blindness 类的引用放在内部类中懒加载，
+ * 保证模组缺失时不会 NoClassDefFoundError。
+ * fork 版失明症默认对所有人关闭，仅由盲女角色分配时开启。
  */
 public final class BlindnessCompat {
-
-    public static final ResourceLocation GUIDANCE_CANE_ID = ResourceLocation.parse("blindness:guidance_cane");
-
-    private BlindnessCompat() {
-    }
+    private BlindnessCompat() {}
 
     public static boolean isLoaded() {
         return FabricLoader.getInstance().isModLoaded("blindness");
     }
 
-    /** 开关玩家的失明体验（模组会自动同步到该玩家客户端） */
     public static void setBlind(Player player, boolean blind) {
-        if (isLoaded()) {
-            BlindnessCompatImpl.setBlind(player, blind);
-        }
+        if (!isLoaded()) return;
+        Impl.setBlind(player, blind);
     }
 
-    /** 给予导盲杖（背包已有则不给） */
     public static void giveGuidanceCane(Player player) {
-        if (isLoaded()) {
-            BlindnessCompatImpl.giveGuidanceCane(player);
-        }
+        if (!isLoaded()) return;
+        Impl.giveGuidanceCane(player);
     }
 
-    private static final class BlindnessCompatImpl {
+    public static ItemStack guidanceCaneStack() {
+        if (!isLoaded()) return ItemStack.EMPTY;
+        return Impl.guidanceCaneStack();
+    }
+
+    public static boolean isGuidanceCane(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !isLoaded()) return false;
+        return Impl.isGuidanceCane(stack);
+    }
+
+    private static final class Impl {
+        private static final Item GUIDANCE_CANE = BuiltInRegistries.ITEM
+                .getOptional(ResourceLocation.fromNamespaceAndPath("blindness", "guidance_cane"))
+                .orElse(null);
+
+        static ItemStack guidanceCaneStack() {
+            return GUIDANCE_CANE == null ? ItemStack.EMPTY : new ItemStack(GUIDANCE_CANE);
+        }
+
+        static boolean isGuidanceCane(ItemStack stack) {
+            return GUIDANCE_CANE != null && stack.is(GUIDANCE_CANE);
+        }
 
         static void setBlind(Player player, boolean blind) {
             BlindnessComponents.PLAYER.get(player).setBlindnessEnabled(blind);
         }
 
         static void giveGuidanceCane(Player player) {
-            var cane = BuiltInRegistries.ITEM.get(GUIDANCE_CANE_ID);
-            if (cane == Items.AIR) {
-                return;
-            }
-            boolean has = player.getInventory().items.stream().anyMatch(stack -> stack.is(cane));
-            if (has) {
-                return;
-            }
-            if (!player.getInventory().add(new ItemStack(cane))) {
-                player.drop(new ItemStack(cane), false);
-            }
+            BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath("blindness", "guidance_cane"))
+                    .ifPresent(item -> {
+                        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                            if (player.getInventory().getItem(i).is(item)) {
+                                return;
+                            }
+                        }
+                        ItemStack stack = new ItemStack(item);
+                        if (!player.getInventory().add(stack)) {
+                            player.drop(stack, false);
+                        }
+                    });
         }
     }
 }

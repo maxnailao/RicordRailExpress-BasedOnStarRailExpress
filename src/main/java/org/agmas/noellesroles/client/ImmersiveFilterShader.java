@@ -26,7 +26,6 @@ public class ImmersiveFilterShader {
     private PostProcessor post;
     private float totalTime = 0.0f;
     private float repairStrength = 0.0f;
-    private float blindGray = 0.0f;
 
     public void initPostProcessor() {
         if (post != null) return;
@@ -55,7 +54,6 @@ public class ImmersiveFilterShader {
         }
         addPass(mc, "dreamcore", ModEffects.DREAMCORE_FILTER, 0.7f);
         addRepairEscapePass(mc);
-        addBlindGrayPass(mc);
     }
 
     private PostProcessor.PostPassEntry addPass(Minecraft mc, String passName, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder, float defaultStrength) {
@@ -128,35 +126,6 @@ public class ImmersiveFilterShader {
     private boolean isRepairEscapePlayer() {
         var role = SREClient.getCachedPlayerRole();
         return role instanceof RepairRole;
-    }
-
-    /**
-     * 盲人黑白视角：盲女存活且游戏进行中时，以 nostalgist_gray 着色器呈现灰度画面，
-     * 取代原来的黑暗效果；旁观/游戏结束后平滑淡出。
-     */
-    private void addBlindGrayPass(Minecraft mc) {
-        post.addSinglePassEntry("nostalgist_gray", pass -> process(mc.player, () -> {
-            boolean active = SREClient.gameComponent != null
-                    && SREClient.gameComponent.isRunning()
-                    && !mc.player.isSpectator()
-                    && !mc.player.isCreative()
-                    && SREClient.gameComponent.isRole(mc.player, ModRoles.NIYAJINGSHIBUSHIXIALE);
-            if (active) {
-                blindGray = Math.min(1.0f, blindGray + 0.05f);
-            } else {
-                blindGray = Math.max(0.0f, blindGray - 0.08f);
-            }
-            if (blindGray <= 0.01f) return false;
-
-            totalTime += 0.016f;
-            var effect = pass.getEffect();
-            if (effect == null) return false;
-            var strength = effect.safeGetUniform("Strength");
-            if (strength != null) strength.set(blindGray);
-            var timeTotal = effect.safeGetUniform("TimeTotal");
-            if (timeTotal != null) timeTotal.set(totalTime);
-            return true;
-        }));
     }
 
     private void bindAfterlifeTextures(Minecraft mc, PostPass pass) {
