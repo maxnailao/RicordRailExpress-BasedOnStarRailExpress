@@ -134,6 +134,29 @@ public class InstinctRenderer {
             }
             return -1;
         });
+        // 复仇者·复仇心切：技能生效期间凶手显示红色轮廓透视（不依赖本能开关）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.AVENGER))
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(self))
+                return -1;
+            var avenger = ModComponents.AVENGER.maybeGet(self).orElse(null);
+            if (avenger == null || !avenger.rushActive || avenger.killerUuid == null)
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (targetPlayer.getUUID().equals(avenger.killerUuid)
+                    && GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return new Color(255, 0, 0).getRGB(); // 凶手：红色发光
+            return -1;
+        });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null
                     || SREClient.gameComponent == null)

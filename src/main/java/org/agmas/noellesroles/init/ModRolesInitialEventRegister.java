@@ -725,6 +725,23 @@ public class ModRolesInitialEventRegister {
                     return comp.finalizePossession();
                 }).shifted(true).announceToSelf(false).build());
 
+        // 复仇者技能：复仇心切
+        // 复仇激活后按 G 键释放：15秒速度2+无限体力+一层护盾+凶手红色透视，
+        // 期间只能击杀凶手；凶手死亡则成功，超时未击杀则自身死亡
+        RoleSkill.register(ModRoles.AVENGER,
+                RoleSkill.skill(SRE.id("avenger_rush"), "skill.noellesroles.avenger.rush", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    var comp = org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent.KEY
+                            .get(player);
+                    if (comp == null)
+                        return false;
+                    if (!context.skillReady())
+                        return false;
+                    return comp.tryUseRush();
+                }).announceToSelf(false).build());
+
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
             ServerPlayer player = context.player();
