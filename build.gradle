@@ -30,6 +30,10 @@ fabricApi {
 repositories {
     maven { url 'https://maven.aliyun.com/repository/public/' }
     mavenCentral()
+    // owo-lib 官方仓库（失明症模组的前置）
+    maven { name = "WispForest"; url = "https://maven.wispforest.io/releases" }
+    // player-animator 仓库（失明症的动画依赖）
+    maven { name = "KosmX"; url = "https://maven.kosmx.dev" }
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -97,6 +101,14 @@ dependencies {
     // Wathe Items
     // modImplementation "maven.modrinth:ratatouille:1.4.3-1.21.1"
     modImplementation files("libs/ratatouille-1.4.3-1.21.1.jar")
+    // 失明症模组及其前置
+    modImplementation files("libs/blindness-1.1.0.jar")
+    modImplementation "io.wispforest:owo-lib:0.12.15.4+1.21"
+    modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:2.0.4+1.21.1"
+    modImplementation files("libs/veil-fabric-1.21.1-4.3.0.jar")
+    // 从 veil 嵌套 jar 中抽出（loom 重映射会丢嵌套 jar，开发环境必须单独挂）
+    modImplementation files("libs/molang-compiler-3.1.1.19.jar")
+    modImplementation files("libs/glsl-processor-0.2.3.jar")
     // 只剩下部分接口的wathe空壳子
     modImplementation files("libs/wathe-1.3.2.jar")
     // Other libs

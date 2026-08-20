@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.compat.BlindnessCompat;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -54,6 +55,9 @@ public class NiyajingshiPlayerComponent implements RoleComponent, ServerTickingC
      */
     @Override
     public void init() {
+        // 开启失明症模组的完整失明体验（近全黑画面+导盲杖探测+声纹感知），并发放导盲杖
+        BlindnessCompat.setBlind(player, true);
+        BlindnessCompat.giveGuidanceCane(player);
         sync();
     }
 
@@ -62,7 +66,9 @@ public class NiyajingshiPlayerComponent implements RoleComponent, ServerTickingC
      */
     @Override
     public void clear() {
-        init();
+        // 角色移除/游戏结束时关闭失明体验
+        BlindnessCompat.setBlind(player, false);
+        sync();
     }
 
     /**

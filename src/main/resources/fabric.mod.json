@@ -314,7 +314,8 @@
   },
   "recommends": {
     "sodium": "*",
-    "sodium-extra": "*"
+    "sodium-extra": "*",
+    "blindness": "*"
   },
   "conflicts": {
     "customskinloader": "*"

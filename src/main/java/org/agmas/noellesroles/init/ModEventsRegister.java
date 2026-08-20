@@ -2604,6 +2604,14 @@ public class ModEventsRegister {
             ModEventsRegister.handleDeathPenalty(player, true, true);
             sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
         });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            final var player = handler.getPlayer();
+            ModEventsRegister.handleDeathPenalty(player, true, true);
+            sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
+            // 失明症模组默认对所有人开启失明：加入时统一关闭，
+            // 只有盲女角色分配时（NiyajingshiPlayerComponent.init）才会重新开启
+            org.agmas.noellesroles.compat.BlindnessCompat.setBlind(player, false);
+        });
     }
 
     /**
