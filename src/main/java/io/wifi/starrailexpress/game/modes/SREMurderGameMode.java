@@ -719,9 +719,13 @@ public class SREMurderGameMode extends GameMode {
             // 如果只有亡命徒存活，且没有其他存活玩家，触发亡命徒获胜
             if (hasLooseEndAlive) {
                 // 检查是否有其他非亡命徒的存活玩家
+                // 注意：坠木(dream)和皮革嘎的(piggod)不计入亡命徒击杀目标，
+                // 亡命徒只需击杀除这两个角色外的其他人即可获胜
                 boolean hasOtherAlive = false;
                 for (ServerPlayer player : serverWorld.players()) {
                     if (!ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))
+                            && !gameWorldComponent.isRole(player, ModRoles.ZHUIMU)
+                            && !gameWorldComponent.isRole(player, ModRoles.PIGE)
                             && !GameUtils.isPlayerEliminated(player)) {
                         hasOtherAlive = true;
                         break;

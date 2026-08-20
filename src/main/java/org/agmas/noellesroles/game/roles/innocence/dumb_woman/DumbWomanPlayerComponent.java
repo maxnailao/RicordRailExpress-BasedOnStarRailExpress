@@ -127,6 +127,15 @@ public class DumbWomanPlayerComponent implements RoleComponent, ServerTickingCom
                 sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN,
                         SILENCE_DURATION_TICKS, 0, false, false, false));
             }
+
+            // 强制保持夜猫子修饰符：开局 assignModifiers 会清空全部修饰符再随机分配，
+            // init() 中加上的夜猫子会被清掉，这里每40 tick补回，确保哑女局内始终持有
+            if (!sp.isSpectator()) {
+                WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
+                if (!modifiers.isModifier(player.getUUID(), TraitorAndModifiers.NIGHT_OWL)) {
+                    modifiers.addModifier(player.getUUID(), TraitorAndModifiers.NIGHT_OWL);
+                }
+            }
         }
     }
 

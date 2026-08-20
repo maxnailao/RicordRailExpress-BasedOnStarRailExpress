@@ -569,6 +569,13 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "child"),
                   org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent.class);
 
+  // 顽童组件
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.wantong.WantongPlayerComponent> WANTONG = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "wantong"),
+                  org.agmas.noellesroles.game.roles.innocence.wantong.WantongPlayerComponent.class);
+
+
   // 情报官组件
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent> INTELLIGENCE =
           org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent.KEY;
@@ -1270,6 +1277,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CHILD)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.innocence.child.ChildPlayerComponent::new);
+
+    // 注册顽童组件
+    registry.beginRegistration(Player.class, WANTONG)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocence.wantong.WantongPlayerComponent::new);
 
     // 注册情报官组件 - 平民阵营，监视器+情报购买
     registry.beginRegistration(Player.class, INTELLIGENCE)

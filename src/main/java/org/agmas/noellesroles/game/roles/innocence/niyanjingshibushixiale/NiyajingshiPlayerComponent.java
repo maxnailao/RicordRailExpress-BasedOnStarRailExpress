@@ -17,7 +17,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 盲人组件
  *
  * 管理盲人的被动效果：
- * - 被动1：存活时持续获得黑暗效果（3秒），旁观时不给予并移除残留效果
+ * - 被动1：存活时持续获得黑暗效果（3秒），同时客户端叠加黑白视角（ImmersiveFilterShader 的 nostalgist_gray pass），旁观时均不生效
  * - 被动2：脚步声纹检测（在 AgentListenStepHandler 中处理，不需要蹲下）
  */
 public class NiyajingshiPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -69,6 +69,7 @@ public class NiyajingshiPlayerComponent implements RoleComponent, ServerTickingC
      * 服务端每 tick 执行
      * - 存活时：每 20 tick 给予 3 秒黑暗效果
      * - 旁观时：移除残留的黑暗效果
+     * 黑白视角为纯客户端着色器，无需服务端处理
      */
     @Override
     public void serverTick() {

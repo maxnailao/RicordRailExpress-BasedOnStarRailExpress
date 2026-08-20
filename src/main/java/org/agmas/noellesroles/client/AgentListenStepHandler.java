@@ -118,15 +118,9 @@ public class AgentListenStepHandler {
 
     /**
      * 获取当前玩家的声音检测范围（方块数）
-     * 盲人角色为 10 格，其他角色为 25 格
+     * 盲人角色已调整为 25 格，与其他角色一致
      */
     public static double getListenRange() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return 25d;
-        var gameComponent = SREClient.gameComponent;
-        if (gameComponent != null && gameComponent.isRole(mc.player, ModRoles.NIYAJINGSHIBUSHIXIALE)) {
-            return 10d;
-        }
         return 25d;
     }
 

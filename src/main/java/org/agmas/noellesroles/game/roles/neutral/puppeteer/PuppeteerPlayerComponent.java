@@ -69,6 +69,9 @@ public class PuppeteerPlayerComponent implements RoleComponent, ServerTickingCom
     /** 假人技能冷却时间（3分钟 = 3600 tick） */
     public static final int PUPPET_ABILITY_COOLDOWN = 60 * 20;
 
+    /** 收集尸体达到该数量后，可用傀儡次数 -1 */
+    public static final int PUPPET_REDUCE_BODY_THRESHOLD = 3;
+
     // ==================== 状态变量 ====================
 
     private final Player player;
@@ -246,14 +249,21 @@ public class PuppeteerPlayerComponent implements RoleComponent, ServerTickingCom
         return phase == 2 &&
                 abilityCooldown <= 0 &&
                 !isControllingPuppet &&
-                usedPuppetCount < collectedBodies;
+                usedPuppetCount < collectedBodies - getPuppetReduceCount();
+    }
+
+    /**
+     * 收集满3具尸体后扣减的可用傀儡数量
+     */
+    private int getPuppetReduceCount() {
+        return collectedBodies >= PUPPET_REDUCE_BODY_THRESHOLD ? 1 : 0;
     }
 
     /**
      * 获取剩余可用假人次数
      */
     public int getRemainingPuppetUses() {
-        return Math.max(0, collectedBodies - usedPuppetCount);
+        return Math.max(0, collectedBodies - usedPuppetCount - getPuppetReduceCount());
     }
 
     /**

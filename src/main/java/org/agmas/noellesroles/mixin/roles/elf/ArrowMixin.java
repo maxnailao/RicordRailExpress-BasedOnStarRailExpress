@@ -25,6 +25,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.cupid.CupidPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -103,6 +104,12 @@ public class ArrowMixin {
                 // 检查是否是盗猎者的箭矢(通过射击者角色判断)
                 if (arrow.getOwner() instanceof ServerPlayer serverPlayer) {
                     SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverPlayer.serverLevel());
+
+                    // 丘比特的再生箭 - 标记/绑定恋人（内部会判断角色与药水类型）
+                    if (CupidPlayerComponent.handleArrowHit((Arrow) arrow, serverPlayer, player)) {
+                        ci.cancel();
+                        return;
+                    }
 
                     // 检查是否是盗猎者
                     if (gameWorld.isRole(serverPlayer, ModRoles.POACHER)) {

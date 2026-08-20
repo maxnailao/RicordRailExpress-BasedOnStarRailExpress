@@ -27,14 +27,14 @@ public abstract class HandCuffsPoseMixin<T extends LivingEntity> {
     @Inject(method = "poseRightArm", at = @At("TAIL"))
     private void noellesroles$cuffedRightArm(T entity, CallbackInfo ci) {
         if (isHandCuffed(entity)) {
-            applyCuffedPose(this.rightArm, true);
+            applyCuffedPose(this.rightArm, true, isCuffedFromFront(entity));
         }
     }
 
     @Inject(method = "poseLeftArm", at = @At("TAIL"))
     private void noellesroles$cuffedLeftArm(T entity, CallbackInfo ci) {
         if (isHandCuffed(entity)) {
-            applyCuffedPose(this.leftArm, false);
+            applyCuffedPose(this.leftArm, false, isCuffedFromFront(entity));
         }
     }
 
@@ -44,10 +44,19 @@ public abstract class HandCuffsPoseMixin<T extends LivingEntity> {
     }
 
     @Unique
-    private static void applyCuffedPose(ModelPart arm, boolean isRight) {
+    private boolean isCuffedFromFront(T entity) {
+        return entity instanceof Player player && HandCuffsItem.isCuffedFromFront(player);
+    }
+
+    @Unique
+    private static void applyCuffedPose(ModelPart arm, boolean isRight, boolean front) {
         float sign = isRight ? 1.0F : -1.0F;
-        arm.xRot = (float) (Math.PI * 0.35);
-        arm.yRot = sign * 0.7F;
-        arm.zRot = sign * 0.2F;
+        // 前铐时镜像后铐姿势：
+        // xRot 取反使手臂从背后(-Z侧)摆到身前(模型正面为-Z，xRot正值朝背后)
+        // yRot/zRot 取反保持双手在身前向中间相交
+        float mirror = front ? -1.0F : 1.0F;
+        arm.xRot = (float) (Math.PI * 0.35) * mirror;
+        arm.yRot = sign * 0.7F * mirror;
+        arm.zRot = sign * 0.2F * mirror;
     }
 }
