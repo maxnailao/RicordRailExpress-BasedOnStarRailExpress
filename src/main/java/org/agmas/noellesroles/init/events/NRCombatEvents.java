@@ -188,6 +188,7 @@ public class NRCombatEvents {
         BatonHandler.register();
         BoneStaffHandler.register();
         RiotShieldHandler.register();
+        org.agmas.noellesroles.game.roles.innocence.avenger.AvengerRushCombatHandler.register();
         BenevolenceSwordHandler.register();
         CuckooEggHandler.register();
         GuardPlayerHandler.register();

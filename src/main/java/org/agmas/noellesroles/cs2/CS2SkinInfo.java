@@ -64,6 +64,7 @@ public final class CS2SkinInfo {
         register("revolver/revolver_shengxuan", "圣宣", "黑枪敬向逝者白枪指向生者");
         register("revolver/revolver_dujinzuolun", "镀金左轮", "枪身镀金的左轮手枪，彰显非凡身份");
         register("revolver/revolver_jisuqiang", "激素枪", "注射激素般令人亢奋的狂暴火力");
+        register("revolver/revolver_chuxingren", "处刑人", "处刑人的漆黑手枪，枪响即是宣判");
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）
@@ -81,6 +82,7 @@ public final class CS2SkinInfo {
         register("bat/bat_jita", "吉他", "用吉他奏响战斗的乐章");
         register("bat/bat_kanglongjian", "亢龙锏", "传说中的亢龙锏，威力无穷");
         register("bat/bat_pobanwangzheren", "破败王者之刃", "破败王者遗留的传说之刃，蕴含王者之力");
+        register("bat/bat_nitai", "拟态", "嗜血的拟态之刃，剑身上的邪眼正凝视着下一个猎物");
         register("bat/bat_sushuiren", "塑水刃", "以流水塑形的利刃，挥动时水光潋滟，唯有持刃者能听见它的潮声");
 
         // ═══════════════════════════════════════════════════════════════════

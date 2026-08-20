@@ -86,6 +86,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.REVOLVER, "revolver_shengxuan_2", QualityColor.UNBELIEVABLE); // 圣宣形态2
         registerSkin(SkinTypes.REVOLVER, "revolver_dujinzuolun", QualityColor.RARE);
         registerSkin(SkinTypes.REVOLVER, "revolver_jisuqiang", QualityColor.EPIC);
+        registerSkin(SkinTypes.REVOLVER, "revolver_chuxingren", QualityColor.LEGENDARY);
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）皮肤 — 仅保留有贴图+模型资源的皮肤
@@ -106,6 +107,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.BAT, "bat_jita", QualityColor.RARE);
         registerSkin(SkinTypes.BAT, "bat_kanglongjian", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.BAT, "bat_pobanwangzheren", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.BAT, "bat_nitai", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.BAT, "bat_sushuiren", QualityColor.UNBELIEVABLE); // 特别皮肤：专属击打音效
 
         // ═══════════════════════════════════════════════════════════════════
