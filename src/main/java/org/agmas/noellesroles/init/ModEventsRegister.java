@@ -1154,7 +1154,7 @@ public class ModEventsRegister {
         GamblerHandler.register();
         StalkerPlayerComponent.registerEvents();
         org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.registerEvents();
-        CupidPlayerComponent.registerEvents();
+        //CupidPlayerComponent.registerEvents();
         ChatHudRules.cantUseChatHud.add((p) -> {
             /**
              * 这只会发生在客户端

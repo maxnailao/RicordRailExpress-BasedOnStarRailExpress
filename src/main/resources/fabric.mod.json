@@ -284,7 +284,8 @@
       "noellesroles:youshazhe_killman",
       "noellesroles:cowboy",
       "noellesroles:conductor",
-      "noellesroles:huanshushi"
+      "noellesroles:huanshushi",
+      "noellesroles:wantong"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

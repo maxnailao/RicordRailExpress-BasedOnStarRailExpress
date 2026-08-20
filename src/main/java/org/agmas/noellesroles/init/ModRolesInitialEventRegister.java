@@ -497,6 +497,13 @@ public class ModRolesInitialEventRegister {
                 childComp.sync();
                 return;
             }
+            // 顽童角色初始化
+            if (role.identifier().equals(ModRoles.WANTONG_XIAOPIHAI.identifier())) {
+                var wantongComp = ModComponents.WANTONG.get(player);
+                wantongComp.init();
+                wantongComp.sync();
+                return;
+            }
             // 召回杀手角色初始化
             if (role.identifier().equals(ModRoles.RECALL_KILLER.identifier())) {
                 var comp = ModComponents.RECALL_KILLER.get(player);
