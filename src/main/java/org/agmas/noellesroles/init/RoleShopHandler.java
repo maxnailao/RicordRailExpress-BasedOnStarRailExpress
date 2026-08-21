@@ -38,6 +38,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.compat.BlindnessCompat;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.content.item.ToxinShopEntry;
@@ -1719,6 +1720,16 @@ public class RoleShopHandler {
                 }
             });
             ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
+        }
+
+        // 盲女商店：导盲杖 100金币
+        {
+            var NIYAJING_SHOP = new ArrayList<ShopEntry>();
+            ItemStack cane = BlindnessCompat.guidanceCaneStack();
+            if (!cane.isEmpty()) {
+                NIYAJING_SHOP.add(new ShopEntry(cane, 100, ShopEntry.Type.TOOL));
+            }
+            ShopContent.customEntries.put(ModRoles.NIYAJINGSHIBUSHIXIALE.getIdentifier(), NIYAJING_SHOP);
         }
 
         // 布袋鬼商店（诡舍·缚灵）
