@@ -25,6 +25,11 @@ public final class BlindnessCompat {
         Impl.setBlind(player, blind);
     }
 
+    public static boolean isBlind(Player player) {
+        if (!isLoaded()) return false;
+        return Impl.isBlind(player);
+    }
+
     public static void giveGuidanceCane(Player player) {
         if (!isLoaded()) return;
         Impl.giveGuidanceCane(player);
@@ -55,6 +60,10 @@ public final class BlindnessCompat {
 
         static void setBlind(Player player, boolean blind) {
             BlindnessComponents.PLAYER.get(player).setBlindnessEnabled(blind);
+        }
+
+        static boolean isBlind(Player player) {
+            return BlindnessComponents.PLAYER.get(player).blindnessEnabled();
         }
 
         static void giveGuidanceCane(Player player) {

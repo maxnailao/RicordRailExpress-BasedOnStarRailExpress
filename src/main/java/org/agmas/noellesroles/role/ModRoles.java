@@ -3060,7 +3060,8 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
             false   // 显示计分板
     )).setCanSeeCoin(true).setCanSeeTime(false)
-            .setComponentKey(ModComponents.DUMB_WOMAN);
+            .setComponentKey(ModComponents.DUMB_WOMAN)
+            .setCanIgnoreBlackout(true);
 
     // ==================== 智力障碍患者与监护人（绑定生成） ====================
 
@@ -3620,11 +3621,10 @@ public class ModRoles {
      * 盲人角色
      * - 属于平民阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
-     * - 真实心情系统
-     * - 有限冲刺时间
-     * - 不可见时间
-     * - 被动1：存活时持续获得黑暗效果（3秒），旁观时不给予
-     * - 被动2：可以看到自身半径10格的玩家脚步声纹（不需要蹲下）
+     * - 无心情系统
+     * - 2倍平民体力
+     * - 可以感知时间
+     * - 拥有失明症视野
      * - 登车标语：利用你的听声辩位技巧帮助平民
      */
     public static SRERole NIYAJINGSHIBUSHIXIALE = TMMRoles.registerRole(new NormalRole(
@@ -3632,11 +3632,12 @@ public class ModRoles {
                     new Color(80, 80, 80).getRGB(), // 深灰色
                     true,   // isInnocent = 平民阵营
                     false,  // canUseKiller = 无杀手能力
-                    SRERole.MoodType.REAL, // 真实心情
-                    TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+                    SRERole.MoodType.FAKE, // 假心情
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 2.0), // 2.0倍平民体力
                     false
             ).setComponentKey(NiyajingshiPlayerComponent.KEY))
-            .setCanSeeTime(false);
+            .setCanSeeTime(true)
+            .setCanIgnoreBlackout(true);
 
     /**
      * 探路者角色 - 平民阵营

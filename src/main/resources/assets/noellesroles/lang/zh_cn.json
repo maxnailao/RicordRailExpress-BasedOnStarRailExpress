@@ -2290,6 +2290,7 @@
   "message.noellesroles.leon.red_herb_received": "幸存之人：你获得了一株红色草药。",
   "message.noellesroles.leon.blue_herb_used": "蓝色草药——格斗体术已刷新！",
   "message.noellesroles.leon.shield_gained": "红色草药——你获得了一层护盾。",
+  "message.noellesroles.niyajingshi.shield_gained": "被保护者：你获得了一层护盾。",
   "message.noellesroles.leon.shield_exists": "你已经拥有护盾，无法叠加。",
   "message.noellesroles.leon.kick_hit": "你猛踹了一脚！",
   "message.noellesroles.leon.kick_miss": "面前没有可以踹的目标。",
