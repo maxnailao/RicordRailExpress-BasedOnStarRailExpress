@@ -453,6 +453,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         SaltedFishClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
+        // 失明症：揭示/声纹生命周期管理 + 声纹 HUD + 轮廓 HUD 投影绘制
+        org.agmas.noellesroles.client.blindness.BlindnessClientState.register();
+        org.agmas.noellesroles.client.blindness.SoundEchoHudRenderer.register();
+        org.agmas.noellesroles.client.blindness.ContactOutlineHudRenderer.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         // 坠木角色皮肤替换
         io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
@@ -484,11 +488,72 @@ public class NoellesrolesClient implements ClientModInitializer {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
         });
+        // 杀手透视：红色轮廓显示地雷
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(LandmineOutlineRenderer::render);
         InstinctRenderer.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
+
+        // 失明症：导盲杖探测揭示（照搬原模组的防御性校验：序列号/数量/距离/唯一中心块）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.ContactRevealS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var client = context.client();
+                        if (client.player == null || payload.sequence() < 0 || payload.entries().isEmpty()
+                                || payload.entries().size() > org.agmas.noellesroles.packet.ContactRevealS2CPacket.MAX_ENTRIES
+                                || net.minecraft.world.phys.Vec3.atCenterOf(payload.center())
+                                        .distanceToSqr(client.player.position()) > 36.0) {
+                            org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 基础校验失败 seq={} entries={}",
+                                    payload.sequence(), payload.entries().size());
+                            return;
+                        }
+                        int centers = 0;
+                        for (var entry : payload.entries()) {
+                            if (!entry.isValid()
+                                    || net.minecraft.world.phys.Vec3.atCenterOf(entry.resolve(payload.center()))
+                                            .distanceToSqr(client.player.position()) > 49.0) {
+                                org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 条目校验失败");
+                                return;
+                            }
+                            if (entry.center()) {
+                                centers++;
+                            }
+                        }
+                        if (centers == 1) {
+                            org.agmas.noellesroles.client.blindness.ContactRevealManager.accept(payload.center(),
+                                    payload.entries());
+                            org.agmas.noellesroles.Noellesroles.LOGGER.info("[失明症] 揭示已接收: seq={} entries={}",
+                                    payload.sequence(), payload.entries().size());
+                        } else {
+                            org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 中心块数量={}", centers);
+                        }
+                    });
+                });
+
+        // 失明症：生物声纹标记 + 弱轮廓揭示
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.SoundEchoS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var client = context.client();
+                        if (client.player == null || client.level == null
+                                || payload.entries().size() > org.agmas.noellesroles.packet.SoundEchoS2CPacket.MAX_ENTRIES
+                                || !Float.isFinite(payload.strength()) || payload.strength() < 0F
+                                || payload.strength() > 1F) {
+                            return;
+                        }
+                        org.agmas.noellesroles.client.blindness.SoundEchoHudRenderer.accept(payload.soundPos(),
+                                payload.category(), payload.strength(), payload.occluded());
+                        var source = switch (payload.category()) {
+                            case DANGER -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_DANGER;
+                            case AMBIENT -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_AMBIENT;
+                            case FOOTSTEP -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_FOOTSTEP;
+                        };
+                        org.agmas.noellesroles.client.blindness.ContactRevealManager.acceptSound(payload.blockCenter(),
+                                source, payload.strength(), payload.entries());
+                    });
+                });
 
         // 对话 NPC：收到 S2C 包后打开对话界面
         ClientPlayNetworking.registerGlobalReceiver(

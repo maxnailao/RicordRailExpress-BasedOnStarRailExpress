@@ -82,6 +82,13 @@ public interface ModBlocks {
             BlockEntityType.Builder.of(SupplyCrateBlockEntity::new,
                     ModBlocks.SUPPLY_CRATE_BLOCK));
 
+    // 反人员地雷（由地雷物品长按右键布设，不注册独立方块物品）
+    Block LANDMINE_BLOCK = Registry.register(BuiltInRegistries.BLOCK, Noellesroles.id("landmine"),
+            new LandmineBlock(BlockBehaviour.Properties.of().noCollission().noOcclusion().instabreak()
+                    .sound(SoundType.METAL)));
+    BlockEntityType<LandmineBlockEntity> LANDMINE_BLOCK_ENTITY = blockEntityRegistrar.create("landmine",
+            BlockEntityType.Builder.of(LandmineBlockEntity::new, LANDMINE_BLOCK));
+
     // 创建轮盘赌桌方块实体类型
     BlockEntityType<DevilRouletteTableEntity> DEVIL_ROULETTE_TABLE_ENTITY = blockEntityRegistrar.create(
             "devil_roulette_table",

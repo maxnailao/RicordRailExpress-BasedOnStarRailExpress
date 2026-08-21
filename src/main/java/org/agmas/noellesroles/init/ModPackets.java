@@ -238,6 +238,14 @@ public class ModPackets {
         // 注册赌徒 1% 奇迹特效包（客户端渲染）
         PayloadTypeRegistry.playS2C().register(GamblerMiracleS2CPacket.ID, GamblerMiracleS2CPacket.CODEC);
 
+        // 注册失明症：导盲杖探测揭示包与生物声纹标记包（客户端接收器见 NoellesrolesClient）
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.packet.ContactRevealS2CPacket.ID,
+                org.agmas.noellesroles.packet.ContactRevealS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.packet.SoundEchoS2CPacket.ID,
+                org.agmas.noellesroles.packet.SoundEchoS2CPacket.CODEC);
+
         // 注册愚者网络包
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.game.roles.innocence.fool.FoolPrayerC2SPacket.ID,
