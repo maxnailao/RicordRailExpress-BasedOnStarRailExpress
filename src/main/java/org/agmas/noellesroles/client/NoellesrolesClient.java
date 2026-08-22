@@ -88,6 +88,8 @@ import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.content.entity.CoffinEntityModel;
+import org.agmas.noellesroles.content.entity.CoffinEntityRenderer;
 import org.agmas.noellesroles.content.entity.CustomFishingHookEntity;
 import org.agmas.noellesroles.content.entity.DurabilityBoatRenderer;
 import org.agmas.noellesroles.content.entity.LockEntity;
@@ -394,6 +396,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 });
 
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        // 棺材实体渲染器（无碰撞装饰实体）
+        EntityRendererRegistry.register(ModEntities.COFFIN, CoffinEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
@@ -433,6 +437,8 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);
+        EntityModelLayerRegistry.registerModelLayer(CoffinEntityModel.LAYER_LOCATION,
+                CoffinEntityModel::createBodyLayer);
         AllowNameRender.EVENT.register((target) -> {
             SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                     .get(target.level());
@@ -451,6 +457,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientEmbalmerState.register();
         ClientSkincrawlerState.register();
         SaltedFishClientHandle.register();
+        KalabiqiumiaoClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
         // 失明症：揭示/声纹生命周期管理 + 声纹 HUD + 轮廓 HUD 投影绘制
@@ -483,6 +490,17 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return null;
         });
+        // 木乃伊角色皮肤替换：强制为木乃伊皮肤（同坠木模式，统一宽体模型）
+        io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return null;
+            if (SREClient.gameComponent.isRole(player, org.agmas.noellesroles.role.ModRoles.MUNAIYI_DESERT)) {
+                return io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult.playerSkin(
+                        org.agmas.noellesroles.Noellesroles.id("textures/entity/munaiyi.png"),
+                        net.minecraft.client.resources.PlayerSkin.Model.WIDE);
+            }
+            return null;
+        });
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
@@ -495,6 +513,19 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
+
+        // 木乃伊技能1：服务端通知打开背包，在背包中点头像选择诅咒目标（同操纵师选人交互）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.MunaiyiOpenInventoryS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var client = context.client();
+                        if (client.player != null) {
+                            client.setScreen(
+                                    new io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen(
+                                            client.player));
+                        }
+                    });
+                });
 
         // 失明症：导盲杖探测揭示（照搬原模组的防御性校验：序列号/数量/距离/唯一中心块）
         ClientPlayNetworking.registerGlobalReceiver(

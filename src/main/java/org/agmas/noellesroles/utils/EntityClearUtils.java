@@ -71,6 +71,7 @@ public class EntityClearUtils {
                         entity instanceof ItemEntity ||
                         entity instanceof PlayerBodyEntity ||
                         entity instanceof WheelchairEntity ||
+                        entity instanceof CoffinEntity ||
                         entity instanceof DurabilityBoatEntity ||
                         entity instanceof KuiXiPuppetEntity ||
                         entity instanceof NoteEntity ||

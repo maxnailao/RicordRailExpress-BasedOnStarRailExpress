@@ -107,6 +107,8 @@ public abstract class PlayerResetMixin {
         // 清除坠木与皮革嘎的组件状态（防止猪建模/隐身效果残留到下一局）
         org.agmas.noellesroles.game.roles.neutral.zhuimu.ZhuimuPlayerComponent.KEY.get(player).clear();
         org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.get(player).clear();
+        // 清除木乃伊组件状态（防止隐身效果/诅咒/棺材残留到下一局）
+        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY.get(player).clear();
         (PlayerVolumeComponent.KEY.get(player)).clear();
         (WayfarerPlayerComponent.KEY.get(player)).clear();
         (HoanMeirinPlayerComponent.KEY.get(player)).clear();

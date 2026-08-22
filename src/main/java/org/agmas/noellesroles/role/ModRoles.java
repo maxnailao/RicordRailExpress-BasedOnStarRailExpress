@@ -60,6 +60,8 @@ import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlay
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jingjiren_wow.JingjirenWowPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.kalabiqiumiao.KalabiqiumiaoPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.niyanjingshibushixiale.NiyajingshiPlayerComponent;
@@ -83,6 +85,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinRole;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
 import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
@@ -241,6 +244,12 @@ public class ModRoles {
     public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     public static final ResourceLocation SALTED_FISH_ID = Noellesroles.id("salted_fish");
+    // 纸片人角色 ID - 平民阵营
+    public static final ResourceLocation KALABIQIUMIAO_ID = Noellesroles.id("kalabiqiumiao");
+    // 躲藏专家角色 ID - 平民阵营
+    public static final ResourceLocation DUOMAOMAO_MEIMEIHIDE_ID = Noellesroles.id("duomaomao_meimeihide");
+    // 史莱姆角色 ID - 平民阵营
+    public static final ResourceLocation SHILAIMU_ID = Noellesroles.id("shilaimu");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
 
@@ -300,6 +309,8 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
+    // 扮演者角色 ID - 杀手阵营（未回忆阶段伪装为平民职业，回忆后转变为模仿者）
+    public static final ResourceLocation BANYANZHE_ID = Noellesroles.id("banyanzhe");
     public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
     public static final ResourceLocation WRAITH_ASSASSIN_ID = Noellesroles.id("wraith_assassin");
 
@@ -319,6 +330,8 @@ public class ModRoles {
     public static final ResourceLocation HUANSHUSHI_ID = Noellesroles.id("huanshushi");
     // 雪怪角色 ID
     public static final ResourceLocation SNOWGUAI_WOW_ID = Noellesroles.id("snowguai_wow");
+    // 木乃伊角色 ID - 独立中立阵营（沙漠地图限定）
+    public static final ResourceLocation MUNAIYI_DESERT_ID = Noellesroles.id("munaiyi_desert");
     // 病娇角色 ID - 独立中立阵营
     public static final ResourceLocation YANDERE_ID = Noellesroles.id("yandere");
         // 售衣员角色 ID - 平民阵营
@@ -331,6 +344,8 @@ public class ModRoles {
     public static final ResourceLocation NIYAJINGSHIBUSHIXIALE_ID = Noellesroles.id("niyanjingshibushixiale");
     // 探路者角色 ID - 平民阵营
     public static final ResourceLocation PATHFINDER_ID = Noellesroles.id("tanluzhe_letsgo");
+    // 侦搜者角色 ID - 平民阵营
+    public static final ResourceLocation ZHENSOUZHE_ID = Noellesroles.id("zhensouzhe_zhencha");
     // 经纪人角色 ID - 平民阵营
     public static final ResourceLocation JINGJIREN_WOW_ID = Noellesroles.id("jingjiren_wow");
     // 维修工角色 ID - 平民阵营
@@ -374,6 +389,7 @@ public class ModRoles {
     public static final ResourceLocation SKINCRAWLER_ID = Noellesroles.id("skincrawler");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
     public static final ResourceLocation RAVEN_ID = Noellesroles.id("raven");
+    public static final ResourceLocation DUAL_GUNNER_ID = Noellesroles.id("shuangqianghuigeichudaan_shuangqiangke");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation DOOMED_SINNER_ID = Noellesroles.id("doomed_sinner");
@@ -400,6 +416,8 @@ public class ModRoles {
     public static final ResourceLocation RESTING_POLICE_ID = Noellesroles.id("resting_police");
     // 哑女 (平民阵营)
     public static final ResourceLocation DUMB_WOMAN_ID = Noellesroles.id("dumb_woman");
+    // 幻灵 (平民阵营，附身机制)
+    public static final ResourceLocation HUANYING_ID = Noellesroles.id("wcwobeiguifushenle_huanling");
     // 智力障碍患者 (平民阵营，与监护人绑定生成)
     public static final ResourceLocation ZHIZHANG_ID = Noellesroles.id("zhizhang");
     // 监护人 (平民阵营，与智力障碍患者绑定生成)
@@ -418,6 +436,10 @@ public class ModRoles {
     public static final ResourceLocation JIAHAO_ID = Noellesroles.id("jiahao_wanglihao");
     // 乌鸦 (平民阵营)
     public static final ResourceLocation WUYAGE_NANBANJIUUBIEBAN_ID = Noellesroles.id("wuyage_nanbanjiuubieban");
+    // 铁傀儡 (平民阵营)
+    public static final ResourceLocation IMIRONMAN_TIEKUILEI_ID = Noellesroles.id("imironman_tiekuilei");
+    // 逃票者 (平民阵营)
+    public static final ResourceLocation TAOPIAOZHE_ID = Noellesroles.id("qingchushinidechepiao_taopiaozhe");
 
     /**
      *  情报官 - 平民阵营
@@ -893,6 +915,46 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true)
             .setComponentKey(SaltedFishPlayerComponent.KEY)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(5000);
+
+    /**
+     * 纸片人 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统、有限体力、显示计分板
+     * - 技能：弦化 —— 模型与判定箱变为纸片人（侧面宽度压扁），
+     *   可自由切换第一/第三人称视角，获得缓降与跳跃提升 II，
+     *   持续 30 秒，冷却 120 秒，技能结束后强制切回第一人称
+     * - 介绍：卡拉比丘喵
+     * - 登车标语：卡拉比丘死了喵
+     */
+    public static SRERole KALABIQIUMIAO = TMMRoles.registerRole(
+            new NormalRole(KALABIQIUMIAO_ID, new Color(255, 255, 255).getRGB(), // 白色
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true)
+            .setComponentKey(KalabiqiumiaoPlayerComponent.KEY)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(5000);
+
+    /**
+     * 躲藏专家 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统、普通体力、显示计分板
+     * - 技能：变身躲藏 —— 花费 200 金币变身为准星对准的方块，
+     *   玩家隐身、方块模型跟随玩家移动，持续 40 秒，冷却 175 秒，
+     *   可主动退出，变身期间无法使用任何道具
+     * - 介绍：躲藏专家
+     * - 登车标语：快藏好，不要被杀手找到你！
+     */
+    public static SRERole DUOMAOMAO_MEIMEIHIDE = TMMRoles.registerRole(
+            new NormalRole(DUOMAOMAO_MEIMEIHIDE_ID, new Color(107, 142, 35).getRGB(), // 橄榄绿（伪装色）
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true)
+            .setComponentKey(DuomaomaoMeimeiHidePlayerComponent.KEY)
             .setDefaultMax(1)
             .setDefaultEnableChance(5000);
 
@@ -2673,6 +2735,23 @@ public class ModRoles {
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setDefaultEnableNeededPlayerCount(10);
 
+    /**
+     * 双枪客 - 中立独立胜利角色（仅18人及以上对局刷新）
+     * - 刷新时必定获得黄油手修饰符，存活期间全程播报"空气中弥漫着左轮的火药味"
+     * - 剩余 总人数/2 人时获得双枪-右手并解锁透视；剩余 总人数/3 - 2 人时获得双枪-左手（自动装配副手）
+     * - 在场时游戏不会结束；胜利条件：独自存活（判定见 CustomWinnerClass）
+     */
+    public static SRERole DUAL_GUNNER = TMMRoles.registerRole(new NormalRole(
+            DUAL_GUNNER_ID,
+            new Color(200, 150, 50).getRGB(), // 黄铜弹壳色 - 火药与双枪的象征
+            false,
+            false,
+            SRERole.MoodType.FAKE, // 虚假心情
+            Integer.MAX_VALUE, // 无限体力
+            true)).setComponentKey(DualGunnerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(false)
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(18);
+
     public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
             REASONER_ID,
             new Color(212, 178, 92).getRGB(),
@@ -2904,6 +2983,48 @@ public class ModRoles {
     }).setComponentKey(ModComponents.IMITATOR).setCanSeeCoin(true);
 
     /**
+     * 扮演者角色 - 杀手阵营（一个不知道自己是杀手的杀手）
+     * - 开局随机扮演一个平民职业：退伍军人/拳击手（斗士）/巡警/搜救员/工人/监察员/乌鸦/运动员，
+     *   登车报幕、U 键职业介绍、商店均显示为扮演的职业（见 BanyanzhePlayerComponent 与报幕 Mixin）
+     * - 未回忆阶段：有限体力、真实理智、时间不可见、无透视、可捡枪，
+     *   像普通平民一样做任务（每个任务 +金币），小脑惩罚不会死亡（掉枪 + 扣san）
+     * - 未回忆时在杀手队友的本能透视中显示彩色边框（InstinctRenderer）
+     * - 回忆方式一：聊天栏发送“我想起来了”；回忆方式二：半径 5 格内仅存杀手阵营持续 10 秒（均可配置）
+     * - 回忆成功后转变为模仿者（RoleUtils.changeRole）
+     */
+    public static SRERole BANYANZHE = TMMRoles.registerRole(new NormalRole(
+            BANYANZHE_ID,
+            new Color(88, 41, 110).getRGB(), // 暗紫色 - 伪装与迷惘
+            false, // 杀手阵营（非乘客）
+            true, // canUseKiller = true，计入杀手人数与胜利条件
+            SRERole.MoodType.REAL, // 真实理智
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false // 时间不可见
+    ) {
+        @Override
+        public void onFinishQuest(Player player, String quest) {
+            // 伪装阶段做任务同普通平民：每完成一个任务获得金币（该回调仅会派发给当前职业为扮演者的玩家）
+            if (!(player instanceof net.minecraft.server.level.ServerPlayer sp))
+                return;
+            var banyanzhe = ModComponents.BANYANZHE.maybeGet(sp).orElse(null);
+            if (banyanzhe == null || banyanzhe.recalled)
+                return;
+            int reward = org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().banyanzheTaskReward;
+            if (reward <= 0)
+                return;
+            io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(sp).addToBalance(reward);
+        }
+    }).setComponentKey(ModComponents.BANYANZHE)
+            .setCanUseInstinct(false) // 无透视
+            .setCanPickUpRevolver(true) // 允许捡枪
+            .setCanSeeTeammateKiller(false) // 未回忆时不知道自己有队友
+            .setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false) // 避免被其他职业的随机转职抽中导致伪装流程异常
+            .setDefaultMax(1)
+            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableChance(2500);
+
+    /**
      * 愚者角色 - 好人阵营
      * - 属于乘客阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
@@ -3062,6 +3183,29 @@ public class ModRoles {
     )).setCanSeeCoin(true).setCanSeeTime(false)
             .setComponentKey(ModComponents.DUMB_WOMAN)
             .setCanIgnoreBlackout(true);
+
+    /**
+     * 幻灵角色 - 平民阵营（附身机制）
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统（心情持续锁定 100%）
+     * - 被动：隐身 + 无法说话（文字+语音）
+     * - 机制：开局旁观寻找附身目标（50s），G 键附身后视角锁定宿主；
+     *   游戏开局满 3 分钟转换为宿主职业并现身；附身杀手/中立即死；
+     *   宿主死亡转回冒险模式 10s 宽限；Shift+G 主动脱离 8s 宽限；失败死因为「附身失败」
+     */
+    public static SRERole HUANYING = TMMRoles.registerRole(new NormalRole(
+            HUANYING_ID,
+            new Color(128, 128, 128).getRGB(), // 灰色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情（被动锁定 100%）
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间
+            false   // 显示计分板
+    )).setCanSeeCoin(true).setCanSeeTime(false)
+            .setComponentKey(ModComponents.HUANYING)
+            .setCanUseSkillWhileSpectator(true)
+            .setDefaultMax(1);
 
     // ==================== 智力障碍患者与监护人（绑定生成） ====================
 
@@ -3508,6 +3652,33 @@ public class ModRoles {
             .setCanUseInstinct(false)     // 不能使用本能
             .setDefaultMax(1)
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.SNOW);
+    
+    /**
+     * 木乃伊 - 独立中立阵营（仅沙漠地图刷新，无胜利条件）
+     * - 沙色，虚假心情，无限体力，可见时间/金币，不可捾枪，隐藏计分板（沿用雪怪构造参数顺序）
+     * - 被动：常驻隐身（释放技能/现身短暂解除）、无敌无法被击杀、沙色透视（被棺材标记玩家呈红色）
+     * - 技能：诅咒（背包选人叠层）/恐吓（隐身红字字幕或现身恶魂debuff）/现身（诅咒环形区或棺材旁传送）/
+     *   领地确认（平地放置棺材，一局最多3个）/干枯（现身时降低周围玩家口渴值40%）
+     * - 完整现身期间双臂平举（同原版僵尸），可左键击杀被棺材标记的玩家
+     * - 登车标语：守护金字塔，驱逐外来者！
+     */
+    public static SRERole MUNAIYI_DESERT = TMMRoles.registerRole(new NormalRole(
+                    MUNAIYI_DESERT_ID,
+                    new Color(216, 184, 114).getRGB(), // 沙色
+                    false,  // isInnocent = false（非乘客阵营）
+                    false,  // canUseKiller = false（无杀手能力）
+                    SRERole.MoodType.FAKE, // 虚假心情（独立中立无胜利条件，隐藏真实阵营）
+                    Integer.MAX_VALUE, // 无限体力（同隐形的末影人模式）
+                    true    // 隐藏计分板
+            )).setComponentKey(ModComponents.MUNAIYI_DESERT)
+            .setNeutrals(true)      // 独立中立阵营，无胜利条件（不参与胜利判定）
+            .setCanSeeCoin(true)    // 可见金币
+            .setCanSeeTime(true)    // 可见时间
+            .setCanPickUpRevolver(false)  // 不能捡枪（无击杀需求，依靠现身左键）
+            .setCanUseInstinct(false)     // 不使用本能开关，沙色透视由 InstinctRenderer 常驻提供（仿雪怪）
+            .setCanBeRandomedByOtherRoles(false) // 不被其他角色随机交换（地图限定）
+            .setDefaultMax(1)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.DESERT); // 仅在 desertRolesMaps 配置的沙漠地图刷新
 
     /**
      * 病娇 - 独立中立阵营
@@ -3660,6 +3831,28 @@ public class ModRoles {
                     false   // 不隐藏计分板
             ).setComponentKey(PathfinderPlayerComponent.KEY))
             .setCanSeeTime(false)
+            .setCanSeeCoin(true);
+
+    /**
+     * 侦搜者角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限冲刺时间
+     * - 可见时间 (setCanSeeTime = true)
+     * - 技能1：打开物品栏点击玩家头像，花费75金币知晓该玩家是否存活，无冷却
+     * - 技能2：按下技能键知晓场上剩余存活人数，冷却90秒（统一技能系统管理）
+     */
+    public static SRERole ZHENSOUZHE = TMMRoles.registerRole(new NormalRole(
+            ZHENSOUZHE_ID, // 角色 ID
+            new Color(0, 51, 153).getRGB(), // 深蓝色 - 代表侦查搜索
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false // 不隐藏计分板
+    ))
+            .setCanSeeTime(true)
             .setCanSeeCoin(true);
 
     /**
@@ -3994,6 +4187,88 @@ public class ModRoles {
                     new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 1, true, false, true)))
             .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(0).setOtherModeRole(true);
+
+    /**
+     * 史莱姆角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限体力
+     * - 不可见时间
+     * - 被动：自带跳跃提升 II 效果
+     * - 技能：花费75金币将脚下 3x3 的方块临时变成史莱姆块，持续20秒后恢复原样，冷却30秒
+     * - 商店：史莱姆球(10)
+     * - 介绍：一个史莱姆
+     * - 登车标语：好黏
+     */
+    public static SRERole SHILAIMU = TMMRoles.registerRole(new NormalRole(
+            SHILAIMU_ID,
+            new Color(144, 238, 144).getRGB(), // 浅绿色 - 代表史莱姆的黏液质感
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.REAL,  // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),    // 标准冲刺时间（有限体力）
+            false   // 显示计分板
+    ) {
+        @Override
+        public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
+            java.util.List<io.wifi.starrailexpress.util.ShopEntry> entries = new java.util.ArrayList<>();
+            // 史莱姆球 10金币
+            entries.add(new io.wifi.starrailexpress.util.ShopEntry(
+                    new ItemStack(net.minecraft.world.item.Items.SLIME_BALL),
+                    10,
+                    io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
+            return entries;
+        }
+    }.setComponentKey(org.agmas.noellesroles.game.roles.innocence.shilaimu.ShilaimuPlayerComponent.KEY))
+            .setCanSeeCoin(true)
+            .setCanSeeTime(false);
+
+    /**
+     * 铁傀儡角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 假心情系统
+     * - 体力为正常平民的1.5倍
+     * - 不可见时间
+     * - 技能：对准玩家按下技能键将其击退2格、击飞4格，并造成缓慢II+失明2秒，
+     *   射程2.7格，最多存储3次，存储恢复CD 30秒，释放间隔CD 6秒
+     * - 被动：免疫一次球棒伤害，但被球棒击打后获得技能禁用、禁止移动、按键禁用、失明效果5秒
+     * - 登车标语：铁壁守关
+     */
+    public static SRERole IMIRONMAN_TIEKUILEI = TMMRoles.registerRole(new NormalRole(
+            IMIRONMAN_TIEKUILEI_ID,
+            new Color(192, 192, 192).getRGB(), // 铁色
+            true,   // 平民阵营
+            false,  // 无杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 1.5), // 体力为正常平民的1.5倍
+            false   // 显示计分板
+    ).setComponentKey(ModComponents.IMIRONMAN_TIEKUILEI))
+            .setCanSeeCoin(true)
+            .setCanSeeTime(false);
+
+    /**
+     * 逃票者角色 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 有限冲刺时间
+     * - 被动技能：其他玩家在自己半径6.5格内累计存在45秒后，即可在背包内知晓该玩家的阵营归属（显示头像）
+     * - 被动豁免：被平民阵营玩家击杀不会触发小脑惩罚，击杀者会收到提示“他只是一个困难的人...”
+     * - 登车标语：查票？我可不在这辆车上
+     */
+    public static SRERole TAOPIAOZHE = TMMRoles.registerRole(new NormalRole(
+            TAOPIAOZHE_ID, // 角色 ID
+            new Color(80, 80, 95).getRGB(), // 深灰蓝色 - 代表躲藏与逃票
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+            false // 不隐藏计分板
+    ).setComponentKey(org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent.KEY))
+            .setCanSeeTime(false)
+            .setCanSeeCoin(true);
 
     /**
      * 判断角色是否为亡命徒阵营变体（亡命徒/屠夫/清算者）

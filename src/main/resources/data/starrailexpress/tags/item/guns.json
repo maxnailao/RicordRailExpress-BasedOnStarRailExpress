@@ -9,6 +9,8 @@
     "noellesroles:zero_one_five_gun",
     "noellesroles:sheriff_revolver",
     "noellesroles:pirate_flintlock",
-    "noellesroles:silenced_pistol"
+    "noellesroles:silenced_pistol",
+    "noellesroles:dual_pistol_left",
+    "noellesroles:dual_pistol_right"
   ]
 }

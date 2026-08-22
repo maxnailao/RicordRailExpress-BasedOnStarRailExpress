@@ -937,6 +937,26 @@ public class ModItems {
             "desert_eagle_magazine", WEAPONS_GROUP);
 
     /**
+     * 双枪-左手
+     * - 仅在副手时可以右键开枪，射程与贴图同左轮手枪
+     * - 只有双枪-右手处于冷却中时才能开枪，与右手枪轮流开火
+     */
+    public static final Item DUAL_PISTOL_LEFT = register(
+            new org.agmas.noellesroles.content.item.DualPistolItem(
+                    new Item.Properties().stacksTo(1), true),
+            "dual_pistol_left", WEAPONS_GROUP);
+
+    /**
+     * 双枪-右手
+     * - 仅在主手时可以右键开枪，射程与贴图同左轮手枪
+     * - 开枪后进入冷却，冷却期间右键放行给副手的双枪-左手，与左手枪轮流开火
+     */
+    public static final Item DUAL_PISTOL_RIGHT = register(
+            new org.agmas.noellesroles.content.item.DualPistolItem(
+                    new Item.Properties().stacksTo(1), false),
+            "dual_pistol_right", WEAPONS_GROUP);
+
+    /**
      * 海盗燧发枪
      * - 射程15格，坐在耐久橡木船上时射程提升为40格
      * - 冷却30秒

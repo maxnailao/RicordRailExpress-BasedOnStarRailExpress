@@ -115,6 +115,29 @@ public class InstinctRenderer {
                 return new Color(255, 60, 60).getRGB(); // 目标：红色发光
             return -2; // 其余玩家禁止透视
         });
+        // 扮演者：未回忆成功前（职业仍为扮演者），在杀手队友的本能透视中显示彩色（渐变）边框，
+        // 回忆成功后职业会变为模仿者，不再命中此处理器（需先于通用杀手直觉回落逻辑注册）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!hasInstinct)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (!isKillerTeam(SREClient.gameComponent.getRole(self)))
+                return -1;
+            if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.BANYANZHE))
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            // 彩色边框：按实体ID偏移的渐变色（复用记者便签的渐变工具）
+            return getGradientColor(targetPlayer.getId());
+        });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {
                 return -1;
@@ -170,6 +193,25 @@ public class InstinctRenderer {
             if (self.distanceTo(target) <= 10.0)
                 return Color.WHITE.getRGB();
             return -2;
+        });
+        // 双枪客：透视解锁后（人数降至总人数/2），常驻透视所有存活玩家，不依赖本能开关；
+        // 解锁前一律返回 -1 透传给后续处理器，保证此前不解锁
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.DUAL_GUNNER))
+                return -1;
+            var dualGunner = ModComponents.DUAL_GUNNER.get(self);
+            if (!dualGunner.espUnlocked)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            return ModRoles.DUAL_GUNNER.color();
         });
         // 鬼眼·杨间 被动：扫描期间，周身范围内的所有玩家显示白色直觉轮廓
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
@@ -1452,6 +1494,52 @@ public class InstinctRenderer {
                     // 不能返回纯白 (0xFFFFFF == -1)，使用近似白
                     return new java.awt.Color(254, 254, 254).getRGB();
                 }
+            }
+            return -1;
+        });
+
+        // 木乃伊：透视所有存活玩家（常驻，无需本能，沙色轮廓）；被棺材标记的玩家显示红色（可被现身击杀）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.MUNAIYI_DESERT))
+                return -1;
+            if (target instanceof Player targetPlayer) {
+                if (targetPlayer == self)
+                    return -1;
+                if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                    return -1;
+                var mummy = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
+                        .maybeGet(self).orElse(null);
+                if (mummy != null && mummy.markedPlayers.contains(targetPlayer.getUUID())) {
+                    return new java.awt.Color(255, 48, 48).getRGB(); // 被标记：红色，可击杀
+                }
+                return ModRoles.MUNAIYI_DESERT.color(); // 沙色
+            }
+            return -1;
+        });
+
+        // 木乃伊未现身时对其他玩家隐身：不被任何本能透视看到（隐身状态下）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (targetPlayer == Minecraft.getInstance().player)
+                return -1;
+            if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.MUNAIYI_DESERT))
+                return -1;
+            var mummy = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
+                    .maybeGet(targetPlayer).orElse(null);
+            if (mummy != null && !mummy.isRevealed()) {
+                return -2; // 未现身：禁用对该目标的本能高亮
             }
             return -1;
         });

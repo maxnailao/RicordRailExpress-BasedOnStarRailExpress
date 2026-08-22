@@ -109,6 +109,9 @@ public class InitModRolesMax {
         // Hacker role max 1 per game
         Harpymodloader.setRoleMaximum(ModRoles.BLACKKE_ID, 1);
 
+        // 侦搜者每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.ZHENSOUZHE_ID, 1);
+
         // 不应该刷新
         Harpymodloader.setRoleMaximum(SpecialGameModeRoles.CUSTOM_PENDING, 0);
 
@@ -347,6 +350,8 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.SHOUYIYUAN_ID, 1);
         // 盲人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.NIYAJINGSHIBUSHIXIALE_ID, 1);
+        // 逃票者每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.TAOPIAOZHE_ID, 1);
 
         // 坠木和皮革嘎的默认为0（概率刷新）
         Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
@@ -589,6 +594,7 @@ public class InitModRolesMax {
             case FLY -> config.airRolesMaps.contains(currentMap);
             case TRAP -> config.trapRolesMaps.contains(currentMap);
             case SNOW -> config.snowRolesMaps.contains(currentMap);
+            case DESERT -> config.desertRolesMaps.contains(currentMap);
         };
     }
 

@@ -53,6 +53,8 @@
   "item.noellesroles.foodstuff.desc": "食材，厨师职业的专属道具。",
   "item.noellesroles.pan.desc": "平底锅，用于烹饪食物，厨师职业的专属道具。",
   "item.noellesroles.once_revolver.desc": "只能发射一次的左轮手枪。",
+  "item.noellesroles.dual_pistol_left.desc": "双枪的左手枪，仅在副手时开枪，需等待右手枪冷却后才能接力射击。",
+  "item.noellesroles.dual_pistol_right.desc": "双枪的右手枪，仅在主手时开枪，与左手枪轮流开火。",
   "item.noellesroles.handcuffs.desc": "手铐，右键将玩家拷住，被拷上的玩家可以通过持续的蹲下来挣脱。",
   "item.noellesroles.patroller_revolver.desc": "巡警的特殊手枪，拥有极短的射击冷却。",
   "item.noellesroles.singer_music_disc.desc": "歌手专属物品。",

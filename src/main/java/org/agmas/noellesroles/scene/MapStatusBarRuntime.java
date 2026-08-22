@@ -117,6 +117,30 @@ public final class MapStatusBarRuntime {
         add(player, MapStatusBarType.THIRST, delta);
     }
 
+    /**
+     * 按当前口渴值的百分比扣除（向下取整），并保底剩余 minRemaining 点，不会致死。
+     * 若当前地图未启用水吧状态栏或玩家未被追踪则静默跳过。
+     *
+     * @param percent      扣除比例（0.4 = 当前值的 40%）
+     * @param minRemaining 扣除后保底剩余值（5% 即 1/20）
+     */
+    public static void drainThirstPercent(ServerPlayer player, float percent, int minRemaining) {
+        ServerLevel level = (ServerLevel) player.level();
+        if (!isGameRunning(level) || currentStatusBar(level) != MapStatusBarType.THIRST || !shouldTrack(player)) {
+            return;
+        }
+        State state = STATES.get(player.getUUID());
+        if (state == null || state.type != MapStatusBarType.THIRST) {
+            return;
+        }
+        int drain = (int) Math.floor(state.value * percent);
+        if (drain <= 0) {
+            return;
+        }
+        state.set(Math.max(Math.max(0, minRemaining), state.value - drain));
+        state.sync(player);
+    }
+
     public static void addHunger(ServerPlayer player, int delta) {
         add(player, MapStatusBarType.HUNGER, delta);
     }
@@ -292,6 +316,13 @@ public final class MapStatusBarRuntime {
         if (ModComponents.GLITCH_ROBOT.maybeGet(player).isPresent()) {
             var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
             if (game.isRole(player, ModRoles.GLITCH_ROBOT)) {
+                return false;
+            }
+        }
+        // 木乃伊被动无敌，不受口渴/饥饿/体温致死影响（这些路径走 forceKillPlayer 绕过免死事件）
+        if (ModComponents.MUNAIYI_DESERT.maybeGet(player).isPresent()) {
+            var game = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level());
+            if (game.isRole(player, ModRoles.MUNAIYI_DESERT)) {
                 return false;
             }
         }

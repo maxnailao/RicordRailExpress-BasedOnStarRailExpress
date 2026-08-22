@@ -418,6 +418,15 @@ public class ModPacketsReciever {
       });
     });
 
+    // 侦搜者存活查询包处理：花费75金币查询目标玩家是否存活
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.ID, (payload, context) -> {
+      var scout = context.player();
+      context.server().execute(() -> {
+        if (scout.hasEffect(ModEffects.SAFE_TIME)) return; // 安全时间
+        org.agmas.noellesroles.game.roles.innocence.zhensouzhe.ZhensouzheHandler.queryTargetAlive(scout, payload.target());
+      });
+    });
+
     // 幻魔者恼鬼召唤目标选择包处理
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.ID, (payload, context) -> {
       var caster = context.player();
@@ -636,6 +645,41 @@ public class ModPacketsReciever {
             .get(context.player()).setPossessTarget(payload.player());
       }
     });
+
+    // 木乃伊诅咒选人包：对点选的存活玩家施加一层诅咒，成功后才记入技能1冷却（层数已满/目标无效不进 CD）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.MunaiyiCurseSelectC2SPacket.ID, (payload, context) -> {
+          ServerPlayer player = context.player();
+          if (player.hasEffect(ModEffects.SAFE_TIME))// 安全时间
+            return;
+          if (payload.target() == null)
+            return;
+          if (RoleSkill.blockForSpectator(player))
+            return;
+          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+              .get(player.level());
+          if (!gameWorldComponent.isSkillAvailable)
+            return;
+          if (!gameWorldComponent.isRole(player, ModRoles.MUNAIYI_DESERT))
+            return;
+          var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
+              .maybeGet(player).orElse(null);
+          if (comp == null)
+            return;
+          SREAbilityPlayerComponent ability = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY.get(player);
+          if (!ability.canUseSkill(
+              org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_CURSE))
+            return;
+          if (!(player.level().getPlayerByUUID(payload.target()) instanceof ServerPlayer target))
+            return;
+          if (!comp.applyCurse(target))
+            return;
+          RoleSkill.getDefinitions(ModRoles.MUNAIYI_DESERT).stream()
+              .filter(d -> d.id().equals(
+                  org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_CURSE))
+              .findFirst()
+              .ifPresent(ability::markSkillUsed);
+        });
 
     // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
     ServerPlayNetworking.registerGlobalReceiver(

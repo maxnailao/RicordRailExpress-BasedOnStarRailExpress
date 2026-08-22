@@ -31,6 +31,12 @@ public class InvisbleHandItem {
             if (player.hasEffect(ModEffects.WRAITH_DIMENSION) && !player.hasEffect(ModEffects.WRAITH_MANIFEST)) {
                 return ItemStack.EMPTY;
             }
+            // 躲藏专家：变身方块期间隐藏手持物品，避免悬浮物品暴露伪装
+            var hideComp = org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.KEY
+                    .maybeGet(player).orElse(null);
+            if (hideComp != null && hideComp.isHiding()) {
+                return ItemStack.EMPTY;
+            }
             return null; // 不修改
         });
         // 显示手铐（改由 HandCuffsFeatureRenderer 动态渲染，副手此处隐藏避免重复）

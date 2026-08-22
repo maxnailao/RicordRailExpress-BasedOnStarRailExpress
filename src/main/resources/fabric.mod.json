@@ -131,6 +131,10 @@
       "noellesroles:nostalgist",
       "noellesroles:wraith_assassin",
       "noellesroles:salted_fish",
+      "noellesroles:kalabiqiumiao",
+      "noellesroles:duomaomao_meimeihide",
+      "noellesroles:shilaimu",
+      "noellesroles:imironman_tiekuilei",
       "noellesroles:party_killer",
       "noellesroles:delayer",
       "noellesroles:blood_feudist",
@@ -248,6 +252,7 @@
       "noellesroles:cuckoo",
       "noellesroles:ma_chen_xu",
       "noellesroles:imitator",
+      "noellesroles:banyanzhe",
       "noellesroles:mortician_bodymaker",
       "noellesroles:phantom_musician",
       "noellesroles:cupid",
@@ -264,6 +269,8 @@
       "noellesroles:ghost_eye",
       "noellesroles:coward",
       "noellesroles:dumb_woman",
+      "noellesroles:shuangqianghuigeichudaan_shuangqiangke",
+      "noellesroles:wcwobeiguifushenle_huanling",
       "noellesroles:zhizhang",
       "noellesroles:guardian",
             "noellesroles:jiahao_wanglihao",
@@ -277,6 +284,7 @@
       "noellesroles:xundaozhe",
       "noellesroles:snow_hunter",
       "noellesroles:snowguai_wow",
+      "noellesroles:munaiyi_desert",
       "noellesroles:yandere",
       "noellesroles:philanthropist",
       "noellesroles:ghoul",
@@ -285,7 +293,8 @@
       "noellesroles:cowboy",
       "noellesroles:conductor",
       "noellesroles:huanshushi",
-      "noellesroles:wantong"
+      "noellesroles:wantong",
+      "noellesroles:taopiaozhe"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

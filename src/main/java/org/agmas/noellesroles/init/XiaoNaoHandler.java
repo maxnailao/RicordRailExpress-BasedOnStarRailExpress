@@ -65,6 +65,15 @@ public class XiaoNaoHandler {
                         return;
                     }
 
+                    // 逃票者被平民阵营玩家击杀不触发小脑惩罚，仅提示击杀者（此分支 killer 必为平民阵营）
+                    if (gameWorldComponent.isRole(victim, ModRoles.TAOPIAOZHE)) {
+                        killer.displayClientMessage(
+                                Component.translatable("message.noellesroles.taopiaozhe.passive_hint")
+                                        .withStyle(ChatFormatting.GRAY),
+                                false);
+                        return;
+                    }
+
                     //检查是否是黑警击杀，黑警击杀不算误杀
                     if (gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP)) {
                         return;

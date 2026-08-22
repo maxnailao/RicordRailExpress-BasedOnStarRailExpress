@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.agmas.noellesroles.content.item.SilencedPistolShootPayload;
+import org.agmas.noellesroles.content.item.DualPistolShootPayload;
 import org.agmas.noellesroles.content.item.DesertEagleShootPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
@@ -88,6 +89,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(MorphC2SPacket.ID, MorphC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.ID,
                 org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.ID,
+                org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.ID,
                 org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(SilencerC2SPacket.ID, SilencerC2SPacket.CODEC);
@@ -107,6 +110,9 @@ public class ModPackets {
                 org.agmas.noellesroles.packet.WizardShieldC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WizardSwitchSpellC2SPacket.ID, WizardSwitchSpellC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
+        // 木乃伊：诅咒选人（C2S）与打开背包选人（S2C）
+        PayloadTypeRegistry.playC2S().register(MunaiyiCurseSelectC2SPacket.ID, MunaiyiCurseSelectC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(MunaiyiOpenInventoryS2CPacket.ID, MunaiyiOpenInventoryS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(AmonSelectTargetC2SPacket.ID, AmonSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
@@ -207,6 +213,11 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(SilencedPistolShootPayload.ID, SilencedPistolShootPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SilencedPistolShootPayload.ID,
                 new SilencedPistolShootPayload.Receiver());
+
+        // 注册双枪（左手/右手）射击网络包
+        PayloadTypeRegistry.playC2S().register(DualPistolShootPayload.ID, DualPistolShootPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DualPistolShootPayload.ID,
+                new DualPistolShootPayload.Receiver());
 
         // 注册沙漠之鹰射击/装填网络包
         PayloadTypeRegistry.playC2S().register(DesertEagleShootPayload.ID, DesertEagleShootPayload.CODEC);

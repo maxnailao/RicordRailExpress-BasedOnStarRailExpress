@@ -63,6 +63,7 @@ public class OtherRolesRegister {
         DoomedSinnerHud.register();
         WraithAssassinHud.register();
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
+        HuanlingHud.register();
         AdventurerHud.register();
         ReasonerHud.register();
         EmbalmerHud.register();

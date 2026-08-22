@@ -53,6 +53,8 @@
   "item.noellesroles.foodstuff.desc": "Ingredients, exclusive item for the Chef role.",
   "item.noellesroles.pan.desc": "Frying pan, used for cooking food, exclusive item for the Chef role.",
   "item.noellesroles.once_revolver.desc": "Revolver that can only be fired once.",
+  "item.noellesroles.dual_pistol_left.desc": "The left gun of the dual pistols. Fires from the off hand only, after the right gun goes on cooldown.",
+  "item.noellesroles.dual_pistol_right.desc": "The right gun of the dual pistols. Fires from the main hand only, alternating shots with the left gun.",
   "item.noellesroles.handcuffs.desc": "Handcuffs, right-click to handcuff a player. Handcuffed players can break free by continuously sneaking.",
   "item.noellesroles.patroller_revolver.desc": "Special pistol for the Patroller, has a very short firing cooldown.",
   "item.noellesroles.singer_music_disc.desc": "Singer's exclusive item.",

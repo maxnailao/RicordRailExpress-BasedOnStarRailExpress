@@ -54,6 +54,7 @@ public class CustomWinnerClass {
             boolean hasMonokumaAlive = false;
             // int thiefCount = 0;
             boolean hasCorruptCopAlive = false;
+            boolean hasDualGunnerAlive = false;
 
             int alivePlayerCount = 0;
             for (var player : serverLevel.players()) {
@@ -82,6 +83,9 @@ public class CustomWinnerClass {
                     }
                     if (gameComponent.isRole(player, ModRoles.MONOKUMA)) {
                         hasMonokumaAlive = true;
+                    }
+                    if (gameComponent.isRole(player, ModRoles.DUAL_GUNNER)) {
+                        hasDualGunnerAlive = true;
                     }
                 }
             }
@@ -131,6 +135,18 @@ public class CustomWinnerClass {
                 if (raven.kills >= raven.requiredKills && raven.requiredKills > 0) {
                     RoleUtils.customWinnerWin(serverLevel, WinStatus.CUSTOM, ModRoles.RAVEN_ID.getPath(), OptionalInt.of(ModRoles.RAVEN.color()));
                     return WinStatus.CUSTOM;
+                }
+            }
+
+            // 双枪客：独自存活即独立胜利；存活期间阻止常规结局，让游戏继续（参考鹈鹕）
+            if (hasDualGunnerAlive) {
+                if (org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent
+                        .checkDualGunnerVictory(serverLevel)) {
+                    return WinStatus.CUSTOM;
+                }
+                if (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS
+                        || winStatus == WinStatus.TIME) {
+                    return WinStatus.NONE;
                 }
             }
 

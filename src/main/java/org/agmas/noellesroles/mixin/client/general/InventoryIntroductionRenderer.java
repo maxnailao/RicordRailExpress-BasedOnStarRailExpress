@@ -50,6 +50,9 @@ public class InventoryIntroductionRenderer {
             // Role
             float scale = getScare(context.guiHeight());
             SRERole role = gameWorldComponent.getRole(player);
+            // 扮演者伪装：本人看到的是扮演的职业，不能知晓自己是扮演者
+            role = org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent.getDisplayedRole(player,
+                  role);
             Font font = Minecraft.getInstance().font;
             final int MAX_WIDTH = (int) (context.guiWidth() / scale / 3);
 

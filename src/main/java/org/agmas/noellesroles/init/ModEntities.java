@@ -462,6 +462,18 @@ public class ModEntities {
                     .build());
 
     /**
+     * 棺材实体 - 纯装饰道具，没有碰撞体积，玩家可直接穿过；
+     * 可通过 /summon noellesroles:coffin 生成，攻击可移除。
+     */
+    public static final EntityType<CoffinEntity> COFFIN = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("coffin"),
+            EntityType.Builder.of(CoffinEntity::new, MobCategory.MISC)
+                    .sized(1.0F, 0.7F)
+                    .clientTrackingRange(10)
+                    .build("coffin"));
+
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */

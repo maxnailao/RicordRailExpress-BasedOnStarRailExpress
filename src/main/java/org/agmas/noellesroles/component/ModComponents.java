@@ -58,6 +58,7 @@ import org.agmas.noellesroles.game.roles.innocence.pilot.PilotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.kalabiqiumiao.KalabiqiumiaoPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
@@ -73,6 +74,7 @@ import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayer
 import org.agmas.noellesroles.game.roles.killer.phantom.PhantomFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.silencer.SilencerFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
@@ -362,6 +364,30 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "salted_fish"),
       SaltedFishPlayerComponent.class);
 
+  public static final ComponentKey<KalabiqiumiaoPlayerComponent> KALABIQIUMIAO = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "kalabiqiumiao"),
+      KalabiqiumiaoPlayerComponent.class);
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent> DUOMAOMAO_MEIMEIHIDE = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "duomaomao_meimeihide"),
+      org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.class);
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.shilaimu.ShilaimuPlayerComponent> SHILAIMU = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "shilaimu"),
+      org.agmas.noellesroles.game.roles.innocence.shilaimu.ShilaimuPlayerComponent.class);
+
+  // 铁傀儡组件 - 平民阵营，充能击退技能+球棒一次性免疫被动
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.imironman.ImironmanPlayerComponent> IMIRONMAN_TIEKUILEI = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "imironman_tiekuilei"),
+          org.agmas.noellesroles.game.roles.innocence.imironman.ImironmanPlayerComponent.class);
+
+  // 逃票者组件 - 平民阵营，半径内累计存在45秒知晓玩家阵营归属被动
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent> TAOPIAOZHE = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "taopiaozhe"),
+          org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent.class);
+
   public static final ComponentKey<org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent> LEON = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "leon"),
       org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.class);
@@ -436,6 +462,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<ImitatorPlayerComponent> IMITATOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "imitator"),
       ImitatorPlayerComponent.class);
+
+  // 扮演者组件 - 伪装职业/回忆状态/转变模仿者
+  public static final ComponentKey<BanyanzhePlayerComponent> BANYANZHE = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "banyanzhe"),
+      BanyanzhePlayerComponent.class);
 
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.party.PartyPlayerComponent> PARTY = ComponentRegistry
       .getOrCreate(
@@ -596,6 +627,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                   ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dumb_woman"),
                   DumbWomanPlayerComponent.class);
 
+  // 双枪客组件 - 中立独立胜利，人数阈值发放双枪+透视解锁+黄油手修饰符+全程播报
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent> DUAL_GUNNER = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID,
+                          "shuangqianghuigeichudaan_shuangqiangke"),
+                  org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent.class);
+
+  // 幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent> HUANYING = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY;
+
   // 术士组件 - 平民阵营，术语施放技能
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent> SHUSHI =
           org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent.KEY;
@@ -661,6 +702,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent> SNOWGUAI_WOW = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "snowguai_wow"),
           org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent.class);
+
+  // 木乃伊组件 - 独立中立阵营（沙漠地图限定），隐身/无敌 + 诅咒/棺材/现身机制，无胜利条件
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent> MUNAIYI_DESERT = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "munaiyi_desert"),
+          org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.class);
 
   // 病娇组件 - 独立中立阵营，爱慕对象 + 目标标记 + 疯魔联动
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent> YANDERE = ComponentRegistry.getOrCreate(
@@ -764,6 +810,31 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SALTED_FISH)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SaltedFishPlayerComponent::new);
+
+    // 注册纸片人组件 - 技能「弦化」状态管理（压扁模型与判定箱、缓降与跳跃提升）
+    registry.beginRegistration(Player.class, KALABIQIUMIAO)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(KalabiqiumiaoPlayerComponent::new);
+
+    // 注册躲藏专家组件 - 技能「变身躲藏」状态管理（隐身 + 方块模型跟随渲染）
+    registry.beginRegistration(Player.class, DUOMAOMAO_MEIMEIHIDE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent::new);
+
+    // 注册史莱姆组件 - 技能「史莱姆领域」临时方块管理与跳跃提升被动
+    registry.beginRegistration(Player.class, SHILAIMU)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.shilaimu.ShilaimuPlayerComponent::new);
+
+    // 注册铁傀儡组件 - 技能充能恢复与球棒一次性免疫被动
+    registry.beginRegistration(Player.class, IMIRONMAN_TIEKUILEI)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.imironman.ImironmanPlayerComponent::new);
+
+    // 注册逃票者组件 - 半径内累计存在45秒知晓玩家阵营归属被动
+    registry.beginRegistration(Player.class, TAOPIAOZHE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent::new);
 
     // 注册里昂组件 - 「幸存之人」被动草药发放
     registry.beginRegistration(Player.class, LEON)
@@ -1057,6 +1128,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ImitatorPlayerComponent::new);
 
+    // 注册扮演者组件 - 伪装职业、回忆逻辑、小脑惩罚拦截（static 块注册全局事件）
+    registry.beginRegistration(Player.class, BANYANZHE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(BanyanzhePlayerComponent::new);
+
     registry.beginRegistration(Player.class, PARTY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.party.PartyPlayerComponent::new);
@@ -1303,6 +1379,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(DumbWomanPlayerComponent::new);
 
+    // 注册双枪客组件 - 中立独立胜利，人数阈值发放双枪+透视解锁+黄油手+播报
+    registry.beginRegistration(Player.class, DUAL_GUNNER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent::new);
+
+    // 注册幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
+    registry.beginRegistration(Player.class, HUANYING)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent::new);
+
     // 注册术士组件 - 平民阵营，术语施放技能
     registry.beginRegistration(Player.class, SHUSHI)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1362,6 +1448,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SNOWGUAI_WOW)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.snowguai.SnowguaiPlayerComponent::new);
+
+    // 注册木乃伊组件 - 独立中立阵营（沙漠地图限定），隐身/无敌 + 诅咒/棺材/现身机制
+    registry.beginRegistration(Player.class, MUNAIYI_DESERT)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent::new);
 
     // 注册病娇组件 - 独立中立阵营，爱慕对象 + 目标标记 + 疯魔联动
     registry.beginRegistration(Player.class, YANDERE)
