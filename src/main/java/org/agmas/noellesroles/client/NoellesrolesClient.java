@@ -460,10 +460,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         KalabiqiumiaoClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
-        // 失明症：揭示/声纹生命周期管理 + 声纹 HUD + 轮廓 HUD 投影绘制
-        org.agmas.noellesroles.client.blindness.BlindnessClientState.register();
-        org.agmas.noellesroles.client.blindness.SoundEchoHudRenderer.register();
-        org.agmas.noellesroles.client.blindness.ContactOutlineHudRenderer.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         // 坠木角色皮肤替换
         io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
@@ -506,6 +502,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
         });
+        // 任务点透视穿透失明遮罩：向失明症模组注册遮罩绘制扩展（失明症未安装时自动跳过）
+        org.agmas.noellesroles.client.blindness.TaskPointMaskBridge.init();
         // 杀手透视：红色轮廓显示地雷
         WorldRenderEvents.AFTER_TRANSLUCENT.register(LandmineOutlineRenderer::render);
         InstinctRenderer.registerInstinctEvents();

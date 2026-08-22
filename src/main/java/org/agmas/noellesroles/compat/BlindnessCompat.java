@@ -46,16 +46,24 @@ public final class BlindnessCompat {
     }
 
     private static final class Impl {
-        private static final Item GUIDANCE_CANE = BuiltInRegistries.ITEM
-                .getOptional(ResourceLocation.fromNamespaceAndPath("blindness", "guidance_cane"))
-                .orElse(null);
+        /**
+         * 每次调用时从注册表查找导盲杖，不用 static final 缓存：
+         * 商店注册可能早于失明症模组完成物品注册，永久缓存 null 会导致商店条目丢失。
+         */
+        private static Item guidanceCaneItem() {
+            return BuiltInRegistries.ITEM
+                    .getOptional(ResourceLocation.fromNamespaceAndPath("blindness", "guidance_cane"))
+                    .orElse(null);
+        }
 
         static ItemStack guidanceCaneStack() {
-            return GUIDANCE_CANE == null ? ItemStack.EMPTY : new ItemStack(GUIDANCE_CANE);
+            Item item = guidanceCaneItem();
+            return item == null ? ItemStack.EMPTY : new ItemStack(item);
         }
 
         static boolean isGuidanceCane(ItemStack stack) {
-            return GUIDANCE_CANE != null && stack.is(GUIDANCE_CANE);
+            Item item = guidanceCaneItem();
+            return item != null && stack.is(item);
         }
 
         static void setBlind(Player player, boolean blind) {
