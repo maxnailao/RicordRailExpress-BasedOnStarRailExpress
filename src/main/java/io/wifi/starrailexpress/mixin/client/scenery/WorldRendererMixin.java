@@ -32,6 +32,14 @@ public abstract class WorldRendererMixin {
     @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/FogRenderer;setupFog(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/FogRenderer$FogMode;FZF)V"))
     public void tmm$applyBlizzardFog(Camera camera, FogRenderer.FogMode fogType, float viewDistance, boolean thickFog,
             float tickDelta, Operation<Void> original) {
+        // ── 失明症：纯黑浓雾，优先级最高（覆盖大厅/暴风雪/地图雾）──
+        // 雾起止压到极近实现"画面几乎全黑"，探路依赖导盲杖轮廓（无雾线框渲染）。
+        // 见 org.agmas.noellesroles.client.blindness 包。
+        LocalPlayer blindnessPlayer = Minecraft.getInstance().player;
+        if (blindnessPlayer != null && blindnessPlayer.hasEffect(ModEffects.BLINDNESS_SICKNESS)) {
+            tmm$doFog(0.05f, 0.35f);
+            return;
+        }
         if (SREClient.isInLobby) {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
             return;

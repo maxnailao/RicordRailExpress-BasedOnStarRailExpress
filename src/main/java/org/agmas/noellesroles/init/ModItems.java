@@ -75,6 +75,16 @@ public class ModItems {
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);
+
+    /**
+     * 导盲杖（移植自"失明症"模组）
+     * - 失明症玩家的核心探路工具
+     * - 短按右键：敲击探测正前方 4 格方块，以发光轮廓短暂显示
+     * - 长按右键：横扫模式，±24° 扇形探测并降低 40% 移速
+     */
+    public static final Item GUIDANCE_CANE = register(
+            new GuidanceCaneItem(new Item.Properties().stacksTo(1)),
+            "guidance_cane", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
@@ -609,6 +619,16 @@ public class ModItems {
     public static final Item BOMB = register(
             new BombItem(new Item.Properties().stacksTo(1)),
             "bomb", ROLE_ITEMS_GROUP);
+    /**
+     * 反人员地雷
+     * - 长按右键3秒在当前位置布设地雷
+     * - 布设者离开布设位置后3秒进入待发状态
+     * - 待发状态下玩家踩到地雷发出按钮声，踩雷者离开踩踏位置即引爆
+     * - 爆炸半径2.5格，范围内所有玩家被炸死，击杀者记为布设者
+     */
+    public static final Item LANDMINE = register(
+            new LandmineItem(new Item.Properties().stacksTo(1)),
+            "landmine", WEAPONS_GROUP);
     /**
      * 轮椅
      */
@@ -1167,6 +1187,7 @@ public class ModItems {
         ChargeableItemRegistry.register(ModItems.THROWING_KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(ANTIDOTE, new AntidoteChargeItem());
         ChargeableItemRegistry.register(ModItems.PIRATE_CUTLASS, new org.agmas.noellesroles.content.item.charge_item.PirateCutlassChargeItem());
+        ChargeableItemRegistry.register(LANDMINE, new LandmineChargeItem());
     }
     // public static final Item SHERIFF_GUN_MAINTENANCE = register(
     // new SheriffGunMaintenanceItem(new Item.Settings().maxCount(1)),

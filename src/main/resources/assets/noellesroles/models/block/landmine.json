@@ -1,0 +1,61 @@
+{
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/block",
+	"textures": {
+		"0": "noellesroles:block/dilei1",
+		"1": "noellesroles:block/dilei2",
+		"2": "noellesroles:block/dilei3",
+		"3": "noellesroles:block/dilei4",
+		"particle": "noellesroles:block/dilei1"
+	},
+	"elements": [
+		{
+			"from": [4, 0, 4],
+			"to": [12, 2, 12],
+			"faces": {
+				"north": {"uv": [8, 0, 16, 2], "texture": "#0"},
+				"east": {"uv": [8, 2, 16, 4], "texture": "#0"},
+				"south": {"uv": [8, 4, 16, 6], "texture": "#0"},
+				"west": {"uv": [8, 6, 16, 8], "texture": "#0"},
+				"up": {"uv": [8, 8, 0, 0], "texture": "#0"},
+				"down": {"uv": [8, 8, 0, 16], "texture": "#0"}
+			}
+		},
+		{
+			"from": [5, 2, 5],
+			"to": [11, 2.3, 11],
+			"faces": {
+				"north": {"uv": [6, 0, 12, 1], "texture": "#1"},
+				"east": {"uv": [6, 1, 12, 2], "texture": "#1"},
+				"south": {"uv": [6, 2, 12, 3], "texture": "#1"},
+				"west": {"uv": [6, 3, 12, 4], "texture": "#1"},
+				"up": {"uv": [6, 6, 0, 0], "texture": "#1"},
+				"down": {"uv": [6, 6, 0, 12], "texture": "#1"}
+			}
+		},
+		{
+			"from": [3.9, 0, 3.3],
+			"to": [12.1, 1.7, 12.7],
+			"faces": {
+				"north": {"uv": [0, 2.75, 2, 3.25], "texture": "#2"},
+				"east": {"uv": [0, 2.25, 2.25, 2.75], "texture": "#2"},
+				"south": {"uv": [2, 2.75, 4, 3.25], "texture": "#2"},
+				"west": {"uv": [2.25, 2.25, 4.5, 2.75], "texture": "#2"},
+				"up": {"uv": [2, 2.25, 0, 0], "texture": "#2"},
+				"down": {"uv": [4, 0, 2, 2.25], "texture": "#2"}
+			}
+		},
+		{
+			"from": [3.3, 0, 3.9],
+			"to": [12.7, 1.7, 12.1],
+			"faces": {
+				"north": {"uv": [2.25, 0, 4.5, 0.5], "texture": "#3"},
+				"east": {"uv": [2.25, 1, 4.25, 1.5], "texture": "#3"},
+				"south": {"uv": [2.25, 0.5, 4.5, 1], "texture": "#3"},
+				"west": {"uv": [2.25, 1.5, 4.25, 2], "texture": "#3"},
+				"up": {"uv": [2.25, 2, 0, 0], "texture": "#3"},
+				"down": {"uv": [2.25, 2, 0, 4], "texture": "#3"}
+			}
+		}
+	]
+}

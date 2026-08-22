@@ -375,6 +375,19 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
 
     /**
+     * 失明症（移植自"失明症"模组）
+     * - 有害效果，近黑色
+     * - 拥有者画面几乎全黑（雾效压黑，见 WorldRendererMixin/BackgroundRendererMixin 的失明雾分支），
+     *   需使用导盲杖（{@code ModItems.GUIDANCE_CANE}）探测前方方块，以发光轮廓短暂看见环境；
+     *   附近生物的声音会以声纹标记 + 弱轮廓提示方位。
+     * - 服务端探测见 {@code org.agmas.noellesroles.game.blindness.CaneContactService}，
+     *   声纹见 {@code org.agmas.noellesroles.game.blindness.SoundEchoService}，
+     *   客户端渲染见 {@code org.agmas.noellesroles.client.blindness} 包。
+     */
+    public static final Holder<MobEffect> BLINDNESS_SICKNESS = register("blindness_sickness",
+            new org.agmas.noellesroles.content.effects.BlindnessSicknessEffect());
+
+    /**
      * 2D 视角
      * - 中性效果
      * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方（0~3 为 2.5D 俯视侧视）；
@@ -565,6 +578,9 @@ public class ModEffects {
         // 导致手持物品仍显示 / 仍能被杀手透视。
         NostalgistBackworldEffectSync.init();
         WraithDimensionEffectSync.init();
+        // 失明症：导盲杖探测服务（含掉线清理）与生物声纹扫描服务
+        org.agmas.noellesroles.game.blindness.CaneContactService.register();
+        org.agmas.noellesroles.game.blindness.SoundEchoService.register();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

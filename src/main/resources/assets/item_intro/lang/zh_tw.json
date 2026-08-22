@@ -9,6 +9,7 @@
   "item.noellesroles.bucket_of_h2so4.desc": "清道夫道具。\n右鍵屍體可以清除。",
   "item.noellesroles.c4.desc": "右鍵投擲，若向玩家投擲則會附著在玩家身上，否則附著在落地處的方塊。C4被引燃時會發出滴的聲音，若期間沒有被拆除，則會在數秒後爆炸，炸死7格範圍內的玩家；爆炸可穿透1格厚牆體，但不能穿透2格厚牆體。被綁定C4的玩家死亡時，C4會掉落在地上並按剩餘時間繼續引爆。C4被除了鉗工以外的玩家使用拆彈鉗拆除時，有20%%的概率直接引爆C4。",
   "item.noellesroles.c4_detonator.desc": "右鍵使用，依次引燃場景中投擲的C4。可同時引爆多個C4。",
+  "item.noellesroles.landmine.desc": "長按右鍵3秒在當前位置佈設地雷。佈設者離開佈設位置後3秒，地雷進入待發狀態。待發狀態下玩家踩到地雷會發出按鈕聲，踩雷者離開踩踏位置即引爆，炸死半徑2.5格內的所有玩家，擊殺記在佈設者頭上。",
   "item.noellesroles.camera_shears.desc": "擁有3點耐久，30秒CD。右鍵攝像頭可使攝像頭失靈90秒。",
   "item.noellesroles.cooked_food.desc": "由廚師烹飪。烹飪後帶有各種效果。",
   "item.noellesroles.letter.desc": "開啟任務點透視時，拿著信封可以看到物品售貨機。",
