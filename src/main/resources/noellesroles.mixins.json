@@ -86,6 +86,7 @@
   },
   "client": [
     "LivingEntityAccessor",
+    "client.blindness.TaskPointMaskCaptureMixin",
     "client.general.AmonHideTargetMixin",
     "client.HandCuffsKeyBindingMixin",
     "client.HandCuffsPoseMixin",

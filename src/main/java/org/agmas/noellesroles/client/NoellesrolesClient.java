@@ -484,6 +484,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
         });
+        // 任务点透视穿透失明遮罩：向失明症模组注册遮罩绘制扩展（失明症未安装时自动跳过）
+        org.agmas.noellesroles.client.blindness.TaskPointMaskBridge.init();
         InstinctRenderer.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {

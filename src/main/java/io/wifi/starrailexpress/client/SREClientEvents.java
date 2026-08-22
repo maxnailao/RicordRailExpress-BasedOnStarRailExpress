@@ -15,7 +15,6 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseAndCustomResult;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -79,10 +78,10 @@ public class SREClientEvents {
     public static void registerClientEvents() {
         registerRoleNameRendererEvents();
         OnGameStartedClient.EVENT.register(() -> {
-            if (!Minecraft.getInstance().isLocalServer()) {
-                SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
-                RoleShopHandler.shopRegister();
-            }
+            // 单人游戏也重建：初始化阶段商店注册可能早于依赖模组（如失明症的导盲杖）完成注册，
+            // 此时所有模组均已初始化完毕，重建可补齐缺失的条目。
+            SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
+            RoleShopHandler.shopRegister();
         });
     }
 

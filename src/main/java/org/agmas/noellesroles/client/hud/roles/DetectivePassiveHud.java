@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.client.SREClient;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.client.AgentListenStepHandler;
+import org.agmas.noellesroles.role.ModRoles;
 import org.joml.Vector3f;
 
 import static org.agmas.noellesroles.client.AgentListenStepHandler.*;
@@ -18,6 +19,10 @@ public class DetectivePassiveHud {
             if (mc.level == null || mc.player == null)
                 return;
             if (!AgentListenStepHandler.canUseListenPassive(mc.player))
+                return;
+            // 盲人角色的声纹显示已取消：其声音感知改由失明症模组的声纹回响提供，不再绘制回声图标。
+            if (SREClient.gameComponent != null
+                    && SREClient.gameComponent.isRole(mc.player, ModRoles.NIYAJINGSHIBUSHIXIALE))
                 return;
             if (SREClient.isPlayerSpectator())
                 return;
