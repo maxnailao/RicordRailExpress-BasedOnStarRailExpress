@@ -3804,7 +3804,7 @@ public class ModRoles {
                     true,   // isInnocent = 平民阵营
                     false,  // canUseKiller = 无杀手能力
                     SRERole.MoodType.FAKE, // 假心情
-                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 2.0), // 2.0倍平民体力
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 1.0), // 1.0倍平民体力
                     false
             ).setComponentKey(NiyajingshiPlayerComponent.KEY))
             .setCanSeeTime(true)

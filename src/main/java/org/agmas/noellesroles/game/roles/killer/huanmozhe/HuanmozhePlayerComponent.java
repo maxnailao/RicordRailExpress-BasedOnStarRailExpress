@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.killer.huanmozhe;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
@@ -539,6 +540,20 @@ public class HuanmozhePlayerComponent implements RoleComponent, ServerTickingCom
     // ==================== 静态事件注册 ====================
 
     static {
+        // 击杀加时：幻魔者击杀平民阵营玩家时，游戏时间正常增加30秒（与基础击杀奖励机制一致）
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (killer == null) return;
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (!gameWorld.isRunning()) return;
+            if (!gameWorld.isRole(killer, ModRoles.HUANMOZHE)) return;
+            if (!gameWorld.isInnocent(victim)) return;
+
+            SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(victim.level());
+            if (timeComponent.getTime() < timeComponent.getResetTime()) {
+                timeComponent.addTime(GameConstants.TIME_ON_CIVILIAN_KILL);
+            }
+        });
+
         // 被动：不死图腾 - 死亡后15秒复活（允许死亡，然后计时复活）
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
