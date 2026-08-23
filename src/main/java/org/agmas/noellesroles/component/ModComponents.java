@@ -368,6 +368,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "kalabiqiumiao"),
       KalabiqiumiaoPlayerComponent.class);
 
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent> XUNGUIREN = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "xunguiren"),
+      org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent.class);
+
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent> DUOMAOMAO_MEIMEIHIDE = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "duomaomao_meimeihide"),
       org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.class);
@@ -739,6 +743,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 诱杀者组件 - 杀手阵营，诱杀左轮技能（放置陷阱左轮，开枪炸膛击杀）
   public static final ComponentKey<KillmanPlayerComponent> KILLMAN = KillmanPlayerComponent.KEY;
 
+  // 鬼影组件 - 杀手阵营，鬼影步瞬移+残影假人+技能储备回转
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingPlayerComponent> GHOSTYING = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghostying_guiying"),
+          org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingPlayerComponent.class);
+
   // 掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
   public static final ComponentKey<RaiderPlayerComponent> RAIDER = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "raider"),
@@ -758,6 +767,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent> WEREWOLF = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "werewolf"),
           org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent.class);
+
+  // 狼人组件 - 杀手阵营（黑灯增益 + 午夜狼嚎特殊模式）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent> WEREWOLF_KILLER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "werewolf_killer"),
+          org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -815,6 +829,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, KALABIQIUMIAO)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(KalabiqiumiaoPlayerComponent::new);
+
+    // 注册寻鬼人组件 - 技能「寻鬼」状态管理（追踪布袋鬼方位的剩余时间与 actionbar 罗盘刷新）
+    registry.beginRegistration(Player.class, XUNGUIREN)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent::new);
 
     // 注册躲藏专家组件 - 技能「变身躲藏」状态管理（隐身 + 方块模型跟随渲染）
     registry.beginRegistration(Player.class, DUOMAOMAO_MEIMEIHIDE)
@@ -1489,6 +1508,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(KillmanPlayerComponent::new);
 
+    // 注册鬼影组件 - 杀手阵营，鬼影步瞬移+残影假人+技能储备回转
+    registry.beginRegistration(Player.class, GHOSTYING)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingPlayerComponent::new);
+
     // 注册掠夺者组件 - 杀手阵营，弩击杀冷却+特殊疯魔模式
     registry.beginRegistration(Player.class, RAIDER)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1524,6 +1548,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, WEREWOLF)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.modes.werewolf.WerewolfPlayerComponent::new);
+
+    // 注册狼人组件 - 杀手阵营，黑灯增益 + 午夜狼嚎特殊模式
+    registry.beginRegistration(Player.class, WEREWOLF_KILLER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent::new);
 
   }
 }

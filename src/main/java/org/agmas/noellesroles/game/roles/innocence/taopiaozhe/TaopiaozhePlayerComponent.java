@@ -29,7 +29,7 @@ import java.util.UUID;
 /**
  * 逃票者组件
  *
- * 被动技能：其他玩家在逃票者半径6.5格内累计存在45秒后，
+ * 被动技能：其他玩家在逃票者半径4.5格内累计存在65秒后，
  * 逃票者即可在背包内知晓该玩家的阵营归属（显示玩家头像与阵营）。
  *
  * 被动豁免：逃票者被平民阵营玩家击杀时不触发小脑惩罚
@@ -42,13 +42,13 @@ public class TaopiaozhePlayerComponent implements RoleComponent, ServerTickingCo
     // ==================== 常量定义 ====================
 
     /** 侦测半径（格） */
-    public static final double DETECT_RADIUS = 6.5;
+    public static final double DETECT_RADIUS = 4.5;
 
     /** 侦测半径平方 */
     private static final double DETECT_RADIUS_SQR = DETECT_RADIUS * DETECT_RADIUS;
 
-    /** 累计存在时长（45秒 = 900 tick） */
-    public static final int REQUIRED_TICKS = 45 * 20;
+    /** 累计存在时长（65秒 = 1300 tick） */
+    public static final int REQUIRED_TICKS = 65 * 20;
 
     /** 阵营编码：平民阵营 */
     public static final byte CAMP_INNOCENT = 0;
@@ -153,7 +153,7 @@ public class TaopiaozhePlayerComponent implements RoleComponent, ServerTickingCo
 
             int ticks = accumulatedTicks.getOrDefault(uuid, 0) + 1;
             if (ticks >= REQUIRED_TICKS) {
-                // 累计满45秒：记录阵营并提示
+                // 累计满65秒：记录阵营并提示
                 revealedCamps.put(uuid, campOf(gameWorld, other));
                 accumulatedTicks.remove(uuid);
                 serverPlayer.displayClientMessage(

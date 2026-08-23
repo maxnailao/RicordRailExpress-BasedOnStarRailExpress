@@ -30,6 +30,9 @@ public class SREReceiverRegister {
     public static void registerGlobalReceivers() {
         SceneAssetNetwork.registerServerReceivers();
 
+        // 表情系统服务端接收器与 tick 检测
+        io.wifi.starrailexpress.emote.EmoteServerManager.register();
+
         UpdateSkinSelectedPayload.registerReceiver();
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包

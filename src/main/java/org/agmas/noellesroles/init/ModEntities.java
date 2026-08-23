@@ -196,6 +196,21 @@ public class ModEntities {
                     .build());
 
     /**
+     * 鬼影残影实体 - 鬼影释放鬼影步时留在原地的假人诱饵，本体现身后消失
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity> GHOSTYING_AFTERIMAGE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("ghostying_afterimage"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity>create(
+                    MobCategory.MISC,
+                    org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 咸鱼假尸体实体 - 咸鱼晒咸鱼技能时生成的假尸体
      */
     @SuppressWarnings("deprecation")
@@ -490,6 +505,8 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
+        // 注册鬼影残影实体属性（LivingEntity 必须注册属性才能生成）
+        FabricDefaultAttributeRegistry.register(GHOSTYING_AFTERIMAGE, LivingEntity.createLivingAttributes());
         // 注册对话 NPC 实体属性
         FabricDefaultAttributeRegistry.register(DIALOG_NPC,
                 org.agmas.noellesroles.content.entity.DialogNpcEntity.createAttributes());

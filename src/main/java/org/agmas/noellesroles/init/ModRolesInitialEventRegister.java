@@ -560,6 +560,12 @@ public class ModRolesInitialEventRegister {
                 comp.init();
                 comp.sync();
             }
+            // 鬼影角色初始化
+            if (role.identifier().equals(ModRoles.GHOSTYING.identifier())) {
+                var comp = ModComponents.GHOSTYING.get(player);
+                comp.init();
+                comp.sync();
+            }
             // 嘉豪角色初始化
             if (role.identifier().equals(ModRoles.JIAHAO.identifier())) {
                 var comp = ModComponents.JIAHAO.get(player);
@@ -1527,6 +1533,15 @@ public class ModRolesInitialEventRegister {
                         .cooldownSeconds(KalabiqiumiaoPlayerComponent.COOLDOWN_TICKS / 20)
                         .showOnHud(true).announceToSelf(false).build());
 
+        // 寻鬼人技能注册：寻鬼 —— 花费 125 金币，在 8 秒内以 actionbar 罗盘样式指明布袋鬼方位，冷却 90 秒。
+        // 金币/目标校验失败时返回 false，不消耗冷却也不扣钱。
+        RoleSkill.register(ModRoles.XUNGUIREN,
+                RoleSkill.skill(org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent.SKILL_ID,
+                        "skill.noellesroles.xunguiren.track",
+                        context -> org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent.KEY
+                                .get(context.player()).useSkill(context.player()))
+                        .cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
+
         // 躲藏专家技能注册：变身躲藏 —— 花费 200 金币变身为准星对准的方块，
         // 持续 40 秒，冷却 175 秒；变身期间隐身且无法使用任何道具，
         // toggleable 支持冷却中再按技能键主动退出（退出不会重置冷却）。
@@ -2063,7 +2078,7 @@ public class ModRolesInitialEventRegister {
                     return comp.usePhaseShift();
                 }).cooldownSeconds(45).toggleable(true).showOnHud(true).announceToSelf(false).build());
 
-        // ==================== 诱杀者技能注册：诱杀左轮（花费75金币原地放置陷阱左轮，CD 100s） ====================
+        // ==================== 诱杀者技能注册：诱杀左轮（花貰75金币原地放置陷阱左轮，CD 100s） ====================
         RoleSkill.register(ModRoles.KILLMAN, RoleSkill.skill(
                 SRE.id("killman_trap_revolver"),
                 "skill.noellesroles.killman.trap",
@@ -2074,6 +2089,19 @@ public class ModRolesInitialEventRegister {
                     if (comp == null) return false;
                     return comp.useTrapRevolver();
                 }).cooldownSeconds(100).showOnHud(true).announceToSelf(false).build());
+        
+        // ==================== 鬼影技能注册：鬼影步（向方向键方向瞬移4格+残影假人，释放无CD；
+        // 储备与回转由组件维护：最多储备5次，每20秒回转1次存储） ====================
+        RoleSkill.register(ModRoles.GHOSTYING, RoleSkill.skill(
+                SRE.id("ghostying_blink"),
+                "skill.noellesroles.ghostying.blink",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    var comp = ModComponents.GHOSTYING.get(player);
+                    if (comp == null) return false;
+                    return comp.useBlink(player);
+                }).showOnHud(true).announceToSelf(false).build());
 
         // ==================== 幻魔者技能注册：地刺(G)，CD30s；恼鬼召唤通过背包界面点选玩家触发 ====================
         RoleSkill.register(ModRoles.HUANMOZHE,

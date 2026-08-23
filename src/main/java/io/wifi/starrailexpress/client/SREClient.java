@@ -1098,6 +1098,9 @@ public class SREClient implements ClientModInitializer {
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
                 "category." + SRE.MOD_ID + ".keybinds"));
+
+        // 表情系统：B 键打开表情罗盘、S2C 接收器、移动打断检测
+        io.wifi.starrailexpress.client.emote.EmoteClientHandler.register();
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();

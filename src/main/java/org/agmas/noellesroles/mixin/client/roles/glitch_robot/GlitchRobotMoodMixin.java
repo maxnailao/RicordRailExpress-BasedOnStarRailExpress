@@ -45,7 +45,8 @@ public class GlitchRobotMoodMixin {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(Minecraft.getInstance().player.level());
         if (gameWorldComponent.isRole(Minecraft.getInstance().player, ModRoles.GLITCH_ROBOT)
-                || gameWorldComponent.isRole(Minecraft.getInstance().player, ModRoles.NIYAJINGSHIBUSHIXIALE)) {
+                || gameWorldComponent.isRole(Minecraft.getInstance().player, ModRoles.NIYAJINGSHIBUSHIXIALE)
+                || gameWorldComponent.isRole(Minecraft.getInstance().player, ModRoles.IMIRONMAN_TIEKUILEI)) {
             context.pose().pushPose();
             context.pose().translate(0.0F, 3.0F * moodOffset, 0.0F);
             context.blitSprite(HudMoodRenderer.MOOD_HAPPY, 5, 6, 14, 17);;

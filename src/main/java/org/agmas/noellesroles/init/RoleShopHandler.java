@@ -3686,6 +3686,60 @@ public class RoleShopHandler {
             GHOUL_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 285, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.GHOUL_ID, GHOUL_SHOP);
         }
+        // 狼人商店：仅开锁器(80)、关灯(150)、午夜狼嚎(400)
+        {
+            var WEREWOLF_KILLER_SHOP = new ArrayList<ShopEntry>();
+            // 开锁器 - 80金币
+            WEREWOLF_KILLER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+            // 关灯 - 150金币
+            WEREWOLF_KILLER_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            // 特殊模式-午夜狼嚎 - 400金币（使用疯魔模式图标，但本质不是疯魔模式）
+            var werewolfHowl = TMMItems.PSYCHO_MODE.getDefaultInstance();
+            werewolfHowl.set(DataComponents.ITEM_NAME,
+                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_name"));
+            var werewolfHowlLore = new ItemLore(List.of(
+                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_lore.1")
+                            .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_lore.2")
+                            .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+            werewolfHowl.set(DataComponents.LORE, werewolfHowlLore);
+            WEREWOLF_KILLER_SHOP.add(new ShopEntry(werewolfHowl, 400, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                        return false;
+                    }
+                    var comp = ModComponents.WEREWOLF_KILLER.get(player);
+                    if (comp == null || comp.isHowlActive()) {
+                        return false;
+                    }
+                    return super.canBuy(player);
+                }
+
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                        return false;
+                    }
+                    var comp = ModComponents.WEREWOLF_KILLER.get(player);
+                    if (comp == null) {
+                        return false;
+                    }
+                    boolean success = comp.startMidnightHowl();
+                    if (success) {
+                        // 购买CD：240秒 = 4800 ticks
+                        player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 240 * 20);
+                    }
+                    return success;
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.WEREWOLF_KILLER_ID, WEREWOLF_KILLER_SHOP);
+        }
         // 幻魔者商店：技能存储 - 80金币一次，最多3次
         {
             var HUANMOZHE_SHOP = new ArrayList<ShopEntry>();

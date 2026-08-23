@@ -406,6 +406,11 @@ public class RoleInitialItems {
         broadcasterItems.add(() -> ModItems.RADIO.getDefaultInstance());
         INITIAL_ITEMS_MAP.put(ModRoles.BROADCASTER, broadcasterItems);
 
+        // 狼人初始物品 - 狼刀
+        List<Supplier<ItemStack>> werewolfKillerItems = new ArrayList<>();
+        werewolfKillerItems.add(() -> ModItems.WOLF_KNIFE.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.WEREWOLF_KILLER, werewolfKillerItems);
+
         // 影隼初始物品 - 喷气背包
         List<Supplier<ItemStack>> shadowFalconItems = new ArrayList<>();
         shadowFalconItems.add(() -> ModItems.JETPACK.getDefaultInstance());

@@ -2,7 +2,9 @@ package org.agmas.noellesroles.game.roles.neutral.dual_gunner;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -33,6 +35,22 @@ import java.util.OptionalInt;
  * - 在场时游戏不会结束；胜利条件为独自存活（判定见 CustomWinnerClass）
  */
 public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingComponent {
+
+    static {
+        // 双枪客击杀玩家不掉枪（含误杀平民）：双枪客与双枪绑定，
+        // 掉枪会破坏其核心玩法；该监听同时覆盖双枪与原左轮的射击掉落判定。
+        // 组件类被 ModComponents 引用时即加载，static 块随之执行（同 Fool 模式）。
+        AllowShootRevolverDrop.EVENT.register((shooter, target) -> {
+            if (shooter == null || shooter.level() == null) {
+                return TrueFalseResult.PASS;
+            }
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(shooter.level());
+            if (gameWorld != null && gameWorld.isRole(shooter, ModRoles.DUAL_GUNNER)) {
+                return TrueFalseResult.FALSE;
+            }
+            return TrueFalseResult.PASS;
+        });
+    }
 
     public static final ComponentKey<DualGunnerPlayerComponent> KEY = ModComponents.DUAL_GUNNER;
 

@@ -132,6 +132,7 @@
       "noellesroles:wraith_assassin",
       "noellesroles:salted_fish",
       "noellesroles:kalabiqiumiao",
+      "noellesroles:xunguiren",
       "noellesroles:duomaomao_meimeihide",
       "noellesroles:shilaimu",
       "noellesroles:imironman_tiekuilei",
@@ -289,12 +290,14 @@
       "noellesroles:philanthropist",
       "noellesroles:ghoul",
       "noellesroles:eling_apex",
+      "noellesroles:ghostying_guiying",
       "noellesroles:youshazhe_killman",
       "noellesroles:cowboy",
       "noellesroles:conductor",
       "noellesroles:huanshushi",
       "noellesroles:wantong",
-      "noellesroles:taopiaozhe"
+      "noellesroles:taopiaozhe",
+      "noellesroles:werewolf_killer"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

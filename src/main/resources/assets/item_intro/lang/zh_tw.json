@@ -99,6 +99,7 @@
   "item.noellesroles.alchemist_buff_potion.desc": "一次性用品，右鍵對玩家使用，隨機施加以下6種增益效果中的一種：san值消耗減緩、san值消耗免疫、san值恢復、無限體力、體力提升、體力恢復效率提升；並提示目標當前獲得的效果。",
   "item.noellesroles.fire_axe.desc": "消防員職業專屬道具，擁有3點耐久，長按右鍵可以舉起消防斧對目標造成擊殺，擊殺後直接消耗3點耐久，也可以蹲下右鍵門將門破開，消耗1點耐久，消防斧耐久不為滿時無法通過消防斧刀人。",
   "item.noellesroles.throwing_knife.desc": "按Q鍵投擲，右鍵可以將飛刀舉起來，並造成擊殺。",
+    "item.noellesroles.wolf_knife.desc": "狼人專屬刀類武器。正常情況下與普通刀一致；黑燈狀態下舉刀速度加快65%%，擊殺後冷卻縮短至18秒；在狼人的午夜狼嚎狀態下舉刀落刀無聲，擊殺後冷卻縮短至6秒。",
   "item.noellesroles.rope.desc": "搜救員職業專屬道具，右鍵將直線範圍內的一個人拉到你面前。",
   "item.noellesroles.extinguisher.desc": "消防員職業專屬道具，擁有5點耐久，可以右鍵或長按右鍵對玩家噴射，被噴射的玩家獲得緩慢和失明效果，能夠清除縱火犯澆在身上的汽油。",
   "item.noellesroles.passbook.desc": "會計職業專屬道具，右鍵將身上的錢存到存摺裏（最多300金幣），存摺會在會計死亡的時候傳遞給附近的好人，存摺可以被丟出。",

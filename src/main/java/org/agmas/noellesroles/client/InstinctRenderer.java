@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
+import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGetInstinctHighlight;
@@ -855,6 +856,45 @@ public class InstinctRenderer {
                 return -1;
             }
             return SERoles.AMNESIAC.color();
+        });
+
+        // 狼人：黑灯状态（含午夜狼嚎）下透视降低为半径7格，非黑灯时透传给通用杀手直觉。
+        // 需先于下方通用逻辑注册，避免通用杀手直觉不受距离限制地返回颜色。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.WEREWOLF_KILLER))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            // 非黑灯状态下同普通杀手，交给后续通用逻辑处理
+            SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(self.level());
+            if (blackout == null || !blackout.isBlackoutActive())
+                return -1;
+            if (!hasInstinct)
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            if (isTargetInvisibleToInstinct(targetPlayer))
+                return -2;
+            // 黑灯下仅可透视半径7格内的玩家，超出范围禁用高亮
+            if (self.distanceTo(targetPlayer) > org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent.BLACKOUT_ESP_RADIUS)
+                return -2;
+            var targetRole = SREClient.gameComponent.getRole(targetPlayer);
+            if (targetRole != null && targetRole.canUseKiller()) {
+                return Color.RED.getRGB();
+            }
+            if (targetRole != null && targetRole.isNeutralForKiller()) {
+                return Color.ORANGE.getRGB();
+            }
+            return TMMRoles.CIVILIAN.color();
         });
 
         // 通用逻辑

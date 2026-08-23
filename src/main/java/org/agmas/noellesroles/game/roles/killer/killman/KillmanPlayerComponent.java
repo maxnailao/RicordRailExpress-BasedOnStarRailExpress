@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 
@@ -195,15 +196,20 @@ public class KillmanPlayerComponent implements RoleComponent {
     /**
      * 判断玩家是否被标记（背包/副手等任意槽位持有诱杀左轮即视为被标记）。
      * 玩家丢掉/失去诱杀左轮后标记自动清空。
+     * 诱杀者本人免疫陷阱：可回收并使用自己放置的诱杀左轮正常击杀。
      */
     public static boolean isMarked(Player player) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld != null && RoleUtils.compareRole(gameWorld.getRole(player.getUUID()), ModRoles.KILLMAN)) {
+            return false;
+        }
         return SREItemUtils.hasItem(player, KillmanPlayerComponent::isTrapRevolver);
     }
 
     /**
      * 开枪触雷处理（OnRevolverUsed 事件调用）：
      * 被标记的玩家开枪后，先清除背包内所有左轮手枪，再以死因"手枪炸膛"击杀，
-     * 避免死亡后掉落左轮手枪。
+     * 避免死亡后掉落左轮手枪。诱杀者本人免疫（见 isMarked）。
      */
     public static void handleTrapShot(ServerPlayer shooter) {
         if (shooter == null)
@@ -214,7 +220,7 @@ public class KillmanPlayerComponent implements RoleComponent {
             return;
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(shooter.level());
-        if (!gameWorld.isRunning())
+        if (gameWorld == null || !gameWorld.isRunning())
             return;
 
         // 先清除背包内所有左轮手枪，避免死亡后掉落

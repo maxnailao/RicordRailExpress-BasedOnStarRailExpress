@@ -282,6 +282,10 @@ public class ModItems {
     public static final Item STALKER_KNIFE_OFFHAND = register(
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
             "stalker_knife_offhand", WEAPONS_GROUP);
+    // 狼刀 - 狼人专属刀类武器：黑灯下举刀加快65%且击杀CD 18s，午夜狼嚎下无声且击杀CD 6s
+    public static final Item WOLF_KNIFE = register(
+            new WolfKnifeItem(new Item.Properties().stacksTo(1)),
+            "wolf_knife", WEAPONS_GROUP);
     public static final Item PIRATE_CUTLASS = register(
             new org.agmas.noellesroles.content.item.PirateCutlassItem(new Item.Properties().stacksTo(1)),
             "pirate_cutlass");
@@ -1203,6 +1207,7 @@ public class ModItems {
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE, new StalkerKnifeChargeItem());
         ChargeableItemRegistry.register(ModItems.SILENCE_TOTEM, new SilenceTotemChargeItem());
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE_OFFHAND, new StalkerKnifeChargeItem());
+        ChargeableItemRegistry.register(ModItems.WOLF_KNIFE, new WolfKnifeChargeItem());
         ChargeableItemRegistry.register(TOXIN, new ToxinChargeItem());
         ChargeableItemRegistry.register(ModItems.THROWING_KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(ANTIDOTE, new AntidoteChargeItem());

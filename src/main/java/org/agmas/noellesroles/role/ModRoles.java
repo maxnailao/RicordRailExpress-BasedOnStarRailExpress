@@ -306,6 +306,7 @@ public class ModRoles {
     public static final ResourceLocation BANDIT_ID = Noellesroles.id("bandit");
     public static final ResourceLocation BLOOD_FEUDIST_ID = Noellesroles.id("blood_feudist");
     public static final ResourceLocation GUEST_GHOST_ID = Noellesroles.id("guest_ghost");
+    public static final ResourceLocation XUNGUIREN_ID = Noellesroles.id("xunguiren");
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
@@ -358,6 +359,10 @@ public class ModRoles {
     public static final ResourceLocation ELING_APEX_ID = Noellesroles.id("eling_apex");
     // 诱杀者角色 ID - 杀手阵营
     public static final ResourceLocation KILLMAN_ID = Noellesroles.id("youshazhe_killman");
+    // 鬼影角色 ID - 杀手阵营
+    public static final ResourceLocation GHOSTYING_ID = Noellesroles.id("ghostying_guiying");
+    // 狼人角色 ID - 杀手阵营（注意：与狼人杀模式组件 noellesroles:werewolf 区分）
+    public static final ResourceLocation WEREWOLF_KILLER_ID = Noellesroles.id("werewolf_killer");
 
     // 坠木角色 ID - 独立中立
     public static final ResourceLocation ZHUIMU_ID = Noellesroles.id("zhuimu_dream");
@@ -839,6 +844,27 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
     )).setComponentKey(ModComponents.MA_CHEN_XU).setCanSeeCoin(true).setOccupiedRoleCount(2)
+            .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(SRERole.SpecialMapRoleMap.QIYUCUN)
+            .setDefaultMax(1);
+
+    /**
+     * 寻鬼人角色 - 平民阵营（鬼图限定，同布袋鬼刷新机制）
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 仅在鬼图 (maChenXuMaps) 刷新，不被其他角色随机交换（地图限定）
+     * - 技能：寻鬼 —— 花费 125 金币，在 8 秒内以 actionbar 罗盘样式指明布袋鬼方位，冷却 90 秒
+     * - 登车标语：鬼气为引，罗盘为眼！
+     */
+    public static SRERole XUNGUIREN = TMMRoles.registerRole(new NormalRole(
+            XUNGUIREN_ID, // 角色 ID
+            new Color(144, 238, 144).getRGB(), // 浅绿色 - 寻鬼罗盘
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 冲刺时间同平民
+            false // 显示计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.XUNGUIREN)
             .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(SRERole.SpecialMapRoleMap.QIYUCUN)
             .setDefaultMax(1);
 
@@ -4049,6 +4075,62 @@ public class ModRoles {
             .setCanSeeCoin(true);
 
     /**
+     * 鬼影 - 杀手阵营
+     *
+     * - 虚假心情
+     * - 无限体力
+     * - 可见时间
+     * - 隐藏计分板
+     * - 商店：同普通杀手
+     * - 技能：鬼影步（向方向键方向瞬移4格，原地留下残影假人，0.7秒后现身残影消失；
+     *   释放无冷却但需现身才可使用；最多储备5次，存储回转20秒）
+     * - 登车标语：你看到的，只是我的残影
+     */
+    public static SRERole GHOSTYING = TMMRoles.registerRole(
+            new NormalRole(
+                    GHOSTYING_ID,
+                    new Color(110, 190, 220).getRGB(), // 幽蓝（鬼魅般苍白的蓝色）
+                    false,  // 杀手阵营
+                    true,   // 可以使用杀手能力
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    Integer.MAX_VALUE, // 无限体力
+                    true    // 隐藏计分板
+            )
+    ).setComponentKey(ModComponents.GHOSTYING)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true);
+
+    /**
+     * 狼人 - 杀手阵营
+     *
+     * - 虚假心情
+     * - 无限体力
+     * - 可见时间、可见金币
+     * - 隐藏计分板
+     * - 初始物品：狼刀
+     * - 非黑灯状态下同普通杀手；黑灯后透视降低为半径7格，获得夜视+速度2，
+     *   狼刀举刀加快65%，黑灯击杀后CD 18秒
+     * - 被动：非黑灯状态下击杀玩家减少自身35%的黑灯购买冷却时间
+     * - 商店：仅开锁器(80)、关灯(150)、午夜狼嚎(400)
+     * - 特殊模式-午夜狼嚎（非疯魔模式）：开启后进入30秒黑灯并播放狼嚎，
+     *   期间狼刀举刀落刀无声、击杀CD 6秒、被击杀者出血量增加、狼人获得静步；购买CD 240秒
+     * - 登车标语：谁会是下一个倒霉蛋？
+     */
+    public static SRERole WEREWOLF_KILLER = TMMRoles.registerRole(
+            new NormalRole(
+                    WEREWOLF_KILLER_ID,
+                    new Color(85, 95, 115).getRGB(), // 狼灰蓝 - 夜色中的狼影
+                    false,  // 杀手阵营
+                    true,   // 可以使用杀手能力
+                    SRERole.MoodType.FAKE, // 虚假心情
+                    Integer.MAX_VALUE, // 无限体力
+                    true    // 隐藏计分板
+            )
+    ).setComponentKey(ModComponents.WEREWOLF_KILLER)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true);
+
+    /**
      * 坠木角色 - 独立中立
      * - 皮肤变为指定皮肤(dream.png)
      * - 虚假心情，无限体力，可见时间
@@ -4228,7 +4310,7 @@ public class ModRoles {
      * 铁傀儡角色 - 平民阵营
      * - 属于平民阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
-     * - 假心情系统
+     * - 假心情系统（心情条伪装同故障机器人，见 GlitchRobotMoodMixin）
      * - 体力为正常平民的1.5倍
      * - 不可见时间
      * - 技能：对准玩家按下技能键将其击退2格、击飞4格，并造成缓慢II+失明2秒，
@@ -4254,7 +4336,7 @@ public class ModRoles {
      * - 不能使用杀手能力 (canUseKiller = false)
      * - 真实心情系统
      * - 有限冲刺时间
-     * - 被动技能：其他玩家在自己半径6.5格内累计存在45秒后，即可在背包内知晓该玩家的阵营归属（显示头像）
+     * - 被动技能：其他玩家在自己半径4.5格内累计存在65秒后，即可在背包内知晓该玩家的阵营归属（显示头像）
      * - 被动豁免：被平民阵营玩家击杀不会触发小脑惩罚，击杀者会收到提示“他只是一个困难的人...”
      * - 登车标语：查票？我可不在这辆车上
      */

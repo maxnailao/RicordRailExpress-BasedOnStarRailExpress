@@ -73,6 +73,7 @@
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.phantom.PhantomFrenzyKnifeCooldownMixin",
+    "roles.werewolfkiller.WolfKnifeStabMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
     "roles.veteran.VeteranKnifeLeftClickMixin",

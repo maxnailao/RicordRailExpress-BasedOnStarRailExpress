@@ -21,6 +21,19 @@ public class SREPayloadRegister {
 
     public static void registerPayloadTypes() {
         SceneAssetNetwork.registerPayloadTypes();
+        // 表情系统 / Emote system
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.emote.EmotePlayC2SPayload.ID,
+                io.wifi.starrailexpress.emote.EmotePlayC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.emote.EmoteStopC2SPayload.ID,
+                io.wifi.starrailexpress.emote.EmoteStopC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.emote.EmotePlayS2CPayload.ID,
+                io.wifi.starrailexpress.emote.EmotePlayS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.emote.EmoteStopS2CPayload.ID,
+                io.wifi.starrailexpress.emote.EmoteStopS2CPayload.CODEC);
         // 商店价格同步 / Shop price sync
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.shop.network.ShopPriceHandshakeS2CPayload.TYPE,

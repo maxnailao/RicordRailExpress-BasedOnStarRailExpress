@@ -425,6 +425,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 context -> new io.wifi.starrailexpress.client.render.entity.PlayerBodyEntityRenderer<>(context, false));
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
+        // 注册鬼影残影实体渲染器（固定残影贴图假人）
+        EntityRendererRegistry.register(ModEntities.GHOSTYING_AFTERIMAGE,
+                org.agmas.noellesroles.client.renderer.GhostyingAfterimageEntityRenderer::new);
         // 注册对话 NPC 实体渲染器
         EntityRendererRegistry.register(ModEntities.DIALOG_NPC,
                 org.agmas.noellesroles.client.renderer.DialogNpcEntityRenderer::new);
