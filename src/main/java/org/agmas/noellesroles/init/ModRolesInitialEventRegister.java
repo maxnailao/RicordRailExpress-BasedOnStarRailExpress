@@ -1906,6 +1906,10 @@ public class ModRolesInitialEventRegister {
                     }
                     shop.addToBalance(-100);
                     SREPlayerShopComponent.KEY.get(targetPlayer).addToBalance(50);
+                    // 捐赠成功获得声望值（关灯免疫黑暗的消耗资源）
+                    org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent.KEY
+                            .get(player)
+                            .addReputation(org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent.DONATE_REPUTATION);
                     player.displayClientMessage(
                             Component.translatable("message.noellesroles.philanthropist.donated",
                                             targetPlayer.getName().getString())

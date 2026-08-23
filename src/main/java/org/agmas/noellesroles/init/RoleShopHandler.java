@@ -1222,6 +1222,12 @@ public class RoleShopHandler {
                     80,
                     ShopEntry.Type.TOOL));
 
+            // 反人员地雷 - 150金币（长按右键3秒放置，杀手阵营可见）
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.LANDMINE.getDefaultInstance(),
+                    150,
+                    ShopEntry.Type.WEAPON));
+
             // 关灯 - 使用配置价格
             GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
                     ShopEntry.Type.TOOL) {
@@ -2219,11 +2225,11 @@ public class RoleShopHandler {
                 }
             });
 
-            // 猎魔箭（原版缓慢箭）- 200金币
+            // 猎魔箭（原版缓慢箭）- 250金币
             final var HuntArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
             HuntArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.liemoren_hunt_arrow.name"));
             HuntArrow.set(DataComponents.MAX_STACK_SIZE, 1);
-            shopEntries.add(new ShopEntry(HuntArrow, 200, ShopEntry.Type.WEAPON) {
+            shopEntries.add(new ShopEntry(HuntArrow, 250, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     int itemCount = SREItemUtils.countItem(player, Items.SPECTRAL_ARROW);

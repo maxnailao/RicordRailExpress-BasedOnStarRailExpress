@@ -4461,10 +4461,12 @@
   "announcement.star.role.philanthropist": "慈善家",
   "announcement.star.goals.philanthropist": "慷慨解囊，帮助他人",
   "announcement.star.win.philanthropist": "平民阵营胜利！",
-  "info.screen.roleid.philanthropist": "平民阵营\n打开背包选择一名玩家，花费100金币使其金币增加50\n技能冷却30秒",
+  "info.screen.roleid.philanthropist": "平民阵营\n打开背包选择一名玩家，花费100金币使其金币增加50\n技能冷却30秒，每次捐赠获得25点声望值\n关灯时自动消耗75点声望值免疫前期黑暗效果",
   "hud.noellesroles.philanthropist.player_selection": "选择捐赠目标（花费100金币 → 对方获得50金币）",
   "message.noellesroles.philanthropist.donated": "已向 %s 捐赠50金币（花费100金币）",
   "message.noellesroles.philanthropist.received": "§6慈善家 %s 向你捐赠了50金币！",
+  "message.noellesroles.philanthropist.reputation_gain": "捐赠成功！获得 %s 点声望值（当前 %s 点）",
+  "message.noellesroles.philanthropist.blackout_immunity": "声望庇护！消耗 %s 点声望免疫了黑暗效果（剩余 %s 点）",
 
   "==================== 售衣员 Shouyiyuan ====================": "",
   "announcement.star.role.shouyiyuan": "售衣员",
