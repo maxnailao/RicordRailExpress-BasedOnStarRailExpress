@@ -162,7 +162,9 @@ public class ModEventsRegister {
     // Noellesroles.id("wind_yaose"), -0.2f, AttributeModifier.Operation.ADD_VALUE);
 
     /**
-     * 处理窃皮者死亡免疫 - 有偷来皮肤时被枪击中进入眩晕
+     * 处理窃皮者死亡免疫 - 有偷来皮肤时被特定武器击中进入眩晕
+     * 可防御：左轮、消音左轮、德林加、刀（退伍军刀）、箭（毒箭）
+     * 疯魔期间优先消耗疯魔护盾：有疯魔护盾时不消耗窃皮抵挡次数
      */
     private static boolean handleSkincrawlerDeath(Player victim, ResourceLocation deathReason) {
         if (victim == null || victim.level().isClientSide())
@@ -172,10 +174,20 @@ public class ModEventsRegister {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
         if (!gameWorld.isRole(victim, ModRoles.SKINCRAWLER))
             return false;
-        if (!GameConstants.DeathReasons.REVOLVER.equals(deathReason))
+        // 可防御的死亡原因：左轮/消音左轮/德林加/刀（退伍军刀）/箭（毒箭）
+        boolean blockable = GameConstants.DeathReasons.REVOLVER.equals(deathReason)
+                || GameConstants.DeathReasons.DERRINGER.equals(deathReason)
+                || GameConstants.DeathReasons.KNIFE.equals(deathReason)
+                || GameConstants.DeathReasons.ARROW.equals(deathReason)
+                || deathReason.getPath().equals("silenced_pistol_shot");
+        if (!blockable)
             return false;
         var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(sp);
         if (comp == null || comp.stolenSkin == null || comp.stolenSkin.equals(sp.getUUID()))
+            return false;
+        // 疯魔优先：疯魔护盾尚存时不消耗窃皮抵挡次数，交由 GameMode.killPlayer 消耗疯魔护盾
+        var psycho = SREPlayerPsychoComponent.KEY.get(sp);
+        if (psycho.getPsychoTicks() > 0 && psycho.getArmour() > 0)
             return false;
         if (comp.blockCharges <= 0)
             return false;

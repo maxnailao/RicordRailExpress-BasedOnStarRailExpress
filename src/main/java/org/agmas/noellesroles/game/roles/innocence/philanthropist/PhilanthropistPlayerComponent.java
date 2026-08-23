@@ -28,8 +28,13 @@ public class PhilanthropistPlayerComponent implements RoleComponent, ServerTicki
     public static final int SKILL_COST = 100;
     public static final int DONATE_AMOUNT = 50;
     public static final int SKILL_COOLDOWN = 30 * 20;
+    /** 每次捐赠获得的声望值 */
+    public static final int DONATE_REPUTATION = 25;
+    /** 关灯时免疫黑暗效果消耗的声望值 */
+    public static final int BLACKOUT_IMMUNITY_COST = 75;
 
     private int skillCooldown = 0;
+    private int reputation = 0;
     private final Player player;
 
     public PhilanthropistPlayerComponent(Player player) {
@@ -56,15 +61,50 @@ public class PhilanthropistPlayerComponent implements RoleComponent, ServerTicki
         return skillCooldown;
     }
 
+    public int getReputation() {
+        return reputation;
+    }
+
+    public void addReputation(int amount) {
+        this.reputation += amount;
+        if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    Component.translatable("message.noellesroles.philanthropist.reputation_gain", amount, reputation)
+                            .withStyle(ChatFormatting.GOLD),
+                    true);
+        }
+        sync();
+    }
+
+    /**
+     * 关灯时尝试消耗声望免疫黑暗效果：声望足够（≥75）时扣除 75 点并返回 true
+     */
+    public boolean tryConsumeBlackoutImmunity() {
+        if (reputation < BLACKOUT_IMMUNITY_COST)
+            return false;
+        reputation -= BLACKOUT_IMMUNITY_COST;
+        if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    Component.translatable("message.noellesroles.philanthropist.blackout_immunity",
+                            BLACKOUT_IMMUNITY_COST, reputation)
+                            .withStyle(ChatFormatting.GOLD),
+                    true);
+        }
+        sync();
+        return true;
+    }
+
     @Override
     public void init() {
         this.skillCooldown = 0;
+        this.reputation = 0;
         sync();
     }
 
     @Override
     public void clear() {
         this.skillCooldown = 0;
+        this.reputation = 0;
         sync();
     }
 
@@ -98,6 +138,8 @@ public class PhilanthropistPlayerComponent implements RoleComponent, ServerTicki
         shop.addToBalance(-SKILL_COST);
         SREPlayerShopComponent.KEY.get(target).addToBalance(DONATE_AMOUNT);
         this.skillCooldown = SKILL_COOLDOWN;
+        // 捐赠成功获得声望值（关灯免疫黑暗的消耗资源）
+        this.reputation += DONATE_REPUTATION;
 
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.philanthropist.donated",
@@ -127,11 +169,13 @@ public class PhilanthropistPlayerComponent implements RoleComponent, ServerTicki
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putInt("SkillCooldown", skillCooldown);
+        tag.putInt("Reputation", reputation);
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.skillCooldown = tag.getInt("SkillCooldown");
+        this.reputation = tag.getInt("Reputation");
     }
 
     @Override

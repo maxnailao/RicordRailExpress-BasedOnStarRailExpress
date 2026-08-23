@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.c4;
 
 import io.wifi.starrailexpress.content.entity.GrenadeEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -51,6 +52,14 @@ public final class C4Detonation {
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(C4Detonation::tick);
         ServerLivingEntityEvents.AFTER_DEATH.register(C4Detonation::afterDeath);
+        // 游戏内死亡是"软死亡"（实体不真正死亡，仅转观察者+生成尸体），
+        // Fabric 的 AFTER_DEATH 不会触发，必须额外监听游戏模组的 OnPlayerDeath 事件，
+        // 否则身上的 C4 会一直挂在观察者身上跟随其飞行。
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (!(victim instanceof ServerPlayer player)) return;
+            C4BackComponent comp = C4BackComponent.KEY.getNullable(player.level());
+            if (comp != null) dropCarrierCharge(player, comp);
+        });
         OnGameEnd.EVENT.register((world, gameWorldComponent) -> {
             C4BackComponent comp = C4BackComponent.KEY.getNullable(world);
             if (comp != null) comp.clearAll();
@@ -200,7 +209,9 @@ public final class C4Detonation {
 
             ServerPlayer carrier = server.getPlayerList().getPlayer(id);
             if (carrier == null || carrier.isRemoved()) continue;
-            if (!carrier.isAlive()) {
+            // 观察者（软死亡或手动切观察者）不再携带 C4，掉落到其当前位置继续倒数；
+            // 软死亡玩家 isAlive() 仍为 true，必须单独判断观察者状态。
+            if (!carrier.isAlive() || carrier.isSpectator()) {
                 if (dropOnly == null) dropOnly = new ArrayList<>();
                 dropOnly.add(id);
                 continue;

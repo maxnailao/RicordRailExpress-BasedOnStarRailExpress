@@ -4113,10 +4113,12 @@
   "announcement.star.role.philanthropist": "Philanthropist",
   "announcement.star.goals.philanthropist": "Give generously, help others",
   "announcement.star.win.philanthropist": "Civilian team wins!",
-  "info.screen.roleid.philanthropist": "Civilian team\nOpen inventory to select a player, spend 100 coins to give them 50 coins\n30s cooldown",
+  "info.screen.roleid.philanthropist": "Civilian team\nOpen inventory to select a player, spend 100 coins to give them 50 coins\n30s cooldown, each donation grants 25 reputation\nDuring blackout, automatically spends 75 reputation to become immune to the darkness effect",
   "hud.noellesroles.philanthropist.player_selection": "Select donation target (cost 100 coins → target gets 50 coins)",
   "message.noellesroles.philanthropist.donated": "Donated 50 coins to %s (cost 100 coins)",
   "message.noellesroles.philanthropist.received": "§6Philanthropist %s donated 50 coins to you!",
+  "message.noellesroles.philanthropist.reputation_gain": "Donation successful! Gained %s reputation (current: %s)",
+  "message.noellesroles.philanthropist.blackout_immunity": "Reputation protection! Spent %s reputation to resist the darkness (remaining: %s)",
 
   "==================== Clothes Seller Shouyiyuan ====================": "",
   "announcement.star.role.shouyiyuan": "Clothes Seller",

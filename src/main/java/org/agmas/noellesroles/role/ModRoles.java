@@ -1424,7 +1424,7 @@ public class ModRoles {
      * - 初始武器：德林加手枪（死亡时不掉落）。
      * - 死亡后掉落一把左轮手枪。
      * - 德林加误杀平民时，牛仔自身死亡（小脑惩罚，不影响红海军）。
-     * - 商店：绳索（75金币）、德林加弹药重置（150金币，购买后6秒缓慢I，结束后重置弹药）。
+     * - 商店：绳索（175金币）、德林加弹药重置（150金币，购买后6秒缓慢I，结束后重置弹药）。
      */
     public static SRERole NIUZAI_JUEDOUBA = TMMRoles.registerRole(
             new NormalRole(NIUZAI_JUEDOUBA_ID, 0x8B4513, true, false, SRERole.MoodType.REAL,
@@ -1440,10 +1440,10 @@ public class ModRoles {
                 @Override
                 public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
                     java.util.ArrayList<io.wifi.starrailexpress.util.ShopEntry> shop = new java.util.ArrayList<>();
-                    // 绳索 - 125金币
+                    // 绳索 - 175金币
                     shop.add(new io.wifi.starrailexpress.util.ShopEntry(
                             org.agmas.noellesroles.init.ModItems.ROPE.getDefaultInstance(),
-                            125,
+                            175,
                             io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
                     // 德林加弹药重置 - 150金币（图标为德林加手枪）
                     shop.add(new io.wifi.starrailexpress.util.ShopEntry(
@@ -2930,7 +2930,7 @@ public class ModRoles {
      * - 隐藏计分板
      * - 与钳工绑定生成
      * - 初始物品：1个C4炸药 + 1个C4引爆器
-     * - 专属商店：短管霰弹枪(185金币)、C4炸药(300金币)、撬棍(25金币)、开锁器(80金币)、关灯(100金币)
+     * - 专属商店：短管霰弹枪(185金币)、C4炸药(280金币)、撬棍(25金币)、开锁器(80金币)、反人员地雷(150金币)、关灯(100金币)
      */
     public static SRERole GANGSTERS = TMMRoles.registerRole(new NormalRole(
             GANGSTERS_ID,
@@ -3763,7 +3763,8 @@ public class ModRoles {
     /**
      * 慈善家 - 平民阵营
      * - 打开背包可选择一名玩家，花费100金币使其金币增加50
-     * - 技能冷却30秒
+     * - 技能冷却30秒，每次捐赠获得25点声望值
+     * - 关灯时自动消耗75点声望值免疫前期黑暗效果（声望不足则正常受黑暗影响）
      * - 登车标语：慷慨解囊，帮助他人
      */
     public static SRERole PHILANTHROPIST = TMMRoles.registerRole(new NormalRole(
@@ -3774,7 +3775,15 @@ public class ModRoles {
                     SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(),
                     false
-            )).setCanSeeCoin(true).setCanSeeTime(false)
+            ) {
+                @Override
+                public boolean canIgnoreBlackout(Player player) {
+                    // 声望免疫：关灯时自动消耗 75 点声望免疫前期黑暗效果（成功消耗后才免疫）
+                    var comp = org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent.KEY
+                            .get(player);
+                    return comp != null && comp.tryConsumeBlackoutImmunity();
+                }
+            }).setCanSeeCoin(true).setCanSeeTime(false)
             .setDefaultMax(1);
 
     /**
@@ -3830,7 +3839,7 @@ public class ModRoles {
                     true,   // isInnocent = 平民阵营
                     false,  // canUseKiller = 无杀手能力
                     SRERole.MoodType.FAKE, // 假心情
-                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 2.0), // 2.0倍平民体力
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 1.0), // 1.0倍平民体力
                     false
             ).setComponentKey(NiyajingshiPlayerComponent.KEY))
             .setCanSeeTime(true)
@@ -3933,7 +3942,7 @@ public class ModRoles {
      * - 不可见时间
      * - 初始道具：弩
      * - 被动：同游侠的金钱获取被动
-     * - 商店：毒箭(50g)、猎魔箭(200g)
+     * - 商店：毒箭(50g)、猎魔箭(250g)
      * - 猎魔箭命中玩家后强制击杀（无视护盾和无敌）
      * - 死亡后掉落左轮手枪
      * - 具有小脑惩罚

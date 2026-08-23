@@ -77,8 +77,9 @@ public final class TaskPointMaskBridge {
             AABB box = shape.bounds();
             matrices.pushPose();
             matrices.translate(pos.getX() - cameraPos.x, pos.getY() - cameraPos.y, pos.getZ() - cameraPos.z);
-            // 遮罩通道颜色只影响强度通道，统一用合成输出的冷色调
-            LevelRenderer.renderLineBox(matrices, consumer, box, 0.72F, 0.96F, 1.0F, 1.0F);
+            // 遮罩通道颜色只影响强度通道，统一用合成输出的冷色调；
+            // 蓝分量必须为 0，蓝通道在遮罩合成中代表红色危险警示。
+            LevelRenderer.renderLineBox(matrices, consumer, box, 0.72F, 0.96F, 0.0F, 1.0F);
             matrices.popPose();
         }
     }

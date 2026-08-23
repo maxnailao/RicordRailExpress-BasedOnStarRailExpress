@@ -164,6 +164,8 @@ public class XiaoNaoHandler {
         for (ServerPlayer p : xiaoNaoKiller.serverLevel().getServer().getPlayerList().getPlayers()) {
             if (p.getUUID().equals(xiaoNaoKiller.getUUID())) continue;
             if (TraitorAndModifiers.CORRUPTION_TRIGGERED.contains(p.getUUID())) continue;
+            // 已死亡的玩家即使拥有腐败修饰符也不应被转变为黑警
+            if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
             if (!modifiers.isModifier(p.getUUID(), TraitorAndModifiers.CORRUPTION)) continue;
 
             TraitorAndModifiers.CORRUPTION_TRIGGERED.add(p.getUUID());
