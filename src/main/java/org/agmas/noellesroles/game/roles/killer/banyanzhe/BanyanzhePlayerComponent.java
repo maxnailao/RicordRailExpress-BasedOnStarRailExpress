@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.killer.banyanzhe;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
@@ -29,6 +30,8 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.BooleanSupplier;
 
 /**
  * 扮演者玩家组件
@@ -59,30 +62,9 @@ public class BanyanzhePlayerComponent implements RoleComponent, ServerTickingCom
 
     static {
         // 回忆方式一：聊天栏发送"我想起来了"（容忍空白/全角空格与前后多余文字）
+        // 注：专用服务器上 Fabric 聊天事件可能因签名/转发链路不触发，另有 BanyanzheChatRecallMixin 兜底
         ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
-            try {
-                String text = message.signedContent();
-                // 去掉所有空白字符（含全角空格）后再判断，避免输入法带入不可见字符导致判定失败
-                String normalized = text.replaceAll("[\\s\\u3000]+", "");
-                if (!normalized.contains("我想起来了") && !normalized.contains("我想起來了")) {
-                    return true;
-                }
-                SREGameWorldComponent game = SREGameWorldComponent.KEY.get(sender.level());
-                if (game == null || !game.isRunning()) {
-                    Noellesroles.LOGGER.info("[扮演者] 回忆短语命中但游戏未运行，忽略: {}", sender.getGameProfile().getName());
-                    return true;
-                }
-                if (!game.isRole(sender, ModRoles.BANYANZHE) || !GameUtils.isPlayerAliveAndSurvival(sender)) {
-                    return true;
-                }
-                BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(sender).orElse(null);
-                if (comp != null && !comp.recalled) {
-                    Noellesroles.LOGGER.info("[扮演者] {} 通过聊天回忆成功", sender.getGameProfile().getName());
-                    comp.recallSuccess(sender);
-                }
-            } catch (Exception e) {
-                Noellesroles.LOGGER.error("[扮演者] 聊天回忆处理异常", e);
-            }
+            handleChatRecall(sender, message.signedContent());
             return true;
         });
 
@@ -110,6 +92,36 @@ public class BanyanzhePlayerComponent implements RoleComponent, ServerTickingCom
                     .withStyle(ChatFormatting.RED), false);
             return false;
         });
+    }
+
+    /**
+     * 聊天回忆统一入口（Fabric 聊天事件与 handleChat Mixin 兜底共用）。
+     * 去掉所有空白字符（含全角空格）后再判断，避免输入法带入不可见字符导致判定失败。
+     */
+    public static void handleChatRecall(ServerPlayer sender, String rawText) {
+        try {
+            if (rawText == null || sender == null)
+                return;
+            String normalized = rawText.replaceAll("[\\s\\u3000]+", "");
+            if (!normalized.contains("我想起来了") && !normalized.contains("我想起來了")) {
+                return;
+            }
+            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(sender.level());
+            if (game == null || !game.isRunning()) {
+                Noellesroles.LOGGER.info("[扮演者] 回忆短语命中但游戏未运行，忽略: {}", sender.getGameProfile().getName());
+                return;
+            }
+            if (!game.isRole(sender, ModRoles.BANYANZHE) || !GameUtils.isPlayerAliveAndSurvival(sender)) {
+                return;
+            }
+            BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(sender).orElse(null);
+            if (comp != null && !comp.recalled) {
+                Noellesroles.LOGGER.info("[扮演者] {} 通过聊天回忆成功", sender.getGameProfile().getName());
+                comp.recallSuccess(sender);
+            }
+        } catch (Exception e) {
+            Noellesroles.LOGGER.error("[扮演者] 聊天回忆处理异常", e);
+        }
     }
 
     private final Player player;
@@ -197,6 +209,96 @@ public class BanyanzhePlayerComponent implements RoleComponent, ServerTickingCom
         return actualRole;
     }
 
+    // ==================== 技能转发：伪装职业的 isRole 临时伪装上下文 ====================
+    // 扮演者可以使用所扮演职业的技能；各技能链路上的 isRole 检查由
+    // BanyanzheIsRoleSpoofMixin 在伪装上下文激活时放行。
+    // 服务端与客户端各自一套标记，仅在各自的派发作用域内生效。
+    private static volatile UUID serverSpoofUuid = null;
+    private static volatile ResourceLocation serverSpoofRoleId = null;
+    private static volatile UUID clientSpoofUuid = null;
+    private static volatile ResourceLocation clientSpoofRoleId = null;
+
+    /** 当前玩家是否正处于伪装中的扮演者（服务端判定） */
+    private static boolean isActiveDisguise(Player player) {
+        if (player == null)
+            return false;
+        BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(player).orElse(null);
+        if (comp == null || comp.recalled || comp.disguiseRoleId == null)
+            return false;
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        return game != null && game.isRole(player, ModRoles.BANYANZHE);
+    }
+
+    /** 玩家是否是正在扮演指定职业的扮演者（不依赖伪装上下文，用于各技能入口判定） */
+    public static boolean isDisguisedAs(Player player, ResourceLocation roleId) {
+        if (roleId == null)
+            return false;
+        BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(player).orElse(null);
+        if (comp == null || comp.recalled || !roleId.equals(comp.disguiseRoleId))
+            return false;
+        return isActiveDisguise(player);
+    }
+
+    /** Mixin 钩子：服务端技能转发期间，将伪装中的扮演者视为其扮演职业 */
+    public static boolean isServerSpoofedRole(Player player, SRERole role) {
+        UUID uuid = serverSpoofUuid;
+        ResourceLocation rid = serverSpoofRoleId;
+        return uuid != null && rid != null && player != null && role != null
+                && player.getUUID().equals(uuid) && role.identifier().equals(rid);
+    }
+
+    /** Mixin 钩子：客户端 G 键派发期间，将伪装中的扮演者视为其扮演职业 */
+    public static boolean isClientSpoofedRole(Player player, SRERole role) {
+        UUID uuid = clientSpoofUuid;
+        ResourceLocation rid = clientSpoofRoleId;
+        return uuid != null && rid != null && player != null && role != null
+                && player.getUUID().equals(uuid) && role.identifier().equals(rid);
+    }
+
+    /**
+     * 服务端：以扮演职业的身份执行技能逻辑。
+     * 非伪装中的扮演者（或任何普通玩家）直接原样执行。
+     */
+    public static void runAsDisguisedRole(ServerPlayer sp, Runnable action) {
+        BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(sp).orElse(null);
+        if (comp == null || comp.recalled || comp.disguiseRoleId == null || !isActiveDisguise(sp)) {
+            action.run();
+            return;
+        }
+        serverSpoofUuid = sp.getUUID();
+        serverSpoofRoleId = comp.disguiseRoleId;
+        try {
+            action.run();
+        } finally {
+            serverSpoofUuid = null;
+            serverSpoofRoleId = null;
+        }
+    }
+
+    /**
+     * 客户端：以扮演职业的身份执行 G 键派发。
+     * 非伪装中的扮演者直接原样执行。
+     */
+    public static boolean runClientDispatchAsDisguised(Player player, BooleanSupplier action) {
+        BanyanzhePlayerComponent comp = ModComponents.BANYANZHE.maybeGet(player).orElse(null);
+        if (comp == null || comp.recalled || comp.disguiseRoleId == null || !isActiveDisguise(player)) {
+            return action.getAsBoolean();
+        }
+        clientSpoofUuid = player.getUUID();
+        clientSpoofRoleId = comp.disguiseRoleId;
+        try {
+            return action.getAsBoolean();
+        } finally {
+            clientSpoofUuid = null;
+            clientSpoofRoleId = null;
+        }
+    }
+
+    /** 伪装阶段拦截任务派发等被动金钱收入（本人做任务的 +50 奖励不受影响） */
+    public static boolean shouldBlockPassiveIncome(Player player) {
+        return isActiveDisguise(player);
+    }
+
     @Override
     public void serverTick() {
         if (recalled)
@@ -279,6 +381,13 @@ public class BanyanzhePlayerComponent implements RoleComponent, ServerTickingCom
             disguiseRoleId = null;
         }
         recalled = tag.getBoolean("Recalled");
+        // 客户端：同步伪装商店展示。专用服务器上客户端与服务端的 ShopContent.customEntries
+        // 是两个独立的静态表，必须在客户端也挂载一次，否则商店会回退成杀手默认刀具商店。
+        if (player.level().isClientSide && disguiseRoleId != null) {
+            List<ShopEntry> entries = ShopContent.getShopEntries(disguiseRoleId);
+            ShopContent.customEntries.put(ModRoles.BANYANZHE_ID,
+                    entries == null ? new ArrayList<>() : new ArrayList<>(entries));
+        }
     }
 
     @Override

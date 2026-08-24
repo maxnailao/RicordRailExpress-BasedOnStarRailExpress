@@ -3045,6 +3045,7 @@ public class ModRoles {
             .setCanPickUpRevolver(true) // 允许捡枪
             .setCanSeeTeammateKiller(false) // 未回忆时不知道自己有队友
             .setCanSeeCoin(true)
+            .setCanAutoAddMoney(false) // 无被动金钱收入（任务派发滴金由 BanyanzheTaskIncomeMixin 一并拦截）
             .setCanBeRandomedByOtherRoles(false) // 避免被其他职业的随机转职抽中导致伪装流程异常
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(12)
@@ -3216,7 +3217,7 @@ public class ModRoles {
      * - 不能使用杀手能力 (canUseKiller = false)
      * - 真实心情系统（心情持续锁定 100%）
      * - 被动：隐身 + 无法说话（文字+语音）
-     * - 机制：开局旁观寻找附身目标（50s），G 键附身后视角锁定宿主；
+     * - 机制：开局隐身+静步寻找附身目标（50s），G 键附身后切换旁观视角锁定宿主；
      *   游戏开局满 3 分钟转换为宿主职业并现身；附身杀手/中立即死；
      *   宿主死亡转回冒险模式 10s 宽限；Shift+G 主动脱离 8s 宽限；失败死因为「附身失败」
      */

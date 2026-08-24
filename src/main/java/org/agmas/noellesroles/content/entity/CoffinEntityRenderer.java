@@ -26,8 +26,10 @@ public class CoffinEntityRenderer extends EntityRenderer<CoffinEntity> {
             MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entityYaw));
-        // 模型枢轴在 y=24（地面），平移使其贴地渲染
-        poseStack.translate(0.0F, -1.5F, 0.0F);
+        // 与原版 LivingEntityRenderer 管线保持一致：先翻转 Y（模型方块 y 轴向下约定），
+        // 再平移枢轴（-1.501 避免与地面共面闪烁），否则棺材会被渲染到实体脚下 0.65 格埋进地里
+        poseStack.scale(-1.0F, -1.0F, 1.0F);
+        poseStack.translate(0.0F, -1.501F, 0.0F);
         this.model.setupAnim(entity, 0.0F, 0.0F, entity.tickCount + partialTick, 0.0F, 0.0F);
         var vertexConsumer = buffer.getBuffer(this.model.renderType(TEXTURE));
         this.model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);

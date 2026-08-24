@@ -180,6 +180,14 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
     public static boolean onAbilityKeyPressed(Minecraft client) {
         if (client.player == null)
             return true;
+        // 扮演者伪装：未回忆前以扮演的职业身份执行整个 G 键派发链（isRole 判定由伪装上下文放行）
+        return org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
+                .runClientDispatchAsDisguised(client.player, () -> onAbilityKeyPressedInternal(client));
+    }
+
+    private static boolean onAbilityKeyPressedInternal(Minecraft client) {
+        if (client.player == null)
+            return true;
         // 获取游戏世界组件
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.player.level());
         if (GKeyRoleSkill.trigger(client, gameWorld, true)) {

@@ -51,6 +51,9 @@ public final class GKeyRoleSkill {
             return false;
         }
         SRERole role = gameWorldComponent.getRole(client.player);
+        // 扮演者伪装：未回忆前以扮演的职业触发注册制技能（如退伍军人冲刺、乌鸦食尸）
+        role = org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent.getDisplayedRole(
+                client.player, role);
         if (role == null) {
             return false;
         }

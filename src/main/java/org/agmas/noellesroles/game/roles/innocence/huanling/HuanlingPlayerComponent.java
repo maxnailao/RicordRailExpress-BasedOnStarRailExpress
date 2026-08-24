@@ -39,11 +39,11 @@ import java.util.UUID;
  * 被动：心情持续锁定 100%、隐身、无法说话（文字+语音）。
  * 机制：
  * <ul>
- * <li>开局进入旁观模式寻找附身目标（默认 50s），对玩家按 G 附身；</li>
- * <li>附身后保持旁观模式，视角锁定宿主；游戏开局满 3 分钟时转换为宿主职业并现身（宿主存活）；</li>
+ * <li>开局以隐身+静步的冒险模式寻找附身目标（默认 50s），对玩家按 G 附身；</li>
+ * <li>附身后切换为旁观者，视角锁定宿主；游戏开局满 3 分钟时转换为宿主职业并现身（宿主存活）；</li>
  * <li>附身到杀手/中立阵营玩家：立即死亡，不留尸体，死因「附身失败」；</li>
- * <li>宿主死亡：幻灵转回冒险模式（隐身+无敌+无碰撞），10s 内须重新附身，否则死亡（留尸体）；</li>
- * <li>Shift+G 主动脱离：8s 内须重新附身（旁观模式寻找），否则死亡（留尸体）。</li>
+ * <li>宿主死亡：幻灵转回冒险模式（隐身+静步+无敌+无碰撞），10s 内须重新附身，否则死亡（留尸体）；</li>
+ * <li>Shift+G 主动脱离：转回隐身+静步的冒险模式，8s 内须重新附身，否则死亡（留尸体）。</li>
  * </ul>
  *
  * <p>
@@ -68,7 +68,7 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
     private long roundStartTick = -1;
     /** 寻找阶段截止时间（gameTime）；-1 表示不在寻找阶段。 */
     private long searchDeadline = -1;
-    /** 寻找阶段是否为冒险模式宽限（宿主死亡后为 true）。 */
+    /** 寻找阶段是否为宿主死亡后的宽限（额外给无敌+无碰撞；常态寻找仅隐身+静步）。 */
     private boolean searchInAdventure;
     /** 当前附身的宿主 UUID；非空即处于附身中。 */
     public UUID possessTarget;
@@ -188,33 +188,39 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
             sync();
     }
 
-    /** 开局：进入旁观模式开始寻找附身目标。 */
+    /** 开局：以隐身+静步的冒险模式开始寻找附身目标。 */
     private void beginRound(ServerPlayer sp) {
         active = true;
         roundStartTick = sp.level().getGameTime();
         int searchSeconds = NoellesRolesConfig.HANDLER.instance().huanlingInitialSearchSeconds;
         searchDeadline = roundStartTick + searchSeconds * 20L;
         searchInAdventure = false;
-        sp.setGameMode(GameType.SPECTATOR);
+        sp.setGameMode(GameType.ADVENTURE);
         sp.setCamera(sp);
-        TrainVoicePlugin.addPlayer(sp.getUUID());
+        applySearchEffects(sp);
         sp.displayClientMessage(Component.translatable("message.noellesroles.huanling.round_start", searchSeconds)
                 .withStyle(ChatFormatting.GRAY), false);
         sync();
     }
 
-    /** 被动刷新：心情锁 100% + 禁言；非附身的冒险状态补隐身（宽限期含无敌/无碰撞）。 */
+    /** 被动刷新：心情锁 100% + 禁言；寻找期（冒险模式）补隐身+静步，宿主死亡宽限另加无敌/无碰撞。 */
     private void refreshPassives(ServerPlayer sp) {
         SREPlayerMoodComponent.KEY.get(sp).setMood(1.0f);
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 60, 0, false, false, false));
         sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 60, 0, false, false, false));
         if (possessTarget == null && !sp.isSpectator()) {
-            sp.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY, 60, 0, false, false, false));
+            applySearchEffects(sp);
             if (searchInAdventure) {
                 sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 60, 0, false, false, false));
                 sp.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 60, 0, false, false, false));
             }
         }
+    }
+
+    /** 寻找期常态效果：隐身 + 静步（短时长，每 20 tick 续期）。 */
+    private void applySearchEffects(ServerPlayer sp) {
+        sp.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY, 60, 0, false, false, false));
+        sp.addEffect(new MobEffectInstance(ModEffects.FOOTSTEP_VANISH, 60, 0, false, false, false));
     }
 
     /** 附身中：跟随宿主、锁定视角；到 3 分钟整点则转换职业现身。 */
@@ -290,6 +296,8 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
         possessTarget = target.getUUID();
         searchDeadline = -1;
         searchInAdventure = false;
+        // 附身切换为旁观者：先清掉寻找期效果，再锁定宿主视角并加入旁观语音频道。
+        removeSearchEffects(sp);
         sp.setGameMode(GameType.SPECTATOR);
         TrainVoicePlugin.addPlayer(sp.getUUID());
         sp.setCamera(target);
@@ -305,7 +313,7 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
         return true;
     }
 
-    /** Shift+G：主动脱离宿主，进入 8s 旁观寻找。 */
+    /** Shift+G：主动脱离宿主，转回隐身+静步的冒险模式，进入 8s 寻找。 */
     public boolean detach() {
         if (!(player instanceof ServerPlayer sp))
             return false;
@@ -317,8 +325,9 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
         searchInAdventure = false;
         searchDeadline = sp.level().getGameTime() + graceSeconds * 20L;
         sp.setCamera(sp);
-        sp.setGameMode(GameType.SPECTATOR);
-        TrainVoicePlugin.addPlayer(sp.getUUID());
+        sp.setGameMode(GameType.ADVENTURE);
+        TrainVoicePlugin.resetPlayer(sp.getUUID());
+        applySearchEffects(sp);
         sp.displayClientMessage(Component.translatable("message.noellesroles.huanling.detached", graceSeconds)
                 .withStyle(ChatFormatting.GRAY), false);
         sync();
@@ -352,7 +361,7 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
     }
 
     private void applyGraceEffects(ServerPlayer sp) {
-        sp.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.INVISIBILITY, 60, 0, false, false, false));
+        applySearchEffects(sp);
         sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 60, 0, false, false, false));
         sp.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 60, 0, false, false, false));
     }
@@ -394,11 +403,17 @@ public final class HuanlingPlayerComponent implements RoleComponent, ServerTicki
 
     /** 移除幻灵阶段的全部药水效果。 */
     private void removePhaseEffects(ServerPlayer sp) {
-        sp.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
+        removeSearchEffects(sp);
         sp.removeEffect(ModEffects.CHAT_BAN);
         sp.removeEffect(ModEffects.VOICE_SILENCE);
         sp.removeEffect(ModEffects.INVINCIBLE);
         sp.removeEffect(ModEffects.NO_COLLIDE);
+    }
+
+    /** 移除寻找期效果（隐身+静步）。 */
+    private void removeSearchEffects(ServerPlayer sp) {
+        sp.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
+        sp.removeEffect(ModEffects.FOOTSTEP_VANISH);
     }
 
     /** 仅移除药水效果（自身死亡时使用，不触碰其它状态）。 */

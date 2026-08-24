@@ -881,7 +881,10 @@ public class NRDeathEvents {
             for (Player player : victim.level().players()) {
                 if (player.getUUID().equals(victim.getUUID()))
                     continue;
-                if (!gameWorld.isRole(player, ModRoles.PATROLLER))
+                // 扮演者伪装为巡警时同样触发附近死亡感知（职业特征）
+                if (!gameWorld.isRole(player, ModRoles.PATROLLER)
+                        && !org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
+                                .isDisguisedAs(player, ModRoles.PATROLLER_ID))
                     continue;
                 if (!GameUtils.isPlayerAliveAndSurvival(player))
                     continue;
@@ -889,7 +892,13 @@ public class NRDeathEvents {
                         || !PatrollerPlayerComponent.isBoundTargetVisible(victim, player))
                     continue;
                 PatrollerPlayerComponent patrollerComponent = ModComponents.PATROLLER.get(player);
-                patrollerComponent.onNearbyDeath();
+                // 伪装中的扮演者需要伪装上下文才能通过 onNearbyDeath 内部的 isRole 校验
+                if (player instanceof ServerPlayer sp) {
+                    org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
+                            .runAsDisguisedRole(sp, patrollerComponent::onNearbyDeath);
+                } else {
+                    patrollerComponent.onNearbyDeath();
+                }
             }
         });
 

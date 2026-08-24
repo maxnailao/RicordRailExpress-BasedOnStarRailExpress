@@ -749,9 +749,9 @@ public class ModRolesInitialEventRegister {
                 }).shifted(true).announceToSelf(false).build());
 
         // 幻灵技能：
-        // - G 键：附身准星玩家（旁观/冒险寻找阶段均可；附身杀手/中立即死）
-        // - Shift+G 键：附身期间主动脱离（进入 8s 旁观寻找）
-        // 注：幻灵寻找/附身阶段处于旁观模式，旁观可用技能由角色 setCanUseSkillWhileSpectator(true) 豁免
+        // - G 键：附身准星玩家（隐身静步寻找期/冒险宽限期均可；附身杀手/中立即死）
+        // - Shift+G 键：附身期间主动脱离（转回隐身+静步冒险模式，进入 8s 寻找）
+        // 注：附身期间处于旁观模式，旁观可用技能由角色 setCanUseSkillWhileSpectator(true) 豁免
         RoleSkill.register(ModRoles.HUANYING,
                 RoleSkill.skill(SRE.id("huanling_possess"), "skill.noellesroles.huanling.possess", context -> {
                     ServerPlayer player = context.player();
@@ -765,7 +765,7 @@ public class ModRolesInitialEventRegister {
                     return comp.possess(target);
                 }).showOnHud(true).announceToSelf(false).build(),
 
-                // Shift+G：主动脱离宿主（8s 宽限旁观寻找）
+                // Shift+G：主动脱离宿主（8s 宽限，隐身+静步冒险寻找）
                 RoleSkill.skill(SRE.id("huanling_detach"), "skill.noellesroles.huanling.detach", context -> {
                     var comp = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY
                             .get(context.player());

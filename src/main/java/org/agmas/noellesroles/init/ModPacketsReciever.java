@@ -789,7 +789,10 @@ public class ModPacketsReciever {
           .get(player);
 
       boolean isVulture = gameWorldComponent.isRole(player, ModRoles.VULTURE);
-      boolean isWuyage = gameWorldComponent.isRole(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN);
+      // 扮演者伪装为乌鸦时同样可以食尸（后续非秃鹫分支不依赖职业组件，无需额外伪装）
+      boolean isWuyage = gameWorldComponent.isRole(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN)
+          || org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
+              .isDisguisedAs(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN_ID);
       if ((isVulture || isWuyage)
           && GameUtils.isPlayerAliveAndSurvival(player)) {
         if (abilityPlayerComponent.cooldown > 0)
@@ -1097,7 +1100,9 @@ public class ModPacketsReciever {
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
-      if (gameWorldComponent.isRole(context.player(), ModRoles.MONITOR)) {
+      if (gameWorldComponent.isRole(context.player(), ModRoles.MONITOR)
+          || org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
+              .isDisguisedAs(context.player(), ModRoles.MONITOR_ID)) {
         MonitorPlayerComponent monitorComponent = MonitorPlayerComponent.KEY.get(context.player());
 
         // 检查冷却
