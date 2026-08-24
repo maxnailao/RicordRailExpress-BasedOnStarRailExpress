@@ -218,6 +218,7 @@ public class DuomaomaoMeimeiHidePlayerComponent implements RoleComponent, Server
         if (player instanceof ServerPlayer sp) {
             sp.removeEffect(MobEffects.INVISIBILITY);
             sp.removeEffect(ModEffects.USED_BANED);
+            sp.removeEffect(ModEffects.JINGBU);
             Noellesroles.LOGGER.info("[duomaomao_meimeihide] {} 结束变身 (notify={})",
                     sp.getGameProfile().getName(), notify);
             if (notify) {
@@ -232,10 +233,11 @@ public class DuomaomaoMeimeiHidePlayerComponent implements RoleComponent, Server
         sync();
     }
 
-    /** 施加变身期间的隐身与禁用道具效果 */
+    /** 施加变身期间的隐身、禁用道具与静步（同特工静步，屏蔽脚步声）效果 */
     private void applyHideEffects() {
         player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, true, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 60, 0, true, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.JINGBU, 60, 0, true, false, false));
     }
 
     @Override

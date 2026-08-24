@@ -34,6 +34,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.entity.CoffinEntity;
 import org.agmas.noellesroles.init.ModEntities;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -50,7 +51,7 @@ import java.util.UUID;
 /**
  * 木乃伊 (munaiyi_desert) 角色组件 —— 独立中立，无胜利条件。
  * <p>
- * 被动：常驻隐身（释放技能/现身短暂解除）、无敌无法被击杀。
+ * 被动：常驻隐身（释放技能/现身短暂解除）、常驻静步（同特工静步，屏蔽脚步声）、无敌无法被击杀。
  * 技能：诅咒（背包选人叠层）、恐吓（隐身红字/现身恶魂）、现身（条件传送）、
  * 领地确认（放置棺材）、干枯（现身时降低周围玩家口渴值）。
  * </p>
@@ -203,6 +204,9 @@ public class MunaiyiDesertPlayerComponent implements RoleComponent, ServerTickin
         if (player.hasEffect(MobEffects.INVISIBILITY)) {
             player.removeEffect(MobEffects.INVISIBILITY);
         }
+        if (player.hasEffect(ModEffects.JINGBU)) {
+            player.removeEffect(ModEffects.JINGBU);
+        }
         sync();
     }
 
@@ -234,7 +238,7 @@ public class MunaiyiDesertPlayerComponent implements RoleComponent, ServerTickin
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
-        // 角色被替换/移除时，还原隐身状态并静默退出
+        // 角色被替换/移除时，还原隐身/静步状态并静默退出
         if (!isMummy(serverPlayer)) {
             if (revealTicks > 0 || fullRevealTicks > 0) {
                 revealTicks = 0;
@@ -243,6 +247,9 @@ public class MunaiyiDesertPlayerComponent implements RoleComponent, ServerTickin
                     player.removeEffect(MobEffects.INVISIBILITY);
                 }
                 sync();
+            }
+            if (player.hasEffect(ModEffects.JINGBU)) {
+                player.removeEffect(ModEffects.JINGBU);
             }
             return;
         }
@@ -268,6 +275,11 @@ public class MunaiyiDesertPlayerComponent implements RoleComponent, ServerTickin
         } else if (!player.hasEffect(MobEffects.INVISIBILITY)) {
             player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
             changed = true;
+        }
+
+        // 维持静步（同特工静步，屏蔽脚步声）：存活且在场期间常驻，不随现身状态变化（参考常驻隐身的维持方式）
+        if (!player.hasEffect(ModEffects.JINGBU)) {
+            player.addEffect(new MobEffectInstance(ModEffects.JINGBU, Integer.MAX_VALUE, 0, false, false, false));
         }
 
         tickCurses(serverPlayer);
