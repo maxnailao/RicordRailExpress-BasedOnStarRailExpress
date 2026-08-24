@@ -3046,6 +3046,7 @@ public class ModRoles {
             .setCanSeeTeammateKiller(false) // 未回忆时不知道自己有队友
             .setCanSeeCoin(true)
             .setCanAutoAddMoney(false) // 无被动金钱收入（任务派发滴金由 BanyanzheTaskIncomeMixin 一并拦截）
+            .setAutoReset(false) // 禁用 onInit 自动 init()：否则会在报幕后清空已选伪装职业，导致后续重新随机与登车标语不符（清理改由 assignRole 前的 onStartGame.clear 完成）
             .setCanBeRandomedByOtherRoles(false) // 避免被其他职业的随机转职抽中导致伪装流程异常
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(12)

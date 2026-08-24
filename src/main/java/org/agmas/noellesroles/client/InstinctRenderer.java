@@ -7,7 +7,6 @@ import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
-import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGetInstinctHighlight;
@@ -872,9 +871,10 @@ public class InstinctRenderer {
                 return -1;
             if (GameUtils.isPlayerSpectatingOrCreative(self))
                 return -1;
-            // 非黑灯状态下同普通杀手，交给后续通用逻辑处理
-            SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(self.level());
-            if (blackout == null || !blackout.isBlackoutActive())
+            // 非黑灯状态下同普通杀手，交给后续通用逻辑处理。
+            // 黑灯判定读组件同步标记（世界黑灯组件不同步到客户端）
+            if (!org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent
+                    .isWerewolfBlackout(self))
                 return -1;
             if (!hasInstinct)
                 return -1;

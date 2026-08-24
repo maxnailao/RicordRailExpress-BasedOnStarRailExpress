@@ -2,7 +2,6 @@ package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.compat.CrosshairaddonsCompat;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.network.original.KnifeStabPayload;
@@ -40,13 +39,14 @@ public class WolfKnifeItem extends KnifeItem {
     }
 
     /**
-     * 获取当前状态下的最小举刀蓄力刻数
+     * 获取当前状态下的最小举刀蓄力刻数。
+     * 黑灯判定读取狼人组件中由服务端同步的标记（世界黑灯组件不同步到客户端，
+     * 不能在客户端直接读）。
      */
     public static int getMinChargeTicks(Player player) {
         if (WerewolfKillerPlayerComponent.isHowling(player))
             return HOWL_MIN_CHARGE_TICKS;
-        SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(player.level());
-        if (blackout != null && blackout.isBlackoutActive())
+        if (WerewolfKillerPlayerComponent.isWerewolfBlackout(player))
             return BLACKOUT_MIN_CHARGE_TICKS;
         return NORMAL_MIN_CHARGE_TICKS;
     }
@@ -54,6 +54,10 @@ public class WolfKnifeItem extends KnifeItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, @NotNull Player user, InteractionHand hand) {
         ItemStack itemStack = user.getItemInHand(hand);
+        // 击杀冷却中无法举刀（客户端即时反馈，服务端同样拦截）
+        if (!user.isCreative() && user.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(itemStack);
+        }
         // 午夜狼嚎：举刀没有声音，跳过普通切刀音效直接进入蓄力
         if (WerewolfKillerPlayerComponent.isHowling(user)) {
             if (user.isSpectator()) {

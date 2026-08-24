@@ -62,6 +62,8 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
     private final Player player;
     /** 午夜狼嚎剩余时间（<=0 表示未激活） */
     public int midnightHowlTicks = 0;
+    /** 黑灯状态（服务端每 tick 从世界组件维护并同步到客户端，供狼刀/透视在客户端判定） */
+    public boolean blackoutActive = false;
     /** 黑灯增益（夜视+速度2）是否已施加，用于黑灯结束时移除 */
     private boolean blackoutBuffsActive = false;
 
@@ -86,6 +88,7 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
     @Override
     public void init() {
         this.midnightHowlTicks = 0;
+        this.blackoutActive = false;
         this.blackoutBuffsActive = false;
         this.sync();
     }
@@ -113,11 +116,23 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
     }
 
     /**
-     * 玩家所在世界是否处于黑灯状态
+     * 玩家所在世界是否处于黑灯状态（直接读世界组件，仅服务端可靠）
      */
     public static boolean isBlackout(Player player) {
         SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(player.level());
         return blackout != null && blackout.isBlackoutActive();
+    }
+
+    /**
+     * 客户端可用的黑灯判定：读取组件内由服务端同步的黑灯标记。
+     * 非狼人回退到世界组件读取（服务端调用时始终准确）。
+     */
+    public static boolean isWerewolfBlackout(Player player) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld != null && gameWorld.isRole(player, ModRoles.WEREWOLF_KILLER)) {
+            return KEY.get(player).blackoutActive;
+        }
+        return isBlackout(player);
     }
 
     /**
@@ -182,6 +197,15 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
 
     @Override
     public void serverTick() {
+        // ── 黑灯状态维护与同步（供客户端狼刀/透视使用） ──
+        if (!player.level().isClientSide) {
+            boolean blackout = isBlackout(player);
+            if (blackout != blackoutActive) {
+                blackoutActive = blackout;
+                this.sync();
+            }
+        }
+
         // ── 午夜狼嚎倒计时 ──
         if (midnightHowlTicks > 0) {
             midnightHowlTicks--;
@@ -201,8 +225,7 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
                     || !gameWorld.isRole(player, ModRoles.WEREWOLF_KILLER)) {
                 return;
             }
-            boolean blackout = isBlackout(player);
-            if (blackout) {
+            if (blackoutActive) {
                 // 每秒刷新一次，保证效果覆盖黑灯期间
                 if (serverPlayer.tickCount % 20 == 0) {
                     serverPlayer.addEffect(new MobEffectInstance(
@@ -294,11 +317,13 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putInt("midnightHowlTicks", this.midnightHowlTicks);
+        tag.putBoolean("blackoutActive", this.blackoutActive);
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.midnightHowlTicks = tag.getInt("midnightHowlTicks");
+        this.blackoutActive = tag.getBoolean("blackoutActive");
     }
 
     @Override

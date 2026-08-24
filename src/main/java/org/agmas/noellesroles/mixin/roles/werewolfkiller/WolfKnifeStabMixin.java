@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>1. 狼刀自身的击杀冷却强制：冷却中的狼刀无法造成击杀。</p>
  * <p>2. 午夜狼嚎期间：举刀落刀都没有声音（静默击杀，不播放刺击音效），
  * 击杀后狼刀冷却缩短至6秒。</p>
- * <p>3. 非午夜狼嚎的成功击杀在方法末尾为狼刀应用对应冷却：
+ * <p>3. 其余成功击杀在原版刀冷却施加点同步为狼刀施加对应冷却：
  * 黑灯状态18秒，其余同普通刀。</p>
  */
 @Mixin(KnifeStabPayload.Receiver.class)
@@ -114,10 +114,11 @@ public class WolfKnifeStabMixin {
     }
 
     /**
-     * 非午夜狼嚎路径成功击杀后，为狼刀本身应用冷却：
-     * 黑灯状态18秒，其余与普通刀一致。
+     * 成功击杀后（原版给刀施加冷却的位置），为狼刀本身按状态施加冷却：
+     * 午夜狼嚎6秒、黑灯18秒、其余与普通刀一致。
      */
-    @Inject(method = "receive", at = @At("TAIL"))
+    @Inject(method = "receive", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/item/ItemCooldowns;addCooldown(Lnet/minecraft/world/item/Item;I)V"))
     private void noe$wolfKnifeKillCooldown(KnifeStabPayload payload, ServerPlayNetworking.Context context,
             CallbackInfo ci) {
         ServerPlayer player = context.player();
@@ -131,7 +132,7 @@ public class WolfKnifeStabMixin {
         } else if (WerewolfKillerPlayerComponent.isBlackout(player)) {
             cooldown = WerewolfKillerPlayerComponent.BLACKOUT_KNIFE_CD;
         } else {
-            cooldown = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.KNIFE, 40 * 20);
+            cooldown = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.KNIFE, 30 * 20);
         }
         player.getCooldowns().addCooldown(ModItems.WOLF_KNIFE, cooldown);
     }

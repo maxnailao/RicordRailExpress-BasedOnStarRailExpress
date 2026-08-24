@@ -8,20 +8,21 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity;
 
 /**
- * 鬼影残影实体渲染器
+ * 鬼影残影实体渲染器（参照 GhostPhantomEntityRenderer 实现）
  *
- * 使用固定的残影贴图渲染假人（参照 GhostPhantomEntityRenderer 实现）
+ * 残影设计为全白假人：直接使用原版自带的白色贴图（每个客户端必然存在），
+ * 避免自定义贴图在部分环境下加载失败导致贴图丢失/乱码。
+ * 若日后需要换回自定义残影外观，改回 noellesroles:textures/entity/ghostying_afterimage.png 即可。
  */
 public class GhostyingAfterimageEntityRenderer
         extends LivingEntityRenderer<GhostyingAfterimageEntity, PlayerModel<GhostyingAfterimageEntity>> {
 
-    /** 固定残影贴图 */
+    /** 原版白色贴图（必然存在，渲染结果为纯白假人） */
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "textures/entity/ghostying_afterimage.png");
+            ResourceLocation.withDefaultNamespace("textures/misc/white.png");
 
     public GhostyingAfterimageEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
