@@ -32,7 +32,7 @@ import java.util.OptionalInt;
  * - 存活期间全程循环播报"空气中弥漫着左轮的火药味"
  * - 场上剩余 总人数/2 人时：获得双枪-右手，解锁透视
  * - 场上剩余 总人数/3 - 2 人时：获得双枪-左手，自动装配到副手
- * - 在场时游戏不会结束；胜利条件为独自存活（判定见 CustomWinnerClass）
+ * - 在场时游戏不会结束；胜利条件为除坠木/皮革嘎的外独自存活（判定见 CustomWinnerClass）
  */
 public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingComponent {
 
@@ -213,7 +213,8 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
     }
 
     /**
-     * 双枪客独立胜利判定：双枪客为唯一存活玩家时获胜。
+     * 双枪客独立胜利判定：除坠木/皮革嘎的外，双枪客为唯一存活玩家时获胜。
+     * （坠木/皮革嘎的不计入击杀目标，同亡命徒的处理方式）
      * 供 CustomWinnerClass 的 AllowGameEnd 监听调用。
      */
     public static boolean checkDualGunnerVictory(ServerLevel serverLevel) {
@@ -222,6 +223,10 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
         int aliveCount = 0;
         for (ServerPlayer sp : serverLevel.players()) {
             if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
+                continue;
+            }
+            // 坠木/皮革嘎的不计入击杀目标（同亡命徒）
+            if (gameWorld.isRole(sp, ModRoles.ZHUIMU) || gameWorld.isRole(sp, ModRoles.PIGE)) {
                 continue;
             }
             aliveCount++;

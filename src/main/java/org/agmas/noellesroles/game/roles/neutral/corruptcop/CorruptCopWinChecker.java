@@ -24,6 +24,11 @@ public class CorruptCopWinChecker {
                 if (!GameUtils.isPlayerAliveAndSurvival(player)) {
                     continue;
                 }
+                // 坠木/皮革嘎的不计入击杀目标（同亡命徒）：无需击杀即可获胜
+                if (gameComponent.isRole(player, ModRoles.ZHUIMU)
+                        || gameComponent.isRole(player, ModRoles.PIGE)) {
+                    continue;
+                }
                 alivePlayerCount++;
 
                 if (gameComponent.isRole(player, ModRoles.CORRUPT_COP)) {
@@ -35,7 +40,7 @@ public class CorruptCopWinChecker {
                 return WinStatus.NOT_MODIFY;
             }
 
-            // 黑警独赢：只剩黑警自己时直接自定义胜利
+            // 黑警独赢：除坠木/皮革嘎的外只剩黑警自己时直接自定义胜利
             if (alivePlayerCount == 1) {
                 RoleUtils.customWinnerWin(serverLevel, "corrupt_cop", ModRoles.CORRUPT_COP.color());
                 return WinStatus.CUSTOM;

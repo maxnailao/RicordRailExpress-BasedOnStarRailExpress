@@ -633,6 +633,8 @@
   "message.noellesroles.dual_gunner.broadcast": "The smell of revolver gunpowder hangs in the air",
   "message.noellesroles.dual_gunner.right_gun": "Half remain: you received the Dual Pistol - Right and your ESP has been unlocked!",
   "message.noellesroles.dual_gunner.left_gun": "The endgame approaches: you received the Dual Pistol - Left, auto-equipped in your off hand!",
+  "announcement.star.win.dual_gunner": "Dual Gunner wins!",
+  "game.win.star.dual_gunner": "The Dual Gunner has completed their mission",
   "announcement.star.role.poisoner": "Poisoner",
   "message.noellesroles.thief.honor_purchased": "Purchased Thief's Honor! Spent %s coins",
   "message.noellesroles.thief.not_enough_money_to_buy_honor": "Insufficient coins! Need %s coins",

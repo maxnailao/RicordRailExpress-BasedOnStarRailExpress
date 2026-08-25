@@ -138,7 +138,7 @@ public class CustomWinnerClass {
                 }
             }
 
-            // 双枪客：独自存活即独立胜利；存活期间阻止常规结局，让游戏继续（参考鹈鹕）
+            // 双枪客：除坠木/皮革嘎的外独自存活即独立胜利；存活期间阻止常规结局，让游戏继续（参考鹈鹕）
             if (hasDualGunnerAlive) {
                 if (org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent
                         .checkDualGunnerVictory(serverLevel)) {

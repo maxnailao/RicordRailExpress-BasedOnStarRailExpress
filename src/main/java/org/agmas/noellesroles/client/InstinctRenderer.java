@@ -88,6 +88,43 @@ public class InstinctRenderer {
             // 其他任何观察者均无法透视到这两个角色
             return -2;
         });
+        // 木乃伊未现身时对其他玩家隐身：不被任何本能透视看到。
+        // 事件首个非-1返回值生效，必须先于通用杀手直觉逻辑注册，否则通用逻辑先返回颜色导致禁用不生效。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (targetPlayer == Minecraft.getInstance().player)
+                return -1;
+            if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.MUNAIYI_DESERT))
+                return -1;
+            var mummy = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
+                    .maybeGet(targetPlayer).orElse(null);
+            if (mummy != null && !mummy.isRevealed()) {
+                return -2; // 未现身：禁用对该目标的本能高亮
+            }
+            return -1;
+        });
+        // 躲藏大师变身方块期间：对其他玩家隐身，不被任何本能透视看到（同木乃伊，必须先于通用逻辑注册）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (targetPlayer == Minecraft.getInstance().player)
+                return -1;
+            var hide = org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.KEY
+                    .maybeGet(targetPlayer).orElse(null);
+            if (hide != null && hide.isHiding()) {
+                return -2; // 变身方块中：禁用对该目标的本能高亮（避免透出方块轮廓）
+            }
+            return -1;
+        });
         TouhouInstincts.registerEvents();
         // 病娇：本能仅可透视爱慕对象（粉色）与目标（红色），其余玩家一律不透视
         // 高亮不依赖本能开关，目标在病娇视角下始终发光
@@ -1560,26 +1597,6 @@ public class InstinctRenderer {
                     return new java.awt.Color(255, 48, 48).getRGB(); // 被标记：红色，可击杀
                 }
                 return ModRoles.MUNAIYI_DESERT.color(); // 沙色
-            }
-            return -1;
-        });
-
-        // 木乃伊未现身时对其他玩家隐身：不被任何本能透视看到（隐身状态下）
-        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (!(target instanceof Player targetPlayer))
-                return -1;
-            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
-                return -1;
-            if (SREClient.gameComponent == null)
-                return -1;
-            if (targetPlayer == Minecraft.getInstance().player)
-                return -1;
-            if (!SREClient.gameComponent.isRole(targetPlayer, ModRoles.MUNAIYI_DESERT))
-                return -1;
-            var mummy = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                    .maybeGet(targetPlayer).orElse(null);
-            if (mummy != null && !mummy.isRevealed()) {
-                return -2; // 未现身：禁用对该目标的本能高亮
             }
             return -1;
         });

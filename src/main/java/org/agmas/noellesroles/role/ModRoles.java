@@ -2765,7 +2765,7 @@ public class ModRoles {
      * 双枪客 - 中立独立胜利角色（仅18人及以上对局刷新）
      * - 刷新时必定获得黄油手修饰符，存活期间全程播报"空气中弥漫着左轮的火药味"
      * - 剩余 总人数/2 人时获得双枪-右手并解锁透视；剩余 总人数/3 - 2 人时获得双枪-左手（自动装配副手）
-     * - 在场时游戏不会结束；胜利条件：独自存活（判定见 CustomWinnerClass）
+     * - 在场时游戏不会结束；胜利条件：除坠木/皮革嘎的外独自存活（判定见 CustomWinnerClass）
      */
     public static SRERole DUAL_GUNNER = TMMRoles.registerRole(new NormalRole(
             DUAL_GUNNER_ID,

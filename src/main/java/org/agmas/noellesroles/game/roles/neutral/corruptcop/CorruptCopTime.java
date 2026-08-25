@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -245,11 +246,12 @@ public class CorruptCopTime {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         ServerLevel serverWorld = (ServerLevel) player.level();
 
-        // 统计存活的除黑警以外的所有玩家数量
+        // 统计存活的除黑警以外的所有玩家数量（坠木/皮革嘎的不计入击杀目标，同亡命徒）
         int aliveOthersCount = 0;
         for (Player p : serverWorld.players()) {
             if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
             if (p == player) continue; // 跳过黑警自己
+            if (gameWorld.isRole(p, ModRoles.ZHUIMU) || gameWorld.isRole(p, ModRoles.PIGE)) continue;
             aliveOthersCount++;
         }
 

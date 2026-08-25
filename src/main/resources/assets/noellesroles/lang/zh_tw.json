@@ -620,6 +620,8 @@
   "message.noellesroles.dual_gunner.broadcast": "空氣中瀰漫著左輪的火藥味",
   "message.noellesroles.dual_gunner.right_gun": "人數已減半：你獲得了雙槍-右手，透視已解鎖！",
   "message.noellesroles.dual_gunner.left_gun": "殘局將至：你獲得了雙槍-左手，已自動裝配到副手！",
+  "announcement.star.win.dual_gunner": "雙槍客勝利！",
+  "game.win.star.dual_gunner": "雙槍客完成了自己的任務",
   "announcement.star.role.poisoner": "毒師",
   "message.noellesroles.thief.honor_purchased": "購買了小偷的榮譽！花費 %s 金幣",
   "message.noellesroles.thief.not_enough_money_to_buy_honor": "金幣不足！需要 %s 金幣",
