@@ -307,6 +307,9 @@ public class PlayerBodyHud {
         CustomRoleHud.registerEvents();
         OnRenderRoleName.RENDER_END.register((player, range, context,
                 tickCounter, font) -> {
+            // 幻灵附身期间不允许查验尸体：避免借旁观特权泄露职业/死因信息
+            if (org.agmas.noellesroles.client.HuanlingClient.isPossessing())
+                return;
             HitResult line = ProjectileUtil.getHitResultOnViewVector(player,
                     (entity) -> entity instanceof PlayerBodyEntity || entity instanceof Player, (double) range);
             targetBody = null;

@@ -35,6 +35,7 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -1264,6 +1265,9 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
+        // 幻灵附身期间：屏蔽聊天栏，不接收其他玩家发送的聊天消息（发送已由 CHAT_BAN 拦截）
+        ClientReceiveMessageEvents.ALLOW_CHAT.register(
+                (message, signedMessage, sender, params, receptionTime) -> !HuanlingClient.isPossessing());
         ClientPlayConnectionEvents.JOIN.register((a, b, c) -> {
             // 加入游戏清空信息
             currentBroadcastMessage.clear();

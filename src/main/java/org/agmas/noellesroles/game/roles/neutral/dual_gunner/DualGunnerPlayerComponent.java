@@ -29,7 +29,7 @@ import java.util.OptionalInt;
 /**
  * 双枪客角色组件 - 中立独立胜利
  * - 刷新时必定获得黄油手修饰符（开局修饰符重随后每 40 tick 补回）
- * - 存活期间全程循环播报"空气中弥漫着左轮的火药味"
+ * - 开局向全体玩家播报入场公告“空气中弥漫着左轮的火药味”（同其他中立角色，见 OnGameTrueStarted）
  * - 场上剩余 总人数/2 人时：获得双枪-右手，解锁透视
  * - 场上剩余 总人数/3 - 2 人时：获得双枪-左手，自动装配到副手
  * - 在场时游戏不会结束；胜利条件为除坠木/皮革嘎的外独自存活（判定见 CustomWinnerClass）
@@ -54,9 +54,6 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
 
     public static final ComponentKey<DualGunnerPlayerComponent> KEY = ModComponents.DUAL_GUNNER;
 
-    /** 播报间隔：60秒 */
-    private static final int BROADCAST_INTERVAL_TICKS = 60 * 20;
-
     private final Player player;
 
     /** 是否已发放双枪-右手（同时解锁透视） */
@@ -65,9 +62,6 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
     public boolean leftGunGiven = false;
     /** 透视是否已解锁（同步到客户端供 InstinctRenderer 使用） */
     public boolean espUnlocked = false;
-
-    /** 播报计时（仅服务端使用，无需同步） */
-    private int broadcastTicks = 0;
 
     public DualGunnerPlayerComponent(Player player) {
         this.player = player;
@@ -83,8 +77,6 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
         rightGunGiven = false;
         leftGunGiven = false;
         espUnlocked = false;
-        // 开局稍等几秒再首次播报，避免与开场公告重叠
-        broadcastTicks = BROADCAST_INTERVAL_TICKS - 5 * 20;
 
         // 强制赋予黄油手修饰符
         applyButterFingers();
@@ -96,7 +88,6 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
         rightGunGiven = false;
         leftGunGiven = false;
         espUnlocked = false;
-        broadcastTicks = 0;
 
         // 移除黄油手修饰符
         if (player != null && player.level() != null) {
@@ -141,16 +132,6 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
         // init() 中加上的黄油手会被清掉，这里每 40 tick 补回，确保双枪客局内始终持有
         if (player.level().getGameTime() % 40 == 0) {
             applyButterFingers();
-        }
-
-        // 全程播报：存活期间每 60 秒向全体玩家广播
-        broadcastTicks++;
-        if (broadcastTicks >= BROADCAST_INTERVAL_TICKS) {
-            broadcastTicks = 0;
-            serverLevel.getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("message.noellesroles.dual_gunner.broadcast")
-                            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC),
-                    false);
         }
 
         // 人数阈值判定：总人数以开局人数为准

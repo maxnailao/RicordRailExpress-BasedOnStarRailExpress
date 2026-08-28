@@ -38,6 +38,9 @@ public class CustomRoleHud {
         OnRenderRoleName.RENDER_PLAYER_EXTRA.register((player, target, context, delta, font) -> {
             if (!SREClient.isPlayerSpectatingOrCreative())
                 return;
+            // 幻灵附身期间屏蔽旁观特权：不允许看见其他玩家的职业
+            if (org.agmas.noellesroles.client.HuanlingClient.isPossessing())
+                return;
             SRERole targetRole = SREClient.gameComponent.getRole(target);
             if (targetRole == null) {
                 targetRole = TMMRoles.DISCOVERY_CIVILIAN;

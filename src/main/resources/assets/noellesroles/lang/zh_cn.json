@@ -685,7 +685,7 @@
   "announcement.star.goals.candlebearer": "为生者与死者秉烛，将灵魂带回故乡。",
   "announcement.star.role.shuangqianghuigeichudaan_shuangqiangke": "双枪客",
   "announcement.star.goals.shuangqianghuigeichudaan_shuangqiangke": "在火药味散去之前让所有人倒下，独自活到最后。",
-  "message.noellesroles.dual_gunner.broadcast": "空气中弥漫着左轮的火药味",
+  "message.noellesroles.dual_gunner.entry": "空气中弥漫着左轮的火药味",
   "message.noellesroles.dual_gunner.right_gun": "人数已减半：你获得了双枪-右手，透视已解锁！",
   "message.noellesroles.dual_gunner.left_gun": "残局将至：你获得了双枪-左手，已自动装配到副手！",
   "announcement.star.win.dual_gunner": "双枪客胜利！",

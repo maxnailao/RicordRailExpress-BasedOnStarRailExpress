@@ -2379,6 +2379,7 @@ public class ModEventsRegister {
             boolean hasPelican = false;
             boolean hasGodfather = false;
             boolean hasCorruptCop = false;
+            boolean hasDualGunner = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2413,6 +2414,8 @@ public class ModEventsRegister {
                     hasGodfather = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.CORRUPT_COP)){
                     hasCorruptCop = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.DUAL_GUNNER)) {
+                    hasDualGunner = true;
                 }
             }
             if (hasDio) {
@@ -2503,6 +2506,14 @@ public class ModEventsRegister {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.corrupt_cop.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasDualGunner) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.dual_gunner.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }

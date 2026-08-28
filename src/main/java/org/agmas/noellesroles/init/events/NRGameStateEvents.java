@@ -232,6 +232,7 @@ public class NRGameStateEvents {
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
             boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false;
             boolean hasNianShou = false, hasArsonist = false, hasCuckoo = false, hasPelican = false, hasGodfather = false;
+            boolean hasDualGunner = false;
             final var all_players = serverLevel.players();
 
             for (var p : all_players) {
@@ -263,6 +264,8 @@ public class NRGameStateEvents {
                     hasPelican = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.GODFATHER)) {
                     hasGodfather = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.DUAL_GUNNER)) {
+                    hasDualGunner = true;
                 }
             }
 
@@ -330,6 +333,14 @@ public class NRGameStateEvents {
                             p.playNotifySound(NRSounds.MAFIA, SoundSource.MASTER, 1.0F, 1.0F);
                     });
                 }));
+            }
+            if (hasDualGunner) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.dual_gunner.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
             }
             if (hasNianShou && !nianShouFirecrackersDistributedThisGame) {
                 nianShouFirecrackersDistributedThisGame = true;

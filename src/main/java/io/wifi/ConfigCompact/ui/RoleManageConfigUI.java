@@ -161,27 +161,30 @@ public class RoleManageConfigUI {
         Collator collator = Collator.getInstance();
         boolean killerFirst = false;
         clone.sort((ea, eb) -> {
-            SRERole a = TMMRoles.ROLES.get(ResourceLocation.parse(ea.getKey()));
-            SRERole b = TMMRoles.ROLES.get(ResourceLocation.parse(eb.getKey()));
+            SRERole a = TMMRoles.ROLES.get(ResourceLocation.tryParse(ea.getKey()));
+            SRERole b = TMMRoles.ROLES.get(ResourceLocation.tryParse(eb.getKey()));
+            // 未注册职业统一排到末尾，且两两间按 id 比较；
+            // 任何情况下都不能返回恒等的 0，否则违反比较器传递性契约导致 TimSort 崩溃
+            if (a == null || b == null) {
+                if (a == b) {
+                    return ea.getKey().compareTo(eb.getKey());
+                }
+                return a == null ? 1 : -1;
+            }
             int rt_a = RoleUtils.getRoleType(a);
             int rt_b = RoleUtils.getRoleType(b);
-            if (a != null && b != null) {
-                if (rt_a > rt_b)
-                    return killerFirst ? -1 : 1;
-                if (rt_a < rt_b)
-                    return killerFirst ? 1 : -1;
-                if (a.identifier().getNamespace().equals(b.identifier().getNamespace())) {
-                    String r_a = RoleUtils.getRoleName(a).getString();
-                    String r_b = RoleUtils.getRoleName(b).getString();
-                    return collator.compare(r_a, r_b);
-                } else {
-                    String nameSpaceA = a.identifier().getNamespace();
-                    String nameSpaceB = b.identifier().getNamespace();
-                    return collator.compare(nameSpaceA, nameSpaceB);
-                }
-            } else {
-                return 0;
-            }
+            int typeCmp = killerFirst ? Integer.compare(rt_b, rt_a) : Integer.compare(rt_a, rt_b);
+            if (typeCmp != 0)
+                return typeCmp;
+            int nsCmp = collator.compare(a.identifier().getNamespace(), b.identifier().getNamespace());
+            if (nsCmp != 0)
+                return nsCmp;
+            int nameCmp = collator.compare(RoleUtils.getRoleName(a).getString(),
+                    RoleUtils.getRoleName(b).getString());
+            if (nameCmp != 0)
+                return nameCmp;
+            // 同类型同名职业：用 id 作最终次序，保证全序稳定
+            return ea.getKey().compareTo(eb.getKey());
         });
     }
 

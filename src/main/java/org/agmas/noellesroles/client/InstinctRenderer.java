@@ -67,6 +67,12 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        // 幻灵附身期间：禁用全部本能高亮，避免借旁观者身份看到职业颜色透视（首个非-1返回值生效，需最先注册）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (HuanlingClient.isPossessing())
+                return -2;
+            return -1;
+        });
         // 坠木/皮革嘎的被动：无法被任何角色透视到（必须最先注册，首个非-1返回值生效）
         // 例外：坠木与皮革嘎的可以互相透视（透传给后续处理器）
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
