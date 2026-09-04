@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -37,16 +38,27 @@ public final class GunTracers {
     }
 
     /**
-     * 未命中实体时的弹道延伸距离：按枪械自身射程取值。
+     * 未命中实体时的弹道延伸距离：按每把枪各自的射程取值
+     * （对应各枪客户端 {@code getGunTarget} 的射线检测距离）。
      * <ul>
-     * <li>狙击枪：200 格（{@code SniperRifleItem#getGunTarget} 的射线检测距离）</li>
-     * <li>其它枪械：30 格（{@code GunShootPayload.Receiver} 的服务端命中判定距离）</li>
+     * <li>狙击枪：200 格</li>
+     * <li>巡警手枪：15 格</li>
+     * <li>左轮手枪 / 标准左轮 / 德林加手枪：20 格</li>
+     * <li>其余枪械：兜底 20 格（多数手持枪械的通用射程）</li>
      * </ul>
      */
     public static double rangeFor(ItemStack gun) {
         if (gun.is(TMMItems.SNIPER_RIFLE)) {
             return 200.0D;
         }
-        return 30.0D;
+        if (gun.is(ModItems.PATROLLER_REVOLVER)) {
+            return 15.0D;
+        }
+        if (gun.is(TMMItems.REVOLVER)
+                || gun.is(TMMItems.STANDARD_REVOLVER)
+                || gun.is(TMMItems.DERRINGER)) {
+            return 20.0D;
+        }
+        return 20.0D;
     }
 }
