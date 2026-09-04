@@ -10,15 +10,15 @@
 ## 内容介绍
 RicordRailExpress 是一个基于 StarRailExpress 的改进版本，拥有更多原创模式和原创角色，角色更偏向平衡与趣味性，以较为简单的角色为主。
 ### 角色
-当中有许多的原创角色与修饰符，部分是StarrailExpress的原版角色与修饰符的原版本或者改进版本。
+当中有许多的原创角色与修饰符，部分是StarRailExpress的原版角色与修饰符的原版本或者改进版本。
 
 角色主要分为真实性角色(占主体)、拥有怪异性能力角色(杀手阵营角色占主体)、基于minecraft原版生物的角色、趣味性角色，二创游戏动漫类角色三类。
 
 其中较为代表性的列出
 
-真实性角色:盲人、哑女、智力障碍患者等
+真实性角色:盲人、哑女、智力障碍患者、海盗、雪原猎手等
 
-拥有怪异性能力角色:暗影、幻灵、鬼魅、鬼影、回溯杀手、殉道者等
+拥有怪异性能力角色:暗影、幻灵、鬼魅、鬼影、回溯杀手、殉道者、木乃伊等
 
 基于Minecraft原版生物的角色:铁傀儡、幻魔师、掠夺者等
 
@@ -27,6 +27,25 @@ RicordRailExpress 是一个基于 StarRailExpress 的改进版本，拥有更多
 二创游戏动漫类角色:恶灵(来自APEX)、Niko(来自CSGO)
 
 对未接触过哈比列车一系列DLC玩家来说本DLC是一个较容易上手的DLC。
+
+### 模式
+基于原版谋杀模式、赌徒模式、邪恶战争等新增了一些小模式：
+
+枪王模式、海盗模式、传统狼人杀卡牌模式等
+
+## 运行环境
+minecraft_version=1.21.1
+yarn_mappings=1.21.1+build.3
+loader_version=0.19.3
+Fabric Loom: 1.15.5
+fzzyConfigVersion=0.7.4-fix1+1.21
+
+### 依赖库
+wahte-1.3.2.jar
+sre-lib-1.0.2.jar
+blindness-1.1.0.jar
+veil-fabric-1.21.1-4.3.0.jar
+molang-compiler-3.1.1.19.jar
 
 
 
@@ -47,7 +66,7 @@ RicordRailExpress 是一个基于 StarRailExpress 的改进版本，拥有更多
 
 ## 免责声明
 
-本模组是Wathe模组的附属模组，并改进了Wathe模组中的很多功能，本模组自带 `Harpymodloader`、`StupidExpress`、`Noellesroles`、`Harpy Simple Roles`模组的功能与内容，新增的职业中部分参考了`KinsWathe`模组中的职业。
+本模组是Wathe模组的附属模组，并改进了Wathe模组中的很多功能，本模组自带 `StarRailExpress`、`blindness`模组的功能与内容。
 本模组完全开源免费，非盈利项目。我们使用和上游 `Noellesroles` 相同的 `GNU General Public License v3.0 only (GPL-3.0-only)` 协议。
 
 ### 你可以做什么（授予的权限依照StarRailExpress开源协议同样要求）
