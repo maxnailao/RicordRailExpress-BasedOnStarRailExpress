@@ -36,7 +36,6 @@ public class WithParentScreenPauseScreen extends PauseScreen {
     public static final Component FEEDBACK_TRAIN = Component.translatable("menu.sre.feedback_train_bug");
     public static final Component SETTINGS = Component.translatable("menu.sre.train_options");
     public static final Component JOIN_QQ = Component.translatable("gui.sre.pause.join_qq");
-    public static final Component JOIN_DISCORD = Component.translatable("gui.sre.pause.join_discord");
     public static final Component JOIN_FEEDBACK = Component.translatable("menu.sre.feedback");
 
     public WithParentScreenPauseScreen(boolean bl) {
@@ -83,8 +82,6 @@ public class WithParentScreenPauseScreen extends PauseScreen {
         try {
             arr.add(ServerLinks.Entry.custom(JOIN_QQ,
                     new URI(StarRailExpressTitleScreen.QQ_GROUP_URL)));
-            arr.add(ServerLinks.Entry.custom(JOIN_DISCORD,
-                    new URI(StarRailExpressTitleScreen.DISCORD_URL)));
             arr.add(ServerLinks.Entry.custom(FEEDBACK_TRAIN,
                     new URI(StarRailExpressTitleScreen.FEEDBACK_URL)));
         } catch (URISyntaxException e) {

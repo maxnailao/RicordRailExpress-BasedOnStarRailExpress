@@ -63,9 +63,8 @@ public class StarRailExpressTitleScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Component TITLE = Component.translatable("narrator.screen.title");
 
-    public static final String QQ_GROUP_URL = "https://qm.qq.com/q/8XXqKRjT7q";
-    public static final String DISCORD_URL = "https://discord.gg/T7R5NkMHt3";
-    public static final String FEEDBACK_URL = "https://github.com/catmoon-train/StarRailExpress/issues";
+    public static final String QQ_GROUP_URL = "https://qm.qq.com/cgi-bin/qm/qr?k=XTS4b57_ZKsagtHaRLFeVovpAu3BxNlK&jump_from=webapi&authKey=C9DjUSbdvKK+Sy0Hf50DRTDczR6pfpFowquQ1Rwk7aJhpGlE7cd+KGkCtnyo3cYy";
+    public static final String FEEDBACK_URL = "https://github.com/maxnailao/RicordRailExpress-BasedOnStarRailExpress/issues";
 
     /** 菜单项纵向间距 */
     private static final int MENU_SPACING = 26;
@@ -313,9 +312,6 @@ public class StarRailExpressTitleScreen extends Screen {
                 Component.translatable("menu.sre.join_qq"),
                 () -> Util.getPlatform().openUri(QQ_GROUP_URL)));
         this.menuEntries.add(new MenuEntry(
-                Component.translatable("menu.sre.join_discord"),
-                () -> Util.getPlatform().openUri(DISCORD_URL)));
-        this.menuEntries.add(new MenuEntry(
                 Component.translatable("menu.sre.feedback"),
                 () -> Util.getPlatform().openUri(FEEDBACK_URL)));
 
@@ -408,8 +404,10 @@ public class StarRailExpressTitleScreen extends Screen {
         renderPanorama(g, delta);
         renderModernOverlay(g);
 
-        // 版本号（左下角）
-        String version = "StarRailExpress 4.3.0 / " + SRE.modPacketVersion;
+        // 版本号（左下角）：从模组元数据动态读取名称与版本
+        String version = FabricLoader.getInstance().getModContainer("starrailexpress")
+                .map(c -> c.getMetadata().getName() + " " + c.getMetadata().getVersion().getFriendlyString())
+                .orElse("RicordRailExpress 1.0.0");
         if (Minecraft.checkModStatus().shouldReportAsModified())
             version += I18n.get("menu.modded");
         g.drawString(this.font, version, 8, this.height - 14, 0xC8B898, false);

@@ -1,4 +1,4 @@
-# StarRail Express
+# RicordRailExpress - 基于StarRailExpress的改进版本
 [[English]](README.md) **[简体中文]**
 
 ## 翻译提示
@@ -6,6 +6,29 @@
 由于开发者的母语不是英语，英文版本的 README 在更新上将会落后于中文版本。请尽可能查看本README。
 
 我们也欢迎为我们提供翻译的玩家和开发者们！（简体中文翻译除外）
+
+## 内容介绍
+RicordRailExpress 是一个基于 StarRailExpress 的改进版本，拥有更多原创模式和原创角色，角色更偏向平衡与趣味性，以较为简单的角色为主。
+# 角色
+当中有许多的原创角色与修饰符，部分是StarrailExpress的原版角色与修饰符的原版本或者改进版本。
+
+角色主要分为真实性角色(占主体)、拥有怪异性能力角色(杀手阵营角色占主体)、基于minecraft原版生物的角色、趣味性角色，二创游戏动漫类角色三类。
+
+其中较为代表性的列出
+
+真实性角色:盲人、哑女、智力障碍患者等
+
+拥有怪异性能力角色:暗影、幻灵、鬼魅、鬼影、回溯杀手、殉道者等
+
+基于Minecraft原版生物的角色:铁傀儡、幻魔师、掠夺者等
+
+趣味性角色:坠木、皮革嘎的、嘉豪等
+
+二创游戏动漫类角色:恶灵(来自APEX)、Niko(来自CSGO)
+
+对未接触过哈比列车一系列DLC玩家来说本DLC是一个较容易上手的DLC。
+
+
 
 ## 请注意！
 本 Wathe 扩展**极有可能**不支持任何其他 Wathe 扩展。
@@ -21,12 +44,13 @@
 且为了方便，我们使用了 `trainmurdermystery` 以及自己的命名空间，而不是 `wathe`。（因为改ID了话地图迁移有点麻烦）
 
 部分位置仍为 `TMM`，因为重命名文件名后需要改的东西比较多，有点麻烦。
+
 ## 免责声明
 
 本模组是Wathe模组的附属模组，并改进了Wathe模组中的很多功能，本模组自带 `Harpymodloader`、`StupidExpress`、`Noellesroles`、`Harpy Simple Roles`模组的功能与内容，新增的职业中部分参考了`KinsWathe`模组中的职业。
 本模组完全开源免费，非盈利项目。我们使用和上游 `Noellesroles` 相同的 `GNU General Public License v3.0 only (GPL-3.0-only)` 协议。
 
-### 你可以做什么（授予的权限）
+### 你可以做什么（授予的权限依照StarRailExpress开源协议同样要求）
 #### 自由使用
 
 你可以为了任何目的运行这个程序，无论是个人、学术还是商业目的。
@@ -88,7 +112,7 @@
 
 ## 本 DLC 特性
 ### 角色
-我们融合了 `Harpymodloader`、`StupidExpress`、`Noellesroles`、`Harpy Simple Roles`、`KinsWathe`的部分角色与修饰符，并且加入了许多我们自己的原创角色、修饰符。你无法在安装此模组的同时安装以上模组。
+我们基于 `StarRailExpress`打造，含有大量该模组的原角色和基于原角色改编的角色以及修饰符，并且加入了许多我们自己的原创角色、修饰符。你无法在安装此模组的同时安装以上模组。
 ### 物品、实体、方块
 我们为列车增加了更多的物品、实体、方块，您可以在游戏物品栏里查看
 ### 功能
@@ -248,7 +272,7 @@
 ## 开发
 
 - **[docs/创建模组.md](docs/创建模组.md)** — 从零创建扩展模组：环境准备、项目搭建、依赖配置、构建命令。
-- **[docs/api.md](docs/api.md)** — 完整开发者 API 参考：角色注册、事件系统、技能系统、商店系统、CCA 组件、HUD 渲染、游戏模式、Replay 系统等。
-- **[CreateExtention.md](CreateExtention.md)** — 快速参考：在现有代码库中注册角色、物品、实体、商店、网络包、GUI 及 Mixin。
+- **[docs/api.[md](docs/api.md)** — 完整开发者 API 参考：角色注册、事件系统、技能系统、商店系统、CCA 组件、HUD 渲染、游戏模式、Replay 系统等。
+- **[CreateExt]()ention.md](CreateExtention.md)** — 快速参考：在现有代码库中注册角色、物品、实体、商店、网络包、GUI 及 Mixin。
 
 > **重要提醒：** 不要引用 Wathe 的库，它会导致崩溃（未初始化）。
