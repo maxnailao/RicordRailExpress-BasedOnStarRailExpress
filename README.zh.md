@@ -35,9 +35,13 @@ RicordRailExpress 是一个基于 StarRailExpress 的改进版本，拥有更多
 
 ## 运行环境
 minecraft_version=1.21.1
+
 yarn_mappings=1.21.1+build.3
+
 loader_version=0.19.3
+
 Fabric Loom: 1.15.5
+
 fzzyConfigVersion=0.7.4-fix1+1.21
 
 ### 依赖库
