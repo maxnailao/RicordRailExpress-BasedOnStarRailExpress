@@ -46,10 +46,15 @@ fzzyConfigVersion=0.7.4-fix1+1.21
 
 ### 依赖库
 wahte-1.3.2.jar
+
 sre-lib-1.0.2.jar
+
 blindness-1.1.0.jar
+
 veil-fabric-1.21.1-4.3.0.jar
+
 molang-compiler-3.1.1.19.jar
+
 
 
 
