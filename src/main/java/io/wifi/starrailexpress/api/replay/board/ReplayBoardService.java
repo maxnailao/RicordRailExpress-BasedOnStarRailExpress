@@ -12,6 +12,8 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import org.joml.Matrix4f;
 
@@ -28,6 +30,8 @@ public final class ReplayBoardService {
     private static final double SCROLL_SPEED_ROWS_PER_TICK = 0.05D;
     private static final float DISPLAY_VIEW_RANGE = 0.6F;
     private static final double TEXT_OFFSET = 0.58D;
+    /** 回放屏幕底板方块：create / show 时自动铺设，remove 时自动清除。 */
+    private static final Block BACKGROUND_BLOCK = Blocks.BLACK_WOOL;
     private static final String NAME_PREFIX = "SRE Replay Screen:";
     private static final String LEGACY_NAME_PREFIX = "SRE Replay Screen: ";
     private static final Map<String, ScrollAnimation> ACTIVE_ANIMATIONS = new HashMap<>();
@@ -52,6 +56,7 @@ public final class ReplayBoardService {
             ServerLevel screenLevel = level.getServer().getLevel(entry.dimension());
             if (screenLevel != null) {
                 clearTextDisplay(screenLevel, entry);
+                clearBackground(screenLevel, entry);
             }
         });
         return removed.isPresent();
@@ -96,14 +101,35 @@ public final class ReplayBoardService {
         }
     }
 
+    /**
+     * 在屏幕区域铺一层底板方块，让文字有背景、也让屏幕边界肉眼可见。
+     * <p>底板位于 {@code origin} 所在平面，沿宽度（水平的、垂直于朝向的方向）与高度（向上）展开；
+     * 文字由 {@link #positionLine} 往朝向方向推出 {@link #TEXT_OFFSET}，恰好浮在底板前方。
+     */
     public static void buildBackground(ServerLevel level, ReplayBoardSavedData.ReplayScreenEntry entry) {
-        // BlockPos origin = entry.origin();
-//        for (int w = 0; w < entry.width(); w++) {
-//            for (int h = 0; h < entry.height(); h++) {
-//                BlockPos pos = backgroundPos(origin, entry.direction(), w, h);
-//                level.setBlock(pos, Blocks.BLACK_WOOL.defaultBlockState(), Block.UPDATE_ALL);
-//            }
-//        }
+        BlockPos origin = entry.origin();
+        for (int w = 0; w < entry.width(); w++) {
+            for (int h = 0; h < entry.height(); h++) {
+                BlockPos pos = backgroundPos(origin, entry.direction(), w, h);
+                level.setBlock(pos, BACKGROUND_BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    /**
+     * 清除屏幕底板（{@link #removeScreen} 时调用）。只移除底板方块本身，
+     * 避免误删玩家在屏幕区域内自建的其它方块。
+     */
+    public static void clearBackground(ServerLevel level, ReplayBoardSavedData.ReplayScreenEntry entry) {
+        BlockPos origin = entry.origin();
+        for (int w = 0; w < entry.width(); w++) {
+            for (int h = 0; h < entry.height(); h++) {
+                BlockPos pos = backgroundPos(origin, entry.direction(), w, h);
+                if (level.getBlockState(pos).is(BACKGROUND_BLOCK)) {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                }
+            }
+        }
     }
 
     public static BlockPos backgroundPos(BlockPos origin, Direction direction, int widthOffset, int heightOffset) {
