@@ -505,6 +505,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
+            org.agmas.noellesroles.gunfx.GunTracerRenderer.render(renderContext);
         });
         // 任务点透视穿透失明遮罩：向失明症模组注册遮罩绘制扩展（失明症未安装时自动跳过）
         org.agmas.noellesroles.client.blindness.TaskPointMaskBridge.init();
@@ -608,6 +609,10 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientSmokeAreaManager.createSmokeArea(context.client().level, payload.position(), payload.radius(),
                     payload.durationTicks());
         });
+        // 枪械射击轨迹：服务端广播弹道终点，客户端渲染渐隐轨迹线
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID, (payload, context) -> context.client()
+                        .execute(() -> org.agmas.noellesroles.gunfx.GunTracerRenderer.onPacket(payload)));
 
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,

@@ -94,13 +94,10 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
                 Entity target = entityHitResult.getEntity();
                 ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, target.getId()));
                 CrosshairaddonsCompat.arrowHit();
-                spawnSmokeTrail(world, user, collision.getLocation());
             } else if (collision instanceof BlockHitResult blockHit) {
                 ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, -1, blockHit.getBlockPos()));
-                spawnSmokeTrail(world, user, collision.getLocation());
             } else {
                 ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.SHOOT, -1));
-                spawnSmokeTrail(world, user, collision.getLocation());
             }
             user.setXRot(user.getXRot() - 4);
             spawnHandParticle();
@@ -121,46 +118,6 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
                 .setAlpha(1f, 0.1f)
                 .setRenderLayer(TMMRenderLayers::additive);
         SREClient.handParticleManager.spawn(handParticle);
-    }
-
-    /**
-     * 在子弹路径上生成 SMOKE 粒子轨迹
-     */
-    private static void spawnSmokeTrail(Level world, Player user, net.minecraft.world.phys.Vec3 hitPos) {
-        // 获取玩家眼睛位置（子弹起点）
-        net.minecraft.world.phys.Vec3 startPos = user.getEyePosition();
-
-        // 计算从起点到终点的向量
-        net.minecraft.world.phys.Vec3 direction = hitPos.subtract(startPos);
-        double distance = direction.length();
-
-        // 归一化方向向量
-        direction = direction.normalize();
-
-        // 每隔一定距离生成一个粒子
-        double stepSize = 0.5; // 每 0.5 格生成一个粒子
-        int particleCount = (int) (distance / stepSize);
-
-        for (int i = 0; i < particleCount; i++) {
-            double ratio = (double) i / particleCount;
-            net.minecraft.world.phys.Vec3 particlePos = startPos.add(
-                    direction.x * distance * ratio,
-                    direction.y * distance * ratio,
-                    direction.z * distance * ratio);
-
-            // 添加随机偏移，使烟雾更自然
-            double offsetX = (world.random.nextDouble() - 0.5) * 0.2;
-            double offsetY = (world.random.nextDouble() - 0.5) * 0.2;
-            double offsetZ = (world.random.nextDouble() - 0.5) * 0.2;
-
-            world.addParticle(
-                    net.minecraft.core.particles.ParticleTypes.SMOKE,
-                    particlePos.x + offsetX,
-                    particlePos.y + offsetY,
-                    particlePos.z + offsetZ,
-                    0, 0.02, 0 // 缓慢上升的速度
-            );
-        }
     }
 
     public static HitResult getGunTarget(Player user) {

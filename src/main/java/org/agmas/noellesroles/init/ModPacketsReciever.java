@@ -2,6 +2,7 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
@@ -388,6 +389,12 @@ public class ModPacketsReciever {
         VoodooPlayerComponent voodooPlayerComponent = (VoodooPlayerComponent) VoodooPlayerComponent.KEY
             .get(context.player());
         voodooPlayerComponent.setTarget(payload.player());
+
+        // 回放记录：巫毒师/冷笑绑定玩家
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+            Component.translatable("replay.event.voodoo.bind",
+                GameReplayUtils.getReplayPlayerDisplayText(context.player(), true),
+                GameReplayUtils.getReplayPlayerDisplayText(context.player().level().getPlayerByUUID(payload.player()), true)));
 
       }
       if (gameWorldComponent.isRole(context.player(), ModRoles.MORPHLING)) {
@@ -1281,6 +1288,12 @@ public class ModPacketsReciever {
             pc.schedulePartySound(6 * 20); // 6秒后从当前位置播放
             pc.sync();
 
+            // 回放记录：派对狂对玩家使用氦气变声
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.party.helium_voice",
+                    GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                    GameReplayUtils.getReplayPlayerDisplayText(target, true)));
+
             // 检查是否达到触发阈值
             if (pc.getCount() >= threshold) {
               PartyPlayerComponent.triggerPartyTime((ServerLevel) player.level(), player);
@@ -1677,6 +1690,13 @@ public class ModPacketsReciever {
                   new org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket(player.getUUID(), comp.stolenSkin));
             }
             comp.sync();
+            // 回放记录：窃皮者改变自身皮肤
+            Player skincrawlerTarget = player.serverLevel().getPlayerByUUID(comp.stolenSkin);
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.skincrawler.change_skin",
+                    GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                    skincrawlerTarget != null ? GameReplayUtils.getReplayPlayerDisplayText(skincrawlerTarget, true)
+                        : Component.literal("<???>")));
             player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_LEATHER, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f,
                 1.0f);

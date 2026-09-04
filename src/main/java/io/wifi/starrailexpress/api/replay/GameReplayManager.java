@@ -19,9 +19,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.Nullable;
 
@@ -606,6 +610,94 @@ public class GameReplayManager implements IGameReplayRecorder {
 
   public void breakArmor(UUID playerUuid) {
     addEvent(GameReplayData.EventType.ARMOR_BREAK, playerUuid, null, "unknown", null, false);
+  }
+
+  public void recordSkillUsedId(Player player, @Nullable String id, @Nullable UUID target) {
+    recordSkillUsedId(player, id, target, false);
+  }
+
+  public void recordSkillUsedId(Player player, @Nullable String id, @Nullable UUID target, boolean hidden) {
+    if (!(player instanceof ServerPlayer sp)) {
+      return;
+    }
+    Entity targetEntity = null;
+    if (target != null) {
+      targetEntity = sp.serverLevel().getEntity(target);
+    }
+
+    if (id == null) {
+      if (targetEntity != null) {
+        recordCustomEvent(
+            Component.translatable("replay.event.player.use_skill_with_target",
+                GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                getTargetEntityText(sp.serverLevel(), targetEntity)),
+            hidden);
+      } else {
+        recordCustomEvent(
+            Component.translatable("replay.event.player.use_skill",
+                GameReplayUtils.getReplayPlayerDisplayText(player, true)),
+            hidden);
+      }
+    } else {
+      recordSkillUsed(player, Component.translatableWithFallback(id, "Skill"), targetEntity, hidden);
+    }
+  }
+
+  public static Component getTargetEntityText(ServerLevel world, Entity targetEntity) {
+    if (targetEntity instanceof Player player) {
+      return GameReplayUtils.getReplayPlayerDisplayText(player, true);
+    } else if (targetEntity instanceof PlayerBodyEntity be) {
+      if (be.getPlayerUuid() != null
+          && world.getPlayerByUUID(be.getPlayerUuid()) instanceof ServerPlayer targetPlayer) {
+        return Component.translatable("replay.event.utils.body.name",
+            GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, true));
+      }
+    } else if (targetEntity instanceof PuppeteerBodyEntity pbe) {
+      var b = pbe.getOwnerUuid();
+      if (b.isPresent()
+          && world.getPlayerByUUID(b.get()) instanceof ServerPlayer targetPlayer) {
+        return Component.translatable("replay.event.utils.puppeteer.name",
+            GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, true));
+      }
+    }
+    return targetEntity.getDisplayName();
+  }
+
+  /** 以字面技能名记录技能释放（自定义职业优先显示用户填写的技能名）。 */
+  public void recordSkillUsed(Player player, Component skillName) {
+    recordSkillUsed(player, skillName, null, false);
+  }
+
+  /** 以字面技能名记录技能释放（自定义职业优先显示用户填写的技能名）。 */
+  public void recordSkillUsed(Player player, Component skillName, @Nullable Entity target) {
+    recordSkillUsed(player, skillName, target, false);
+  }
+
+  public void recordSkillUsed(Player player, Component skillName, @Nullable Entity target, boolean hidden) {
+    if (!(player instanceof ServerPlayer sp)) {
+      return;
+    }
+    if (target == null) {
+
+      recordCustomEvent(
+          Component.translatable("sre.replay.event.skill_release",
+              GameReplayUtils.getReplayPlayerDisplayText(player, true),
+              Component
+                  .translatable("sre.replay.event.skill_release.warp",
+                      skillName)
+                  .withStyle(ChatFormatting.WHITE)),
+          hidden);
+    } else {
+      recordCustomEvent(
+          Component.translatable("sre.replay.event.skill_release_with_target",
+              GameReplayUtils.getReplayPlayerDisplayText(player, true),
+              getTargetEntityText(sp.serverLevel(), target),
+              Component
+                  .translatable("sre.replay.event.skill_release.warp",
+                      skillName)
+                  .withStyle(ChatFormatting.WHITE)),
+          hidden);
+    }
   }
 
   public void recordSkillUsed(UUID playerUuid, ResourceLocation skillUsed) {

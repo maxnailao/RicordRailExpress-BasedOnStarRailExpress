@@ -1,5 +1,7 @@
 package pro.fazeclan.river.stupid_express.role.arsonist.item;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.network.chat.Component;
@@ -72,6 +74,12 @@ public class LighterItem extends Item {
             player.playNotifySound(SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
             player.displayClientMessage(Component.translatable("item.stupid_express.lighter.used"), true);
             player.playNotifySound(SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 1f, 1f);
+            // 回放记录：纵火犯点燃所有被泼油玩家
+            if (player instanceof ServerPlayer sp) {
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.arsonist.ignite",
+                                GameReplayUtils.getReplayPlayerDisplayText(sp, true)));
+            }
             var playersLeft = players1.stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
             if (playersLeft <= 1) {
                 // 纵火犯独立胜利统计：使用 RoleUtils.customWinnerWin

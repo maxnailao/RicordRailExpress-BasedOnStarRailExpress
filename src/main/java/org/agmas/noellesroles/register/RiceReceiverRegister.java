@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.register;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -410,6 +412,11 @@ public class RiceReceiverRegister {
                         // 重置双方状态（这会触发 isDeliveryActive() 返回 false）
                         postmanComp.init();
                         targetComp.init();
+                        // 回放记录：传递盒双方交换物品
+                        SRE.REPLAY_MANAGER.recordCustomEvent(
+                            Component.translatable("replay.event.shameimaru.exchange_box",
+                                GameReplayUtils.getReplayPlayerDisplayText(postmanPlayer, true),
+                                GameReplayUtils.getReplayPlayerDisplayText(receiverPlayer, true)));
 
                         // 关闭双方界面
                         if (context.player() instanceof ServerPlayer serverPlayer) {
@@ -492,6 +499,11 @@ public class RiceReceiverRegister {
 
             // 开始审查
             component.startInspecting((ServerPlayer) target);
+            // 回放记录：探员审查玩家物品栏
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.agent.inspect_inventory",
+                    GameReplayUtils.getReplayPlayerDisplayText(context.player(), true),
+                    GameReplayUtils.getReplayPlayerDisplayText(target, true)));
 
             // 打开只读的侦探审查界面
             if (context.player() instanceof ServerPlayer serverPlayer) {

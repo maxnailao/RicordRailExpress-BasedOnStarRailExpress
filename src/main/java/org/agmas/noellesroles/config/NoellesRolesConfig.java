@@ -274,6 +274,12 @@ public class NoellesRolesConfig implements ConfigData {
     public boolean enableClientBlood = true;
 
     /**
+     * (Server Side) Enable the gun-fire tracer line effect broadcast on every gunshot
+     */
+
+    public boolean gunTracerEffect = true;
+
+    /**
      * Punishment for a civilian's accidental killing of another civilian
      */
 

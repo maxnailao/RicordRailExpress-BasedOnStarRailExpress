@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.neutral.doomedsinner;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.replay.ReplayEvent;
 import io.wifi.starrailexpress.api.replay.ReplayEventTypes;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
@@ -420,6 +421,14 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
         for (ServerPlayer viewer : level.players()) {
             ServerPlayNetworking.send(viewer, packet);
         }
+
+        // 回放记录：宿命的罪人改变皮肤
+        Player skinTarget = level.getPlayerByUUID(skinUuid);
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.doomed_sinner.change_skin",
+                        GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                        skinTarget != null ? GameReplayUtils.getReplayPlayerDisplayText(skinTarget, true)
+                                : Component.literal("<???>")));
     }
 
     private static void grantRandomFalseItem(ServerPlayer player) {
@@ -529,6 +538,10 @@ public class DoomedSinnerPlayerComponent implements RoleComponent, ServerTicking
         for (ServerPlayer p : serverLevel.players()) {
             p.sendSystemMessage(message);
         }
+        // 回放记录：宿命的罪人真正死亡
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.doomed_sinner.real_dead",
+                        GameReplayUtils.getReplayPlayerDisplayText(player, true)));
     }
 
     // ── 胜利判定（供 CustomWinnerClass 调用） ──────────────────────

@@ -1116,7 +1116,9 @@ public class ModEventsRegister {
                 SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                 if (gameWorldComponent.isRole(victim, ModRoles.JESTER)
                         && !gameWorldComponent.isRole(killer, ModRoles.JESTER)
-                        && gameWorldComponent.isInnocent(killer)) {
+                        && (gameWorldComponent.isInnocent(killer)
+                                // 黑警为中立阵营，特例允许其击杀触发小丑精神爆发
+                                || gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP))) {
                     SREPlayerPsychoComponent component = SREPlayerPsychoComponent.KEY.get(victim);
                     if (component.getPsychoTicks() <= 0) {
                         component.startPsycho();

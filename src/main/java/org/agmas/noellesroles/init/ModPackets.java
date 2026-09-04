@@ -71,6 +71,9 @@ public class ModPackets {
                 LotteryMachineResultS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WheelchairMoveC2SPacket.ID, WheelchairMoveC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BroadcastMessageS2CPacket.ID, BroadcastMessageS2CPacket.CODEC);
+        // 枪械射击弹道轨迹（S2C）
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID,
+                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CanMoveInTimeStopS2CPacket.ID, CanMoveInTimeStopS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
