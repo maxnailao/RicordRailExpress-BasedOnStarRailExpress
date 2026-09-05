@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.game.roles.killer.conspirator;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -187,6 +189,12 @@ public class ConspiratorPlayerComponent implements RoleComponent, ServerTickingC
                             .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
                     true);
 
+            // 回放记录：阴谋家用阴谋书页猜对了某玩家的身份
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.conspirator.record_identity",
+                            GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
+
             // 通知目标玩家他们被诅咒了（但不告诉是谁）
             if (target instanceof ServerPlayer targetServer) {
                 targetServer.displayClientMessage(
@@ -208,6 +216,12 @@ public class ConspiratorPlayerComponent implements RoleComponent, ServerTickingC
             this.sync();
             return true;
         } else {
+            // 回放记录：阴谋家用阴谋书页猜错了某玩家的身份
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.conspirator.record_identity.wrong",
+                            GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
+
             // 猜测错误
             this.wrongGuessCount++;
 

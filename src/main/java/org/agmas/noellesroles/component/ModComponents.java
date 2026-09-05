@@ -1024,6 +1024,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(PelicanPlayerComponent::new);
     registry.beginRegistration(Player.class, GodfatherComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(GodfatherComponent::new);
+    // 蜜蜂家族（蜂后 / 马蜂 / 工蜂）共用组件
+    registry.beginRegistration(Player.class,
+            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyComponent.KEY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyComponent::new);
     registry.beginRegistration(Player.class, ThiefPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(ThiefPlayerComponent::new);
     registry.beginRegistration(Player.class, CandleBearerPlayerComponent.KEY)

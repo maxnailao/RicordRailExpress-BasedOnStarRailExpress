@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.game.roles.neutral.recorder;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -129,8 +131,18 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
                     Component.translatable("message.noellesroles.recorder.correct_guess")
                             .withStyle(ChatFormatting.GREEN),
                     true);
+            // 回放记录：记录员用记录笔记猜对了某玩家的身份
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.recorder.record_identity",
+                            GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
             checkWinCondition();
         } else {
+            // 回放记录：记录员用记录笔记猜错了某玩家的身份
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.recorder.record_identity.wrong",
+                            GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
             wrongGuessCount++;
             serverPlayer.displayClientMessage(
                     Component

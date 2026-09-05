@@ -25,6 +25,7 @@ import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.MafiaActionC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,11 +91,14 @@ public final class MafiaManager {
     }
 
     private static void handleAction(ServerPlayer player, int action, UUID target) {
+        // 教父已死亡/旁观时不得继续招募
+        if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
         if (!isGodfather(player)) return;
         if (target == null) return;
         ServerPlayer tgt = player.server.getPlayerList().getPlayer(target);
         if (tgt == null || !GameUtils.isPlayerAliveAndSurvival(tgt)) return;
-        var comp = GodfatherComponent.KEY.get(player);
+        var comp = GodfatherComponent.KEY.maybeGet(player).orElse(null);
+        if (comp == null) return;
         long now = player.level().getGameTime();
 
         if (action == MafiaActionC2SPacket.RECRUIT_MAFIOSO || action == MafiaActionC2SPacket.RECRUIT_JANITOR || action == MafiaActionC2SPacket.RECRUIT_NUTRITIONIST || action == MafiaActionC2SPacket.RECRUIT_PARASOL) {
@@ -150,13 +154,17 @@ public final class MafiaManager {
 
     public static void onGodfatherDeath(ServerPlayer godfather) {
         UUID gfId = godfather.getUUID();
+        // 亡命徒时刻（难民修饰符触发）期间，教父死亡不还原家族成员职业
+        boolean inLooseEndMoment = RefugeeComponent.KEY.get(godfather.level()).isAnyRevivals;
         for (UUID memberId : new ArrayList<>(godfatherByMember.keySet())) {
             if (gfId.equals(godfatherByMember.get(memberId))) {
                 ServerPlayer member = godfather.server.getPlayerList().getPlayer(memberId);
-                // 只有当前仍然是家族成员，才变回原来的职业
-                if (member != null && isMafiaMember(member)
+                // 只有在亡命徒时刻之外，且当前仍然是家族成员，才变回原来的职业
+                if (!inLooseEndMoment && member != null && isMafiaMember(member)
                         && previousRoleByMember.containsKey(memberId)) {
-                    RoleUtils.changeRole(member, previousRoleByMember.get(memberId));
+                    // record=true 写入回放；addStats=false 避免把还原误计为「又玩了一局原职业」；
+                    // noEventCall=true 避免重复发放初始物品与重播入场报幕
+                    RoleUtils.changeRole(member, previousRoleByMember.get(memberId), true, false, false, true);
                     // 清除从家族商店购买的标记物品
                     clearMafiaShopItems(member);
                 }
@@ -168,19 +176,22 @@ public final class MafiaManager {
 
     // Bullet system
     public static int getLoadedBullets(ServerPlayer godfather) {
-        return GodfatherComponent.KEY.get(godfather).loadedBullets;
+        var comp = GodfatherComponent.KEY.maybeGet(godfather).orElse(null);
+        return comp != null ? comp.loadedBullets : 0;
     }
     public static int getMaxLoadedBullets(ServerPlayer godfather) {
-        return GodfatherComponent.KEY.get(godfather).maxLoadedBullets;
+        var comp = GodfatherComponent.KEY.maybeGet(godfather).orElse(null);
+        return comp != null ? comp.maxLoadedBullets : 0;
     }
     public static void consumeBullet(ServerPlayer godfather) {
-        var comp = GodfatherComponent.KEY.get(godfather);
+        var comp = GodfatherComponent.KEY.maybeGet(godfather).orElse(null);
+        if (comp == null) return;
         if (comp.loadedBullets > 0) { comp.loadedBullets--; comp.sync(); }
         syncDerringerUsed(godfather, comp.loadedBullets > 0);
     }
     public static boolean tryLoadBullet(ServerPlayer godfather) {
-        var comp = GodfatherComponent.KEY.get(godfather);
-        if (comp.loadedBullets >= comp.maxLoadedBullets) return false;
+        var comp = GodfatherComponent.KEY.maybeGet(godfather).orElse(null);
+        if (comp == null || comp.loadedBullets >= comp.maxLoadedBullets) return false;
         comp.loadedBullets++; comp.sync();
         syncDerringerUsed(godfather, true);
         return true;

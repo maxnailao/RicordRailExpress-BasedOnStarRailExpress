@@ -4,6 +4,7 @@ import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
@@ -2374,6 +2375,25 @@ public class RoleShopHandler {
                     ModRoles.MORPHLING_ID, entries);
         }
 
+        // 蜜蜂家族商店：刀 + 开锁器；马蜂额外带手雷
+        {
+            ShopContent.customEntries.put(
+                    BounsRoles.BEE_QUEEN.identifier(),
+                    List.of(new KillerKnifeShopEntry(300),
+                            new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
+            ShopContent.customEntries.put(
+                    BounsRoles.BEE_WORKER.identifier(),
+                    List.of(new KillerKnifeShopEntry(300),
+                            new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
+            var waspShop = new ArrayList<ShopEntry>();
+            waspShop.add(new KillerKnifeShopEntry(200));
+            // 外层 KillerKnifeShopEntry 只有刀的构造器（内含刀耐久与首购折扣逻辑），
+            // 手雷只能用普通 ShopEntry。
+            waspShop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 600, ShopEntry.Type.WEAPON));
+            waspShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(BounsRoles.BEE_WASP.identifier(), waspShop);
+        }
+
         // 静语者商店（手动构建，用静语者疯魔替代普通疯魔）
         {
             var silencerShop = new ArrayList<ShopEntry>();
@@ -3320,6 +3340,10 @@ public class RoleShopHandler {
                                 }
                             }
                         }
+                        // 回放记录：诡客买净雨符关闭了里世界
+                        SRE.REPLAY_MANAGER.recordCustomEvent(
+                                Component.translatable("replay.event.trickster.close_shadow",
+                                        GameReplayUtils.getReplayPlayerDisplayText(player, true)));
                         return true;
                     }
                 });

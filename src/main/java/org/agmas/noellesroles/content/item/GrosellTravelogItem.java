@@ -1,5 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -132,6 +134,12 @@ public class GrosellTravelogItem extends Item {
                     .withStyle(ChatFormatting.DARK_PURPLE), true);
             player.level().playSound(null, player.blockPosition(), SoundEvents.EVOKER_CAST_SPELL,
                     SoundSource.PLAYERS, 1.0f, 0.8f);
+
+            // 回放记录：旅行者把被放逐的同伴从游记中召回
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.adventurer.recall",
+                            GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
 
             // 释放后才进冷却。
             int cooldown = NoellesRolesConfig.HANDLER.instance().grosellTravelogCooldownSeconds * 20;

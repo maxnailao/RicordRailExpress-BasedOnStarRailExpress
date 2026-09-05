@@ -140,18 +140,19 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     /**
-     * 治愈感染
+     * 治愈感染。仅在真正处于感染中（infectedTicks > 0）时记录回放事件，
+     * 避免死亡/复位路径误报「被治愈」（那些路径请直接调 {@link #clear()}）。
      */
     public void cure() {
         if (this.infectedTicks <= 0 && this.infector == null && !this.spreadAccelerated) {
             return;
         }
-        this.infectedTicks = 0;
-        this.infector = null;
-        this.lastSpreadTick = 0;
-        this.spreadAccelerated = false;
-        this.cachedInfectorPlayer = null;
-        this.infectorCheckCounter = 0;
+        if (this.infectedTicks > 0) {
+            SRE.REPLAY_MANAGER.recordCustomEvent(
+                    Component.translatable("replay.event.infected.health",
+                            GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+        }
+        this.clear();
         this.sync(); // 同步给所有者+所有疫使
     }
 
@@ -175,6 +176,11 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 故障机器人免疫病毒感染
         if (gameWorld.isRole(player, ModRoles.GLITCH_ROBOT)) {
+            return false;
+        }
+
+        // 职业自带中毒免疫（SRERole#canBePoisoned() == false，如蜜蜂家族）同样免疫病毒感染
+        if (!role.canBePoisoned()) {
             return false;
         }
 
@@ -234,9 +240,9 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             return;
         }
 
-        // 如果玩家已死亡，立即清除感染状态
+        // 如果玩家已死亡，立即清除感染状态（非治愈，不记回放）
         if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-            this.cure();
+            this.clear();
             return;
         }
 
@@ -278,8 +284,8 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
                 Player killer = this.infector != null ? player.level().getPlayerByUUID(this.infector) : null;
                 GameUtils.killPlayer(this.player, true, killer, INFECTION_DEATH_REASON);
 
-                // 清除感染状态，防止玩家复活后再次触发死亡
-                this.cure();
+                // 清除感染状态，防止玩家复活后再次触发死亡（感染致死，非治愈，不记回放）
+                this.clear();
 
                 // 清除中毒状态（感染致死时不清除中毒会导致问题）
                 io.wifi.starrailexpress.cca.SREPlayerPoisonComponent poisonComponent = io.wifi.starrailexpress.cca.SREPlayerPoisonComponent.KEY

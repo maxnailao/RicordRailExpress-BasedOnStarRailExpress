@@ -32,7 +32,8 @@ public class PillItem extends Item {
             if (poisonous) {
                 SREPlayerPoisonComponent.KEY.get(player).setPoisonTicks(HSRConstants.toxinPoisonTime, player.getUUID());
             } else {
-                SREPlayerPoisonComponent.KEY.get(player).init();
+                // 自服解药：无施药者，回放仅记「自己解毒」
+                SREPlayerPoisonComponent.KEY.get(player).cure(null);
                 // 治愈感染
                 InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(player);
                 infectedComponent.cure();

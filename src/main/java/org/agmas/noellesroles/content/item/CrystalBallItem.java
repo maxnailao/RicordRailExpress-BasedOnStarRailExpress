@@ -1,8 +1,11 @@
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -46,7 +49,12 @@ public class CrystalBallItem extends Item {
             if (hr instanceof EntityHitResult ehr) {
                 Entity target = ehr.getEntity();
                 DivinerPlayerComponent comp = DivinerPlayerComponent.KEY.get(sp);
-                comp.startChannel(sp, target);
+                if (comp.startChannel(sp, target)) {
+                    // 回放记录：占卜家成功对目标起卦
+                    SRE.REPLAY_MANAGER.recordCustomEvent(
+                            Component.translatable("replay.event.diviner.divination",
+                                    GameReplayUtils.getReplayPlayerDisplayText(sp, true)));
+                }
             }
         }
         player.swing(hand, true);

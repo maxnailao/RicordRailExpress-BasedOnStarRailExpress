@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.util.Mth;
+import org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent;
 import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 
@@ -24,8 +25,8 @@ public class ClientAmonState {
     /** 终幕「阿蒙时刻」全局表现：偏灰滤镜、小丑音乐与状态栏倒计时是否激活。 */
     public static volatile boolean finaleActive = false;
     private static long finaleStartMs = 0L;
-    /** 终幕总时长（毫秒），与服务端 FINALE_TICKS(80 秒) 对应。 */
-    private static final long FINALE_DURATION_MS = 80_000L;
+    /** 终幕总时长（毫秒）：直接由服务端 {@link AmonPlayerComponent#FINALE_TICKS} 换算，避免两处硬编码不同步。 */
+    private static final long FINALE_DURATION_MS = AmonPlayerComponent.FINALE_TICKS * 50L;
 
     public static void register() {
         OnGettingPlayerSkin.EVENT.register((player) -> {

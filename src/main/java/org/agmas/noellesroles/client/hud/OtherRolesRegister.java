@@ -57,6 +57,7 @@ public class OtherRolesRegister {
         HousekeeperHud.register();
         PelicanHud.register();
         GodfatherHud.register();
+        BeeFamilyHud.register();
         WarlockHud.register();
         WizardHud.register();
         RavenHud.register();

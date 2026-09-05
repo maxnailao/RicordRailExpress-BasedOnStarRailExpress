@@ -1335,6 +1335,10 @@ public class ModEventsRegister {
             WushujiaPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
+            // 复位蜂后领袖加成（蜜蜂家族中毒致死时间减半）
+            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.resetQueenLeaderBonus();
+            // 复位蜜蜂家族全灭检查的待处理标记
+            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.reset();
 
             // 清除所有玩家的感染状态
             for (ServerPlayer player : world.players()) {
@@ -2382,6 +2386,7 @@ public class ModEventsRegister {
             boolean hasGodfather = false;
             boolean hasCorruptCop = false;
             boolean hasDualGunner = false;
+            boolean hasBee = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2404,6 +2409,8 @@ public class ModEventsRegister {
                     hasCandlebearer = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.RAVEN)) {
                     hasRaven = true;
+                } else if (gameWorldComponent.isRole(p, org.agmas.noellesroles.role.BounsRoles.BEE_QUEEN)) {
+                    hasBee = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
                 } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
@@ -2452,6 +2459,15 @@ public class ModEventsRegister {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.raven.entry")
                                 .withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasBee) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        p.playNotifySound(SoundEvents.BEE_LOOP, SoundSource.MASTER, 0.5F, 1.0f);
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }

@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
+import org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyRole;
 import org.agmas.noellesroles.modifier.BounsModifiers;
 import org.agmas.noellesroles.role.touhou.ForestRoles;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
@@ -242,6 +243,63 @@ public class BounsRoles {
             .setDefaultEnableChance(10)
             .addRelatedRole(ModRoles.VOODOO);
 
+    /**
+     * 蜂后：蜜蜂家族的首领。
+     * - 中立阵营 (setNeutrals = true)，假心情，无限冲刺
+     * - 右键尸体花 75 金币，把死者复活为工蜂（【召唤增强】后为马蜂）
+     * - 花 300 金币【选择继承者】，自己死后由继承者复活接任蜂后并继承金币
+     * - 家族成员击杀一人，蜂后额外获得 50 金币
+     */
+    public static SRERole BEE_QUEEN = TMMRoles.registerRole(new BeeFamilyRole(id("bee_queen"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setCanAutoAddMoney(true)
+            .setDefaultEnableNeededPlayerCount(16)
+            .setDefaultEnableChance(2000)
+            .setCanUseInstinct(true);
+
+    /**
+     * 马蜂：蜜蜂家族的基因突变个体，由蜂后【召唤增强】后复活尸体得到。
+     * 无存活时间限制，毒针冷却 30s 且不会自尽。
+     */
+    public static SRERole BEE_WASP = TMMRoles.registerRole(new BeeFamilyRole(id("bee_wasp"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultMax(0)
+            .addBothRelatedRole(BEE_QUEEN)
+            .setCanUseInstinct(true);
+
+    /**
+     * 工蜂：一次性但强力的蜜蜂士兵，只能由蜂后召唤。
+     * 复活后仅存活 120s，毒针冷却 60s，刺出后自己立即死亡。
+     */
+    public static SRERole BEE_WORKER = TMMRoles.registerRole(new BeeFamilyRole(id("bee_worker"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultMax(0)
+            .addBothRelatedRole(BEE_QUEEN)
+            .setCanUseInstinct(true);
+
     public static void init() {
         RedHouseRoles.init();
         MountainRoles.init();
@@ -262,5 +320,9 @@ public class BounsRoles {
             return true;
         });
 
+        // 蜜蜂家族：事件接线 + 三个职业的技能定义。
+        // 放在这里（而不是 BounsHandlers）是为了保证 BEE_QUEEN/BEE_WASP/BEE_WORKER
+        // 已完成静态初始化：registerEvents() 由 init() 调用，此时 <clinit> 已结束。
+        org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.registerEvents();
     }
 }

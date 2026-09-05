@@ -359,6 +359,10 @@ public class GameConstants {
         public static ResourceLocation PHANTOM_DESTROYED = SRE.id("phantom_destroyed");
         // 沙漠之鹰
         public static ResourceLocation DESERT_EAGLE = SRE.id("desert_eagle_shot");
+        // 工蜂 sting 之后的蜂刺反噬（一次性士兵）
+        public static ResourceLocation BEE_USED_OUT_SKILL = Noellesroles.id("bee_used_out_skill");
+        // 工蜂存活时间耗尽
+        public static ResourceLocation BEE_WORKER_TIMEOUT = Noellesroles.id("bee_worker_timeout");
     }
 
     public static int getFurandoruSafeLine() {

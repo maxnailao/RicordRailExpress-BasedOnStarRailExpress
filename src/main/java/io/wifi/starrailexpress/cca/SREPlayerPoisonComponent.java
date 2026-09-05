@@ -2,10 +2,12 @@ package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,6 +15,7 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -84,6 +87,33 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
         this.init();
     }
 
+    /**
+     * 解毒（无来源）：清除中毒状态，若此前确实处于中毒中则记录一条回放事件。
+     */
+    public void cure() {
+        cure(null);
+    }
+
+    /**
+     * 解毒（带来源）：{@code healthBy} 为施药者，非空时回放事件会带上「谁治好了谁」。
+     * 注意只在真正处于中毒状态（poisonTicks > 0）时才记录，避免空放解毒剂刷回放。
+     */
+    public void cure(@Nullable Player healthBy) {
+        if (poisonTicks > 0) {
+            if (healthBy != null) {
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.poison.health.with_source",
+                                GameReplayUtils.getReplayPlayerDisplayText(healthBy, true),
+                                GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+            } else {
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.poison.health",
+                                GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+            }
+        }
+        this.init();
+    }
+
     public void sync_with_all() {
         for (var p : this.player.getServer().getPlayerList().getPlayers()) {
             KEY.syncWith(p, this.player.asComponentProvider());
@@ -144,6 +174,13 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
 
     @Override
     public void serverTick() {
+        // 职业自带中毒免疫（SRERole#canBePoisoned() == false）：直接清掉已有中毒状态。
+        if (this.poisonTicks > 0 && !currentRoleCanBePoisoned()) {
+            this.poisonTicks = -1;
+            this.poisoner = null;
+            this.sync();
+            return;
+        }
         if (this.poisonTicks > 0) {
             this.poisonTicks--;
             if (this.poisonTicks == 0) {
@@ -163,7 +200,40 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
         }
     }
 
+    /**
+     * 当前职业是否允许被中毒。无游戏世界组件 / 无职业时视为允许（保持原行为）。
+     */
+    private boolean currentRoleCanBePoisoned() {
+        if (gameWorldComponent == null) {
+            gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
+        }
+        if (gameWorldComponent == null) {
+            return true;
+        }
+        var role = gameWorldComponent.getRole(this.player);
+        return role == null || role.canBePoisoned();
+    }
+
     public void setPoisonTicks(int ticks, UUID poisoner) {
+        if (ticks > 0 && !currentRoleCanBePoisoned()) {
+            return;
+        }
+        // 回放记录：仅在「从无中毒 -> 有中毒」这一刻记一次，避免续毒刷新时长时重复刷屏
+        if (poisonTicks <= 0 && ticks > 0) {
+            if (poisoner != null) {
+                var poisonerPlayer = player.level().getPlayerByUUID(poisoner);
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.poison.trigger.with_source",
+                                GameReplayUtils.getReplayPlayerDisplayText(poisonerPlayer, true),
+                                GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                                String.format("%.1f", ticks / 20f)));
+            } else {
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.poison.trigger",
+                                GameReplayUtils.getReplayPlayerDisplayText(player, true),
+                                String.format("%.1f", ticks / 20f)));
+            }
+        }
         this.poisoner = poisoner;
         this.poisonTicks = ticks;
         if (this.initialPoisonTicks == 0)

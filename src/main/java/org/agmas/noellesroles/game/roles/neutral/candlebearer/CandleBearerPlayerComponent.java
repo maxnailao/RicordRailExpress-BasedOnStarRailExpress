@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.game.roles.neutral.candlebearer;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -200,6 +202,11 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
                         .withStyle(ChatFormatting.GOLD),
                 true);
         sync();
+        // 回放记录：为生者秉烛
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.candlebearer.candle_player",
+                        GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true),
+                        GameReplayUtils.getReplayPlayerDisplayText(target, true)));
         return true;
     }
 
@@ -267,6 +274,11 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
         } else {
             sync();
         }
+
+        // 回放记录：对尸体秉烛
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.candlebearer.candle_corpse",
+                        GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true)));
 
         return true;
     }

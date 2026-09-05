@@ -163,6 +163,18 @@ public class CustomWinnerClass {
                 return WinStatus.CUSTOM;
             }
 
+            // 蜜蜂家族独立胜利
+            if (org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager
+                    .checkBeeFamilyVictory(serverLevel)) {
+                return WinStatus.CUSTOM;
+            }
+            // 蜜蜂家族存活时阻止游戏结束
+            if (org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager
+                    .shouldPreventGameEnd(serverLevel)
+                    && (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS)) {
+                return WinStatus.NONE;
+            }
+
             // 教父家族独立胜利
             if (org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.checkMafiaVictory(serverLevel)) {
                 return WinStatus.CUSTOM;

@@ -37,7 +37,7 @@ public class InfectedWinChecker {
     private static final int TICK_INTERVAL = 20;    // 每20 tick（1秒）执行一次检查（原来每tick执行，减少95%）
     
     /**
-     * 检查场上是否存在医生或故障机器人（都能阻止疫使时刻并让乘客获胜）
+     * 检查场上是否存在医生、故障机器人或其它免疫中毒的职业（都能阻止疫使时刻并让乘客获胜）
      */
     private static boolean hasDoctor(ServerLevel level, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
@@ -45,6 +45,11 @@ public class InfectedWinChecker {
                 return true;
             }
             if (gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)) {
+                return true;
+            }
+            // 免疫中毒的职业（如蜜蜂家族）同样不会因感染致死，等价于故障机器人
+            var role = gameWorldComponent.getRole(player);
+            if (role != null && !role.canBePoisoned()) {
                 return true;
             }
         }
@@ -238,7 +243,8 @@ public class InfectedWinChecker {
                     hasKiller = true;
                 }
                 if (!hasDoctor && (gameWorldComponent.isRole(player, ModRoles.DOCTOR)
-                        || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT))) {
+                        || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)
+                        || (role != null && !role.canBePoisoned()))) {
                     hasDoctor = true;
                 }
                 if (!hasLooseEnd && ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))) {
@@ -398,7 +404,8 @@ public class InfectedWinChecker {
                 hasKiller = true;
             }
             if (!hasDoctor && (gameWorldComponent.isRole(player, ModRoles.DOCTOR)
-                    || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT))) {
+                    || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)
+                    || (role != null && !role.canBePoisoned()))) {
                 hasDoctor = true;
             }
             if (!hasLooseEnd && ModRoles.isLooseEndVariant(gameWorldComponent.getRole(player))) {

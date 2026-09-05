@@ -53,6 +53,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canSeeBodyRoleInfo = false;
     protected boolean canUseInstinct = false;
     protected boolean canIgnoreBlackout = false;
+    protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
     /**
@@ -361,6 +362,20 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setCanIgnoreBlackout(Boolean bl) {
         this.canIgnoreBlackout = bl;
+        return this;
+    }
+
+    /**
+     * 该职业是否可以被中毒（默认 true）。
+     * 设为 false 后，该职业无法被施加中毒效果，已中毒状态也会被 serverTick 清除，
+     * 同时免疫病毒感染。
+     */
+    public boolean canBePoisoned() {
+        return canBePoisoned;
+    }
+
+    public SRERole setCanBePoisoned(boolean flag) {
+        this.canBePoisoned = flag;
         return this;
     }
 

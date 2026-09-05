@@ -19,6 +19,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -51,6 +52,7 @@ import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.init.RoleShopHandler;
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
 import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
@@ -87,6 +89,10 @@ public class NRGameStateEvents {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
+            // 复位蜂后领袖加成（蜜蜂家族中毒致死时间减半）
+            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.resetQueenLeaderBonus();
+            // 复位蜜蜂家族全灭检查的待处理标记
+            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.reset();
 
             // 清除所有玩家的感染状态
             for (ServerPlayer player : serverLevel.players()) {
@@ -230,7 +236,7 @@ public class NRGameStateEvents {
     private static void registerOnGameTrueStarted() {
         OnGameTrueStarted.EVENT.register((serverLevel) -> {
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
-            boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false;
+            boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false, hasBee = false;
             boolean hasNianShou = false, hasArsonist = false, hasCuckoo = false, hasPelican = false, hasGodfather = false;
             boolean hasDualGunner = false;
             final var all_players = serverLevel.players();
@@ -254,6 +260,8 @@ public class NRGameStateEvents {
                     hasCandlebearer = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.RAVEN)) {
                     hasRaven = true;
+                } else if (gameWorldComponent.isRole(p, BounsRoles.BEE_QUEEN)) {
+                    hasBee = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
                 } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
@@ -299,6 +307,15 @@ public class NRGameStateEvents {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.raven.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasBee) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        p.playNotifySound(SoundEvents.BEE_LOOP, SoundSource.MASTER, 0.5F, 1.0f);
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }
