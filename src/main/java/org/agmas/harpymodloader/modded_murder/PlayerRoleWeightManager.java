@@ -1,13 +1,16 @@
 package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.UUID;
 
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
+
 public class PlayerRoleWeightManager {
-    public static HashMap<UUID, Integer> ForcePlayerTeam = new HashMap<>();
+    public static HashMap<UUID, ForceTeamInfo> ForcePlayerTeam = new HashMap<>();
     public static HashMap<UUID, WeightInfo> playerWeights = new HashMap<>();
 
     /**
@@ -130,16 +133,16 @@ public class PlayerRoleWeightManager {
      * Get Role type(int) for a role
      * 
      * @param role
-     * @return - -1: Unknown 
+     * @return - -1: Unknown
      *         - 1: Innocent
      *         - 2: Neturals but not for killer
      *         - 3: Neturals for killer
      *         - 4: Killer
      *         - 5: Vigilante
      */
-    public static int getRoleType(SRERole role) {
+    public static int getRoleType(SRERole role, int nullRoleNumber) {
         if (role == null)
-            return -1;
+            return nullRoleNumber;
 
         if (role.isVigilanteTeam()) {
             return 5;
@@ -163,7 +166,11 @@ public class PlayerRoleWeightManager {
         if (role.canUseKiller()) {
             return 4;
         }
-        return -1; // Unknown
+        return nullRoleNumber; // Unknown
+    }
+
+    public static int getRoleType(SRERole role) {
+        return getRoleType(role, -1);
     }
 
     public static int getRoleType_OnlyDistinctKiller(SRERole r) {
@@ -377,11 +384,11 @@ public class PlayerRoleWeightManager {
         }
     }
 
-    public static void forceTeam(UUID player, int roleType) {
+    public static void forceTeam(UUID player, int roleType, ForceTeamType from) {
         if (roleType == -1) {
             ForcePlayerTeam.remove(player);
         } else {
-            ForcePlayerTeam.put(player, roleType);
+            ForcePlayerTeam.put(player, new ForceTeamInfo(roleType, from));
         }
     }
 
@@ -392,6 +399,14 @@ public class PlayerRoleWeightManager {
             PlayerRoleWeightManager.playerWeights.put(player, weightManager);
         }
         weightManager.incrementKillerSideFailureBoost();
+    }
+
+    public static double getMaxWeight(ServerPlayer player) {
+        double weight = 0;
+        for (int i = 1; i <= 5; i++) {
+            weight = Math.max(weight, getRoleWeightPercent(player, i));
+        }
+        return weight;
     }
 
 }

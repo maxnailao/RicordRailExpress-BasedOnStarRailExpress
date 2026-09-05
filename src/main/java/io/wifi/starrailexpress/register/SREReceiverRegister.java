@@ -92,7 +92,7 @@ public class SREReceiverRegister {
                 new UseAssassinationItemPayload.Receiver());
 
         // Role Rotation receivers
-        RoleRotationSelectC2SPacket.registerServerReceiver();
+        io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode.registerServerPacketRecievers();
 
         // 音乐盒 C2S 接收器
         io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.registerReceiver();

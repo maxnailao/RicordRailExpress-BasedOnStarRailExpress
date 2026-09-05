@@ -1,211 +1,200 @@
 package io.wifi.starrailexpress.content.vote.client;
 
+import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRotationScreen;
 import io.wifi.starrailexpress.network.RoleRotationSyncS2CPacket;
-
+import net.minecraft.client.Minecraft;
 import java.util.*;
 
-/**
- * 职业轮选模式客户端缓存
- */
 public class RoleRotationCache {
 
+    // ==================== 全局状态 ====================
     private static boolean isSelecting = false;
-    private static int currentIndex = 0;
-    private static int totalPlayers = 0;
-    private static int confirmCountdown = -1;
-    private static int finalPhaseThreshold = 6;
-    private static int remainingTime = 0;
+    private static int currentRoundIndex = 0; // 当前轮次（从1开始）
+    private static int totalPlayerCount = 0;
+    private static int confirmCountdown = -1; // 确认阶段倒计时（tick）
+    private static int perPlayerTimeLimit = 0; // 每个玩家的选择时限（tick）
+    private static long roundStartGameTime = 0; // 服务端本轮开始时的世界游戏时间（tick）
 
-    // 玩家序号映射 (玩家UUID -> 序号)
-    private static final HashMap<UUID, Integer> rotationOrder = new HashMap<>();
-
-    // 已选择职业的玩家 (玩家UUID -> 职业名)
-    private static final HashMap<UUID, String> selectedRoles = new HashMap<>();
-
-    // 当前候选职业
-    private static final List<String> currentCandidates = new ArrayList<>();
-
-    // 当前玩家自己的序号
-    private static int myRotationIndex = -1;
-    
-    // 随机选择玩家集合（用于鹅鸭杀轮抽模式）
+    // ==================== 玩家数据 ====================
+    private static final List<UUID> playerOrder = new ArrayList<>(); // 全局玩家顺序
+    private static final Map<UUID, Integer> rotationOrder = new LinkedHashMap<>(); // UUID -> 序号
+    private static final Map<UUID, String> selectedRoles = new LinkedHashMap<>(); // UUID -> 角色ID字符串
     private static final Set<UUID> randomChoosers = new HashSet<>();
-    
-    // 上次是否为轮到当前玩家（用于检测状态变化）
-    private static boolean wasMyTurn = false;
+    private static final Map<UUID, List<String>> roundCandidates = new LinkedHashMap<>(); // 本轮玩家 -> 候选角色ID列表
 
+    // ==================== 缓存辅助 ====================
+    private static UUID localPlayerUuid = null; // 本地玩家 UUID
+    private static boolean wasMyTurn = false; // 用于音效/提示
+
+    // ---------- 网络包更新 ----------
     public static void updateFromPacket(RoleRotationSyncS2CPacket packet) {
         isSelecting = packet.isSelecting();
-        currentIndex = packet.getCurrentIndex();
-        // 确保totalPlayers被正确更新
-        if (packet.getTotalPlayers() > 0) {
-            totalPlayers = packet.getTotalPlayers();
-        }
-        confirmCountdown = packet.getConfirmCountdown();
-        finalPhaseThreshold = packet.getFinalPhaseThreshold();
-        remainingTime = packet.getRemainingTime();
-        
-        // 更新rotationOrder
+        currentRoundIndex = packet.currentRoundIndex();
+        totalPlayerCount = packet.totalPlayerCount();
+        confirmCountdown = packet.confirmCountdown();
+        perPlayerTimeLimit = packet.perPlayerTimeLimit();
+        roundStartGameTime = packet.roundStartTime();
+
+        // 玩家顺序
+        playerOrder.clear();
+        playerOrder.addAll(packet.playerOrder());
         rotationOrder.clear();
-        rotationOrder.putAll(packet.getRotationOrder());
-        
-        // 更新selectedRoles
-        selectedRoles.clear();
-        selectedRoles.putAll(packet.getSelectedRoles());
-        
-        // 更新currentCandidates
-        currentCandidates.clear();
-        currentCandidates.addAll(packet.getCurrentCandidates());
-        
-        // 更新myRotationIndex（支持0号玩家）
-        if (packet.getMyRotationIndex() >= 0) {
-            myRotationIndex = packet.getMyRotationIndex();
+        for (int i = 0; i < packet.playerOrder().size(); i++) {
+            rotationOrder.put(packet.playerOrder().get(i), i + 1);
         }
-        
-        // 更新随机选择玩家
+
+        // 已选职业
+        selectedRoles.clear();
+        selectedRoles.putAll(packet.selectedRoles());
+
+        // 随机选择者
         randomChoosers.clear();
-        randomChoosers.addAll(packet.getRandomChoosers());
-        
-        // 更新轮到状态
-        wasMyTurn = isSelecting && isMyTurnLocal();
-    }
-    
-    // 检查当前玩家（通过myRotationIndex）是否是当前轮到的玩家
-    private static boolean isMyTurnLocal() {
-        return myRotationIndex >= 0 && myRotationIndex == currentIndex;
-    }
-    
-    public static boolean getWasMyTurn() {
-        return wasMyTurn;
+        randomChoosers.addAll(packet.randomChoosers());
+
+        // 本轮候选映射
+        roundCandidates.clear();
+        roundCandidates.putAll(packet.roundCandidates());
+
+        // 本地玩家 UUID（动态获取，以防切换账号）
+        Minecraft mc = Minecraft.getInstance();
+        localPlayerUuid = mc.player != null ? mc.player.getUUID() : null;
+
+        // 本轮是否轮到自己
+        wasMyTurn = isSelecting && localPlayerUuid != null && roundCandidates.containsKey(localPlayerUuid);
     }
 
+    // ---------- 客户端每帧调用 ----------
+    public static void tickTimers() {
+        // 确认倒计时本地递减，确保 UI 平滑
+        if (confirmCountdown > 0) {
+            confirmCountdown--;
+        }
+    }
+
+    // ---------- 状态查询 ----------
     public static boolean isSelecting() {
         return isSelecting;
     }
 
-    public static int getCurrentIndex() {
-        return currentIndex;
+    public static int getCurrentRoundIndex() {
+        return currentRoundIndex;
     }
 
     public static int getTotalPlayers() {
-        return totalPlayers;
+        return totalPlayerCount;
     }
 
     public static int getConfirmCountdown() {
         return confirmCountdown;
     }
 
-    public static int getFinalPhaseThreshold() {
-        return finalPhaseThreshold;
-    }
-
+    /**
+     * 个人剩余选择时间（tick）
+     * 使用客户端 level 的游戏时间与服务端 roundStartTime 之差。
+     */
     public static int getRemainingTime() {
-        return remainingTime;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null)
+            return 0;
+        long elapsed = mc.level.getGameTime() - roundStartGameTime;
+        return (int) Math.max(0, perPlayerTimeLimit - elapsed);
     }
 
     public static int getRemainingSeconds() {
-        // 如果正在选择，使用remainingTime；否则使用confirmCountdown
-        if (isSelecting) {
-            return remainingTime / 20;
+        return getRemainingTime() / 20;
+    }
+
+    // 当前选角阶段剩余秒数（用于显示）
+    public static int getDisplaySeconds() {
+        if (isSelecting && isMyTurn()) {
+            if (!hasSelected())
+                return getRemainingSeconds();
+            return 0;
+        } else if (isSelecting) {
+            return getRemainingSeconds();
         } else if (confirmCountdown > 0) {
             return confirmCountdown / 20;
         }
-        return remainingTime / 20;
+        return 0;
     }
 
-    public static HashMap<UUID, Integer> getRotationOrder() {
+    // 全局玩家列表
+    public static Map<UUID, Integer> getRotationOrder() {
         return rotationOrder;
     }
 
-    public static HashMap<UUID, String> getSelectedRoles() {
+    public static Map<UUID, String> getSelectedRoles() {
         return selectedRoles;
-    }
-
-    public static List<String> getCurrentCandidates() {
-        return currentCandidates;
-    }
-
-    public static int getMyRotationIndex() {
-        return myRotationIndex;
-    }
-    
-    public static void setMyRotationIndex(int index) {
-        myRotationIndex = index;
     }
 
     public static Set<UUID> getRandomChoosers() {
         return randomChoosers;
     }
 
-    public static void updateRandomChoosers(Set<UUID> choosers) {
-        randomChoosers.clear();
-        randomChoosers.addAll(choosers);
+    public static Map<UUID, List<String>> getRoundCandidates() {
+        return roundCandidates;
     }
 
-    public static boolean isMyTurn(UUID playerUuid) {
-        Integer index = rotationOrder.get(playerUuid);
-        return index != null && index == currentIndex;
+    // 当前本地玩家的候选职业列表
+    public static List<String> getMyCandidates() {
+        if (localPlayerUuid == null)
+            return Collections.emptyList();
+        return roundCandidates.getOrDefault(localPlayerUuid, Collections.emptyList());
     }
 
-    public static void updateRotationOrder(HashMap<UUID, Integer> order) {
-        rotationOrder.clear();
-        rotationOrder.putAll(order);
+    // 当前是否轮到本地玩家（即在 roundCandidates 中）
+    public static boolean isMyTurn() {
+        return localPlayerUuid != null && roundCandidates.containsKey(localPlayerUuid);
     }
 
-    public static void updateSelectedRoles(HashMap<UUID, String> selected) {
-        selectedRoles.clear();
-        selectedRoles.putAll(selected);
+    // 本地玩家是否已选择职业
+    public static boolean hasSelected() {
+        return localPlayerUuid != null && selectedRoles.containsKey(localPlayerUuid);
     }
 
-    public static void updateCurrentCandidates(List<String> candidates) {
-        currentCandidates.clear();
-        currentCandidates.addAll(candidates);
+    // 兼容旧方法
+    public static int getCurrentIndex() {
+        return currentRoundIndex;
     }
 
-    public static void clear() {
-        isSelecting = false;
-        currentIndex = 0;
-        totalPlayers = 0;
-        confirmCountdown = -1;
-        remainingTime = 0;
-        rotationOrder.clear();
-        selectedRoles.clear();
-        currentCandidates.clear();
-        randomChoosers.clear();
-        myRotationIndex = -1;
+    public static int getMyRotationIndex() {
+        return localPlayerUuid != null ? rotationOrder.getOrDefault(localPlayerUuid, -1) : -1;
     }
 
+    public static boolean getWasMyTurn() {
+        return wasMyTurn;
+    }
+
+    // 是否仍可打开轮选界面
     public static boolean canReOpen() {
-        // isSelecting 为 true 时可以重新打开，或者确认倒计时 > 0 时可以打开
-        // 确认倒计时 <= 0 时表示轮选已结束，不应该重新打开界面
         return isSelecting || confirmCountdown > 0;
     }
-    
-    public static void updateBaseState(boolean selecting, int currentIdx, int total, int countdown) {
+
+    // 清空（游戏结束）
+    public static void clear() {
+        isSelecting = false;
+        currentRoundIndex = 0;
+        totalPlayerCount = 0;
+        confirmCountdown = -1;
+        perPlayerTimeLimit = 0;
+        roundStartGameTime = 0;
+        playerOrder.clear();
+        rotationOrder.clear();
+        selectedRoles.clear();
+        randomChoosers.clear();
+        roundCandidates.clear();
+        localPlayerUuid = null;
+        wasMyTurn = false;
+        final var mc = Minecraft.getInstance();
+        if (mc.screen instanceof RoleRotationScreen) {
+            mc.setScreen(null);
+        }
+    }
+
+    public static void updateBaseState(boolean selecting, int index, int total, int countdown) {
         isSelecting = selecting;
-        currentIndex = currentIdx;
-        totalPlayers = total;
+        currentRoundIndex = index;
+        totalPlayerCount = total;
         confirmCountdown = countdown;
-    }
-
-    public static void setRemainingTime(int time) {
-        remainingTime = time;
-    }
-
-    public static void setWasMyTurn(boolean turn) {
-        wasMyTurn = turn;
-    }
-
-    /**
-     * 客户端本地倒计时 tick — 每帧调用一次，让倒计时在服务端同步间隔中也能平滑递减。
-     * 服务端数据包到达时会覆盖本地值，保证最终一致性。
-     */
-    public static void tickTimers() {
-        if (remainingTime > 0) {
-            remainingTime--;
-        }
-        if (confirmCountdown > 0) {
-            confirmCountdown--;
-        }
     }
 }

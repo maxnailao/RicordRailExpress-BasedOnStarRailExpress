@@ -28,6 +28,9 @@ import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionE
 import org.agmas.noellesroles.role.ModRoles;
 
 public class ModEffects {
+    /** 仅禁止CCA/职业执行tick */
+    public static final Holder<MobEffect> CCA_FREEZED = register("cca_freezed",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> INVENTORY_BANED = register("inventory_baned",

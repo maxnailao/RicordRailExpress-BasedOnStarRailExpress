@@ -107,7 +107,16 @@ public class RoleAssignmentPool {
      * @return 选中的角色，如果池为空则返回null
      */
     public SRERole selectRole() {
-        return selectRoleWithCountCheck();
+        return selectRole((r) -> true);
+    }
+
+    /**
+     * 从池中选择一个角色
+     * 
+     * @return 选中的角色，如果池为空则返回null
+     */
+    public SRERole selectRole(Predicate<SRERole> condition) {
+        return selectRoleWithCountCheck(condition);
     }
 
     /**
@@ -117,12 +126,16 @@ public class RoleAssignmentPool {
      * @return 选中的角色列表
      */
     public List<SRERole> selectRoles(int count) {
+        return selectRoles(count, (r) -> true);
+    }
+
+    public List<SRERole> selectRoles(int count, Predicate<SRERole> condition) {
         final int maxTrial = 3;
         int needCount = count;
         List<SRERole> selected = new ArrayList<>();
         for (int i = 0; i < needCount; i++) {
             for (int j = 0; j < maxTrial; j++) {
-                SRERole role = selectRole();
+                SRERole role = selectRole(condition);
                 if (role != null) {
                     int roleOccupiedCount = role.getOccupiedRoleCount();
                     // 额外逻辑：occupiedRoleCount <= 0 表示不占用角色槽位（如迷失杀手）
@@ -131,7 +144,7 @@ public class RoleAssignmentPool {
                         selected.add(role);
                         break;
                     }
-                    if(ignoreeRoleOccupiedCount)
+                    if (ignoreeRoleOccupiedCount)
                         roleOccupiedCount = 1;
                     if (i + roleOccupiedCount <= needCount) {
                         selected.add(role);
@@ -173,15 +186,19 @@ public class RoleAssignmentPool {
         return poolName;
     }
 
+    public Map<ResourceLocation, Integer> getRoleCountMap() {
+        return roleCountMap;
+    }
+
     /**
      * 内部方法：根据权重和计数限制选择角色
      */
-    private SRERole selectRoleWithCountCheck() {
+    private SRERole selectRoleWithCountCheck(Predicate<SRERole> condition) {
         if (isEmpty()) {
             return null;
         }
-
-        SRERole selectedRole = roleWeights.selectRandomKeyBasedOnWeights();
+        var roleWeights2 = roleWeights.filter(condition);
+        SRERole selectedRole = roleWeights2.selectRandomKeyBasedOnWeights();
         if (selectedRole == null) {
             return null;
         }
@@ -198,11 +215,34 @@ public class RoleAssignmentPool {
             return selectedRole;
         } else {
             roleWeights.removeKey(selectedRole);
-            return selectRoleWithCountCheck();
+            return selectRoleWithCountCheck(condition);
         }
     }
 
     public void setIgnoreRoleOccupiedCount(boolean b) {
         this.ignoreeRoleOccupiedCount = b;
+    }
+
+    public void addRoleCount(SRERole role, int i) {
+        if (role == null)
+            return;
+        int remainingCount = roleCountMap.getOrDefault(role.identifier(), 1);
+        if (remainingCount + i >= 0) {
+            // 在无限重复模式下，不减少计数
+            if (!allowUnlimitedRepeats) {
+                roleCountMap.put(role.identifier(), remainingCount + i);
+                if (remainingCount + i <= 0) {
+                    roleWeights.removeKey(role);
+                }
+            }
+            return;
+        } else {
+            roleWeights.removeKey(role);
+            return;
+        }
+    }
+
+    public void removeRoleCount(SRERole role, int i) {
+        addRoleCount(role, -i);
     }
 }

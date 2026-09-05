@@ -16,6 +16,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 
 import java.util.HashMap;
@@ -75,7 +77,8 @@ public final class BackpackManager {
                 || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
             return false;
         }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), type.getTypeId());
+        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(),
+                new ForceTeamInfo(type.getTypeId(), ForceTeamType.CARD));
         entry.state.cards.put(type, current - 1);
         markDirty(player, entry);
         Component message = Component.translatable("message.sre.progression.faction_card_activated",

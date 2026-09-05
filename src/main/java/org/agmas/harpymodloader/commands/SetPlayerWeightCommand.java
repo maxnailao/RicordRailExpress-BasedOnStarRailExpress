@@ -67,12 +67,14 @@ public class SetPlayerWeightCommand {
             roleType_1, String.format("%.2f", percent)));
       }
       if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
-        int roleType_1 = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
-        if (roleType_1 >= 0 && roleType_1 < TypeMappings.length) {
-          source.sendSystemMessage(
-              Component.translatable("Forced Team: %s", TypeMappings[roleType_1]).withStyle(ChatFormatting.AQUA));
+        var t = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+        if (t != null) {
+          var roleType_1 = t.roleType();
+          if (roleType_1 >= 0 && roleType_1 < TypeMappings.length) {
+            source.sendSystemMessage(
+                Component.translatable("Forced Team: %s", TypeMappings[roleType_1]).withStyle(ChatFormatting.AQUA));
+          }
         }
-
       }
       return 1;
     }

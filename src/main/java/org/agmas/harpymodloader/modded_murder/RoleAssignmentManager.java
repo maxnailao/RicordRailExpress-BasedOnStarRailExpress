@@ -186,8 +186,11 @@ public class RoleAssignmentManager {
             return all_role_instances;
         }
         int all = killer + civilian + neutrals + neturals_for_killer + vigilante;
+        if (all == 0)
+            return all_role_instances;
         all_role_instances.addAll(SREMurderGameMode.getAllRoles(killer, vigilante, neutrals + neturals_for_killer, all,
-                0, killerPool, neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, maxDepth - 1));
+                0, killerPool, neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, List.of(),
+                maxDepth - 1));
         return all_role_instances;
     }
 }

@@ -184,6 +184,8 @@ public class ModRoles {
     public static ResourceLocation CORONER_ID = Noellesroles.id("coroner");
     public static ResourceLocation PATROLLER_ID = Noellesroles.id("patroller");
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
+    /** 领袖职业 ID（当前未实装该职业，保留以对齐角色分配逻辑） */
+    public static ResourceLocation LEADER_ID = Noellesroles.id("leader");
     // 鬼眼·杨间角色 ID - 警长阵营
     public static final ResourceLocation GHOST_EYE_ID = Noellesroles.id("ghost_eye");
     public static final ResourceLocation LEON_ID = Noellesroles.id("leon");

@@ -32,6 +32,7 @@ import java.util.Objects;
 
 public class WithParentScreenPauseScreen extends PauseScreen {
     public Screen parent;
+    public boolean shouldHideBackground = false;
     public static final Component ROLE_INTRODUCTION = Component.translatable("menu.sre.role_introduction");
     public static final Component FEEDBACK_TRAIN = Component.translatable("menu.sre.feedback_train_bug");
     public static final Component SETTINGS = Component.translatable("menu.sre.train_options");
@@ -48,6 +49,11 @@ public class WithParentScreenPauseScreen extends PauseScreen {
         this.parent = screen;
     }
 
+    public WithParentScreenPauseScreen(Screen screen, boolean shouldHideBackground) {
+        this(screen);
+        this.shouldHideBackground = shouldHideBackground;
+    }
+
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
         super.render(guiGraphics, i, j, f);
     }
@@ -61,6 +67,15 @@ public class WithParentScreenPauseScreen extends PauseScreen {
         int var10005 = this.width;
         Objects.requireNonNull(this.font);
         this.addRenderableWidget(new StringWidget(0, var10004, var10005, 9, this.title, this.font));
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
+        if (!shouldHideBackground) {
+            super.renderBackground(guiGraphics, i, j, f);
+        } else {
+            guiGraphics.fill(0, 0, width, height, java.awt.Color.BLACK.getRGB());
+        }
     }
 
     public void createPauseMenu_sre() {

@@ -1,10 +1,11 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
+import java.util.*;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -13,11 +14,10 @@ import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
-import io.wifi.starrailexpress.game.modes.funny.rotation.LightningDraftState;
+import io.wifi.starrailexpress.game.modes.funny.rotation.SingleSelectDraftState;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import io.wifi.starrailexpress.network.RoleRotationSelectC2SPacket;
-import io.wifi.starrailexpress.network.RoleRotationSyncS2CPacket;
 import io.wifi.starrailexpress.network.CloseUiPayload;
+import io.wifi.starrailexpress.network.RoleRotationSyncS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -35,45 +35,30 @@ import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 
-import java.util.*;
-
-public class SRERoleRotationGameMode extends SREMurderGameMode {
+/**
+ * 职业轮抽单选模式 - 玩家按顺序逐一选择职业。
+ * 与 SRERoleRotationGameMode（闪电轮抽/并行模式）的区别：
+ * - 玩家 1-by-1 依次选择，每人 4 秒时限
+ * - 每次给出 3 个候选 + 随机选项
+ * - 复用相同的客户端 UI 和网络包
+ */
+public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
 
     private static final int ROTATION_SAFE_TIME = 5 * 60 * 20;
     private boolean isInRotationPhase = false;
     private long rotationTimeout = -1;
-    private LightningDraftState draftState;
+    private SingleSelectDraftState draftState;
 
-    public SRERoleRotationGameMode(ResourceLocation identifier) {
+    public SRERoleRotationSingleSelectGameMode(ResourceLocation identifier) {
         super(identifier, 10, 3);
     }
 
-    @Override
-    public boolean hasPreSounds() {
-        return true;
-    }
-
-    // 静态注册网络接收器。同时处理 SRERoleRotationGameMode 和 SRERoleRotationSingleSelectGameMode。
-    public static void registerServerPacketRecievers() {
-        ServerPlayNetworking.registerGlobalReceiver(RoleRotationSelectC2SPacket.TYPE, (packet, context) -> {
-            context.player().server.execute(() -> {
-                ServerPlayer player = context.player();
-                if (player.level() instanceof ServerLevel serverLevel) {
-                    var gameMode = SREGameWorldComponent.getInstance(serverLevel).getGameMode();
-                    if (gameMode instanceof SRERoleRotationGameMode rotationMode) {
-                        rotationMode.handlePlayerSelection(player, packet.choiceIndex());
-                    } else if (gameMode instanceof SRERoleRotationSingleSelectGameMode singleMode) {
-                        singleMode.handlePlayerSelection(player, packet.choiceIndex());
-                    }
-                }
-            });
-        });
-    }
+    // 网络接收器由 SRERoleRotationGameMode.registerServerPacketRecievers() 统一注册，
+    // 因为它也处理 SRERoleRotationSingleSelectGameMode。
 
     @Override
     public void initializeGame(ServerLevel world, SREGameWorldComponent gameComp, List<ServerPlayer> players) {
         gameComp.clearRoleMap(false);
-        SREGameTimeComponent.KEY.get(world).setTimeFrozen(true);
         for (ServerPlayer p : players) {
             gameComp.addRole(p, SpecialGameModeRoles.CUSTOM_PENDING, false);
             p.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, ROTATION_SAFE_TIME + 40, 10, true, false, false));
@@ -99,10 +84,12 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                 }
             }
         }
-        // 初始化闪电轮抽
-        draftState = new LightningDraftState(new ArrayList<>(players));
-        draftState.initializeRolePool(world);
+
+        // 初始化单选轮抽状态
+        draftState = new SingleSelectDraftState();
+        players.forEach(p -> draftState.playerOrder.put(p.getUUID(), 0)); // 先放入 playerOrder，稍后 assignRotationOrder 覆写
         draftState.assignRotationOrder();
+        draftState.initializeRolePool(world);
         draftState.startNextRound(world);
 
         isInRotationPhase = true;
@@ -111,14 +98,25 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     }
 
     private void broadcastSync(ServerLevel world) {
+        // 获取当前玩家序号列表
+        List<UUID> orderList = new ArrayList<>();
+        for (int i = 1; i <= draftState.totalPlayers; i++) {
+            for (Map.Entry<UUID, Integer> entry : draftState.playerOrder.entrySet()) {
+                if (entry.getValue() == i) {
+                    orderList.add(entry.getKey());
+                    break;
+                }
+            }
+        }
+
         RoleRotationSyncS2CPacket packet = new RoleRotationSyncS2CPacket(
                 draftState.isSelecting,
-                draftState.currentRoundIndex,
+                draftState.currentRotationIndex,
                 draftState.totalPlayers,
                 draftState.confirmCountdown,
                 draftState.perPlayerTimeLimit,
                 draftState.roundStartTime,
-                draftState.playerOrder,
+                orderList,
                 draftState.getSelectedRolesAsStrings(),
                 draftState.randomChoosers,
                 draftState.getRoundCandidatesAsStrings());
@@ -127,7 +125,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         }
     }
 
-    private void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
+    public void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
         if (!isInRotationPhase || draftState == null)
             return;
         if (draftState.processSelection(player.serverLevel(), player.getUUID(), choiceIndex)) {
@@ -141,9 +139,9 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             super.tickServerGameLoop(world, gameComp);
             return;
         }
-        // ★ 处理离线玩家
+
+        // 处理离线玩家
         if (draftState.handleOfflinePlayers(world)) {
-            // 状态有变动，广播同步
             broadcastSync(world);
         }
 
@@ -164,24 +162,22 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             }
         }
 
-        // 轮选超时
-        if (draftState.isSelecting) {
-            long elapsed = world.getGameTime() - draftState.roundStartTime;
-            if (elapsed >= draftState.perPlayerTimeLimit) {
-                draftState.timeoutUnfinishedPlayers(world);
-                broadcastSync(world);
-            }
+        // 单人选择超时
+        if (draftState.isSelecting && draftState.isCurrentPlayerTimedOut(world)) {
+            draftState.timeoutUnfinishedPlayers(world);
+            broadcastSync(world);
         }
     }
 
     private void forceFinishRotation(ServerLevel world, SREGameWorldComponent gameComp) {
-        for (UUID uuid : draftState.playerOrder) {
+        // 为所有未选职业的玩家随机分配
+        for (Map.Entry<UUID, Integer> entry : draftState.playerOrder.entrySet()) {
+            UUID uuid = entry.getKey();
             if (!draftState.selectedRoles.containsKey(uuid)) {
-                SRERole role = draftState.rolePool.isEmpty() ? TMMRoles.CIVILIAN : draftState.rolePool.remove(0).role();
+                SRERole role = draftState.rolePool.isEmpty() ? TMMRoles.CIVILIAN : draftState.rolePool.remove(0);
                 draftState.selectedRoles.put(uuid, role);
             }
         }
-        draftState.remainingPlayerCount = 0;
         finishRotationPhase(world, gameComp);
     }
 
@@ -197,7 +193,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             mood.sync();
         });
         OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
-        SREGameTimeComponent.KEY.get(world).setTimeFrozen(false);
+
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
@@ -219,6 +215,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             }
         }
         roleComp.sync();
+
         List<ServerPlayer> alive = world.getPlayers(GameUtils::isPlayerAliveAndSurvivalIgnoreShitSplit);
         for (ServerPlayer p : alive) {
             var role = gameComp.getRole(p);

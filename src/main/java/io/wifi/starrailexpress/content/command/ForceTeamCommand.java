@@ -7,6 +7,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,7 +41,7 @@ public class ForceTeamCommand {
             int roleType) {
 
         for (var player : players) {
-            PlayerRoleWeightManager.forceTeam(player.getUUID(), roleType);
+            PlayerRoleWeightManager.forceTeam(player.getUUID(), roleType, ForceTeamType.COMMAND);
         }
         if (roleType == -1) {
             source.sendSuccess(

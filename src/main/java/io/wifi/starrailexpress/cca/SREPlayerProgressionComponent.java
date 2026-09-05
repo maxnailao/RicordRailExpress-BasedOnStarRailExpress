@@ -16,6 +16,8 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -271,7 +273,8 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(this.player.getUUID())) {
                 return false;
             }
-            PlayerRoleWeightManager.ForcePlayerTeam.put(this.player.getUUID(), type.getTypeId());
+            PlayerRoleWeightManager.ForcePlayerTeam.put(this.player.getUUID(),
+                    new ForceTeamInfo(type.getTypeId(), ForceTeamType.CARD));
             this.factionCards.put(type, current - 1);
             Component message = Component.translatable("message.sre.progression.faction_card_activated",
                     Component.translatable(type.displayName));

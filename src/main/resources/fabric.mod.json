@@ -217,8 +217,6 @@
       "starrailexpress:role",
       "starrailexpress:dnf_inventory_backup",
       "starrailexpress:monitor",
-      "starrailexpress:role_rotation",
-      "starrailexpress:role_rotation_player",
       "starrailexpress:body_entity",
       "starrailexpress:mood",
       "starrailexpress:task",

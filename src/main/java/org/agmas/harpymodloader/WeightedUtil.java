@@ -1,6 +1,7 @@
 package org.agmas.harpymodloader;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 //by canyuesama
 public class WeightedUtil<T> {
@@ -317,6 +318,20 @@ public class WeightedUtil<T> {
      */
     public WeightedUtil<T> copy() {
         return new WeightedUtil<>(new LinkedHashMap<>(this.weights));
+    }
+
+    /**
+     * 按条件筛选权重，返回一个新的权重表
+     */
+    public WeightedUtil<T> filter(Predicate<T> filter) {
+        LinkedHashMap<T, Float> newWeights = new LinkedHashMap<>();
+        var sets = weights.entrySet();
+        for (var set : sets) {
+            if (filter.test(set.getKey())) {
+                newWeights.put(set.getKey(), set.getValue());
+            }
+        }
+        return new WeightedUtil<>(newWeights);
     }
 
     /**

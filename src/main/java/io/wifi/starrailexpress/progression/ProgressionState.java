@@ -109,6 +109,22 @@ public final class ProgressionState {
             return NONE;
         }
 
+        public static FactionCardType fromRoleType(int typeValue) {
+            if (typeValue == 0)
+                return FactionCardType.NONE;
+            if (typeValue == 1)
+                return FactionCardType.CIVILIAN;
+            if (typeValue == 2)
+                return FactionCardType.NEUTRAL;
+            if (typeValue == 3)
+                return FactionCardType.NEUTRAL_FOR_KILLER;
+            if (typeValue == 4)
+                return FactionCardType.KILLER;
+            if (typeValue == 5)
+                return FactionCardType.CIVILIAN;
+            return NONE;
+        }
+
         public static FactionCardType fromInt(int typeValue) {
             for (FactionCardType type : values()) {
                 if (type.type == typeValue) {

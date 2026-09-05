@@ -77,6 +77,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
 
     public ArrayList<SRERole> occupationRoles = new ArrayList<>();
+    /** 被哪些职业作为关联职业引用 */
+    public HashSet<SRERole> occupationedRoles = new HashSet<>();
     public HashSet<SRERole> opposingRoles = new HashSet<>();
 
     /**
@@ -102,6 +104,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole removeOccupationRole(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.remove(i);
+            i.occupationedRoles.remove(this);
             i.removeRelatedRole(this);
         }
         return this;
@@ -124,6 +127,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole addOccupationRoleOnce(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.add(i);
+            i.occupationedRoles.add(this);
             i.addRelatedRole(this);
         }
         // 去重。
@@ -140,6 +144,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole addOccupationRole(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.add(i);
+            i.occupationedRoles.add(this);
             i.addRelatedRole(this);
         }
         return this;
@@ -1449,7 +1454,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public boolean hasOccupationRole() {
-        return this.occupationRoles.isEmpty();
+        return !this.occupationRoles.isEmpty();
+    }
+
+    public boolean hasOccupationedRole() {
+        return !this.occupationedRoles.isEmpty();
     }
 
     public ArrayList<SRERole> getoccupationRoles() {

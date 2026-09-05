@@ -3,8 +3,6 @@ package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeTeamsPlayerComponent;
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeWorldComponent;
-import io.wifi.starrailexpress.cca.gamemode.RoleRotationPlayerComponent;
-import io.wifi.starrailexpress.cca.gamemode.RoleRotationWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.mail.MailboxComponent;
 
@@ -34,7 +32,6 @@ public class SREComponents
         registry.register(ParticipationComponent.KEY, ParticipationComponent::new);
         registry.register(SREGameRoundEndComponent.KEY, SREGameRoundEndComponent::new);
         registry.register(MapVotingComponent.KEY, MapVotingComponent::new);
-        registry.register(RoleRotationWorldComponent.KEY, RoleRotationWorldComponent::new);
 
 
     }
@@ -79,9 +76,6 @@ public class SREComponents
         registry.beginRegistration(Player.class, CustomRoleGameModeTeamsPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
                 .end(CustomRoleGameModeTeamsPlayerComponent::new);
-        registry.beginRegistration(Player.class, RoleRotationPlayerComponent.KEY)
-                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-                .end(RoleRotationPlayerComponent::new);
         registry.beginRegistration(Player.class, SREPlayerDamageTrackerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerDamageTrackerComponent::new);
         // 音乐盒组件

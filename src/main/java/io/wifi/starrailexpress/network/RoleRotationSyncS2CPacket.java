@@ -1,216 +1,83 @@
 package io.wifi.starrailexpress.network;
 
+import io.netty.buffer.ByteBuf;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.cca.gamemode.RoleRotationWorldComponent;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 
 import java.util.*;
 
-/**
- * 职业轮选同步数据包
- * 服务端向客户端同步职业轮选状态
- */
-public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
+public record RoleRotationSyncS2CPacket(
+        boolean isSelecting,
+        int currentRoundIndex, // 当前轮次（从1开始）
+        int totalPlayerCount,
+        int confirmCountdown, // 确认倒计时（tick），-1 表示未激活
+        int perPlayerTimeLimit, // 每个玩家的选择时限（tick）
+        long roundStartTime, // 本轮开始的世界时间（tick）
+        List<UUID> playerOrder, // 全局玩家顺序（按权重）
+        Map<UUID, String> selectedRoles, // UUID -> 角色ID
+        Set<UUID> randomChoosers,
+        Map<UUID, List<String>> roundCandidates // 本轮玩家 -> 候选角色ID列表（最多3个）
+) implements CustomPacketPayload {
 
     public static final Type<RoleRotationSyncS2CPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(SRE.MOD_ID, "role_rotation_sync"));
+            ResourceLocation.tryBuild(SRE.MOD_ID, "role_rotation_sync"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, RoleRotationSyncS2CPacket> CODEC = StreamCodec.ofMember(
-            RoleRotationSyncS2CPacket::write,
-            RoleRotationSyncS2CPacket::new
-    );
+    // ----------------- 编解码器 -----------------
+    private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = StreamCodec.of(FriendlyByteBuf::writeUUID,
+            FriendlyByteBuf::readUUID);
 
-    private final boolean isSelecting;
-    private final int currentIndex;
-    private final int totalPlayers;
-    private final int confirmCountdown;
-    private final int finalPhaseThreshold;
-    private final int remainingTime; // 剩余选择时间（tick）
-    
-    // 玩家轮选顺序
-    private final HashMap<UUID, Integer> rotationOrder;
-    // 已选职业
-    private final HashMap<UUID, String> selectedRoles;
-    // 候选职业
-    private final List<String> currentCandidates;
-    // 当前玩家自己的序号
-    private final int myRotationIndex;
-    // 记录哪些玩家选择了"随机"
-    private final Set<UUID> randomChoosers;
+    private static final StreamCodec<ByteBuf, List<UUID>> UUID_LIST_CODEC = ByteBufCodecs.collection(ArrayList::new,
+            UUID_CODEC, 256);
 
-    public RoleRotationSyncS2CPacket(RegistryFriendlyByteBuf buf) {
-        this.isSelecting = buf.readBoolean();
-        this.currentIndex = buf.readInt();
-        this.totalPlayers = buf.readInt();
-        this.confirmCountdown = buf.readInt();
-        this.finalPhaseThreshold = buf.readInt();
-        this.remainingTime = buf.readInt();
-        
-        // 读取rotationOrder（带安全上限）
-        int orderSize = Math.min(buf.readInt(), 200);
-        this.rotationOrder = new HashMap<>();
-        for (int i = 0; i < orderSize; i++) {
-            UUID uuid = buf.readUUID();
-            int index = buf.readInt();
-            rotationOrder.put(uuid, index);
-        }
-        
-        // 读取selectedRoles（带安全上限）
-        int selectedSize = Math.min(buf.readInt(), 200);
-        this.selectedRoles = new HashMap<>();
-        for (int i = 0; i < selectedSize; i++) {
-            UUID uuid = buf.readUUID();
-            String rolePath = buf.readUtf(256);
-            selectedRoles.put(uuid, rolePath);
-        }
-        
-        // 读取currentCandidates（带安全上限）
-        int candidatesSize = Math.min(buf.readInt(), 500);
-        this.currentCandidates = new ArrayList<>();
-        for (int i = 0; i < candidatesSize; i++) {
-            String rolePath = buf.readUtf(256);
-            currentCandidates.add(rolePath);
-        }
-        
-        // 读取myRotationIndex
-        this.myRotationIndex = buf.readInt();
-        
-        // 读取randomChoosers（带安全上限）
-        int randomSize = Math.min(buf.readInt(), 200);
-        this.randomChoosers = new HashSet<>();
-        for (int i = 0; i < randomSize; i++) {
-            randomChoosers.add(buf.readUUID());
-        }
-    }
+    private static final StreamCodec<ByteBuf, Map<UUID, String>> SELECTED_CODEC = ByteBufCodecs.map(HashMap::new,
+            UUID_CODEC, ByteBufCodecs.STRING_UTF8, 256);
 
-    private RoleRotationSyncS2CPacket(boolean isSelecting, int currentIndex, int totalPlayers,
-            int confirmCountdown, int finalPhaseThreshold, int remainingTime,
-            HashMap<UUID, Integer> rotationOrder, HashMap<UUID, String> selectedRoles,
-            List<String> currentCandidates, int myRotationIndex, Set<UUID> randomChoosers) {
-        this.isSelecting = isSelecting;
-        this.currentIndex = currentIndex;
-        this.totalPlayers = totalPlayers;
-        this.confirmCountdown = confirmCountdown;
-        this.finalPhaseThreshold = finalPhaseThreshold;
-        this.remainingTime = remainingTime;
-        this.rotationOrder = rotationOrder;
-        this.selectedRoles = selectedRoles;
-        this.currentCandidates = currentCandidates;
-        this.myRotationIndex = myRotationIndex;
-        this.randomChoosers = randomChoosers;
-    }
+    private static final StreamCodec<ByteBuf, Set<UUID>> UUID_SET_CODEC = ByteBufCodecs.collection(HashSet::new,
+            UUID_CODEC, 256);
 
-    private void write(RegistryFriendlyByteBuf buf) {
-        buf.writeBoolean(isSelecting);
-        buf.writeInt(currentIndex);
-        buf.writeInt(totalPlayers);
-        buf.writeInt(confirmCountdown);
-        buf.writeInt(finalPhaseThreshold);
-        buf.writeInt(remainingTime);
-        
-        // 写入rotationOrder
-        buf.writeInt(rotationOrder.size());
-        for (Map.Entry<UUID, Integer> entry : rotationOrder.entrySet()) {
-            buf.writeUUID(entry.getKey());
-            buf.writeInt(entry.getValue());
+    private static final StreamCodec<ByteBuf, Map<UUID, List<String>>> ROUND_CANDIDATES_CODEC = ByteBufCodecs.map(
+            HashMap::new,
+            UUID_CODEC,
+            ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8, 3),
+            256);
+
+    public static final StreamCodec<ByteBuf, RoleRotationSyncS2CPacket> CODEC = new StreamCodec<>() {
+        @Override
+        public RoleRotationSyncS2CPacket decode(ByteBuf buf) {
+            return new RoleRotationSyncS2CPacket(
+                    ByteBufCodecs.BOOL.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    ByteBufCodecs.VAR_LONG.decode(buf),
+                    UUID_LIST_CODEC.decode(buf),
+                    SELECTED_CODEC.decode(buf),
+                    UUID_SET_CODEC.decode(buf),
+                    ROUND_CANDIDATES_CODEC.decode(buf));
         }
-        
-        // 写入selectedRoles
-        buf.writeInt(selectedRoles.size());
-        for (Map.Entry<UUID, String> entry : selectedRoles.entrySet()) {
-            buf.writeUUID(entry.getKey());
-            buf.writeUtf(entry.getValue(), 256);
+
+        @Override
+        public void encode(ByteBuf buf, RoleRotationSyncS2CPacket pkt) {
+            ByteBufCodecs.BOOL.encode(buf, pkt.isSelecting);
+            ByteBufCodecs.VAR_INT.encode(buf, pkt.currentRoundIndex);
+            ByteBufCodecs.VAR_INT.encode(buf, pkt.totalPlayerCount);
+            ByteBufCodecs.VAR_INT.encode(buf, pkt.confirmCountdown);
+            ByteBufCodecs.VAR_INT.encode(buf, pkt.perPlayerTimeLimit);
+            ByteBufCodecs.VAR_LONG.encode(buf, pkt.roundStartTime);
+            UUID_LIST_CODEC.encode(buf, pkt.playerOrder);
+            SELECTED_CODEC.encode(buf, pkt.selectedRoles);
+            UUID_SET_CODEC.encode(buf, pkt.randomChoosers);
+            ROUND_CANDIDATES_CODEC.encode(buf, pkt.roundCandidates);
         }
-        
-        // 写入currentCandidates
-        buf.writeInt(currentCandidates.size());
-        for (String rolePath : currentCandidates) {
-            buf.writeUtf(rolePath, 256);
-        }
-        
-        // 写入myRotationIndex
-        buf.writeInt(myRotationIndex);
-        
-        // 写入randomChoosers
-        buf.writeInt(randomChoosers.size());
-        for (UUID uuid : randomChoosers) {
-            buf.writeUUID(uuid);
-        }
-    }
+    };
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
-
-    // ==================== 客户端处理 ====================
-
-    public static void sendToPlayer(ServerPlayer player) {
-        Level level = player.level();
-        if (level.getServer() == null) {
-            return;
-        }
-
-        RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(level);
-        int remainingTime = 0;
-        if (rrwc.isSelecting()) {
-            // 计算当前玩家的剩余选择时间
-            remainingTime = rrwc.getSelectionTimeLimit();
-        } else if (rrwc.getConfirmCountdown() > 0) {
-            // 如果不是选择阶段但有确认倒计时，使用确认倒计时
-            remainingTime = rrwc.getConfirmCountdown();
-        }
-        
-        // 获取当前玩家自己的序号
-        int myIndex = rrwc.getPlayerRotationIndex(player.getUUID());
-
-        // 构建玩家轮选顺序
-        HashMap<UUID, Integer> orderMap = new HashMap<>(rrwc.getRotationOrderMap());
-        
-        // 构建已选职业map
-        HashMap<UUID, String> selectedMap = new HashMap<>();
-        for (Map.Entry<UUID, SRERole> entry : rrwc.getSelectedRoles().entrySet()) {
-            selectedMap.put(entry.getKey(), entry.getValue().identifier().toString());
-        }
-        
-        // 构建候选职业列表
-        List<String> candidatesList = new ArrayList<>();
-        for (SRERole role : rrwc.getCurrentCandidates()) {
-            candidatesList.add(role.identifier().toString());
-        }
-
-        ServerPlayNetworking.send(player, new RoleRotationSyncS2CPacket(
-                rrwc.isSelecting(),
-                rrwc.getCurrentRotationIndex(),
-                rrwc.getTotalPlayers(),
-                rrwc.getConfirmCountdown(),
-                rrwc.getFinalPhaseThreshold(),
-                remainingTime,
-                orderMap,
-                selectedMap,
-                candidatesList,
-                myIndex,
-                new HashSet<>(rrwc.getRandomChoosers())
-        ));
-    }
-
-    // Getter
-    public boolean isSelecting() { return isSelecting; }
-    public int getCurrentIndex() { return currentIndex; }
-    public int getTotalPlayers() { return totalPlayers; }
-    public int getConfirmCountdown() { return confirmCountdown; }
-    public int getFinalPhaseThreshold() { return finalPhaseThreshold; }
-    public int getRemainingTime() { return remainingTime; }
-    public HashMap<UUID, Integer> getRotationOrder() { return rotationOrder; }
-    public HashMap<UUID, String> getSelectedRoles() { return selectedRoles; }
-    public List<String> getCurrentCandidates() { return currentCandidates; }
-    public int getMyRotationIndex() { return myRotationIndex; }
-    public Set<UUID> getRandomChoosers() { return randomChoosers; }
 }
