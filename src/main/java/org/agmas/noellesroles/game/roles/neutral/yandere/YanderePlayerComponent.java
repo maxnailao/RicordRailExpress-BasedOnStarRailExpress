@@ -142,8 +142,11 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
 
         boolean changed = false;
 
-        // 1. 随机分配爱慕对象（失去后不再重新分配）
-        if (!crushLost && (crushUuid == null || serverLevel.getPlayerByUUID(crushUuid) == null)) {
+        // 1. 随机分配爱慕对象：仅在本局尚未绑定时分配。
+        //    爱慕对象死亡由 OnKillPlayerTriggered 置 crushLost 并清空 crushUuid；
+        //    掉线/切维度时 getPlayerByUUID 同样返回 null，不能据此重新绑定，
+        //    否则违背「开局随机绑定一名爱慕对象」。
+        if (!crushLost && crushUuid == null) {
             changed |= assignCrush(serverPlayer, serverLevel);
         }
 
@@ -185,11 +188,13 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
                 }
             }
 
-            // 4. 清理已死亡/离线的目标
+            // 4. 清理已死亡的目标：仅当玩家对象可得且确认死亡时移除。
+            //    掉线时 getPlayerByUUID 返回 null，此时保留标记，
+            //    使其重连后仍是目标（成为目标后在病娇视角下持续发光）。
             List<UUID> deadTargets = new ArrayList<>();
             for (UUID uuid : targets) {
                 Player t = serverLevel.getPlayerByUUID(uuid);
-                if (t == null || !GameUtils.isPlayerAliveAndSurvival(t)) {
+                if (t != null && !GameUtils.isPlayerAliveAndSurvival(t)) {
                     deadTargets.add(uuid);
                 }
             }

@@ -164,7 +164,7 @@ public class InitModRolesMax {
         // 心理学家每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.PSYCHOLOGIST_ID, 1);
 
-        // 咒法师每局只能有 1 个
+        // 咒术师每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.WARLOCK_ID, 1);
 
         // 嬉命人每局只能有 1 个

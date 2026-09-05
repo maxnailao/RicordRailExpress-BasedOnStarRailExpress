@@ -464,6 +464,16 @@ public class ModEffects {
     public static final Holder<MobEffect> NIGHTMARE = register("nightmare", new NightmareEffect());
 
     /**
+     * 领域标记（各领域共享）：
+     * - 中性效果，幽紫色
+     * - amplifier 0 = 愚者塔罗会开会领域，1 = 咒术师灰髓之境角斗场领域
+     * - 拥有此效果的玩家正处于某个领域中，无法被拉入另一个领域；
+     * 由各领域在进入时授予对应等级，离场时移除。
+     */
+    public static final Holder<MobEffect> DOMAIN_MARK = register("domain_mark",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9B59B6));
+
+    /**
      * 注册药水效果到注册表
      */
 
@@ -474,6 +484,20 @@ public class ModEffects {
     private static int getAmplifier(LivingEntity entity, Holder<MobEffect> effect) {
         MobEffectInstance instance = entity.getEffect(effect);
         return instance != null ? instance.getAmplifier() : -1;
+    }
+
+    /**
+     * 领域标记：返回玩家所处领域的等级（0=愚者塔罗会，1=咒术师灰髓之境）；不在任何领域返回 -1。
+     */
+    public static int getDomainMarkLevel(LivingEntity entity) {
+        return getAmplifier(entity, DOMAIN_MARK);
+    }
+
+    /**
+     * 玩家当前是否处于任意一个领域中（即拥有领域标记效果）。
+     */
+    public static boolean isInAnyDomain(LivingEntity entity) {
+        return entity.hasEffect(DOMAIN_MARK);
     }
 
     /**

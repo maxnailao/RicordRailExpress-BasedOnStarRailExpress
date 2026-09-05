@@ -1415,7 +1415,7 @@ public class RoleShopHandler {
             PARASOL_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
         }
 
-        // ==================== 咒法师商店 ====================
+        // ==================== 咒术师商店 ====================
         {
             // 刀 - 130金币
             WARLOCK_SHOP.add(new KillerKnifeShopEntry(130));
@@ -1432,9 +1432,20 @@ public class RoleShopHandler {
             });
             // 关灯 - 使用配置价格
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL));
+                    ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
             // 监控失灵 - 60金币
-            WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL));
+            WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useMonitorBroken(player,
+                            SREConfig.instance().monitorBrokenDuration * 20);
+                }
+            });
         }
 
         // ==================== 嬉命人商店 ====================
@@ -3133,7 +3144,7 @@ public class RoleShopHandler {
                     ModRoles.PARASOL_ID, PARASOL_SHOP);
         }
 
-        // 咒法师商店
+        // 咒术师商店
         {
             ShopContent.customEntries.put(
                     ModRoles.WARLOCK_ID, WARLOCK_SHOP);

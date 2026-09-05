@@ -3120,13 +3120,13 @@ public class ModRoles {
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();
     public static HashMap<SRERole, RoleAnnouncementTexts.RoleAnnouncementText> roleRoleAnnouncementTextHashMap = new HashMap<>();
 
-    // ==================== 咒法师 ====================
+    // ==================== 咒术师 ====================
     public static SRERole WARLOCK = TMMRoles.registerRole(new NormalRole(
             WARLOCK_ID, new java.awt.Color(139, 0, 139).getRGB(), false,
             true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY))
             .setCanUseKiller(true).setCanSeeTeammateKiller(true).setCanBeRandomedByOtherRoles(false)
-            .setDefaultMax(0)
+            .setDefaultMax(1)
             .setCanUseInstinct(true).setCanSeeCoin(true);
 
     // ==================== 嬉命人（Embalmer）====================

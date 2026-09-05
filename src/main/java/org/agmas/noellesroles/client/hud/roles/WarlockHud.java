@@ -9,39 +9,52 @@ import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
+/**
+ * 咒术师状态 HUD：咒物数量 / 诅咒中目标数 / 领域剩余时间。
+ * 技能冷却由 {@code UnifiedSkillHud} 自动渲染，这里只补充资源信息（左下角）。
+ */
 public class WarlockHud {
     public static void register() {
         RoleHudRenderCallback.EVENT.register(ModRoles.WARLOCK_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
-            if (SREClient.isPlayerSpectator()) return;
-            var comp = WarlockPlayerComponent.KEY.get(client.player);
+            if (SREClient.isPlayerSpectator() || client.level == null)
+                return;
+            var comp = WarlockPlayerComponent.KEY.maybeGet(client.player).orElse(null);
+            if (comp == null)
+                return;
             Font font = client.font;
-            int sw = client.getWindow().getGuiScaledWidth();
             int sy = client.getWindow().getGuiScaledHeight();
 
-            // 标记技能 — 右下角第一行
-            Component markText;
-            if (comp.markCooldown > 0) {
-                int sec = (comp.markCooldown + 19) / 20;
-                markText = Component.translatable("hud.noellesroles.warlock.mark_cd", sec).withStyle(ChatFormatting.GOLD);
-            } else if (comp.markedTarget != null) {
-                markText = Component.translatable("hud.noellesroles.warlock.marked").withStyle(ChatFormatting.YELLOW);
-            } else {
-                markText = Component.translatable("hud.noellesroles.warlock.mark_ready").withStyle(ChatFormatting.GREEN);
-            }
-            context.drawString(font, markText, sw - font.width(markText) - 8, sy - 36, 0xFFFFFF);
+            int y = sy - 46;
+            Component essenceText = Component
+                    .translatable("hud.noellesroles.warlock.essences", comp.essences.size())
+                    .withStyle(comp.essences.isEmpty() ? ChatFormatting.GRAY : ChatFormatting.LIGHT_PURPLE);
+            context.drawString(font, essenceText, 8, y, 0xFFFFFF);
+            y += 12;
 
-            // 咒杀技能 — 右下角第二行
-            Component killText;
-            if (comp.killCooldown > 0) {
-                int sec = (comp.killCooldown + 19) / 20;
-                killText = Component.translatable("hud.noellesroles.warlock.kill_cd", sec).withStyle(ChatFormatting.RED);
-            } else if (comp.markedTarget != null) {
-                killText = Component.translatable("hud.noellesroles.warlock.kill_ready").withStyle(ChatFormatting.DARK_PURPLE);
-            } else {
-                killText = Component.translatable("hud.noellesroles.warlock.kill_no_target").withStyle(ChatFormatting.GRAY);
+            // 当前处于诅咒中的存活目标数量（领域可拉入的候选）
+            int cursedCount = comp.getCursedCount();
+            if (cursedCount > 0) {
+                Component curseText = Component
+                        .translatable("hud.noellesroles.warlock.cursing", cursedCount)
+                        .withStyle(ChatFormatting.DARK_PURPLE);
+                context.drawString(font, curseText, 8, y, 0xFFFFFF);
+                y += 12;
             }
-            context.drawString(font, killText, sw - font.width(killText) - 8, sy - 24, 0xFFFFFF);
+
+            if (comp.domainOpen && comp.domainRemaining > 0) {
+                int sec = (comp.domainRemaining + 19) / 20;
+                Component domainText = Component
+                        .translatable("hud.noellesroles.warlock.domain", sec)
+                        .withStyle(ChatFormatting.DARK_AQUA);
+                context.drawString(font, domainText, 8, y, 0xFFFFFF);
+            } else if (comp.domainCooldown > 0) {
+                int sec = (comp.domainCooldown + 19) / 20;
+                Component cdText = Component
+                        .translatable("hud.noellesroles.warlock.domain_cd", sec)
+                        .withStyle(ChatFormatting.GRAY);
+                context.drawString(font, cdText, 8, y, 0xFFFFFF);
+            }
         });
     }
 }

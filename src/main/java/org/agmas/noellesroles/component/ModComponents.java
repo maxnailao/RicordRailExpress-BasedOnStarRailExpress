@@ -1331,7 +1331,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordPlayerComponent::new);
 
-    // 注册咒法师组件
+    // 注册丘比特组件
     registry.beginRegistration(Player.class, CUPID)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(CupidPlayerComponent::new);
