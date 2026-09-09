@@ -272,6 +272,15 @@ public class RoleRotationScreen extends Screen {
 
     private Component selectedRoleText(UUID uuid) {
         String rolePath = RoleRotationCache.getSelectedRoles().get(uuid);
+        // 不可见轮选：除自己以外一律只显示「已选择/未选择」，
+        // 既不泄露具体职业，也不泄露是否选了随机
+        if (RoleRotationCache.isHideSelections() && !isLocalPlayer(uuid)) {
+            return rolePath == null
+                    ? Component.translatable("gui.sre.role_rotation.hidden_unselected")
+                            .withStyle(ChatFormatting.DARK_GRAY)
+                    : Component.translatable("gui.sre.role_rotation.hidden_selected")
+                            .withStyle(ChatFormatting.GREEN);
+        }
         if (rolePath == null) {
             return Component.literal("?").withStyle(ChatFormatting.DARK_GRAY);
         }
@@ -287,6 +296,11 @@ public class RoleRotationScreen extends Screen {
         }
         int factionColor = getFactionColor(role);
         return RoleUtils.getRoleName(role).withStyle(style -> style.withColor(factionColor));
+    }
+
+    private boolean isLocalPlayer(UUID uuid) {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.player != null && mc.player.getUUID().equals(uuid);
     }
 
     private int getFactionColor(SRERole role) {
@@ -321,6 +335,9 @@ public class RoleRotationScreen extends Screen {
         if (row < 0 || row >= players.size())
             return null;
         UUID uuid = players.get(row).getKey();
+        // 不可见轮选下别人的职业已脱敏成空串，这里再挡一道，避免悬停提示/点击开介绍页泄露
+        if (RoleRotationCache.isHideSelections() && !isLocalPlayer(uuid))
+            return null;
         String rolePath = RoleRotationCache.getSelectedRoles().get(uuid);
         if (rolePath == null)
             return null;

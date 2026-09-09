@@ -48,6 +48,10 @@ public class SREGameModes {
     public static final ResourceLocation ROLE_ROTATION_SINGLE_SELECT_MODE_ID = SRE
             .haimanId("role_rotation_single_select");
 
+    // Invisible Role Rotation Mode (nailao)
+    public static final ResourceLocation ROLE_ROTATION_INVISIBLE_MODE_ID = SRE
+            .nailaoId("role_rotation_invisible");
+
     // Class Change Mode (haiman)
     public static final ResourceLocation CLASS_CHANGE_MODE_ID = SRE.haimanId("class_change");
 
@@ -100,6 +104,10 @@ public class SREGameModes {
     // Role Rotation Single Select Mode
     public static final GameMode ROLE_ROTATION_SINGLE_SELECT_MODE = registerGameMode(
             new SRERoleRotationSingleSelectGameMode(ROLE_ROTATION_SINGLE_SELECT_MODE_ID));
+
+    // Invisible Role Rotation Mode
+    public static final GameMode ROLE_ROTATION_INVISIBLE_MODE = registerGameMode(
+            new SRERoleRotationInvisibleGameMode(ROLE_ROTATION_INVISIBLE_MODE_ID));
 
     // Class Change Mode (haiman)
     public static final GameMode CLASS_CHANGE_MODE = registerGameMode(new SREClassChangeGameMode(CLASS_CHANGE_MODE_ID));

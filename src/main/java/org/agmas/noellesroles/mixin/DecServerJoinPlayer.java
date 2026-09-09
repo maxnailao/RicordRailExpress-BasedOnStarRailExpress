@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.mixin;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
@@ -26,6 +28,11 @@ public class DecServerJoinPlayer {
         }
         RoleUtils.removeAllPlayerAttributes(serverPlayer);
         ConfigWorldComponent.KEY.get(serverPlayer.level()).sync();
+        // 对局进行中才连进来的玩家（退出重进、或中途加入）标记为已退出，
+        // 之后整局禁止使用技能，防止靠重连洗掉技能副作用。下一局 init() 会重置。
+        if (GameUtils.isGameRunning(serverPlayer)) {
+            SREAbilityPlayerComponent.KEY.get(serverPlayer).setExited(true);
+        }
     }
 
 }

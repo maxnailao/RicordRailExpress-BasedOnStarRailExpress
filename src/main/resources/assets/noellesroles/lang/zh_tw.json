@@ -4107,5 +4107,6 @@
   "hud.noellesroles.bee_family.channel.normal": "普通頻道",
   "hud.noellesroles.bee_family.successor": "繼承者：%s",
   "hud.noellesroles.bee_family.money": "你需要 %s 金幣才能復活玩家！",
-  "hud.noellesroles.bee.revived_player": "[蜜蜂家族] %s 復活了一隻 %s"
+  "hud.noellesroles.bee.revived_player": "[蜜蜂家族] %s 復活了一隻 %s",
+  "skill.noellesroles.unable_to_use_exited": "無法使用技能：你退出重進過"
 }

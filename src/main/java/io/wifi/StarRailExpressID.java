@@ -8,7 +8,7 @@ import pro.fazeclan.river.stupid_express.StupidExpress;
 
 public class StarRailExpressID {
     // 验证版本号系统，强制客户端更新。
-    public static final String modPacketVersion = "4.3.1";
+    public static final String modPacketVersion = "4.3.2";
 
     // ID
     public final static String MOD_ID = "starrailexpress";
@@ -22,6 +22,7 @@ public class StarRailExpressID {
     public final static String XIAOHEIHAND_MOD_ID = "xiao_hei_hand";
     public final static String BLACK_WHITE_BEAR_MOD_ID = "thef0rs4ken";
     public final static String JIALE_MOD_ID = "jiale";
+    public final static String NAILAO_MOD_ID = "nailao";
     public final static String NOELLESROLES_ROLE = Noellesroles.MOD_ID;
     public final static String STUPIDEXPRESS = StupidExpress.MOD_ID;
 
@@ -59,6 +60,10 @@ public class StarRailExpressID {
 
     public static @NotNull ResourceLocation jialeId(String name) {
         return ResourceLocation.fromNamespaceAndPath(JIALE_MOD_ID, name);
+    }
+
+    public static @NotNull ResourceLocation nailaoId(String name) {
+        return ResourceLocation.fromNamespaceAndPath(NAILAO_MOD_ID, name);
     }
 
     public static @NotNull ResourceLocation TMMId(String name) {

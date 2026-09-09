@@ -52,6 +52,7 @@ public final class RoleSkill {
             int maxCharges,
             boolean continuous,
             int holdIntervalTicks,
+            boolean noCastCCA,
             boolean announceToSelf,
             boolean toggleable,
             boolean shifted,
@@ -81,6 +82,7 @@ public final class RoleSkill {
         private int maxCharges = -1;
         private boolean continuous;
         private int holdIntervalTicks = 1;
+        private boolean noCastCCA = false;
         private boolean announceToSelf = false;
         private boolean toggleable;
         private boolean shifted;
@@ -94,6 +96,16 @@ public final class RoleSkill {
 
         public Builder cooldownTicks(int ticks) {
             this.cooldownTicks = ticks;
+            return this;
+        }
+
+        /**
+         * 该技能不再把自身的冷却/充能镜像到组件顶层的 CCA 字段。
+         * 用于多技能职业：顶层字段只应反映"当前选中且需要 HUD 大冷却显示"的技能，
+         * 否则一个后台技能的冷却会污染另一个技能的 HUD 与旧版 useAbility() 判定。
+         */
+        public Builder noCastCCA(boolean flag) {
+            this.noCastCCA = flag;
             return this;
         }
 
@@ -146,7 +158,7 @@ public final class RoleSkill {
 
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
-                    holdIntervalTicks, announceToSelf, toggleable, shifted, showOnHud, handler);
+                    holdIntervalTicks, noCastCCA, announceToSelf, toggleable, shifted, showOnHud, handler);
         }
     }
 
@@ -240,6 +252,13 @@ public final class RoleSkill {
      * 所有技能派发路径应在入口处调用此方法。
      */
     public static boolean blockForSpectator(ServerPlayer player) {
+        // 对局中途退出重进过的人，整局无法再使用技能
+        if (SREAbilityPlayerComponent.KEY.get(player).hasExited()) {
+            player.displayClientMessage(
+                    Component.translatable("skill.noellesroles.unable_to_use_exited").withStyle(ChatFormatting.RED),
+                    true);
+            return true;
+        }
         if (!player.isSpectator()) {
             return false;
         }

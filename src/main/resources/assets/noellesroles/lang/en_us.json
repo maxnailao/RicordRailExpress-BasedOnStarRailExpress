@@ -4319,5 +4319,6 @@
   "hud.noellesroles.bee_family.channel.normal": "Normal Channel",
   "hud.noellesroles.bee_family.successor": "Successor: %s",
   "hud.noellesroles.bee_family.money": "You need %s coins to revive a player!",
-  "hud.noellesroles.bee.revived_player": "[Bee Family] %s revived a %s"
+  "hud.noellesroles.bee.revived_player": "[Bee Family] %s revived a %s",
+  "skill.noellesroles.unable_to_use_exited": "Cannot use skill: you left and rejoined the game"
 }

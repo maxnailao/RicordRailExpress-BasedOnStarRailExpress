@@ -110,20 +110,43 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         broadcastSync(world);
     }
 
+    /**
+     * 是否对其他人隐藏本次轮选的选择结果。不可见轮选模式覆写为 true。
+     */
+    protected boolean hideOthersSelections() {
+        return false;
+    }
+
     private void broadcastSync(ServerLevel world) {
-        RoleRotationSyncS2CPacket packet = new RoleRotationSyncS2CPacket(
-                draftState.isSelecting,
-                draftState.currentRoundIndex,
-                draftState.totalPlayers,
-                draftState.confirmCountdown,
-                draftState.perPlayerTimeLimit,
-                draftState.roundStartTime,
-                draftState.playerOrder,
-                draftState.getSelectedRolesAsStrings(),
-                draftState.randomChoosers,
-                draftState.getRoundCandidatesAsStrings());
+        boolean hide = hideOthersSelections();
+        Map<UUID, String> selected = draftState.getSelectedRolesAsStrings();
+        Set<UUID> randoms = draftState.randomChoosers;
+        Map<UUID, List<String>> candidates = draftState.getRoundCandidatesAsStrings();
+        // 不隐藏时所有人共用同一份包；隐藏时必须逐人构造，否则别人的职业会随包泄露
+        RoleRotationSyncS2CPacket shared = hide ? null
+                : new RoleRotationSyncS2CPacket(draftState.isSelecting, draftState.currentRoundIndex,
+                        draftState.totalPlayers, draftState.confirmCountdown, draftState.perPlayerTimeLimit,
+                        draftState.roundStartTime, draftState.playerOrder, selected, randoms, candidates, false);
         for (ServerPlayer p : world.players()) {
-            ServerPlayNetworking.send(p, packet);
+            if (shared != null) {
+                ServerPlayNetworking.send(p, shared);
+                continue;
+            }
+            // 只保留自己的职业、随机标记与候选池，其他人一律脱敏（保留 key 以便 UI 判断已选/未选）
+            UUID self = p.getUUID();
+            Map<UUID, String> maskedSelected = new LinkedHashMap<>();
+            selected.forEach((uuid, path) -> maskedSelected.put(uuid,
+                    self.equals(uuid) ? path : RoleRotationSyncS2CPacket.HIDDEN_ROLE_PATH));
+            Set<UUID> maskedRandoms = new HashSet<>();
+            if (randoms.contains(self)) {
+                maskedRandoms.add(self);
+            }
+            Map<UUID, List<String>> maskedCandidates = new LinkedHashMap<>();
+            candidates.forEach((uuid, list) -> maskedCandidates.put(uuid, self.equals(uuid) ? list : List.of()));
+            ServerPlayNetworking.send(p, new RoleRotationSyncS2CPacket(draftState.isSelecting,
+                    draftState.currentRoundIndex, draftState.totalPlayers, draftState.confirmCountdown,
+                    draftState.perPlayerTimeLimit, draftState.roundStartTime, draftState.playerOrder,
+                    maskedSelected, maskedRandoms, maskedCandidates, true));
         }
     }
 

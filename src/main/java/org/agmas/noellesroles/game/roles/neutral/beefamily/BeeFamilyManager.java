@@ -155,18 +155,25 @@ public class BeeFamilyManager {
                         .toggleable(true)
                         .announceToSelf(false)
                         .build());
+        // 蜂后的三个技能全部标 noCastCCA：组件顶层的 cooldown 字段被右键尸体召唤独占
+        // （下方 UseEntityCallback 用 cca.setCooldown(REVIVE_COOLDOWN) 写入、BeeFamilyHud 用 cca.hasCooldown() 显示）。
+        // 若技能把自身冷却镜像上去，一是用技能会误锁召唤 60 秒，二是 mirrorSelectedSkill 每 tick
+        // 反向把召唤冷却覆写成当前选中技能的冷却（通常为 0），导致召唤冷却直接失效。
         RoleSkill.register(BounsRoles.BEE_QUEEN,
                 RoleSkill.skill(SRE.id("bee_queen/improve"), "skill.noellesroles.bee_queen.improve",
                         (ctx) -> improveNextSummon(ctx))
+                        .noCastCCA(true)
                         .showOnHud(true).cooldownSeconds(60).announceToSelf(true).build(),
                 RoleSkill.skill(SRE.id("bee_queen/mark"), "skill.noellesroles.bee_queen.mark",
                         (ctx) -> markSuccessor(ctx))
+                        .noCastCCA(true)
                         .showOnHud(true)
                         .cooldownSeconds(60)
                         .announceToSelf(true)
                         .build(),
                 RoleSkill.skill(SRE.id("bee_channel"), "skill.noellesroles.bee_channel",
                         BeeFamilyManager::changeChannel)
+                        .noCastCCA(true)
                         .cooldownTicks(1)
                         .showOnHud(true)
                         .toggleable(true)

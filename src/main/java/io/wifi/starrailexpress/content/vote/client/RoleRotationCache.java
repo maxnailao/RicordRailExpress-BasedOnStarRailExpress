@@ -14,6 +14,7 @@ public class RoleRotationCache {
     private static int confirmCountdown = -1; // 确认阶段倒计时（tick）
     private static int perPlayerTimeLimit = 0; // 每个玩家的选择时限（tick）
     private static long roundStartGameTime = 0; // 服务端本轮开始时的世界游戏时间（tick）
+    private static boolean hideSelections = false; // 不可见轮选：其他人的选择已被服务端脱敏
 
     // ==================== 玩家数据 ====================
     private static final List<UUID> playerOrder = new ArrayList<>(); // 全局玩家顺序
@@ -34,6 +35,7 @@ public class RoleRotationCache {
         confirmCountdown = packet.confirmCountdown();
         perPlayerTimeLimit = packet.perPlayerTimeLimit();
         roundStartGameTime = packet.roundStartTime();
+        hideSelections = packet.hideSelections();
 
         // 玩家顺序
         playerOrder.clear();
@@ -82,6 +84,13 @@ public class RoleRotationCache {
 
     public static int getTotalPlayers() {
         return totalPlayerCount;
+    }
+
+    /**
+     * 是否为不可见轮选模式（服务端已把其他人的职业/随机标记脱敏，只能看到已选/未选）
+     */
+    public static boolean isHideSelections() {
+        return hideSelections;
     }
 
     public static int getConfirmCountdown() {
@@ -178,6 +187,7 @@ public class RoleRotationCache {
         confirmCountdown = -1;
         perPlayerTimeLimit = 0;
         roundStartGameTime = 0;
+        hideSelections = false;
         playerOrder.clear();
         rotationOrder.clear();
         selectedRoles.clear();

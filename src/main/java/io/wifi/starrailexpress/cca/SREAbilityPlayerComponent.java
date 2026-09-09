@@ -65,6 +65,13 @@ public class SREAbilityPlayerComponent
     private ResourceLocation castingSkill;
     private long lastHoldTick = Long.MIN_VALUE;
 
+    /** 对局中途退出重进过的标记，为 true 时禁止使用技能（仅服务端，不同步不落盘） */
+    private boolean exited = false;
+
+    public boolean hasExited() {
+        return exited;
+    }
+
     public static final class SkillState {
         public int cooldown;
         public int charges = -1;
@@ -90,6 +97,7 @@ public class SREAbilityPlayerComponent
 
     public void init(boolean sync) {
         this.targetUUID = null;
+        this.exited = false;
         this.duration = 0;
         this.cooldown = 0;
         this.charges = -1;
@@ -243,9 +251,11 @@ public class SREAbilityPlayerComponent
         }
         state.castCount++;
         castingSkill = definition.continuous() ? definition.id() : null;
-        cooldown = state.cooldown;
-        charges = state.charges;
-        maxCharges = state.maxCharges;
+        if (!definition.noCastCCA()) {
+            cooldown = state.cooldown;
+            charges = state.charges;
+            maxCharges = state.maxCharges;
+        }
         sync();
     }
 
@@ -282,7 +292,16 @@ public class SREAbilityPlayerComponent
         if (definitions.isEmpty()) {
             return;
         }
-        SkillState state = getSkillState(definitions.get(selectedSkill).id());
+        // 中途改职（如蜂后继承者接任、蜜蜂家族全灭后还原原职业）会让技能数量变少，
+        // 而 selectedSkill 仍停留在旧职业的索引上，此处必须钳制，否则 get 越界崩服。
+        if (selectedSkill >= definitions.size()) {
+            selectedSkill = selectedSkill % definitions.size();
+        }
+        RoleSkill.Definition definition = definitions.get(selectedSkill);
+        if (definition.noCastCCA()) {
+            return;
+        }
+        SkillState state = getSkillState(definition.id());
         cooldown = state.cooldown;
         charges = state.charges;
         maxCharges = state.maxCharges;
@@ -482,5 +501,9 @@ public class SREAbilityPlayerComponent
     public void setTarget(UUID target) {
         this.targetUUID = target;
         sync();
+    }
+
+    public void setExited(boolean b) {
+        this.exited = b;
     }
 }

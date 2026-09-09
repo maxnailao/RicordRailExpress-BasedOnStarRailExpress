@@ -20,8 +20,17 @@ public record RoleRotationSyncS2CPacket(
         List<UUID> playerOrder, // 全局玩家顺序（按权重）
         Map<UUID, String> selectedRoles, // UUID -> 角色ID
         Set<UUID> randomChoosers,
-        Map<UUID, List<String>> roundCandidates // 本轮玩家 -> 候选角色ID列表（最多3个）
+        Map<UUID, List<String>> roundCandidates, // 本轮玩家 -> 候选角色ID列表（最多3个）
+        // 不可见轮选：为 true 时服务端已把其他人的选择脱敏成 HIDDEN_ROLE_PATH，
+        // 客户端据此把玩家列表渲染成「已选择/未选择」而不是具体职业
+        boolean hideSelections
 ) implements CustomPacketPayload {
+
+    /**
+     * 不可见轮选模式下，代表「已选择但职业对其他人保密」的占位路径。
+     * 真实的角色ID形如 {@code noellesroles:avenger}，永远不会是空串，因此可以安全区分。
+     */
+    public static final String HIDDEN_ROLE_PATH = "";
 
     public static final Type<RoleRotationSyncS2CPacket> TYPE = new Type<>(
             ResourceLocation.tryBuild(SRE.MOD_ID, "role_rotation_sync"));
@@ -58,7 +67,8 @@ public record RoleRotationSyncS2CPacket(
                     UUID_LIST_CODEC.decode(buf),
                     SELECTED_CODEC.decode(buf),
                     UUID_SET_CODEC.decode(buf),
-                    ROUND_CANDIDATES_CODEC.decode(buf));
+                    ROUND_CANDIDATES_CODEC.decode(buf),
+                    ByteBufCodecs.BOOL.decode(buf));
         }
 
         @Override
@@ -73,6 +83,7 @@ public record RoleRotationSyncS2CPacket(
             SELECTED_CODEC.encode(buf, pkt.selectedRoles);
             UUID_SET_CODEC.encode(buf, pkt.randomChoosers);
             ROUND_CANDIDATES_CODEC.encode(buf, pkt.roundCandidates);
+            ByteBufCodecs.BOOL.encode(buf, pkt.hideSelections);
         }
     };
 
