@@ -21,7 +21,7 @@ import java.util.List;
  * <p>
  * - 一条不会断的拴绳：注册时不设置耐久值，无限耐久。
  * - 右键重刑犯将其套住并牵引运输（狱警专属）。
- * - 完整的套住/牵引/解开逻辑在阶段 7 实现，依赖 ConvictPlayerComponent 与重刑犯职业。
+ * - 完整的套住/牵引/解开逻辑依赖 ConvictPlayerComponent 与重刑犯职业。
  * </p>
  */
 public class ConvictEscortLeashItem extends Item {

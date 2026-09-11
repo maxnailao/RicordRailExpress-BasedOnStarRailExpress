@@ -11,7 +11,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
- * 狱警防爆盾技能（阶段 6）—— 完全参照保安 {@code GuardPlayerHandler} 的防爆盾牌交互：
+ * 狱警防爆盾技能 —— 完全参照保安 {@code GuardPlayerHandler} 的防爆盾牌交互：
  * <ul>
  *   <li>副手已是防爆盾牌 → 收回背包（背包满则丢出世界），清空副手；</li>
  *   <li>主手是防爆盾牌 → 换到副手；</li>

@@ -1316,7 +1316,7 @@ public class ModEventsRegister {
         CuckooEggHandler.register();
         // 注册保安技能
         GuardPlayerHandler.register();
-        // 注册狱警防爆盾技能（阶段 6：背包有防爆盾牌时按技能键装 / 卸副手，同保安）
+        // 注册狱警防爆盾技能（背包有防爆盾牌时按技能键装 / 卸副手，同保安）
         org.agmas.noellesroles.game.roles.vigilante.jailer.JailerPlayerHandler.register();
         // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
         org.agmas.noellesroles.content.item.GroselleJourneyManager.register();

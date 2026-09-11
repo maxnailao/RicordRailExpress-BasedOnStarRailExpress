@@ -18,8 +18,8 @@ import net.minecraft.world.level.Level;
  * <p>
  * - 纹理、佩戴与缓慢逻辑同普通手铐（复用 {@link HandCuffsItem#SLOT_HANDCUFFS} 与其渲染/姿势 mixin）。
  * - 无限耐久、无法挣脱：覆盖 {@link #inventoryTick} 移除"蹲下挣脱扣耐久"逻辑，永不损耗。
- * - 开局自动铐在重刑犯身上；仅能由杀手阵营/杀手方中立/警长阵营成员对重刑犯蹲下右键解开，
- * 解开后手铐消失（不进入解开者背包），具体交互见阶段 5 的解除事件。
+ * - 开局自动铐在重刑犯身上；仅能由杀手阵营/杀手方中立/警长阵营成员解开：
+ * 对其蹲下空手右键（即时）或蹲下注视约 1 秒（引导式），解开后手铐消失（不进入解开者背包）。
  * </p>
  */
 public class ConvictHandcuffsItem extends HandCuffsItem {
@@ -33,7 +33,7 @@ public class ConvictHandcuffsItem extends HandCuffsItem {
     }
 
     /**
-     * 解除重刑犯手铐（阶段 5）：从额外槽移除并直接丢弃，不进入任何人的背包。
+     * 解除重刑犯手铐：从额外槽移除并直接丢弃，不进入任何人的背包。
      *
      * @return 若原本佩戴着重刑犯手铐并被成功解除则返回 {@code true}，否则 {@code false}
      */

@@ -9,7 +9,7 @@ import org.agmas.noellesroles.packet.ConvictChoiceOpenS2CPacket;
 import org.agmas.noellesroles.packet.ConvictChoiceSelectC2SPacket;
 
 /**
- * 重刑犯「做出你的抉择」GUI（阶段 4）。
+ * 重刑犯「做出你的抉择」GUI。
  *
  * <p>三个按钮：改过自新 / 毁灭一切 / 加入组织；顶部显示倒计时。点击后发送
  * {@link ConvictChoiceSelectC2SPacket} 并关闭界面；倒计时归零时服务端已默认「毁灭一切」，

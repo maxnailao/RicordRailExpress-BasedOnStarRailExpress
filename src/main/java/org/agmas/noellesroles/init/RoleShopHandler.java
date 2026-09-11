@@ -344,7 +344,7 @@ public class RoleShopHandler {
         });
     }
 
-    /** 重刑犯商店门禁（阶段 6）：仅「毁灭一切」分支的重刑犯可见 / 可购买其个人商店条目。 */
+    /** 重刑犯商店门禁：仅「毁灭一切」分支的重刑犯可见 / 可购买其个人商店条目。 */
     private static boolean isDestroyConvict(@NotNull Player player) {
         var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
         return comp != null && comp.choice == ConvictPlayerComponent.Choice.DESTROY;
@@ -868,7 +868,7 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
         }
 
-        // 狱警商店：左轮手枪（限购一次）/ 警棍 / 狱警钥匙 / 重刑犯押运工具 / 防爆盾牌
+        // 狱警商店：左轮手枪（限购一次）/ 警棍（限购一次）/ 狱警钥匙 / 重刑犯押运工具 / 防爆盾牌
         {
             var JAILER_SHOP = new ArrayList<ShopEntry>();
             // 左轮手枪 - 100 金币（限购一次，用 ConvictPlayerComponent.hasBoughtRevolver 记录；
@@ -893,8 +893,27 @@ public class RoleShopHandler {
                     return inserted;
                 }
             });
-            // 警棍 - 100 金币
-            JAILER_SHOP.add(new ShopEntry(ModItems.BATON.getDefaultInstance(), 100, ShopEntry.Type.WEAPON));
+            // 警棍 - 100 金币（限购一次，用 ConvictPlayerComponent.hasBoughtBaton 记录）
+            JAILER_SHOP.add(new ShopEntry(ModItems.BATON.getDefaultInstance(), 100, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
+                    return super.canBuy(player) && (comp == null || !comp.hasBoughtBaton);
+                }
+
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    boolean inserted = RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
+                    if (inserted) {
+                        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (comp != null) {
+                            comp.hasBoughtBaton = true;
+                            comp.sync();
+                        }
+                    }
+                    return inserted;
+                }
+            });
             // 狱警钥匙 - 25 金币（可开房间门与关押门，无限耐久）
             JAILER_SHOP.add(new ShopEntry(ModItems.JAILER_KEY.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
             // 重刑犯押运工具 - 25 金币（不断拴绳，牵引重刑犯）

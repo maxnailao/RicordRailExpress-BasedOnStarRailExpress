@@ -8,7 +8,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
- * 重刑犯「毁灭一切」独立胜利检测（阶段 5）。
+ * 重刑犯「毁灭一切」独立胜利检测。
  *
  * <p>复刻黑警（{@code CorruptCopWinChecker}）的「击杀所有人」独赢逻辑，但仅对
  * 抉择为 {@link ConvictPlayerComponent.Choice#DESTROY 毁灭一切} 的重刑犯生效：</p>

@@ -85,7 +85,7 @@ public interface ModBlocks {
             BlockEntityType.Builder.of(SupplyCrateBlockEntity::new,
                     ModBlocks.SUPPLY_CRATE_BLOCK));
 
-    // ===== 重刑犯 & 狱警（阶段 2）：重刑犯生成方块 + 关押门，注册到 SRE 功能方块（DECORATION_GROUP） =====
+    // ===== 重刑犯 & 狱警：重刑犯生成方块 + 关押门，注册到 SRE 功能方块（DECORATION_GROUP） =====
     // 重刑犯生成方块：原版标靶材质（方块模型 parent 指向 minecraft:block/target）；开局用于定位并传送重刑犯。
     Block CONVICT_SPAWN_BLOCK = registerBlockMultiTab("convict_spawn_block",
             new ConvictSpawnBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)

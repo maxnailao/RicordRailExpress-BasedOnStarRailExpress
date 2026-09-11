@@ -56,7 +56,7 @@
   "item.noellesroles.dual_pistol_left.desc": "The left gun of the dual pistols. Fires from the off hand only, after the right gun goes on cooldown.",
   "item.noellesroles.dual_pistol_right.desc": "The right gun of the dual pistols. Fires from the main hand only, alternating shots with the left gun.",
   "item.noellesroles.handcuffs.desc": "Handcuffs, right-click to handcuff a player. Handcuffed players can break free by continuously sneaking.",
-  "item.noellesroles.convict_handcuffs.desc": "Convict handcuffs. Same texture and logic as normal handcuffs, but unbreakable and cannot be struggled out of. Auto-applied to the convict at round start; only killer-team/killer-neutral or sheriff-team members can unlock them by sneak-right-clicking the convict, and the cuffs vanish on release.",
+  "item.noellesroles.convict_handcuffs.desc": "Convict handcuffs. Same texture and logic as normal handcuffs, but unbreakable and cannot be struggled out of. Auto-applied to the convict at round start; only killer-team/killer-neutral or sheriff-team members can unlock them - either sneak-right-click with empty hands (instant) or sneak while looking at the convict for about 1 second (channeled). The cuffs vanish on release.",
   "item.noellesroles.convict_escort_leash.desc": "Convict escort tool: an unbreakable leash. Right-click a convict to tether and escort them. Infinite durability.",
   "item.noellesroles.jailer_key.desc": "Jailer key. Same texture and model as the iron door key, but unbreakable, and can open both room doors and detention doors.",
   "item.noellesroles.patroller_revolver.desc": "Special pistol for the Patroller, has a very short firing cooldown.",

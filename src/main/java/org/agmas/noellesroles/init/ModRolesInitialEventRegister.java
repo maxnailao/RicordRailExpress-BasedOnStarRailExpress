@@ -591,18 +591,8 @@ public class ModRolesInitialEventRegister {
                                 SREPlayerShopComponent.KEY.get(player).addToBalance(50);
                             }
                         }));
-        // 重刑犯被动收入：存活期间周期性发放少量金币（金额/间隔取自配置）
-        RolePassive.register(ModRoles.CONVICT,
-                RolePassive.passive(SRE.id("convict_income"),
-                        "passive.noellesroles.convict.income",
-                        Math.max(1, NoellesRolesConfig.instance().convictPassiveIncomeIntervalSeconds) * 20,
-                        player -> {
-                            var gameWorld = SREGameWorldComponent.KEY.get(player.level());
-                            if (gameWorld.isRunning() && GameUtils.isPlayerAliveAndSurvival(player)) {
-                                SREPlayerShopComponent.KEY.get(player).addToBalance(
-                                        NoellesRolesConfig.instance().convictPassiveIncomeAmount);
-                            }
-                        }));
+        // 重刑犯被动收入不在此注册 RolePassive：那会把它显示到 HUD 右下角被动栏。
+        // 改由 ConvictPlayerComponent.tickActiveConvict 按配置的间隔/金额周期发放。
         // 宿命的罪人技能注册：
         // 技能 1「命运的启示」(G)：近距离查看准星目标最近 3 次杀人方式
         // 技能 2「重启」(Shift+G)：随机死因死亡脱离，回房间 + 短暂无敌

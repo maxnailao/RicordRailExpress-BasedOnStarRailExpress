@@ -2787,9 +2787,9 @@ public class ModRoles {
      * - 中立阵营 (setNeutrals(true))、无限体力、无 san (FAKE 心情)、每局最多 1
      * - 不可被失忆患者/赌徒等转变 (setCanBeRandomedByOtherRoles(false))
      * - 硬地图限制：重写 getRoundMaxCount，非 prisonRolesMaps 配置的监狱图一律返回 0
-     * - 做任务得金币 (onFinishQuest)；被动收入由 RolePassive 周期发放（见 ModRolesInitialEventRegister）
-     * - 开局出生在生成方块上、被戴重刑犯手铐、弹出「做出你的抉择」GUI（阶段 4）
-     * - 三分支玩法（改过自新/毁灭一切/加入组织）见阶段 5，状态存于 ConvictPlayerComponent
+     * - 做任务得金币 (onFinishQuest)；被动收入由 ConvictPlayerComponent 周期发放（不进 HUD 被动栏）
+     * - 开局出生在生成方块上、被戴重刑犯手铐、弹出「做出你的抉择」GUI
+     * - 三分支玩法（改过自新/毁灭一切/加入组织）状态存于 ConvictPlayerComponent
      */
     public static SRERole CONVICT = TMMRoles.registerRole(new NormalRole(
             CONVICT_ID,
@@ -2833,28 +2833,24 @@ public class ModRoles {
                 }
                 var comp = org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY
                         .maybeGet(player).orElse(null);
-                // 改过自新 + 已解铐 → 放行捡枪（随后 onPickUpItem 转职狱警）；其余分支一律禁捡
-                if (comp != null
-                        && comp.choice == org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.Choice.REFORM
-                        && comp.handcuffRemoved) {
-                    return false;
-                }
-                return true;
+                // 改过自新 + 手铐已解除 → 放行捡枪（随后 onPickUpItem 转职狱警）；其余分支一律禁捡
+                return comp == null || !comp.canReformPickUpGun();
             };
         }
 
         @Override
         public InteractionResult onPickUpItem(Player player, ItemStack item) {
-            // 改过自新 + 已解铐的重刑犯捡起左轮/巡警手枪 → 转职为狱警（随后核心 canPickUpRevolver 重取角色放行）
+            // 改过自新 + 手铐已解除的重刑犯捡起左轮/巡警手枪 → 转职为狱警
             boolean isGun = item.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER)
                     || item.is(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER);
             if (isGun) {
                 var comp = org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY
                         .maybeGet(player).orElse(null);
-                if (comp != null
-                        && comp.choice == org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.Choice.REFORM
-                        && comp.handcuffRemoved) {
+                if (comp != null && comp.canReformPickUpGun()) {
                     org.agmas.noellesroles.utils.RoleUtils.changeRole(player, ModRoles.JAILER);
+                    // SUCCESS：核心拾取 Mixin 会直接执行原版拾取，绕过掉落归属、
+                    // 热键栏空位与旧角色 canPickUpRevolver 等门禁，确保转职后枪械必定入手
+                    return InteractionResult.SUCCESS;
                 }
             }
             return super.onPickUpItem(player, item);
@@ -2870,11 +2866,11 @@ public class ModRoles {
      * - 警长阵营 (isInnocent=true + setVigilanteTeam(true))、可捡左轮 (setCanPickUpRevolver(true))
      * - 每局最多 1；保持默认可被随机（失忆患者可变出 / 赌徒可刷出）
      * - 硬地图限制：重写 getRoundMaxCount，非监狱图一律返回 0
-     * - 商店与防爆盾技能见阶段 6
+     * - 拥有专属商店与防爆盾技能
      */
     public static SRERole JAILER = TMMRoles.registerRole(new NormalRole(
             JAILER_ID,
-            new Color(170, 170, 170).getRGB(), // 同警卫 - 银灰色
+            0x2F6BFF, // 同巡警 - 蓝色
             true, // isInnocent = true（警长阵营）
             false, // canUseKiller = false
             SRERole.MoodType.REAL, // 真实心情
