@@ -1318,6 +1318,8 @@ public class ModEventsRegister {
         GuardPlayerHandler.register();
         // 注册狱警防爆盾技能（背包有防爆盾牌时按技能键装 / 卸副手，同保安）
         org.agmas.noellesroles.game.roles.vigilante.jailer.JailerPlayerHandler.register();
+        // 注册狱警钥匙的房间门交互（可开带房号的房间门，不开铁门）
+        org.agmas.noellesroles.content.item.JailerKeyDoorHandler.register();
         // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
         org.agmas.noellesroles.content.item.GroselleJourneyManager.register();
         VoodooDeathHandler.registerEvents();
@@ -2393,6 +2395,7 @@ public class ModEventsRegister {
             boolean hasCorruptCop = false;
             boolean hasDualGunner = false;
             boolean hasBee = false;
+            boolean hasConvict = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2431,6 +2434,8 @@ public class ModEventsRegister {
                     hasCorruptCop = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.DUAL_GUNNER)) {
                     hasDualGunner = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.CONVICT)){
+                    hasConvict = true;
                 }
             }
             if (hasDio) {
@@ -2538,6 +2543,14 @@ public class ModEventsRegister {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.dual_gunner.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasConvict) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.convict.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }

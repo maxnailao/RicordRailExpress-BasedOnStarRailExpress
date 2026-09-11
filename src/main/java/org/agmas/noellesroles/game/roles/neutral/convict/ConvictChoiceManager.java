@@ -6,12 +6,10 @@ import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.game.GameUtils;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,11 +17,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.item.ConvictHandcuffsItem;
@@ -33,10 +28,6 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ConvictChoiceOpenS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * 重刑犯开局流程管理器。
@@ -54,28 +45,18 @@ import java.util.UUID;
  */
 public class ConvictChoiceManager {
 
-    /** 引导式解铐所需累计 tick（20 = 1 秒）。 */
-    private static final int UNLOCK_CHANNEL_TICKS = 20;
-    /** 引导式解铐的有效距离（格）。 */
-    private static final double UNLOCK_REACH = 3.0D;
-    /** 正在引导解铐的玩家 → 其目标重刑犯。 */
-    private static final Map<UUID, UUID> CHANNEL_TARGETS = new HashMap<>();
-    /** 正在引导解铐的玩家 → 已累计 tick。 */
-    private static final Map<UUID, Integer> CHANNEL_TICKS = new HashMap<>();
-
     /** 注册开局钩子与解铐交互。由 {@code ModEventsRegister.registerEvents()} 调用。 */
     public static void register() {
         OnGameTrueStarted.EVENT.register(ConvictChoiceManager::onGameTrueStarted);
-        // 解铐方式一：合格阵营成员对被铐重刑犯「蹲下 + 空手右键」→ 立即解除
-        // （原版在「蹲下且手持任意物品」时不会发出实体交互包，故此路径仅空手时可达）
+        // 解铐：合格阵营成员对被铐重刑犯「蹲下 + 右键」→ 立即解除。
+        // 原版在「蹲下且主手 / 副手持有任意物品」时不会发出实体交互包，
+        // 因此解除者需要先切到空手槽再蹲下右键。
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (world.isClientSide || hand != InteractionHand.MAIN_HAND || !player.isShiftKeyDown()) {
                 return InteractionResult.PASS;
             }
             return tryUnlockByInteraction(player, entity);
         });
-        // 解铐方式二（兜底）：蹲下并注视被铐重刑犯约 1 秒 → 解除；手持任意物品同样有效
-        ServerTickEvents.END_WORLD_TICK.register(ConvictChoiceManager::tickUnlockChannels);
     }
 
     private static void onGameTrueStarted(ServerLevel serverLevel) {
@@ -170,8 +151,6 @@ public class ConvictChoiceManager {
      * 解除手铐：杀手阵营 / 杀手方中立 / 警长阵营成员对被铐重刑犯解铐 →
      * 手铐消失（不入包）+ 置 {@code handcuffRemoved}，并按抉择触发对应分支。
      *
-     * <p>两条触发路径共用此方法：蹲下空手右键（即时）与蹲下注视约 1 秒（引导式兜底）。</p>
-     *
      * @return 成功解除返回 {@link InteractionResult#SUCCESS}，否则 {@link InteractionResult#PASS}
      */
     public static InteractionResult tryUnlockByInteraction(Player removerRaw, Entity targetRaw) {
@@ -240,117 +219,9 @@ public class ConvictChoiceManager {
         }
     }
 
-    /**
-     * 引导式解铐（兜底路径）：蹲下并持续注视被铐重刑犯约 1 秒即解除手铐。
-     *
-     * <p>原版客户端在「蹲下且主手/副手持有任意物品」时不会发送实体交互包，
-     * 因此 {@link UseEntityCallback} 的蹲下右键只在空手时可达；而游戏中解除者
-     * （杀手持刀 / 警长持枪 / 狱警持钥匙）几乎必然手持物品。此路径不依赖交互包，
-     * 保证解铐在任何手持状态下都能完成，进而保证改过自新可捡枪、毁灭一切可解锁透视。</p>
-     */
-    private static void tickUnlockChannels(ServerLevel level) {
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level);
-        if (!gameWorld.isRunning()) {
-            CHANNEL_TARGETS.clear();
-            CHANNEL_TICKS.clear();
-            return;
-        }
-        for (ServerPlayer remover : level.players()) {
-            UUID id = remover.getUUID();
-            boolean channeling = CHANNEL_TARGETS.containsKey(id);
-            ServerPlayer target = channeling
-                    ? level.getServer().getPlayerList().getPlayer(CHANNEL_TARGETS.get(id))
-                    : null;
-            // 中断：起身 / 死亡 / 阵营不再合格 / 目标丢失或不再是准星下的被铐重刑犯
-            if (channeling && !isChannelValid(gameWorld, remover, target)) {
-                CHANNEL_TARGETS.remove(id);
-                CHANNEL_TICKS.remove(id);
-                target = null;
-            }
-            if (target == null) {
-                if (!canStartChannel(gameWorld, remover)) {
-                    continue;
-                }
-                target = findCuffedConvictInCrosshair(remover, gameWorld);
-                if (target == null) {
-                    continue;
-                }
-                CHANNEL_TARGETS.put(id, target.getUUID());
-                CHANNEL_TICKS.put(id, 0);
-            }
-            int progress = CHANNEL_TICKS.merge(id, 1, Integer::sum);
-            if (progress >= UNLOCK_CHANNEL_TICKS) {
-                CHANNEL_TARGETS.remove(id);
-                CHANNEL_TICKS.remove(id);
-                tryUnlockByInteraction(remover, target);
-                continue;
-            }
-            showChannelProgress(level, remover, target, progress);
-        }
-        // 清理已断开连接的记录
-        if (!CHANNEL_TARGETS.isEmpty()) {
-            CHANNEL_TARGETS.keySet()
-                    .removeIf(uuid -> level.getServer().getPlayerList().getPlayer(uuid) == null);
-            CHANNEL_TICKS.keySet().retainAll(CHANNEL_TARGETS.keySet());
-        }
-    }
-
-    /** 引导是否仍然有效：保持蹲下、双方存活、阵营合格，且准星下仍是同一被铐重刑犯。 */
-    private static boolean isChannelValid(SREGameWorldComponent gameWorld, ServerPlayer remover,
-            ServerPlayer target) {
-        return target != null
-                && remover.isShiftKeyDown()
-                && GameUtils.isPlayerAliveAndSurvival(remover)
-                && GameUtils.isPlayerAliveAndSurvival(target)
-                && isEligibleRemover(gameWorld, remover)
-                && findCuffedConvictInCrosshair(remover, gameWorld) == target;
-    }
-
-    /** 是否允许开始引导：蹲下、存活、阵营合格，且未手持押运拴绳（避免押运途中误解铐）。 */
-    private static boolean canStartChannel(SREGameWorldComponent gameWorld, ServerPlayer remover) {
-        return remover.isShiftKeyDown()
-                && GameUtils.isPlayerAliveAndSurvival(remover)
-                && isEligibleRemover(gameWorld, remover)
-                && !remover.getMainHandItem().is(ModItems.CONVICT_ESCORT_LEASH);
-    }
-
     /** 解除者阵营是否合格：杀手阵营 / 杀手方中立 / 警长阵营。 */
     private static boolean isEligibleRemover(SREGameWorldComponent gameWorld, ServerPlayer remover) {
         return gameWorld.isKillerTeam(remover) || gameWorld.isNeutralForKiller(remover)
                 || gameWorld.isVigilanteTeam(remover);
-    }
-
-    /** 该玩家是否为「仍被铐住的重刑犯」。 */
-    private static boolean isCuffedConvict(SREGameWorldComponent gameWorld, ServerPlayer player) {
-        if (!gameWorld.isRole(player, ModRoles.CONVICT)) {
-            return false;
-        }
-        ConvictPlayerComponent comp = ConvictPlayerComponent.KEY.get(player);
-        return !comp.handcuffRemoved && ConvictHandcuffsItem.hasConvictHandCuff(player);
-    }
-
-    /** 取准星下 3 格内、仍被铐住的重刑犯（无则 null）。 */
-    private static ServerPlayer findCuffedConvictInCrosshair(ServerPlayer remover,
-            SREGameWorldComponent gameWorld) {
-        Vec3 eye = remover.getEyePosition();
-        Vec3 look = remover.getViewVector(1.0F);
-        Vec3 end = eye.add(look.scale(UNLOCK_REACH));
-        AABB box = remover.getBoundingBox().expandTowards(look.scale(UNLOCK_REACH)).inflate(1.0D);
-        EntityHitResult hit = ProjectileUtil.getEntityHitResult(remover, eye, end, box,
-                entity -> entity instanceof ServerPlayer sp && sp != remover && isCuffedConvict(gameWorld, sp),
-                UNLOCK_REACH * UNLOCK_REACH);
-        return hit != null && hit.getEntity() instanceof ServerPlayer sp ? sp : null;
-    }
-
-    /** 引导进度提示：动作栏倒计时 + 目标身上的粒子。 */
-    private static void showChannelProgress(ServerLevel level, ServerPlayer remover, ServerPlayer target,
-            int progress) {
-        double leftSeconds = Math.max(0, UNLOCK_CHANNEL_TICKS - progress) / 20.0D;
-        remover.displayClientMessage(Component
-                .translatable("message.noellesroles.convict.unlock_progress",
-                        String.format(java.util.Locale.ROOT, "%.1f", leftSeconds))
-                .withStyle(ChatFormatting.YELLOW), true);
-        Vec3 pos = target.position();
-        level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y + 1.0D, pos.z, 3, 0.15D, 0.15D, 0.15D, 0.02D);
     }
 }
