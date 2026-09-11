@@ -162,6 +162,12 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket::handle);
 
+        // 重刑犯「做出你的抉择」：开启 GUI（S2C）与提交抉择（C2S）
+        PayloadTypeRegistry.playS2C().register(ConvictChoiceOpenS2CPacket.ID, ConvictChoiceOpenS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ConvictChoiceSelectC2SPacket.ID, ConvictChoiceSelectC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ConvictChoiceSelectC2SPacket.ID,
+                ConvictChoiceSelectC2SPacket::handle);
+
         PayloadTypeRegistry.playS2C().register(DoomedSinnerFateRevealS2CPacket.ID, DoomedSinnerFateRevealS2CPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);

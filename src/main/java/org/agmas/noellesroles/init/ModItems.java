@@ -233,6 +233,18 @@ public class ModItems {
     public static final Item TOY_HANDCUFFS = register(
             new HandCuffsItem((new Item.Properties()).stacksTo(1), 1), "toy_handcuffs",
             TOOLS_GROUP);
+    // 重刑犯手铐 - 纹理/逻辑同普通手铐，但无限耐久、无法挣脱（开局自动铐在重刑犯身上）
+    public static final Item CONVICT_HANDCUFFS = register(
+            new ConvictHandcuffsItem((new Item.Properties()).stacksTo(1)), "convict_handcuffs",
+            TOOLS_GROUP);
+    // 重刑犯押运工具 - 不会断的拴绳，可套住重刑犯运输（无限耐久）
+    public static final Item CONVICT_ESCORT_LEASH = register(
+            new ConvictEscortLeashItem((new Item.Properties()).stacksTo(1)), "convict_escort_leash",
+            TOOLS_GROUP);
+    // 狱警钥匙 - 材质模型同铁门钥匙，无限耐久，可打开房间门与关押门
+    public static final Item JAILER_KEY = register(
+            new JailerKeyItem((new Item.Properties()).stacksTo(1)), "jailer_key",
+            TOOLS_GROUP);
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
             WEAPONS_GROUP);

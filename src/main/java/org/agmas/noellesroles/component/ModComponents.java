@@ -638,6 +638,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
                           "shuangqianghuigeichudaan_shuangqiangke"),
                   org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent.class);
 
+  // 重刑犯组件 - 中立独立胜利，三分支玩法状态（抉择/手铐解除/透视/押运拴绳）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent> CONVICT = ComponentRegistry
+          .getOrCreate(
+                  ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "convict"),
+                  org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.class);
+
   // 幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent> HUANYING = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY;
 
@@ -1407,6 +1413,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, DUAL_GUNNER)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent::new);
+
+    // 注册重刑犯组件 - 中立独立胜利，三分支玩法状态载体
+    registry.beginRegistration(Player.class, CONVICT)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent::new);
 
     // 注册幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
     registry.beginRegistration(Player.class, HUANYING)

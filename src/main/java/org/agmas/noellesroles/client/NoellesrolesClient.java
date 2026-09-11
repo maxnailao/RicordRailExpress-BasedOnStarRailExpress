@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.doctor4t.ratatouille.util.TextUtils;
 import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.render.block_entity.SmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -278,6 +279,11 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
                 HunterCageBlockEntityRenderer::new);
+        // 关押门：复用核心 SmallDoorBlockEntityRenderer + 钢门贴图，使其外观/开关动画同铁门
+        BlockEntityRenderers.register(
+                ModBlocks.DETENTION_DOOR_ENTITY,
+                ctx -> new SmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/anthracite_steel_door.png"),
+                        ctx));
 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
 
@@ -516,6 +522,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
+
+        // 重刑犯「做出你的抉择」：服务端通知开启抉择 GUI
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.ConvictChoiceOpenS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> context.client()
+                            .setScreen(new org.agmas.noellesroles.client.screen.ConvictChoiceScreen(payload)));
+                });
 
         // 木乃伊技能1：服务端通知打开背包，在背包中点头像选择诅咒目标（同操纵师选人交互）
         ClientPlayNetworking.registerGlobalReceiver(

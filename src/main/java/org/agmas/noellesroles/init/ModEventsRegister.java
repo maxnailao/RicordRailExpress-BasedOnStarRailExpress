@@ -1316,6 +1316,8 @@ public class ModEventsRegister {
         CuckooEggHandler.register();
         // 注册保安技能
         GuardPlayerHandler.register();
+        // 注册狱警防爆盾技能（阶段 6：背包有防爆盾牌时按技能键装 / 卸副手，同保安）
+        org.agmas.noellesroles.game.roles.vigilante.jailer.JailerPlayerHandler.register();
         // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
         org.agmas.noellesroles.content.item.GroselleJourneyManager.register();
         VoodooDeathHandler.registerEvents();
@@ -1584,6 +1586,10 @@ public class ModEventsRegister {
         ConspiratorKilledPlayer.registerEvents();
         // 注册黑警胜利条件
         CorruptCopWinChecker.registerEvent();
+        // 注册重刑犯开局流程（生成方块传送 + 戴手铐 + 抉择 GUI + 30s 计时）
+        org.agmas.noellesroles.game.roles.neutral.convict.ConvictChoiceManager.register();
+        // 注册重刑犯「毁灭一切」独立胜利检测（击杀所有人独赢）
+        org.agmas.noellesroles.game.roles.neutral.convict.ConvictWinChecker.registerEvent();
         // 注册疫使胜利检测和加速检测
         InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();

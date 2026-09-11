@@ -55,6 +55,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.role.BounsRoles;
@@ -341,6 +342,12 @@ public class RoleShopHandler {
                 return success;
             }
         });
+    }
+
+    /** 重刑犯商店门禁（阶段 6）：仅「毁灭一切」分支的重刑犯可见 / 可购买其个人商店条目。 */
+    private static boolean isDestroyConvict(@NotNull Player player) {
+        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
+        return comp != null && comp.choice == ConvictPlayerComponent.Choice.DESTROY;
     }
 
     public static void shopRegister() {
@@ -859,6 +866,79 @@ public class RoleShopHandler {
             var GUARD_SHOP = new java.util.ArrayList<ShopEntry>();
             GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
+        }
+
+        // 狱警商店：左轮手枪（限购一次）/ 警棍 / 狱警钥匙 / 重刑犯押运工具 / 防爆盾牌
+        {
+            var JAILER_SHOP = new ArrayList<ShopEntry>();
+            // 左轮手枪 - 100 金币（限购一次，用 ConvictPlayerComponent.hasBoughtRevolver 记录；
+            // CCA 组件挂载于所有玩家，自然生成的狱警同样适用，每局 init/clear 重置）
+            JAILER_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
+                    return super.canBuy(player) && (comp == null || !comp.hasBoughtRevolver);
+                }
+
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    boolean inserted = RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
+                    if (inserted) {
+                        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (comp != null) {
+                            comp.hasBoughtRevolver = true;
+                            comp.sync();
+                        }
+                    }
+                    return inserted;
+                }
+            });
+            // 警棍 - 100 金币
+            JAILER_SHOP.add(new ShopEntry(ModItems.BATON.getDefaultInstance(), 100, ShopEntry.Type.WEAPON));
+            // 狱警钥匙 - 25 金币（可开房间门与关押门，无限耐久）
+            JAILER_SHOP.add(new ShopEntry(ModItems.JAILER_KEY.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+            // 重刑犯押运工具 - 25 金币（不断拴绳，牵引重刑犯）
+            JAILER_SHOP.add(new ShopEntry(ModItems.CONVICT_ESCORT_LEASH.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+            // 防爆盾牌 - 150 金币（同保安，配合狱警防爆盾技能装 / 卸副手）
+            JAILER_SHOP.add(new ShopEntry(ModItems.RIOT_SHIELD.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.JAILER.getIdentifier(), JAILER_SHOP);
+        }
+
+        // 重刑犯商店：仅「毁灭一切」分支可见（canDisplay 门禁）；
+        // 刀（无限耐久）/ 一次性手枪 / 撬锁器 / 撬棍
+        {
+            var CONVICT_SHOP = new ArrayList<ShopEntry>();
+            // 刀 - 100 金币（无限耐久）
+            ItemStack convictKnife = TMMItems.KNIFE.getDefaultInstance();
+            convictKnife.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            CONVICT_SHOP.add(new ShopEntry(convictKnife, 100, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return isDestroyConvict(player);
+                }
+            });
+            // 一次性手枪 - 200 金币
+            CONVICT_SHOP.add(new ShopEntry(ModItems.ONCE_REVOLVER.getDefaultInstance(), 200, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return isDestroyConvict(player);
+                }
+            });
+            // 撬锁器 - 50 金币
+            CONVICT_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return isDestroyConvict(player);
+                }
+            });
+            // 撬棍 - 25 金币
+            CONVICT_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 25, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return isDestroyConvict(player);
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.CONVICT.getIdentifier(), CONVICT_SHOP);
         }
 
         // 小偷商店（注释部分，保留）

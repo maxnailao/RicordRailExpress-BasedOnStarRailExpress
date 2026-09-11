@@ -256,6 +256,24 @@ public class InstinctRenderer {
                 return -1;
             return ModRoles.DUAL_GUNNER.color();
         });
+        // 重刑犯·毁灭一切：解铐后解锁全局透视，常驻显示所有存活玩家（颜色同重刑犯=黄铜色），不依赖本能开关
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.CONVICT))
+                return -1;
+            var convict = ModComponents.CONVICT.maybeGet(self).orElse(null);
+            if (convict == null || !convict.espUnlocked)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            return ModRoles.CONVICT.color();
+        });
         // 鬼眼·杨间 被动：扫描期间，周身范围内的所有玩家显示白色直觉轮廓
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player targetPlayer) || Minecraft.getInstance().player == null

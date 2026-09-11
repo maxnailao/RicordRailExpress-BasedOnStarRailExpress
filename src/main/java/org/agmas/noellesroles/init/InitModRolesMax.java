@@ -358,6 +358,12 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
         // 绑定生成：坠木刷新时皮革嘎的也刷新
         RoleAssignmentManager.addOccupationRole(ModRoles.ZHUIMU, ModRoles.PIGE);
+
+        // 重刑犯与狱警：默认 0，仅在监狱图由 autoRoleMaxCount 经 getRoundMaxCount 动态启用为 1
+        Harpymodloader.setRoleMaximum(ModRoles.CONVICT_ID, 0);
+        Harpymodloader.setRoleMaximum(ModRoles.JAILER_ID, 0);
+        // 绑定生成：重刑犯刷新时狱警一同刷新
+        RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
     }
 
     public static void registerDynamic() {

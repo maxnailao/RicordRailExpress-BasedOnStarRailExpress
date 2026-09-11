@@ -224,6 +224,11 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> desertRolesMaps = new ArrayList<>(List.of("desertmap"));
 
     /**
+     * Areas that will spawn prison roles (Convict, Jailer). These roles ONLY spawn on these maps.
+     */
+    public ArrayList<String> prisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
+
+    /**
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")
@@ -862,6 +867,16 @@ public class NoellesRolesConfig implements ConfigData {
      * 扮演者 - 小脑惩罚（误杀平民）时扣除的 san 值（0~1，不会死亡，改为掉枪+扣san）
      */
     public float banyanzheXiaoNaoSanLoss = 0.2f;
+
+    // ==================== 重刑犯 (convict) / 狱警 (jailer) 配置 ====================
+    /** 重刑犯 - 每完成一个任务获得的金币数 */
+    public int convictTaskReward = 50;
+    /** 重刑犯 - 被动收入每次发放的金币数 */
+    public int convictPassiveIncomeAmount = 5;
+    /** 重刑犯 - 被动收入发放间隔（秒） */
+    public int convictPassiveIncomeIntervalSeconds = 30;
+    /** 重刑犯 - 开局「做出你的抉择」GUI 的选择时限（秒），超时默认「毁灭一切」 */
+    public int convictChoiceSeconds = 30;
 
     public static NoellesRolesConfig instance() {
         return HANDLER.instance();

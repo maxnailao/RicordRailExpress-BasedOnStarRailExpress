@@ -397,6 +397,8 @@ public class ModRoles {
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
     public static final ResourceLocation RAVEN_ID = Noellesroles.id("raven");
     public static final ResourceLocation DUAL_GUNNER_ID = Noellesroles.id("shuangqianghuigeichudaan_shuangqiangke");
+    public static final ResourceLocation CONVICT_ID = Noellesroles.id("convict");
+    public static final ResourceLocation JAILER_ID = Noellesroles.id("jailer");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation DOOMED_SINNER_ID = Noellesroles.id("doomed_sinner");
@@ -2779,6 +2781,117 @@ public class ModRoles {
             true)).setComponentKey(DualGunnerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(false)
             .setDefaultMax(1).setDefaultEnableNeededPlayerCount(18);
+
+    /**
+     * 重刑犯（convict）—— 中立独立胜利角色，仅在监狱图刷新，与狱警绑定生成。
+     * - 中立阵营 (setNeutrals(true))、无限体力、无 san (FAKE 心情)、每局最多 1
+     * - 不可被失忆患者/赌徒等转变 (setCanBeRandomedByOtherRoles(false))
+     * - 硬地图限制：重写 getRoundMaxCount，非 prisonRolesMaps 配置的监狱图一律返回 0
+     * - 做任务得金币 (onFinishQuest)；被动收入由 RolePassive 周期发放（见 ModRolesInitialEventRegister）
+     * - 开局出生在生成方块上、被戴重刑犯手铐、弹出「做出你的抉择」GUI（阶段 4）
+     * - 三分支玩法（改过自新/毁灭一切/加入组织）见阶段 5，状态存于 ConvictPlayerComponent
+     */
+    public static SRERole CONVICT = TMMRoles.registerRole(new NormalRole(
+            CONVICT_ID,
+            new Color(200, 150, 50).getRGB(), // 同双枪客 - 黄铜色
+            false, // isInnocent = false（中立）
+            false, // canUseKiller = false
+            SRERole.MoodType.FAKE, // 无 san / 不会真正疯狂
+            Integer.MAX_VALUE, // 无限体力
+            true) { // 计分板隐藏
+        @Override
+        public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
+                SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
+            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps.contains(mapName)) {
+                return 0;
+            }
+            return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
+        }
+
+        @Override
+        public void onFinishQuest(Player player, String quest) {
+            // 做任务获得金币（同扮演者的任务奖励模式）
+            if (!(player instanceof ServerPlayer sp)) {
+                return;
+            }
+            int reward = org.agmas.noellesroles.config.NoellesRolesConfig.instance().convictTaskReward;
+            if (reward <= 0) {
+                return;
+            }
+            io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(sp).addToBalance(reward);
+        }
+
+        @Override
+        public java.util.function.Predicate<net.minecraft.world.item.Item> cantPickupItem(Player player) {
+            return item -> {
+                // 仅左轮手枪 / 巡警手枪受门禁；其余物品不受限
+                boolean isGun = item == io.wifi.starrailexpress.index.TMMItems.REVOLVER
+                        || item == org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER;
+                if (!isGun) {
+                    return false;
+                }
+                var comp = org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY
+                        .maybeGet(player).orElse(null);
+                // 改过自新 + 已解铐 → 放行捡枪（随后 onPickUpItem 转职狱警）；其余分支一律禁捡
+                if (comp != null
+                        && comp.choice == org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.Choice.REFORM
+                        && comp.handcuffRemoved) {
+                    return false;
+                }
+                return true;
+            };
+        }
+
+        @Override
+        public InteractionResult onPickUpItem(Player player, ItemStack item) {
+            // 改过自新 + 已解铐的重刑犯捡起左轮/巡警手枪 → 转职为狱警（随后核心 canPickUpRevolver 重取角色放行）
+            boolean isGun = item.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER)
+                    || item.is(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER);
+            if (isGun) {
+                var comp = org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY
+                        .maybeGet(player).orElse(null);
+                if (comp != null
+                        && comp.choice == org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.Choice.REFORM
+                        && comp.handcuffRemoved) {
+                    org.agmas.noellesroles.utils.RoleUtils.changeRole(player, ModRoles.JAILER);
+                }
+            }
+            return super.onPickUpItem(player, item);
+        }
+    }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY)
+            .setCanSeeCoin(true).setNeutrals(true)
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(false)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1);
+
+    /**
+     * 狱警（jailer）—— 警长阵营角色，仅在监狱图刷新，与重刑犯绑定生成。
+     * - 警长阵营 (isInnocent=true + setVigilanteTeam(true))、可捡左轮 (setCanPickUpRevolver(true))
+     * - 每局最多 1；保持默认可被随机（失忆患者可变出 / 赌徒可刷出）
+     * - 硬地图限制：重写 getRoundMaxCount，非监狱图一律返回 0
+     * - 商店与防爆盾技能见阶段 6
+     */
+    public static SRERole JAILER = TMMRoles.registerRole(new NormalRole(
+            JAILER_ID,
+            new Color(170, 170, 170).getRGB(), // 同警卫 - 银灰色
+            true, // isInnocent = true（警长阵营）
+            false, // canUseKiller = false
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false) { // 计分板显示
+        @Override
+        public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
+                SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
+            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps.contains(mapName)) {
+                return 0;
+            }
+            return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
+        }
+    }).setVigilanteTeam(true).setCanPickUpRevolver(true)
+            .setCanSeeCoin(true).setCanSeeTime(true)
+            .setDefaultMax(1);
 
     public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
             REASONER_ID,

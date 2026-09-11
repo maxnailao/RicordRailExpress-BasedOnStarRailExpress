@@ -18,6 +18,9 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
+import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
+import io.wifi.starrailexpress.index.TMMItems;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block.*;
 import org.agmas.noellesroles.content.block_entity.*;
@@ -81,6 +84,25 @@ public interface ModBlocks {
             "supply_crate",
             BlockEntityType.Builder.of(SupplyCrateBlockEntity::new,
                     ModBlocks.SUPPLY_CRATE_BLOCK));
+
+    // ===== 重刑犯 & 狱警（阶段 2）：重刑犯生成方块 + 关押门，注册到 SRE 功能方块（DECORATION_GROUP） =====
+    // 重刑犯生成方块：原版标靶材质（方块模型 parent 指向 minecraft:block/target）；开局用于定位并传送重刑犯。
+    Block CONVICT_SPAWN_BLOCK = registerBlockMultiTab("convict_spawn_block",
+            new ConvictSpawnBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(-1.0F, 3600000.0F)),
+            TMMItems.DECORATION_GROUP, BLOCK_CREATIVE_GROUP);
+
+    // 关押门：仅狱警钥匙/撬棍可开；被撬棍强行破坏时触发永久警报（见 DetentionDoorBlockEntity#blast）。
+    Block DETENTION_DOOR = registerBlockMultiTab("detention_door",
+            new DetentionDoorBlock(() -> ModBlocks.DETENTION_DOOR_ENTITY,
+                    BlockBehaviour.Properties
+                            .ofFullCopy(io.wifi.starrailexpress.index.TMMBlocks.SMALL_GLASS_DOOR)
+                            .sound(SoundType.COPPER)),
+            TMMItems.DECORATION_GROUP, BLOCK_CREATIVE_GROUP);
+    BlockEntityType<SmallDoorBlockEntity> DETENTION_DOOR_ENTITY = blockEntityRegistrar.create("detention_door",
+            BlockEntityType.Builder.<SmallDoorBlockEntity>of(
+                    (pos, state) -> new DetentionDoorBlockEntity(ModBlocks.DETENTION_DOOR_ENTITY, pos, state),
+                    ModBlocks.DETENTION_DOOR));
 
     // 反人员地雷（由地雷物品长按右键布设，不注册独立方块物品）
     Block LANDMINE_BLOCK = Registry.register(BuiltInRegistries.BLOCK, Noellesroles.id("landmine"),
