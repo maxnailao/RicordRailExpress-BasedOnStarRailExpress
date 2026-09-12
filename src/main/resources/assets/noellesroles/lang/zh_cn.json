@@ -1825,7 +1825,7 @@
   "block.noellesroles.convict_spawn_block": "重刑犯生成方块",
   "block.noellesroles.detention_door": "关押门",
   "message.noellesroles.detention_door.alarmed": "[警告]关押重刑犯的门被强行破坏",
-  "tip.door.requires_jailer_key": "这扇关押门需要狱警钥匙才能打开",
+  "tip.door.requires_jailer_key": "这扇关押门需要狱警钥匙或者撬棍才能打开",
   "block.noellesroles.incinerator": "焚化炉",
   "block.noellesroles.moving_platform": "移动方块",
   "entity.noellesroles.rolling_stone": "滚石",

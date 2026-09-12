@@ -2855,6 +2855,15 @@ public class ModRoles {
             }
             return super.onPickUpItem(player, item);
         }
+
+        @Override
+        public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+            // 重刑犯被好人击杀 → 触发小脑惩罚（除非已选择「毁灭一切」分支）
+            if (victim instanceof ServerPlayer serverVictim && killer instanceof ServerPlayer serverKiller) {
+                org.agmas.noellesroles.game.roles.neutral.convict.ConvictChoiceManager
+                        .onConvictKilledByInnocent(serverVictim, serverKiller, deathReason);
+            }
+        }
     }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent.KEY)
             .setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(false)

@@ -67,6 +67,8 @@ public class ConvictPlayerComponent implements RoleComponent, ServerTickingCompo
     public boolean hasBoughtBaton = false;
     /** 被哪个狱警用押运工具拴住（null 表示未被拴住） */
     public UUID leashedBy = null;
+    /** 被谁解除手铐（用于「加入组织」分支转职为解救者的身份；null 表示尚未解铐）。仅服务端使用，不同步。 */
+    public UUID uncuffedBy = null;
 
     /** 抉择 GUI 是否已开启 */
     public boolean choiceGuiOpened = false;
@@ -108,6 +110,7 @@ public class ConvictPlayerComponent implements RoleComponent, ServerTickingCompo
         hasBoughtRevolver = false;
         hasBoughtBaton = false;
         leashedBy = null;
+        uncuffedBy = null;
         choiceGuiOpened = false;
         choiceTimeLeftTicks = 0;
         passiveIncomeTicksLeft = 0;

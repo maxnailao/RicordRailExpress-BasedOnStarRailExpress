@@ -5,12 +5,14 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
+import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -30,18 +32,17 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
- * 重刑犯开局流程管理器。
+ * 重刑犯流程管理器。
  *
  * <p>游戏正式开始（{@link OnGameTrueStarted}）时，对每名重刑犯：</p>
  * <ol>
  *   <li>扫描游戏区域定位 {@link ModBlocks#CONVICT_SPAWN_BLOCK 重刑犯生成方块}，将其传送到方块上方；</li>
  *   <li>用 {@link HandCuffsItem#putOnHandCuff 静态佩戴 API} 戴上
- *       {@link ModItems#CONVICT_HANDCUFFS 重刑犯手铐}（无限耐久、无法挣脱）；</li>
- *   <li>发送 {@link ConvictChoiceOpenS2CPacket} 开启「做出你的抉择」GUI，并在
- *       {@link ConvictPlayerComponent} 上启动倒计时（超时默认「毁灭一切」，见组件 serverTick）。</li>
+ *       {@link ModItems#CONVICT_HANDCUFFS 重刑犯手铐}（无限耐久、无法挣脱）。</li>
  * </ol>
  *
- * <p>抉择结果仅记录分支；三分支的具体玩法在解除手铐时触发（见 {@link #applyBranch}）。</p>
+ * <p>路径选择（「做出你的抉择」GUI）延后到被合格阵营成员摘下手铐时开启（见
+ * {@link #tryUnlockByInteraction}），并在抉择确定后触发对应分支（见 {@link #applyBranch}）。</p>
  */
 public class ConvictChoiceManager {
 
@@ -76,7 +77,7 @@ public class ConvictChoiceManager {
         }
     }
 
-    /** 传送 + 戴手铐 + 开启抉择 GUI + 启动计时。 */
+    /** 传送 + 戴手铐。路径选择（抉择 GUI）延后到被解除手铐时再开启（见 {@link #tryUnlockByInteraction}）。 */
     private static void setupConvict(ServerPlayer convict, BlockPos spawnPos) {
         if (spawnPos != null) {
             convict.teleportTo(spawnPos.getX() + 0.5, spawnPos.getY() + 1, spawnPos.getZ() + 0.5);
@@ -89,14 +90,11 @@ public class ConvictChoiceManager {
         }
 
         ConvictPlayerComponent comp = ConvictPlayerComponent.KEY.get(convict);
-        int seconds = Math.max(1, NoellesRolesConfig.instance().convictChoiceSeconds);
         comp.choice = ConvictPlayerComponent.Choice.NONE;
         comp.handcuffRemoved = false;
-        comp.choiceGuiOpened = true;
-        comp.choiceTimeLeftTicks = seconds * 20;
+        comp.choiceGuiOpened = false;
+        comp.choiceTimeLeftTicks = 0;
         comp.sync();
-
-        ServerPlayNetworking.send(convict, new ConvictChoiceOpenS2CPacket(seconds));
     }
 
     /** 扫描游戏区域，返回第一个重刑犯生成方块的位置（找不到返回 null）。 */
@@ -129,12 +127,13 @@ public class ConvictChoiceManager {
         applyChoice(player, choiceFromIndex(choiceIndex));
     }
 
-    /** 应用抉择：记录分支、结束计时、标记 GUI 关闭并同步。分支玩法于解除手铐时触发。 */
+    /** 应用抉择：记录分支、结束计时、触发对应分支玩法并同步。 */
     public static void applyChoice(ServerPlayer player, ConvictPlayerComponent.Choice choice) {
         ConvictPlayerComponent comp = ConvictPlayerComponent.KEY.get(player);
         comp.choice = choice;
         comp.choiceGuiOpened = false;
         comp.choiceTimeLeftTicks = 0;
+        applyBranch(player, comp, choice);
         comp.sync();
     }
 
@@ -149,7 +148,7 @@ public class ConvictChoiceManager {
 
     /**
      * 解除手铐：杀手阵营 / 杀手方中立 / 警长阵营成员对被铐重刑犯解铐 →
-     * 手铐消失（不入包）+ 置 {@code handcuffRemoved}，并按抉择触发对应分支。
+     * 手铐消失（不入包）+ 置 {@code handcuffRemoved}，并开启「做出你的抉择」GUI 进行路径选择。
      *
      * @return 成功解除返回 {@link InteractionResult#SUCCESS}，否则 {@link InteractionResult#PASS}
      */
@@ -171,21 +170,28 @@ public class ConvictChoiceManager {
         if (!isEligibleRemover(gameWorld, remover)) {
             return InteractionResult.PASS;
         }
-        boolean killerSide = gameWorld.isKillerTeam(remover) || gameWorld.isNeutralForKiller(remover);
-
         // 解除手铐（消失、不入包）
         ConvictHandcuffsItem.removeConvictHandcuff(convict);
         comp.handcuffRemoved = true;
+        comp.uncuffedBy = remover.getUUID();
+
+        // 被摘下手铐后再进行路径选择：开启抉择 GUI + 启动倒计时（超时默认「毁灭一切」）
+        int seconds = Math.max(1, NoellesRolesConfig.instance().convictChoiceSeconds);
+        comp.choice = ConvictPlayerComponent.Choice.NONE;
+        comp.choiceGuiOpened = true;
+        comp.choiceTimeLeftTicks = seconds * 20;
         comp.sync();
 
-        applyBranch(convict, remover, comp, killerSide);
+        ServerPlayNetworking.send(convict, new ConvictChoiceOpenS2CPacket(seconds));
         return InteractionResult.SUCCESS;
     }
 
-    /** 按当前抉择触发分支效果（解铐时调用）。分支的捡枪门禁见 {@code ModRoles.CONVICT}。 */
-    private static void applyBranch(ServerPlayer convict, ServerPlayer remover, ConvictPlayerComponent comp,
-            boolean removerKillerSide) {
-        switch (comp.choice) {
+    /**
+     * 按抉择触发分支效果（在被解铐后的路径选择确定时调用）。分支的捡枪门禁见 {@code ModRoles.CONVICT}。
+     */
+    private static void applyBranch(ServerPlayer convict, ConvictPlayerComponent comp,
+            ConvictPlayerComponent.Choice choice) {
+        switch (choice) {
             case REFORM ->
                 // 改过自新：解铐后可捡左轮/巡警手枪转职狱警（见 ModRoles CONVICT.onPickUpItem）
                 convict.displayClientMessage(Component
@@ -194,16 +200,21 @@ public class ConvictChoiceManager {
             case DESTROY -> {
                 // 毁灭一切：解锁全局透视（颜色同双枪客）；个人商店按 choice 门禁开启
                 comp.espUnlocked = true;
-                comp.sync();
                 convict.displayClientMessage(Component
                         .translatable("message.noellesroles.convict.destroy_unlocked").withStyle(ChatFormatting.RED),
                         true);
             }
             case JOIN -> {
-                // 加入组织：被杀手/杀手方中立解铐 → 变为解铐者职业；被警长阵营解铐 → 变为普通杀手
-                SRERole newRole = removerKillerSide
-                        ? SREGameWorldComponent.KEY.get(remover.level()).getRole(remover)
-                        : TMMRoles.KILLER;
+                // 加入组织：被杀手/杀手方中立解铐 → 变为解救者（解铐者）职业；被警长阵营解铐或解铐者已离线 → 变为普通杀手
+                ServerPlayer remover = null;
+                if (comp.uncuffedBy != null
+                        && convict.level().getPlayerByUUID(comp.uncuffedBy) instanceof ServerPlayer sp) {
+                    remover = sp;
+                }
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(convict.level());
+                boolean killerSide = remover != null
+                        && (gameWorld.isKillerTeam(remover) || gameWorld.isNeutralForKiller(remover));
+                SRERole newRole = killerSide ? gameWorld.getRole(remover) : TMMRoles.KILLER;
                 if (newRole == null) {
                     newRole = TMMRoles.KILLER;
                 }
@@ -213,10 +224,30 @@ public class ConvictChoiceManager {
                         true);
             }
             default -> {
-                // NONE：未抉择即被解铐，仅解除手铐，无分支效果
-                // （若之后超时默认为毁灭一切，组件 serverTick 会补解锁透视）
+                // NONE：理论不可达（applyChoice 只传入非 NONE 抉择），保留防御分支
             }
         }
+    }
+
+    /**
+     * 重刑犯被好人（平民/警长阵营）击杀时触发小脑惩罚，除非已选择「毁灭一切」分支。
+     * 由 {@code ModRoles.CONVICT} 的 {@code onDeath} 覆盖调用；复用「误杀好人」的
+     * {@link OnTeammateKilledTeammate} 处理路径。
+     */
+    public static void onConvictKilledByInnocent(ServerPlayer victim, ServerPlayer killer,
+            ResourceLocation deathReason) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+        SRERole killerRole = gameWorld.getRole(killer);
+        // 仅好人击杀触发：杀手/中立击杀重刑犯不算误杀，不惩罚
+        if (killerRole == null || !killerRole.isInnocent()) {
+            return;
+        }
+        // 毁灭一切分支是明确威胁，击杀不触发惩罚
+        ConvictPlayerComponent comp = ConvictPlayerComponent.KEY.maybeGet(victim).orElse(null);
+        if (comp != null && comp.choice == ConvictPlayerComponent.Choice.DESTROY) {
+            return;
+        }
+        OnTeammateKilledTeammate.EVENT.invoker().playerKilled(victim, killer, true, deathReason);
     }
 
     /** 解除者阵营是否合格：杀手阵营 / 杀手方中立 / 警长阵营。 */
