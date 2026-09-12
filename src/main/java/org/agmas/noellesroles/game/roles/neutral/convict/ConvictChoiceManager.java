@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -49,6 +50,8 @@ public class ConvictChoiceManager {
     /** 注册开局钩子与解铐交互。由 {@code ModEventsRegister.registerEvents()} 调用。 */
     public static void register() {
         OnGameTrueStarted.EVENT.register(ConvictChoiceManager::onGameTrueStarted);
+        // 每局结束时重置狱警商店限购标记（左轮/警棍）
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> resetShopPurchaseFlags(serverLevel));
         // 解铐：合格阵营成员对被铐重刑犯「蹲下 + 右键」→ 立即解除。
         // 原版在「蹲下且主手 / 副手持有任意物品」时不会发出实体交互包，
         // 因此解除者需要先切到空手槽再蹲下右键。
@@ -61,6 +64,7 @@ public class ConvictChoiceManager {
     }
 
     private static void onGameTrueStarted(ServerLevel serverLevel) {
+        resetShopPurchaseFlags(serverLevel);
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
         BlockPos spawnPos = null;
         boolean scanned = false;
@@ -95,6 +99,18 @@ public class ConvictChoiceManager {
         comp.choiceGuiOpened = false;
         comp.choiceTimeLeftTicks = 0;
         comp.sync();
+    }
+
+    /** 每局开始/结束时重置狱警商店的限购标记（左轮/警棍）；组件按玩家挂载，多个狱警各自独立。 */
+    private static void resetShopPurchaseFlags(ServerLevel serverLevel) {
+        for (ServerPlayer p : serverLevel.players()) {
+            ConvictPlayerComponent comp = ConvictPlayerComponent.KEY.maybeGet(p).orElse(null);
+            if (comp != null) {
+                comp.hasBoughtRevolver = false;
+                comp.hasBoughtBaton = false;
+                comp.sync();
+            }
+        }
     }
 
     /** 扫描游戏区域，返回第一个重刑犯生成方块的位置（找不到返回 null）。 */

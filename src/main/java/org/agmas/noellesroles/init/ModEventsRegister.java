@@ -79,6 +79,7 @@ import org.agmas.noellesroles.content.entity.HallucinationAreaManager;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.ServerSmokeAreaManager;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
+import org.agmas.noellesroles.content.item.ConvictHandcuffsItem;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.content.item.BatonHandler;
@@ -1497,6 +1498,9 @@ public class ModEventsRegister {
             }
             if (entity instanceof Player target) {
                 if (HandCuffsItem.hasHandCuff(target)) {
+                    // 重刑犯手铐由 ConvictChoiceManager 专属处理（需蹲下 + 弹抉择 GUI），此处跳过
+                    if (ConvictHandcuffsItem.hasConvictHandCuff(target))
+                        return InteractionResult.PASS;
                     if (!player.getMainHandItem().isEmpty())
                         return InteractionResult.PASS;
                     var fkit = HandCuffsItem.putOffHandCuff(target);
