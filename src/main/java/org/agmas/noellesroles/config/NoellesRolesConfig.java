@@ -229,6 +229,14 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> prisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
 
     /**
+     * Areas that will spawn the witch-prison roles (Pre Witch). These roles ONLY spawn on these maps.
+     * Kept separate from prisonRolesMaps so the witch prison can use a different map than the
+     * jailer / convict prison. Defaults to the same map as prisonRolesMaps; change it to the
+     * witch-prison map id to decouple the two.
+     */
+    public ArrayList<String> witchPrisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
+
+    /**
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")
