@@ -543,6 +543,13 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
+            // 预备魔女角色初始化：开局随机技能（召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯）
+            if (role.identifier().equals(ModRoles.PRE_WITCH.identifier())) {
+                var preWitch = ModComponents.PRE_WITCH.get(player);
+                preWitch.init();
+                preWitch.sync();
+                return;
+            }
             // 雪原猎手初始化
             if (role.identifier().equals(ModRoles.SNOW_HUNTER.identifier())) {
                 var comp = ModComponents.SNOW_HUNTER.get(player);
@@ -2227,6 +2234,25 @@ public class ModRolesInitialEventRegister {
                         .cooldownSeconds(NoellesRolesConfig.HANDLER.instance().imironmanCastIntervalSeconds)
                         .charges(NoellesRolesConfig.HANDLER.instance().imironmanMaxCharges)
                         .showOnHud(true).announceToSelf(true).build());
+
+        // 预备魔女技能：同一个按键，按开局随机到的技能派发
+        // （召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯，冷却由组件回写）
+        RoleSkill.register(ModRoles.PRE_WITCH,
+                RoleSkill.skill(
+                        org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.PRE_WITCH_SKILL_ID,
+                        "skill.noellesroles.prewitch.ability",
+                        context -> org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.use(
+                                context.player(), context.target(), false))
+                        .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
+
+        // 魔女技能：同一按键，继承的技能在魔女形态下的表现（净化者→破法者、明星→禁锢）
+        RoleSkill.register(ModRoles.MAJO,
+                RoleSkill.skill(
+                        org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.MAJO_SKILL_ID,
+                        "skill.noellesroles.majo.ability",
+                        context -> org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.use(
+                                context.player(), context.target(), true))
+                        .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
 
     }
 

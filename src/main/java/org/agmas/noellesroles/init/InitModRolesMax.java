@@ -364,6 +364,11 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.JAILER_ID, 0);
         // 绑定生成：重刑犯刷新时狱警一同刷新
         RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
+
+        // 预备魔女与魔女：默认 0，仅监狱图由 autoRoleMaxCount 经 getRoundMaxCount 动态启用为 1
+        // 魔女的 getRoundMaxCount 恒为 0（只能由预备魔女转化产生）
+        Harpymodloader.setRoleMaximum(ModRoles.PRE_WITCH_ID, 0);
+        Harpymodloader.setRoleMaximum(ModRoles.MAJO_ID, 0);
     }
 
     public static void registerDynamic() {

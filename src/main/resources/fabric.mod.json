@@ -297,7 +297,8 @@
       "noellesroles:wantong",
       "noellesroles:taopiaozhe",
       "noellesroles:werewolf_killer",
-      "noellesroles:convict"
+      "noellesroles:convict",
+      "noellesroles:pre_witch"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

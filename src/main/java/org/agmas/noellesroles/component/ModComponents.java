@@ -647,6 +647,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent> HUANYING = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY;
 
+  // 预备魔女 / 魔女组件 - 中立转化角色，随机技能、心情归零转化、死亡回溯
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent> PRE_WITCH = org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY;
+
   // 术士组件 - 平民阵营，术语施放技能
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent> SHUSHI =
           org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent.KEY;
@@ -1418,6 +1421,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CONVICT)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent::new);
+
+    // 注册预备魔女 / 魔女组件 - 随机技能、目击扣心情、心情归零转化、死亡回溯
+    registry.beginRegistration(Player.class, PRE_WITCH)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent::new);
 
     // 注册幻灵组件 - 平民阵营，附身机制（旁观视角锁定/冒险宽限/3分钟现身转换）
     registry.beginRegistration(Player.class, HUANYING)

@@ -399,6 +399,9 @@ public class ModRoles {
     public static final ResourceLocation DUAL_GUNNER_ID = Noellesroles.id("shuangqianghuigeichudaan_shuangqiangke");
     public static final ResourceLocation CONVICT_ID = Noellesroles.id("convict");
     public static final ResourceLocation JAILER_ID = Noellesroles.id("jailer");
+    // 预备魔女（特殊中立）/ 魔女（预备魔女转化后的杀手形态）
+    public static final ResourceLocation PRE_WITCH_ID = Noellesroles.id("pre_witch");
+    public static final ResourceLocation MAJO_ID = Noellesroles.id("majo");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation DOOMED_SINNER_ID = Noellesroles.id("doomed_sinner");
@@ -2897,6 +2900,72 @@ public class ModRoles {
     }).setVigilanteTeam(true).setCanPickUpRevolver(true)
             .setCanSeeCoin(true).setCanSeeTime(true)
             .setDefaultMax(1);
+
+    /**
+     * 预备魔女（pre_witch）—— 特殊中立阵营，仅在魔女监牢地图刷新。
+     * <ul>
+     * <li>中立阵营 (setNeutrals(true)) + isInnocent=true：因此天然享有"平民规则"——
+     * 跟随乘客阵营胜利、击杀好人会触发小脑惩罚、可以拾取左轮手枪</li>
+     * <li>真实心情 (MoodType.REAL)：san 值不会自然降低，但目击尸体 / 杀人现场会扣心情值</li>
+     * <li>心情值扣完即转化为杀手阵营的魔女（见 PreWitchPlayerComponent）</li>
+     * <li>开局随机获得一个技能：召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯（低概率）</li>
+     * <li>硬地图限制：重写 getRoundMaxCount，非 prisonRolesMaps 配置的监狱图一律返回 0</li>
+     * <li>每局最多 1；不可被失忆患者 / 赌徒等转变 (setCanBeRandomedByOtherRoles(false))</li>
+     * </ul>
+     */
+    public static SRERole PRE_WITCH = TMMRoles.registerRole(new NormalRole(
+            PRE_WITCH_ID,
+            new Color(135, 206, 235).getRGB(), // 天蓝色
+            true, // isInnocent = true（跟随乘客阵营结算，并享有平民的拾枪 / 小脑规则）
+            false, // canUseKiller = false
+            SRERole.MoodType.REAL, // 真实心情：需要靠理智撑住不变成魔女
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false) { // 计分板显示
+        @Override
+        public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
+                SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
+            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps.contains(mapName)) {
+                return 0;
+            }
+            return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
+        }
+    }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
+            .setNeutrals(true)
+            .setCanSeeCoin(true)
+            .setCanPickUpRevolver(true)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1);
+
+    /**
+     * 魔女（majo）—— 预备魔女心情值归零后转化而成的杀手形态。
+     * <ul>
+     * <li>杀手阵营 (canUseKiller=true)：拥有普通杀手商店、杀手直觉与被动收入</li>
+     * <li>不再显示 san (MoodType.FAKE)，不会掉心情，也不会再次转化</li>
+     * <li>继承预备魔女的随机技能（净化者→破法者、明星→禁锢，其余技能不变）</li>
+     * <li>不会自然刷新：getRoundMaxCount 恒为 0，只由转化产生</li>
+     * </ul>
+     */
+    public static SRERole MAJO = TMMRoles.registerRole(new NormalRole(
+            MAJO_ID,
+            new Color(255, 40, 40).getRGB(), // 亮红色
+            false, // isInnocent = false（杀手阵营）
+            true, // canUseKiller = true（普通杀手商店）
+            SRERole.MoodType.FAKE, // 魔女不再有 san 值
+            Integer.MAX_VALUE, // 无限体力
+            true) { // 计分板隐藏
+        @Override
+        public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
+                SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
+            // 魔女只能由预备魔女转化产生，永远不参与随机刷新
+            return 0;
+        }
+    }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
+            .setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(0)
+            // 与预备魔女互为「相关职业」：职业介绍的「关联内容」里可以互相跳转（仅用于展示，不参与刷新）
+            .addBothRelatedRole(ModRoles.PRE_WITCH);
 
     public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
             REASONER_ID,
