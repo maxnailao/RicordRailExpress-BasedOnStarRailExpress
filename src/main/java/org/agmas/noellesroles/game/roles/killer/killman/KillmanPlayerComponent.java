@@ -210,6 +210,9 @@ public class KillmanPlayerComponent implements RoleComponent {
      * 开枪触雷处理（OnRevolverUsed 事件调用）：
      * 被标记的玩家开枪后，先清除背包内所有左轮手枪，再以死因"手枪炸膛"击杀，
      * 避免死亡后掉落左轮手枪。诱杀者本人免疫（见 isMarked）。
+     *
+     * <p>炸膛属于无来源的环境致死，必须使用强制击杀绕过护盾/免死判定：
+     * 否则持有无敌（监护人技能、起搏器、庇护等）的玩家开枪后仍然存活，诱饵就形同虚设。
      */
     public static void handleTrapShot(ServerPlayer shooter) {
         if (shooter == null)
@@ -225,8 +228,8 @@ public class KillmanPlayerComponent implements RoleComponent {
 
         // 先清除背包内所有左轮手枪，避免死亡后掉落
         SREItemUtils.clearItem(shooter, stack -> stack.is(TMMItems.REVOLVER));
-        // 以死因"手枪炸膛"击杀
-        GameUtils.killPlayer(shooter, true, null, DEATH_REASON_REVOLVER_BURST);
+        // 以死因"手枪炸膛"击杀（强制击杀，保证诱饵一定致死）
+        GameUtils.forceKillPlayer(shooter, true, null, DEATH_REASON_REVOLVER_BURST);
     }
 
     // ==================== NBT 读写 ====================
