@@ -149,14 +149,14 @@ public class InitModRolesMax {
         // 运动员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);
 
-        // 明星每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 1);
+        // 明星：不单独刷新，只能作为经纪人的关联职业出现（每局由 registerDynamic 决定）
+        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 0);
 
         // 退伍军人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.VETERAN_ID, 1);
 
-        // 歌手每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 1);
+        // 歌手：不单独刷新，只能作为经纪人的关联职业出现（每局由 registerDynamic 决定）
+        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 0);
 
         // 经纪人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.JINGJIREN_WOW_ID, 1);
@@ -276,6 +276,9 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
         // 智力障碍患者与监护人绑定生成
         RoleAssignmentManager.addOccupationRole(ModRoles.ZHIZHANG, ModRoles.GUARDIAN);
+        // 经纪人与歌手/明星绑定生成（每局只带其中一名或两名，见 registerDynamic）
+        RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
+        RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
@@ -532,7 +535,40 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
                 Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
             }
+
+            applyManagerArtistBinding(random);
         });
+    }
+
+    /**
+     * 经纪人绑定刷新歌手/明星：经纪人刷新时至少带一名歌手或明星，两者可以同时出现，也可以只出现一个。
+     * 歌手与明星不再单独进入角色池，只能作为经纪人的关联职业展开产生。
+     *
+     * <p>这里是本局的临时分配关系：每局先解除上一局留下的绑定，再按掷骰结果重新绑定。
+     * 职业介绍里展示的关联职业由 addBothRelatedRole 单独维护，不随本局掷骰结果漂移。
+     */
+    private static void applyManagerArtistBinding(Random random) {
+        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 0);
+        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 0);
+
+        boolean managerEnabled = Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.JINGJIREN_WOW_ID, 0) > 0;
+        boolean withSinger = managerEnabled && random.nextBoolean();
+        boolean withStar = managerEnabled && random.nextBoolean();
+        if (managerEnabled && !withSinger && !withStar) {
+            // 掷骰同时落空时保底一名，避免经纪人独自刷新
+            withStar = true;
+        }
+
+        // 先解除上一局留下的绑定，再按本局结果重新绑定
+        ModRoles.JINGJIREN_WOW.removeOccupationRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
+        if (withSinger) {
+            RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
+        }
+        if (withStar) {
+            RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
+        }
+        // 职业介绍中的互相展示始终保留，不受本局绑定结果影响
+        ModRoles.JINGJIREN_WOW.addBothRelatedRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
     }
 
     private static void applySpecialMapRoles(String currentMap, NoellesRolesConfig config) {
