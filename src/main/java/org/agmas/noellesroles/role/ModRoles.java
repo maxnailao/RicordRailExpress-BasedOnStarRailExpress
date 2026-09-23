@@ -3473,7 +3473,9 @@ public class ModRoles {
     }).setCanSeeCoin(true)
             .setComponentKey(ModComponents.ZHIZHANG)
             .setOccupiedRoleCount(2)
-            .setCanBeRandomedByOtherRoles(false);
+            .setCanBeRandomedByOtherRoles(false)
+            // 默认不参与刷新：每局由 InitModRolesMax 按概率决定，刷新时监护人由关联职业展开补齐
+            .setDefaultMax(0);
 
     /**
      * 监护人角色 - 平民阵营
@@ -3496,7 +3498,9 @@ public class ModRoles {
     )).setCanSeeCoin(true)
             .setComponentKey(ModComponents.GUARDIAN)
             .setOccupiedRoleCount(2)
-            .setCanBeRandomedByOtherRoles(false);
+            .setCanBeRandomedByOtherRoles(false)
+            // 默认不参与刷新：只能作为智力障碍患者的关联职业成对出现
+            .setDefaultMax(0);
 
     /**
      * 钓鱼佬角色 - 平民阵营

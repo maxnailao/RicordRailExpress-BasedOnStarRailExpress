@@ -246,6 +246,19 @@ public class NoellesRolesConfig implements ConfigData {
     public int chanceOfEggRoles = 15;
     @ConfigEntry.Category(value = "detail")
     public int minPlayerForEggRoles = 12;
+
+    /**
+     * 智力障碍患者（与监护人成对刷新）刷新概率（%）
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int chanceOfZhizhang = 40;
+
+    /**
+     * 智力障碍患者（与监护人成对刷新）刷新最小玩家数
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int minPlayerForZhizhang = 8;
+
     // ==================== 角色刷新概率配置 ====================
     // 普通概率配置（0-100，百分比）
 

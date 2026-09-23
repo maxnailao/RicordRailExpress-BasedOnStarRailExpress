@@ -514,6 +514,16 @@ public class InitModRolesMax {
             applySpecialMapRoles(currentMap, config);
             applySpecialVigilanteRoles(players_count, config, random, currentMap);
 
+            // 智力障碍患者与监护人：按概率成对刷新。
+            // 监护人恒为 0，只能由智力障碍患者的关联职业展开自动补齐，因此不会出现"只有监护人没有患者"的情况。
+            if (players_count >= config.minPlayerForZhizhang
+                    && random.nextInt(0, 100) < config.chanceOfZhizhang) {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 1);
+            } else {
+                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 0);
+            }
+            Harpymodloader.setRoleMaximum(ModRoles.GUARDIAN_ID, 0);
+
             // 坠木和皮革嘎的：每把概率刷新，不占用中立位
             if (players_count >= 8 && random.nextInt(0, 100) < 5) {
                 Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 1);
