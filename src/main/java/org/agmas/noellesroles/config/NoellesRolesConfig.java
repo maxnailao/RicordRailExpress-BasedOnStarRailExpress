@@ -225,6 +225,7 @@ public class NoellesRolesConfig implements ConfigData {
 
     /**
      * Areas that will spawn prison roles (Convict, Jailer). These roles ONLY spawn on these maps.
+     * An empty list means no map restriction (they may spawn on any map).
      */
     public ArrayList<String> prisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
 
@@ -232,7 +233,7 @@ public class NoellesRolesConfig implements ConfigData {
      * Areas that will spawn the witch-prison roles (Pre Witch). These roles ONLY spawn on these maps.
      * Kept separate from prisonRolesMaps so the witch prison can use a different map than the
      * jailer / convict prison. Defaults to the same map as prisonRolesMaps; change it to the
-     * witch-prison map id to decouple the two.
+     * witch-prison map id to decouple the two. An empty list means no map restriction.
      */
     public ArrayList<String> witchPrisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
 
@@ -898,6 +899,28 @@ public class NoellesRolesConfig implements ConfigData {
     public int convictPassiveIncomeIntervalSeconds = 30;
     /** 重刑犯 - 开局「做出你的抉择」GUI 的选择时限（秒），超时默认「毁灭一切」 */
     public int convictChoiceSeconds = 30;
+
+    /**
+     * 地图列表匹配规则，与 {@link SpawnInfo#map} 的语义保持一致：
+     * 列表为空表示不限制地图；否则忽略首尾空白与大小写，与当前地图名逐一比对。
+     * 狱警 / 重刑犯 / 预备魔女这类"只在特定地图刷新"的职业都走这里，避免手写的名字
+     * 因为大小写或多余空格对不上，导致职业静默地一局都刷不出来。
+     */
+    public static boolean matchesMapList(List<String> mapList, String mapName) {
+        if (mapList == null || mapList.isEmpty()) {
+            return true;
+        }
+        if (mapName == null || mapName.isBlank()) {
+            return false;
+        }
+        String currentMap = mapName.trim();
+        for (String entry : mapList) {
+            if (entry != null && entry.trim().equalsIgnoreCase(currentMap)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static NoellesRolesConfig instance() {
         return HANDLER.instance();

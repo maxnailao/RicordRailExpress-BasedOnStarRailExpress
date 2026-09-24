@@ -227,7 +227,7 @@
   "text.autoconfig.noellesroles.option.trapRolesMaps": "會刷新機關地圖角色的地圖（冒險家）",
   "text.autoconfig.noellesroles.option.airRolesMaps": "會刷新飛行角色的地圖（如飛行員、影隼）",
   "text.autoconfig.noellesroles.option.snowRolesMaps": "會刷新雪圖角色的地圖（如雪原獵手、雪怪）",
-  "text.autoconfig.noellesroles.option.witchPrisonRolesMaps": "會刷新預備魔女的地圖（魔女監牢，與獄警/重刑犯的監獄圖分開設定）",
+  "text.autoconfig.noellesroles.option.witchPrisonRolesMaps": "會刷新預備魔女的地圖（魔女監牢；填 train_maps 裡的地圖檔名，與獄警/重刑犯的監獄圖分開設定，留空表示所有地圖）",
   "text.autoconfig.noellesroles.option.cuckooMaps": "布穀鳥專屬地圖（空則不限制，填了則僅在指定地圖刷新）",
   "text.autoconfig.noellesroles.option.ghostMaps": "小透明專屬地圖（空則不限制，填了則僅在指定地圖刷新）",
   "text.autoconfig.noellesroles.option.chanceOfTouhouRoles": "東方職業（彩蛋）刷新概率",

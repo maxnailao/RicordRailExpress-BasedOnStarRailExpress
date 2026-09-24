@@ -2805,8 +2805,9 @@ public class ModRoles {
         @Override
         public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
                 SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
-            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新
-            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps.contains(mapName)) {
+            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新（留空表示不限制）
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.matchesMapList(
+                    org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps, mapName)) {
                 return 0;
             }
             return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
@@ -2891,8 +2892,9 @@ public class ModRoles {
         @Override
         public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
                 SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
-            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新
-            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps.contains(mapName)) {
+            // 监狱图硬限制：仅 NoellesRolesConfig.prisonRolesMaps 中的地图允许刷新（留空表示不限制）
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.matchesMapList(
+                    org.agmas.noellesroles.config.NoellesRolesConfig.instance().prisonRolesMaps, mapName)) {
                 return 0;
             }
             return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
@@ -2925,9 +2927,10 @@ public class ModRoles {
         @Override
         public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
                 SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
-            // 魔女监牢硬限制：仅 witchPrisonRolesMaps 中的地图允许刷新
+            // 魔女监牢硬限制：仅 witchPrisonRolesMaps 中的地图允许刷新（留空表示不限制）
             // （与狱警 / 重刑犯的 prisonRolesMaps 分开配置，互不影响）
-            if (!org.agmas.noellesroles.config.NoellesRolesConfig.instance().witchPrisonRolesMaps.contains(mapName)) {
+            if (!org.agmas.noellesroles.config.NoellesRolesConfig.matchesMapList(
+                    org.agmas.noellesroles.config.NoellesRolesConfig.instance().witchPrisonRolesMaps, mapName)) {
                 return 0;
             }
             return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);

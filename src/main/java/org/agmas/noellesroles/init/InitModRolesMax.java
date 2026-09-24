@@ -14,6 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.commands.RoleCountManager;
+import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modifiers.EggModifier;
@@ -393,6 +395,7 @@ public class InitModRolesMax {
             }
             final int players_count = serverLevel.getServer().getPlayerCount();
             initModifiersCount(players_count);
+            logPreWitchSpawnCheck(currentMap, players_count);
 
             // 彩蛋角色/修饰符数量
             if (players_count >= NoellesRolesConfig.instance().minPlayerForEggRoles
@@ -645,14 +648,39 @@ public class InitModRolesMax {
     private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
             case ALL -> true;
-            case QIYUCUN -> config.maChenXuMaps.contains(currentMap);
-            case BIGMAP -> config.swastMaps.contains(currentMap);
-            case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
-            case FLY -> config.airRolesMaps.contains(currentMap);
-            case TRAP -> config.trapRolesMaps.contains(currentMap);
-            case SNOW -> config.snowRolesMaps.contains(currentMap);
-            case DESERT -> config.desertRolesMaps.contains(currentMap);
+            case QIYUCUN -> NoellesRolesConfig.matchesMapList(config.maChenXuMaps, currentMap);
+            case BIGMAP -> NoellesRolesConfig.matchesMapList(config.swastMaps, currentMap);
+            case UNDERWATER -> NoellesRolesConfig.matchesMapList(config.underwaterRolesMaps, currentMap);
+            case FLY -> NoellesRolesConfig.matchesMapList(config.airRolesMaps, currentMap);
+            case TRAP -> NoellesRolesConfig.matchesMapList(config.trapRolesMaps, currentMap);
+            case SNOW -> NoellesRolesConfig.matchesMapList(config.snowRolesMaps, currentMap);
+            case DESERT -> NoellesRolesConfig.matchesMapList(config.desertRolesMaps, currentMap);
         };
+    }
+
+    /**
+     * 把"预备魔女能不能自然刷新"的三个前提直接写进日志，省掉反复猜配置：
+     * 当前地图是否在 witchPrisonRolesMaps 里、玩家数是否过 neutralMinPlayerCount 门槛（决定中立槽位）、
+     * 以及本局最终算出的角色上限。三个条件任一不满足，这局就不会自然刷新预备魔女。
+     */
+    private static void logPreWitchSpawnCheck(String currentMap, int playersCount) {
+        NoellesRolesConfig config = NoellesRolesConfig.instance();
+        boolean mapMatched = NoellesRolesConfig.matchesMapList(config.witchPrisonRolesMaps, currentMap);
+        int neutralSlots = RoleCountManager.getNeutralCount(playersCount);
+        SRE.LOGGER.info(
+                "[pre_witch] 地图={} 配置地图={} 命中={} 玩家数={} 中立槽位={} 本局上限={} 开局概率={} 配置上限={}",
+                currentMap, config.witchPrisonRolesMaps, mapMatched, playersCount, neutralSlots,
+                Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.PRE_WITCH_ID, 0),
+                ModRoles.PRE_WITCH.spawnInfo.enableChance, ModRoles.PRE_WITCH.spawnInfo.maxSpawn);
+        if (!mapMatched) {
+            SRE.LOGGER.warn(
+                    "[pre_witch] 地图 {} 不在 witchPrisonRolesMaps {} 中，本局不刷新预备魔女（列表留空表示不限制地图）",
+                    currentMap, config.witchPrisonRolesMaps);
+        } else if (neutralSlots <= 0) {
+            SRE.LOGGER.warn(
+                    "[pre_witch] 中立槽位为 0（玩家数 {} ≤ harpymodloader.json 的 neutralMinPlayerCount {}），本局任何中立职业都不会刷新",
+                    playersCount, HarpyModLoaderConfig.HANDLER.instance().neutralMinPlayerCount);
+        }
     }
 
     private static void autoRoleMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
