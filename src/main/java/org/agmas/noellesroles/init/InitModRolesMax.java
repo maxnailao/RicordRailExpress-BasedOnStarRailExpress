@@ -19,6 +19,7 @@ import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
+import org.agmas.harpymodloader.modded_murder.ModdedWeights;
 import org.agmas.harpymodloader.modifiers.EggModifier;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -40,8 +41,10 @@ import java.util.Random;
 
 public class InitModRolesMax {
     /**
-     * 预备魔女命中魔女监牢时的本局权重。中立池里几十个职业的权重都是 1（用户配置里地图限定职业一般是 10），
-     * 100 能让它在 3 个中立槽位里稳定抽出（约九成），既做到「较高概率」，也保留偶尔没刷出的变化。
+     * 预备魔女命中魔女监牢时的本局权重下限。中立池里几十个职业的权重都是 1，100 能让它在 3 个中立槽位里
+     * 稳定抽出（约九成）：既做到「较高概率」，也保留偶尔没刷出的变化。
+     * 这是下限而非硬值：用户在 config/harpymodloader.json 的 roleWeights 里写更高的值会直接生效（见
+     * applySpecialMapRoles），不用重新编译。
      */
     private static final float PRE_WITCH_MAP_WEIGHT = 100f;
 
@@ -599,7 +602,11 @@ public class InitModRolesMax {
             // 避免跨局残留（ROLE_WEIGHT 影响的是出场率，ROLE_MAX 才是本局上限）。
             if (role == ModRoles.PRE_WITCH) {
                 if (mapMatched) {
-                    Harpymodloader.setRoleWeight(role, PRE_WITCH_MAP_WEIGHT);
+                    // 取下限：用户把 config/harpymodloader.json 的 roleWeights 调得更高时听用户的
+                    float configuredWeight = HarpyModLoaderConfig.HANDLER.instance().useCustomRoleWeights
+                            ? ModdedWeights.getRoleWeight(role)
+                            : 1f;
+                    Harpymodloader.setRoleWeight(role, Math.max(PRE_WITCH_MAP_WEIGHT, configuredWeight));
                 } else {
                     Harpymodloader.clearRoleWeight(role.identifier());
                 }
