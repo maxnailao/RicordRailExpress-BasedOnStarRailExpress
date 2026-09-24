@@ -116,6 +116,16 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
     /** 开局随机技能是否已经真正摇过（防止组件默认值 RECALLER 被当成结果） */
     private boolean grantedSkillRolled = false;
     /**
+     * 本局技能是否已经"摇定"（只有摇定过的技能才会写进存档）。
+     *
+     * <p>
+     * 同一次职业分配里，{@code ModdedRoleAssigned} 的监听器与框架自己的
+     * {@code RoleMethodDispatcher.onInit} 会各调一次 {@link #init()}；没有这道锁，
+     * 技能会被连着摇两次（日志出现两条互相覆盖的结果），玩家已经被告知的技能
+     * 也可能在开局中途被改掉。
+     */
+    private boolean skillLocked = false;
+    /**
      * transform() 内部改职同样会触发 init()，用这个标记告诉 init()：这次要保留继承下来的技能。
      * （init() 也会额外检查当前职业是否已经是魔女，双保险）
      */
@@ -175,20 +185,40 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public void init() {
-        // init() 有两种来源：
-        // 1) 真正进入一局（每局开始框架调用的 clear()、或者本局被分配到预备魔女 / 魔女）：重新随机技能；
+        // init() 的来源：
+        // 1) 本局被分配到预备魔女 / 魔女（ModdedRoleAssigned；同一次分配里框架还会自己再调一次
+        //    RoleMethodDispatcher.onInit → init()，靠 skillLocked 保证一局只摇一次）；
         // 2) transform() 内部改职触发：此时 suppressNextRoll 为 true，保留继承下来的技能
         //    （transform() 在 changeRole 之后还会再写回一次状态，属于双保险）。
         boolean keepInheritedSkill = this.suppressNextRoll;
         this.suppressNextRoll = false;
-        if (!keepInheritedSkill) {
-            this.grantedSkill = rollSkill();
-        }
         // 注意：这里必须无条件重置 transformed / rewindUsed。
         // grantedSkill 与 transformed 都会被写进玩家存档，旧版本只在 !transformed 时才重摇，
         // 于是上一局残留的转化状态会让新的一局既不重新随机技能、也无法再次转化，
         // 玩家就会一直拿着上一局抽到的技能（表现为「每一局都是时空旅者」）。
-        this.grantedSkillRolled = true;
+        resetRoundState();
+        if (keepInheritedSkill) {
+            this.grantedSkillRolled = true;
+            this.skillLocked = true;
+            return;
+        }
+        rollSkillOnce();
+    }
+
+    @Override
+    public void clear() {
+        // 框架在每局开始 / 每局结束时都会调用 clear()：这里只彻底复位，不摇技能。
+        // 技能推迟到真正拿到预备魔女 / 魔女职业时（init() 或 ensureSkillRolled()）才摇，
+        // 这样摇出来的技能一定属于本局，诊断日志里记录的也就是本局真正生效的那一次。
+        this.suppressNextRoll = false;
+        this.grantedSkill = GrantedSkill.RECALLER;
+        this.grantedSkillRolled = false;
+        this.skillLocked = false;
+        resetRoundState();
+    }
+
+    /** 每局都要归零的状态：转化、回溯、冷却、技能播报与目击记录 */
+    private void resetRoundState() {
         this.transformed = false;
         this.rewindUsed = false;
         this.pendingRewindTicks = -1;
@@ -198,16 +228,15 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
         this.seenScenes.clear();
     }
 
-    @Override
-    public void clear() {
-        // 框架在每局开始 / 每局结束时都会先调用 clear()：这里彻底清空，
-        // 再让 init() 重新随机一次技能，避免玩家存档里的旧技能一直沿用下去。
-        this.suppressNextRoll = false;
-        this.transformed = false;
-        this.grantedSkill = GrantedSkill.RECALLER;
-        this.grantedSkillRolled = false;
-        this.rewindUsed = false;
-        init();
+    /** 本局摇一次技能，摇定后不再变化（同一个职业分配里 init() 会被调用两次） */
+    private void rollSkillOnce() {
+        if (this.skillLocked) {
+            this.grantedSkillRolled = true;
+            return;
+        }
+        this.grantedSkill = rollSkill();
+        this.grantedSkillRolled = true;
+        this.skillLocked = true;
     }
 
     /** 把组件状态同步给该玩家客户端（与其他职业组件保持一致） */
@@ -266,10 +295,12 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
         if (grantedSkillRolled) {
             return;
         }
-        grantedSkillRolled = true;
-        if (!transformed) {
-            this.grantedSkill = rollSkill();
+        if (this.transformed) {
+            this.grantedSkillRolled = true;
+            this.skillLocked = true;
+            return;
         }
+        rollSkillOnce();
     }
 
     // ==================== 每刻逻辑 ====================
@@ -510,7 +541,10 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        tag.putString("GrantedSkill", this.grantedSkill.id());
+        // 只有摇定过的技能才写进存档：clear() 复位后的占位值不该被当成"这一局的技能"读回来
+        if (this.skillLocked) {
+            tag.putString("GrantedSkill", this.grantedSkill.id());
+        }
         tag.putBoolean("Transformed", this.transformed);
         tag.putBoolean("RewindUsed", this.rewindUsed);
         tag.putInt("SkillCooldownTicks", this.skillCooldownTicks);
@@ -522,6 +556,7 @@ public class PreWitchPlayerComponent implements RoleComponent, ServerTickingComp
             this.grantedSkill = GrantedSkill.byId(tag.getString("GrantedSkill"));
             // 存档里已有技能记录，说明这一局已经摇过，不要再次随机
             this.grantedSkillRolled = true;
+            this.skillLocked = true;
         }
         this.transformed = tag.getBoolean("Transformed");
         this.rewindUsed = tag.getBoolean("RewindUsed");

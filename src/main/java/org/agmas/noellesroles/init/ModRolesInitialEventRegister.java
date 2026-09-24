@@ -543,7 +543,9 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
-            // 预备魔女角色初始化：开局随机技能（召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯）
+            // 预备魔女角色初始化：开局随机技能（召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯）。
+            // 框架在本监听器之后还会自己再调一次 onInit → init()，组件内部靠 skillLocked 保证一局只摇一次，
+            // 这里先 init() 再 sync()，客户端拿到的就是本局最终技能。
             if (role.identifier().equals(ModRoles.PRE_WITCH.identifier())) {
                 var preWitch = ModComponents.PRE_WITCH.get(player);
                 preWitch.init();
