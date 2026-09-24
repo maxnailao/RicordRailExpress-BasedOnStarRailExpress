@@ -139,6 +139,30 @@ public class Harpymodloader implements ModInitializer {
         setRoleMaximum(role.identifier(), max);
     }
 
+    /**
+     * 本局职业权重覆盖。非空时，该职业在本局的加权抽选里使用这里的权重，覆盖用户配置
+     * （harpymodloader.json 的 roleWeights）。
+     *
+     * <p>存在的理由：ROLE_MAX 只决定「本局最多几个人」，不决定出场率。地图限定职业把本局上限设成 1
+     * 之后，仍然要和几十个中立职业一起按权重抢中立槽位，权重 10 时每局出场率也只有三成左右，
+     * 需要临时拉高权重。由设置方负责在每局写入或清除，不要跨局残留。
+     */
+    public static HashMap<ResourceLocation, Float> ROLE_WEIGHT = new HashMap<>();
+
+    public static void setRoleWeight(ResourceLocation role, Float weight) {
+        ROLE_WEIGHT.put(role, weight);
+    }
+
+    public static void setRoleWeight(SRERole role, Float weight) {
+        if (role != null) {
+            setRoleWeight(role.identifier(), weight);
+        }
+    }
+
+    public static void clearRoleWeight(ResourceLocation role) {
+        ROLE_WEIGHT.remove(role);
+    }
+
     public void registerCommands() {
         ArgumentTypeRegistry.registerArgumentType(
                 ResourceLocation.fromNamespaceAndPath(MOD_ID, "role"),

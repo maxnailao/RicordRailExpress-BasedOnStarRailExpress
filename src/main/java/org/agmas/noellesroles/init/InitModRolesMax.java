@@ -39,6 +39,12 @@ import java.util.List;
 import java.util.Random;
 
 public class InitModRolesMax {
+    /**
+     * 预备魔女命中魔女监牢时的本局权重。中立池里几十个职业的权重都是 1（用户配置里地图限定职业一般是 10），
+     * 100 能让它在 3 个中立槽位里稳定抽出（约九成），既做到「较高概率」，也保留偶尔没刷出的变化。
+     */
+    private static final float PRE_WITCH_MAP_WEIGHT = 100f;
+
     public static Random random = new Random();
     public static boolean isEggEnabled = false;
     public static boolean isTouhouEnabled = false;
@@ -582,10 +588,21 @@ public class InitModRolesMax {
             if (!role.isSpecialMapRole()) {
                 continue;
             }
-            if (isSpecialMapRoleEnabled(role, currentMap, config)) {
+            boolean mapMatched = isSpecialMapRoleEnabled(role, currentMap, config);
+            if (mapMatched) {
                 Harpymodloader.setRoleMaximum(role, Math.max(0, role.spawnInfo.maxSpawn));
             } else {
                 Harpymodloader.setRoleMaximum(role, 0);
+            }
+            // 预备魔女是魔女监牢的招牌角色，只把本局上限设成 1 并不够：它还要和几十个中立职业按权重抢
+            // 中立槽位，权重 10 时每局出场率只有三成左右。命中地图时把本局权重拉高，未命中则清掉，
+            // 避免跨局残留（ROLE_WEIGHT 影响的是出场率，ROLE_MAX 才是本局上限）。
+            if (role == ModRoles.PRE_WITCH) {
+                if (mapMatched) {
+                    Harpymodloader.setRoleWeight(role, PRE_WITCH_MAP_WEIGHT);
+                } else {
+                    Harpymodloader.clearRoleWeight(role.identifier());
+                }
             }
         }
     }
@@ -674,9 +691,10 @@ public class InitModRolesMax {
         boolean mapMatched = NoellesRolesConfig.matchesMapList(configuredMaps, currentMap);
         int neutralSlots = RoleCountManager.getNeutralCount(playersCount);
         SRE.LOGGER.info(
-                "[pre_witch] 地图={} 配置地图={} 命中={} 玩家数={} 中立槽位={} 本局上限={} 开局概率={} 配置上限={}",
+                "[pre_witch] 地图={} 配置地图={} 命中={} 玩家数={} 中立槽位={} 本局上限={} 本局权重={} 开局概率={} 配置上限={}",
                 currentMap, configuredMaps, mapMatched, playersCount, neutralSlots,
                 Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.PRE_WITCH_ID, 0),
+                Harpymodloader.ROLE_WEIGHT.getOrDefault(ModRoles.PRE_WITCH_ID, 0f),
                 ModRoles.PRE_WITCH.spawnInfo.enableChance, ModRoles.PRE_WITCH.spawnInfo.maxSpawn);
         if (!mapMatched) {
             SRE.LOGGER.warn(

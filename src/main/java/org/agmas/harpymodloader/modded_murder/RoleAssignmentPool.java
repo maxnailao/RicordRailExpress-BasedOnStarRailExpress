@@ -77,12 +77,15 @@ public class RoleAssignmentPool {
         // 构建权重映射
         HashMap<SRERole, Float> roleWeights = new HashMap<>();
         for (SRERole role : availableRoles) {
-            float weight = 1f;
-            if (HarpyModLoaderConfig.HANDLER.instance().useCustomRoleWeights) {
-                weight = ModdedWeights.getRoleWeight(role);
-                if (weight <= 0)
-                    continue;
-            }
+            // 本局权重覆盖（地图限定职业等）优先于用户配置权重
+            Float override = Harpymodloader.ROLE_WEIGHT.get(role.identifier());
+            float weight = override != null
+                    ? override
+                    : (HarpyModLoaderConfig.HANDLER.instance().useCustomRoleWeights
+                            ? ModdedWeights.getRoleWeight(role)
+                            : 1f);
+            if (weight <= 0)
+                continue;
             roleWeights.put(role, weight);
         }
 
