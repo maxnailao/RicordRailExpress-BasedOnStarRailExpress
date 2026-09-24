@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.MapManager;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -370,7 +371,8 @@ public class InitModRolesMax {
         // 绑定生成：重刑犯刷新时狱警一同刷新
         RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
 
-        // 预备魔女与魔女：默认 0，仅魔女监牢图（witchPrisonRolesMaps）由 autoRoleMaxCount 经 getRoundMaxCount 动态启用为 1
+        // 预备魔女与魔女：默认 0。预备魔女是特殊地图职业（specialMapRole = WITCH_PRISON），
+        // 本局上限由 applySpecialMapRoles 按 witchPrisonRolesMaps 决定（与雪怪 / 木乃伊同一套机制）；
         // 魔女的 getRoundMaxCount 恒为 0（只能由预备魔女转化产生）
         Harpymodloader.setRoleMaximum(ModRoles.PRE_WITCH_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.MAJO_ID, 0);
@@ -395,7 +397,6 @@ public class InitModRolesMax {
             }
             final int players_count = serverLevel.getServer().getPlayerCount();
             initModifiersCount(players_count);
-            logPreWitchSpawnCheck(currentMap, players_count);
 
             // 彩蛋角色/修饰符数量
             if (players_count >= NoellesRolesConfig.instance().minPlayerForEggRoles
@@ -519,6 +520,8 @@ public class InitModRolesMax {
 
             applySpecialMapRoles(currentMap, config);
             applySpecialVigilanteRoles(players_count, config, random, currentMap);
+            // 必须在 applySpecialMapRoles 之后，本局上限此时才是最终值
+            logPreWitchSpawnCheck(serverLevel, currentMap, players_count);
 
             // 智力障碍患者与监护人：按概率成对刷新。
             // 监护人恒为 0，只能由智力障碍患者的关联职业展开自动补齐，因此不会出现"只有监护人没有患者"的情况。
@@ -655,27 +658,47 @@ public class InitModRolesMax {
             case TRAP -> NoellesRolesConfig.matchesMapList(config.trapRolesMaps, currentMap);
             case SNOW -> NoellesRolesConfig.matchesMapList(config.snowRolesMaps, currentMap);
             case DESERT -> NoellesRolesConfig.matchesMapList(config.desertRolesMaps, currentMap);
+            case WITCH_PRISON -> NoellesRolesConfig.matchesMapList(config.witchPrisonRolesMaps, currentMap);
         };
     }
 
     /**
-     * 把"预备魔女能不能自然刷新"的三个前提直接写进日志，省掉反复猜配置：
-     * 当前地图是否在 witchPrisonRolesMaps 里、玩家数是否过 neutralMinPlayerCount 门槛（决定中立槽位）、
-     * 以及本局最终算出的角色上限。三个条件任一不满足，这局就不会自然刷新预备魔女。
+     * 把"预备魔女能不能自然刷新"的前提直接写进日志，省掉反复猜配置：
+     * 当前地图是否在 witchPrisonRolesMaps 里、配置的地图名在本世界 train_maps 里是否真的存在、
+     * 玩家数是否过 neutralMinPlayerCount 门槛（决定中立槽位）、以及本局最终算出的角色上限。
+     * 任一条件不满足，这局就不会自然刷新预备魔女。
      */
-    private static void logPreWitchSpawnCheck(String currentMap, int playersCount) {
+    private static void logPreWitchSpawnCheck(ServerLevel serverLevel, String currentMap, int playersCount) {
         NoellesRolesConfig config = NoellesRolesConfig.instance();
-        boolean mapMatched = NoellesRolesConfig.matchesMapList(config.witchPrisonRolesMaps, currentMap);
+        List<String> configuredMaps = config.witchPrisonRolesMaps;
+        boolean mapMatched = NoellesRolesConfig.matchesMapList(configuredMaps, currentMap);
         int neutralSlots = RoleCountManager.getNeutralCount(playersCount);
         SRE.LOGGER.info(
                 "[pre_witch] 地图={} 配置地图={} 命中={} 玩家数={} 中立槽位={} 本局上限={} 开局概率={} 配置上限={}",
-                currentMap, config.witchPrisonRolesMaps, mapMatched, playersCount, neutralSlots,
+                currentMap, configuredMaps, mapMatched, playersCount, neutralSlots,
                 Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.PRE_WITCH_ID, 0),
                 ModRoles.PRE_WITCH.spawnInfo.enableChance, ModRoles.PRE_WITCH.spawnInfo.maxSpawn);
         if (!mapMatched) {
             SRE.LOGGER.warn(
                     "[pre_witch] 地图 {} 不在 witchPrisonRolesMaps {} 中，本局不刷新预备魔女（列表留空表示不限制地图）",
-                    currentMap, config.witchPrisonRolesMaps);
+                    currentMap, configuredMaps);
+            if (!configuredMaps.isEmpty()) {
+                List<String> availableMaps = MapManager.getAvailableMaps(serverLevel);
+                List<String> missing = new ArrayList<>();
+                for (String configured : configuredMaps) {
+                    // 复用同一套比对：以本世界真实地图名列表作为白名单去查配置的每一个名字
+                    if (!NoellesRolesConfig.matchesMapList(availableMaps, configured)) {
+                        missing.add(configured);
+                    }
+                }
+                if (missing.isEmpty()) {
+                    SRE.LOGGER.warn("[pre_witch] 配置的地图名在本世界 train_maps 里都存在（本世界共 {} 张地图），只是本局没抽到它们",
+                            availableMaps.size());
+                } else {
+                    SRE.LOGGER.warn("[pre_witch] 配置的地图名 {} 在本世界 train_maps 里不存在，任何一局都不会命中；本世界实际地图：{}",
+                            missing, availableMaps);
+                }
+            }
         } else if (neutralSlots <= 0) {
             SRE.LOGGER.warn(
                     "[pre_witch] 中立槽位为 0（玩家数 {} ≤ harpymodloader.json 的 neutralMinPlayerCount {}），本局任何中立职业都不会刷新",

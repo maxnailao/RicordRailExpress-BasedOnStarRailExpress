@@ -2911,8 +2911,9 @@ public class ModRoles {
      * <li>真实心情 (MoodType.REAL)：san 值不会自然降低，但目击尸体 / 杀人现场会扣心情值</li>
      * <li>心情值扣完即转化为杀手阵营的魔女（见 PreWitchPlayerComponent）</li>
      * <li>开局随机获得一个技能：召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯（低概率）</li>
-     * <li>硬地图限制：重写 getRoundMaxCount，仅 witchPrisonRolesMaps 配置的地图（魔女监牢）允许刷新，
-     * 与狱警 / 重刑犯使用的 prisonRolesMaps 相互独立</li>
+     * <li>特殊地图职业（specialMapRole = WITCH_PRISON）：仅 witchPrisonRolesMaps 配置的地图（魔女监牢）刷新，
+     * 与雪怪 / 木乃伊等走同一套机制（InitModRolesMax.applySpecialMapRoles），与狱警 / 重刑犯的
+     * prisonRolesMaps 相互独立</li>
      * <li>每局最多 1；不可被失忆患者 / 赌徒等转变 (setCanBeRandomedByOtherRoles(false))</li>
      * </ul>
      */
@@ -2923,24 +2924,14 @@ public class ModRoles {
             false, // canUseKiller = false
             SRERole.MoodType.REAL, // 真实心情：需要靠理智撑住不变成魔女
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
-            false) { // 计分板显示
-        @Override
-        public int getRoundMaxCount(net.minecraft.server.level.ServerLevel serverLevel,
-                SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players, String mapName) {
-            // 魔女监牢硬限制：仅 witchPrisonRolesMaps 中的地图允许刷新（留空表示不限制）
-            // （与狱警 / 重刑犯的 prisonRolesMaps 分开配置，互不影响）
-            if (!org.agmas.noellesroles.config.NoellesRolesConfig.matchesMapList(
-                    org.agmas.noellesroles.config.NoellesRolesConfig.instance().witchPrisonRolesMaps, mapName)) {
-                return 0;
-            }
-            return super.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
-        }
-    }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
+            false)) // 计分板显示
+            .setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
             .setNeutrals(true)
             .setCanSeeCoin(true)
             .setCanPickUpRevolver(true)
             .setCanBeRandomedByOtherRoles(false)
-            .setDefaultMax(1);
+            .setDefaultMax(1)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.WITCH_PRISON);
 
     /**
      * 魔女（majo）—— 预备魔女心情值归零后转化而成的杀手形态。

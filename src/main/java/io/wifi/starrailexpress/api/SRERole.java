@@ -503,7 +503,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW, DESERT
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW, DESERT, WITCH_PRISON
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
