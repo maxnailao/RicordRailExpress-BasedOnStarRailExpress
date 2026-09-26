@@ -1335,6 +1335,18 @@ public class RoleShopHandler {
                     return SREPlayerShopComponent.useBlackout(player);
                 }
             });
+
+            // RPG-7 火箭筒 - 100金币
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.RPG7.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.WEAPON));
+
+            // RPG-7 火箭弹 - 300金币
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.RPG7_AMMO.getDefaultInstance(),
+                    300,
+                    ShopEntry.Type.WEAPON));
         }
 
         // ==================== 钳工商店 ====================
