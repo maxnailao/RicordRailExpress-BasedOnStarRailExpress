@@ -12,6 +12,7 @@ import net.minecraft.client.OptionInstance;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.item.DesertEagleItem;
+import org.agmas.noellesroles.content.item.Rpg7Item;
 import org.agmas.noellesroles.content.item.SilencedPistolItem;
 import org.agmas.noellesroles.init.ModItems;
 import org.lwjgl.glfw.GLFW;
@@ -91,6 +92,13 @@ public class MouseHandlerMixin {
             // 处理消音手枪左键换弹
             if (mainHandStack.is(ModItems.SILENCED_PISTOL)) {
                 SilencedPistolItem.tryReloadFromClient(player);
+                ci.cancel();
+                return;
+            }
+
+            // 处理 RPG-7 左键装填
+            if (mainHandStack.is(ModItems.RPG7)) {
+                Rpg7Item.tryReloadFromClient(player);
                 ci.cancel();
                 return;
             }

@@ -403,6 +403,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 });
 
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.RPG7_ROCKET,
+                org.agmas.noellesroles.content.entity.Rpg7RocketRenderer::new);
         // 棺材实体渲染器（无碰撞装饰实体）
         EntityRendererRegistry.register(ModEntities.COFFIN, CoffinEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));

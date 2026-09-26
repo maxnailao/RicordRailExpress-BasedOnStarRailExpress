@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.network.packet.ShowCustomNewspaperPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.agmas.noellesroles.content.item.Rpg7ShootPayload;
 import org.agmas.noellesroles.content.item.SilencedPistolShootPayload;
 import org.agmas.noellesroles.content.item.DualPistolShootPayload;
 import org.agmas.noellesroles.content.item.DesertEagleShootPayload;
@@ -222,6 +223,10 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(SilencedPistolShootPayload.ID, SilencedPistolShootPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SilencedPistolShootPayload.ID,
                 new SilencedPistolShootPayload.Receiver());
+
+        // 注册 RPG-7 射击/装填网络包
+        PayloadTypeRegistry.playC2S().register(Rpg7ShootPayload.ID, Rpg7ShootPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(Rpg7ShootPayload.ID, Rpg7ShootPayload::handle);
 
         // 注册双枪（左手/右手）射击网络包
         PayloadTypeRegistry.playC2S().register(DualPistolShootPayload.ID, DualPistolShootPayload.CODEC);

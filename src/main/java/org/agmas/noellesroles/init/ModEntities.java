@@ -61,6 +61,19 @@ public class ModEntities {
                     .build());
 
     /**
+     * RPG-7 火箭弹抛射物 - 高速飞行，命中方块/实体引爆
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<Rpg7RocketEntity> RPG7_ROCKET = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "rpg7_rocket"),
+            FabricEntityTypeBuilder.<Rpg7RocketEntity>create(MobCategory.MISC, Rpg7RocketEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /**
      * 氯气弹实体 - 可投掷物品，落地时使范围内玩家中毒
      */
     @SuppressWarnings("deprecation")

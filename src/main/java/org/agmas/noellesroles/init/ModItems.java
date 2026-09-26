@@ -931,6 +931,25 @@ public class ModItems {
             "silenced_pistol", WEAPONS_GROUP);
 
     /**
+     * RPG-7 火箭筒
+     * - 右键发射火箭弹，左键装填（最高 1 发，自动消耗背包中的火箭弹）
+     * - 初始无弹药，装填后模型显示炮弹部分
+     */
+    public static final Item RPG7 = register(
+            new org.agmas.noellesroles.content.item.Rpg7Item(
+                    new Item.Properties().stacksTo(1)),
+            "rpg7", WEAPONS_GROUP);
+
+    /**
+     * RPG-7 火箭弹
+     * - 用于装填 RPG-7
+     */
+    public static final Item RPG7_AMMO = register(
+            new org.agmas.noellesroles.content.item.Rpg7AmmoItem(
+                    new Item.Properties()),
+            "rpg7_ammo", WEAPONS_GROUP);
+
+    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒
