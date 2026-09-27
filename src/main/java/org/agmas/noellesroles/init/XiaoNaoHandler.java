@@ -65,15 +65,6 @@ public class XiaoNaoHandler {
                         return;
                     }
 
-                    // 逃票者被平民阵营玩家击杀不触发小脑惩罚，仅提示击杀者（此分支 killer 必为平民阵营）
-                    if (gameWorldComponent.isRole(victim, ModRoles.TAOPIAOZHE)) {
-                        killer.displayClientMessage(
-                                Component.translatable("message.noellesroles.taopiaozhe.passive_hint")
-                                        .withStyle(ChatFormatting.GRAY),
-                                false);
-                        return;
-                    }
-
                     //检查是否是黑警击杀，黑警击杀不算误杀
                     if (gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP)) {
                         return;
@@ -164,8 +155,6 @@ public class XiaoNaoHandler {
         for (ServerPlayer p : xiaoNaoKiller.serverLevel().getServer().getPlayerList().getPlayers()) {
             if (p.getUUID().equals(xiaoNaoKiller.getUUID())) continue;
             if (TraitorAndModifiers.CORRUPTION_TRIGGERED.contains(p.getUUID())) continue;
-            // 已死亡的玩家即使拥有腐败修饰符也不应被转变为黑警
-            if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
             if (!modifiers.isModifier(p.getUUID(), TraitorAndModifiers.CORRUPTION)) continue;
 
             TraitorAndModifiers.CORRUPTION_TRIGGERED.add(p.getUUID());

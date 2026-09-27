@@ -51,9 +51,6 @@ public final class GKeyRoleSkill {
             return false;
         }
         SRERole role = gameWorldComponent.getRole(client.player);
-        // 扮演者伪装：未回忆前以扮演的职业触发注册制技能（如退伍军人冲刺、乌鸦食尸）
-        role = org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent.getDisplayedRole(
-                client.player, role);
         if (role == null) {
             return false;
         }
@@ -228,7 +225,27 @@ public final class GKeyRoleSkill {
             return true;
         });
 
-        // 咒术师已改走统一 RoleSkill 系统（窃取发肤 / 蚀骨之咒），不再需要 G 键特例
+        // 咒法师：按技能键标记目标，蹲下按技能键触发咒杀
+        register(ModRoles.WARLOCK, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+                return true;
+            // 蹲下 = 咒杀
+            if (client.player.isShiftKeyDown()) {
+                ClientPlayNetworking.send(new org.agmas.noellesroles.packet.WarlockKillC2SPacket());
+                return true;
+            }
+            // 普通 = 标记目标
+            var hitResult = client.hitResult;
+            if (hitResult != null && hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                net.minecraft.world.phys.EntityHitResult e = (net.minecraft.world.phys.EntityHitResult) hitResult;
+                if (e.getEntity() instanceof Player targetPlayer) {
+                    ClientPlayNetworking.send(new AbilityWithTargetC2SPacket(targetPlayer));
+                }
+            } else {
+                client.player.displayClientMessage(Component.translatable("hud.warlock.target_miss"), true);
+            }
+            return true;
+        });
 
         // 嬉命人：按技能键发动变装（冷却80秒）
         register(ModRoles.EMBALMER, true, (client, gameWorld) -> {

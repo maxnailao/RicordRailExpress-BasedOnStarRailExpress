@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "starrailexpress",
   "version": "${version}",
-  "name": "RicordRailExpress",
+  "name": "StarRailExpress",
   "description": "",
   "authors": [
     "Catmoon Train Team"
@@ -80,7 +80,6 @@
       "noellesroles:amon",
       "noellesroles:pelican",
       "noellesroles:godfather",
-      "noellesroles:bee_family",
       "noellesroles:broadcaster",
       "noellesroles:ghost",
       "noellesroles:thief",
@@ -132,11 +131,6 @@
       "noellesroles:nostalgist",
       "noellesroles:wraith_assassin",
       "noellesroles:salted_fish",
-      "noellesroles:kalabiqiumiao",
-      "noellesroles:xunguiren",
-      "noellesroles:duomaomao_meimeihide",
-      "noellesroles:shilaimu",
-      "noellesroles:imironman_tiekuilei",
       "noellesroles:party_killer",
       "noellesroles:delayer",
       "noellesroles:blood_feudist",
@@ -217,6 +211,8 @@
       "starrailexpress:role",
       "starrailexpress:dnf_inventory_backup",
       "starrailexpress:monitor",
+      "starrailexpress:role_rotation",
+      "starrailexpress:role_rotation_player",
       "starrailexpress:body_entity",
       "starrailexpress:mood",
       "starrailexpress:task",
@@ -248,11 +244,9 @@
       "starrailexpress:player_damage_tracker",
       "starrailexpress:music_box",
       "starrailexpress:cs2_inventory",
-      "starrailexpress:backpack_persistence",
       "noellesroles:cuckoo",
       "noellesroles:ma_chen_xu",
       "noellesroles:imitator",
-      "noellesroles:banyanzhe",
       "noellesroles:mortician_bodymaker",
       "noellesroles:phantom_musician",
       "noellesroles:cupid",
@@ -269,8 +263,6 @@
       "noellesroles:ghost_eye",
       "noellesroles:coward",
       "noellesroles:dumb_woman",
-      "noellesroles:shuangqianghuigeichudaan_shuangqiangke",
-      "noellesroles:wcwobeiguifushenle_huanling",
       "noellesroles:zhizhang",
       "noellesroles:guardian",
             "noellesroles:jiahao_wanglihao",
@@ -284,21 +276,16 @@
       "noellesroles:xundaozhe",
       "noellesroles:snow_hunter",
       "noellesroles:snowguai_wow",
-      "noellesroles:munaiyi_desert",
       "noellesroles:yandere",
       "noellesroles:philanthropist",
       "noellesroles:ghoul",
       "noellesroles:eling_apex",
-      "noellesroles:ghostying_guiying",
       "noellesroles:youshazhe_killman",
       "noellesroles:cowboy",
       "noellesroles:conductor",
       "noellesroles:huanshushi",
-      "noellesroles:wantong",
-      "noellesroles:taopiaozhe",
-      "noellesroles:werewolf_killer",
-      "noellesroles:convict",
-      "noellesroles:pre_witch"
+      "noellesroles:kidnapper_role",
+      "noellesroles:kidnapped"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
@@ -327,8 +314,7 @@
   },
   "recommends": {
     "sodium": "*",
-    "sodium-extra": "*",
-    "blindness": "*"
+    "sodium-extra": "*"
   },
   "conflicts": {
     "customskinloader": "*"

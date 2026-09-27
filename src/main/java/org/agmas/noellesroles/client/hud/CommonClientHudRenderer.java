@@ -224,7 +224,27 @@ public class CommonClientHudRenderer {
           }
         }
       }
+      /** 绑匪审判阶段专属hud */
+      if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.gameComponent.isKidnapperJudgmentActive()) {
+        if (player != null) {
+          // 存活玩家和旁观者都能看到
+          boolean canSee = GameUtils.isPlayerAliveAndSurvival(player) || player.isSpectator();
+          if (canSee) {
+            Component judgmentGlobalText = Component.translatable("hud.noellesroles.kidnapper.judgment_global")
+                    .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_RED);
 
+            int centerX = guiGraphics.guiWidth() / 2;
+            guiGraphics.drawCenteredString(font, judgmentGlobalText, centerX, 60, Color.WHITE.getRGB());
+
+            // 审判倒计时（正上方，横幅下一行，m:ss 格式同黑警时刻）
+            int remainingSeconds = SREClient.gameComponent.getKidnapperJudgmentRemainingSeconds();
+            Component judgmentTimerText = Component.translatable("hud.noellesroles.kidnapper.judgment_timer",
+                            String.format("%d:%02d", remainingSeconds / 60, remainingSeconds % 60))
+                    .withStyle(ChatFormatting.BOLD, ChatFormatting.RED);
+            guiGraphics.drawCenteredString(font, judgmentTimerText, centerX, 72, Color.WHITE.getRGB());
+          }
+        }
+      }
 
       SRERole role = SREClient.getCachedPlayerRole();
       if (role == null)

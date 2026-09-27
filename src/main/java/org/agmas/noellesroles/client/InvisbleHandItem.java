@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.index.TMMItems;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -31,21 +32,15 @@ public class InvisbleHandItem {
             if (player.hasEffect(ModEffects.WRAITH_DIMENSION) && !player.hasEffect(ModEffects.WRAITH_MANIFEST)) {
                 return ItemStack.EMPTY;
             }
-            // 躲藏专家：变身方块期间隐藏手持物品，避免悬浮物品暴露伪装
-            var hideComp = org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.KEY
-                    .maybeGet(player).orElse(null);
-            if (hideComp != null && hideComp.isHiding()) {
-                return ItemStack.EMPTY;
-            }
             return null; // 不修改
         });
-        // 显示手铐（改由 HandCuffsFeatureRenderer 动态渲染，副手此处隐藏避免重复）
+        // 显示手铐
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (mainHand)
                 return null;
             var item = ExtraSlotComponent.getSlot(player, HandCuffsItem.SLOT_HANDCUFFS);
             if (item.getItem() instanceof HandCuffsItem) {
-                return ItemStack.EMPTY;
+                return item;
             }
             return null; // 不修改
         });
@@ -82,6 +77,15 @@ public class InvisbleHandItem {
                 }
             }
             return null;
+        });
+
+        // 捆绳：拿在手里时仅持有者自己可见，其他玩家渲染该玩家手持物时替换为空
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (!itemStack.is(ModItems.KIDNAP_ROPE))
+                return null; // 不修改
+            if (player == Minecraft.getInstance().player)
+                return null; // 持有者本人手中仍然可见
+            return ItemStack.EMPTY;
         });
 
     }

@@ -259,16 +259,6 @@ public class RoleUtils extends MCItemsUtils {
 
     public static void changeRole(Player player, SRERole role, boolean record, boolean addStats,
             boolean clearOldItems) {
-        changeRole(player, role, record, addStats, clearOldItems, false);
-    }
-
-    /**
-     * @param noEventCall 为 true 时不触发 {@code ModdedRoleRemoved} / {@code ModdedRoleAssigned}。
-     *                    用于「恢复原职业」这类内部改职：玩家并非真正获得新职业，
-     *                    触发事件会导致初始物品重复发放、入场报幕重播等副作用。
-     */
-    public static void changeRole(Player player, SRERole role, boolean record, boolean addStats,
-            boolean clearOldItems, boolean noEventCall) {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         // 删除旧职业
         var oldRole = gameWorldComponent.getRole(player);
@@ -290,8 +280,7 @@ public class RoleUtils extends MCItemsUtils {
                             player.getInventory().removeItem(itemStack);
                         });
             }
-            if (!noEventCall)
-                ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(player, oldRole);
+            ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(player, oldRole);
         }
         if (addStats) {
             PlayerStats stats = PlayerStatsManager.get(player);
@@ -311,8 +300,7 @@ public class RoleUtils extends MCItemsUtils {
         gameWorldComponent.addRole(player, role);
         // 触发事件
         if (player instanceof ServerPlayer sp) {
-            if (!noEventCall)
-                (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
+            (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
         }
     }
 

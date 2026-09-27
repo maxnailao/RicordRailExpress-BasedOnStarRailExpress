@@ -47,6 +47,14 @@
       }
     ]
   },
+  "noellesroles.kidnapper_judgment": {
+    "sounds": [
+      {
+        "name": "noellesroles:kidnapper_judgment",
+        "stream": true
+      }
+    ]
+  },
   "plush.spbgcp": {
     "sounds": [
       {
@@ -240,14 +248,6 @@
       {
         "name": "noellesroles:jiahao_music_3",
         "stream": true
-      }
-    ]
-  },
-  "noellesroles.rpg7_shoot": {
-    "sounds": [
-      {
-        "name": "noellesroles:rpg7_shoot",
-        "stream": false
       }
     ]
   }

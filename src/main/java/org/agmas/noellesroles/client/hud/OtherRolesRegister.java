@@ -57,14 +57,12 @@ public class OtherRolesRegister {
         HousekeeperHud.register();
         PelicanHud.register();
         GodfatherHud.register();
-        BeeFamilyHud.register();
         WarlockHud.register();
         WizardHud.register();
         RavenHud.register();
         DoomedSinnerHud.register();
         WraithAssassinHud.register();
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
-        HuanlingHud.register();
         AdventurerHud.register();
         ReasonerHud.register();
         EmbalmerHud.register();
@@ -85,7 +83,8 @@ public class OtherRolesRegister {
         MengyanHud.register();
         XundaozheHud.register();
         SnowHunterHud.register();
-        ConvictHud.register();
+        KidnapperHud.register();
+        KidnappedHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

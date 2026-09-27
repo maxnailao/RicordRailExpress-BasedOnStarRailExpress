@@ -28,9 +28,6 @@ import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionE
 import org.agmas.noellesroles.role.ModRoles;
 
 public class ModEffects {
-    /** 仅禁止CCA/职业执行tick */
-    public static final Holder<MobEffect> CCA_FREEZED = register("cca_freezed",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> INVENTORY_BANED = register("inventory_baned",
@@ -378,19 +375,6 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
 
     /**
-     * 失明症（移植自"失明症"模组）
-     * - 有害效果，近黑色
-     * - 拥有者画面几乎全黑（雾效压黑，见 WorldRendererMixin/BackgroundRendererMixin 的失明雾分支），
-     *   需使用导盲杖（{@code ModItems.GUIDANCE_CANE}）探测前方方块，以发光轮廓短暂看见环境；
-     *   附近生物的声音会以声纹标记 + 弱轮廓提示方位。
-     * - 服务端探测见 {@code org.agmas.noellesroles.game.blindness.CaneContactService}，
-     *   声纹见 {@code org.agmas.noellesroles.game.blindness.SoundEchoService}，
-     *   客户端渲染见 {@code org.agmas.noellesroles.client.blindness} 包。
-     */
-    public static final Holder<MobEffect> BLINDNESS_SICKNESS = register("blindness_sickness",
-            new org.agmas.noellesroles.content.effects.BlindnessSicknessEffect());
-
-    /**
      * 2D 视角
      * - 中性效果
      * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方（0~3 为 2.5D 俯视侧视）；
@@ -467,16 +451,6 @@ public class ModEffects {
     public static final Holder<MobEffect> NIGHTMARE = register("nightmare", new NightmareEffect());
 
     /**
-     * 领域标记（各领域共享）：
-     * - 中性效果，幽紫色
-     * - amplifier 0 = 愚者塔罗会开会领域，1 = 咒术师灰髓之境角斗场领域
-     * - 拥有此效果的玩家正处于某个领域中，无法被拉入另一个领域；
-     * 由各领域在进入时授予对应等级，离场时移除。
-     */
-    public static final Holder<MobEffect> DOMAIN_MARK = register("domain_mark",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9B59B6));
-
-    /**
      * 注册药水效果到注册表
      */
 
@@ -487,20 +461,6 @@ public class ModEffects {
     private static int getAmplifier(LivingEntity entity, Holder<MobEffect> effect) {
         MobEffectInstance instance = entity.getEffect(effect);
         return instance != null ? instance.getAmplifier() : -1;
-    }
-
-    /**
-     * 领域标记：返回玩家所处领域的等级（0=愚者塔罗会，1=咒术师灰髓之境）；不在任何领域返回 -1。
-     */
-    public static int getDomainMarkLevel(LivingEntity entity) {
-        return getAmplifier(entity, DOMAIN_MARK);
-    }
-
-    /**
-     * 玩家当前是否处于任意一个领域中（即拥有领域标记效果）。
-     */
-    public static boolean isInAnyDomain(LivingEntity entity) {
-        return entity.hasEffect(DOMAIN_MARK);
     }
 
     /**
@@ -605,9 +565,6 @@ public class ModEffects {
         // 导致手持物品仍显示 / 仍能被杀手透视。
         NostalgistBackworldEffectSync.init();
         WraithDimensionEffectSync.init();
-        // 失明症：导盲杖探测服务（含掉线清理）与生物声纹扫描服务
-        org.agmas.noellesroles.game.blindness.CaneContactService.register();
-        org.agmas.noellesroles.game.blindness.SoundEchoService.register();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

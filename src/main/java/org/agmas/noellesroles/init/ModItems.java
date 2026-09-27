@@ -72,19 +72,13 @@ public class ModItems {
     public static final Item PIGE_SWORD = register(
             new PigeSwordItem(),
             "pige_sword", ROLE_ITEMS_GROUP);
+    // 捆绳 - 绑匪专属，绑架必须持有捆绳，2点耐久，每绑架一次消耗1点耐久
+    public static final Item KIDNAP_ROPE = register(
+            new KidnapRopeItem(new Item.Properties().stacksTo(1).durability(2)),
+            "kidnap_rope", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);
-
-    /**
-     * 导盲杖（移植自"失明症"模组）
-     * - 失明症玩家的核心探路工具
-     * - 短按右键：敲击探测正前方 4 格方块，以发光轮廓短暂显示
-     * - 长按右键：横扫模式，±24° 扇形探测并降低 40% 移速
-     */
-    public static final Item GUIDANCE_CANE = register(
-            new GuidanceCaneItem(new Item.Properties().stacksTo(1)),
-            "guidance_cane", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
@@ -233,18 +227,6 @@ public class ModItems {
     public static final Item TOY_HANDCUFFS = register(
             new HandCuffsItem((new Item.Properties()).stacksTo(1), 1), "toy_handcuffs",
             TOOLS_GROUP);
-    // 重刑犯手铐 - 纹理/逻辑同普通手铐，但无限耐久、无法挣脱（开局自动铐在重刑犯身上）
-    public static final Item CONVICT_HANDCUFFS = register(
-            new ConvictHandcuffsItem((new Item.Properties()).stacksTo(1)), "convict_handcuffs",
-            TOOLS_GROUP);
-    // 重刑犯押运工具 - 不会断的拴绳，可套住重刑犯运输（无限耐久）
-    public static final Item CONVICT_ESCORT_LEASH = register(
-            new ConvictEscortLeashItem((new Item.Properties()).stacksTo(1)), "convict_escort_leash",
-            TOOLS_GROUP);
-    // 狱警钥匙 - 材质模型同铁门钥匙，无限耐久，可打开房间门与关押门
-    public static final Item JAILER_KEY = register(
-            new JailerKeyItem((new Item.Properties()).stacksTo(1)), "jailer_key",
-            TOOLS_GROUP);
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
             WEAPONS_GROUP);
@@ -294,10 +276,6 @@ public class ModItems {
     public static final Item STALKER_KNIFE_OFFHAND = register(
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
             "stalker_knife_offhand", WEAPONS_GROUP);
-    // 狼刀 - 狼人专属刀类武器：黑灯下举刀加快65%且击杀CD 18s，午夜狼嚎下无声且击杀CD 6s
-    public static final Item WOLF_KNIFE = register(
-            new WolfKnifeItem(new Item.Properties().stacksTo(1)),
-            "wolf_knife", WEAPONS_GROUP);
     public static final Item PIRATE_CUTLASS = register(
             new org.agmas.noellesroles.content.item.PirateCutlassItem(new Item.Properties().stacksTo(1)),
             "pirate_cutlass");
@@ -636,16 +614,6 @@ public class ModItems {
             new BombItem(new Item.Properties().stacksTo(1)),
             "bomb", ROLE_ITEMS_GROUP);
     /**
-     * 反人员地雷
-     * - 长按右键3秒在当前位置布设地雷
-     * - 布设者离开布设位置后3秒进入待发状态
-     * - 待发状态下玩家踩到地雷发出按钮声，踩雷者离开踩踏位置即引爆
-     * - 爆炸半径2.5格，范围内所有玩家被炸死，击杀者记为布设者
-     */
-    public static final Item LANDMINE = register(
-            new LandmineItem(new Item.Properties().stacksTo(1)),
-            "landmine", WEAPONS_GROUP);
-    /**
      * 轮椅
      */
     public static final Item WHEELCHAIR = register(
@@ -931,25 +899,6 @@ public class ModItems {
             "silenced_pistol", WEAPONS_GROUP);
 
     /**
-     * RPG-7 火箭筒
-     * - 右键发射火箭弹，左键装填（最高 1 发，自动消耗背包中的火箭弹）
-     * - 初始无弹药，装填后模型显示炮弹部分
-     */
-    public static final Item RPG7 = register(
-            new org.agmas.noellesroles.content.item.Rpg7Item(
-                    new Item.Properties().stacksTo(1)),
-            "rpg7", WEAPONS_GROUP);
-
-    /**
-     * RPG-7 火箭弹
-     * - 用于装填 RPG-7
-     */
-    public static final Item RPG7_AMMO = register(
-            new org.agmas.noellesroles.content.item.Rpg7AmmoItem(
-                    new Item.Properties()),
-            "rpg7_ammo", WEAPONS_GROUP);
-
-    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒
@@ -970,26 +919,6 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.DesertEagleMagazineItem(
                     new Item.Properties()),
             "desert_eagle_magazine", WEAPONS_GROUP);
-
-    /**
-     * 双枪-左手
-     * - 仅在副手时可以右键开枪，射程与贴图同左轮手枪
-     * - 只有双枪-右手处于冷却中时才能开枪，与右手枪轮流开火
-     */
-    public static final Item DUAL_PISTOL_LEFT = register(
-            new org.agmas.noellesroles.content.item.DualPistolItem(
-                    new Item.Properties().stacksTo(1), true),
-            "dual_pistol_left", WEAPONS_GROUP);
-
-    /**
-     * 双枪-右手
-     * - 仅在主手时可以右键开枪，射程与贴图同左轮手枪
-     * - 开枪后进入冷却，冷却期间右键放行给副手的双枪-左手，与左手枪轮流开火
-     */
-    public static final Item DUAL_PISTOL_RIGHT = register(
-            new org.agmas.noellesroles.content.item.DualPistolItem(
-                    new Item.Properties().stacksTo(1), false),
-            "dual_pistol_right", WEAPONS_GROUP);
 
     /**
      * 海盗燧发枪
@@ -1238,12 +1167,10 @@ public class ModItems {
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE, new StalkerKnifeChargeItem());
         ChargeableItemRegistry.register(ModItems.SILENCE_TOTEM, new SilenceTotemChargeItem());
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE_OFFHAND, new StalkerKnifeChargeItem());
-        ChargeableItemRegistry.register(ModItems.WOLF_KNIFE, new WolfKnifeChargeItem());
         ChargeableItemRegistry.register(TOXIN, new ToxinChargeItem());
         ChargeableItemRegistry.register(ModItems.THROWING_KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(ANTIDOTE, new AntidoteChargeItem());
         ChargeableItemRegistry.register(ModItems.PIRATE_CUTLASS, new org.agmas.noellesroles.content.item.charge_item.PirateCutlassChargeItem());
-        ChargeableItemRegistry.register(LANDMINE, new LandmineChargeItem());
     }
     // public static final Item SHERIFF_GUN_MAINTENANCE = register(
     // new SheriffGunMaintenanceItem(new Item.Settings().maxCount(1)),

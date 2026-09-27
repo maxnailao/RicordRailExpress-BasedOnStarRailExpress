@@ -9,17 +9,13 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.MapManager;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
-import org.agmas.harpymodloader.commands.RoleCountManager;
-import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
-import org.agmas.harpymodloader.modded_murder.ModdedWeights;
 import org.agmas.harpymodloader.modifiers.EggModifier;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -40,14 +36,6 @@ import java.util.List;
 import java.util.Random;
 
 public class InitModRolesMax {
-    /**
-     * 预备魔女命中魔女监牢时的本局权重下限。中立池里几十个职业的权重都是 1，100 能让它在 3 个中立槽位里
-     * 稳定抽出（约九成）：既做到「较高概率」，也保留偶尔没刷出的变化。
-     * 这是下限而非硬值：用户在 config/harpymodloader.json 的 roleWeights 里写更高的值会直接生效（见
-     * applySpecialMapRoles），不用重新编译。
-     */
-    private static final float PRE_WITCH_MAP_WEIGHT = 100f;
-
     public static Random random = new Random();
     public static boolean isEggEnabled = false;
     public static boolean isTouhouEnabled = false;
@@ -121,9 +109,6 @@ public class InitModRolesMax {
         // Hacker role max 1 per game
         Harpymodloader.setRoleMaximum(ModRoles.BLACKKE_ID, 1);
 
-        // 侦搜者每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.ZHENSOUZHE_ID, 1);
-
         // 不应该刷新
         Harpymodloader.setRoleMaximum(SpecialGameModeRoles.CUSTOM_PENDING, 0);
 
@@ -161,14 +146,14 @@ public class InitModRolesMax {
         // 运动员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);
 
-        // 明星：不单独刷新，只能作为经纪人的关联职业出现（每局由 registerDynamic 决定）
-        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 0);
+        // 明星每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 1);
 
         // 退伍军人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.VETERAN_ID, 1);
 
-        // 歌手：不单独刷新，只能作为经纪人的关联职业出现（每局由 registerDynamic 决定）
-        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 0);
+        // 歌手每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 1);
 
         // 经纪人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.JINGJIREN_WOW_ID, 1);
@@ -176,7 +161,7 @@ public class InitModRolesMax {
         // 心理学家每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.PSYCHOLOGIST_ID, 1);
 
-        // 咒术师每局只能有 1 个
+        // 咒法师每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.WARLOCK_ID, 1);
 
         // 嬉命人每局只能有 1 个
@@ -288,9 +273,6 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
         // 智力障碍患者与监护人绑定生成
         RoleAssignmentManager.addOccupationRole(ModRoles.ZHIZHANG, ModRoles.GUARDIAN);
-        // 经纪人与歌手/明星绑定生成（每局只带其中一名或两名，见 registerDynamic）
-        RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
-        RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
@@ -365,26 +347,12 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.SHOUYIYUAN_ID, 1);
         // 盲人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.NIYAJINGSHIBUSHIXIALE_ID, 1);
-        // 逃票者每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.TAOPIAOZHE_ID, 1);
 
         // 坠木和皮革嘎的默认为0（概率刷新）
         Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
         // 绑定生成：坠木刷新时皮革嘎的也刷新
         RoleAssignmentManager.addOccupationRole(ModRoles.ZHUIMU, ModRoles.PIGE);
-
-        // 重刑犯与狱警：默认 0，仅在监狱图由 autoRoleMaxCount 经 getRoundMaxCount 动态启用为 1
-        Harpymodloader.setRoleMaximum(ModRoles.CONVICT_ID, 0);
-        Harpymodloader.setRoleMaximum(ModRoles.JAILER_ID, 0);
-        // 绑定生成：重刑犯刷新时狱警一同刷新
-        RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
-
-        // 预备魔女与魔女：默认 0。预备魔女是特殊地图职业（specialMapRole = WITCH_PRISON），
-        // 本局上限由 applySpecialMapRoles 按 witchPrisonRolesMaps 决定（与雪怪 / 木乃伊同一套机制）；
-        // 魔女的 getRoundMaxCount 恒为 0（只能由预备魔女转化产生）
-        Harpymodloader.setRoleMaximum(ModRoles.PRE_WITCH_ID, 0);
-        Harpymodloader.setRoleMaximum(ModRoles.MAJO_ID, 0);
     }
 
     public static void registerDynamic() {
@@ -529,18 +497,6 @@ public class InitModRolesMax {
 
             applySpecialMapRoles(currentMap, config);
             applySpecialVigilanteRoles(players_count, config, random, currentMap);
-            // 必须在 applySpecialMapRoles 之后，本局上限此时才是最终值
-            logPreWitchSpawnCheck(serverLevel, currentMap, players_count);
-
-            // 智力障碍患者与监护人：按概率成对刷新。
-            // 监护人恒为 0，只能由智力障碍患者的关联职业展开自动补齐，因此不会出现"只有监护人没有患者"的情况。
-            if (players_count >= config.minPlayerForZhizhang
-                    && random.nextInt(0, 100) < config.chanceOfZhizhang) {
-                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 1);
-            } else {
-                Harpymodloader.setRoleMaximum(ModRoles.ZHIZHANG_ID, 0);
-            }
-            Harpymodloader.setRoleMaximum(ModRoles.GUARDIAN_ID, 0);
 
             // 坠木和皮革嘎的：每把概率刷新，不占用中立位
             if (players_count >= 8 && random.nextInt(0, 100) < 5) {
@@ -550,40 +506,7 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
                 Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
             }
-
-            applyManagerArtistBinding(random);
         });
-    }
-
-    /**
-     * 经纪人绑定刷新歌手/明星：经纪人刷新时至少带一名歌手或明星，两者可以同时出现，也可以只出现一个。
-     * 歌手与明星不再单独进入角色池，只能作为经纪人的关联职业展开产生。
-     *
-     * <p>这里是本局的临时分配关系：每局先解除上一局留下的绑定，再按掷骰结果重新绑定。
-     * 职业介绍里展示的关联职业由 addBothRelatedRole 单独维护，不随本局掷骰结果漂移。
-     */
-    private static void applyManagerArtistBinding(Random random) {
-        Harpymodloader.setRoleMaximum(ModRoles.SINGER_ID, 0);
-        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 0);
-
-        boolean managerEnabled = Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.JINGJIREN_WOW_ID, 0) > 0;
-        boolean withSinger = managerEnabled && random.nextBoolean();
-        boolean withStar = managerEnabled && random.nextBoolean();
-        if (managerEnabled && !withSinger && !withStar) {
-            // 掷骰同时落空时保底一名，避免经纪人独自刷新
-            withStar = true;
-        }
-
-        // 先解除上一局留下的绑定，再按本局结果重新绑定
-        ModRoles.JINGJIREN_WOW.removeOccupationRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
-        if (withSinger) {
-            RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
-        }
-        if (withStar) {
-            RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
-        }
-        // 职业介绍中的互相展示始终保留，不受本局绑定结果影响
-        ModRoles.JINGJIREN_WOW.addBothRelatedRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
     }
 
     private static void applySpecialMapRoles(String currentMap, NoellesRolesConfig config) {
@@ -591,25 +514,10 @@ public class InitModRolesMax {
             if (!role.isSpecialMapRole()) {
                 continue;
             }
-            boolean mapMatched = isSpecialMapRoleEnabled(role, currentMap, config);
-            if (mapMatched) {
+            if (isSpecialMapRoleEnabled(role, currentMap, config)) {
                 Harpymodloader.setRoleMaximum(role, Math.max(0, role.spawnInfo.maxSpawn));
             } else {
                 Harpymodloader.setRoleMaximum(role, 0);
-            }
-            // 预备魔女是魔女监牢的招牌角色，只把本局上限设成 1 并不够：它还要和几十个中立职业按权重抢
-            // 中立槽位，权重 10 时每局出场率只有三成左右。命中地图时把本局权重拉高，未命中则清掉，
-            // 避免跨局残留（ROLE_WEIGHT 影响的是出场率，ROLE_MAX 才是本局上限）。
-            if (role == ModRoles.PRE_WITCH) {
-                if (mapMatched) {
-                    // 取下限：用户把 config/harpymodloader.json 的 roleWeights 调得更高时听用户的
-                    float configuredWeight = HarpyModLoaderConfig.HANDLER.instance().useCustomRoleWeights
-                            ? ModdedWeights.getRoleWeight(role)
-                            : 1f;
-                    Harpymodloader.setRoleWeight(role, Math.max(PRE_WITCH_MAP_WEIGHT, configuredWeight));
-                } else {
-                    Harpymodloader.clearRoleWeight(role.identifier());
-                }
             }
         }
     }
@@ -675,60 +583,13 @@ public class InitModRolesMax {
     private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
             case ALL -> true;
-            case QIYUCUN -> NoellesRolesConfig.matchesMapList(config.maChenXuMaps, currentMap);
-            case BIGMAP -> NoellesRolesConfig.matchesMapList(config.swastMaps, currentMap);
-            case UNDERWATER -> NoellesRolesConfig.matchesMapList(config.underwaterRolesMaps, currentMap);
-            case FLY -> NoellesRolesConfig.matchesMapList(config.airRolesMaps, currentMap);
-            case TRAP -> NoellesRolesConfig.matchesMapList(config.trapRolesMaps, currentMap);
-            case SNOW -> NoellesRolesConfig.matchesMapList(config.snowRolesMaps, currentMap);
-            case DESERT -> NoellesRolesConfig.matchesMapList(config.desertRolesMaps, currentMap);
-            case WITCH_PRISON -> NoellesRolesConfig.matchesMapList(config.witchPrisonRolesMaps, currentMap);
+            case QIYUCUN -> config.maChenXuMaps.contains(currentMap);
+            case BIGMAP -> config.swastMaps.contains(currentMap);
+            case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
+            case FLY -> config.airRolesMaps.contains(currentMap);
+            case TRAP -> config.trapRolesMaps.contains(currentMap);
+            case SNOW -> config.snowRolesMaps.contains(currentMap);
         };
-    }
-
-    /**
-     * 把"预备魔女能不能自然刷新"的前提直接写进日志，省掉反复猜配置：
-     * 当前地图是否在 witchPrisonRolesMaps 里、配置的地图名在本世界 train_maps 里是否真的存在、
-     * 玩家数是否过 neutralMinPlayerCount 门槛（决定中立槽位）、以及本局最终算出的角色上限。
-     * 任一条件不满足，这局就不会自然刷新预备魔女。
-     */
-    private static void logPreWitchSpawnCheck(ServerLevel serverLevel, String currentMap, int playersCount) {
-        NoellesRolesConfig config = NoellesRolesConfig.instance();
-        List<String> configuredMaps = config.witchPrisonRolesMaps;
-        boolean mapMatched = NoellesRolesConfig.matchesMapList(configuredMaps, currentMap);
-        int neutralSlots = RoleCountManager.getNeutralCount(playersCount);
-        SRE.LOGGER.info(
-                "[pre_witch] 地图={} 配置地图={} 命中={} 玩家数={} 中立槽位={} 本局上限={} 本局权重={} 开局概率={} 配置上限={}",
-                currentMap, configuredMaps, mapMatched, playersCount, neutralSlots,
-                Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.PRE_WITCH_ID, 0),
-                Harpymodloader.ROLE_WEIGHT.getOrDefault(ModRoles.PRE_WITCH_ID, 0f),
-                ModRoles.PRE_WITCH.spawnInfo.enableChance, ModRoles.PRE_WITCH.spawnInfo.maxSpawn);
-        if (!mapMatched) {
-            SRE.LOGGER.warn(
-                    "[pre_witch] 地图 {} 不在 witchPrisonRolesMaps {} 中，本局不刷新预备魔女（列表留空表示不限制地图）",
-                    currentMap, configuredMaps);
-            if (!configuredMaps.isEmpty()) {
-                List<String> availableMaps = MapManager.getAvailableMaps(serverLevel);
-                List<String> missing = new ArrayList<>();
-                for (String configured : configuredMaps) {
-                    // 复用同一套比对：以本世界真实地图名列表作为白名单去查配置的每一个名字
-                    if (!NoellesRolesConfig.matchesMapList(availableMaps, configured)) {
-                        missing.add(configured);
-                    }
-                }
-                if (missing.isEmpty()) {
-                    SRE.LOGGER.warn("[pre_witch] 配置的地图名在本世界 train_maps 里都存在（本世界共 {} 张地图），只是本局没抽到它们",
-                            availableMaps.size());
-                } else {
-                    SRE.LOGGER.warn("[pre_witch] 配置的地图名 {} 在本世界 train_maps 里不存在，任何一局都不会命中；本世界实际地图：{}",
-                            missing, availableMaps);
-                }
-            }
-        } else if (neutralSlots <= 0) {
-            SRE.LOGGER.warn(
-                    "[pre_witch] 中立槽位为 0（玩家数 {} ≤ harpymodloader.json 的 neutralMinPlayerCount {}），本局任何中立职业都不会刷新",
-                    playersCount, HarpyModLoaderConfig.HANDLER.instance().neutralMinPlayerCount);
-        }
     }
 
     private static void autoRoleMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,

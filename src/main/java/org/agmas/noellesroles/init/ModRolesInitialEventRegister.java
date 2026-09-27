@@ -44,7 +44,6 @@ import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerC
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.kalabiqiumiao.KalabiqiumiaoPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.shushi.ShuShiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
@@ -149,15 +148,6 @@ public class ModRolesInitialEventRegister {
                     // 魔术师加入指挥官频道
                     player.sendSystemMessage(Component.translatable("message.magician.commander_present_joined_channel")
                             .withStyle(ChatFormatting.GOLD));
-                }
-            }
-
-            // 扮演者角色初始化：选定扮演职业并挂载其商店，清空杀手初始金币（伪装成普通平民）
-            if (role.identifier().equals(ModRoles.BANYANZHE_ID)) {
-                var banyanzheComponent = ModComponents.BANYANZHE.maybeGet(player).orElse(null);
-                if (banyanzheComponent != null) {
-                    banyanzheComponent.pickDisguiseIfAbsent();
-                    SREPlayerShopComponent.KEY.get(player).setBalance(0);
                 }
             }
 
@@ -507,13 +497,6 @@ public class ModRolesInitialEventRegister {
                 childComp.sync();
                 return;
             }
-            // 顽童角色初始化
-            if (role.identifier().equals(ModRoles.WANTONG_XIAOPIHAI.identifier())) {
-                var wantongComp = ModComponents.WANTONG.get(player);
-                wantongComp.init();
-                wantongComp.sync();
-                return;
-            }
             // 召回杀手角色初始化
             if (role.identifier().equals(ModRoles.RECALL_KILLER.identifier())) {
                 var comp = ModComponents.RECALL_KILLER.get(player);
@@ -543,15 +526,6 @@ public class ModRolesInitialEventRegister {
                 comp.sync();
                 return;
             }
-            // 预备魔女角色初始化：开局随机技能（召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯）。
-            // 框架在本监听器之后还会自己再调一次 onInit → init()，组件内部靠 skillLocked 保证一局只摇一次，
-            // 这里先 init() 再 sync()，客户端拿到的就是本局最终技能。
-            if (role.identifier().equals(ModRoles.PRE_WITCH.identifier())) {
-                var preWitch = ModComponents.PRE_WITCH.get(player);
-                preWitch.init();
-                preWitch.sync();
-                return;
-            }
             // 雪原猎手初始化
             if (role.identifier().equals(ModRoles.SNOW_HUNTER.identifier())) {
                 var comp = ModComponents.SNOW_HUNTER.get(player);
@@ -566,12 +540,6 @@ public class ModRolesInitialEventRegister {
             // 诱杀者角色初始化
             if (role.identifier().equals(ModRoles.KILLMAN.identifier())) {
                 var comp = ModComponents.KILLMAN.get(player);
-                comp.init();
-                comp.sync();
-            }
-            // 鬼影角色初始化
-            if (role.identifier().equals(ModRoles.GHOSTYING.identifier())) {
-                var comp = ModComponents.GHOSTYING.get(player);
                 comp.init();
                 comp.sync();
             }
@@ -600,8 +568,6 @@ public class ModRolesInitialEventRegister {
                                 SREPlayerShopComponent.KEY.get(player).addToBalance(50);
                             }
                         }));
-        // 重刑犯被动收入不在此注册 RolePassive：那会把它显示到 HUD 右下角被动栏。
-        // 改由 ConvictPlayerComponent.tickActiveConvict 按配置的间隔/金额周期发放。
         // 宿命的罪人技能注册：
         // 技能 1「命运的启示」(G)：近距离查看准星目标最近 3 次杀人方式
         // 技能 2「重启」(Shift+G)：随机死因死亡脱离，回房间 + 短暂无敌
@@ -759,47 +725,6 @@ public class ModRolesInitialEventRegister {
                     return comp.finalizePossession();
                 }).shifted(true).announceToSelf(false).build());
 
-        // 幻灵技能：
-        // - G 键：附身准星玩家（隐身静步寻找期/冒险宽限期均可；附身杀手/中立即死）
-        // - Shift+G 键：附身期间主动脱离（转回隐身+静步冒险模式，进入 8s 寻找）
-        // 注：附身期间处于旁观模式，旁观可用技能由角色 setCanUseSkillWhileSpectator(true) 豁免
-        RoleSkill.register(ModRoles.HUANYING,
-                RoleSkill.skill(SRE.id("huanling_possess"), "skill.noellesroles.huanling.possess", context -> {
-                    ServerPlayer player = context.player();
-                    var comp = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY
-                            .get(player);
-                    if (comp == null)
-                        return false;
-                    ServerPlayer target = context.target() == null ? null
-                            : (player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp
-                                    : null);
-                    return comp.possess(target);
-                }).showOnHud(true).announceToSelf(false).build(),
-
-                // Shift+G：主动脱离宿主（8s 宽限，隐身+静步冒险寻找）
-                RoleSkill.skill(SRE.id("huanling_detach"), "skill.noellesroles.huanling.detach", context -> {
-                    var comp = org.agmas.noellesroles.game.roles.innocence.huanling.HuanlingPlayerComponent.KEY
-                            .get(context.player());
-                    return comp != null && comp.detach();
-                }).shifted(true).showOnHud(true).announceToSelf(false).build());
-
-        // 复仇者技能：复仇心切
-        // 复仇激活后按 G 键释放：15秒速度2+无限体力+一层护盾+凶手红色透视，
-        // 期间只能击杀凶手；凶手死亡则成功，超时未击杀则自身死亡
-        RoleSkill.register(ModRoles.AVENGER,
-                RoleSkill.skill(SRE.id("avenger_rush"), "skill.noellesroles.avenger.rush", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator())
-                        return false;
-                    var comp = org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent.KEY
-                            .get(player);
-                    if (comp == null)
-                        return false;
-                    if (!context.skillReady())
-                        return false;
-                    return comp.tryUseRush();
-                }).announceToSelf(false).build());
-
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
             ServerPlayer player = context.player();
@@ -809,35 +734,32 @@ public class ModRolesInitialEventRegister {
             }
         });
 
-        // 咒术师技能注册（重做版）：窃取发肤（G）/ 蚀骨之咒（V 切换）/ 领域展开（背包点选）
-        org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager.register();
-        RoleSkill.register(ModRoles.WARLOCK,
-                RoleSkill.skill(SRE.id("warlock_steal"), "skill.noellesroles.warlock.steal", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator())
-                        return false;
-                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY
-                            .maybeGet(player).orElse(null);
-                    if (comp == null)
-                        return false;
-                    ServerPlayer target = context.target() != null
-                            && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null;
-                    return comp.trySteal(target);
-                }).cooldownSeconds(18).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("warlock_curse"), "skill.noellesroles.warlock.curse", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator())
-                        return false;
-                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY
-                            .maybeGet(player).orElse(null);
-                    if (comp == null)
-                        return false;
-                    ServerPlayer target = context.target() != null
-                            && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null;
-                    return comp.tryCurse(target);
-                }).cooldownSeconds(45).showOnHud(true).build());
-        // 领域展开（技能三）改为在背包 LimitedInventoryScreen 点选已被诅咒且存活的目标触发，
-        // 见 WarlockScreenMixin / WarlockDomainWidget / WarlockDomainC2SPacket（冷却记在组件里，60s）。
+        // 咒法师技能注册：标记目标玩家
+        RoleSkill.register(ModRoles.WARLOCK, context -> {
+            ServerPlayer player = context.player();
+            var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+            if (comp == null)
+                return;
+            UUID targetUuid = context.target();
+            ServerPlayer target = null;
+            if (targetUuid != null) {
+                Player p = player.level().getPlayerByUUID(targetUuid);
+                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)
+                        && player.distanceToSqr(sp) <= 4.0D * 4.0D) {
+                    target = sp;
+                }
+            }
+            if (target != null && comp.tryMark(target)) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.warlock.marked", target.getName().getString())
+                                .withStyle(ChatFormatting.LIGHT_PURPLE),
+                        true);
+            } else {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED),
+                        true);
+            }
+        });
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
@@ -952,14 +874,6 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(90).build());
 
-        // 侦搜者技能注册：按技能键知晓场上剩余存活人数，冷却90秒（技能1为背包点头像查存活，走网络包）
-        RoleSkill.register(ModRoles.ZHENSOUZHE, RoleSkill.skill(
-                SRE.id("zhensouzhe_scan_alive"),
-                "skill.noellesroles.zhensouzhe.scan_alive",
-                context -> org.agmas.noellesroles.game.roles.innocence.zhensouzhe.ZhensouzheHandler
-                        .scanAliveCount(context.player()))
-                .cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
-
         // 布谷鸟技能注册：在脚下放置蛋，冷却20秒
         RoleSkill.register(ModRoles.CUCKOO, RoleSkill.skill(
                 SRE.id("cuckoo_place_egg"),
@@ -1019,66 +933,6 @@ public class ModRolesInitialEventRegister {
                     }
                     return comp.useAbility();
                 }).cooldownSeconds(20).build());
-
-        // 木乃伊技能注册（沙漠地图限定独立中立，5 个技能全部非 shifted，V 键循环）：
-        // 技能1「木乃伊的诅咒」：打开背包选人叠层，冷却仅在选中成功后由 C2S 接收端记入（handler 返回 false）
-        // 技能2「恐吓」：隐身时 3 格内红色字幕；现身时恶魂音效 + 15 格内缓慢/反胃/黑暗 15s
-        // 技能3「现身」：诅咒 3 层玩家环形区或棺材旁标记玩家处传送现身 15s（条件不满足不进 CD）
-        // 技能4「领地确认」：平地放置棺材，充能机制限制一局最多放置数量（配置默认 3）
-        // 技能5「干枯」：仅完整现身可用，周围玩家口渴值下降 40%（保底剩余 5%）
-        var munaiyiConfig = NoellesRolesConfig.HANDLER.instance();
-        RoleSkill.register(ModRoles.MUNAIYI_DESERT,
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_CURSE,
-                        "skill.noellesroles.munaiyi.curse", context -> {
-                            ServerPlayer player = context.player();
-                            if (player.isSpectator())
-                                return false;
-                            var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                                    .maybeGet(player).orElse(null);
-                            if (comp == null)
-                                return false;
-                            // 打开背包选人；实际施加与冷却记账在选人 C2S 接收端，此处不消耗冷却/充能
-                            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-                                    new org.agmas.noellesroles.packet.MunaiyiOpenInventoryS2CPacket());
-                            return false;
-                        }).cooldownTicks(munaiyiConfig.munaiyiCurseCooldown * 20).showOnHud(true).build(),
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_SCARE,
-                        "skill.noellesroles.munaiyi.scare", context -> {
-                            var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                                    .maybeGet(context.player()).orElse(null);
-                            if (comp == null)
-                                return false;
-                            return comp.scare();
-                        }).cooldownTicks(munaiyiConfig.munaiyiScareCooldown * 20).showOnHud(true).build(),
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_REVEAL,
-                        "skill.noellesroles.munaiyi.reveal", context -> {
-                            var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                                    .maybeGet(context.player()).orElse(null);
-                            if (comp == null)
-                                return false;
-                            return comp.tryReveal();
-                        }).cooldownTicks(munaiyiConfig.munaiyiRevealCooldown * 20).showOnHud(true).build(),
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_TERRITORY,
-                        "skill.noellesroles.munaiyi.territory", context -> {
-                            var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                                    .maybeGet(context.player()).orElse(null);
-                            if (comp == null)
-                                return false;
-                            return comp.placeCoffin();
-                        }).charges(munaiyiConfig.munaiyiMaxCoffins).showOnHud(true).build(),
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_WITHER,
-                        "skill.noellesroles.munaiyi.wither", context -> {
-                            var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-                                    .maybeGet(context.player()).orElse(null);
-                            if (comp == null)
-                                return false;
-                            return comp.wither();
-                        }).cooldownTicks(munaiyiConfig.munaiyiWitherCooldown * 20).showOnHud(true).build());
 
         // 点灯人技能注册：隐身，消耗1次效果，最多5次
         RoleSkill.register(ModRoles.CANDLE_BEARER, RoleSkill.skill(
@@ -1539,70 +1393,6 @@ public class ModRolesInitialEventRegister {
                         context -> SaltedFishPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
                         .showOnHud(true).announceToSelf(false).build());
 
-        // 纸片人技能注册：弦化 —— 变为纸片人（模型与判定箱压扁）30秒，
-        // 获得缓降与跳跃提升 II，可自由切换视角，冷却 120 秒
-        RoleSkill.register(ModRoles.KALABIQIUMIAO,
-                RoleSkill.skill(KalabiqiumiaoPlayerComponent.SKILL_ID, "skill.noellesroles.kalabiqiumiao.stringify",
-                        context -> KalabiqiumiaoPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
-                        .cooldownSeconds(KalabiqiumiaoPlayerComponent.COOLDOWN_TICKS / 20)
-                        .showOnHud(true).announceToSelf(false).build());
-
-        // 寻鬼人技能注册：寻鬼 —— 花费 125 金币，在 8 秒内以 actionbar 罗盘样式指明布袋鬼方位，冷却 90 秒。
-        // 金币/目标校验失败时返回 false，不消耗冷却也不扣钱。
-        RoleSkill.register(ModRoles.XUNGUIREN,
-                RoleSkill.skill(org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent.SKILL_ID,
-                        "skill.noellesroles.xunguiren.track",
-                        context -> org.agmas.noellesroles.game.roles.innocence.xunguiren.XunguirenPlayerComponent.KEY
-                                .get(context.player()).useSkill(context.player()))
-                        .cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
-
-        // 躲藏专家技能注册：变身躲藏 —— 花费 200 金币变身为准星对准的方块，
-        // 持续 40 秒，冷却 175 秒；变身期间隐身且无法使用任何道具，
-        // toggleable 支持冷却中再按技能键主动退出（退出不会重置冷却）。
-        // 注册普通 + 蹲下双定义：统一技能系统会按蹲下状态过滤技能定义，
-        // 躲藏玩法中玩家常处于蹲下状态，双定义保证蹲下时也能正常释放/退出；
-        // 两个定义冷却状态各自独立，释放成功后手动同步另一侧冷却。
-        int duomaomaoHideCooldown = NoellesRolesConfig.HANDLER.instance().duomaomaoMeimeiHideCooldownSeconds;
-        RoleSkill.register(ModRoles.DUOMAOMAO_MEIMEIHIDE,
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.SKILL_ID,
-                        "skill.noellesroles.duomaomao_meimeihide.transform",
-                        context -> {
-                            var comp = org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.KEY
-                                    .get(context.player());
-                            boolean used = comp.useSkill(context.player(), context.skillReady());
-                            if (used) {
-                                syncDuomaomaoHideCooldown(context.player(), duomaomaoHideCooldown);
-                            }
-                            return used;
-                        })
-                        .cooldownSeconds(duomaomaoHideCooldown)
-                        .toggleable(true).showOnHud(true).announceToSelf(false).build(),
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.SKILL_ID_SHIFTED,
-                        "skill.noellesroles.duomaomao_meimeihide.transform",
-                        context -> {
-                            var comp = org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.KEY
-                                    .get(context.player());
-                            // 变身中：直接退出（不重置冷却）；保护期内的重复触发会被忽略
-                            if (comp.isHiding()) {
-                                comp.tryExit();
-                                return false;
-                            }
-                            // 蹲下变体以主技能冷却状态为准，避免绕过冷却重复变身
-                            var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(context.player());
-                            boolean primaryReady = ability.getSkillState(
-                                    org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.SKILL_ID)
-                                    .cooldown <= 0;
-                            boolean used = comp.useSkill(context.player(), primaryReady && context.skillReady());
-                            if (used) {
-                                syncDuomaomaoHideCooldown(context.player(), duomaomaoHideCooldown);
-                            }
-                            return used;
-                        })
-                        .cooldownSeconds(duomaomaoHideCooldown)
-                        .shifted(true).toggleable(true).announceToSelf(false).build());
-
         // 出题人不适用于统一的技能注册：其需要不同的触发方式但这个api不兼容。
         // 年兽技能注册：发送红包给目标玩家（客户端选目标）
         RoleSkill.register(ModRoles.NIAN_SHOU, RoleSkill.skill(
@@ -1935,10 +1725,6 @@ public class ModRolesInitialEventRegister {
                     }
                     shop.addToBalance(-100);
                     SREPlayerShopComponent.KEY.get(targetPlayer).addToBalance(50);
-                    // 捐赠成功获得声望值（关灯免疫黑暗的消耗资源）
-                    org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent.KEY
-                            .get(player)
-                            .addReputation(org.agmas.noellesroles.game.roles.innocence.philanthropist.PhilanthropistPlayerComponent.DONATE_REPUTATION);
                     player.displayClientMessage(
                             Component.translatable("message.noellesroles.philanthropist.donated",
                                             targetPlayer.getName().getString())
@@ -2096,7 +1882,7 @@ public class ModRolesInitialEventRegister {
                     return comp.usePhaseShift();
                 }).cooldownSeconds(45).toggleable(true).showOnHud(true).announceToSelf(false).build());
 
-        // ==================== 诱杀者技能注册：诱杀左轮（花貰75金币原地放置陷阱左轮，CD 100s） ====================
+        // ==================== 诱杀者技能注册：诱杀左轮（花费75金币原地放置陷阱左轮，CD 100s） ====================
         RoleSkill.register(ModRoles.KILLMAN, RoleSkill.skill(
                 SRE.id("killman_trap_revolver"),
                 "skill.noellesroles.killman.trap",
@@ -2107,19 +1893,6 @@ public class ModRolesInitialEventRegister {
                     if (comp == null) return false;
                     return comp.useTrapRevolver();
                 }).cooldownSeconds(100).showOnHud(true).announceToSelf(false).build());
-        
-        // ==================== 鬼影技能注册：鬼影步（向方向键方向瞬移4格+残影假人，释放无CD；
-        // 储备与回转由组件维护：最多储备5次，每20秒回转1次存储） ====================
-        RoleSkill.register(ModRoles.GHOSTYING, RoleSkill.skill(
-                SRE.id("ghostying_blink"),
-                "skill.noellesroles.ghostying.blink",
-                context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    var comp = ModComponents.GHOSTYING.get(player);
-                    if (comp == null) return false;
-                    return comp.useBlink(player);
-                }).showOnHud(true).announceToSelf(false).build());
 
         // ==================== 幻魔者技能注册：地刺(G)，CD30s；恼鬼召唤通过背包界面点选玩家触发 ====================
         RoleSkill.register(ModRoles.HUANMOZHE,
@@ -2211,64 +1984,6 @@ public class ModRolesInitialEventRegister {
                             return comp.useSpotlight();
                         }).cooldownSeconds(100).shifted(true).showOnHud(true).announceToSelf(true).build());
 
-        // ==================== 史莱姆技能注册：按 G 将脚下 3x3 方块临时变成史莱姆块，持续20秒，冷却30秒 ====================
-        RoleSkill.register(ModRoles.SHILAIMU,
-                RoleSkill.skill(SRE.id("shilaimu_slime_field"),
-                        "skill.noellesroles.shilaimu.slime_field",
-                        context -> org.agmas.noellesroles.game.roles.innocence.shilaimu.ShilaimuPlayerComponent.KEY
-                                .get(context.player()).useSkill(context.player()))
-                        .cooldownSeconds(30).showOnHud(true).announceToSelf(false).build());
-
-        // ==================== 铁傀儡技能注册：按 G 击退+击飞准星玩家，最多存储3次，存储恢复CD 30秒，释放间隔CD 6秒 ====================
-        RoleSkill.register(ModRoles.IMIRONMAN_TIEKUILEI,
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.innocence.imironman.ImironmanPlayerComponent.SKILL_ID,
-                        "skill.noellesroles.imironman.iron_punch",
-                        context -> {
-                            ServerPlayer player = context.player();
-                            if (player.isSpectator())
-                                return false;
-                            var comp = ModComponents.IMIRONMAN_TIEKUILEI.get(player);
-                            if (comp == null)
-                                return false;
-                            return comp.useIronPunch();
-                        })
-                        .cooldownSeconds(NoellesRolesConfig.HANDLER.instance().imironmanCastIntervalSeconds)
-                        .charges(NoellesRolesConfig.HANDLER.instance().imironmanMaxCharges)
-                        .showOnHud(true).announceToSelf(true).build());
-
-        // 预备魔女技能：同一个按键，按开局随机到的技能派发
-        // （召回者 / 时空旅者 / 净化者 / 明星 / 死亡回溯，冷却由组件回写）
-        RoleSkill.register(ModRoles.PRE_WITCH,
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.PRE_WITCH_SKILL_ID,
-                        "skill.noellesroles.prewitch.ability",
-                        context -> org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.use(
-                                context.player(), context.target(), false))
-                        .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
-
-        // 魔女技能：同一按键，继承的技能在魔女形态下的表现（净化者→破法者、明星→禁锢）
-        RoleSkill.register(ModRoles.MAJO,
-                RoleSkill.skill(
-                        org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.MAJO_SKILL_ID,
-                        "skill.noellesroles.majo.ability",
-                        context -> org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.use(
-                                context.player(), context.target(), true))
-                        .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
-
-    }
-
-    /**
-     * 躲藏专家双定义冷却同步：普通/蹲下两个技能定义的冷却状态各自独立，
-     * 释放成功后把两个技能状态的冷却都设为完整冷却，保证蹲下/站立两条路径共享同一个冷却。
-     */
-    private static void syncDuomaomaoHideCooldown(ServerPlayer player, int cooldownSeconds) {
-        var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(player);
-        int ticks = cooldownSeconds * 20;
-        ability.setSkillCooldown(
-                org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.SKILL_ID, ticks);
-        ability.setSkillCooldown(
-                org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide.DuomaomaoMeimeiHidePlayerComponent.SKILL_ID_SHIFTED, ticks);
     }
 
     /**

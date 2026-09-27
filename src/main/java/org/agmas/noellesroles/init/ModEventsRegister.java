@@ -79,7 +79,6 @@ import org.agmas.noellesroles.content.entity.HallucinationAreaManager;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.ServerSmokeAreaManager;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.content.item.ConvictHandcuffsItem;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.content.item.BatonHandler;
@@ -163,9 +162,7 @@ public class ModEventsRegister {
     // Noellesroles.id("wind_yaose"), -0.2f, AttributeModifier.Operation.ADD_VALUE);
 
     /**
-     * 处理窃皮者死亡免疫 - 有偷来皮肤时被特定武器击中进入眩晕
-     * 可防御：左轮、消音左轮、德林加、刀（退伍军刀）、箭（毒箭）
-     * 疯魔期间优先消耗疯魔护盾：有疯魔护盾时不消耗窃皮抵挡次数
+     * 处理窃皮者死亡免疫 - 有偷来皮肤时被枪击中进入眩晕
      */
     private static boolean handleSkincrawlerDeath(Player victim, ResourceLocation deathReason) {
         if (victim == null || victim.level().isClientSide())
@@ -175,20 +172,10 @@ public class ModEventsRegister {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
         if (!gameWorld.isRole(victim, ModRoles.SKINCRAWLER))
             return false;
-        // 可防御的死亡原因：左轮/消音左轮/德林加/刀（退伍军刀）/箭（毒箭）
-        boolean blockable = GameConstants.DeathReasons.REVOLVER.equals(deathReason)
-                || GameConstants.DeathReasons.DERRINGER.equals(deathReason)
-                || GameConstants.DeathReasons.KNIFE.equals(deathReason)
-                || GameConstants.DeathReasons.ARROW.equals(deathReason)
-                || deathReason.getPath().equals("silenced_pistol_shot");
-        if (!blockable)
+        if (!GameConstants.DeathReasons.REVOLVER.equals(deathReason))
             return false;
         var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(sp);
         if (comp == null || comp.stolenSkin == null || comp.stolenSkin.equals(sp.getUUID()))
-            return false;
-        // 疯魔优先：疯魔护盾尚存时不消耗窃皮抵挡次数，交由 GameMode.killPlayer 消耗疯魔护盾
-        var psycho = SREPlayerPsychoComponent.KEY.get(sp);
-        if (psycho.getPsychoTicks() > 0 && psycho.getArmour() > 0)
             return false;
         if (comp.blockCharges <= 0)
             return false;
@@ -1117,9 +1104,7 @@ public class ModEventsRegister {
                 SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                 if (gameWorldComponent.isRole(victim, ModRoles.JESTER)
                         && !gameWorldComponent.isRole(killer, ModRoles.JESTER)
-                        && (gameWorldComponent.isInnocent(killer)
-                                // 黑警为中立阵营，特例允许其击杀触发小丑精神爆发
-                                || gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP))) {
+                        && gameWorldComponent.isInnocent(killer)) {
                     SREPlayerPsychoComponent component = SREPlayerPsychoComponent.KEY.get(victim);
                     if (component.getPsychoTicks() <= 0) {
                         component.startPsycho();
@@ -1169,7 +1154,7 @@ public class ModEventsRegister {
         GamblerHandler.register();
         StalkerPlayerComponent.registerEvents();
         org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.registerEvents();
-        //CupidPlayerComponent.registerEvents();
+        CupidPlayerComponent.registerEvents();
         ChatHudRules.cantUseChatHud.add((p) -> {
             /**
              * 这只会发生在客户端
@@ -1317,10 +1302,6 @@ public class ModEventsRegister {
         CuckooEggHandler.register();
         // 注册保安技能
         GuardPlayerHandler.register();
-        // 注册狱警防爆盾技能（背包有防爆盾牌时按技能键装 / 卸副手，同保安）
-        org.agmas.noellesroles.game.roles.vigilante.jailer.JailerPlayerHandler.register();
-        // 注册狱警钥匙的房间门交互（可开带房号的房间门，不开铁门）
-        org.agmas.noellesroles.content.item.JailerKeyDoorHandler.register();
         // 格罗赛尔游记：放逐管理器（tick + 击杀改判 + 一局结束清理）
         org.agmas.noellesroles.content.item.GroselleJourneyManager.register();
         VoodooDeathHandler.registerEvents();
@@ -1331,6 +1312,9 @@ public class ModEventsRegister {
         // 掠夺者击杀冷却
         org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent.registerKillCooldownEvent();
 
+        // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
+        org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
+
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
         };
@@ -1340,10 +1324,6 @@ public class ModEventsRegister {
             WushujiaPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
-            // 复位蜂后领袖加成（蜜蜂家族中毒致死时间减半）
-            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.resetQueenLeaderBonus();
-            // 复位蜜蜂家族全灭检查的待处理标记
-            org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.reset();
 
             // 清除所有玩家的感染状态
             for (ServerPlayer player : world.players()) {
@@ -1498,9 +1478,6 @@ public class ModEventsRegister {
             }
             if (entity instanceof Player target) {
                 if (HandCuffsItem.hasHandCuff(target)) {
-                    // 重刑犯手铐由 ConvictChoiceManager 专属处理（需蹲下 + 弹抉择 GUI），此处跳过
-                    if (ConvictHandcuffsItem.hasConvictHandCuff(target))
-                        return InteractionResult.PASS;
                     if (!player.getMainHandItem().isEmpty())
                         return InteractionResult.PASS;
                     var fkit = HandCuffsItem.putOffHandCuff(target);
@@ -1592,10 +1569,6 @@ public class ModEventsRegister {
         ConspiratorKilledPlayer.registerEvents();
         // 注册黑警胜利条件
         CorruptCopWinChecker.registerEvent();
-        // 注册重刑犯开局流程（生成方块传送 + 戴手铐 + 抉择 GUI + 30s 计时）
-        org.agmas.noellesroles.game.roles.neutral.convict.ConvictChoiceManager.register();
-        // 注册重刑犯「毁灭一切」独立胜利检测（击杀所有人独赢）
-        org.agmas.noellesroles.game.roles.neutral.convict.ConvictWinChecker.registerEvent();
         // 注册疫使胜利检测和加速检测
         InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
@@ -2397,9 +2370,7 @@ public class ModEventsRegister {
             boolean hasPelican = false;
             boolean hasGodfather = false;
             boolean hasCorruptCop = false;
-            boolean hasDualGunner = false;
-            boolean hasBee = false;
-            boolean hasConvict = false;
+            boolean hasKidnapper = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2422,8 +2393,6 @@ public class ModEventsRegister {
                     hasCandlebearer = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.RAVEN)) {
                     hasRaven = true;
-                } else if (gameWorldComponent.isRole(p, org.agmas.noellesroles.role.BounsRoles.BEE_QUEEN)) {
-                    hasBee = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
                 } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
@@ -2436,10 +2405,8 @@ public class ModEventsRegister {
                     hasGodfather = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.CORRUPT_COP)){
                     hasCorruptCop = true;
-                } else if (gameWorldComponent.isRole(p, ModRoles.DUAL_GUNNER)) {
-                    hasDualGunner = true;
-                } else if (gameWorldComponent.isRole(p, ModRoles.CONVICT)){
-                    hasConvict = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.kidnapper)) {
+                    hasKidnapper = true;
                 }
             }
             if (hasDio) {
@@ -2474,15 +2441,6 @@ public class ModEventsRegister {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.raven.entry")
                                 .withStyle(ChatFormatting.YELLOW));
-                    }
-                });
-            }
-            if (hasBee) {
-                all_players.forEach((p) -> {
-                    if (p != null) {
-                        p.playNotifySound(SoundEvents.BEE_LOOP, SoundSource.MASTER, 0.5F, 1.0f);
-                        BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }
@@ -2542,19 +2500,11 @@ public class ModEventsRegister {
                     }
                 });
             }
-            if (hasDualGunner) {
+            if (hasKidnapper) {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.dual_gunner.entry").withStyle(ChatFormatting.YELLOW));
-                    }
-                });
-            }
-            if (hasConvict) {
-                all_players.forEach((p) -> {
-                    if (p != null) {
-                        BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.convict.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.kidnapper.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }
@@ -2667,14 +2617,6 @@ public class ModEventsRegister {
             final var player = handler.getPlayer();
             ModEventsRegister.handleDeathPenalty(player, true, true);
             sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
-        });
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            final var player = handler.getPlayer();
-            ModEventsRegister.handleDeathPenalty(player, true, true);
-            sender.sendPacket(new BloodConfigS2CPacket(NoellesRolesConfig.HANDLER.instance().enableClientBlood));
-            // 失明症模组默认对所有人开启失明：加入时统一关闭，
-            // 只有盲女角色分配时（NiyajingshiPlayerComponent.init）才会重新开启
-            org.agmas.noellesroles.compat.BlindnessCompat.setBlind(player, false);
         });
     }
 

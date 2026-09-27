@@ -18,6 +18,7 @@ import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.killman.KillmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
@@ -82,6 +83,8 @@ public class NRCombatEvents {
             handleUniversalGunCooldown(player);
             handleJojoDoubleCooldown(player);
             handleButterFingersCooldown(player);
+            // 诱杀者陷阱：被标记的玩家开枪后清除左轮并以"手枪炸膛"击杀
+            KillmanPlayerComponent.handleTrapShot(player);
         });
     }
 
@@ -188,7 +191,6 @@ public class NRCombatEvents {
         BatonHandler.register();
         BoneStaffHandler.register();
         RiotShieldHandler.register();
-        org.agmas.noellesroles.game.roles.innocence.avenger.AvengerRushCombatHandler.register();
         BenevolenceSwordHandler.register();
         CuckooEggHandler.register();
         GuardPlayerHandler.register();
@@ -206,5 +208,7 @@ public class NRCombatEvents {
         org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent.registerKillCooldownEvent();
         org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         VoodooDeathHandler.registerEvents();
+        // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
+        org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
     }
 }

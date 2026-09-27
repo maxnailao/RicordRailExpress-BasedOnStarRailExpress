@@ -1,9 +1,7 @@
 package org.agmas.noellesroles.role;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -144,11 +142,11 @@ public class TraitorAndModifiers {
             null, null, false, false))
             .setDefaultEnableChance(500);
 
-    // 起义军 - 被同阵营误杀时变为叛徒（不刷新在巫毒师身上）
+    // 起义军 - 被同阵营误杀时变为叛徒
     public static SREModifier REBEL = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("rebel"),
             new Color(0, 100, 0).getRGB(), // 暗绿色
-            new HashSet<>(Arrays.asList(ModRoles.VOODOO)), null, false, true))
+            null, null, false, true))
             .setDefaultEnableChance(2500).setHidden(true);
 
     // 晕血症 - 看到死亡获得缓慢和反胃
@@ -568,13 +566,6 @@ public class TraitorAndModifiers {
                     if (coinsToTake > 0) {
                         killerShop.setBalance(killerCurrentCoins - coinsToTake);
                         killerShop.sync();
-
-                        // 回放记录：死者敛财了击杀者的金币
-                        SRE.REPLAY_MANAGER.recordCustomEvent(
-                                Component.translatable("replay.event.money_grubber.take",
-                                        GameReplayUtils.getReplayPlayerDisplayText(killer, true),
-                                        GameReplayUtils.getReplayPlayerDisplayText(victim, true),
-                                        coinsToTake));
 
                         if (killer instanceof ServerPlayer) {
                             ((ServerPlayer) killer).displayClientMessage(
