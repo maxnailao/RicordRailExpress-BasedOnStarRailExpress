@@ -395,8 +395,9 @@ public class CS2ServerReceiverRegister {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 String boxId = payload.boxId();
-                // 读取原始 JSON 文件发送给客户端
-                java.nio.file.Path configFile = java.nio.file.Paths.get("CS2_box", boxId + ".json");
+                // 读取原始 JSON 文件发送给客户端（使用游戏目录绝对路径）
+                java.nio.file.Path configFile = net.fabricmc.loader.api.FabricLoader.getInstance()
+                        .getGameDir().resolve("CS2_box").resolve(boxId + ".json");
                 if (!java.nio.file.Files.exists(configFile)) {
                     Noellesroles.LOGGER.warn("[CS2Box] Box config file not found: {}", configFile);
                     return;

@@ -2,13 +2,13 @@ package org.agmas.noellesroles.cs2;
 
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.utils.Pair;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -28,7 +28,8 @@ public class CS2BoxManager {
     private final Path configDir;
 
     private CS2BoxManager() {
-        this.configDir = Paths.get("CS2_box");
+        // 使用游戏目录的绝对路径，避免依赖工作目录（Fabric 版本迁移后工作目录可能变化）
+        this.configDir = FabricLoader.getInstance().getGameDir().resolve("CS2_box");
         reload();
     }
 
