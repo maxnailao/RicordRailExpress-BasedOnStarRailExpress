@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState;
@@ -16,6 +17,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
@@ -67,6 +69,51 @@ public final class BackpackManager {
         int current = entry.state.cards.getOrDefault(type, 0);
         entry.state.cards.put(type, Math.max(0, current + count));
         markDirty(player, entry);
+    }
+
+    /** 扣除职业卡（黑市上架用），数量不足返回 false。 */
+    public static boolean removeCard(ServerPlayer player, FactionCardType type, int count) {
+        if (type == FactionCardType.NONE || count <= 0) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        int current = entry.state.cards.getOrDefault(type, 0);
+        if (current < count) {
+            return false;
+        }
+        entry.state.cards.put(type, current - count);
+        markDirty(player, entry);
+        return true;
+    }
+
+    // ====================== 自选职业卡 ======================
+
+    public static int getSelfSelectCount(ServerPlayer player) {
+        return getEntry(player.getUUID()).state.selfSelectCards;
+    }
+
+    public static void addSelfSelectCard(ServerPlayer player, int count) {
+        if (count == 0) {
+            return;
+        }
+        Entry entry = getEntry(player.getUUID());
+        entry.state.selfSelectCards = Math.max(0, entry.state.selfSelectCards + count);
+        markDirty(player, entry);
+    }
+
+    /** 使用一张自选职业卡并强制指定职业（写入 {@code FORCED_MODDED_ROLE_FLIP}）。 */
+    public static boolean useSelfSelectCard(ServerPlayer player, SRERole role) {
+        if (role == null) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        if (entry.state.selfSelectCards < 1) {
+            return false;
+        }
+        entry.state.selfSelectCards -= 1;
+        markDirty(player, entry);
+        Harpymodloader.addToForcedRoles(role, player);
+        return true;
     }
 
     /** 逐字复刻 {@code ProgressionDataManager.activateFactionCard}：卡库写改为背包。 */

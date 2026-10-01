@@ -1071,13 +1071,6 @@ public class SREClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_O, // 默认热键 'O'
                 "category." + SRE.MOD_ID + ".keybinds"));
 
-        // Register CS2 warehouse keybind（仓库热键，默认 ',' 键）
-        warehouseKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".warehouse",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_COMMA, // 默认热键 ',' (即 '、' 键位)
-                "category." + SRE.MOD_ID + ".keybinds"));
-
         // 狼人杀操作界面热键（默认 '='）
         werewolfUiKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key." + SRE.MOD_ID + ".werewolf_ui",
@@ -1328,14 +1321,6 @@ public class SREClient implements ClientModInitializer {
                     }
                 }
 
-            }
-
-            if (warehouseKeybind.consumeClick()) {
-                if (client.screen instanceof org.agmas.noellesroles.client.screen.CS2WarehouseScreen) {
-                    client.setScreen(null);
-                } else {
-                    client.setScreen(new org.agmas.noellesroles.client.screen.CS2WarehouseScreen());
-                }
             }
 
             // 路径点管理 GUI：开关式切换

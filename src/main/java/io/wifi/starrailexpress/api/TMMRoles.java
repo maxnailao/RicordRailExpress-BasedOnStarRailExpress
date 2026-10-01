@@ -68,4 +68,19 @@ public class TMMRoles {
     public static SRERole getRole(ResourceLocation id) {
         return ROLES.getOrDefault(id, null);
     }
+
+    /** 是否可由「自选职业卡」选择：排除坠木/皮革嘎、其他模式、特殊地图限定与不可随机职业。 */
+    public static boolean isSelfSelectableRole(SRERole role) {
+        if (role == null) {
+            return false;
+        }
+        if (role.identifier().equals(DISCOVERY_CIVILIAN.identifier())
+                || role.identifier().equals(LOOSE_END.identifier())) {
+            return false;
+        }
+        if (role.isOtherModeRole() || role.isSpecialMapRole()) {
+            return false;
+        }
+        return role.canBeRandomed();
+    }
 }

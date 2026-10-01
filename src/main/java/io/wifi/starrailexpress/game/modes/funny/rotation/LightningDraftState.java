@@ -422,12 +422,24 @@ public class LightningDraftState {
             }
         }
 
-        // 3. 剩余实例依次分配给玩家，每人最多 PLAYER_SELECT_COUNT 个
+        // 3. 剩余实例依次分配给玩家，每人最多 PLAYER_SELECT_COUNT 个；
+        //    硬性强制阵营（职业卡/命令）的玩家只补发本阵营职业，确保卡牌真正生效
         Iterator<RoleInstance> iter = remainingDrawn.iterator();
         for (UUID playerId : roundPlayers) {
             List<RoleInstance> candidates = candidateMap.get(playerId);
+            ForceTeamInfo force = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
+            int hardForcedType = -1;
+            if (force != null && force.type() != ForceTeamType.ROLE_WEIGHTS
+                    && force.roleType() >= 1 && force.roleType() <= 5) {
+                hardForcedType = normalizeCardType(force.roleType());
+            }
             while (candidates.size() < PLAYER_SELECT_COUNT && iter.hasNext()) {
-                candidates.add(iter.next());
+                RoleInstance next = iter.next();
+                if (hardForcedType >= 0 && !roleMatchesFaction(next.role(), hardForcedType)) {
+                    // 非本阵营职业不提供给硬性强制玩家，使其只能选本阵营
+                    continue;
+                }
+                candidates.add(next);
                 iter.remove();
             }
         }

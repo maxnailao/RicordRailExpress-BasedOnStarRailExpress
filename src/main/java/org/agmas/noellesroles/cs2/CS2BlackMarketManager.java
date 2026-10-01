@@ -2,9 +2,11 @@ package org.agmas.noellesroles.cs2;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
@@ -209,6 +211,10 @@ public class CS2BlackMarketManager {
             if (itemId.equals(musicComp.getEquippedBox())) {
                 musicComp.setEquippedBox(null);
             }
+        } else if ("card".equals(itemType)) {
+            FactionCardType cardType = FactionCardType.fromString(itemId);
+            if (cardType == FactionCardType.NONE) return false;
+            if (!BackpackManager.removeCard(seller, cardType, 1)) return false;
         } else {
             return false; // 不支持的类型
         }
@@ -264,6 +270,11 @@ public class CS2BlackMarketManager {
             }
         } else if ("musicbox".equals(listing.itemType)) {
             buyerInv.addMusicBox(listing.itemId, 1);
+        } else if ("card".equals(listing.itemType)) {
+            FactionCardType cardType = FactionCardType.fromString(listing.itemId);
+            if (cardType != FactionCardType.NONE) {
+                BackpackManager.addCard(buyer, cardType, 1);
+            }
         }
         buyerInv.sync();
 
@@ -303,6 +314,11 @@ public class CS2BlackMarketManager {
             inv.addSkin(listing.itemId, 1);
         } else if ("musicbox".equals(listing.itemType)) {
             inv.addMusicBox(listing.itemId, 1);
+        } else if ("card".equals(listing.itemType)) {
+            FactionCardType cardType = FactionCardType.fromString(listing.itemId);
+            if (cardType != FactionCardType.NONE) {
+                BackpackManager.addCard(player, cardType, 1);
+            }
         }
         inv.sync();
 

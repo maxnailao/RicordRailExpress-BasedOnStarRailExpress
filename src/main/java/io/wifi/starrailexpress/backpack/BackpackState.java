@@ -13,6 +13,8 @@ public final class BackpackState {
     public Map<FactionCardType, Integer> cards = new EnumMap<>(FactionCardType.class);
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
     public boolean migrated = false;
+    /** 自选职业卡数量 */
+    public int selfSelectCards = 0;
     public long version;
 
     public static BackpackState createDefault() {
@@ -36,6 +38,7 @@ public final class BackpackState {
         }
         // 钳制负值
         cards.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
+        selfSelectCards = Math.max(0, selfSelectCards);
         return this;
     }
 
@@ -45,6 +48,7 @@ public final class BackpackState {
             this.cards.putAll(other.cards);
         }
         this.migrated = other.migrated;
+        this.selfSelectCards = other.selfSelectCards;
         this.version = other.version;
         normalized();
     }

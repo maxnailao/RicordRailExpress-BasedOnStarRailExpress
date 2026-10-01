@@ -3841,6 +3841,7 @@ public class ModRoles {
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(12)
             .setCanPickUpRevolver(false)
+            .setCanBeRandomedByOtherRoles(false)
             .setDefaultEnableChance(10000);
 
     /**

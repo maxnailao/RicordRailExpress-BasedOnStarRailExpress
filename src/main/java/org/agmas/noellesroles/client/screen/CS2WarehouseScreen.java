@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
+import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.content.musicbox.MusicBox;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry;
@@ -13,10 +14,12 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.noellesroles.cs2.CS2BoxConfig;
 import org.agmas.noellesroles.cs2.CS2BoxManager;
 import org.agmas.noellesroles.cs2.CS2SkinInfo;
@@ -67,8 +70,13 @@ public class CS2WarehouseScreen extends Screen {
     private static final int TEXT_DIM = 0xFF999999;
     private static final int ACCENT = 0xFF4488FF;
 
-    private enum Category { ALL, BOXES, SKINS, MUSIC }
+    private enum Category { ALL, BOXES, SKINS, MUSIC, CARDS }
     private Category selectedCategory = Category.ALL;
+
+    /** 职业卡显示顺序与阵营名 */
+    private static final FactionCardType[] CARD_DISPLAY_ORDER = {
+            FactionCardType.KILLER, FactionCardType.CIVILIAN,
+            FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
 
     // 物品网格数据
     private final List<WarehouseItem> items = new ArrayList<>();
@@ -143,26 +151,22 @@ public class CS2WarehouseScreen extends Screen {
 
         CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
 
-        // 箱子 — 每个箱子占一格
+        // 箱子 — 同类堆叠，右下角显示 xN
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
             for (Map.Entry<String, Integer> entry : inv.getBoxes().entrySet()) {
                 String boxId = entry.getKey();
                 // 从客户端缓存获取中文名称（服务端登录时同步）
                 String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(boxId);
                 String name = !cachedName.isEmpty() ? cachedName : formatBoxId(boxId);
-                for (int i = 0; i < entry.getValue(); i++) {
-                    items.add(new WarehouseItem("box", boxId, name, "", 1, 0));
-                }
+                items.add(new WarehouseItem("box", boxId, name, "", entry.getValue(), 0));
             }
         }
 
-        // 钥匙 — 每个钥匙占一格
+        // 钥匙 — 同类堆叠，右下角显示 xN
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
             for (Map.Entry<String, Integer> entry : inv.getKeys().entrySet()) {
-                for (int i = 0; i < entry.getValue(); i++) {
-                    items.add(new WarehouseItem("key", entry.getKey(),
-                            entry.getKey().replace('_', ' '), "", 1, 0));
-                }
+                items.add(new WarehouseItem("key", entry.getKey(),
+                        entry.getKey().replace('_', ' '), "", entry.getValue(), 0));
             }
         }
 
@@ -205,6 +209,37 @@ public class CS2WarehouseScreen extends Screen {
                 }
             }
         }
+
+        // 职业卡 — 从场外背包读取
+        if (selectedCategory == Category.ALL || selectedCategory == Category.CARDS) {
+            var backpack = ClientPlayerDataCache.backpack(player.getUUID());
+            for (FactionCardType type : CARD_DISPLAY_ORDER) {
+                int count = backpack.cards.getOrDefault(type, 0);
+                if (count <= 0) continue;
+                items.add(new WarehouseItem("card", type.questKey, cardName(type), "", count, 0));
+            }
+            // 自选职业卡
+            if (backpack.selfSelectCards > 0) {
+                items.add(new WarehouseItem("selfselect", "selfselect", "自选职业卡", "", backpack.selfSelectCards, 0));
+            }
+        }
+    }
+
+    private static String cardName(FactionCardType type) {
+        return switch (type) {
+            case KILLER -> "杀手职业卡";
+            case CIVILIAN -> "平民职业卡";
+            case NEUTRAL -> "中立职业卡";
+            case NEUTRAL_FOR_KILLER -> "杀手中立职业卡";
+            default -> type.questKey;
+        };
+    }
+
+    private void sendCommand(String command) {
+        if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) {
+            return;
+        }
+        minecraft.player.connection.sendCommand(command.startsWith("/") ? command.substring(1) : command);
     }
 
     private static String formatBoxId(String boxId) {
@@ -244,8 +279,8 @@ public class CS2WarehouseScreen extends Screen {
 
     private void renderSidebar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.fill(0, 0, sidebarWidth, height, SIDEBAR_COLOR);
-        Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC};
-        String[] labels = {"全部", "箱子/钥匙", "皮肤", "音乐盒"};
+        Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC, Category.CARDS};
+        String[] labels = {"全部", "箱子/钥匙", "皮肤", "音乐盒", "职业卡"};
         for (int i = 0; i < categories.length; i++) {
             int y = 40 + i * 32;
             boolean selected = categories[i] == selectedCategory;
@@ -346,6 +381,12 @@ public class CS2WarehouseScreen extends Screen {
             }
             case "music" -> {
                 guiGraphics.renderFakeItem(new ItemStack(Items.MUSIC_DISC_13), iconX, iconY);
+            }
+            case "card" -> {
+                guiGraphics.renderFakeItem(new ItemStack(Items.PAPER), iconX, iconY);
+            }
+            case "selfselect" -> {
+                guiGraphics.renderFakeItem(new ItemStack(Items.NAME_TAG), iconX, iconY);
             }
         }
     }
@@ -464,6 +505,7 @@ public class CS2WarehouseScreen extends Screen {
             case "key" -> "钥匙";
             case "skin" -> "皮肤";
             case "music" -> "音乐盒";
+            case "card" -> "职业卡";
             default -> type;
         };
     }
@@ -472,7 +514,7 @@ public class CS2WarehouseScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // 侧边栏分类点击
         if (mouseX < sidebarWidth) {
-            Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC};
+            Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC, Category.CARDS};
             for (int i = 0; i < categories.length; i++) {
                 int y = 40 + i * 32;
                 if (mouseY >= y && mouseY < y + 28) {
@@ -493,6 +535,28 @@ public class CS2WarehouseScreen extends Screen {
             lastClickItemId = hoveredItem.id;
 
             if (button == 0) { // 左键
+                if ("selfselect".equals(hoveredItem.type)) {
+                    // 打开自选职业卡 GUI（先选阵营，再选具体职业）
+                    minecraft.setScreen(new SelfSelectCardScreen());
+                    return true;
+                }
+                if ("card".equals(hoveredItem.type)) {
+                    // 左键弹出确认框，确认后才激活职业卡（沿用 sre:pass activate 路径）
+                    String cardId = hoveredItem.id;
+                    String cardDisplayName = hoveredItem.displayName;
+                    minecraft.setScreen(new ConfirmScreen(
+                            confirmed -> {
+                                if (confirmed) {
+                                    sendCommand("sre:pass activate " + cardId);
+                                }
+                                minecraft.setScreen(this);
+                            },
+                            Component.literal("确认使用职业卡"),
+                            Component.literal("确认使用「" + cardDisplayName + "」吗？"),
+                            Component.literal("使用"),
+                            Component.literal("取消")));
+                    return true;
+                }
                 if (isDoubleClick && "box".equals(hoveredItem.type)) {
                     // 双击箱子 → 向服务端请求奖池数据，收到后打开预览UI
                     pendingPreviewBoxId = hoveredItem.id;
