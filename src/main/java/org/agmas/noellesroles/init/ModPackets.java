@@ -7,9 +7,7 @@ import io.wifi.starrailexpress.network.packet.ShowCustomNewspaperPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.agmas.noellesroles.content.item.Rpg7ShootPayload;
 import org.agmas.noellesroles.content.item.SilencedPistolShootPayload;
-import org.agmas.noellesroles.content.item.DualPistolShootPayload;
 import org.agmas.noellesroles.content.item.DesertEagleShootPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
@@ -72,9 +70,6 @@ public class ModPackets {
                 LotteryMachineResultS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WheelchairMoveC2SPacket.ID, WheelchairMoveC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BroadcastMessageS2CPacket.ID, BroadcastMessageS2CPacket.CODEC);
-        // 枪械射击弹道轨迹（S2C）
-        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID,
-                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CanMoveInTimeStopS2CPacket.ID, CanMoveInTimeStopS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanAllTaskPointsPayload.ID, ScanAllTaskPointsPayload.CODEC);
@@ -93,8 +88,6 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(MorphC2SPacket.ID, MorphC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.ID,
                 org.agmas.noellesroles.packet.BlackkeSelectTargetC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.ID,
-                org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.ID,
                 org.agmas.noellesroles.packet.HuanmozheVexTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(SilencerC2SPacket.ID, SilencerC2SPacket.CODEC);
@@ -114,9 +107,6 @@ public class ModPackets {
                 org.agmas.noellesroles.packet.WizardShieldC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WizardSwitchSpellC2SPacket.ID, WizardSwitchSpellC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorC2SPacket.ID, ManipulatorC2SPacket.CODEC);
-        // 木乃伊：诅咒选人（C2S）与打开背包选人（S2C）
-        PayloadTypeRegistry.playC2S().register(MunaiyiCurseSelectC2SPacket.ID, MunaiyiCurseSelectC2SPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(MunaiyiOpenInventoryS2CPacket.ID, MunaiyiOpenInventoryS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(AmonSelectTargetC2SPacket.ID, AmonSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
@@ -162,12 +152,6 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(ReasonerOpenScreenS2CPacket.ID, ReasonerOpenScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket::handle);
-
-        // 重刑犯「做出你的抉择」：开启 GUI（S2C）与提交抉择（C2S）
-        PayloadTypeRegistry.playS2C().register(ConvictChoiceOpenS2CPacket.ID, ConvictChoiceOpenS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(ConvictChoiceSelectC2SPacket.ID, ConvictChoiceSelectC2SPacket.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(ConvictChoiceSelectC2SPacket.ID,
-                ConvictChoiceSelectC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(DoomedSinnerFateRevealS2CPacket.ID, DoomedSinnerFateRevealS2CPacket.CODEC);
 
@@ -224,15 +208,6 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(SilencedPistolShootPayload.ID,
                 new SilencedPistolShootPayload.Receiver());
 
-        // 注册 RPG-7 射击/装填网络包
-        PayloadTypeRegistry.playC2S().register(Rpg7ShootPayload.ID, Rpg7ShootPayload.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(Rpg7ShootPayload.ID, Rpg7ShootPayload::handle);
-
-        // 注册双枪（左手/右手）射击网络包
-        PayloadTypeRegistry.playC2S().register(DualPistolShootPayload.ID, DualPistolShootPayload.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(DualPistolShootPayload.ID,
-                new DualPistolShootPayload.Receiver());
-
         // 注册沙漠之鹰射击/装填网络包
         PayloadTypeRegistry.playC2S().register(DesertEagleShootPayload.ID, DesertEagleShootPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(DesertEagleShootPayload.ID,
@@ -263,14 +238,6 @@ public class ModPackets {
         // 注册赌徒 1% 奇迹特效包（客户端渲染）
         PayloadTypeRegistry.playS2C().register(GamblerMiracleS2CPacket.ID, GamblerMiracleS2CPacket.CODEC);
 
-        // 注册失明症：导盲杖探测揭示包与生物声纹标记包（客户端接收器见 NoellesrolesClient）
-        PayloadTypeRegistry.playS2C().register(
-                org.agmas.noellesroles.packet.ContactRevealS2CPacket.ID,
-                org.agmas.noellesroles.packet.ContactRevealS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(
-                org.agmas.noellesroles.packet.SoundEchoS2CPacket.ID,
-                org.agmas.noellesroles.packet.SoundEchoS2CPacket.CODEC);
-
         // 注册愚者网络包
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.game.roles.innocence.fool.FoolPrayerC2SPacket.ID,
@@ -297,8 +264,8 @@ public class ModPackets {
         // 注册启用任务透视网络包
         PayloadTypeRegistry.playS2C().register(EnableTaskHighlightPacket.ID, EnableTaskHighlightPacket.CODEC);
 
-        // 注册咒术师网络包
-        PayloadTypeRegistry.playC2S().register(WarlockDomainC2SPacket.ID, WarlockDomainC2SPacket.CODEC);
+        // 注册咒法师网络包
+        PayloadTypeRegistry.playC2S().register(WarlockKillC2SPacket.ID, WarlockKillC2SPacket.CODEC);
 
         // 注册嬉命人网络包
         PayloadTypeRegistry.playC2S().register(EmbalmerC2SPacket.ID, EmbalmerC2SPacket.CODEC);

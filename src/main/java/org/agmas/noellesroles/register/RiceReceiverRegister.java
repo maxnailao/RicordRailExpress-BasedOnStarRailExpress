@@ -1,8 +1,6 @@
 package org.agmas.noellesroles.register;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -412,11 +410,6 @@ public class RiceReceiverRegister {
                         // 重置双方状态（这会触发 isDeliveryActive() 返回 false）
                         postmanComp.init();
                         targetComp.init();
-                        // 回放记录：传递盒双方交换物品
-                        SRE.REPLAY_MANAGER.recordCustomEvent(
-                            Component.translatable("replay.event.shameimaru.exchange_box",
-                                GameReplayUtils.getReplayPlayerDisplayText(postmanPlayer, true),
-                                GameReplayUtils.getReplayPlayerDisplayText(receiverPlayer, true)));
 
                         // 关闭双方界面
                         if (context.player() instanceof ServerPlayer serverPlayer) {
@@ -499,11 +492,6 @@ public class RiceReceiverRegister {
 
             // 开始审查
             component.startInspecting((ServerPlayer) target);
-            // 回放记录：探员审查玩家物品栏
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.agent.inspect_inventory",
-                    GameReplayUtils.getReplayPlayerDisplayText(context.player(), true),
-                    GameReplayUtils.getReplayPlayerDisplayText(target, true)));
 
             // 打开只读的侦探审查界面
             if (context.player() instanceof ServerPlayer serverPlayer) {
@@ -566,29 +554,26 @@ public class RiceReceiverRegister {
                     true);
         });
 
-        // 处理斗士技能包（扮演者伪装为斗士时可转发使用）
+        // 处理斗士技能包
         ServerPlayNetworking.registerGlobalReceiver(BOXER_ABILITY_PACKET, (payload, context) -> {
-            org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                    .runAsDisguisedRole(context.player(), () -> {
-                        if (RoleSkill.blockForSpectator(context.player()))
-                            return;
-                        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
-                        // 验证玩家是斗士（伪装中的扮演者由伪装上下文放行）
-                        if (!gameWorld.isRole(context.player(), ModRoles.FIGHTER))
-                            return;
+            // 验证玩家是斗士
+            if (!gameWorld.isRole(context.player(), ModRoles.FIGHTER))
+                return;
 
-                        // 验证玩家存活
-                        if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
-                            return;
+            // 验证玩家存活
+            if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
+                return;
 
-                        // 获取斗士组件
-                        BoxerPlayerComponent boxerComponent = ModComponents.FIGHTER.get(context.player());
+            // 获取斗士组件
+            BoxerPlayerComponent boxerComponent = ModComponents.FIGHTER.get(context.player());
 
-                        // 在服务端使用技能
-                        boxerComponent.useAbility();
-                        ConfigWorldComponent.onPlayerUsedSkill(context.player());
-                    });
+            // 在服务端使用技能
+            boxerComponent.useAbility();
+            ConfigWorldComponent.onPlayerUsedSkill(context.player());
         });
 
         // 处理跟踪者窥视包
@@ -645,29 +630,26 @@ public class RiceReceiverRegister {
             }
         });
 
-        // 处理运动员技能包（扮演者伪装为运动员时可转发使用）
+        // 处理运动员技能包
         ServerPlayNetworking.registerGlobalReceiver(ATHLETE_ABILITY_PACKET, (payload, context) -> {
-            org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                    .runAsDisguisedRole(context.player(), () -> {
-                        if (RoleSkill.blockForSpectator(context.player()))
-                            return;
-                        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
-                        // 验证玩家是运动员（伪装中的扮演者由伪装上下文放行）
-                        if (!gameWorld.isRole(context.player(), ModRoles.ATHLETE))
-                            return;
+            // 验证玩家是运动员
+            if (!gameWorld.isRole(context.player(), ModRoles.ATHLETE))
+                return;
 
-                        // 验证玩家存活
-                        if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
-                            return;
+            // 验证玩家存活
+            if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
+                return;
 
-                        // 获取运动员组件
-                        AthletePlayerComponent athleteComponent = ModComponents.ATHLETE.get(context.player());
+            // 获取运动员组件
+            AthletePlayerComponent athleteComponent = ModComponents.ATHLETE.get(context.player());
 
-                        // 在服务端使用技能
-                        athleteComponent.useAbility();
-                        ConfigWorldComponent.onPlayerUsedSkill(context.player());
-                    });
+            // 在服务端使用技能
+            athleteComponent.useAbility();
+            ConfigWorldComponent.onPlayerUsedSkill(context.player());
         });
 
         // 处理慕恋者窥视包
@@ -772,10 +754,9 @@ public class RiceReceiverRegister {
             ConfigWorldComponent.onPlayerUsedSkill(context.player());
         });
 
-        // 处理退伍军人持刀冲刺包（扮演者伪装为退伍军人时可转发使用）
+        // 处理退伍军人持刀冲刺包
         ServerPlayNetworking.registerGlobalReceiver(VETERAN_DASH_PACKET, (payload, context) -> {
-            org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                    .runAsDisguisedRole(context.player(), () -> handleVeteranDash(context.player()));
+            handleVeteranDash(context.player());
         });
 
         // 处理心理学家治疗包

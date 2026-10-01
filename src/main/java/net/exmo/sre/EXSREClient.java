@@ -35,8 +35,9 @@ public class EXSREClient {
         InputStream background = getBackgroundImage();
         try {
             if (background != null) {
-                // 每次启动都用模组内置图强制覆盖，保证加载界面随版本自动更新 //
-                Files.copy(background, BackgroundTexture, StandardCopyOption.REPLACE_EXISTING);
+                // Copy the default textures into the config directory //
+                if (!BackgroundTexture.toFile().exists())
+                    Files.copy(background, BackgroundTexture, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (Exception e) {
             e.printStackTrace();

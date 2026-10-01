@@ -22,7 +22,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModEffects;
@@ -146,17 +145,12 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             cooldownTicks--;
         if (huntTicks > 0) {
             huntTicks--;
-            // 狩猎效果可能被其它机制（牛奶/死亡/其它职业技能）清除，缺失时立即补回，
-            // 否则渡鸦会在狩猎中途失去无敌与伪装，本体被看见、可被击杀。
-            if (!player.hasEffect(ModEffects.DISGUISE))
-                applyHuntEffects();
-            if (!hasLivingTargetRole(game) && chooseTargetRole(game))
-                changed = true;
+            if (!hasLivingTargetRole(game))
+                chooseTargetRole(game);
             if (huntTicks <= 0)
                 endHunt(true);
+            changed = true;
         }
-        // 仅在实际变化时同步：huntTicks/cooldownTicks 由客户端 clientTick() 本地递减，
-        // 每 tick 全量同步会在整场狩猎（2400 tick）内向所有玩家持续刷包。
         if (changed || player.tickCount % 200 == 0)
             sync();
     }
@@ -164,11 +158,6 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     private boolean observeNearbyMood(int totalPlayers) {
         boolean changed = false;
         float threshold = getChargeThreshold(totalPlayers);
-        // 充能已满时提前返回，省去每 tick 遍历全场玩家与心情组件查询
-        if (charges >= MAX_CHARGES) {
-            observedMood.keySet().removeIf(id -> player.level().getPlayerByUUID(id) == null);
-            return false;
-        }
         for (Player nearby : player.level().players()) {
             if (nearby == player || nearby.distanceToSqr(player) > MOOD_RADIUS_SQR
                     || !GameUtils.isPlayerAliveAndSurvival(nearby))
@@ -235,7 +224,6 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         giveHuntItems(serverPlayer);
         applyHuntEffects();
         sync();
-        ConfigWorldComponent.onPlayerUsedSkill(serverPlayer);
         return true;
     }
 
@@ -279,16 +267,12 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         player.getInventory().add(TMMItems.LOCKPICK.getDefaultInstance());
     }
 
-    /**
-     * 狩猎效果一律设为无限时长（-1），仅由 {@link #endHunt(boolean)} 显式移除。
-     * 若用有限时长，效果会在狩猎结束前自然到期，导致渡鸦提前失去无敌/静默/无碰撞。
-     */
     private void applyHuntEffects() {
-        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, -1, 3, false, false, false));
-        player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, -1, 0, false, false, false));
-        player.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, -1, 0, false, false, false));
-        player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, -1, 0, false, false, false));
-        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, -1, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, HUNT_TICKS + 6 * 20, 3, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, HUNT_TICKS, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, HUNT_TICKS, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, HUNT_TICKS, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, HUNT_TICKS, 0, false, false, false));
     }
 
     public boolean canKill(Player victim) {

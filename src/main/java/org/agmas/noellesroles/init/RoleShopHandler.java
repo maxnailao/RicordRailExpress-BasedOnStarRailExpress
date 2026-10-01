@@ -4,7 +4,6 @@ import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
@@ -39,7 +38,6 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
-import org.agmas.noellesroles.compat.BlindnessCompat;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.intelligence.IntelligencePlayerComponent;
 import org.agmas.noellesroles.content.item.ToxinShopEntry;
@@ -55,7 +53,6 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.convict.ConvictPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.role.BounsRoles;
@@ -342,12 +339,6 @@ public class RoleShopHandler {
                 return success;
             }
         });
-    }
-
-    /** 重刑犯商店门禁：仅「毁灭一切」分支的重刑犯可见 / 可购买其个人商店条目。 */
-    private static boolean isDestroyConvict(@NotNull Player player) {
-        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
-        return comp != null && comp.choice == ConvictPlayerComponent.Choice.DESTROY;
     }
 
     public static void shopRegister() {
@@ -868,98 +859,6 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
         }
 
-        // 狱警商店：左轮手枪（限购一次）/ 警棍（限购一次）/ 狱警钥匙 / 重刑犯押运工具 / 防爆盾牌
-        {
-            var JAILER_SHOP = new ArrayList<ShopEntry>();
-            // 左轮手枪 - 100 金币（限购一次，用 ConvictPlayerComponent.hasBoughtRevolver 记录；
-            // CCA 组件挂载于所有玩家，自然生成的狱警同样适用，每局 init/clear 重置）
-            JAILER_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canBuy(@NotNull Player player) {
-                    var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
-                    return super.canBuy(player) && (comp == null || !comp.hasBoughtRevolver);
-                }
-
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    boolean inserted = RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
-                    if (inserted) {
-                        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
-                        if (comp != null) {
-                            comp.hasBoughtRevolver = true;
-                            comp.sync();
-                        }
-                    }
-                    return inserted;
-                }
-            });
-            // 警棍 - 100 金币（限购一次，用 ConvictPlayerComponent.hasBoughtBaton 记录）
-            JAILER_SHOP.add(new ShopEntry(ModItems.BATON.getDefaultInstance(), 100, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canBuy(@NotNull Player player) {
-                    var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
-                    return super.canBuy(player) && (comp == null || !comp.hasBoughtBaton);
-                }
-
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    boolean inserted = RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
-                    if (inserted) {
-                        var comp = ConvictPlayerComponent.KEY.maybeGet(player).orElse(null);
-                        if (comp != null) {
-                            comp.hasBoughtBaton = true;
-                            comp.sync();
-                        }
-                    }
-                    return inserted;
-                }
-            });
-            // 狱警钥匙 - 25 金币（可开房间门与关押门，无限耐久）
-            JAILER_SHOP.add(new ShopEntry(ModItems.JAILER_KEY.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
-            // 重刑犯押运工具 - 25 金币（不断拴绳，牵引重刑犯）
-            JAILER_SHOP.add(new ShopEntry(ModItems.CONVICT_ESCORT_LEASH.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
-            // 防爆盾牌 - 150 金币（同保安，配合狱警防爆盾技能装 / 卸副手）
-            JAILER_SHOP.add(new ShopEntry(ModItems.RIOT_SHIELD.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
-            ShopContent.customEntries.put(ModRoles.JAILER.getIdentifier(), JAILER_SHOP);
-        }
-
-        // 重刑犯商店：仅「毁灭一切」分支可见（canDisplay 门禁）；
-        // 刀（无限耐久）/ 一次性手枪 / 撬锁器 / 撬棍
-        {
-            var CONVICT_SHOP = new ArrayList<ShopEntry>();
-            // 刀 - 100 金币（无限耐久）
-            ItemStack convictKnife = TMMItems.KNIFE.getDefaultInstance();
-            convictKnife.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
-            CONVICT_SHOP.add(new ShopEntry(convictKnife, 100, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canDisplay(@NotNull Player player) {
-                    return isDestroyConvict(player);
-                }
-            });
-            // 一次性手枪 - 200 金币
-            CONVICT_SHOP.add(new ShopEntry(ModItems.ONCE_REVOLVER.getDefaultInstance(), 200, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canDisplay(@NotNull Player player) {
-                    return isDestroyConvict(player);
-                }
-            });
-            // 撬锁器 - 50 金币
-            CONVICT_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean canDisplay(@NotNull Player player) {
-                    return isDestroyConvict(player);
-                }
-            });
-            // 撬棍 - 25 金币
-            CONVICT_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 25, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean canDisplay(@NotNull Player player) {
-                    return isDestroyConvict(player);
-                }
-            });
-            ShopContent.customEntries.put(ModRoles.CONVICT.getIdentifier(), CONVICT_SHOP);
-        }
-
         // 小偷商店（注释部分，保留）
         // ... (原THIEF_SHOP内容被注释，不影响)
 
@@ -1322,12 +1221,6 @@ public class RoleShopHandler {
                     80,
                     ShopEntry.Type.TOOL));
 
-            // 反人员地雷 - 150金币（长按右键3秒放置，杀手阵营可见）
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.LANDMINE.getDefaultInstance(),
-                    150,
-                    ShopEntry.Type.WEAPON));
-
             // 关灯 - 使用配置价格
             GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
                     ShopEntry.Type.TOOL) {
@@ -1335,18 +1228,6 @@ public class RoleShopHandler {
                     return SREPlayerShopComponent.useBlackout(player);
                 }
             });
-
-            // RPG-7 火箭筒 - 100金币
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.RPG7.getDefaultInstance(),
-                    100,
-                    ShopEntry.Type.WEAPON));
-
-            // RPG-7 火箭弹 - 300金币
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.RPG7_AMMO.getDefaultInstance(),
-                    300,
-                    ShopEntry.Type.WEAPON));
         }
 
         // ==================== 钳工商店 ====================
@@ -1526,7 +1407,7 @@ public class RoleShopHandler {
             PARASOL_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
         }
 
-        // ==================== 咒术师商店 ====================
+        // ==================== 咒法师商店 ====================
         {
             // 刀 - 130金币
             WARLOCK_SHOP.add(new KillerKnifeShopEntry(130));
@@ -1543,20 +1424,9 @@ public class RoleShopHandler {
             });
             // 关灯 - 使用配置价格
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+                    ShopEntry.Type.TOOL));
             // 监控失灵 - 60金币
-            WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useMonitorBroken(player,
-                            SREConfig.instance().monitorBrokenDuration * 20);
-                }
-            });
+            WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL));
         }
 
         // ==================== 嬉命人商店 ====================
@@ -1849,16 +1719,6 @@ public class RoleShopHandler {
                 }
             });
             ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
-        }
-
-        // 盲女商店：导盲杖 100金币
-        {
-            var NIYAJING_SHOP = new ArrayList<ShopEntry>();
-            ItemStack cane = BlindnessCompat.guidanceCaneStack();
-            if (!cane.isEmpty()) {
-                NIYAJING_SHOP.add(new ShopEntry(cane, 100, ShopEntry.Type.TOOL));
-            }
-            ShopContent.customEntries.put(ModRoles.NIYAJINGSHIBUSHIXIALE.getIdentifier(), NIYAJING_SHOP);
         }
 
         // 布袋鬼商店（诡舍·缚灵）
@@ -2348,11 +2208,11 @@ public class RoleShopHandler {
                 }
             });
 
-            // 猎魔箭（原版缓慢箭）- 250金币
+            // 猎魔箭（原版缓慢箭）- 200金币
             final var HuntArrow = Items.SPECTRAL_ARROW.getDefaultInstance();
             HuntArrow.set(DataComponents.ITEM_NAME, Component.translatable("item.liemoren_hunt_arrow.name"));
             HuntArrow.set(DataComponents.MAX_STACK_SIZE, 1);
-            shopEntries.add(new ShopEntry(HuntArrow, 250, ShopEntry.Type.WEAPON) {
+            shopEntries.add(new ShopEntry(HuntArrow, 200, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     int itemCount = SREItemUtils.countItem(player, Items.SPECTRAL_ARROW);
@@ -2495,25 +2355,6 @@ public class RoleShopHandler {
 
             ShopContent.customEntries.put(
                     ModRoles.MORPHLING_ID, entries);
-        }
-
-        // 蜜蜂家族商店：刀 + 开锁器；马蜂额外带手雷
-        {
-            ShopContent.customEntries.put(
-                    BounsRoles.BEE_QUEEN.identifier(),
-                    List.of(new KillerKnifeShopEntry(300),
-                            new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
-            ShopContent.customEntries.put(
-                    BounsRoles.BEE_WORKER.identifier(),
-                    List.of(new KillerKnifeShopEntry(300),
-                            new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
-            var waspShop = new ArrayList<ShopEntry>();
-            waspShop.add(new KillerKnifeShopEntry(200));
-            // 外层 KillerKnifeShopEntry 只有刀的构造器（内含刀耐久与首购折扣逻辑），
-            // 手雷只能用普通 ShopEntry。
-            waspShop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 600, ShopEntry.Type.WEAPON));
-            waspShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-            ShopContent.customEntries.put(BounsRoles.BEE_WASP.identifier(), waspShop);
         }
 
         // 静语者商店（手动构建，用静语者疯魔替代普通疯魔）
@@ -3255,7 +3096,7 @@ public class RoleShopHandler {
                     ModRoles.PARASOL_ID, PARASOL_SHOP);
         }
 
-        // 咒术师商店
+        // 咒法师商店
         {
             ShopContent.customEntries.put(
                     ModRoles.WARLOCK_ID, WARLOCK_SHOP);
@@ -3462,10 +3303,6 @@ public class RoleShopHandler {
                                 }
                             }
                         }
-                        // 回放记录：诡客买净雨符关闭了里世界
-                        SRE.REPLAY_MANAGER.recordCustomEvent(
-                                Component.translatable("replay.event.trickster.close_shadow",
-                                        GameReplayUtils.getReplayPlayerDisplayText(player, true)));
                         return true;
                     }
                 });
@@ -3762,6 +3599,15 @@ public class RoleShopHandler {
             CORRUPT_COP_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 250, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.CORRUPT_COP_ID, CORRUPT_COP_SHOP);
         }
+        // 绑匪商店
+        {
+            var KIDNAPPER_SHOP = new ArrayList<ShopEntry>();
+            // 撬锁器 - 100金币
+            KIDNAPPER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            // 捆绳 - 75金币
+            KIDNAPPER_SHOP.add(new ShopEntry(ModItems.KIDNAP_ROPE.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.KIDNAPPER_ID, KIDNAPPER_SHOP);
+        }
         // 雪原猎手商店
         {
             var SNOW_HUNTER_SHOP = new ArrayList<ShopEntry>();
@@ -3837,60 +3683,6 @@ public class RoleShopHandler {
             // 短管霰弹枪 - 285金币
             GHOUL_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 285, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.GHOUL_ID, GHOUL_SHOP);
-        }
-        // 狼人商店：仅开锁器(80)、关灯(150)、午夜狼嚎(400)
-        {
-            var WEREWOLF_KILLER_SHOP = new ArrayList<ShopEntry>();
-            // 开锁器 - 80金币
-            WEREWOLF_KILLER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
-            // 关灯 - 150金币
-            WEREWOLF_KILLER_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
-            // 特殊模式-午夜狼嚎 - 400金币（使用疯魔模式图标，但本质不是疯魔模式）
-            var werewolfHowl = TMMItems.PSYCHO_MODE.getDefaultInstance();
-            werewolfHowl.set(DataComponents.ITEM_NAME,
-                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_name"));
-            var werewolfHowlLore = new ItemLore(List.of(
-                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_lore.1")
-                            .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
-                    Component.translatable("itemstack.werewolf_killer.psychoitem.item_lore.2")
-                            .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
-            werewolfHowl.set(DataComponents.LORE, werewolfHowlLore);
-            WEREWOLF_KILLER_SHOP.add(new ShopEntry(werewolfHowl, 400, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
-                        return false;
-                    }
-                    var comp = ModComponents.WEREWOLF_KILLER.get(player);
-                    if (comp == null || comp.isHowlActive()) {
-                        return false;
-                    }
-                    return super.canBuy(player);
-                }
-
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
-                        return false;
-                    }
-                    var comp = ModComponents.WEREWOLF_KILLER.get(player);
-                    if (comp == null) {
-                        return false;
-                    }
-                    boolean success = comp.startMidnightHowl();
-                    if (success) {
-                        // 购买CD：240秒 = 4800 ticks
-                        player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 240 * 20);
-                    }
-                    return success;
-                }
-            });
-            ShopContent.customEntries.put(ModRoles.WEREWOLF_KILLER_ID, WEREWOLF_KILLER_SHOP);
         }
         // 幻魔者商店：技能存储 - 80金币一次，最多3次
         {
@@ -4025,5 +3817,10 @@ public class RoleShopHandler {
                 java.util.Optional.empty(),
                 java.util.List.of(new net.minecraft.world.effect.MobEffectInstance(effect, duration, amplifier))));
         return stack;
+
+
     }
+
+
+
 }

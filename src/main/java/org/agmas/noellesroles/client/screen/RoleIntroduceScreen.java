@@ -36,9 +36,7 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
-import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.RoleInitialItems;
-import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.FlagUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.Matrix4f;
@@ -242,17 +240,8 @@ public class RoleIntroduceScreen extends Screen {
 
     private static SRERole getRole(Player player) {
         if (SREClient.gameComponent != null)
-            return getDisplayedRole(player);
+            return SREClient.gameComponent.getRole(player);
         return null;
-    }
-
-    /**
-     * 获取玩家“应当看到”的职业：扮演者未回忆前看到的是自己扮演的平民职业，
-     * 不能让其知晓自己是扮演者。
-     */
-    private static SRERole getDisplayedRole(Player player) {
-        return org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                .getDisplayedRole(player, SREClient.gameComponent.getRole(player));
     }
 
     public RoleIntroduceScreen(Player player) {
@@ -401,7 +390,7 @@ public class RoleIntroduceScreen extends Screen {
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.gameComponent == null)
                     yield false;
-                var nowRole = getDisplayedRole(this.minecraft.player);
+                var nowRole = SREClient.gameComponent.getRole(this.minecraft.player);
                 if (nowRole == null)
                     yield false;
                 yield RoleUtils.compareRole(role, nowRole);

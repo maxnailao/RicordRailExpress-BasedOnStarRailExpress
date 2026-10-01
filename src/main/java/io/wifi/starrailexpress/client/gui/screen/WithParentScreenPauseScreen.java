@@ -32,11 +32,11 @@ import java.util.Objects;
 
 public class WithParentScreenPauseScreen extends PauseScreen {
     public Screen parent;
-    public boolean shouldHideBackground = false;
     public static final Component ROLE_INTRODUCTION = Component.translatable("menu.sre.role_introduction");
     public static final Component FEEDBACK_TRAIN = Component.translatable("menu.sre.feedback_train_bug");
     public static final Component SETTINGS = Component.translatable("menu.sre.train_options");
     public static final Component JOIN_QQ = Component.translatable("gui.sre.pause.join_qq");
+    public static final Component JOIN_DISCORD = Component.translatable("gui.sre.pause.join_discord");
     public static final Component JOIN_FEEDBACK = Component.translatable("menu.sre.feedback");
 
     public WithParentScreenPauseScreen(boolean bl) {
@@ -47,11 +47,6 @@ public class WithParentScreenPauseScreen extends PauseScreen {
     public WithParentScreenPauseScreen(Screen screen) {
         this(true);
         this.parent = screen;
-    }
-
-    public WithParentScreenPauseScreen(Screen screen, boolean shouldHideBackground) {
-        this(screen);
-        this.shouldHideBackground = shouldHideBackground;
     }
 
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
@@ -67,15 +62,6 @@ public class WithParentScreenPauseScreen extends PauseScreen {
         int var10005 = this.width;
         Objects.requireNonNull(this.font);
         this.addRenderableWidget(new StringWidget(0, var10004, var10005, 9, this.title, this.font));
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
-        if (!shouldHideBackground) {
-            super.renderBackground(guiGraphics, i, j, f);
-        } else {
-            guiGraphics.fill(0, 0, width, height, java.awt.Color.BLACK.getRGB());
-        }
     }
 
     public void createPauseMenu_sre() {
@@ -97,6 +83,8 @@ public class WithParentScreenPauseScreen extends PauseScreen {
         try {
             arr.add(ServerLinks.Entry.custom(JOIN_QQ,
                     new URI(StarRailExpressTitleScreen.QQ_GROUP_URL)));
+            arr.add(ServerLinks.Entry.custom(JOIN_DISCORD,
+                    new URI(StarRailExpressTitleScreen.DISCORD_URL)));
             arr.add(ServerLinks.Entry.custom(FEEDBACK_TRAIN,
                     new URI(StarRailExpressTitleScreen.FEEDBACK_URL)));
         } catch (URISyntaxException e) {

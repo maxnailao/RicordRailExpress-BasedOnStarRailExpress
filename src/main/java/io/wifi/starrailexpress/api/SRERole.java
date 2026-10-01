@@ -53,7 +53,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canSeeBodyRoleInfo = false;
     protected boolean canUseInstinct = false;
     protected boolean canIgnoreBlackout = false;
-    protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
     /**
@@ -77,8 +76,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
 
     public ArrayList<SRERole> occupationRoles = new ArrayList<>();
-    /** 被哪些职业作为关联职业引用 */
-    public HashSet<SRERole> occupationedRoles = new HashSet<>();
     public HashSet<SRERole> opposingRoles = new HashSet<>();
 
     /**
@@ -104,7 +101,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole removeOccupationRole(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.remove(i);
-            i.occupationedRoles.remove(this);
             i.removeRelatedRole(this);
         }
         return this;
@@ -127,7 +123,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole addOccupationRoleOnce(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.add(i);
-            i.occupationedRoles.add(this);
             i.addRelatedRole(this);
         }
         // 去重。
@@ -144,7 +139,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole addOccupationRole(SRERole... role) {
         for (var i : role) {
             this.occupationRoles.add(i);
-            i.occupationedRoles.add(this);
             i.addRelatedRole(this);
         }
         return this;
@@ -370,20 +364,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    /**
-     * 该职业是否可以被中毒（默认 true）。
-     * 设为 false 后，该职业无法被施加中毒效果，已中毒状态也会被 serverTick 清除，
-     * 同时免疫病毒感染。
-     */
-    public boolean canBePoisoned() {
-        return canBePoisoned;
-    }
-
-    public SRERole setCanBePoisoned(boolean flag) {
-        this.canBePoisoned = flag;
-        return this;
-    }
-
     // ───────────────────────── 任务刷新控制 / Task Refresh Control ─────────────────────────
 
     /** 该职业不可刷出的任务类型（黑名单）。 */
@@ -503,7 +483,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW, DESERT, WITCH_PRISON
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
@@ -1454,11 +1434,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public boolean hasOccupationRole() {
-        return !this.occupationRoles.isEmpty();
-    }
-
-    public boolean hasOccupationedRole() {
-        return !this.occupationedRoles.isEmpty();
+        return this.occupationRoles.isEmpty();
     }
 
     public ArrayList<SRERole> getoccupationRoles() {

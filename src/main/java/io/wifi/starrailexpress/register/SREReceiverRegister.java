@@ -30,9 +30,6 @@ public class SREReceiverRegister {
     public static void registerGlobalReceivers() {
         SceneAssetNetwork.registerServerReceivers();
 
-        // 表情系统服务端接收器与 tick 检测
-        io.wifi.starrailexpress.emote.EmoteServerManager.register();
-
         UpdateSkinSelectedPayload.registerReceiver();
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包
@@ -92,7 +89,7 @@ public class SREReceiverRegister {
                 new UseAssassinationItemPayload.Receiver());
 
         // Role Rotation receivers
-        io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode.registerServerPacketRecievers();
+        RoleRotationSelectC2SPacket.registerServerReceiver();
 
         // 音乐盒 C2S 接收器
         io.wifi.starrailexpress.content.musicbox.network.SelectMusicBoxC2SPayload.registerReceiver();

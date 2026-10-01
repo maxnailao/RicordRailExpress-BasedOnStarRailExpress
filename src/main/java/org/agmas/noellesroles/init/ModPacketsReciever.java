@@ -2,7 +2,6 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
@@ -390,12 +389,6 @@ public class ModPacketsReciever {
             .get(context.player());
         voodooPlayerComponent.setTarget(payload.player());
 
-        // 回放记录：巫毒师/冷笑绑定玩家
-        SRE.REPLAY_MANAGER.recordCustomEvent(
-            Component.translatable("replay.event.voodoo.bind",
-                GameReplayUtils.getReplayPlayerDisplayText(context.player(), true),
-                GameReplayUtils.getReplayPlayerDisplayText(context.player().level().getPlayerByUUID(payload.player()), true)));
-
       }
       if (gameWorldComponent.isRole(context.player(), ModRoles.MORPHLING)) {
         MorphlingPlayerComponent morphlingPlayerComponent = (MorphlingPlayerComponent) MorphlingPlayerComponent.KEY
@@ -422,15 +415,6 @@ public class ModPacketsReciever {
 
         var blackkeComponent = org.agmas.noellesroles.game.roles.innocence.blackke.BlackkePlayerComponent.KEY.get(hacker);
         blackkeComponent.useSkillOnTarget(targetServerPlayer);
-      });
-    });
-
-    // 侦搜者存活查询包处理：花费75金币查询目标玩家是否存活
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ZhensouzheQueryTargetC2SPacket.ID, (payload, context) -> {
-      var scout = context.player();
-      context.server().execute(() -> {
-        if (scout.hasEffect(ModEffects.SAFE_TIME)) return; // 安全时间
-        org.agmas.noellesroles.game.roles.innocence.zhensouzhe.ZhensouzheHandler.queryTargetAlive(scout, payload.target());
       });
     });
 
@@ -653,41 +637,6 @@ public class ModPacketsReciever {
       }
     });
 
-    // 木乃伊诅咒选人包：对点选的存活玩家施加一层诅咒，成功后才记入技能1冷却（层数已满/目标无效不进 CD）
-    ServerPlayNetworking.registerGlobalReceiver(
-        org.agmas.noellesroles.packet.MunaiyiCurseSelectC2SPacket.ID, (payload, context) -> {
-          ServerPlayer player = context.player();
-          if (player.hasEffect(ModEffects.SAFE_TIME))// 安全时间
-            return;
-          if (payload.target() == null)
-            return;
-          if (RoleSkill.blockForSpectator(player))
-            return;
-          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
-              .get(player.level());
-          if (!gameWorldComponent.isSkillAvailable)
-            return;
-          if (!gameWorldComponent.isRole(player, ModRoles.MUNAIYI_DESERT))
-            return;
-          var comp = org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.KEY
-              .maybeGet(player).orElse(null);
-          if (comp == null)
-            return;
-          SREAbilityPlayerComponent ability = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY.get(player);
-          if (!ability.canUseSkill(
-              org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_CURSE))
-            return;
-          if (!(player.level().getPlayerByUUID(payload.target()) instanceof ServerPlayer target))
-            return;
-          if (!comp.applyCurse(target))
-            return;
-          RoleSkill.getDefinitions(ModRoles.MUNAIYI_DESERT).stream()
-              .filter(d -> d.id().equals(
-                  org.agmas.noellesroles.game.roles.neutral.munaiyi_desert.MunaiyiDesertPlayerComponent.SKILL_CURSE))
-              .findFirst()
-              .ifPresent(ability::markSkillUsed);
-        });
-
     // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {
@@ -796,10 +745,7 @@ public class ModPacketsReciever {
           .get(player);
 
       boolean isVulture = gameWorldComponent.isRole(player, ModRoles.VULTURE);
-      // 扮演者伪装为乌鸦时同样可以食尸（后续非秃鹫分支不依赖职业组件，无需额外伪装）
-      boolean isWuyage = gameWorldComponent.isRole(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN)
-          || org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-              .isDisguisedAs(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN_ID);
+      boolean isWuyage = gameWorldComponent.isRole(player, ModRoles.WUYAGE_NANBANJIUUBIEBAN);
       if ((isVulture || isWuyage)
           && GameUtils.isPlayerAliveAndSurvival(player)) {
         if (abilityPlayerComponent.cooldown > 0)
@@ -1107,9 +1053,7 @@ public class ModPacketsReciever {
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
-      if (gameWorldComponent.isRole(context.player(), ModRoles.MONITOR)
-          || org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-              .isDisguisedAs(context.player(), ModRoles.MONITOR_ID)) {
+      if (gameWorldComponent.isRole(context.player(), ModRoles.MONITOR)) {
         MonitorPlayerComponent monitorComponent = MonitorPlayerComponent.KEY.get(context.player());
 
         // 检查冷却
@@ -1287,12 +1231,6 @@ public class ModPacketsReciever {
             pc.addAffectedTarget(target.getUUID());
             pc.schedulePartySound(6 * 20); // 6秒后从当前位置播放
             pc.sync();
-
-            // 回放记录：派对狂对玩家使用氦气变声
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.party.helium_voice",
-                    GameReplayUtils.getReplayPlayerDisplayText(player, true),
-                    GameReplayUtils.getReplayPlayerDisplayText(target, true)));
 
             // 检查是否达到触发阈值
             if (pc.getCount() >= threshold) {
@@ -1542,10 +1480,9 @@ public class ModPacketsReciever {
       }
     });
 
-    // ==================== 咒术师网络包 ====================
+    // ==================== 咒法师网络包 ====================
 
-    // 领域展开：背包点选一名已被诅咒且存活的目标，对其展开领域（校验 / 冷却由组件内部处理）
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockDomainC2SPacket.ID,
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockKillC2SPacket.ID,
         (payload, context) -> {
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
@@ -1557,12 +1494,34 @@ public class ModPacketsReciever {
             return;
           if (!GameUtils.isPlayerAliveAndSurvival(player))
             return;
-          if (payload.target() == null)
-            return;
-          var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY
-              .maybeGet(player).orElse(null);
-          if (comp != null) {
-            comp.tryOpenDomainOn(payload.target());
+          var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+          ServerPlayer victim = comp.tryHexKill();
+          if (victim != null) {
+            player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                io.wifi.starrailexpress.index.TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5.0F, 1.0F);
+            GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString())
+                    .withStyle(ChatFormatting.DARK_PURPLE),
+                true);
+          } else {
+            // 检查是否因为距离太远而失败
+            if (comp.markedTarget != null) {
+              ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
+              if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
+                  && player.distanceTo(
+                      marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
+                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
+                    .withStyle(ChatFormatting.RED), true);
+              } else {
+                player.displayClientMessage(
+                    Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED),
+                    true);
+              }
+            } else {
+              player.displayClientMessage(
+                  Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+            }
           }
         });
 
@@ -1669,13 +1628,6 @@ public class ModPacketsReciever {
                   new org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket(player.getUUID(), comp.stolenSkin));
             }
             comp.sync();
-            // 回放记录：窃皮者改变自身皮肤
-            Player skincrawlerTarget = player.serverLevel().getPlayerByUUID(comp.stolenSkin);
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.skincrawler.change_skin",
-                    GameReplayUtils.getReplayPlayerDisplayText(player, true),
-                    skincrawlerTarget != null ? GameReplayUtils.getReplayPlayerDisplayText(skincrawlerTarget, true)
-                        : Component.literal("<???>")));
             player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_LEATHER, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f,
                 1.0f);

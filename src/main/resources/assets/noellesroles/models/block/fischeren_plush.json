@@ -1,7 +1,0 @@
-{
-	"parent":"noellesroles:block/baka_plush",
-	"textures": {
-		"0": "starrailexpress:block/plush/fischeren",
-		"particle": "starrailexpress:block/plush/fischeren"
-	}
-}

@@ -25,7 +25,6 @@ public class NRSounds {
     public static final SoundEvent SHOTGUN_FIRE = registrar.create("noellesroles.shotgun_fire");
     public static final SoundEvent SHORT_CIRCUIT = registrar.create("noellesroles.short_circuit");
     public static final SoundEvent SHOTGUNU_COCK = registrar.create("noellesroles.shotgun_cock");
-    public static final SoundEvent RPG7_SHOOT = registrar.create("noellesroles.rpg7_shoot");
     
     // 疫使相关音效
     public static final SoundEvent INFECTED_COUGH = registrar.create("noellesroles.cough");
@@ -74,6 +73,9 @@ public class NRSounds {
     public static final SoundEvent A = registrar.create("noellesroles.a");
     //黑警
     public static final SoundEvent CORRUPT_COP_TIME = registrar.create("noellesroles.corruptcoptime");
+
+    //绑匪审判阶段
+    public static final SoundEvent KIDNAPPER_JUDGMENT = registrar.create("noellesroles.kidnapper_judgment");
 
     // 听觉干扰
     public static final SoundEvent OPPOAFIVE = registrar.create("noellesroles.oppoafive");

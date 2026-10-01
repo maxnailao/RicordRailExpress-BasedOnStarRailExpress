@@ -1,8 +1,6 @@
 package org.agmas.noellesroles.game.roles.neutral.thief;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -282,13 +280,6 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         this.cooldown = ABILITY_COOLDOWN;
         this.sync();
 
-        // 回放记录：小偷从某玩家身上偷走了金币
-        SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.thief.steal_money",
-                        GameReplayUtils.getReplayPlayerDisplayText(player, true),
-                        GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, true),
-                        Component.literal(String.valueOf(stealAmount))));
-
         return true;
     }
 
@@ -426,12 +417,6 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         // 成功偷取，进入冷却
         this.cooldown = ABILITY_COOLDOWN;
         this.sync();
-
-        // 回放记录：小偷从某玩家身上偷走了物品
-        SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.thief.steal_item",
-                        GameReplayUtils.getReplayPlayerDisplayText(player, true),
-                        GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, true), itemName));
 
         return true;
     }
@@ -738,10 +723,9 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         // 移除物品
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 
-        // 给予金币（导盲杖100，其他50）
-        int sellPrice = org.agmas.noellesroles.compat.BlindnessCompat.isGuidanceCane(heldItem) ? 100 : 50;
+        // 给予50金币
         SREPlayerShopComponent thiefShop = SREPlayerShopComponent.KEY.get(player);
-        thiefShop.balance += sellPrice;
+        thiefShop.balance += 50;
         thiefShop.sync();
 
         // 获取物品名称
@@ -749,7 +733,7 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
 
         // 通知小偷
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.thief.item_sold", itemName, sellPrice)
+                Component.translatable("message.noellesroles.thief.item_sold", itemName, 50)
                         .withStyle(ChatFormatting.GREEN),
                 true);
 
@@ -763,10 +747,6 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
     private boolean canSellItem(ItemStack stack, SREGameWorldComponent gameWorldComponent) {
         if (stack.isEmpty())
             return false;
-
-        // 导盲杖（失明症模组）
-        if (org.agmas.noellesroles.compat.BlindnessCompat.isGuidanceCane(stack))
-            return true;
 
         // 禁止偷取/出售的物品
         // 金锭（小偷的荣誉）

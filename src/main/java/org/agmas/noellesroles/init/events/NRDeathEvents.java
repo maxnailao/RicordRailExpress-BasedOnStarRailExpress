@@ -82,9 +82,7 @@ public class NRDeathEvents {
     // ==================== 死亡免疫 / 反制辅助方法 ====================
 
     /**
-     * 处理窃皮者死亡免疫 - 有偷来皮肤时被特定武器击中进入眩晕
-     * 可防御：左轮、消音左轮、德林加、刀（退伍军刀）、箭（毒箭）
-     * 疯魔期间优先消耗疯魔护盾：有疯魔护盾时不消耗窃皮抵挡次数
+     * 处理窃皮者死亡免疫 - 有偷来皮肤时被枪击中进入眩晕
      */
     private static boolean handleSkincrawlerDeath(Player victim, ResourceLocation deathReason) {
         if (victim == null || victim.level().isClientSide())
@@ -94,20 +92,10 @@ public class NRDeathEvents {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
         if (!gameWorld.isRole(victim, ModRoles.SKINCRAWLER))
             return false;
-        // 可防御的死亡原因：左轮/消音左轮/德林加/刀（退伍军刀）/箭（毒箭）
-        boolean blockable = GameConstants.DeathReasons.REVOLVER.equals(deathReason)
-                || GameConstants.DeathReasons.DERRINGER.equals(deathReason)
-                || GameConstants.DeathReasons.KNIFE.equals(deathReason)
-                || GameConstants.DeathReasons.ARROW.equals(deathReason)
-                || deathReason.getPath().equals("silenced_pistol_shot");
-        if (!blockable)
+        if (!GameConstants.DeathReasons.REVOLVER.equals(deathReason))
             return false;
         var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(sp);
         if (comp == null || comp.stolenSkin == null || comp.stolenSkin.equals(sp.getUUID()))
-            return false;
-        // 疯魔优先：疯魔护盾尚存时不消耗窃皮抵挡次数，交由 GameMode.killPlayer 消耗疯魔护盾
-        var psycho = SREPlayerPsychoComponent.KEY.get(sp);
-        if (psycho.getPsychoTicks() > 0 && psycho.getArmour() > 0)
             return false;
         if (comp.blockCharges <= 0)
             return false;
@@ -881,10 +869,7 @@ public class NRDeathEvents {
             for (Player player : victim.level().players()) {
                 if (player.getUUID().equals(victim.getUUID()))
                     continue;
-                // 扮演者伪装为巡警时同样触发附近死亡感知（职业特征）
-                if (!gameWorld.isRole(player, ModRoles.PATROLLER)
-                        && !org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                                .isDisguisedAs(player, ModRoles.PATROLLER_ID))
+                if (!gameWorld.isRole(player, ModRoles.PATROLLER))
                     continue;
                 if (!GameUtils.isPlayerAliveAndSurvival(player))
                     continue;
@@ -892,13 +877,7 @@ public class NRDeathEvents {
                         || !PatrollerPlayerComponent.isBoundTargetVisible(victim, player))
                     continue;
                 PatrollerPlayerComponent patrollerComponent = ModComponents.PATROLLER.get(player);
-                // 伪装中的扮演者需要伪装上下文才能通过 onNearbyDeath 内部的 isRole 校验
-                if (player instanceof ServerPlayer sp) {
-                    org.agmas.noellesroles.game.roles.killer.banyanzhe.BanyanzhePlayerComponent
-                            .runAsDisguisedRole(sp, patrollerComponent::onNearbyDeath);
-                } else {
-                    patrollerComponent.onNearbyDeath();
-                }
+                patrollerComponent.onNearbyDeath();
             }
         });
 
@@ -1148,9 +1127,7 @@ public class NRDeathEvents {
                 SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                 if (gameWorldComponent.isRole(victim, ModRoles.JESTER)
                         && !gameWorldComponent.isRole(killer, ModRoles.JESTER)
-                        && (gameWorldComponent.isInnocent(killer)
-                                // 黑警为中立阵营，特例允许其击杀触发小丑精神爆发
-                                || gameWorldComponent.isRole(killer, ModRoles.CORRUPT_COP))) {
+                        && gameWorldComponent.isInnocent(killer)) {
                     SREPlayerPsychoComponent component = SREPlayerPsychoComponent.KEY.get(victim);
                     if (component.getPsychoTicks() <= 0) {
                         component.startPsycho();
@@ -1425,11 +1402,6 @@ public class NRDeathEvents {
                                     killer.getName())
                                     .withStyle(ChatFormatting.RED),
                             true);
-                    // 回放记录：雇佣兵将玩家设为目标
-                    SRE.REPLAY_MANAGER.recordCustomEvent(
-                        Component.translatable("replay.event.mercenary.set_target",
-                            GameReplayUtils.getReplayPlayerDisplayText(victim, true),
-                            GameReplayUtils.getReplayPlayerDisplayText(killer, true)));
                 }
             }
             // 影隼临时护盾破碎

@@ -1,8 +1,6 @@
 package org.agmas.noellesroles.game.roles.innocence.fortuneteller;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
@@ -77,11 +75,6 @@ public class FortunetellerPlayerComponent implements RoleComponent, ServerTickin
                 Component.translatable("message.fortuneteller.been_protected", player.getDisplayName())
                         .withStyle(ChatFormatting.GOLD),
                 true);
-        // 回放记录：算命先生护住了某玩家
-        SRE.REPLAY_MANAGER.recordCustomEvent(
-                Component.translatable("replay.event.fortuneteller",
-                        GameReplayUtils.getReplayPlayerDisplayText(player, true),
-                        GameReplayUtils.getReplayPlayerDisplayText(target, true)));
         this.sync();
     }
 

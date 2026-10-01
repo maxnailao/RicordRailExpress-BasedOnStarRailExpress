@@ -51,9 +51,10 @@ public class AntidoteItem extends Item {
                     Entity target = entityHitResult.getEntity();
                     if (attacker instanceof ServerPlayer player) {
                         if (!((double)target.distanceTo(player) > (double)3.0F)) {
-                            // 清除中毒状态（传入施药者，回放会记「谁治好了谁」）
+                            // 清除中毒状态
                             final var playerPoisonComponent = SREPlayerPoisonComponent.KEY.get(target);
-                            ((SREPlayerPoisonComponent) playerPoisonComponent).cure(attacker);
+                            ((SREPlayerPoisonComponent) playerPoisonComponent).init();
+                            playerPoisonComponent.sync();
                             
                             // 清除感染状态
                             InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(target);
