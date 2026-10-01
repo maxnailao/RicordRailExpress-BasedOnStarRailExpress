@@ -3,10 +3,7 @@ package org.agmas.noellesroles.game.roles.killer.killman;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameEnd;
-import io.wifi.starrailexpress.event.OnRevolverUsed;
-import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -25,7 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 
@@ -42,7 +38,6 @@ import java.util.UUID;
  *   玩家背包内不再有标记左轮时标记自动清空）
  * - 被标记的玩家开枪后：先清除其背包内所有左轮手枪，再以死因"手枪炸膛"击杀，
  *   避免死亡后掉落左轮手枪
- * - 诱饵左轮不能击杀他人：开枪者手里拿着诱饵左轮时，本次射击不产生任何击杀
  * - 技能CD 100s（由统一技能系统管理）
  * - 每局开始/结束时清理场上残留的诱杀左轮掉落物并重置状态
  */
@@ -67,20 +62,6 @@ public class KillmanPlayerComponent implements RoleComponent {
     private static final int DROP_PICKUP_DELAY = 40;
 
     static {
-        // 开枪触雷：被标记的玩家开枪后清除左轮并以"手枪炸膛"击杀
-        // （注册在组件 static 块，类被 ModComponents 引用时即加载生效，不依赖外部注册入口）
-        OnRevolverUsed.EVENT.register((shooter, target) -> handleTrapShot(shooter));
-
-        // 诱饵左轮不能击杀他人：开枪者手里拿着诱饵左轮时，本次射击不产生任何击杀。
-        // 目标死亡发生在 OnRevolverUsed 触发之前，事后无法补救，因此必须在这里拦下；
-        // 开枪者随后仍会被 handleTrapShot 以"手枪炸膛"反噬。
-        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            if (killer == null || !GameConstants.DeathReasons.REVOLVER.equals(deathReason)) {
-                return true;
-            }
-            return !isTrapRevolver(killer.getMainHandItem());
-        });
-
         // 游戏结束时重置：清除场上残留的诱杀左轮掉落物并清空标记记录；
         // 额外扫除所有玩家背包中残留的诱杀左轮（兼容被标记者离线等边缘情况，确保每局彻底重置）
         OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
@@ -209,24 +190,15 @@ public class KillmanPlayerComponent implements RoleComponent {
     /**
      * 判断玩家是否被标记（背包/副手等任意槽位持有诱杀左轮即视为被标记）。
      * 玩家丢掉/失去诱杀左轮后标记自动清空。
-     * 诱杀者本人免疫陷阱：不会被自己放置的诱饵左轮反噬
-     * （但诱饵左轮对任何人都打不死人，见 static 块中的击杀拦截）。
      */
     public static boolean isMarked(Player player) {
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorld != null && RoleUtils.compareRole(gameWorld.getRole(player.getUUID()), ModRoles.KILLMAN)) {
-            return false;
-        }
         return SREItemUtils.hasItem(player, KillmanPlayerComponent::isTrapRevolver);
     }
 
     /**
      * 开枪触雷处理（OnRevolverUsed 事件调用）：
      * 被标记的玩家开枪后，先清除背包内所有左轮手枪，再以死因"手枪炸膛"击杀，
-     * 避免死亡后掉落左轮手枪。诱杀者本人免疫（见 isMarked）。
-     *
-     * <p>炸膛属于无来源的环境致死，必须使用强制击杀绕过护盾/免死判定：
-     * 否则持有无敌（监护人技能、起搏器、庇护等）的玩家开枪后仍然存活，诱饵就形同虚设。
+     * 避免死亡后掉落左轮手枪。
      */
     public static void handleTrapShot(ServerPlayer shooter) {
         if (shooter == null)
@@ -237,13 +209,13 @@ public class KillmanPlayerComponent implements RoleComponent {
             return;
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(shooter.level());
-        if (gameWorld == null || !gameWorld.isRunning())
+        if (!gameWorld.isRunning())
             return;
 
         // 先清除背包内所有左轮手枪，避免死亡后掉落
         SREItemUtils.clearItem(shooter, stack -> stack.is(TMMItems.REVOLVER));
-        // 以死因"手枪炸膛"击杀（强制击杀，保证诱饵一定致死）
-        GameUtils.forceKillPlayer(shooter, true, null, DEATH_REASON_REVOLVER_BURST);
+        // 以死因"手枪炸膛"击杀
+        GameUtils.killPlayer(shooter, true, null, DEATH_REASON_REVOLVER_BURST);
     }
 
     // ==================== NBT 读写 ====================

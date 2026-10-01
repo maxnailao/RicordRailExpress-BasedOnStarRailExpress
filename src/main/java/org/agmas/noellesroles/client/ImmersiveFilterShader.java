@@ -11,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.function.BooleanSupplier;
 

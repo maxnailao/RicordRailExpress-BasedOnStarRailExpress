@@ -61,19 +61,6 @@ public class ModEntities {
                     .build());
 
     /**
-     * RPG-7 火箭弹抛射物 - 高速飞行，命中方块/实体引爆
-     */
-    @SuppressWarnings("deprecation")
-    public static final EntityType<Rpg7RocketEntity> RPG7_ROCKET = Registry.register(
-            BuiltInRegistries.ENTITY_TYPE,
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "rpg7_rocket"),
-            FabricEntityTypeBuilder.<Rpg7RocketEntity>create(MobCategory.MISC, Rpg7RocketEntity::new)
-                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
-                    .trackRangeBlocks(128)
-                    .trackedUpdateRate(2)
-                    .build());
-
-    /**
      * 氯气弹实体 - 可投掷物品，落地时使范围内玩家中毒
      */
     @SuppressWarnings("deprecation")
@@ -203,21 +190,6 @@ public class ModEntities {
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghost_phantom"),
             FabricEntityTypeBuilder.<GhostPhantomEntity>create(MobCategory.MISC, GhostPhantomEntity::new)
-                    .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
-                    .trackRangeBlocks(64)
-                    .trackedUpdateRate(2)
-                    .build());
-
-    /**
-     * 鬼影残影实体 - 鬼影释放鬼影步时留在原地的假人诱饵，本体现身后消失
-     */
-    @SuppressWarnings("deprecation")
-    public static final EntityType<org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity> GHOSTYING_AFTERIMAGE = Registry.register(
-            BuiltInRegistries.ENTITY_TYPE,
-            Noellesroles.id("ghostying_afterimage"),
-            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity>create(
-                    MobCategory.MISC,
-                    org.agmas.noellesroles.game.roles.killer.ghostying.GhostyingAfterimageEntity::new)
                     .dimensions(EntityDimensions.fixed(0.6F, 1.8F)) // 玩家尺寸
                     .trackRangeBlocks(64)
                     .trackedUpdateRate(2)
@@ -490,18 +462,6 @@ public class ModEntities {
                     .build());
 
     /**
-     * 棺材实体 - 纯装饰道具，没有碰撞体积，玩家可直接穿过；
-     * 可通过 /summon noellesroles:coffin 生成，攻击可移除。
-     */
-    public static final EntityType<CoffinEntity> COFFIN = Registry.register(
-            BuiltInRegistries.ENTITY_TYPE,
-            Noellesroles.id("coffin"),
-            EntityType.Builder.of(CoffinEntity::new, MobCategory.MISC)
-                    .sized(1.0F, 0.7F)
-                    .clientTrackingRange(10)
-                    .build("coffin"));
-
-    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */
@@ -518,8 +478,6 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
         // 注册鬼魅幻影实体属性
         FabricDefaultAttributeRegistry.register(GHOST_PHANTOM, LivingEntity.createLivingAttributes());
-        // 注册鬼影残影实体属性（LivingEntity 必须注册属性才能生成）
-        FabricDefaultAttributeRegistry.register(GHOSTYING_AFTERIMAGE, LivingEntity.createLivingAttributes());
         // 注册对话 NPC 实体属性
         FabricDefaultAttributeRegistry.register(DIALOG_NPC,
                 org.agmas.noellesroles.content.entity.DialogNpcEntity.createAttributes());

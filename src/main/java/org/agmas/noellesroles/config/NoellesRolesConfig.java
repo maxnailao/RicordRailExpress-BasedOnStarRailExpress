@@ -219,25 +219,6 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> snowRolesMaps = new ArrayList<>(List.of("areas_snow"));
 
     /**
-     * Areas that will spawn desert-map roles
-     */
-    public ArrayList<String> desertRolesMaps = new ArrayList<>(List.of("desertmap"));
-
-    /**
-     * Areas that will spawn prison roles (Convict, Jailer). These roles ONLY spawn on these maps.
-     * An empty list means no map restriction (they may spawn on any map).
-     */
-    public ArrayList<String> prisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
-
-    /**
-     * Areas that will spawn the witch-prison roles (Pre Witch). These roles ONLY spawn on these maps.
-     * Kept separate from prisonRolesMaps so the witch prison can use a different map than the
-     * jailer / convict prison. Defaults to the same map as prisonRolesMaps; change it to the
-     * witch-prison map id to decouple the two. An empty list means no map restriction.
-     */
-    public ArrayList<String> witchPrisonRolesMaps = new ArrayList<>(List.of("areas_prison"));
-
-    /**
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")
@@ -255,19 +236,6 @@ public class NoellesRolesConfig implements ConfigData {
     public int chanceOfEggRoles = 15;
     @ConfigEntry.Category(value = "detail")
     public int minPlayerForEggRoles = 12;
-
-    /**
-     * 智力障碍患者（与监护人成对刷新）刷新概率（%）
-     */
-    @ConfigEntry.Category(value = "detail")
-    public int chanceOfZhizhang = 40;
-
-    /**
-     * 智力障碍患者（与监护人成对刷新）刷新最小玩家数
-     */
-    @ConfigEntry.Category(value = "detail")
-    public int minPlayerForZhizhang = 8;
-
     // ==================== 角色刷新概率配置 ====================
     // 普通概率配置（0-100，百分比）
 
@@ -299,12 +267,6 @@ public class NoellesRolesConfig implements ConfigData {
      */
 
     public boolean enableClientBlood = true;
-
-    /**
-     * (Server Side) Enable the gun-fire tracer line effect broadcast on every gunshot
-     */
-
-    public boolean gunTracerEffect = true;
 
     /**
      * Punishment for a civilian's accidental killing of another civilian
@@ -546,16 +508,6 @@ public class NoellesRolesConfig implements ConfigData {
     /** Undead Lord - Real damage each undead deals to a player per attack (HP, 0=disabled) */
     public double undeadLordUndeadAttackDamage = 1.0;
 
-    // ==================== Huanling (幻灵) ====================
-    /** Huanling - 开局寻找附身目标的时间（秒），超时未附身则死亡 */
-    public int huanlingInitialSearchSeconds = 50;
-    /** Huanling - 宿主死亡后重新寻找附身目标的宽限时间（秒，冒险模式） */
-    public int huanlingRepossessGraceSeconds = 10;
-    /** Huanling - 主动脱离宿主后重新寻找附身目标的宽限时间（秒，旁观模式） */
-    public int huanlingDetachGraceSeconds = 8;
-    /** Huanling - 游戏开局多少秒后转换为附身目标的职业并现身 */
-    public int huanlingTransformGameSeconds = 180;
-
     /** 格罗赛尔游记 (Groselle Travelog) - 放逐目标坐标 X */
     public int grosellTravelogBanishX = -100;
     /** 格罗赛尔游记 (Groselle Travelog) - 放逐目标坐标 Y */
@@ -601,16 +553,6 @@ public class NoellesRolesConfig implements ConfigData {
     public int morphlingDummyCooldown = 90;
     /** Morphling (变形者) - Knife dummy max lifetime / forward-rush time in seconds */
     public int morphlingDummyLifetime = 10;
-
-    // ==================== 躲藏专家 (duomaomao_meimeihide) ====================
-    /** 躲藏专家 - 变身躲藏技能金币花费 */
-    public int duomaomaoMeimeiHideCost = 200;
-    /** 躲藏专家 - 变身持续时间（秒） */
-    public int duomaomaoMeimeiHideDurationSeconds = 40;
-    /** 躲藏专家 - 变身躲藏技能冷却（秒） */
-    public int duomaomaoMeimeiHideCooldownSeconds = 175;
-    /** 躲藏专家 - 准星选取方块的最大距离（格） */
-    public double duomaomaoMeimeiHideReach = 5.0;
 
     /**
      * Phantom - Invisibility duration in seconds
@@ -778,149 +720,6 @@ public class NoellesRolesConfig implements ConfigData {
     public int minPlayerForLovers = 12;
     @Category("detail")
     public int chanceOfModifierLovers = 10;
-
-    // ==================== 木乃伊 (munaiyi_desert) 配置 ====================
-    /**
-     * 木乃伊 - 技能1「木乃伊的诅咒」冷却（秒）
-     */
-    public int munaiyiCurseCooldown = 10;
-
-    /**
-     * 木乃伊 - 技能2「恐吓」冷却（秒）
-     */
-    public int munaiyiScareCooldown = 25;
-
-    /**
-     * 木乃伊 - 技能3「现身」冷却（秒）
-     */
-    public int munaiyiRevealCooldown = 60;
-
-    /**
-     * 木乃伊 - 技能3「现身」持续时长（秒）
-     */
-    public int munaiyiRevealDuration = 15;
-
-    /**
-     * 木乃伊 - 技能4「领地确认」一局最多放置的棺材数量（通过技能充能实现）
-     */
-    public int munaiyiMaxCoffins = 3;
-
-    /**
-     * 木乃伊 - 技能5「干枯」冷却（秒）
-     */
-    public int munaiyiWitherCooldown = 20;
-
-    /**
-     * 木乃伊 - 技能5「干枯」作用半径（格）
-     */
-    public int munaiyiWitherRadius = 10;
-
-    /**
-     * 木乃伊 - 棺材标记玩家所需的周边停留总时长（秒）
-     */
-    public int munaiyiCoffinMarkSeconds = 10;
-
-    /**
-     * 木乃伊 - 棺材标记统计半径（格）
-     */
-    public double munaiyiCoffinMarkRadius = 7.5D;
-
-    /**
-     * 木乃伊 - 释放技能后的短暂现身时长（秒）
-     */
-    public int munaiyiBriefRevealSeconds = 3;
-
-    /**
-     * 铁傀儡 - 技能「铁拳冲击」射程（格）
-     */
-    public double imironmanSkillRange = 2.7D;
-
-    /**
-     * 铁傀儡 - 技能最大存储次数（充能上限）
-     */
-    public int imironmanMaxCharges = 3;
-
-    /**
-     * 铁傀儡 - 技能存储恢复冷却（秒），每恢复1次充能所需时间
-     */
-    public int imironmanRechargeSeconds = 30;
-
-    /**
-     * 铁傀儡 - 技能释放间隔冷却（秒）
-     */
-    public int imironmanCastIntervalSeconds = 6;
-
-    /**
-     * 铁傀儡 - 技能命中后目标的缓慢II+失明持续时长（秒）
-     */
-    public double imironmanSkillEffectSeconds = 2;
-
-    /**
-     * 铁傀儡 - 技能命中水平击退强度（约等于击退格数）
-     */
-    public double imironmanKnockback = 2.0D;
-
-    /**
-     * 铁傀儡 - 技能命中垂直击飞速度（约击飞4格高）
-     */
-    public double imironmanLaunchVelocity = 0.8D;
-
-    /**
-     * 铁傀儡 - 被动被球棒击打后的禁用/失明持续时长（秒）
-     */
-    public double imironmanPassiveDebuffSeconds = 5;
-
-    /**
-     * 扮演者 - 伪装阶段每完成一个任务获得的金币数（同普通平民）
-     */
-    public int banyanzheTaskReward = 50;
-
-    /**
-     * 扮演者 - 回忆方式二的判定半径（格）：范围内仅存在杀手阵营玩家时累计计时
-     */
-    public double banyanzheRecallRadius = 5.0D;
-
-    /**
-     * 扮演者 - 回忆方式二需要持续的时间（秒）
-     */
-    public int banyanzheRecallSeconds = 10;
-
-    /**
-     * 扮演者 - 小脑惩罚（误杀平民）时扣除的 san 值（0~1，不会死亡，改为掉枪+扣san）
-     */
-    public float banyanzheXiaoNaoSanLoss = 0.2f;
-
-    // ==================== 重刑犯 (convict) / 狱警 (jailer) 配置 ====================
-    /** 重刑犯 - 每完成一个任务获得的金币数 */
-    public int convictTaskReward = 50;
-    /** 重刑犯 - 被动收入每次发放的金币数 */
-    public int convictPassiveIncomeAmount = 5;
-    /** 重刑犯 - 被动收入发放间隔（秒） */
-    public int convictPassiveIncomeIntervalSeconds = 30;
-    /** 重刑犯 - 开局「做出你的抉择」GUI 的选择时限（秒），超时默认「毁灭一切」 */
-    public int convictChoiceSeconds = 30;
-
-    /**
-     * 地图列表匹配规则，与 {@link SpawnInfo#map} 的语义保持一致：
-     * 列表为空表示不限制地图；否则忽略首尾空白与大小写，与当前地图名逐一比对。
-     * 狱警 / 重刑犯 / 预备魔女这类"只在特定地图刷新"的职业都走这里，避免手写的名字
-     * 因为大小写或多余空格对不上，导致职业静默地一局都刷不出来。
-     */
-    public static boolean matchesMapList(List<String> mapList, String mapName) {
-        if (mapList == null || mapList.isEmpty()) {
-            return true;
-        }
-        if (mapName == null || mapName.isBlank()) {
-            return false;
-        }
-        String currentMap = mapName.trim();
-        for (String entry : mapList) {
-            if (entry != null && entry.trim().equalsIgnoreCase(currentMap)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public static NoellesRolesConfig instance() {
         return HANDLER.instance();

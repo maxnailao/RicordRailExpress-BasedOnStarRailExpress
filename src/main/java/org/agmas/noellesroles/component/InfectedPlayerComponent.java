@@ -1,15 +1,12 @@
 package org.agmas.noellesroles.component;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -128,31 +125,22 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             this.cachedInfectorPlayer = infectorPlayer;
             this.infectorCheckCounter = 0;
             this.sync(); // 同步给所有者+所有疫使
-
-            // 回放记录：疫使将某玩家感染
-            if (player instanceof ServerPlayer victim && infectorPlayer instanceof ServerPlayer infector) {
-                SRE.REPLAY_MANAGER.recordCustomEvent(
-                        Component.translatable("replay.event.infected.infect",
-                                GameReplayUtils.getReplayPlayerDisplayText(infector, true),
-                                GameReplayUtils.getReplayPlayerDisplayText(victim, true)));
-            }
         }
     }
 
     /**
-     * 治愈感染。仅在真正处于感染中（infectedTicks > 0）时记录回放事件，
-     * 避免死亡/复位路径误报「被治愈」（那些路径请直接调 {@link #clear()}）。
+     * 治愈感染
      */
     public void cure() {
         if (this.infectedTicks <= 0 && this.infector == null && !this.spreadAccelerated) {
             return;
         }
-        if (this.infectedTicks > 0) {
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.event.infected.health",
-                            GameReplayUtils.getReplayPlayerDisplayText(player, true)));
-        }
-        this.clear();
+        this.infectedTicks = 0;
+        this.infector = null;
+        this.lastSpreadTick = 0;
+        this.spreadAccelerated = false;
+        this.cachedInfectorPlayer = null;
+        this.infectorCheckCounter = 0;
         this.sync(); // 同步给所有者+所有疫使
     }
 
@@ -176,11 +164,6 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 故障机器人免疫病毒感染
         if (gameWorld.isRole(player, ModRoles.GLITCH_ROBOT)) {
-            return false;
-        }
-
-        // 职业自带中毒免疫（SRERole#canBePoisoned() == false，如蜜蜂家族）同样免疫病毒感染
-        if (!role.canBePoisoned()) {
             return false;
         }
 
@@ -240,9 +223,9 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             return;
         }
 
-        // 如果玩家已死亡，立即清除感染状态（非治愈，不记回放）
+        // 如果玩家已死亡，立即清除感染状态
         if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-            this.clear();
+            this.cure();
             return;
         }
 
@@ -284,8 +267,8 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
                 Player killer = this.infector != null ? player.level().getPlayerByUUID(this.infector) : null;
                 GameUtils.killPlayer(this.player, true, killer, INFECTION_DEATH_REASON);
 
-                // 清除感染状态，防止玩家复活后再次触发死亡（感染致死，非治愈，不记回放）
-                this.clear();
+                // 清除感染状态，防止玩家复活后再次触发死亡
+                this.cure();
 
                 // 清除中毒状态（感染致死时不清除中毒会导致问题）
                 io.wifi.starrailexpress.cca.SREPlayerPoisonComponent poisonComponent = io.wifi.starrailexpress.cca.SREPlayerPoisonComponent.KEY
@@ -347,14 +330,6 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
                         // 感染目标
                         targetComponent.infect(infectorPlayer);
                         spreadCount++;
-
-                        // 回放记录：疫使将病毒传染给了某玩家
-                        if (this.player instanceof ServerPlayer spreader && nearby instanceof ServerPlayer spreadTarget) {
-                            SRE.REPLAY_MANAGER.recordCustomEvent(
-                                    Component.translatable("replay.event.infected.spread_virus",
-                                            GameReplayUtils.getReplayPlayerDisplayText(spreader, true),
-                                            GameReplayUtils.getReplayPlayerDisplayText(spreadTarget, true)));
-                        }
 
                         // 播放熊猫打喷嚏音效 - 表示病毒传播
                         nearby.level().playSound(null, nearby.getX(), nearby.getY(), nearby.getZ(),

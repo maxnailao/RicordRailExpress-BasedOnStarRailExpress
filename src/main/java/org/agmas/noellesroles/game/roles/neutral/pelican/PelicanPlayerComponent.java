@@ -1,7 +1,5 @@
 package org.agmas.noellesroles.game.roles.neutral.pelican;
 
-import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -201,10 +199,6 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
         ServerPlayer target = player.getServer().getPlayerList().getPlayer(targetId);
         if (target != null) {
             PelicanManager.releasePlayer(target);
-            // 记录回放：鹈鹕主动吐出玩家
-            SRE.REPLAY_MANAGER.recordCustomEvent(Component.translatable("replay.pelican.spit",
-                    GameReplayUtils.getReplayPlayerDisplayText(sp, true),
-                    GameReplayUtils.getReplayPlayerDisplayText(target, true)));
         }
 
         sp.displayClientMessage(

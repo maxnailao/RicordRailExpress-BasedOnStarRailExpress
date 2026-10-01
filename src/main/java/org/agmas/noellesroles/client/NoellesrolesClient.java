@@ -5,7 +5,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.doctor4t.ratatouille.util.TextUtils;
 import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.client.render.block_entity.SmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -36,7 +35,6 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -90,8 +88,6 @@ import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
-import org.agmas.noellesroles.content.entity.CoffinEntityModel;
-import org.agmas.noellesroles.content.entity.CoffinEntityRenderer;
 import org.agmas.noellesroles.content.entity.CustomFishingHookEntity;
 import org.agmas.noellesroles.content.entity.DurabilityBoatRenderer;
 import org.agmas.noellesroles.content.entity.LockEntity;
@@ -279,11 +275,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
                 HunterCageBlockEntityRenderer::new);
-        // 关押门：复用核心 SmallDoorBlockEntityRenderer + 钢门贴图，使其外观/开关动画同铁门
-        BlockEntityRenderers.register(
-                ModBlocks.DETENTION_DOOR_ENTITY,
-                ctx -> new SmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/anthracite_steel_door.png"),
-                        ctx));
 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
 
@@ -306,7 +297,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 (entityType, entityRenderer, registrationHelper, context) -> {
                     if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
                         registrationHelper.register(new C4BackFeatureRenderer(pr));
-                        registrationHelper.register(new HandCuffsFeatureRenderer(pr));
                     }
                 });
 
@@ -403,10 +393,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 });
 
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
-        EntityRendererRegistry.register(ModEntities.RPG7_ROCKET,
-                org.agmas.noellesroles.content.entity.Rpg7RocketRenderer::new);
-        // 棺材实体渲染器（无碰撞装饰实体）
-        EntityRendererRegistry.register(ModEntities.COFFIN, CoffinEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
@@ -434,9 +420,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 context -> new io.wifi.starrailexpress.client.render.entity.PlayerBodyEntityRenderer<>(context, false));
         // 注册鬼魅幻影实体渲染器
         EntityRendererRegistry.register(ModEntities.GHOST_PHANTOM, GhostPhantomEntityRenderer::new);
-        // 注册鬼影残影实体渲染器（固定残影贴图假人）
-        EntityRendererRegistry.register(ModEntities.GHOSTYING_AFTERIMAGE,
-                org.agmas.noellesroles.client.renderer.GhostyingAfterimageEntityRenderer::new);
         // 注册对话 NPC 实体渲染器
         EntityRendererRegistry.register(ModEntities.DIALOG_NPC,
                 org.agmas.noellesroles.client.renderer.DialogNpcEntityRenderer::new);
@@ -449,8 +432,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);
-        EntityModelLayerRegistry.registerModelLayer(CoffinEntityModel.LAYER_LOCATION,
-                CoffinEntityModel::createBodyLayer);
         AllowNameRender.EVENT.register((target) -> {
             SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                     .get(target.level());
@@ -469,7 +450,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientEmbalmerState.register();
         ClientSkincrawlerState.register();
         SaltedFishClientHandle.register();
-        KalabiqiumiaoClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
@@ -498,111 +478,16 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return null;
         });
-        // 木乃伊角色皮肤替换：强制为木乃伊皮肤（同坠木模式，统一宽体模型）
-        io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
-            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
-                return null;
-            if (SREClient.gameComponent.isRole(player, org.agmas.noellesroles.role.ModRoles.MUNAIYI_DESERT)) {
-                return io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult.playerSkin(
-                        org.agmas.noellesroles.Noellesroles.id("textures/entity/munaiyi.png"),
-                        net.minecraft.client.resources.PlayerSkin.Model.WIDE);
-            }
-            return null;
-        });
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
-            org.agmas.noellesroles.gunfx.GunTracerRenderer.render(renderContext);
         });
-        // 任务点透视穿透失明遮罩：向失明症模组注册遮罩绘制扩展（失明症未安装时自动跳过）
-        org.agmas.noellesroles.client.blindness.TaskPointMaskBridge.init();
-        // 杀手透视：红色轮廓显示地雷
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(LandmineOutlineRenderer::render);
         InstinctRenderer.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
-
-        // 重刑犯「做出你的抉择」：服务端通知开启抉择 GUI
-        ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.packet.ConvictChoiceOpenS2CPacket.ID, (payload, context) -> {
-                    context.client().execute(() -> context.client()
-                            .setScreen(new org.agmas.noellesroles.client.screen.ConvictChoiceScreen(payload)));
-                });
-
-        // 木乃伊技能1：服务端通知打开背包，在背包中点头像选择诅咒目标（同操纵师选人交互）
-        ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.packet.MunaiyiOpenInventoryS2CPacket.ID, (payload, context) -> {
-                    context.client().execute(() -> {
-                        var client = context.client();
-                        if (client.player != null) {
-                            client.setScreen(
-                                    new io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen(
-                                            client.player));
-                        }
-                    });
-                });
-
-        // 失明症：导盲杖探测揭示（照搬原模组的防御性校验：序列号/数量/距离/唯一中心块）
-        ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.packet.ContactRevealS2CPacket.ID, (payload, context) -> {
-                    context.client().execute(() -> {
-                        var client = context.client();
-                        if (client.player == null || payload.sequence() < 0 || payload.entries().isEmpty()
-                                || payload.entries().size() > org.agmas.noellesroles.packet.ContactRevealS2CPacket.MAX_ENTRIES
-                                || net.minecraft.world.phys.Vec3.atCenterOf(payload.center())
-                                        .distanceToSqr(client.player.position()) > 36.0) {
-                            org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 基础校验失败 seq={} entries={}",
-                                    payload.sequence(), payload.entries().size());
-                            return;
-                        }
-                        int centers = 0;
-                        for (var entry : payload.entries()) {
-                            if (!entry.isValid()
-                                    || net.minecraft.world.phys.Vec3.atCenterOf(entry.resolve(payload.center()))
-                                            .distanceToSqr(client.player.position()) > 49.0) {
-                                org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 条目校验失败");
-                                return;
-                            }
-                            if (entry.center()) {
-                                centers++;
-                            }
-                        }
-                        if (centers == 1) {
-                            org.agmas.noellesroles.client.blindness.ContactRevealManager.accept(payload.center(),
-                                    payload.entries());
-                            org.agmas.noellesroles.Noellesroles.LOGGER.info("[失明症] 揭示已接收: seq={} entries={}",
-                                    payload.sequence(), payload.entries().size());
-                        } else {
-                            org.agmas.noellesroles.Noellesroles.LOGGER.warn("[失明症] 揭示包被拒: 中心块数量={}", centers);
-                        }
-                    });
-                });
-
-        // 失明症：生物声纹标记 + 弱轮廓揭示
-        ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.packet.SoundEchoS2CPacket.ID, (payload, context) -> {
-                    context.client().execute(() -> {
-                        var client = context.client();
-                        if (client.player == null || client.level == null
-                                || payload.entries().size() > org.agmas.noellesroles.packet.SoundEchoS2CPacket.MAX_ENTRIES
-                                || !Float.isFinite(payload.strength()) || payload.strength() < 0F
-                                || payload.strength() > 1F) {
-                            return;
-                        }
-                        org.agmas.noellesroles.client.blindness.SoundEchoHudRenderer.accept(payload.soundPos(),
-                                payload.category(), payload.strength(), payload.occluded());
-                        var source = switch (payload.category()) {
-                            case DANGER -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_DANGER;
-                            case AMBIENT -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_AMBIENT;
-                            case FOOTSTEP -> org.agmas.noellesroles.client.blindness.RevealSource.ENTITY_FOOTSTEP;
-                        };
-                        org.agmas.noellesroles.client.blindness.ContactRevealManager.acceptSound(payload.blockCenter(),
-                                source, payload.strength(), payload.entries());
-                    });
-                });
 
         // 对话 NPC：收到 S2C 包后打开对话界面
         ClientPlayNetworking.registerGlobalReceiver(
@@ -624,10 +509,6 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientSmokeAreaManager.createSmokeArea(context.client().level, payload.position(), payload.radius(),
                     payload.durationTicks());
         });
-        // 枪械射击轨迹：服务端广播弹道终点，客户端渲染渐隐轨迹线
-        ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID, (payload, context) -> context.client()
-                        .execute(() -> org.agmas.noellesroles.gunfx.GunTracerRenderer.onPacket(payload)));
 
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,
@@ -1285,9 +1166,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
-        // 幻灵附身期间：屏蔽聊天栏，不接收其他玩家发送的聊天消息（发送已由 CHAT_BAN 拦截）
-        ClientReceiveMessageEvents.ALLOW_CHAT.register(
-                (message, signedMessage, sender, params, receptionTime) -> !HuanlingClient.isPossessing());
         ClientPlayConnectionEvents.JOIN.register((a, b, c) -> {
             // 加入游戏清空信息
             currentBroadcastMessage.clear();

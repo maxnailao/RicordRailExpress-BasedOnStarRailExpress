@@ -52,7 +52,6 @@
   },
   "client": [
     "client.effects.InvisiblePlayer",
-    "client.emote.PlayerModelEmoteMixin",
     "client.AbstractClientPlayerEntityMixin",
     "client.AdvancedCameraMixin",
     "client.CameraPositionMixin",

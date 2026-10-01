@@ -54,7 +54,6 @@ public class CustomWinnerClass {
             boolean hasMonokumaAlive = false;
             // int thiefCount = 0;
             boolean hasCorruptCopAlive = false;
-            boolean hasDualGunnerAlive = false;
 
             int alivePlayerCount = 0;
             for (var player : serverLevel.players()) {
@@ -83,9 +82,6 @@ public class CustomWinnerClass {
                     }
                     if (gameComponent.isRole(player, ModRoles.MONOKUMA)) {
                         hasMonokumaAlive = true;
-                    }
-                    if (gameComponent.isRole(player, ModRoles.DUAL_GUNNER)) {
-                        hasDualGunnerAlive = true;
                     }
                 }
             }
@@ -138,18 +134,6 @@ public class CustomWinnerClass {
                 }
             }
 
-            // 双枪客：除坠木/皮革嘎的外独自存活即独立胜利；存活期间阻止常规结局，让游戏继续（参考鹈鹕）
-            if (hasDualGunnerAlive) {
-                if (org.agmas.noellesroles.game.roles.neutral.dual_gunner.DualGunnerPlayerComponent
-                        .checkDualGunnerVictory(serverLevel)) {
-                    return WinStatus.CUSTOM;
-                }
-                if (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS
-                        || winStatus == WinStatus.TIME) {
-                    return WinStatus.NONE;
-                }
-            }
-
             // 阿蒙「终幕·寻找阿蒙」：存在持有寄宿体的存活阿蒙时进入终幕并阻止常规结算；
             // 终幕结束（撑过 2 分钟或杀光众人）由组件自身宣布 CUSTOM 胜利。
             WinStatus amonResult = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent
@@ -161,18 +145,6 @@ public class CustomWinnerClass {
             // 鹈鹕存活时检查独立胜利
             if (PelicanPlayerComponent.checkPelicanVictory(serverLevel)) {
                 return WinStatus.CUSTOM;
-            }
-
-            // 蜜蜂家族独立胜利
-            if (org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager
-                    .checkBeeFamilyVictory(serverLevel)) {
-                return WinStatus.CUSTOM;
-            }
-            // 蜜蜂家族存活时阻止游戏结束
-            if (org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager
-                    .shouldPreventGameEnd(serverLevel)
-                    && (winStatus == WinStatus.KILLERS || winStatus == WinStatus.PASSENGERS)) {
-                return WinStatus.NONE;
             }
 
             // 教父家族独立胜利
