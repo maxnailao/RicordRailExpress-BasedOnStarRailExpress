@@ -1,0 +1,18 @@
+{
+  "box_name": "帽子饰品箱",
+  "key_name": "hat_key",
+  "common": 0.7992,
+  "uncommon": 0.1598,
+  "rare": 0.032,
+  "epic": 0.0064,
+  "legendary": 0.0026,
+  "unbelievable": 0.0,
+  "common_skins": [
+    "hat/hat_ricord_green_camo"
+  ],
+  "uncommon_skins": [],
+  "rare_skins": [],
+  "epic_skins": [],
+  "legendary_skins": [],
+  "unbelievable_skins": []
+}

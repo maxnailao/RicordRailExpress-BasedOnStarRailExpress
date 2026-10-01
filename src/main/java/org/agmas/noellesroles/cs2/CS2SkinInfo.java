@@ -108,6 +108,8 @@ public final class CS2SkinInfo {
         // HAT（帽子）— 瑞科德列车玩偶帽系列
         // ═══════════════════════════════════════════════════════════════════
         register("hat/hat_jiale114514", "JiaLe114514 玩偶帽", "把 JiaLe114514 玩偶戴在头上，全场最靓的崽");
+        // 瑞科德饰品（帽子/钢盔系列）
+        register("hat/hat_ricord_green_camo", "绿色迷彩钢盔+面罩", "瑞科德饰品：绿色迷彩钢盔+面罩，戴在头上");
         // 特殊玩偶帽
         registerHat("justacheese", "cheese");
         registerHat("spbgcp", "spbgcp");

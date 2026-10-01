@@ -70,7 +70,7 @@ public class CS2WarehouseScreen extends Screen {
     private static final int TEXT_DIM = 0xFF999999;
     private static final int ACCENT = 0xFF4488FF;
 
-    private enum Category { ALL, BOXES, SKINS, MUSIC, CARDS }
+    private enum Category { ALL, BOXES, KNIFE, REVOLVER, BAT, GRENADE, HAT, MUSIC, CARDS }
     private Category selectedCategory = Category.ALL;
 
     /** 职业卡显示顺序与阵营名 */
@@ -170,8 +170,8 @@ public class CS2WarehouseScreen extends Screen {
             }
         }
 
-        // 皮肤 — 从 CS2InventoryComponent 仓库读取
-        if (selectedCategory == Category.ALL || selectedCategory == Category.SKINS) {
+        // 皮肤 — 按刀/左轮手枪/棒球棍/帽子分类显示
+        if (isSkinCategory(selectedCategory)) {
             for (Map.Entry<String, Integer> entry : inv.getSkins().entrySet()) {
                 String skinId = entry.getKey(); // 格式: "itemType/skinName"
                 int count = entry.getValue();
@@ -181,15 +181,14 @@ public class CS2WarehouseScreen extends Screen {
                 if (parts.length < 2) continue;
                 String itemType = parts[0];
                 String skinName = parts[1];
+                if (!skinCategoryMatches(selectedCategory, itemType)) continue;
 
                 int quality = getSkinQuality(itemType, skinName);
-                // 每个皮肤各占一格
-                for (int i = 0; i < count; i++) {
-                    items.add(new WarehouseItem("skin", skinId,
-                            CS2SkinInfo.getName(skinId),
-                            CS2SkinInfo.getDescription(skinId),
-                            1, quality));
-                }
+                // 相同皮肤合并为一格，右下角显示 xN
+                items.add(new WarehouseItem("skin", skinId,
+                        CS2SkinInfo.getName(skinId),
+                        CS2SkinInfo.getDescription(skinId),
+                        count, quality));
             }
         }
 
@@ -232,6 +231,25 @@ public class CS2WarehouseScreen extends Screen {
             case NEUTRAL -> "中立职业卡";
             case NEUTRAL_FOR_KILLER -> "杀手中立职业卡";
             default -> type.questKey;
+        };
+    }
+
+    /** 是否为皮肤相关的分类（全部或各皮肤子类） */
+    private static boolean isSkinCategory(Category c) {
+        return c == Category.ALL || c == Category.KNIFE || c == Category.REVOLVER
+                || c == Category.BAT || c == Category.GRENADE || c == Category.HAT;
+    }
+
+    /** 皮肤类型是否属于指定分类 */
+    private static boolean skinCategoryMatches(Category c, String itemType) {
+        if (c == Category.ALL) return true;
+        return switch (c) {
+            case KNIFE -> "knife".equals(itemType);
+            case REVOLVER -> "revolver".equals(itemType) || "gun".equals(itemType);
+            case BAT -> "bat".equals(itemType);
+            case GRENADE -> "grenade".equals(itemType);
+            case HAT -> "hat".equals(itemType);
+            default -> false;
         };
     }
 
@@ -279,8 +297,9 @@ public class CS2WarehouseScreen extends Screen {
 
     private void renderSidebar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.fill(0, 0, sidebarWidth, height, SIDEBAR_COLOR);
-        Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC, Category.CARDS};
-        String[] labels = {"全部", "箱子/钥匙", "皮肤", "音乐盒", "职业卡"};
+        Category[] categories = {Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
+                Category.BAT, Category.GRENADE, Category.HAT, Category.MUSIC, Category.CARDS};
+        String[] labels = {"全部", "箱子/钥匙", "刀", "左轮手枪", "棒球棍", "手雷", "帽子", "音乐盒", "职业卡"};
         for (int i = 0; i < categories.length; i++) {
             int y = 40 + i * 32;
             boolean selected = categories[i] == selectedCategory;
@@ -514,7 +533,8 @@ public class CS2WarehouseScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // 侧边栏分类点击
         if (mouseX < sidebarWidth) {
-            Category[] categories = {Category.ALL, Category.BOXES, Category.SKINS, Category.MUSIC, Category.CARDS};
+            Category[] categories = {Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
+                    Category.BAT, Category.GRENADE, Category.HAT, Category.MUSIC, Category.CARDS};
             for (int i = 0; i < categories.length; i++) {
                 int y = 40 + i * 32;
                 if (mouseY >= y && mouseY < y + 28) {

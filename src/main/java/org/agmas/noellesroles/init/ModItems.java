@@ -950,6 +950,13 @@ public class ModItems {
             "rpg7_ammo", WEAPONS_GROUP);
 
     /**
+     * 瑞科德饰品 - 绿色迷彩钢盔+面罩（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_GREEN_CAMO_HELMET = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_green_camo_helmet", RICORD_ACCESSORIES_GROUP);
+
+    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒

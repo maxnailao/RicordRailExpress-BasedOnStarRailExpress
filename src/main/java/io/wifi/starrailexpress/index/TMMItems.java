@@ -70,6 +70,8 @@ public interface TMMItems {
             SRE.id("all"));
     ResourceKey<CreativeModeTab> NOELLESROLES_ALL_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             Noellesroles.id("all"));
+    ResourceKey<CreativeModeTab> RICORD_ACCESSORIES_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+            Noellesroles.id("ricord_accessories"));
 
     // === 武器 (WEAPONS) ===
     Item KNIFE = registrar.create("knife", new KnifeItem(new Item.Properties().stacksTo(1)), WEAPONS_GROUP,
@@ -238,6 +240,10 @@ public interface TMMItems {
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, NOELLESROLES_ALL_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.noellesroles.all"))
                 .icon(() -> new ItemStack(ModItems.BLANK_CARTRIDGE))
+                .build());
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, RICORD_ACCESSORIES_GROUP, FabricItemGroup.builder()
+                .title(Component.literal("瑞科德饰品"))
+                .icon(() -> new ItemStack(ModItems.RICORD_GREEN_CAMO_HELMET))
                 .build());
 
         SkinableItem.add(TMMItems.KNIFE);

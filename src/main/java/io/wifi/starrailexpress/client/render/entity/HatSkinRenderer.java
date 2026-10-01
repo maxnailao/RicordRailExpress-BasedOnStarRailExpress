@@ -73,8 +73,15 @@ public final class HatSkinRenderer {
         // 玩偶底面略低于头顶使其"坐实"在头上而非悬浮
         poseStack.translate(0.0F, -0.50F, 0.0F);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-        // 方块坐标（y 朝上）→ 渲染层坐标；0.625 为原版头顶方块基准缩放，再适当放大让玩偶帽更醒目
-        float scale = 0.625F * 0.7F;
+        // 方块坐标（y 朝上）→ 渲染层坐标；0.625 为原版头顶方块基准缩放
+        float scale;
+        if (plushBlock == null) {
+            // 自定义帽子模型（瑞科德饰品）：没有对应玩偶方块，按头围大小渲染，比玩偶帽大
+            scale = 0.75F;
+        } else {
+            // 玩偶帽：再适当缩小让玩偶更小巧
+            scale = 0.625F * 0.7F;
+        }
         poseStack.scale(scale, -scale, -scale);
         // 方块底面中心对齐头部枢轴
         poseStack.translate(-0.5D, 0.0D, -0.5D);
