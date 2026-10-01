@@ -1,7 +1,9 @@
 package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
+import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -197,6 +199,8 @@ public class CS2ShopScreen extends Screen {
                                 ? cachedName : d.itemId.replace('_', ' ');
                     } else if ("musicbox".equals(d.itemType)) {
                         displayName = getMusicBoxName(d.itemId);
+                    } else if ("card".equals(d.itemType)) {
+                        displayName = cardFullName(FactionCardType.fromString(d.itemId));
                     } else {
                         displayName = CS2SkinInfo.getName(d.itemId);
                     }
@@ -236,7 +240,30 @@ public class CS2ShopScreen extends Screen {
                 item.count = entry.getValue();
                 listableItems.add(item);
             }
+            // 职业卡
+            var backpack = ClientPlayerDataCache.backpack(player.getUUID());
+            for (FactionCardType type : CARD_ORDER) {
+                int count = backpack.cards.getOrDefault(type, 0);
+                if (count <= 0) continue;
+                ShopDisplayItem item = new ShopDisplayItem(cardFullName(type), "card", type.questKey, 0, -1);
+                item.count = count;
+                listableItems.add(item);
+            }
         }
+    }
+
+    private static final FactionCardType[] CARD_ORDER = {
+            FactionCardType.KILLER, FactionCardType.CIVILIAN,
+            FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
+
+    private static String cardFullName(FactionCardType type) {
+        return switch (type) {
+            case KILLER -> "杀手职业卡";
+            case CIVILIAN -> "平民职业卡";
+            case NEUTRAL -> "中立职业卡";
+            case NEUTRAL_FOR_KILLER -> "杀手中立职业卡";
+            default -> type.questKey;
+        };
     }
 
     @Override

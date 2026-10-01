@@ -110,10 +110,10 @@ public class GameMenuEntries {
 //            minecraft.setScreen(new LootInfoScreen(0, 0, 0, parent));
 //            toggleViewMenu.accept(false);
 //        }));
-        // 皮肤管理已迁移至仓库系统（CS2WarehouseScreen）
+        // 皮肤管理/职业卡已迁移至仓库系统（CS2WarehouseScreen），背包入口直接打开仓库
         // 库存管理
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
-            minecraft.setScreen(new BackpackScreen(parent));
+            minecraft.setScreen(new org.agmas.noellesroles.client.screen.CS2WarehouseScreen());
             toggleViewMenu.accept(false);
         }));
         // 邮箱管理

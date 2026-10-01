@@ -13,7 +13,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,11 +21,14 @@ public final class BackpackGrantCommand {
     private BackpackGrantCommand() {}
 
     private static final SuggestionProvider<CommandSourceStack> CARD_TYPE_SUGGESTIONS =
-            (context, builder) -> SharedSuggestionProvider.suggest(
-                    Arrays.stream(FactionCardType.values())
-                            .filter(t -> t != FactionCardType.NONE)
-                            .map(t -> t.questKey),
-                    builder);
+            (context, builder) -> {
+                List<String> types = new ArrayList<>();
+                for (FactionCardType t : FactionCardType.values()) {
+                    if (t != FactionCardType.NONE) types.add(t.questKey);
+                }
+                types.add("selfselect");
+                return SharedSuggestionProvider.suggest(types, builder);
+            };
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("sre:backpack")
@@ -50,6 +53,13 @@ public final class BackpackGrantCommand {
     }
 
     private static int grant(Collection<ServerPlayer> targets, String rawType, int count) {
+        if ("selfselect".equalsIgnoreCase(rawType)) {
+            for (ServerPlayer target : targets) {
+                BackpackManager.addSelfSelectCard(target, count);
+                target.sendSystemMessage(Component.literal("§a获得 " + count + " 张 自选职业卡"));
+            }
+            return targets.size();
+        }
         FactionCardType type = FactionCardType.fromString(rawType);
         if (type == FactionCardType.NONE) {
             return 0;

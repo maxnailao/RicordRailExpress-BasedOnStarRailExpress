@@ -3967,6 +3967,8 @@
   "hud.noellesroles.convict.path.destroy": "毁灭一切(独自获胜)",
   "hud.noellesroles.convict.path.join": "加入组织(帮助杀手方)",
   "hud.noellesroles.convict.path.none": "尚未抉择(%s 秒)",
+  "hud.noellesroles.convict.uncuff_hint_sheriff": "shift+右键可解开重刑犯，让其捡起左轮手枪改过自新",
+  "hud.noellesroles.convict.uncuff_hint_killer": "shift+右键可解开重刑犯，劝说其成为我们的一员",
   "message.noellesroles.escort.not_jailer": "只有狱警可以使用重刑犯押运工具",
   "message.noellesroles.escort.not_convict": "押运工具只能套住重刑犯",
   "message.noellesroles.escort.leashed": "已用押运工具套住 %s",
