@@ -86,6 +86,8 @@ public class OtherRolesRegister {
         XundaozheHud.register();
         SnowHunterHud.register();
         ConvictHud.register();
+        KidnapperHud.register();
+        KidnappedHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

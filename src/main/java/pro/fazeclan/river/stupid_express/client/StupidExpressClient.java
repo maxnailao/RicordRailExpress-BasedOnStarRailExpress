@@ -107,6 +107,21 @@ public class StupidExpressClient implements ClientModInitializer {
                         },
                         1.0f, 10, 10));
 
+        // 绑匪审判阶段音乐
+        AmbienceUtil.registerBackgroundAmbience(
+                new io.wifi.starrailexpress.client.util.MyBackgroundAmbience(NRSounds.KIDNAPPER_JUDGMENT,
+                        net.minecraft.sounds.SoundSource.MASTER,
+                        player -> {
+                            if (SREClient.gameComponent == null)
+                                return false;
+
+                            if (!SREClient.gameComponent.isRunning())
+                                return false;
+
+                            return SREClient.gameComponent.isKidnapperJudgmentActive();
+                        },
+                        1.0f, 10, 10));
+
         // 初始化按键绑定
         SplitPersonalityKeybinds.registerKeyPressCallbacks();
 

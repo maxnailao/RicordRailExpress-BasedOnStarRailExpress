@@ -1331,6 +1331,9 @@ public class ModEventsRegister {
         // 掠夺者击杀冷却
         org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent.registerKillCooldownEvent();
 
+        // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
+        org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
+
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
         };
@@ -2400,6 +2403,7 @@ public class ModEventsRegister {
             boolean hasDualGunner = false;
             boolean hasBee = false;
             boolean hasConvict = false;
+            boolean hasKidnapper = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -2440,6 +2444,8 @@ public class ModEventsRegister {
                     hasDualGunner = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.CONVICT)){
                     hasConvict = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.kidnapper)) {
+                    hasKidnapper = true;
                 }
             }
             if (hasDio) {
@@ -2555,6 +2561,14 @@ public class ModEventsRegister {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.convict.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasKidnapper) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.kidnapper.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }

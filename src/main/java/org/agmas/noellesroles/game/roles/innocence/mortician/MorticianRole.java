@@ -108,7 +108,7 @@ public class MorticianRole extends NormalRole {
                     // 殡仪员物品限制检查（在 super.clicked 之前阻止）
                     if (slot != null && slot.hasItem()) {
                         ItemStack stack = slot.getItem();
-                        if (isDerringer(stack) || isCommandBlock(stack)) {
+                        if (isDerringer(stack) || isCommandBlock(stack) || isKidnapRope(stack)) {
                             return false; // 禁止拿取，不关闭页面
                         }
                         if (isRevolver(stack) && morticianHasRevolver(player)) {
@@ -133,7 +133,7 @@ public class MorticianRole extends NormalRole {
                     // 殡仪员物品限制检查
                     if (slot != null && slot.hasItem()) {
                         ItemStack stack = slot.getItem();
-                        if (isDerringer(stack) || isCommandBlock(stack))
+                        if (isDerringer(stack) || isCommandBlock(stack) || isKidnapRope(stack))
                             return false;
                         if (isRevolver(stack) && morticianHasRevolver(player))
                             return false;
@@ -160,6 +160,13 @@ public class MorticianRole extends NormalRole {
      */
     private boolean isDerringer(ItemStack stack) {
         return !stack.isEmpty() && stack.is(io.wifi.starrailexpress.index.TMMItems.DERRINGER);
+    }
+
+    /**
+     * 检查物品是否是捆绳（绑匪专属，不可被摸出）
+     */
+    private boolean isKidnapRope(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(org.agmas.noellesroles.init.ModItems.KIDNAP_ROPE);
     }
 
     /**
@@ -230,6 +237,11 @@ public class MorticianRole extends NormalRole {
 
         // 检查是否是德林加手枪
         if (isDerringer(stack)) {
+            return false;
+        }
+
+        // 检查是否是捆绳（绑匪专属，不可被摸出）
+        if (isKidnapRope(stack)) {
             return false;
         }
 

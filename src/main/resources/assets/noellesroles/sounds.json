@@ -47,6 +47,14 @@
       }
     ]
   },
+  "noellesroles.kidnapper_judgment": {
+    "sounds": [
+      {
+        "name": "noellesroles:kidnapper_judgment",
+        "stream": true
+      }
+    ]
+  },
   "plush.spbgcp": {
     "sounds": [
       {

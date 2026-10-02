@@ -73,6 +73,12 @@ public class AbilityHandler {
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
+        // 绑匪：绑架/放下面前的玩家；无目标且绑满 6 人时进入审判阶段
+        if (gameWorldComponent.isRole(player, ModRoles.kidnapper)) {
+            org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.KEY
+                    .get(player).tryUseSkill(player);
+            return;
+        }
         if (gameWorldComponent.isRole(player, ModRoles.EXAMPLER)) {
             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
             if (shop.balance < 300) {

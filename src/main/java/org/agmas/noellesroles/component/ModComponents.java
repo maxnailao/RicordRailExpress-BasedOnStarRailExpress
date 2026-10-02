@@ -159,12 +159,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       SREAbilityPlayerComponent.class);
 
   public static final ComponentKey<AvengerPlayerComponent> AVENGER = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "avenger"),
-      AvengerPlayerComponent.class);
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "avenger"),
+          AvengerPlayerComponent.class);
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent> KIDNAPPER =
+          org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.KEY;
+
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA> KIDNAPPED =
+          org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA.KEY;
 
   public static final ComponentKey<FortunetellerPlayerComponent> FORTUNETELLER = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "fortuneteller"),
-      FortunetellerPlayerComponent.class);
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "fortuneteller"),
+          FortunetellerPlayerComponent.class);
 
   public static final ComponentKey<ConspiratorPlayerComponent> CONSPIRATOR = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "conspirator"),
@@ -1552,7 +1558,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent::new);
 
-    // ==================== 示例：注册更多组件 ====================
+    // 注册绑匪组件 - 绑架/拖拽/审判阶段状态机
+    registry.beginRegistration(Player.class, KIDNAPPER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent::new);
+    // 注册人质组件 - 禁锢/禁言/杀手挣脱
+    registry.beginRegistration(Player.class, KIDNAPPED)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA::new);
+
+    //  ==================== 示例：注册更多组件 ====================
     //
     // 如果你的角色需要存储特定数据，可以在这里注册更多组件：
     //

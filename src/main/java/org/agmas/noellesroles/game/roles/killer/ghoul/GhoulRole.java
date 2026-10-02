@@ -210,6 +210,10 @@ public class GhoulRole extends NormalRole {
         if (stack.is(TMMItems.DRAWING_BOARD)) {
             return true;
         }
+        // 捆绳（绑匪专属，不可被摸出）
+        if (stack.is(ModItems.KIDNAP_ROPE)) {
+            return true;
+        }
         // 命令方块（同殡仪员）
         if (stack.is(Items.COMMAND_BLOCK) ||
                 stack.is(Items.REPEATING_COMMAND_BLOCK) ||

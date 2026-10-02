@@ -3762,6 +3762,15 @@ public class RoleShopHandler {
             CORRUPT_COP_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 250, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.CORRUPT_COP_ID, CORRUPT_COP_SHOP);
         }
+        // 绑匪商店
+        {
+            var KIDNAPPER_SHOP = new ArrayList<ShopEntry>();
+            // 撬锁器 - 100金币
+            KIDNAPPER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            // 捆绳 - 75金币
+            KIDNAPPER_SHOP.add(new ShopEntry(ModItems.KIDNAP_ROPE.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.KIDNAPPER_ID, KIDNAPPER_SHOP);
+        }
         // 雪原猎手商店
         {
             var SNOW_HUNTER_SHOP = new ArrayList<ShopEntry>();

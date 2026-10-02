@@ -298,7 +298,9 @@
       "noellesroles:taopiaozhe",
       "noellesroles:werewolf_killer",
       "noellesroles:convict",
-      "noellesroles:pre_witch"
+      "noellesroles:pre_witch",
+      "noellesroles:kidnapper_role",
+      "noellesroles:kidnapped"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

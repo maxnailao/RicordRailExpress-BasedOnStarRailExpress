@@ -42,6 +42,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
+import org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
@@ -157,6 +158,29 @@ public class InstinctRenderer {
             if (yandere.isTarget(targetPlayer.getUUID()))
                 return new Color(255, 60, 60).getRGB(); // 目标：红色发光
             return -2; // 其余玩家禁止透视
+        });
+        // 绑匪：本能透视所有存活玩家——普通玩家粉色轮廓，被绑架的人质红色轮廓
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.kidnapper))
+                return -1;
+            // 绑匪死亡/旁观后透传给默认逻辑
+            if (!GameUtils.isPlayerAliveAndSurvival(self))
+                return -1;
+            if (!hasInstinct)
+                return -1;
+            if (!(target instanceof Player targetPlayer) || targetPlayer == self)
+                return -1;
+            if (!GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            // KidnappedCCA 已同步给所有玩家，客户端可直接读取绑架状态
+            if (KidnappedCCA.KEY.get(targetPlayer).isKidnapped)
+                return new Color(255, 60, 60).getRGB(); // 被绑架人质：红色
+            return new Color(255, 105, 180).getRGB(); // 其他玩家：粉色
         });
         // 扮演者：未回忆成功前（职业仍为扮演者），在杀手队友的本能透视中显示彩色（渐变）边框，
         // 回忆成功后职业会变为模仿者，不再命中此处理器（需先于通用杀手直觉回落逻辑注册）

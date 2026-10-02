@@ -84,5 +84,14 @@ public class InvisbleHandItem {
             return null;
         });
 
+        // 捆绳：拿在手里时仅持有者自己可见，其他玩家渲染该玩家手持物时替换为空
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (!itemStack.is(ModItems.KIDNAP_ROPE))
+                return null; // 不修改
+            if (player == net.minecraft.client.Minecraft.getInstance().player)
+                return null; // 持有者本人手中仍然可见
+            return ItemStack.EMPTY;
+        });
+
     }
 }

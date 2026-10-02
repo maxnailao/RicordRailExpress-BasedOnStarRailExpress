@@ -206,5 +206,7 @@ public class NRCombatEvents {
         org.agmas.noellesroles.game.roles.killer.raider.RaiderPlayerComponent.registerKillCooldownEvent();
         org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         VoodooDeathHandler.registerEvents();
+        // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
+        org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
     }
 }

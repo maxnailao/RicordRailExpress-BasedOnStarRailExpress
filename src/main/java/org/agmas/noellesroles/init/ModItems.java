@@ -72,6 +72,10 @@ public class ModItems {
     public static final Item PIGE_SWORD = register(
             new PigeSwordItem(),
             "pige_sword", ROLE_ITEMS_GROUP);
+    // 捆绳 - 绑匪专属，绑架必须持有捆绳，2点耐久，每绑架一次消耗1点耐久
+    public static final Item KIDNAP_ROPE = register(
+            new KidnapRopeItem(new Item.Properties().stacksTo(1).durability(2)),
+            "kidnap_rope", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);

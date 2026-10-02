@@ -35,6 +35,9 @@ public class TimeStopShader {
     // 怀旧者里世界灰白滤镜强度 (0~1)
     private float nostalgistGray = 0.0f;
 
+    // 绑匪审判阶段红色滤镜强度 (0~1)
+    private float judgmentRed = 0.0f;
+
     // 上一次的状态（用于检测效果开始或刷新）
     private boolean lastHasTimeStop = false;
     private int lastDuration = 0;
@@ -49,6 +52,11 @@ public class TimeStopShader {
     // 水墨风淡入淡出速度
     private static final float INK_FADE_IN_SPEED = 0.03f;
     private static final float INK_FADE_OUT_SPEED = 0.05f;
+
+    // 绑匪审判阶段红色滤镜：最大强度 / 淡入淡出速度（按帧近似 60fps）
+    private static final float JUDGMENT_MAX_STRENGTH = 0.55f;
+    private static final float JUDGMENT_FADE_IN_SPEED = 0.02f;
+    private static final float JUDGMENT_FADE_OUT_SPEED = 0.03f;
 
     public void initPostProcessor() {
         if (m_post != null)
@@ -312,6 +320,38 @@ public class TimeStopShader {
             }
             return true;
         }));
+
+        // 绑匪审判阶段红色滤镜（由全局标记 isKidnapperJudgmentActive 驱动，全场演出）
+        m_post.addSinglePassEntry("kidnapper_judgment", pass -> processPlayer(mc.player, () -> {
+            if (SREClient.gameComponent == null)
+                return false;
+
+            totalTime += 0.016f;
+
+            boolean active = SREClient.gameComponent.isRunning()
+                    && SREClient.gameComponent.isKidnapperJudgmentActive();
+            if (active) {
+                judgmentRed = Math.min(1.0f, judgmentRed + JUDGMENT_FADE_IN_SPEED);
+            } else {
+                judgmentRed = Math.max(0.0f, judgmentRed - JUDGMENT_FADE_OUT_SPEED);
+            }
+            if (judgmentRed <= 0.01f)
+                return false;
+
+            var effect = pass.getEffect();
+            if (effect == null)
+                return false;
+
+            var strengthUniform = effect.safeGetUniform("Strength");
+            if (strengthUniform != null) {
+                strengthUniform.set(judgmentRed * JUDGMENT_MAX_STRENGTH);
+            }
+            var timeUniform = effect.safeGetUniform("Time");
+            if (timeUniform != null) {
+                timeUniform.set(totalTime);
+            }
+            return true;
+        }));
     }
 
     public void renderPostProcess(float partialTicks) {
@@ -333,6 +373,7 @@ public class TimeStopShader {
         inkStrength = 0.0f;
         rewindStrength = 0.0f;
         nostalgistGray = 0.0f;
+        judgmentRed = 0.0f;
     }
 
     public void forceStart() {

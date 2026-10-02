@@ -291,6 +291,48 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         this.sync();
     }
 
+    /** 绑匪审判阶段 */
+    // 绑匪审判阶段是否激活（全场通用，供 HUD 横幅与审判阶段音乐读取）
+    private boolean kidnapperJudgmentActive = false;
+
+    // 绑匪审判阶段剩余时间（秒），用于客户端正上方倒计时显示
+    private int kidnapperJudgmentRemainingSeconds = 0;
+
+    public boolean isKidnapperJudgmentActive() {
+        return kidnapperJudgmentActive;
+    }
+
+    public void setKidnapperJudgmentActive(boolean active) {
+        this.kidnapperJudgmentActive = active;
+        if (!active) {
+            this.kidnapperJudgmentRemainingSeconds = 0;
+        }
+        this.sync();
+    }
+
+    public int getKidnapperJudgmentRemainingSeconds() {
+        return kidnapperJudgmentRemainingSeconds;
+    }
+
+    public void setKidnapperJudgmentRemainingSeconds(int seconds) {
+        this.kidnapperJudgmentRemainingSeconds = Math.max(0, seconds);
+        this.sync();
+    }
+
+    /**
+     * 重置绑匪审判阶段状态（新游戏开始时调用）
+     */
+    public void resetKidnapperJudgment() {
+        resetKidnapperJudgment(true);
+    }
+
+    public void resetKidnapperJudgment(boolean sync) {
+        if (kidnapperJudgmentActive || kidnapperJudgmentRemainingSeconds != 0) {
+            kidnapperJudgmentActive = false;
+            kidnapperJudgmentRemainingSeconds = 0;
+            if (sync) sync();
+        }
+    }
 
     /**
      * 这里的技能指的部分职业（难民词条）
@@ -543,6 +585,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         roleWorldComponent.clearRoleMap(sync);
         setPsychosActive(0, sync);
         resetCorruptCopBlackout(sync);
+        resetKidnapperJudgment(sync);
     }
 
     public void clearRoleMap() {
@@ -682,6 +725,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         } else {
             this.corruptCopBlackoutRemainingSeconds = 0;
         }
+        // 绑匪审判阶段NBT同步
+        this.kidnapperJudgmentActive = nbtCompound.contains("KidnapperJudgmentActive")
+                && nbtCompound.getBoolean("KidnapperJudgmentActive");
+        if (nbtCompound.contains("KidnapperJudgmentRemainingSeconds")) {
+            this.kidnapperJudgmentRemainingSeconds = nbtCompound.getInt("KidnapperJudgmentRemainingSeconds");
+        } else {
+            this.kidnapperJudgmentRemainingSeconds = 0;
+        }
         this.drawnCategories.clear();
 
         if (nbtCompound.contains("DrawnCategories", Tag.TAG_LIST)) {
@@ -738,6 +789,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             nbtCompound.putBoolean("CorruptCopBlackoutActive", corruptCopBlackoutActive);
         if (corruptCopBlackoutActive && corruptCopBlackoutRemainingSeconds > 0)
             nbtCompound.putInt("CorruptCopBlackoutRemainingSeconds", corruptCopBlackoutRemainingSeconds);
+        if (kidnapperJudgmentActive)
+            nbtCompound.putBoolean("KidnapperJudgmentActive", kidnapperJudgmentActive);
+        if (kidnapperJudgmentActive && kidnapperJudgmentRemainingSeconds > 0)
+            nbtCompound.putInt("KidnapperJudgmentRemainingSeconds", kidnapperJudgmentRemainingSeconds);
         nbtCompound.putString("GameStatus", this.gameStatus.name());
         nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
         // nbtCompound.putInt("Fade", fade);

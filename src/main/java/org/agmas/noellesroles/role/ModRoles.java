@@ -365,6 +365,8 @@ public class ModRoles {
     public static final ResourceLocation GHOSTYING_ID = Noellesroles.id("ghostying_guiying");
     // 狼人角色 ID - 杀手阵营（注意：与狼人杀模式组件 noellesroles:werewolf 区分）
     public static final ResourceLocation WEREWOLF_KILLER_ID = Noellesroles.id("werewolf_killer");
+    // 绑匪角色 ID - 独立中立
+    public static final ResourceLocation KIDNAPPER_ID = Noellesroles.id("kidnapper");
 
     // 坠木角色 ID - 独立中立
     public static final ResourceLocation ZHUIMU_ID = Noellesroles.id("zhuimu_dream");
@@ -4542,16 +4544,53 @@ public class ModRoles {
      * - 登车标语：查票？我可不在这辆车上
      */
     public static SRERole TAOPIAOZHE = TMMRoles.registerRole(new NormalRole(
-            TAOPIAOZHE_ID, // 角色 ID
-            new Color(80, 80, 95).getRGB(), // 深灰蓝色 - 代表躲藏与逃票
-            true, // isInnocent = 平民阵营
-            false, // canUseKiller = 无杀手能力
-            SRERole.MoodType.REAL, // 真实心情
-            TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
-            false // 不隐藏计分板
-    ).setComponentKey(org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent.KEY))
+                    TAOPIAOZHE_ID, // 角色 ID
+                    new Color(80, 80, 95).getRGB(), // 深灰蓝色 - 代表躲藏与逃票
+                    true, // isInnocent = 平民阵营
+                    false, // canUseKiller = 无杀手能力
+                    SRERole.MoodType.REAL, // 真实心情
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), // 有限体力
+                    false // 不隐藏计分板
+            ).setComponentKey(org.agmas.noellesroles.game.roles.innocence.taopiaozhe.TaopiaozhePlayerComponent.KEY))
             .setCanSeeTime(false)
             .setCanSeeCoin(true);
+
+    /**
+     * 绑匪
+     * - 属于特殊中立阵营
+     * - 不能使用杀手能力
+     * - 假心情系统
+     * - 无限体力
+     * - 可见时间
+     * - 技能（G键）：瞄准附近玩家将其绑架（禁言、禁技能、禁道具、禁背包），
+     *  * 绑架期间目标每 tick 被牵引到绑匪身后，可拖到任意位置后再按一次 G 放下。
+     *  * 绑架目标若是杀手，60 秒后可自行挣脱
+     *  - 特殊时刻（审判阶段）：满 6 人且场上存活人数达标后，按 G（视线无目标时）进入『审判阶段』：
+     *  * 绑架技能失效，获得枪与刀，枪击杀人不掉落，枪冷却按绑架人数递减
+     *  * （6人获得一层盾 … 10人-80％）；审判阶段绑匪杀死的人记为被绑架（在自己房间被捆绑）。
+     *  * 当场上所有其他存活玩家都被绑架时绑匪胜利
+     *   - 本能（透视）：所有存活玩家在绑匪眼中显示粉色轮廓，被绑架的人质显示红色轮廓。
+     */
+    public static SRERole kidnapper = TMMRoles.registerRole(
+                    new NormalRole(KIDNAPPER_ID,
+                            new Color(64, 64, 64).getRGB(),// 深灰色
+                            false,//非乘客阵营
+                            false,//无杀手能力
+                            SRERole.MoodType.FAKE, // 虚假心情
+                            Integer.MAX_VALUE, // 无限体力
+                            true//不显示计分板
+                    ) {
+                        @Override
+                        public java.util.List<net.minecraft.world.item.ItemStack> getDefaultItems() {
+                            java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>();
+                            // 出生自带一根捆绳
+                            items.add(org.agmas.noellesroles.init.ModItems.KIDNAP_ROPE.getDefaultInstance());
+                            return items;
+                        }
+                    }.setComponentKey(org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.KEY))
+            .setCanSeeCoin(true)
+            .setCanUseInstinct(true) // 绑匪本能：透视所有玩家（粉色），被绑架人质为红色
+            .setCanIgnoreBlackout(true); // 黑灯免疫：熄灯不再给绑匪施加失明/黑暗（减速）
 
     /**
      * 判断角色是否为亡命徒阵营变体（亡命徒/屠夫/清算者）
