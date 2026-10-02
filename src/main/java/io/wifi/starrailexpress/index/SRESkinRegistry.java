@@ -198,6 +198,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.HAT, "hat_liangjie", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_liyu", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_ricord_green_camo", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_ricord_cat_headset", QualityColor.LEGENDARY);
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }

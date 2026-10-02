@@ -961,6 +961,13 @@ public class ModItems {
             "ricord_green_camo_helmet", RICORD_ACCESSORIES_GROUP);
 
     /**
+     * 瑞科德饰品 - 小猫耳机（猫耳头戴式耳机，帽子）
+     */
+    public static final Item RICORD_CAT_HEADSET = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_cat_headset", RICORD_ACCESSORIES_GROUP);
+
+    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒

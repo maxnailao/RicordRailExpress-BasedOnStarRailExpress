@@ -579,6 +579,7 @@
   "item.noellesroles.rpg7.ammo": "弹药：%s/%s",
   "item.noellesroles.rpg7_ammo": "RPG-7 火箭弹",
   "item.noellesroles.ricord_green_camo_helmet": "绿色迷彩钢盔+面罩",
+  "item.noellesroles.ricord_cat_headset": "小猫耳机",
 "item.noellesroles.desert_eagle": "沙漠之鹰",
 "item.noellesroles.desert_eagle.tooltip": "左键开火，R键换弹\n射程25格，射击冷協0.3秒\n弹容7发，使用沙鹰弹匣装填（2.5秒换弹）\n连续开火后坐力递增\n爆头秒杀，身体致残，累计3发击杀",
 "item.noellesroles.desert_eagle.ammo": "弹药：%s/%s",

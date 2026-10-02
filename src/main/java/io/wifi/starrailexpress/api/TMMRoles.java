@@ -69,7 +69,14 @@ public class TMMRoles {
         return ROLES.getOrDefault(id, null);
     }
 
-    /** 是否可由「自选职业卡」选择：排除坠木/皮革嘎、其他模式、特殊地图限定与不可随机职业。 */
+    /**
+     * 是否可由「自选职业卡」选择。
+     * <p>
+     * 排除：坠木/皮革嘎、其他模式职业、特殊地图限定职业，以及不会自然刷新的职业
+     * （{@code defaultMaxCount <= 0}，如操纵师）。彩蛋职业（{@link EggRole}，如迪奥）
+     * 与警长阵营虽默认不刷新，但作为特殊职业/阵营仍允许自选。
+     * </p>
+     */
     public static boolean isSelfSelectableRole(SRERole role) {
         if (role == null) {
             return false;
@@ -81,6 +88,10 @@ public class TMMRoles {
         if (role.isOtherModeRole() || role.isSpecialMapRole()) {
             return false;
         }
-        return role.canBeRandomed();
+        // 不会自然刷新的职业不可自选；彩蛋职业（如迪奥）与警长阵营例外。
+        if (role.defaultMaxCount <= 0 && !(role instanceof EggRole) && !role.isVigilanteTeam()) {
+            return false;
+        }
+        return true;
     }
 }

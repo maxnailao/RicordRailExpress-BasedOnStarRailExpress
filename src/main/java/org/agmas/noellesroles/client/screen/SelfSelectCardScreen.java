@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 自选职业卡 GUI：第一步选阵营（杀手/平民/中立/杀手中立），第二步在网格中选该阵营的具体职业。
- * 特殊地图限定、其他模式、不可随机的职业不展示。选择后发送 {@code sre:pass selfselect <roleId>}。
+ * 自选职业卡 GUI：第一步选阵营（杀手/平民/中立/杀手中立/警长），第二步在网格中选该阵营的具体职业。
+ * 特殊地图限定、其他模式、不会自然刷新的职业不展示（彩蛋职业除外）。选择后发送 {@code sre:pass selfselect <roleId>}。
  */
 public class SelfSelectCardScreen extends Screen {
 
-    private static final int[] FACTION_TYPES = { 4, 1, 2, 3 };
-    private static final String[] FACTION_NAMES = { "杀手", "平民", "中立", "杀手中立" };
+    private static final int[] FACTION_TYPES = { 4, 1, 2, 3, 5 };
+    private static final String[] FACTION_NAMES = { "杀手", "平民", "中立", "杀手中立", "警长" };
 
     /** 职业卡片网格尺寸 */
     private static final int CARD_W = 150;
