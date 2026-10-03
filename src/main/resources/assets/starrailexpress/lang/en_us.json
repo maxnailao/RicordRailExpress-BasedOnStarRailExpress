@@ -1465,6 +1465,7 @@
     "menu.sre.quit":  "Exit Game",
     "screen.limited_inventory.button.menu.show":  "Quick Menu",
     "screen.limited_inventory.button.menu.hide":  "Hide Menu",
+    "screen.limited_inventory.menu.backpack":  "Warehouse",
     "screen.limited_inventory.menu.introduction":  "Role Introduction",
     "screen.limited_inventory.menu.loot_screen":  "Open Draw",
     "screen.limited_inventory.menu.role_guess":  "Role Guessing Notepad",

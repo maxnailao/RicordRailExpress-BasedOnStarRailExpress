@@ -38,6 +38,12 @@ public class GameMenuEntries {
      */
     public static ArrayList<MenuEntry> entries(Minecraft minecraft, Screen parent, Consumer<Boolean> toggleViewMenu) {
         ArrayList<MenuEntry> entries = new ArrayList<>();
+        // 背包（CS2 仓库）：可在局内随时切换帽子等皮肤。
+        // 放在列表首位——按钮自下而上排列，因此它会占据右下角最顺手的位置。
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
+            minecraft.setScreen(new org.agmas.noellesroles.client.screen.CS2WarehouseScreen());
+            toggleViewMenu.accept(false);
+        }));
         // 职业介绍
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.introduction"), (btn) -> {
             var role = SREGameWorldComponent.KEY.get(minecraft.level).getRole(minecraft.player);

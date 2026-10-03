@@ -1507,6 +1507,7 @@
     "menu.sre.quit":  "退出遊戲",
     "screen.limited_inventory.button.menu.show":  "便捷菜單",
     "screen.limited_inventory.button.menu.hide":  "隱藏菜單",
+    "screen.limited_inventory.menu.backpack":  "背包",
     "screen.limited_inventory.menu.introduction":  "職業介紹",
     "screen.limited_inventory.menu.loot_screen":  "打開抽卡",
     "screen.limited_inventory.menu.role_guess":  "職業猜測記事本",
