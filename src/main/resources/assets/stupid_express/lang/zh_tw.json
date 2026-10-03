@@ -187,6 +187,7 @@
   "sre.pass.exp_progress": "經驗 %s/%s",
   "sre.pass.not_active": "未啟動",
   "message.sre.pass.faction.assign_failed": "很抱歉，您這局沒有玩到您強制選中的陣營。我們已補償您一張對應職業卡片。",
+  "message.sre.pass.selfselect_role_disabled": "職業「%s」已在本局禁用，無法使用自選職業卡（卡牌未消耗）。",
   "sre.pass.faction.activated": "%s (已啟動)",
   "sre.pass.faction.killer": "殺手陣營卡",
   "sre.pass.faction.civilian": "平民陣營卡",

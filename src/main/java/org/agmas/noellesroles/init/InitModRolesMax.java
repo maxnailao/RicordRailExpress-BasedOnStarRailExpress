@@ -683,6 +683,7 @@ public class InitModRolesMax {
             case SNOW -> NoellesRolesConfig.matchesMapList(config.snowRolesMaps, currentMap);
             case DESERT -> NoellesRolesConfig.matchesMapList(config.desertRolesMaps, currentMap);
             case WITCH_PRISON -> NoellesRolesConfig.matchesMapList(config.witchPrisonRolesMaps, currentMap);
+            case PRISON -> NoellesRolesConfig.matchesMapList(config.prisonRolesMaps, currentMap);
         };
     }
 

@@ -69,6 +69,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
     protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.ALL;
+    /** 是否允许被「自选职业卡」指定，默认允许；转化/派生职业需显式设为 false */
+    protected boolean selfSelectable = true;
     protected boolean specialVigilante = false;
     protected boolean refreshableSpecialVigilante = false;
     protected int refreshableSpecialVigilanteChance = -1;
@@ -503,7 +505,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW, DESERT, WITCH_PRISON
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP, SNOW, DESERT, WITCH_PRISON,
+        /** 监狱图专属（重刑犯 / 狱警），地图名单见 {@code NoellesRolesConfig.prisonRolesMaps} */
+        PRISON
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
@@ -517,6 +521,27 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public boolean isSpecialMapRole() {
         return this.specialMapRole != SpecialMapRoleMap.ALL;
+    }
+
+    /**
+     * 记录「这个职业不允许用自选职业卡指定」。
+     * <p>
+     * 默认 {@code true}：普通职业都能自选。设置成 {@code false} 用于两类角色：
+     * <ul>
+     * <li>特殊地图职业 —— 不需要单独设置，{@link #isSpecialMapRole()} 已经会排除；</li>
+     * <li>转化 / 派生生成的职业（如魔女、强化巡警、亡命徒变体、黑手党链），
+     * 以及其它不应被玩家用卡直接指定的角色 —— 必须显式关掉。</li>
+     * </ul>
+     * 判定入口见 {@code TMMRoles.isSelfSelectableRole}。
+     */
+    public boolean isSelfSelectable() {
+        return this.selfSelectable;
+    }
+
+    /** @see #isSelfSelectable() */
+    public SRERole setSelfSelectable(boolean selfSelectable) {
+        this.selfSelectable = selfSelectable;
+        return this;
     }
 
     public boolean isSpecialVigilante() {

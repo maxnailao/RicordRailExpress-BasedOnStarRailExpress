@@ -78,9 +78,23 @@ public class TMMRoles {
      * （{@code defaultMaxCount <= 0}，如操纵师）；彩蛋职业（{@link EggRole}，如迪奥）
      * 与警长阵营虽默认不刷新，但作为特殊职业/阵营仍允许自选。
      * </p>
+     * <p>
+     * 注意「特殊地图限定职业」靠 {@link SRERole#isSpecialMapRole()} 判定，
+     * 因此只在特定地图刷新的职业必须注册 {@code setSpecialMapRole(...)}
+     * （监狱图的重刑犯 / 狱警用 {@code PRISON}）。若某个职业的地图门禁只写在
+     * {@code getRoundMaxCount} 里、没打 specialMapRole 标记，就会被这里漏放而可自选。
+     * </p>
+     * <p>
+     * 转化 / 派生生成的职业（如魔女、强化巡警、亡命徒变体、黑手党链）不是地图职业，
+     * 必须显式注册 {@code setSelfSelectable(false)}，见 {@link SRERole#isSelfSelectable()}。
+     * </p>
      */
     public static boolean isSelfSelectableRole(SRERole role) {
         if (role == null) {
+            return false;
+        }
+        // 显式声明不可自选（转化 / 派生生成的职业走这里）
+        if (!role.isSelfSelectable()) {
             return false;
         }
         // 只允许谋杀模式的职业（对齐 SREMurderGameMode.getAllRoles 的池构建）
