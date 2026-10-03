@@ -4826,5 +4826,9 @@
   "message.noellesroles.kidnapped.rescue_started_victim": "队友正在为你解开绳索，还需 %s 秒",
   "message.noellesroles.kidnapped.rescue_progress": "解绳中：%ss",
   "message.noellesroles.kidnapped.rescue_interrupted": "解绳中断！需重新潜行右键并保持 5 秒",
-  "message.noellesroles.kidnapped.rescue_in_progress": "已有队友正在解救此人质"
+  "message.noellesroles.kidnapped.rescue_in_progress": "已有队友正在解救此人质",
+  "message.noellesroles.kidnapped.neutral_rescue_hint": "你是中立阵营，没有队友：被绑 %s 秒后任何玩家都能来给你解绳（被绑期间仍可转视角、切换物品栏、开商店买东西）",
+  "message.noellesroles.kidnapped.neutral_rescue_unlocked": "现在任何玩家都可以来给你解绳了！",
+  "hud.noellesroles.kidnapped.neutral_rescue_cd": "解绳解锁：%ss（任何玩家都可救你）",
+  "hud.noellesroles.kidnapped.neutral_rescue_ready": "等待任意玩家潜行右键解绳"
 }

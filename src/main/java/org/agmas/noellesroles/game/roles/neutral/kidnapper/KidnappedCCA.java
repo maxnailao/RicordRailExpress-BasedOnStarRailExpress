@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.neutral.kidnapper;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -25,10 +26,13 @@ import java.util.UUID;
 /**
  * 被绑架者组件（人质侧）。
  *
- * <p>被绑架期间：禁止移动/转视角/使用物品/打开背包/使用技能/说话
- * （文字聊天由 KidnapperChatMixin 与 CHAT_BAN 双重拦截，语音聊天由 VOICE_SILENCE 拦截）。
+ * <p>被绑架期间：禁止移动/使用物品/使用技能/说话
+ * （文字聊天由 CHAT_BAN + ALLOW_CHAT_MESSAGE 拦截，语音聊天由 VOICE_SILENCE 拦截）；
+ * 但<b>允许转视角、允许切换物品栏、允许打开背包并在商店购买物品</b>，
+ * 因此不再施加 TURN_BANED / INVENTORY_BANED（这两个效果会同时屏蔽鼠标转向、滚轮与 E 键）。
  * 狼（杀手）被绑 90 秒后可主手持撬锁器持续 5 秒自行挣脱（消耗撬锁器），每局仅限一次；
- * 狼和平民被绑 60 秒后可被队友潜行右键救援，解绳需救援者保持潜行并靠近人质持续 5 秒。
+ * 平民被绑 60 秒后可被队友潜行右键救援，解绳需救援者保持潜行并靠近人质持续 5 秒；
+ * 中立没有队友，被绑 120 秒后任何玩家（绑匪除外）都可以潜行右键给他解绳。
  * 挣脱/被救会给绑匪提示「有人逃脱了」。
  *
  * <p>注意：shouldSyncWith 对所有玩家返回 true，
@@ -46,6 +50,8 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public static final int KILLER_ESCAPE_TICKS = 90 * 20;
     /** 狼（杀手）解锁后需持续手持撬锁器的时长（5 秒），中途放下则重新计时 */
     public static final int LOCKPICK_ESCAPE_TICKS = 5 * 20;
+    /** 中立人质解锁「被解绳」所需被绑时间（120 秒）：中立没有队友，到点后任何玩家都能来解绳 */
+    public static final int NEUTRAL_RESCUE_UNLOCK_TICKS = 120 * 20;
     /** 队友救援触发后解绳所需持续时长（5 秒），中途站起或走远则重新计时 */
     public static final int RESCUE_DURATION_TICKS = 5 * 20;
     /** 解绳期间救援者与人质的最大允许距离（平方值，4 格） */
@@ -56,11 +62,13 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public boolean isKidnapped = false;
     /** 绑架对象是否为杀手（狼） */
     public boolean isKillerTarget = false;
+    /** 绑架对象是否为中立阵营：中立没有队友，解绳解锁时间更长（120 秒），但到点后任何人都能救 */
+    public boolean isNeutralTarget = false;
     /** 狼自救计时（tick），达到 KILLER_ESCAPE_TICKS 后解锁撬锁自救 */
     public int escapeTicks = 0;
     /** 狼撬锁自救进度（tick）：解锁后主手持撬锁器累计，中途放下清零，满 LOCKPICK_ESCAPE_TICKS 后挣脱 */
     public int lockpickTicks = 0;
-    /** 自救机会是否已用完（每局仅一次，init 时重置） */
+    /** 自救机会是否已用完（狼每局仅一次，init 时重置） */
     public boolean usedSelfEscape = false;
     /** 已被绑架时长（tick），达到 RESCUE_UNLOCK_TICKS 后队友才可救援 */
     public int kidnappedTicks = 0;
@@ -96,6 +104,9 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         this.kidnapper = kidnapper;
         this.isKidnapped = true;
         this.isKillerTarget = killerTarget;
+        // 中立阵营人质：解绳解锁时间延长到 120 秒，但到点后任何玩家都能来解绳
+        SRERole role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
+        this.isNeutralTarget = !killerTarget && role != null && role.isNeutrals();
         this.escapeTicks = 0;
         this.lockpickTicks = 0;
         this.kidnappedTicks = 0;
@@ -117,16 +128,24 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
                             .withStyle(ChatFormatting.GOLD), false);
                 }
             }
-            sp.displayClientMessage(Component.translatable("message.noellesroles.kidnapped.rescue_hint",
-                            RESCUE_UNLOCK_TICKS / 20)
+            // 解绳提示：中立用「任何人都能救你」文案，其余用「队友救援」文案
+            sp.displayClientMessage(Component.translatable(
+                            isNeutralTarget ? "message.noellesroles.kidnapped.neutral_rescue_hint"
+                                    : "message.noellesroles.kidnapped.rescue_hint",
+                            rescueUnlockTicks() / 20)
                     .withStyle(ChatFormatting.YELLOW), false);
         }
         sync();
     }
 
-    /** 被绑时长是否已达 1 分钟：达到后队友才可以救援 */
+    /** 本人质解锁「被解绳」所需的被绑时长（tick）：中立 120 秒，平民/狼 60 秒 */
+    public int rescueUnlockTicks() {
+        return isNeutralTarget ? NEUTRAL_RESCUE_UNLOCK_TICKS : RESCUE_UNLOCK_TICKS;
+    }
+
+    /** 是否已可被解绳救援：达到本人质的解锁时长后，任何玩家（绑匪除外）都能潜行右键解绳 */
     public boolean canBeRescued() {
-        return isKidnapped && kidnappedTicks >= RESCUE_UNLOCK_TICKS;
+        return isKidnapped && kidnappedTicks >= rescueUnlockTicks();
     }
 
     /** 队友潜行右键触发解绳：救援者需保持潜行并留在人质附近，持续 5 秒后解救成功 */
@@ -163,6 +182,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         this.isKidnapped = false;
         this.kidnapper = null;
         this.isKillerTarget = false;
+        this.isNeutralTarget = false;
         this.escapeTicks = 0;
         this.lockpickTicks = 0;
         this.kidnappedTicks = 0;
@@ -192,6 +212,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         this.kidnapper = null;
         this.isKidnapped = false;
         this.isKillerTarget = false;
+        this.isNeutralTarget = false;
         this.escapeTicks = 0;
         this.lockpickTicks = 0;
         this.kidnappedTicks = 0;
@@ -213,6 +234,13 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
             return;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(sp.level());
 
+        // 兜底：对局未在进行（结束/未开始）时立刻解除捆绑，
+        // 否则残留的 isKidnapped 会让 CHAT_BAN 等效果跨局续期，玩家「对局后无法说话」
+        if (!game.isRunning()) {
+            release(false);
+            return;
+        }
+
         // 人质死亡 → 静默解除
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             release(false);
@@ -227,27 +255,26 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         }
 
         // 禁锢效果（每 tick 续期，短时长）
+        // 注意：不再施加 TURN_BANED / INVENTORY_BANED —— 人质可以转视角、切换物品栏、开背包逛商店
         sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 10, 0, true, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 10, 0, true, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 10, 0, true, false, true));
         // 禁止说话：禁文字聊天 + 禁语音聊天（续期停止后约 0.5 秒自动失效）
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 10, 0, true, false, true));
 
-        // 被绑时长累计：满 60 秒解锁队友救援
-        if (kidnappedTicks < RESCUE_UNLOCK_TICKS) {
-            kidnappedTicks++;
-            if (kidnappedTicks == RESCUE_UNLOCK_TICKS) {
-                sp.displayClientMessage(Component.translatable("message.noellesroles.kidnapped.rescue_unlocked")
-                        .withStyle(ChatFormatting.GREEN), false);
-                sync();
-            } else if (kidnappedTicks % 20 == 0) {
-                // 每秒同步一次，供本人 HUD 倒计时显示
-                sync();
-            }
+        // 被绑时长累计：平民/狼满 60 秒、中立满 120 秒后解锁「被解绳」
+        kidnappedTicks++;
+        if (kidnappedTicks == rescueUnlockTicks()) {
+            sp.displayClientMessage(Component.translatable(
+                            isNeutralTarget ? "message.noellesroles.kidnapped.neutral_rescue_unlocked"
+                                    : "message.noellesroles.kidnapped.rescue_unlocked")
+                    .withStyle(ChatFormatting.GREEN), false);
+            sync();
+        } else if (kidnappedTicks % 20 == 0) {
+            // 每秒同步一次，供本人 HUD 倒计时显示
+            sync();
         }
 
         // 队友解绳救援：潜行右键触发后需持续 5 秒，期间救援者须保持潜行并留在人质 4 格内
@@ -348,6 +375,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("isKidnapped", isKidnapped);
         tag.putBoolean("isKillerTarget", isKillerTarget);
+        tag.putBoolean("isNeutralTarget", isNeutralTarget);
         tag.putBoolean("usedSelfEscape", usedSelfEscape);
         tag.putInt("kidnappedTicks", kidnappedTicks);
         tag.putInt("escapeTicks", escapeTicks);
@@ -363,6 +391,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         isKidnapped = tag.getBoolean("isKidnapped");
         isKillerTarget = tag.getBoolean("isKillerTarget");
+        isNeutralTarget = tag.getBoolean("isNeutralTarget");
         usedSelfEscape = tag.getBoolean("usedSelfEscape");
         kidnappedTicks = tag.getInt("kidnappedTicks");
         escapeTicks = tag.getInt("escapeTicks");

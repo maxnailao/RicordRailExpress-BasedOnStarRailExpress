@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -639,8 +640,9 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
             }
         });
 
-        // 其他玩家潜行右键被绑架者 → 开始解绳（被绑满 1 分钟后才允许）；
-        // 救援者需保持潜行并留在人质附近持续 5 秒才能解救成功（进度在 KidnappedCCA 中推进）
+        // 其他玩家潜行右键被绑架者 → 开始解绳（平民/狼被绑满 60 秒、中立满 120 秒后才允许）；
+        // 救援者可以是任何玩家（绑匪本人除外），需保持潜行并留在人质附近持续 5 秒才能解救成功
+        // （进度在 KidnappedCCA 中推进）
         UseEntityCallback.EVENT.register((user, world, hand, entity, hitResult) -> {
             if (world.isClientSide() || !(user instanceof ServerPlayer rescuer)
                     || !(entity instanceof ServerPlayer victim))
@@ -654,12 +656,23 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
             if (!vic.canBeRescued()) {
                 rescuer.displayClientMessage(Component.translatable(
                                 "message.noellesroles.kidnapped.rescue_too_early",
-                                KidnappedCCA.RESCUE_UNLOCK_TICKS / 20)
+                                vic.rescueUnlockTicks() / 20)
                         .withStyle(ChatFormatting.RED), true);
                 return InteractionResult.FAIL;
             }
             vic.startRescue(rescuer);
             return InteractionResult.SUCCESS;
+        });
+
+        // 人质禁言反馈：文字聊天由 CHAT_BAN + ALLOW_CHAT_MESSAGE 在「广播阶段」拦截。
+        // 不能再像旧 KidnapperChatMixin 那样在 handleChat 的 HEAD 直接 cancel —— 那会让签名聊天
+        // 的确认链断裂，客户端在对局结束后也发不出消息（表现为「对局后无法说话」，需重进服务器）。
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
+            if (sender == null || !KidnappedCCA.KEY.get(sender).isKidnapped)
+                return true;
+            sender.displayClientMessage(Component.translatable("message.noellesroles.kidnapped.muted")
+                    .withStyle(ChatFormatting.RED), true);
+            return false;
         });
     }
 

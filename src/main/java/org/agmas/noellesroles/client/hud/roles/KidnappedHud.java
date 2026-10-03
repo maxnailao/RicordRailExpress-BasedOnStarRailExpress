@@ -9,9 +9,10 @@ import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA;
 
 /**
- * 人质 HUD（屏幕左下角）：被绑架期间显示队友救援解锁倒计时。
+ * 人质 HUD（屏幕左下角）：被绑架期间显示救援/挣脱倒计时。
  * 狼（杀手）被绑 90 秒解锁后，主手持撬锁器保持 5 秒可自行挣脱，此处显示撬锁倒计时；
- * 狼与平民统一在被绑 1 分钟后等待队友潜行右键救援。
+ * 平民在被绑 60 秒后等待队友潜行右键救援；
+ * 中立在被绑 120 秒后等待任意玩家潜行右键解绳。
  * 挂全局 CommonHudRenderCallback：人质可能是任何角色。
  */
 public class KidnappedHud {
@@ -60,19 +61,24 @@ public class KidnappedHud {
                 }
             } else if (comp.canBeRescued()) {
                 if (comp.rescuer != null) {
-                    // 队友正在解绳：显示剩余秒数
+                    // 有人正在解绳：显示剩余秒数
                     int remain = (KidnappedCCA.RESCUE_DURATION_TICKS - comp.rescueTicks + 19) / 20;
                     Component progress = Component.translatable("hud.noellesroles.kidnapped.rescue_progress", remain)
                             .withStyle(ChatFormatting.GREEN);
                     context.drawString(textRenderer, progress, x, y, 0xFFFFFF);
                 } else {
-                    Component ready = Component.translatable("hud.noellesroles.kidnapped.rescue_ready")
+                    // 中立显示「任意玩家」文案，其余显示「队友」文案
+                    Component ready = Component.translatable(
+                                    comp.isNeutralTarget ? "hud.noellesroles.kidnapped.neutral_rescue_ready"
+                                            : "hud.noellesroles.kidnapped.rescue_ready")
                             .withStyle(ChatFormatting.GREEN);
                     context.drawString(textRenderer, ready, x, y, 0xFFFFFF);
                 }
             } else {
-                int remain = (KidnappedCCA.RESCUE_UNLOCK_TICKS - comp.kidnappedTicks + 19) / 20;
-                Component cd = Component.translatable("hud.noellesroles.kidnapped.rescue_cd", remain);
+                int remain = (comp.rescueUnlockTicks() - comp.kidnappedTicks + 19) / 20;
+                Component cd = Component.translatable(
+                        comp.isNeutralTarget ? "hud.noellesroles.kidnapped.neutral_rescue_cd"
+                                : "hud.noellesroles.kidnapped.rescue_cd", remain);
                 context.drawString(textRenderer, cd, x, y, 0xFFFF55);
             }
         });

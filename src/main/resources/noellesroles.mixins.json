@@ -47,7 +47,6 @@
     "roles.builder.ProjectileWallBlockMixin",
     "roles.engineer.EngineerCrowbarMixin",
     "roles.executioner.ExecutionerConfirmMixin",
-    "roles.kidnapper.KidnapperChatMixin",
     "roles.kidnapper.KidnapperKillMixin",
     "roles.framing.DelusionVialApplyMixin",
     "roles.framing.DoNotApplyFakePoisonMixin",

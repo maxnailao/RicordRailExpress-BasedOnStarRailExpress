@@ -1343,6 +1343,17 @@ public class ModEventsRegister {
             WushujiaPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
+            // 绑匪：解除所有残留的捆绑状态（此时绑匪组件已被 onEndGame 清空，直接硬重置即可，
+            // 不发「你获救了」提示），并立刻摘掉禁言/沉默效果，杜绝「对局后无法说话」
+            for (ServerPlayer player : world.players()) {
+                var kidnappedComp = ModComponents.KIDNAPPED.maybeGet(player).orElse(null);
+                if (kidnappedComp != null && kidnappedComp.isKidnapped) {
+                    kidnappedComp.init();
+                    kidnappedComp.sync();
+                }
+                player.removeEffect(ModEffects.CHAT_BAN);
+                player.removeEffect(ModEffects.VOICE_SILENCE);
+            }
             // 复位蜂后领袖加成（蜜蜂家族中毒致死时间减半）
             org.agmas.noellesroles.game.roles.neutral.beefamily.BeeFamilyManager.resetQueenLeaderBonus();
             // 复位蜜蜂家族全灭检查的待处理标记

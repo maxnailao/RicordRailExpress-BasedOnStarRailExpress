@@ -136,6 +136,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.DUMB_WOMAN);
         // 注册术士角色组件
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.SHUSHI);
+        // 注册人质组件（绑匪）：纳入对局开始/结束的统一 clear()，
+        // 避免 isKidnapped 跨局残留导致玩家一直被禁言/禁锢
+        TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.KIDNAPPED);
     }
 
     private void initConfig() {

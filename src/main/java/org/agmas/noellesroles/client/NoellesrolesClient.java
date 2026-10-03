@@ -1440,6 +1440,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (nextAbilityBind.consumeClick()) {
                 ClientAbilityHandler.selectNextSkill(client);
             }
+
             ClientAbilityHandler.tickContinuousInput(client);
             var repairInputComponent = org.agmas.noellesroles.component.ModComponents.REPAIR_ROLES.get(client.player);
             boolean repairGameRunning = SREClient.gameComponent != null
@@ -1466,6 +1467,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                             .send(new org.agmas.noellesroles.game.roles.innocence.fool.FoolPrayerC2SPacket());
                 }
                 if (abilityPressed) {
+                    // Deleted:ClientAbilityHandler.handler(client);
                     if (SREClient.gameComponent.isRole(client.player, ModRoles.ATTENDANT)) {
                         ClientPlayNetworking.send(new AbilityC2SPacket());
                     }
