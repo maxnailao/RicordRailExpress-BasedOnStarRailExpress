@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 每日商店管理器
  * <p>
  * 每天 00:00（跨天）刷新，随机提供 4 件商品（武器皮肤 / 刀皮 / 音乐盒）。
- * 品质抽取概率：白30% 蓝25% 紫20% 橙15% 红10%。
+ * 品质抽取概率：白25% 绿25% 蓝20% 紫15% 橙10% 红5%。
  * 数据实时写入 JSON 文件，跨重启保持当日商店与已购记录。
  * </p>
  */
@@ -35,10 +35,10 @@ public class DailyShopManager {
     /** 每日商店商品数量 */
     public static final int ITEM_COUNT = 4;
 
-    /** 参与抽取的品质档位（白/蓝/紫/橙/红 → 品质索引 0/2/3/4/5） */
-    private static final int[] QUALITY_TIERS = {0, 2, 3, 4, 5};
-    /** 各档位抽取概率 */
-    private static final double[] QUALITY_WEIGHTS = {0.30, 0.25, 0.20, 0.15, 0.10};
+    /** 参与抽取的品质档位（白/绿/蓝/紫/橙/红 → 品质索引 0/1/2/3/4/5） */
+    private static final int[] QUALITY_TIERS = {0, 1, 2, 3, 4, 5};
+    /** 各档位抽取概率：白25% 绿25% 蓝20% 紫15% 橙10% 红5% */
+    private static final double[] QUALITY_WEIGHTS = {0.25, 0.25, 0.20, 0.15, 0.10, 0.05};
 
     /** 不参与抽取的皮肤（测试皮 / 多形态变体） */
     private static final Set<String> EXCLUDED_SKINS = Set.of(
@@ -136,7 +136,7 @@ public class DailyShopManager {
             }
         }
 
-        // 音乐盒：均匀分配到 5 个档位，参与品质抽取
+        // 音乐盒：均匀分配到 6 个档位，参与品质抽取
         int i = 0;
         for (MusicBox box : MusicBoxRegistry.getAll()) {
             pool.get(QUALITY_TIERS[i % QUALITY_TIERS.length]).add("musicbox/" + box.id());
@@ -145,9 +145,8 @@ public class DailyShopManager {
         return pool;
     }
 
-    /** 绿色(uncommon,1) 归入白档(0)，其余保持 */
+    /** 品质档位直接对应（0~5），未收录的品质归入白档(0) */
     private static int representativeTier(int quality) {
-        if (quality <= 1) return 0;
         for (int tier : QUALITY_TIERS) if (tier == quality) return quality;
         return 0;
     }
