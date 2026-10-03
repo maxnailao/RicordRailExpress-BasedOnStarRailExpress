@@ -39,6 +39,8 @@ public class CS2ServerReceiverRegister {
         registerEquipSkin();
         registerEquipMusicBox();
         registerBoxPreviewRequest();
+        registerDailyShopSyncRequest();
+        registerDailyShopBuy();
     }
 
     // ── 开箱 ──
@@ -407,6 +409,36 @@ public class CS2ServerReceiverRegister {
                     ServerPlayNetworking.send(player, new BoxPreviewS2CPayload(json));
                 } catch (java.io.IOException e) {
                     Noellesroles.LOGGER.error("[CS2Box] Failed to read box config: {}", configFile, e);
+                }
+            });
+        });
+    }
+
+    // ── 每日商店：同步请求 ──
+
+    private static void registerDailyShopSyncRequest() {
+        ServerPlayNetworking.registerGlobalReceiver(DailyShopSyncRequestC2SPayload.ID, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                try {
+                    org.agmas.noellesroles.cs2.DailyShopManager.getInstance().syncToPlayer(player);
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[DailyShop] Error in sync request", e);
+                }
+            });
+        });
+    }
+
+    // ── 每日商店：购买 ──
+
+    private static void registerDailyShopBuy() {
+        ServerPlayNetworking.registerGlobalReceiver(DailyShopBuyC2SPayload.ID, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                try {
+                    org.agmas.noellesroles.cs2.DailyShopManager.getInstance().buy(player, payload.slot());
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[DailyShop] Error in buy operation", e);
                 }
             });
         });

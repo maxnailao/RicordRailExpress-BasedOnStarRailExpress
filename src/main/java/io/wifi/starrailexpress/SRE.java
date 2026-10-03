@@ -194,6 +194,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         // 黑市系统初始化
         org.agmas.noellesroles.cs2.CS2BlackMarketManager.getInstance().init(
                 java.nio.file.Paths.get("config"));
+        // 每日商店初始化
+        org.agmas.noellesroles.cs2.DailyShopManager.getInstance().init(
+                java.nio.file.Paths.get("config"));
         // 玩家上线时通知黑市离线收入（需手动领取）+ 同步箱子名称配置
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             server.execute(() -> {

@@ -109,6 +109,11 @@ public class CS2WarehouseScreen extends Screen {
         cols = (width - gridStartX - 16) / (cardSize + cardGap);
         if (cols < 1) cols = 1;
 
+        // 左上角：皮肤预览入口
+        addRenderableWidget(Button.builder(Component.literal("皮肤预览"), b -> {
+            minecraft.setScreen(new SkinPreviewScreen());
+        }).pos(4, 8).size(sidebarWidth - 8, 20).build());
+
         // 底部按钮
         int btnY = height - 30;
         addRenderableWidget(Button.builder(Component.literal("商店"), b -> {
@@ -222,6 +227,9 @@ public class CS2WarehouseScreen extends Screen {
                 items.add(new WarehouseItem("selfselect", "selfselect", "自选职业卡", "", backpack.selfSelectCards, 0));
             }
         }
+
+        // 按品质降序排序（高品质靠前）
+        items.sort((a, b) -> Integer.compare(b.quality, a.quality));
     }
 
     private static String cardName(FactionCardType type) {

@@ -52,16 +52,18 @@ public class CS2ShopScreen extends Screen {
     private static final String[] QUALITY_NAMES = {"\u666e\u901a", "\u7f55\u89c1", "\u7a00\u6709", "\u53f2\u8bd7", "\u4f20\u8bf4", "\u4e0d\u53ef\u601d\u8bae"};
     private static final int[] QUALITY_TEXT_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F};
 
-    private enum Tab { BUY, SELL, MARKET }
+    private enum Tab { BUY, SELL, MARKET, DAILY }
     private Tab selectedTab = Tab.BUY;
 
     // 商店商品数据（从服务端配置加载，客户端使用缓存）
     private final List<ShopDisplayItem> buyItems = new ArrayList<>();
     private final List<ShopDisplayItem> sellItems = new ArrayList<>();
     private final List<MarketDisplayItem> marketItems = new ArrayList<>();
+    private final List<DailyDisplayItem> dailyItems = new ArrayList<>();
     private ShopDisplayItem hoveredBuyItem = null;
     private ShopDisplayItem hoveredSellItem = null;
     private MarketDisplayItem hoveredMarketItem = null;
+    private DailyDisplayItem hoveredDailyItem = null;
     private int scrollOffset = 0;
 
     // 黑市上架模式
@@ -76,6 +78,8 @@ public class CS2ShopScreen extends Screen {
     /** 服务端同步的黑市数据缓存 */
     private static String marketDataCache = "[]";
     private static int myPendingCoinsCache = 0;
+    /** 服务端同步的每日商店数据缓存 */
+    private static String dailyShopCache = "{}";
     private static final Gson GSON = new Gson();
     /** 缓存当前玩家自己的挂单 listingId 集合，避免每帧反序列化 */
     private Set<String> ownListingIds = null;
@@ -102,6 +106,13 @@ public class CS2ShopScreen extends Screen {
         myPendingCoinsCache = amount;
     }
 
+    /**
+     * 服务端同步每日商店数据时调用（静态缓存）
+     */
+    public static void setDailyShopCache(String json) {
+        dailyShopCache = json;
+    }
+
     @Override
     protected void init() {
         super.init();
@@ -117,6 +128,8 @@ public class CS2ShopScreen extends Screen {
 
         // 请求服务端同步黑市数据
         ClientPlayNetworking.send(new BlackMarketSyncRequestC2SPayload());
+        // 请求服务端同步每日商店数据
+        ClientPlayNetworking.send(new DailyShopSyncRequestC2SPayload());
 
         // 返回仓库按钮
         addRenderableWidget(Button.builder(Component.literal("< 仓库"), b -> {
@@ -135,6 +148,7 @@ public class CS2ShopScreen extends Screen {
         buyItems.clear();
         sellItems.clear();
         marketItems.clear();
+        dailyItems.clear();
 
         // 购买商品 (从 ShopConfig 单例获取 - 客户端同步)
         for (ShopConfig.ShopItem item : ShopConfig.getInstance().getShopItems()) {
@@ -250,6 +264,28 @@ public class CS2ShopScreen extends Screen {
                 listableItems.add(item);
             }
         }
+
+        // 每日商店商品（从服务端缓存解析）
+        try {
+            com.google.gson.JsonObject root = com.google.gson.JsonParser
+                    .parseString(dailyShopCache).getAsJsonObject();
+            if (root.has("items")) {
+                for (var el : root.getAsJsonArray("items")) {
+                    com.google.gson.JsonObject o = el.getAsJsonObject();
+                    DailyDisplayItem d = new DailyDisplayItem();
+                    d.slot = o.get("slot").getAsInt();
+                    d.itemId = o.get("itemId").getAsString();
+                    d.itemType = o.get("itemType").getAsString();
+                    d.quality = o.get("quality").getAsInt();
+                    d.price = o.get("price").getAsInt();
+                    d.purchased = o.has("purchased") && o.get("purchased").getAsBoolean();
+                    d.name = "musicbox".equals(d.itemType)
+                            ? getMusicBoxName(d.itemId.substring("musicbox/".length()))
+                            : CS2SkinInfo.getName(d.itemId);
+                    dailyItems.add(d);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private static final FactionCardType[] CARD_ORDER = {
@@ -276,11 +312,13 @@ public class CS2ShopScreen extends Screen {
         hoveredSellItem = null;
         hoveredMarketItem = null;
         hoveredListItem = null;
+        hoveredDailyItem = null;
 
         switch (selectedTab) {
             case BUY -> renderBuyTab(guiGraphics, mouseX, mouseY);
             case SELL -> renderSellTab(guiGraphics, mouseX, mouseY);
             case MARKET -> renderMarketTab(guiGraphics, mouseX, mouseY);
+            case DAILY -> renderDailyTab(guiGraphics, mouseX, mouseY);
         }
 
         super.render(guiGraphics, mouseX, mouseY, delta);
@@ -297,9 +335,9 @@ public class CS2ShopScreen extends Screen {
     }
 
     private void renderTabs(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET};
-        String[] labels = {"购买", "出售", "黑市"};
-        int tabWidth = width / 3;
+        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY};
+        String[] labels = {"购买", "出售", "黑市", "每日商店"};
+        int tabWidth = width / tabs.length;
 
         for (int i = 0; i < tabs.length; i++) {
             int x = i * tabWidth;
@@ -495,6 +533,53 @@ public class CS2ShopScreen extends Screen {
         }
     }
 
+    private void renderDailyTab(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        guiGraphics.drawCenteredString(font,
+                "每日 00:00 刷新  |  下次刷新: " + nextRefreshCountdown(),
+                width / 2, listStartY, 0xFF88AACC);
+        int startY = listStartY + 14;
+
+        if (dailyItems.isEmpty()) {
+            guiGraphics.drawCenteredString(font, "暂无每日商品", width / 2, height / 2, TEXT_DIM);
+            return;
+        }
+
+        for (int i = scrollOffset; i < dailyItems.size(); i++) {
+            int y = startY + (i - scrollOffset) * itemHeight;
+            if (y + itemHeight > height - 40) break;
+
+            DailyDisplayItem item = dailyItems.get(i);
+            boolean hovered = mouseX >= 20 && mouseX < width - 20 && mouseY >= y && mouseY < y + itemHeight - 2;
+            if (hovered) hoveredDailyItem = item;
+
+            int bg = hovered ? CARD_HOVER : CARD_BG;
+            guiGraphics.fill(20, y, width - 20, y + itemHeight - 2, bg);
+
+            guiGraphics.drawString(font, item.name, 30, y + 6, TEXT_COLOR, false);
+            if (item.quality >= 0 && item.quality < QUALITY_NAMES.length) {
+                String typeTag = "musicbox".equals(item.itemType) ? "音乐盒" : "皮肤";
+                guiGraphics.drawString(font, "[" + QUALITY_NAMES[item.quality] + "·" + typeTag + "]",
+                        30, y + 20, QUALITY_TEXT_COLORS[item.quality], false);
+            }
+            guiGraphics.drawString(font, item.price + " 货币", width - 130, y + 10, GOLD, false);
+
+            if (item.purchased) {
+                guiGraphics.fill(width - 80, y + 4, width - 30, y + itemHeight - 6, 0x60888888);
+                guiGraphics.drawCenteredString(font, "已购买", width - 55, y + 10, 0xFFAAAAAA);
+            } else if (hovered) {
+                guiGraphics.fill(width - 80, y + 4, width - 30, y + itemHeight - 6, 0x6044FF44);
+                guiGraphics.drawCenteredString(font, "购买", width - 55, y + 10, 0xFF44FF44);
+            }
+        }
+    }
+
+    private static String nextRefreshCountdown() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime next = now.toLocalDate().plusDays(1).atStartOfDay();
+        long secs = java.time.Duration.between(now, next).getSeconds();
+        return String.format("%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // 如果价格输入框可见且点击在它上面，优先处理
@@ -505,8 +590,8 @@ public class CS2ShopScreen extends Screen {
         }
 
         // Tab 切换
-        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET};
-        int tabWidth = width / 3;
+        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY};
+        int tabWidth = width / tabs.length;
         if (mouseY >= 28 && mouseY < 52) {
             for (int i = 0; i < tabs.length; i++) {
                 int x = i * tabWidth;
@@ -539,6 +624,25 @@ public class CS2ShopScreen extends Screen {
         if (selectedTab == Tab.SELL && hoveredSellItem != null && mouseX >= width - 80) {
             ClientPlayNetworking.send(new ShopSellC2SPayload(
                     hoveredSellItem.type, hoveredSellItem.id));
+            return true;
+        }
+
+        // 每日商店购买点击
+        if (selectedTab == Tab.DAILY && hoveredDailyItem != null && mouseX >= width - 80) {
+            if (hoveredDailyItem.purchased) {
+                var p = Minecraft.getInstance().player;
+                if (p != null) p.displayClientMessage(Component.literal("§c今日已购买过该商品"), true);
+                return true;
+            }
+            var p = Minecraft.getInstance().player;
+            if (p != null) {
+                int coins = PlayerEconomyManager.getCoinNum(p);
+                if (coins < hoveredDailyItem.price) {
+                    p.displayClientMessage(Component.literal("§c货币不足，需要 " + hoveredDailyItem.price + " 货币"), true);
+                    return true;
+                }
+            }
+            ClientPlayNetworking.send(new DailyShopBuyC2SPayload(hoveredDailyItem.slot));
             return true;
         }
 
@@ -667,6 +771,9 @@ public class CS2ShopScreen extends Screen {
         if (selectedTab == Tab.BUY) {
             total = buyItems.size();
             effectiveStartY = listStartY;
+        } else if (selectedTab == Tab.DAILY) {
+            total = dailyItems.size();
+            effectiveStartY = listStartY + 14;
         } else if (selectedTab == Tab.MARKET) {
             if (listingMode) {
                 total = listableItems.size();
@@ -728,6 +835,17 @@ public class CS2ShopScreen extends Screen {
             this.price = price;
             this.quality = quality;
         }
+    }
+
+    /** 每日商店展示条目 */
+    private static class DailyDisplayItem {
+        int slot;
+        String itemId;
+        String itemType;
+        String name;
+        int quality;
+        int price;
+        boolean purchased;
     }
 
     /** 黑市展示条目 */

@@ -311,5 +311,16 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.ID,
                 org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.CODEC);
+
+        // CS2 每日商店网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.DailyShopSyncRequestC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.DailyShopSyncRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.DailyShopSyncS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.DailyShopSyncS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.DailyShopBuyC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.DailyShopBuyC2SPayload.CODEC);
     }
 }

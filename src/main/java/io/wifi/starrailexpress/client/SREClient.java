@@ -1246,6 +1246,18 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // CS2 每日商店数据同步接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.DailyShopSyncS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        org.agmas.noellesroles.client.screen.CS2ShopScreen.setDailyShopCache(payload.shopJson());
+                        if (context.client().screen instanceof org.agmas.noellesroles.client.screen.CS2ShopScreen shopScreen) {
+                            shopScreen.refreshData();
+                        }
+                    });
+                });
+
         // CS2 箱子预览数据接收器
         ClientPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.cs2.network.BoxPreviewS2CPayload.ID,
