@@ -11,7 +11,8 @@ import java.util.List;
 
 /**
  * 自选职业卡 GUI：第一步选阵营（杀手/平民/中立/杀手中立/警长），第二步在网格中选该阵营的具体职业。
- * 特殊地图限定、其他模式、不会自然刷新的职业不展示（彩蛋职业除外）。选择后发送 {@code sre:pass selfselect <roleId>}。
+ * 只展示谋杀模式职业：原版基础职业、修理逃脱模式、其他模式、特殊地图限定、不会自然刷新的职业不展示
+ * （彩蛋职业与警长阵营除外）。选择后发送 {@code sre:pass selfselect <roleId>}。
  */
 public class SelfSelectCardScreen extends Screen {
 

@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.harpymodloader.Harpymodloader;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 
 import java.util.*;
@@ -72,8 +73,9 @@ public class TMMRoles {
     /**
      * 是否可由「自选职业卡」选择。
      * <p>
-     * 排除：坠木/皮革嘎、其他模式职业、特殊地图限定职业，以及不会自然刷新的职业
-     * （{@code defaultMaxCount <= 0}，如操纵师）。彩蛋职业（{@link EggRole}，如迪奥）
+     * 只允许谋杀模式的职业：排除原版基础职业（{@code VANNILA_ROLES}）、其他模式职业、
+     * 修理逃脱模式职业（{@link RepairRole}）与特殊地图限定职业。此外排除不会自然刷新的职业
+     * （{@code defaultMaxCount <= 0}，如操纵师）；彩蛋职业（{@link EggRole}，如迪奥）
      * 与警长阵营虽默认不刷新，但作为特殊职业/阵营仍允许自选。
      * </p>
      */
@@ -81,11 +83,11 @@ public class TMMRoles {
         if (role == null) {
             return false;
         }
-        if (role.identifier().equals(DISCOVERY_CIVILIAN.identifier())
-                || role.identifier().equals(LOOSE_END.identifier())) {
-            return false;
-        }
-        if (role.isOtherModeRole() || role.isSpecialMapRole()) {
+        // 只允许谋杀模式的职业（对齐 SREMurderGameMode.getAllRoles 的池构建）
+        if (Harpymodloader.VANNILA_ROLES.contains(role)
+                || role.isOtherModeRole()
+                || role instanceof RepairRole
+                || role.isSpecialMapRole()) {
             return false;
         }
         // 不会自然刷新的职业不可自选；彩蛋职业（如迪奥）与警长阵营例外。
