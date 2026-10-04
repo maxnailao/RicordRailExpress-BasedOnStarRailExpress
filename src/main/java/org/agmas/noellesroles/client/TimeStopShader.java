@@ -293,11 +293,13 @@ public class TimeStopShader {
             return true;
         }));
 
-        // 怀旧者里世界灰白滤镜（由 NOSTALGIST_BACKWORLD 药水效果驱动的独立着色器）
+        // 怀旧者里世界灰白滤镜（NOSTALGIST_BACKWORLD）+ 寻血猎犬疯魔灰白（BLOODHOUND_FRENZY，保留红色透视）
         m_post.addSinglePassEntry("nostalgist_gray", pass -> processPlayer(mc.player, () -> {
             totalTime += 0.016f;
 
-            boolean active = mc.player.hasEffect(ModEffects.NOSTALGIST_BACKWORLD);
+            boolean bloodhoundFrenzy = mc.player.hasEffect(ModEffects.BLOODHOUND_FRENZY);
+            boolean active = mc.player.hasEffect(ModEffects.NOSTALGIST_BACKWORLD)
+                    || bloodhoundFrenzy;
             if (active) {
                 nostalgistGray = Math.min(1.0f, nostalgistGray + 0.05f);
             } else {
@@ -317,6 +319,11 @@ public class TimeStopShader {
             var timeTotalUniform = effect.safeGetUniform("TimeTotal");
             if (timeTotalUniform != null) {
                 timeTotalUniform.set(totalTime);
+            }
+            // 寻血猎犬疯魔：保留红色透视轮廓；怀旧者：纯灰白（KeepRed=0）
+            var keepRedUniform = effect.safeGetUniform("KeepRed");
+            if (keepRedUniform != null) {
+                keepRedUniform.set(bloodhoundFrenzy ? 1.0f : 0.0f);
             }
             return true;
         }));

@@ -1334,6 +1334,10 @@ public class ModEventsRegister {
         // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
         org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
 
+        // 寻血猎犬：枪械特性（不掉枪概率 / 枪械冷却 / 用枪击杀奖励 / 疯魔巡警手枪永不掉枪）
+        // 注意：原 NRCombatEvents 类未被任何入口调用，故必须在此注册，否则全部失效
+        org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent.registerEvents();
+
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
         };

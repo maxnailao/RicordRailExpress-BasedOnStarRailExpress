@@ -146,6 +146,21 @@ public class ModEntities {
                     .build());
 
     /**
+     * 压力试剂投掷实体 - 魔女共犯专属，落点展开压力领域
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.roles.neutral.witch_accomplice.PressureReagentEntity> PRESSURE_REAGENT = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pressure_reagent"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.roles.neutral.witch_accomplice.PressureReagentEntity>create(
+                    MobCategory.MISC,
+                    org.agmas.noellesroles.game.roles.neutral.witch_accomplice.PressureReagentEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(4)
+                    .trackedUpdateRate(10)
+                    .build());
+
+    /**
      * 灾厄印记实体 - 设陷者专属隐形陷阱
      */
     @SuppressWarnings("deprecation")

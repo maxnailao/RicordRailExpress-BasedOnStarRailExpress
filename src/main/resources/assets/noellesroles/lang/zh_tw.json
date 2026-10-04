@@ -4175,5 +4175,16 @@
   "message.noellesroles.prewitch.recaller_recalled": "順著魔力回到了印記處",
   "message.noellesroles.prewitch.lockdown_no_target": "3 格內沒有可以禁錮的目標",
   "message.noellesroles.prewitch.lockdown_victim": "你被魔女的魔力禁錮，無法移動",
-  "message.noellesroles.prewitch.lockdown_used": "禁錮了 %s"
+  "message.noellesroles.prewitch.lockdown_used": "禁錮了 %s",
+  "itemstack.bloodhound.psychoitem.item_name": "狂野獵人",
+  "itemstack.bloodhound.psychoitem.item_lore.1": "「野獸的嗅覺……無人能逃。」",
+  "itemstack.bloodhound.psychoitem.item_lore.2": "開啟後螢幕變為灰白並向全場發出吼叫；瘋魔期間透視所有平民與中立（全身紅光），不再透視狼人隊友；獲得一把巡警手槍（冷卻6.5秒）與一層護盾。",
+  "=========== 魔女共犯 ===========": "",
+  "announcement.star.role.witch_accomplice": "魔女共犯",
+  "announcement.star.goals.witch_accomplice": "狼方中立。與預備魔女綁定而生，用壓力試劑折磨獵物，助推魔女降臨。",
+  "announcement.star.win.witch_accomplice": "殺手勝利！",
+  "item.noellesroles.pressure_reagent": "壓力試劑",
+  "message.noellesroles.witch_accomplice.domain_in": "正在被壓力領域影響..快出去！",
+  "message.noellesroles.witch_accomplice.domain_prewitch": "你感到了些許壓力...",
+  "info.screen.roleid.witch_accomplice": "狼方中立\n與預備魔女綁定生成，可以透視綁定的預備魔女（藍色高亮）。\n商店可購買：撬鎖器(100金幣)、壓力試劑(200金幣)。\n壓力試劑：右鍵投擲，以落點為中心展開持續30秒、半徑10格的領域；領域內好人和會掉理智的職業心情值持續降低（預備魔女降低得更多），螢幕上方出現提示；離開領域或領域結束後，被扣除的心情值會逐漸恢復其中的50%%。"
 }

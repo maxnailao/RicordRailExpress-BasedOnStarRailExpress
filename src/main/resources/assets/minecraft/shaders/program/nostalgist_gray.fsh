@@ -4,6 +4,7 @@ uniform sampler2D DiffuseSampler;
 
 uniform float Strength;
 uniform float TimeTotal;
+uniform float KeepRed;
 uniform vec2 OutSize;
 
 in vec2 texCoord;
@@ -35,6 +36,14 @@ void main() {
     // 按强度混合彩色原图与灰白特效
     float s = clamp(Strength, 0.0, 1.0);
     vec3 finalColor = mix(col, tinted, s);
+
+    // 保留红色：KeepRed>0 时，画面中明显偏红的像素（如疯魔透视轮廓）不参与灰白化，
+    // 保持其原始红色，使红色目标在灰白世界中凸显（怀旧者 KeepRed=0，行为不变）。
+    if (KeepRed > 0.001) {
+        float redDominance = col.r - max(col.g, col.b);
+        float keep = clamp(redDominance * KeepRed * 2.5, 0.0, 1.0);
+        finalColor = mix(finalColor, col, keep * s);
+    }
 
     fragColor = vec4(finalColor, 1.0);
 }

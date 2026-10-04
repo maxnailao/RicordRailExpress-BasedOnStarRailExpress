@@ -158,5 +158,6 @@
   "shop.noellesroles.undead_lord.summon_charm.desc": "立即在身邊召喚 2 個臨時亡靈，持續 45 秒。60 秒冷卻，且召喚數量不會超過亡靈上限。",
   "shop.noellesroles.undead_lord.infection_amp.desc": "接下來 60 秒內亡靈攻擊的感染值翻倍。",
   "item.noellesroles.reasoner_compass.desc": "推理師專屬物品。遊戲開始 2 分鐘後自動獲得，右鍵打開羅盤占卜介面。每次提交答案後冷卻 35 秒，全部問題推理正確即可獨立勝利。",
-  "item.noellesroles.inferior_lockpick.desc": "冤魂專屬的劣質開鎖器，繼承開鎖器的開門與封鎖特性；每次成功用於開鎖後進入 15 秒冷卻。"
+  "item.noellesroles.inferior_lockpick.desc": "冤魂專屬的劣質開鎖器，繼承開鎖器的開門與封鎖特性；每次成功用於開鎖後進入 15 秒冷卻。",
+  "item.noellesroles.pressure_reagent.desc": "魔女共犯專屬道具，可在魔女共犯商店花費200金幣購買。右鍵播撒後以播撒點為中心展開持續30秒的領域，領域內玩家心情值持續降低（預備魔女降低更多）；離開領域或領域結束後，被扣除的心情值會逐漸恢復其中的50%%。"
 }

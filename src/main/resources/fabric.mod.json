@@ -300,7 +300,9 @@
       "noellesroles:convict",
       "noellesroles:pre_witch",
       "noellesroles:kidnapper_role",
-      "noellesroles:kidnapped"
+      "noellesroles:kidnapped",
+      "noellesroles:bloodhound",
+      "noellesroles:witch_accomplice"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

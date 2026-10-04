@@ -365,6 +365,9 @@ public class ModRoles {
     public static final ResourceLocation GHOSTYING_ID = Noellesroles.id("ghostying_guiying");
     // 狼人角色 ID - 杀手阵营（注意：与狼人杀模式组件 noellesroles:werewolf 区分）
     public static final ResourceLocation WEREWOLF_KILLER_ID = Noellesroles.id("werewolf_killer");
+    // 寻血猎犬角色 ID - 杀手阵营（狼人阵营）
+    public static final ResourceLocation BLOODHOUND_ID = Noellesroles.id("bloodhound");
+
     // 绑匪角色 ID - 独立中立
     public static final ResourceLocation KIDNAPPER_ID = Noellesroles.id("kidnapper");
 
@@ -403,6 +406,7 @@ public class ModRoles {
     public static final ResourceLocation JAILER_ID = Noellesroles.id("jailer");
     // 预备魔女（特殊中立）/ 魔女（预备魔女转化后的杀手形态）
     public static final ResourceLocation PRE_WITCH_ID = Noellesroles.id("pre_witch");
+    public static final ResourceLocation WITCH_ACCOMPLICE_ID = Noellesroles.id("witch_accomplice");
     public static final ResourceLocation MAJO_ID = Noellesroles.id("majo");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
@@ -2068,9 +2072,33 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
-    )).setComponentKey(WitchPlayerComponent.KEY)
+            )).setComponentKey(WitchPlayerComponent.KEY)
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false)
             .setCanUseInstinct(true).setCanSeeCoin(true);
+
+    /**
+     * 寻血猎犬 - 杀手阵营（狼人阵营）
+     * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)
+     * - 假心情、无限体力、隐藏计分板
+     * - 无杀手本能透视（setCanUseInstinct(false)），但始终可透视狼人队友（红色轮廓，见 InstinctRenderer）
+     * - 枪械特性：开枪命中后 50% 概率不掉落枪械；用枪击杀奖励 150 金币；枪械冷却 20 秒
+     * - 技能「众神之眼」(G键，冷却25秒)：以自身为中心，红圈由内到外扩散至半径45格，
+     *   被扫到的玩家（含小透明与中立）被寻血猎犬透视5秒，其屏幕正上方提示「你已被扫描！」
+     * - 登车标语：混账敌人的踪迹...
+     */
+    public static SRERole BLOODHOUND = TMMRoles.registerRole(new NormalRole(
+                    BLOODHOUND_ID, // 角色 ID
+                    new Color(139, 30, 30).getRGB(), // 暗血红色 - 寻血猎犬
+                    false, // isInnocent = 杀手阵营
+                    true, // canUseKiller = 有杀手能力
+                    SRERole.MoodType.FAKE, // 假心情
+                    Integer.MAX_VALUE, // 无限冲刺时间
+                    true // 隐藏计分板
+            )).setComponentKey(ModComponents.BLOODHOUND)
+            .setCanUseInstinct(false) // 无本能透视
+            .setCanSeeTeammateKiller(true) // 仅透视狼人队友
+            .setCanSeeCoin(true).setCanSeeTime(true)
+            .setDefaultMax(1);
 
     /**
      * Hacker role
@@ -2958,11 +2986,39 @@ public class ModRoles {
             // 魔女只能由预备魔女转化产生，永远不参与随机刷新
             return 0;
         }
-    }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
+            }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
             .setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(0)
             // 与预备魔女互为「相关职业」：职业介绍的「关联内容」里可以互相跳转（仅用于展示，不参与刷新）
+            .addBothRelatedRole(ModRoles.PRE_WITCH);
+
+    /**
+     * 魔女共犯（witch_accomplice）—— 狼方中立，与预备魔女绑定生成（同在魔女监牢地图刷新）。
+     * <ul>
+     * <li>狼方中立：setNeutrals(true) + setNeutralForKiller(true)，杀手视为队友，跟随杀手阵营胜利</li>
+     * <li>始终透视绑定的预备魔女（蓝色高亮，见 InstinctRenderer）</li>
+     * <li>商店：撬锁器(100) / 压力试剂(200)</li>
+     * <li>压力试剂：右键播撒，以播撒点为中心展开 30s 领域，领域内玩家持续掉心情，
+     *     预备魔女掉得更多；离开领域/领域结束后，被扣心情逐渐恢复其中的 50%</li>
+     * </ul>
+     */
+    public static SRERole WITCH_ACCOMPLICE = TMMRoles.registerRole(new NormalRole(
+                    WITCH_ACCOMPLICE_ID,
+                    new Color(90, 120, 200).getRGB(), // 幽蓝 - 魔女共犯
+                    false, // isInnocent = false（狼方中立）
+                    false, // canUseKiller = false（用专属商店，不开杀手商店）
+                    SRERole.MoodType.FAKE, // 自身无心情
+                    Integer.MAX_VALUE, // 无限体力
+                    true)) // 隐藏计分板
+            .setComponentKey(org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent.KEY)
+            .setNeutrals(true)
+            .setNeutralForKiller(true)
+            .setCanSeeCoin(true)
+            .setCanPickUpRevolver(false)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.WITCH_PRISON)
             .addBothRelatedRole(ModRoles.PRE_WITCH);
 
     public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(

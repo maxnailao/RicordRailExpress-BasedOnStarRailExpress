@@ -2601,6 +2601,71 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(
                     ModRoles.BLOOD_FEUDIST_ID, BLOOD_FEUDIST_SHOP);
         }
+
+        // 寻血猎犬商店：撬锁器 / 左轮手枪 / 关灯 / 便签 / 狂野猎人（专属疯魔）
+        {
+            var bloodhoundShop = new ArrayList<ShopEntry>();
+            // 撬锁器 - 75金币
+            bloodhoundShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+            // 左轮手枪 - 135金币
+            bloodhoundShop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 135, ShopEntry.Type.WEAPON));
+            // 关灯 - 150金币
+            bloodhoundShop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            // 便签 - 25金币
+            bloodhoundShop.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), 25, ShopEntry.Type.TOOL));
+            // 狂野猎人 - 385金币（寻血猎犬专属疯魔）
+            {
+                var wildHunter = TMMItems.PSYCHO_MODE.getDefaultInstance();
+                wildHunter.set(DataComponents.ITEM_NAME,
+                        Component.translatable("itemstack.bloodhound.psychoitem.item_name"));
+                var lore = new ItemLore(List.of(
+                        Component.translatable("itemstack.bloodhound.psychoitem.item_lore.1")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+                        Component.translatable("itemstack.bloodhound.psychoitem.item_lore.2")
+                                .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+                wildHunter.set(DataComponents.LORE, lore);
+                bloodhoundShop.add(new ShopEntry(wildHunter, 385, ShopEntry.Type.WEAPON) {
+                    @Override
+                    public boolean canBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        return super.canBuy(player);
+                    }
+
+                    @Override
+                    public boolean onBuy(@NotNull Player player) {
+                        if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                            return false;
+                        }
+                        var comp = ModComponents.BLOODHOUND.maybeGet(player).orElse(null);
+                        if (comp == null) {
+                            return false;
+                        }
+                        boolean success = comp.startFrenzy();
+                        if (success) {
+                            // 狂野猎人开启后冷却 90 秒
+                            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 90 * 20);
+                        }
+                        return success;
+                    }
+                });
+            }
+            ShopContent.customEntries.put(ModRoles.BLOODHOUND_ID, bloodhoundShop);
+        }
+
+        // 魔女共犯商店：撬锁器(100) / 压力试剂(200)
+        {
+            var accompliceShop = new ArrayList<ShopEntry>();
+            accompliceShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            accompliceShop.add(new ShopEntry(ModItems.PRESSURE_REAGENT.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.WITCH_ACCOMPLICE_ID, accompliceShop);
+        }
     // 盗猎者商店
     {
       var shopEntries = new ArrayList<ShopEntry>();

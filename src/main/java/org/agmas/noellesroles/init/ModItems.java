@@ -367,6 +367,16 @@ public class ModItems {
             "delusion_vial", ROLE_ITEMS_GROUP);
 
     /**
+     * 压力试剂
+     * - 魔女共犯专属物品，商店 200 金币购买
+     * - 右键播撒：展开 30s 领域，领域内玩家心情持续降低（预备魔女更多），
+     *   离开/结束后被扣心情逐渐恢复 50%
+     */
+    public static final Item PRESSURE_REAGENT = register(
+            new org.agmas.noellesroles.content.item.PressureReagentItem(new Item.Properties().stacksTo(1)),
+            "pressure_reagent", ROLE_ITEMS_GROUP);
+
+    /**
      * 马桶毒药
      * - 毒师专属物品
      * - 右键涂在马桶上，使下一个使用马桶的玩家中毒

@@ -4830,5 +4830,22 @@
   "message.noellesroles.kidnapped.neutral_rescue_hint": "你是中立阵营，没有队友：被绑 %s 秒后任何玩家都能来给你解绳（被绑期间仍可转视角、切换物品栏、开商店买东西）",
   "message.noellesroles.kidnapped.neutral_rescue_unlocked": "现在任何玩家都可以来给你解绳了！",
   "hud.noellesroles.kidnapped.neutral_rescue_cd": "解绳解锁：%ss（任何玩家都可救你）",
-  "hud.noellesroles.kidnapped.neutral_rescue_ready": "等待任意玩家潜行右键解绳"
+  "hud.noellesroles.kidnapped.neutral_rescue_ready": "等待任意玩家潜行右键解绳",
+  "=========== 寻血猎犬 ===========": "",
+  "announcement.star.role.bloodhound": "寻血猎犬",
+  "announcement.star.goals.bloodhound": "混账敌人的踪迹...",
+  "announcement.star.win.bloodhound": "杀手胜利！",
+  "skill.noellesroles.bloodhound.eye_of_gods": "众神之眼",
+  "message.noellesroles.bloodhound.scanned": "你已被扫描！",
+  "itemstack.bloodhound.psychoitem.item_name": "狂野猎人",
+  "itemstack.bloodhound.psychoitem.item_lore.1": "“野兽的嗅觉……无人能逃。”",
+  "itemstack.bloodhound.psychoitem.item_lore.2": "开启后屏幕变为灰白并向全场发出吼叫；疯魔期间透视所有平民与中立（全身红光），不再透视狼人队友；获得一把巡警手枪（冷却6.5秒）与一层护盾。",
+  "=========== 魔女共犯 ===========": "",
+  "announcement.star.role.witch_accomplice": "魔女共犯",
+  "announcement.star.goals.witch_accomplice": "狼方中立。与预备魔女绑定而生，用压力试剂折磨猎物，助推魔女降临。",
+  "announcement.star.win.witch_accomplice": "杀手胜利！",
+  "item.noellesroles.pressure_reagent": "压力试剂",
+  "message.noellesroles.witch_accomplice.domain_in": "正在被压力领域影响..快出去！",
+  "message.noellesroles.witch_accomplice.domain_prewitch": "你感到了些许压力...",
+  "info.screen.roleid.witch_accomplice": "狼方中立\n与预备魔女绑定生成，可以透视绑定的预备魔女（蓝色高亮）。\n商店可购买：撬锁器(100金币)、压力试剂(200金币)。\n压力试剂：右键投掷，以落点为中心展开持续30秒、半径10格的领域；领域内好人与会掉理智的职业心情值持续降低（预备魔女降低得更多），屏幕上方出现提示；离开领域或领域结束后，被扣除的心情值会逐渐恢复其中的50%%。"
 }

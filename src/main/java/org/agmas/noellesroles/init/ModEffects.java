@@ -175,6 +175,15 @@ public class ModEffects {
     public static final Holder<MobEffect> NOSTALGIST_BACKWORLD = register("nostalgist_backworld",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBFBFBF));
 
+    /**
+     * 寻血猎犬·狂野猎人疯魔标记
+     * - 中性效果，灰白色
+     * - 由 {@code BloodhoundPlayerComponent} 在疯魔期间施加于自身，
+     *   驱动客户端灰白滤镜（{@code TimeStopShader} 的 {@code nostalgist_gray} pass）。
+     */
+    public static final Holder<MobEffect> BLOODHOUND_FRENZY = register("bloodhound_frenzy",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBFBFBF));
+
     public static final Holder<MobEffect> WRAITH_DIMENSION = register("wraith_dimension",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x315B7C));
 

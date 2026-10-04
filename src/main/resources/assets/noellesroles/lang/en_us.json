@@ -4399,5 +4399,22 @@
   "message.noellesroles.kidnapped.neutral_rescue_unlocked": "Any player can untie you now!",
   "hud.noellesroles.kidnapped.neutral_rescue_cd": "Untie unlock: %ss (any player can save you)",
   "hud.noellesroles.kidnapped.neutral_rescue_ready": "Waiting for any player to sneak + right-click to untie you",
-  "message.noellesroles.kidnapper.entry": "The rope made a sound in the dark ....."
+  "message.noellesroles.kidnapper.entry": "The rope made a sound in the dark .....",
+  "=========== Bloodhound ===========": "",
+  "announcement.star.role.bloodhound": "Bloodhound",
+  "announcement.star.goals.bloodhound": "Killer Faction. The trail of those damned enemies...",
+  "announcement.star.win.bloodhound": "Killers Win!",
+  "skill.noellesroles.bloodhound.eye_of_gods": "Eye of the Gods",
+  "message.noellesroles.bloodhound.scanned": "You have been scanned!",
+  "itemstack.bloodhound.psychoitem.item_name": "Wild Hunter",
+  "itemstack.bloodhound.psychoitem.item_lore.1": "\"The beast's scent... no one can escape.\"",
+  "itemstack.bloodhound.psychoitem.item_lore.2": "Turns your screen grayscale and roars to all players; during the frenzy you see all civilians and neutrals (glowing red) and no longer see werewolf teammates; grants a Patroller Revolver (6.5s cooldown) and one shield.",
+  "=========== Witch Accomplice ===========": "",
+  "announcement.star.role.witch_accomplice": "Witch Accomplice",
+  "announcement.star.goals.witch_accomplice": "Killer-side neutral. Bound to the Pre-Witch, torment prey with Pressure Reagent to hasten the Witch's descent.",
+  "announcement.star.win.witch_accomplice": "Killers Win!",
+  "item.noellesroles.pressure_reagent": "Pressure Reagent",
+  "message.noellesroles.witch_accomplice.domain_in": "Being drained by the Pressure Domain... get out!",
+  "message.noellesroles.witch_accomplice.domain_prewitch": "You feel a slight pressure...",
+  "info.screen.roleid.witch_accomplice": "Killer-side Neutral\nSpawns bound to the Pre-Witch, and can see the bound Pre-Witch through walls (blue highlight).\nShop: Lockpick (100 coins), Pressure Reagent (200 coins).\nPressure Reagent: right-click to THROW it, creating a domain centered on the landing point for 30 seconds (radius 10). Innocents and SAN-draining roles inside continuously lose SAN and see a warning above their screen; the Pre-Witch loses more. After leaving the domain or when it ends, 50%% of the SAN lost inside gradually recovers."
 }

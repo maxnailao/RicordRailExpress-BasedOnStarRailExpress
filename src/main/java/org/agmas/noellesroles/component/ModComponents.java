@@ -542,8 +542,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   // 鬼眼·杨间组件 - 警长阵营，鬼眼扫描 + 诡域
   public static final ComponentKey<GhostEyePlayerComponent> GHOST_EYE = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghost_eye"),
-      GhostEyePlayerComponent.class);
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ghost_eye"),
+          GhostEyePlayerComponent.class);
+
+  // 寻血猎犬组件 - 杀手阵营，众神之眼红圈扫描 + 仅透视队友/被扫描者
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent> BLOODHOUND = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "bloodhound"),
+          org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent.class);
+
+  // 魔女共犯组件 - 狼方中立，绑定预备魔女透视 + 压力试剂领域（扣心情/恢复50%）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent> WITCH_ACCOMPLICE = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "witch_accomplice"),
+          org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent.class);
 
   // 摄影师组件 - 记录画框购买次数
   public static final ComponentKey<PhotographerPlayerComponent> PHOTOGRAPHER = ComponentRegistry.getOrCreate(
@@ -892,8 +902,18 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
     // 注册女巫组件 - 存蹲下素材获取、被动收入、药剂选择、调制次数
     registry.beginRegistration(Player.class, WITCH)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(WitchPlayerComponent::new);
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(WitchPlayerComponent::new);
+
+    // 注册寻血猎犬组件 - 众神之眼红圈扩散扫描状态与被透视玩家集合
+    registry.beginRegistration(Player.class, BLOODHOUND)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent::new);
+
+    // 注册魔女共犯组件 - 绑定预备魔女 + 压力试剂领域状态
+    registry.beginRegistration(Player.class, WITCH_ACCOMPLICE)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent::new);
 
     // Register hacker component - stores commander channel restore countdown
     registry.beginRegistration(Player.class, BLACKKE)

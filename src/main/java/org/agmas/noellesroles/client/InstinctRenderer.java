@@ -68,7 +68,38 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
-        // 幻灵附身期间：禁用全部本能高亮，避免借旁观者身份看到职业颜色透视（首个非-1返回值生效，需最先注册）
+        // 寻血猎犬·狂野猎人疯魔：最高优先级透视（必须先于所有「隐身/禁用」handler 注册）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            // 只对寻血猎犬本人生效，其余角色一律 -1 透传，不影响任何现有逻辑
+            if (!SREClient.gameComponent.isRole(self, ModRoles.BLOODHOUND))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            // 只有处于疯魔时才接管；非疯魔返回 -1，交给下方常规寻血猎犬 handler
+            var frenzyComp = ModComponents.BLOODHOUND.maybeGet(self).orElse(null);
+            if (frenzyComp == null || !frenzyComp.inFrenzy)
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (targetPlayer.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -2;
+            var frenzyTargetRole = SREClient.gameComponent.getRole(targetPlayer);
+            // 疯魔期间关闭狼人队友透视
+            if (frenzyTargetRole != null && SREClient.gameComponent.isKillerTeamRole(frenzyTargetRole))
+                return -2;
+            // 平民 / 中立：全身红光（此处已抢在隐身 handler 之前，故可穿透隐身）
+            return new Color(255, 40, 40).getRGB();
+        });
+        // 幻灵附身期间：禁用全部本能高亮...（原有第一个 handler，保持不动）
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (HuanlingClient.isPossessing())
                 return -2;
@@ -1492,6 +1523,73 @@ public class InstinctRenderer {
                 }
             }
             return -1;
+        });
+
+        // 寻血猎犬：无本能，仅透视狼人队友（红）与「众神之眼」扫描到的玩家（含小透明/中立）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.BLOODHOUND))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (targetPlayer.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -2;
+            var comp = ModComponents.BLOODHOUND.maybeGet(self).orElse(null);
+            var targetRole = SREClient.gameComponent.getRole(targetPlayer);
+            boolean targetIsKillerTeam = targetRole != null && SREClient.gameComponent.isKillerTeamRole(targetRole);
+            // 狂野猎人疯魔期间：关闭狼人队友透视，平民/中立全身红光
+            if (comp != null && comp.inFrenzy) {
+                if (targetIsKillerTeam) {
+                    return -2;
+                }
+                return new Color(255, 40, 40).getRGB();
+            }
+            // 狼人队友：始终红色透视（无距离限制）
+            if (targetIsKillerTeam) {
+                return Color.RED.getRGB();
+            }
+            // 「众神之眼」扫描到的好人/中立玩家：绿色透视
+            if (comp != null && comp.isRevealed(targetPlayer.getUUID())) {
+                return Color.GREEN.getRGB();
+            }
+            // 寻血猎犬无本能：其余目标一律不透视
+            return -2;
+        });
+
+        // 魔女共犯：透视绑定的预备魔女（蓝色高亮），其余一律不透视
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.WITCH_ACCOMPLICE))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (targetPlayer.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -2;
+            var accomplice = ModComponents.WITCH_ACCOMPLICE.maybeGet(self).orElse(null);
+            if (accomplice != null && accomplice.isBoundPreWitch(targetPlayer.getUUID())) {
+                return new Color(60, 120, 255).getRGB(); // 蓝色高亮
+            }
+            return -2;
         });
 
         // 工人：透视工程师和建筑师（开局即可透视，无需购买物品）

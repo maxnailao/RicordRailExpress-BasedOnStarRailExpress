@@ -118,6 +118,9 @@ public class InitModRolesMax {
         // 女巫每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.WITCH_ID, 1);
 
+        // 寻血猎犬每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.BLOODHOUND_ID, 1);
+
         // Hacker role max 1 per game
         Harpymodloader.setRoleMaximum(ModRoles.BLACKKE_ID, 1);
 

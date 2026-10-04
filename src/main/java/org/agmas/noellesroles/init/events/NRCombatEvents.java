@@ -208,5 +208,7 @@ public class NRCombatEvents {
         VoodooDeathHandler.registerEvents();
         // 绑匪：审判阶段枪不掉落 + 枪冷却缩减 + 潜行右键救人
         org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
+        // 寻血猎犬：50% 不掉枪 + 枪冷却 20s + 用枪击杀奖励 150 金币
+        org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent.registerEvents();
     }
 }

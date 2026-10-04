@@ -653,6 +653,19 @@ public class ModRolesInitialEventRegister {
                     return comp.useSkill();
                 }).cooldownSeconds(30).build());
 
+        // 寻血猎犬技能「众神之眼」：红圈由内向外扩散扫描（半径45格），
+        // 被扫到的玩家（含小透明/中立）被寻血猎犬透视5秒，冷却25秒
+        RoleSkill.register(ModRoles.BLOODHOUND, RoleSkill.skill(
+                        SRE.id("bloodhound_eye_of_gods"),
+                        "skill.noellesroles.bloodhound.eye_of_gods",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) return false;
+                            var comp = ModComponents.BLOODHOUND.maybeGet(player).orElse(null);
+                            return comp != null && comp.startScan();
+                        })
+                .cooldownSeconds(NoellesRolesConfig.HANDLER.instance().bloodhoundScanCooldownSeconds)
+                .showOnHud(true).announceToSelf(true).build());
         RolePassive.register(ModRoles.PHANTOM_MUSICIAN,
                 RolePassive.passive(SRE.id("phantom_musician_income"),
                         "passive.noellesroles.phantom_musician.income", 30 * 20, player -> {

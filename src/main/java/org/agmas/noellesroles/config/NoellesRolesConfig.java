@@ -422,7 +422,37 @@ public class NoellesRolesConfig implements ConfigData {
      */
     public int ghostEyeDomainRadius = 12;
 
+    // ==================== 寻血猎犬 (bloodhound) ====================
+    /** 寻血猎犬 - 「众神之眼」红圈扫描最大半径（格） */
+    public int bloodhoundScanRadius = 45;
+    /** 寻血猎犬 - 红圈由内向外扩散到最大半径所需时间（tick，20=1秒） */
+    public int bloodhoundScanExpandTicks = 30;
+    /** 寻血猎犬 - 被扫描玩家被透视的持续时间（秒） */
+    public int bloodhoundScanRevealSeconds = 5;
+    /** 寻血猎犬 - 「众神之眼」技能冷却（秒） */
+    public int bloodhoundScanCooldownSeconds = 25;
+    /** 寻血猎犬 - 枪械射击后的冷却（秒） */
+    public int bloodhoundGunCooldownSeconds = 20;
+    /** 寻血猎犬 - 用枪击杀一名玩家获得的金币总额 */
+    public int bloodhoundGunKillReward = 150;
+    /** 寻血猎犬 - 开枪命中后不掉落枪械的概率（%）；80 表示 80% 保留枪、20% 掉枪 */
+    public int bloodhoundGunNoDropChance = 80;
+    /** 寻血猎犬 - 「狂野猎人」特殊疯魔持续时间（秒） */
+    public int bloodhoundFrenzyDurationSeconds = 30;
+    /** 寻血猎犬 - 「狂野猎人」疯魔期间巡警手枪冷却（tick，20=1秒；130=6.5秒） */
+    public int bloodhoundFrenzyPatrollerCooldownTicks = 130;
 
+    // ==================== 魔女共犯 (witch_accomplice) ====================
+    /** 魔女共犯 - 压力试剂领域半径（格） */
+    public double witchAccompliceDomainRadius = 10.0;
+    /** 魔女共犯 - 压力试剂领域持续时间（秒） */
+    public int witchAccompliceDomainSeconds = 30;
+    /** 魔女共犯 - 领域内普通玩家每 tick 扣除的心情值 */
+    public float witchAccompliceDrainPerTick = 0.0005f;
+    /** 魔女共犯 - 领域内预备魔女每 tick 扣除的心情值（更多） */
+    public float witchAccomplicePreWitchDrainPerTick = 0.0015f;
+    /** 魔女共犯 - 离开领域后每 tick 恢复的心情值（恢复被扣量的 50%） */
+    public float witchAccompliceRecoverPerTick = 0.001f;
 
     // ==================== Diviner (占卜家) ====================
     /** Diviner - Divination cooldown in seconds */
@@ -495,7 +525,7 @@ public class NoellesRolesConfig implements ConfigData {
     public int wizardShadowCooldownSeconds = 90;
     /** Wizard - Explosion! spell minimum mana to cast */
     public int wizardExplosionMinMana = 350;
-    /** Wizard - Percent of current mana spent by Explosion! */
+    /** Percent of current mana spent by Explosion! */
     public int wizardExplosionManaPercentCost = 80;
     /** Wizard - Explosion! spell cooldown in seconds */
     public int wizardExplosionCooldownSeconds = 150;
