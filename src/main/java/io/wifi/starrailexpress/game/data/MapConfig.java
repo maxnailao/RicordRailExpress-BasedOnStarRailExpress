@@ -47,9 +47,6 @@ public class MapConfig {
         @SerializedName("gameModes")
         public List<String> gameModes = new ArrayList<>();
 
-        @SerializedName("repair")
-        public RepairConfig repair;
-
         @SerializedName("werewolf")
         public WerewolfConfig werewolf;
 
@@ -111,25 +108,6 @@ public class MapConfig {
         }
     }
 
-    public static class RepairConfig {
-        @SerializedName("cloneEntries")
-        public List<CloneEntry> cloneEntries = new ArrayList<>();
-        @SerializedName("repairStations")
-        public List<Pos> repairStations = new ArrayList<>();
-        @SerializedName("lockedDoors")
-        public List<LockedDoorEntry> lockedDoors = new ArrayList<>();
-        @SerializedName("lootPoints")
-        public List<LootPointEntry> lootPoints = new ArrayList<>();
-        @SerializedName("escapeRoutes")
-        public List<EscapeRouteEntry> escapeRoutes = new ArrayList<>();
-        @SerializedName("trialStands")
-        public List<Pos> trialStands = new ArrayList<>();
-        @SerializedName("hunterSpawns")
-        public List<Pos> hunterSpawns = new ArrayList<>();
-        @SerializedName("survivorSpawns")
-        public List<Pos> survivorSpawns = new ArrayList<>();
-    }
-
     /**
      * 狼人杀模式配置
      */
@@ -137,52 +115,6 @@ public class MapConfig {
         /** 座位坐标映射："1"~"12" -> 坐标 */
         @SerializedName("seats")
         public java.util.Map<String, Pos> seats = new java.util.HashMap<>();
-    }
-
-    public static class CloneEntry {
-        @SerializedName("source")
-        public Pos source = new Pos();
-        @SerializedName("target")
-        public Pos target = new Pos();
-        @SerializedName("size")
-        public Pos size = new Pos(1, 1, 1);
-    }
-
-    public static class LockedDoorEntry {
-        @SerializedName("pos")
-        public Pos pos = new Pos();
-        @SerializedName("lockId")
-        public String lockId = "";
-        @SerializedName("requiredItem")
-        public String requiredItem = "";
-        @SerializedName("consume")
-        public boolean consume = true;
-    }
-
-    public static class LootPointEntry {
-        @SerializedName("pos")
-        public Pos pos = new Pos();
-        @SerializedName("category")
-        public String category = "tool";
-        @SerializedName("guaranteed")
-        public boolean guaranteed = false;
-        @SerializedName("chance")
-        public double chance = 1.0D;
-        @SerializedName("pool")
-        public List<String> pool = new ArrayList<>();
-    }
-
-    public static class EscapeRouteEntry {
-        @SerializedName("id")
-        public String id = "";
-        @SerializedName("displayKey")
-        public String displayKey = "";
-        @SerializedName("pos")
-        public Pos pos = new Pos();
-        @SerializedName("capacity")
-        public int capacity = 1;
-        @SerializedName("requiredItems")
-        public List<String> requiredItems = new ArrayList<>();
     }
 
     public static class Pos {

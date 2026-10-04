@@ -214,6 +214,20 @@ public class ShopConfig {
             item2.addProperty("price", 50);
             shopprice.add("2", item2);
 
+            JsonObject item3 = new JsonObject();
+            item3.addProperty("name", "帽子饰品箱");
+            item3.addProperty("type", "box");
+            item3.addProperty("id", "hat_box");
+            item3.addProperty("price", 100);
+            shopprice.add("3", item3);
+
+            JsonObject item4 = new JsonObject();
+            item4.addProperty("name", "帽子饰品箱钥匙");
+            item4.addProperty("type", "key");
+            item4.addProperty("id", "hat_key");
+            item4.addProperty("price", 100);
+            shopprice.add("4", item4);
+
             root.add("shopprice", shopprice);
 
             JsonObject sellprice = new JsonObject();
@@ -225,6 +239,7 @@ public class ShopConfig {
             sellprice.addProperty("unbelievable_skinsprice", 2000);
             JsonObject boxPrice = new JsonObject();
             boxPrice.addProperty("weapon_case_1", 20);
+            boxPrice.addProperty("hat_box", 20);
             sellprice.add("box_price", boxPrice);
             sellprice.addProperty("musicbox_price", 30);
             root.add("sellprice", sellprice);

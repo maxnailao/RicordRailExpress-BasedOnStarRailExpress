@@ -53,17 +53,6 @@ public class ModItems {
             new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
             "fisher_rod");
 
-    public static final Item REPAIR_TOOLBOX = register(
-            new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip",
-                    new Item.Properties().stacksTo(4)),
-            "repair_toolbox", REPAIR_MODE_GROUP);
-    public static final Item SPARE_PARTS = register(
-            new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip",
-                    new Item.Properties().stacksTo(16)),
-            "spare_parts", REPAIR_MODE_GROUP);
-    public static final Item RESCUE_FLARE = register(
-            new RescueFlareItem(new Item.Properties().stacksTo(4)),
-            "rescue_flare", ROLE_ITEMS_GROUP);
     // 推理之书 - 大侦探专属
     public static final Item DEDUCTION_BOOK = register(
             new DeductionBookItem(new Item.Properties().stacksTo(1)),
@@ -92,83 +81,6 @@ public class ModItems {
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
-    public static final Item REPAIR_MEDKIT = register(
-            new RepairMedkitItem(new Item.Properties().stacksTo(4)),
-            "repair_medkit", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_CHAIN = register(
-            new HunterChainItem(new Item.Properties().stacksTo(1).durability(6)),
-            "hunter_chain", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_WEAPON = register(
-            new HunterWeaponItem(new Item.Properties().stacksTo(1).durability(96)),
-            "hunter_weapon", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_HAMMER = register(
-            new HunterWeaponItem("hammer", new Item.Properties().stacksTo(1).durability(84)),
-            "hunter_hammer", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_HOOK = register(
-            new HunterWeaponItem("hook", new Item.Properties().stacksTo(1).durability(88)),
-            "hunter_hook", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_PLUGIN_LACERATION = register(
-            new HunterAttackPluginItem("laceration", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_laceration", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_PLUGIN_CONCUSSION = register(
-            new HunterAttackPluginItem("concussion", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_concussion", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_PLUGIN_TRACKING = register(
-            new HunterAttackPluginItem("tracking", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_tracking", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_PLUGIN_SUPPRESSION = register(
-            new HunterAttackPluginItem("suppression", new Item.Properties().stacksTo(4)),
-            "hunter_plugin_suppression", REPAIR_MODE_GROUP);
-
-    public static final Item HUNTER_PULSE = register(
-            new HunterPulseItem(new Item.Properties().stacksTo(1)),
-            "hunter_pulse", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_BLINK = register(
-            new HunterBlinkItem(new Item.Properties().stacksTo(1).durability(4)),
-            "hunter_blink", REPAIR_MODE_GROUP);
-    public static final Item HUNTER_JAMMER = register(
-            new HunterJammerItem(new Item.Properties().stacksTo(1).durability(3)),
-            "hunter_jammer", REPAIR_MODE_GROUP);
-
-    public static final Item SMOKE_PELLET = register(
-            new SmokePelletItem(new Item.Properties().stacksTo(8)),
-            "smoke_pellet", REPAIR_MODE_GROUP);
-    public static final Item DECOY_BEACON = register(
-            new DecoyBeaconItem(new Item.Properties().stacksTo(4)),
-            "decoy_beacon", REPAIR_MODE_GROUP);
-    public static final Item ESCAPE_GRAPPLE = register(
-            new EscapeGrappleItem(new Item.Properties().stacksTo(1).durability(3)),
-            "escape_grapple", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_AREA_KEY = register(
-            new RepairRouteItem("area_key", new Item.Properties().stacksTo(8)),
-            "repair_area_key", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_OLD_KEY = register(
-            new RepairRouteItem("old_key", new Item.Properties().stacksTo(4)),
-            "repair_old_key", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_FUSE = register(
-            new RepairRouteItem("fuse", new Item.Properties().stacksTo(4)),
-            "repair_fuse", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_GEAR_HANDLE = register(
-            new RepairRouteItem("gear_handle", new Item.Properties().stacksTo(4)),
-            "repair_gear_handle", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_CROWBAR = register(
-            new RepairRouteItem("crowbar", new Item.Properties().stacksTo(1).durability(24)),
-            "repair_crowbar", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_LOCKPICK = register(
-            new RepairRouteItem("lockpick", new Item.Properties().stacksTo(8)),
-            "repair_lockpick", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_BATTERY = register(
-            new RepairRouteItem("battery", new Item.Properties().stacksTo(4)),
-            "repair_battery", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_VALVE_HANDLE = register(
-            new RepairRouteItem("valve_handle", new Item.Properties().stacksTo(4)),
-            "repair_valve_handle", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_BOLT_CUTTER = register(
-            new RepairRouteItem("bolt_cutter", new Item.Properties().stacksTo(1).durability(18)),
-            "repair_bolt_cutter", REPAIR_MODE_GROUP);
-    public static final Item REPAIR_PRESET_WAND = register(
-            new RepairPresetWandItem(new Item.Properties().stacksTo(1)),
-            "repair_preset_wand", REPAIR_MODE_GROUP);
     public static final Item PILL = register(
             new PillItem((new Item.Properties()).stacksTo(16)
                     .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)
@@ -395,7 +307,7 @@ public class ModItems {
 
     public static final Item DEFIBRILLATOR = register(
             new DefibrillatorItem(new Item.Properties().stacksTo(1)),
-            "defibrillator", REPAIR_MODE_GROUP);
+            "defibrillator", ROLE_ITEMS_GROUP);
 
     public static final Item BOXING_GLOVE = register(
             new BoxingGloveItem(new Item.Properties().stacksTo(1)),

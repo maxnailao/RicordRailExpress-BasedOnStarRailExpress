@@ -280,7 +280,6 @@ public class CommonClientHudRenderer {
     registerFather();
     UnifiedSkillHud.register();
     MurderTimeHud.register();
-    RepairEscapeHud.register();
     registerSons();
     OtherRolesRegister.registerSons();
   }

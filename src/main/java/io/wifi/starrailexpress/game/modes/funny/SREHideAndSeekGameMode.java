@@ -2,7 +2,6 @@ package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
-import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -208,12 +207,11 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
                 role -> role.identifier() == SpecialGameModeRoles.SEEKER.identifier());
         RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        role.isVigilanteTeam() && !role.isOtherModeRole() && !(role instanceof RepairRole));
+                        role.isVigilanteTeam() && !role.isOtherModeRole());
         // 中立池
         RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
                 role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
                         !role.isOtherModeRole() &&
-                        !(role instanceof RepairRole) &&
                         ((!role.canUseKiller() &&
                                 !role.isInnocent()) || role.isNeutrals())
                         &&
@@ -222,7 +220,6 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
                         !role.isOtherModeRole() &&
-                        !(role instanceof RepairRole) &&
                         !role.isVigilanteTeam() &&
                         !role.canUseKiller() &&
                         !role.isNeutrals() &&

@@ -2,7 +2,6 @@ package io.wifi.starrailexpress.client.gui.screen.roster;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.minecraft.client.gui.GuiGraphics;
@@ -136,8 +135,8 @@ abstract class AbstractRoleRosterScreen extends Screen {
             // 都调用了 setCanBeRandomedByOtherRoles(false)，若以此过滤会被错误地排除在名单之外。
             //
             // 过滤口径与谋杀模式 SREMurderGameMode.getAllRoles 的池构建保持一致：排除其它模式职业
-            // （isOtherModeRole）以及修理逃脱模式的 RepairRole（如蛮徒/狱卒/追踪者等），避免它们泄漏进名单。
-            return !role.isOtherModeRole() && !(role instanceof RepairRole) && role.getOccupiedRoleCount() <= 1;
+            // （isOtherModeRole），避免它们泄漏进名单。
+            return !role.isOtherModeRole() && role.getOccupiedRoleCount() <= 1;
         } catch (Throwable ignored) {
             return false;
         }

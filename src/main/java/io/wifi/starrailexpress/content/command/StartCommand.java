@@ -56,19 +56,9 @@ public class StartCommand {
       return -1;
     }
 
-    if (gameMode == SREGameModes.REPAIR_ESCAPE_MODE) {
-      // 节约写入玩家NBT带来的网络消耗，所以需要手动启用才会进行同步。
-      // 否则禁止游戏。
-      if (!SREConfig.instance().enableRepairMode) {
-        source.sendFailure(Component.translatable("game.start_error.disabled_gamemode", gameMode.getName(),
-            Component.translatable("text.autoconfig.starrailexpress.option.enableRepairMode"), "enableRepairMode",
-            "true"));
-        return -1;
-      }
-    }
     // 检查当前地图是否支持该游戏模式
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
-    if (gameMode != SREGameModes.REPAIR_ESCAPE_MODE && gameMode != SREGameModes.WEREWOLF_MODE && areas.gameModes != null && !areas.gameModes.isEmpty()) {
+    if (gameMode != SREGameModes.WEREWOLF_MODE && areas.gameModes != null && !areas.gameModes.isEmpty()) {
       String modeId = gameMode.identifier.getPath();
       boolean isSupported = areas.gameModes.contains(modeId);
       if (!isSupported) {

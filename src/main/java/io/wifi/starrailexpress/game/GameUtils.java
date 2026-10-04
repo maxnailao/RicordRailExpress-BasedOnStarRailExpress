@@ -424,12 +424,6 @@ public class GameUtils {
             return;
         }
         isStartingGame = true;
-        // 修机模式：跳过正常 Areas 加载，使用自动生成的庄园地图
-        if (gameMode == SREGameModes.REPAIR_ESCAPE_MODE) {
-            SRE.LOGGER.info("Repair Escape mode - skipping area loading, using auto-generated manor");
-            trueStartGame(world, gameMode, time);
-            return;
-        }
         // 狼人杀模式：加载地图配置但跳过区域重置
         // 玩家收集使用默认流程：准备区域内且参与游戏的玩家入局，其余玩家旁观
         if (gameMode == SREGameModes.WEREWOLF_MODE) {
