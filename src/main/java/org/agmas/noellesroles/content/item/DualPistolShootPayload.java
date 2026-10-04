@@ -33,9 +33,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 双枪（左手/右手）射击网络包。
- * - leftHand=true 表示双枪-左手（副手）开枪，服务端会重新校验"双枪-右手处于冷却中"的核心判定
+ * - leftHand=true 表示双枪-左手（副手）开枪，服务端只校验左手枪自身的冷却
  * - leftHand=false 表示双枪-右手（主手）开枪
- * 命中与掉落逻辑与左轮手枪保持一致。
+ * 左右手冷却互相独立。命中与掉落逻辑与左轮手枪保持一致。
  */
 public record DualPistolShootPayload(boolean leftHand, int targetId) implements CustomPacketPayload {
 
@@ -62,19 +62,17 @@ public record DualPistolShootPayload(boolean leftHand, int targetId) implements 
                 stack = player.getOffhandItem();
                 if (!stack.is(ModItems.DUAL_PISTOL_LEFT))
                     return;
-                // 核心判定：只有双枪-右手处于冷却中时，双枪-左手才能开枪（两枪轮流开火）
-                if (!cooldowns.isOnCooldown(ModItems.DUAL_PISTOL_RIGHT))
-                    return;
             } else {
                 stack = player.getMainHandItem();
                 if (!stack.is(ModItems.DUAL_PISTOL_RIGHT))
                     return;
             }
+            // 独立冷却校验：每把枪只受自身冷却限制
             if (cooldowns.isOnCooldown(stack.getItem()))
                 return;
 
             // 设置与左轮手枪相同的冷却（创造模式也进入冷却：
-            // 冷却是左手枪"右手枪在冷却中才能开枪"判定的同步手段，不能跳过）
+            // 冷却需同步到客户端，防止连点，不能跳过）
             cooldowns.addCooldown(stack.getItem(), DualPistolItem.getRevolverCooldown());
 
             // 扳机声与枪声（与左轮手枪一致）

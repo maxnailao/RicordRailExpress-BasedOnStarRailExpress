@@ -1492,6 +1492,7 @@
   "message.noellesroles.candlebearer.charge_gained": "获得隐身机会：%s/%s",
   "announcement.star.win.candlebearer": "秉烛人胜利！",
   "announcement.star.win.shuangqianghuigeichudaan_shuangqiangke": "双枪客胜利！",
+  "game.win.star.shuangqianghuigeichudaan_shuangqiangke":"双枪客胜利！",
   "item.noellesroles.candlebearer.shop.invisibility_charge": "隐身机会",
   "item.noellesroles.candlebearer.shop.invisibility_charge.lore1": "购买后立即获得一次隐身机会（最多储存5次）",
   "item.noellesroles.candlebearer.shop.candle": "蜡烛",

@@ -1058,7 +1058,7 @@ public class ModItems {
     /**
      * 双枪-左手
      * - 仅在副手时可以右键开枪，射程与贴图同左轮手枪
-     * - 只有双枪-右手处于冷却中时才能开枪，与右手枪轮流开火
+     * - 冷却独立计算，与右手枪互不锁定
      */
     public static final Item DUAL_PISTOL_LEFT = register(
             new org.agmas.noellesroles.content.item.DualPistolItem(
@@ -1068,7 +1068,7 @@ public class ModItems {
     /**
      * 双枪-右手
      * - 仅在主手时可以右键开枪，射程与贴图同左轮手枪
-     * - 开枪后进入冷却，冷却期间右键放行给副手的双枪-左手，与左手枪轮流开火
+     * - 冷却独立计算；主手冷却期间右键自动落到副手，由左手枪按自己的冷却开枪
      */
     public static final Item DUAL_PISTOL_RIGHT = register(
             new org.agmas.noellesroles.content.item.DualPistolItem(

@@ -27,13 +27,14 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 双枪（左手/右手）
- * - 双枪-右手：仅在主手时可以右键开枪
- * - 双枪-左手：仅在副手时可以右键开枪，且只有当双枪-右手处于冷却中时才能开枪
- * - 两枪共用左轮手枪的射程、贴图与冷却，形成轮流开枪的效果：
- *   右手开枪进入冷却 -> 右键放行到副手 -> 左手开枪进入冷却 -> 右手冷却结束后再开枪 ...
+ * - 双枪-右手：仅在主手时可以右键开枪，冷却独立计算
+ * - 双枪-左手：仅在副手时可以右键开枪，冷却独立计算
+ * - 两枪共用左轮手枪的射程、贴图与冷却时长，但冷却互相独立（不再要求"右手冷却中左手才能开"）：
+ *   主手枪不在冷却时右键由右手枪开火；右手枪冷却中右键自动落到副手，由左手枪开火，
+ *   两枪各自按自己的冷却独立射击
  */
 public class DualPistolItem extends SkinableItem implements HeldLikeRevolver {
-    /** 是否为左手枪（左手枪仅副手可用，且需右手枪处于冷却中） */
+    /** 是否为左手枪（左手枪仅副手可用，冷却独立） */
     private final boolean left;
 
     public DualPistolItem(Properties settings, boolean left) {
@@ -61,10 +62,7 @@ public class DualPistolItem extends SkinableItem implements HeldLikeRevolver {
             if (hand != InteractionHand.OFF_HAND) {
                 return InteractionResultHolder.pass(stack);
             }
-            // 核心判定：只有双枪-右手处于冷却中时左手枪才能开枪，保证两枪轮流开火
-            if (!user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_RIGHT)) {
-                return InteractionResultHolder.pass(stack);
-            }
+            // 独立冷却：只检查左手枪自己的冷却，不再要求右手枪处于冷却中
             if (user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_LEFT)) {
                 return InteractionResultHolder.pass(stack);
             }
