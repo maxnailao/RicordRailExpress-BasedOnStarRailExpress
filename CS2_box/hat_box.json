@@ -10,8 +10,18 @@
   "common_skins": [
     "hat/hat_ricord_green_camo"
   ],
-  "uncommon_skins": [],
-  "rare_skins": [],
+  "uncommon_skins": [
+    "hat/hat_ricord_chushimao",
+    "hat/hat_ricord_matongchou",
+    "hat/hat_ricord_kuanggongmao",
+    "hat/hat_ricord_limao",
+    "hat/hat_ricord_green_camo_base",
+    "hat/hat_ricord_green_camo_t"
+  ],
+  "rare_skins": [
+    "hat/hat_ricord_xiaodangao",
+    "hat/hat_ricord_xiaoji"
+  ],
   "epic_skins": [],
   "legendary_skins": [],
   "unbelievable_skins": []

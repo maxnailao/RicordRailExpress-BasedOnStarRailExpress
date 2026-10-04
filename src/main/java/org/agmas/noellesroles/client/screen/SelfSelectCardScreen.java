@@ -5,13 +5,20 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.agmas.harpymodloader.SREDisableManager;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 自选职业卡 GUI：第一步选阵营（杀手/平民/中立/杀手中立/警长），第二步在网格中选该阵营的具体职业。
- * 特殊地图限定、其他模式、不会自然刷新的职业不展示（彩蛋职业除外）。选择后发送 {@code sre:pass selfselect <roleId>}。
+ * 只展示谋杀模式职业：原版基础职业、修理逃脱模式、其他模式、特殊地图限定、不会自然刷新的职业不展示
+ * （彩蛋职业与警长阵营除外）。选择后发送 {@code sre:pass selfselect <roleId>}。
+ *
+ * <p>本局被禁用的职业仍会列出，但以灰色显示且无法点击（服务端也会二次拦截，
+ * 见 {@code ProgressionCommand#selfSelect}）。
  */
 public class SelfSelectCardScreen extends Screen {
 
@@ -24,8 +31,17 @@ public class SelfSelectCardScreen extends Screen {
     private static final int CARD_GAP = 6;
     private static final int GRID_TOP = 70;
 
+    // ===== 配色 =====
+    private static final int BG_NORMAL = 0x30161B30;
+    private static final int BG_HOVER = 0x504488FF;
+    private static final int BG_DISABLED = 0x40000000;
+    private static final int TEXT_NORMAL = 0xFFFFFFFF;
+    private static final int TEXT_DISABLED = 0xFF9A9A9A;
+
     private int selectedFaction = -1;
     private final List<SRERole> selectableRoles = new ArrayList<>();
+    /** 当前列出的职业里，本局被禁用的职业 id */
+    private final Set<String> disabledRoleIds = new HashSet<>();
     private int scrollOffset = 0; // 单位：行
 
     public SelfSelectCardScreen() {
@@ -72,10 +88,17 @@ public class SelfSelectCardScreen extends Screen {
             if (y + CARD_H > height - 40) break;
 
             SRERole role = selectableRoles.get(i);
+            boolean disabled = isDisabled(role);
             boolean hovered = inside(mouseX, mouseY, x, y, CARD_W, CARD_H);
-            g.fill(x, y, x + CARD_W, y + CARD_H, hovered ? 0x504488FF : 0x30161B30);
+            int bg = disabled ? BG_DISABLED : (hovered ? BG_HOVER : BG_NORMAL);
+            g.fill(x, y, x + CARD_W, y + CARD_H, bg);
             g.drawCenteredString(font, truncate(role.getName().getString(), CARD_W - 12),
-                    x + CARD_W / 2, y + (CARD_H - 9) / 2, 0xFFFFFFFF);
+                    x + CARD_W / 2, y + (CARD_H - 9) / 2, disabled ? TEXT_DISABLED : TEXT_NORMAL);
+            if (disabled && hovered) {
+                g.renderTooltip(font, Component.literal("该职业已在本局禁用")
+                        .append("\n")
+                        .append(Component.literal("§7无法使用自选职业卡（卡牌不会被消耗）")), mouseX, mouseY);
+            }
         }
 
         // 返回按钮
@@ -117,6 +140,10 @@ public class SelfSelectCardScreen extends Screen {
                 int y = GRID_TOP + row * (CARD_H + CARD_GAP);
                 if (inside(mouseX, mouseY, x, y, CARD_W, CARD_H)) {
                     SRERole role = selectableRoles.get(i);
+                    // 本局被禁用的职业不可选：不发送命令、不消耗卡牌
+                    if (isDisabled(role)) {
+                        return true;
+                    }
                     sendCommand("sre:pass selfselect " + role.identifier());
                     onClose();
                     return true;
@@ -141,12 +168,22 @@ public class SelfSelectCardScreen extends Screen {
         selectedFaction = factionType;
         scrollOffset = 0;
         selectableRoles.clear();
+        disabledRoleIds.clear();
         for (SRERole role : TMMRoles.ROLES.values()) {
             if (!TMMRoles.isSelfSelectableRole(role)) continue;
             if (roleFactionType(role) != factionType) continue;
             selectableRoles.add(role);
+            // 每帧都查会反复扫描禁用列表，这里在打开阵营时缓存一次。
+            // 判定复用角色介绍界面同一套 SREDisableManager，保证「显示为禁用」和「不可选」一致。
+            if (SREDisableManager.isRoleDisabled(role)) {
+                disabledRoleIds.add(role.identifier().toString());
+            }
         }
         selectableRoles.sort((a, b) -> a.getName().getString().compareTo(b.getName().getString()));
+    }
+
+    private boolean isDisabled(SRERole role) {
+        return role != null && disabledRoleIds.contains(role.identifier().toString());
     }
 
     private int gridCols() {

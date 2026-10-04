@@ -111,6 +111,14 @@ public final class CS2SkinInfo {
         // 瑞科德饰品（帽子/钢盔系列）
         register("hat/hat_ricord_green_camo", "绿色迷彩钢盔+面罩", "瑞科德饰品：绿色迷彩钢盔+面罩，戴在头上");
         register("hat/hat_ricord_cat_headset", "小猫耳机", "瑞科德饰品：猫耳头戴式耳机，戴上后猫耳会立在头上");
+        register("hat/hat_ricord_chushimao", "厨师帽", "瑞科德饰品：雪白的厨师高帽，戴上就像星级大厨");
+        register("hat/hat_ricord_matongchou", "马桶抽", "瑞科德饰品：木柄皮搋子，戴在头上别有一番风味");
+        register("hat/hat_ricord_kuanggongmao", "矿工帽", "瑞科德饰品：带灯的矿工安全帽，照亮漆黑矿道");
+        register("hat/hat_ricord_limao", "礼帽", "瑞科德饰品：绅士黑色礼帽，举手投足皆是风度");
+        register("hat/hat_ricord_green_camo_base", "绿色迷彩钢盔", "瑞科德饰品：绿色迷彩钢盔，只有头盔没有面罩");
+        register("hat/hat_ricord_green_camo_t", "绿色迷彩钢盔+T", "瑞科德饰品：绿色迷彩钢盔加装 T 形挂件");
+        register("hat/hat_ricord_xiaodangao", "小蛋糕", "瑞科德饰品：头顶一块奶油小蛋糕，甜蜜又美味");
+        register("hat/hat_ricord_xiaoji", "小鸡", "瑞科德饰品：毛茸茸的小鸡趴在头顶，叽叽喳喳");
         // 特殊玩偶帽
         registerHat("justacheese", "cheese");
         registerHat("spbgcp", "spbgcp");

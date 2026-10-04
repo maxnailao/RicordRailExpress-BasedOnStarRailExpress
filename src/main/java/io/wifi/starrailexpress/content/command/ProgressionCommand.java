@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.SREDisableManager;
 
 public final class ProgressionCommand {
     private ProgressionCommand() {
@@ -44,6 +45,14 @@ public final class ProgressionCommand {
     private static int selfSelect(ServerPlayer player, String rawRole) {
         ResourceLocation roleId = ResourceLocation.tryParse(rawRole);
         SRERole role = roleId == null ? null : TMMRoles.getRole(roleId);
+        // 本局被禁用的职业不可用自选卡（客户端已置灰并拦截，这里再挡一次防手打命令绕过）
+        if (role != null && SREDisableManager.isRoleDisabled(role)) {
+            player.displayClientMessage(
+                    Component.translatable("message.sre.pass.selfselect_role_disabled",
+                            Harpymodloader.getRoleName(role)),
+                    true);
+            return 0;
+        }
         if (role == null || !TMMRoles.isSelfSelectableRole(role)
                 || !BackpackManager.useSelfSelectCard(player, role)) {
             player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);

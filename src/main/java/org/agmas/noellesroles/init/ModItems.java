@@ -978,6 +978,62 @@ public class ModItems {
             "ricord_cat_headset", RICORD_ACCESSORIES_GROUP);
 
     /**
+     * 瑞科德饰品 - 厨师帽（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_CHUSHIMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_chushimao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 马桶抽（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_MATONGCHOU = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_matongchou", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 矿工帽（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_KUANGGONGMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_kuanggongmao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 礼帽（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_LIMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_limao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 小蛋糕（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_XIAODANGAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xiaodangao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 小鸡（帽子，可在 CS2 仓库穿戴）
+     */
+    public static final Item RICORD_XIAOJI = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xiaoji", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 绿色迷彩钢盔（无面罩，帽子）
+     */
+    public static final Item RICORD_GREEN_CAMO_BASE_HELMET = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_green_camo_base_helmet", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 绿色迷彩钢盔+T（加装 T 形挂件，帽子）
+     */
+    public static final Item RICORD_GREEN_CAMO_T_HELMET = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_green_camo_t_helmet", RICORD_ACCESSORIES_GROUP);
+
+    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒

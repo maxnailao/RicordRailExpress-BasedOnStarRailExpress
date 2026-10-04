@@ -199,6 +199,16 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.HAT, "hat_liyu", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_ricord_green_camo", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_ricord_cat_headset", QualityColor.LEGENDARY);
+        // 瑞科德饰品 — 普通（绿色）品级
+        registerSkin(SkinTypes.HAT, "hat_ricord_chushimao", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_matongchou", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_kuanggongmao", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_limao", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_green_camo_base", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_green_camo_t", QualityColor.UNCOMMON);
+        // 瑞科德饰品 — 稀有（蓝色）品级
+        registerSkin(SkinTypes.HAT, "hat_ricord_xiaodangao", QualityColor.RARE);
+        registerSkin(SkinTypes.HAT, "hat_ricord_xiaoji", QualityColor.RARE);
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }

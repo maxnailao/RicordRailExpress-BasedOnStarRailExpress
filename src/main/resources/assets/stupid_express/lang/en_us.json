@@ -187,6 +187,7 @@
   "sre.pass.exp_progress": "EXP %s/%s",
   "sre.pass.not_active": "Not active",
   "message.sre.pass.faction.assign_failed": "Sorry, you didn't get to play your chosen faction this round. We have compensated you with a corresponding faction card.",
+  "message.sre.pass.selfselect_role_disabled": "Role \"%s\" is disabled this round; the self-select card cannot be used (card not consumed).",
   "sre.pass.faction.activated": "%s (Activated)",
   "sre.pass.faction.killer": "Killer Faction Card",
   "sre.pass.faction.civilian": "Civilian Faction Card",

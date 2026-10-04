@@ -1355,7 +1355,9 @@ public class ModRoles {
             .registerRole(new NormalRole(BETTER_VIGILANTE_ID, new Color(0, 255, 255).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setComponentKey(BetterVigilantePlayerComponent.KEY))
-            .setCanBeRandomedByOtherRoles(false).setDefaultMax(0);
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(0)
+            // 巡警的强化形态，由巡警派生而来，不允许用自选卡直接指定
+            .setSelfSelectable(false);
     public static SRERole BROADCASTER = TMMRoles
             .registerRole(new NormalRole(BROADCASTER_ID, new Color(0, 255, 0).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), true)
@@ -1976,22 +1978,27 @@ public class ModRoles {
             .registerRole(new EggRole(MAFIOSO_ID, new Color(218, 112, 214).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true)
+            // 黑手党链成员：由黑手党体系产生，不允许用自选卡直接指定
+            .setSelfSelectable(false);
     public static SRERole JANITOR = TMMRoles
             .registerRole(new EggRole(JANITOR_ID, new Color(255, 105, 180).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true)
+            .setSelfSelectable(false);
     public static SRERole NUTRITIONIST = TMMRoles
             .registerRole(new EggRole(NUTRITIONIST_ID, new Color(50, 205, 50).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true)
+            .setSelfSelectable(false);
     public static SRERole PARASOL = TMMRoles
             .registerRole(new EggRole(PARASOL_ID, new Color(0, 139, 139).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true)
+            .setSelfSelectable(false);
 
     // 验尸官
     // 技能（搬尸）：对着尸体按技能键搬起尸体，10秒后自动落下，放下后90秒冷却
@@ -2902,6 +2909,10 @@ public class ModRoles {
             .setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(false)
             .setCanBeRandomedByOtherRoles(false)
+            // 监狱图专属：打上 specialMapRole 后，自选职业卡会自动排除它
+            // （TMMRoles.isSelfSelectableRole 会滤掉所有特殊地图职业），
+            // 本局上限统一由 InitModRolesMax.applySpecialMapRoles 按 prisonRolesMaps 决定
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.PRISON)
             .setDefaultMax(1);
 
     /**
@@ -2931,6 +2942,10 @@ public class ModRoles {
         }
     }).setVigilanteTeam(true).setCanPickUpRevolver(true)
             .setCanSeeCoin(true).setCanSeeTime(true)
+            // 监狱图专属：打上 specialMapRole 后，自选职业卡会自动排除它
+            // （TMMRoles.isSelfSelectableRole 会滤掉所有特殊地图职业），
+            // 本局上限统一由 InitModRolesMax.applySpecialMapRoles 按 prisonRolesMaps 决定
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.PRISON)
             .setDefaultMax(1);
 
     /**
@@ -2989,6 +3004,8 @@ public class ModRoles {
             }).setComponentKey(org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchPlayerComponent.KEY)
             .setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false)
+            // 魔女只能由预备魔女转化产生，不允许用自选卡直接指定
+            .setSelfSelectable(false)
             .setDefaultMax(0)
             // 与预备魔女互为「相关职业」：职业介绍的「关联内容」里可以互相跳转（仅用于展示，不参与刷新）
             .addBothRelatedRole(ModRoles.PRE_WITCH);
@@ -3529,7 +3546,9 @@ public class ModRoles {
             .setOccupiedRoleCount(2)
             .setCanBeRandomedByOtherRoles(false)
             // 默认不参与刷新：每局由 InitModRolesMax 按概率决定，刷新时监护人由关联职业展开补齐
-            .setDefaultMax(0);
+            .setDefaultMax(0)
+            // 由概率刷新 / 关联职业成对产生，不允许用自选卡直接指定
+            .setSelfSelectable(false);
 
     /**
      * 监护人角色 - 平民阵营
@@ -3554,7 +3573,9 @@ public class ModRoles {
             .setOccupiedRoleCount(2)
             .setCanBeRandomedByOtherRoles(false)
             // 默认不参与刷新：只能作为智力障碍患者的关联职业成对出现
-            .setDefaultMax(0);
+            .setDefaultMax(0)
+            // 只作为关联职业与智力障碍患者成对出现，不允许用自选卡直接指定
+            .setSelfSelectable(false);
 
     /**
      * 钓鱼佬角色 - 平民阵营
@@ -4515,7 +4536,9 @@ public class ModRoles {
                             new MobEffectInstance(MobEffects.DIG_SPEED, 30 * 20, 2, true, false, true)
                     ))))
             .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
-            .setDefaultMax(0).setOtherModeRole(true);
+            .setDefaultMax(0).setOtherModeRole(true)
+            // 亡命徒变体：随本局亡命徒玩法生成，不允许用自选卡直接指定
+            .setSelfSelectable(false);
 
     /**
      * 清算者 - 亡命徒阵营变体
@@ -4527,7 +4550,9 @@ public class ModRoles {
             new LooseEndRole(LIQUIDATOR_LOOSE_END_ID, 0x9F0000, false, false, SRERole.MoodType.NONE, -1, false,
                     new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 1, true, false, true)))
             .setCanSeeTime(true).setCanUseInstinct(true).setCanBeRandomedByOtherRoles(false)
-            .setDefaultMax(0).setOtherModeRole(true);
+            .setDefaultMax(0).setOtherModeRole(true)
+            // 亡命徒变体：随本局亡命徒玩法生成，不允许用自选卡直接指定
+            .setSelfSelectable(false);
 
     /**
      * 史莱姆角色 - 平民阵营
