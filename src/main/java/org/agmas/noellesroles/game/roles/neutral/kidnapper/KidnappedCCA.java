@@ -60,6 +60,12 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public final Player player;
     public UUID kidnapper;
     public boolean isKidnapped = false;
+    /**
+     * 人质「已被放下/原地被绑」姿态标记：true 表示处于被绑且不再被拖拽（原地站立），
+     * 客户端据此渲染「双手背后、低头」的捆绑动作；拖拽跟随过程中为 false。
+     * 需同步给所有客户端（shouldSyncWith=true），供 PlayerModel.setupAnim mixin 读取。
+     */
+    public boolean boundIdle = false;
     /** 绑架对象是否为杀手（狼） */
     public boolean isKillerTarget = false;
     /** 绑架对象是否为中立阵营：中立没有队友，解绳解锁时间更长（120 秒），但到点后任何人都能救 */
@@ -104,6 +110,8 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         this.kidnapper = kidnapper;
         this.isKidnapped = true;
         this.isKillerTarget = killerTarget;
+        // 新绑架默认进入拖拽跟随，非原地捆绑
+        this.boundIdle = false;
         // 中立阵营人质：解绳解锁时间延长到 120 秒，但到点后任何玩家都能来解绳
         SRERole role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
         this.isNeutralTarget = !killerTarget && role != null && role.isNeutrals();
@@ -176,10 +184,19 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         }
     }
 
+    /** 标记人质为「原地被绑」（放下/绑回房间）：触发客户端捆绑姿态渲染 */
+    public void markBoundIdle() {
+        if (!isKidnapped)
+            return;
+        this.boundIdle = true;
+        sync();
+    }
+
     /** 释放；escaped=true（挣脱/被救）时提示绑匪「有人逃脱了」 */
     public void release(boolean escaped) {
         UUID kUuid = this.kidnapper;
         this.isKidnapped = false;
+        this.boundIdle = false;
         this.kidnapper = null;
         this.isKillerTarget = false;
         this.isNeutralTarget = false;
@@ -211,6 +228,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     public void init() {
         this.kidnapper = null;
         this.isKidnapped = false;
+        this.boundIdle = false;
         this.isKillerTarget = false;
         this.isNeutralTarget = false;
         this.escapeTicks = 0;
@@ -374,6 +392,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("isKidnapped", isKidnapped);
+        tag.putBoolean("boundIdle", boundIdle);
         tag.putBoolean("isKillerTarget", isKillerTarget);
         tag.putBoolean("isNeutralTarget", isNeutralTarget);
         tag.putBoolean("usedSelfEscape", usedSelfEscape);
@@ -390,6 +409,7 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         isKidnapped = tag.getBoolean("isKidnapped");
+        boundIdle = tag.getBoolean("boundIdle");
         isKillerTarget = tag.getBoolean("isKillerTarget");
         isNeutralTarget = tag.getBoolean("isNeutralTarget");
         usedSelfEscape = tag.getBoolean("usedSelfEscape");

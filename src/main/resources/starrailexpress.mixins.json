@@ -53,6 +53,7 @@
   "client": [
     "client.effects.InvisiblePlayer",
     "client.emote.PlayerModelEmoteMixin",
+    "client.kidnap.KidnappedBoundPoseMixin",
     "client.AbstractClientPlayerEntityMixin",
     "client.AdvancedCameraMixin",
     "client.CameraPositionMixin",

@@ -51,9 +51,9 @@ public final class AnxingSkinHandler {
      * <p>客户端/服务端均可调用（装备查询自动走对应侧的数据源）。</p>
      */
     public static boolean hasAnxingSkinEquipped(Player player, ItemStack itemStack) {
-        // 1. 优先检查 ItemStack 自身的皮肤数据组件
-        if (itemStack.has(SREDataComponentTypes.SKIN)) {
-            return SKIN_ID.equals(itemStack.get(SREDataComponentTypes.SKIN));
+        // 1. 物品栈显式携带暗星皮肤 → 直接命中
+        if (SKIN_ID.equals(itemStack.get(SREDataComponentTypes.SKIN))) {
+            return true;
         }
         // 2. 获取物品的皮肤类型（如 "knife"），而非注册路径
         String skinType;
@@ -62,7 +62,7 @@ public final class AnxingSkinHandler {
         } else {
             skinType = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
         }
-        // 3. 按皮肤类型查询玩家装备的皮肤
+        // 3. 按皮肤类型实时查询玩家装备的皮肤（权威来源，避免过期组件导致特效/形态失效）
         String equippedSkin = PlayerEconomyManager.getEquippedSkinForItemType(player, skinType);
         return SKIN_ID.equals(equippedSkin);
     }
