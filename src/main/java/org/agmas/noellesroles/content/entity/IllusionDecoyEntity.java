@@ -90,6 +90,14 @@ public class IllusionDecoyEntity extends PathfinderMob {
     private static final EntityDataAccessor<Float> VIEW_X_ROT = SynchedEntityData.defineId(
             IllusionDecoyEntity.class, EntityDataSerializers.FLOAT);
 
+    /**
+     * 本体体积缩放（{@code Attributes.SCALE} 的值）。
+     * <p>矮小 / 侏儒 / 高大等修饰符改的是玩家的 SCALE 属性，分身必须跟着一起缩放，
+     * 否则一眼就能通过体积分辨真假。判定箱同样受本体 SCALE 影响，所以两边一致。
+     */
+    private static final EntityDataAccessor<Float> DECOY_SCALE = SynchedEntityData.defineId(
+            IllusionDecoyEntity.class, EntityDataSerializers.FLOAT);
+
     private static final double BASE_SPEED = 0.25D;
 
     /** 所有者（幻术师）UUID */
@@ -152,6 +160,7 @@ public class IllusionDecoyEntity extends PathfinderMob {
         builder.define(ITEM_LOCKED, false);
         builder.define(POSE_FLAGS, 0);
         builder.define(VIEW_X_ROT, 0.0F);
+        builder.define(DECOY_SCALE, 1.0F);
     }
 
     /**
@@ -188,6 +197,8 @@ public class IllusionDecoyEntity extends PathfinderMob {
         setViewXRot(owner.getXRot());
         this.setXRot(owner.getXRot());
         this.xRotO = owner.getXRot();
+        // 体积与本体一致：矮小/侏儒/高大等修饰符改的是玩家的 SCALE 属性
+        setDecoyScale(readOwnerScale(owner));
         // 姿态取「放置瞬间」所有者的动作（蹲下/坐着/举刀/疾跑）
         syncPoseFrom(owner);
     }
@@ -206,6 +217,19 @@ public class IllusionDecoyEntity extends PathfinderMob {
         if (owner.isPassenger()) flags |= POSE_SITTING;
         if (!owner.getOffhandItem().isEmpty()) flags |= POSE_OFFHAND_ITEM;
         setPoseFlags(flags);
+    }
+
+    /** 读本体的 SCALE 属性值；拿不到就按 1.0（正常体型）处理 */
+    private static float readOwnerScale(Player owner) {
+        try {
+            var attr = owner.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
+            if (attr != null) {
+                return (float) attr.getValue();
+            }
+        } catch (Exception ignored) {
+            // 属性不存在时退回正常体型
+        }
+        return 1.0F;
     }
 
     public UUID getSkinUuid() {
@@ -242,6 +266,22 @@ public class IllusionDecoyEntity extends PathfinderMob {
 
     public void setViewXRot(float xRot) {
         this.entityData.set(VIEW_X_ROT, xRot);
+    }
+
+    /** 本体体积缩放（1.0 = 正常体型） */
+    public float getDecoyScale() {
+        return this.entityData.get(DECOY_SCALE);
+    }
+
+    public void setDecoyScale(float scale) {
+        float s = scale <= 0.0F ? 1.0F : scale;
+        this.entityData.set(DECOY_SCALE, s);
+        // 同时写进 SCALE 属性：1.21 里 Entity.getDimensions() = 默认体积 × getScale()，
+        // 而 getScale() 读的就是这个属性。判定箱和渲染体积因此保持一致。
+        var attr = this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
+        if (attr != null && Math.abs(attr.getBaseValue() - s) > 1.0E-4D) {
+            attr.setBaseValue(s);
+        }
     }
 
     /** 当前是否处于「坐着」姿态（放置瞬间本体正坐在座位上） */
@@ -313,6 +353,8 @@ public class IllusionDecoyEntity extends PathfinderMob {
         }
         // 姿态**只在 setup() 取样一次**（放置瞬间），之后固定不变：
         // 蹲下放出来就是蹲着的分身、坐着放就是坐着的，放开按键也不会跟着站起来。
+        // 体积例外：修饰符随时可能增减（得到/失去矮小），所以每 tick 跟随本体 SCALE。
+        setDecoyScale(readOwnerScale(owner));
 
         int mode = getBehaviorMode();
         switch (mode) {

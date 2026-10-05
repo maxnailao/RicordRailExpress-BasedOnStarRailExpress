@@ -120,13 +120,20 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             // 影子：原版影子是 LivingEntityRenderer 内部私有逻辑，EntityRenderer 只暴露
             // getShadowRadius，没有可调用的公共方法；而本渲染器走的是「假玩家」路线，
             // 所以这里手动在脚下画一个原版阴影贴图的贴地四边形，效果与真身一致。
-            renderShadow(fakePlayer, matrices, vertexConsumers);
+            float decoyScale = entity.getDecoyScale();
+            renderShadow(fakePlayer, matrices, vertexConsumers, decoyScale);
 
             boolean sitting = (poseFlags & IllusionDecoyEntity.POSE_SITTING) != 0;
             if (sitting) {
                 SITTING_DECOYS.add(fakePlayer.getUUID());
             }
             try {
+                // 体积与本体一致（矮小/侏儒/高大等修饰符）：缩放整个分身，
+                // 同时位移也按比例缩放，保证脚仍踩在原地而不是浮起来。
+                if (decoyScale != 1.0F) {
+                    matrices.scale(decoyScale, decoyScale, decoyScale);
+                    matrices.translate(0.0F, (1.0F - decoyScale) / decoyScale, 0.0F);
+                }
                 instance.getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0.0D, 0, tickDelta, matrices,
                         vertexConsumers, light);
             } finally {
@@ -154,7 +161,7 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
      * 找不到就退回分身自身高度。这样站在地面、台阶、椅子上都不会把影子画到方块里面去。
      */
     private static void renderShadow(RemotePlayer fakePlayer, PoseStack matrices,
-            MultiBufferSource vertexConsumers) {
+            MultiBufferSource vertexConsumers, float decoyScale) {
         Level level = fakePlayer.level();
         if (level == null) {
             return;
@@ -179,7 +186,8 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
         // 转到以影子中心为原点的局部坐标，方便只用一个矩阵直接写顶点
         matrices.translate(x, shadowY + 0.01D, z);
         Matrix4f m = matrices.last().pose();
-        float r = SHADOW_RADIUS;
+        // 影子随本身体积一起缩放（矮小 → 影子也小）
+        float r = SHADOW_RADIUS * Math.max(0.1F, decoyScale);
         // 贴地四边形：朝上，UV 覆盖整张贴图（阴影贴图自带羽化 alpha）
         buffer.addVertex(m, -r, 0.0F, -r).setColor(1.0F, 1.0F, 1.0F, SHADOW_ALPHA)
                 .setUv(0.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY)
