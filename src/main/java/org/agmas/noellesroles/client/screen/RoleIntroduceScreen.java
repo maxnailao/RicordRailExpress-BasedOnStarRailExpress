@@ -114,6 +114,9 @@ public class RoleIntroduceScreen extends Screen {
     public static final List<RoleCategory> CATEGORIES = new ArrayList<>();
     static {
         CATEGORIES.add(new RoleCategory("screen.roleintroduce.category.all", 0xFFEEEEEE, item -> true));
+        // 特殊职业：只在特定地图刷新的职业（specialMapRole != ALL，如雪怪/潜水员/预备魔女等）
+        CATEGORIES.add(new RoleCategory("screen.roleintroduce.category.special", 0xFFDD8844,
+                item -> item instanceof SRERole r && r.isSpecialMapRole()));
         CATEGORIES.add(new RoleCategory("display.type.role.innocent", 0xFF44BB66,
                 item -> item instanceof SRERole r && (PlayerRoleWeightManager.getRoleType(r) == 0
                         || PlayerRoleWeightManager.getRoleType(r) == 1)));

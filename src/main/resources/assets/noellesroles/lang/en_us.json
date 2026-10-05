@@ -1519,6 +1519,7 @@
   "==================== 所有职业介绍UI ====================": "",
   "display.type.role": "Class",
   "screen.roleintroduce.category.all": "All",
+  "screen.roleintroduce.category.special": "Special Roles",
   "screen.roleintroduce.category.item": "Items",
   "screen.roleintroduce.category.sponsor": "Supporters",
   "block.noellesroles.custom_player_plush": "Custom Player Plush",

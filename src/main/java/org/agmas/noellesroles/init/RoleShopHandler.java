@@ -1226,6 +1226,24 @@ public class RoleShopHandler {
                     185,
                     ShopEntry.Type.WEAPON));
 
+            // 反人员地雷 - 150金币（长按右键3秒放置，杀手阵营可见）
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.LANDMINE.getDefaultInstance(),
+                    150,
+                    ShopEntry.Type.WEAPON));
+
+            // RPG-7 火箭筒 - 100金币
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.RPG7.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.WEAPON));
+
+            // RPG-7 火箭弹 - 300金币
+            GANGSTERS_SHOP.add(new ShopEntry(
+                    ModItems.RPG7_AMMO.getDefaultInstance(),
+                    300,
+                    ShopEntry.Type.WEAPON));
+
             // C4炸药 - 280金币
             GANGSTERS_SHOP.add(new ShopEntry(
                     ModItems.C4.getDefaultInstance(),
@@ -1244,12 +1262,6 @@ public class RoleShopHandler {
                     80,
                     ShopEntry.Type.TOOL));
 
-            // 反人员地雷 - 150金币（长按右键3秒放置，杀手阵营可见）
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.LANDMINE.getDefaultInstance(),
-                    150,
-                    ShopEntry.Type.WEAPON));
-
             // 关灯 - 使用配置价格
             GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
                     ShopEntry.Type.TOOL) {
@@ -1257,18 +1269,6 @@ public class RoleShopHandler {
                     return SREPlayerShopComponent.useBlackout(player);
                 }
             });
-
-            // RPG-7 火箭筒 - 100金币
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.RPG7.getDefaultInstance(),
-                    100,
-                    ShopEntry.Type.WEAPON));
-
-            // RPG-7 火箭弹 - 300金币
-            GANGSTERS_SHOP.add(new ShopEntry(
-                    ModItems.RPG7_AMMO.getDefaultInstance(),
-                    300,
-                    ShopEntry.Type.WEAPON));
         }
 
         // ==================== 钳工商店 ====================

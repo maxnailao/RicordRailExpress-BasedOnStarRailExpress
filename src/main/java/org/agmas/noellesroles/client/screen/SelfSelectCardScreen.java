@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.client.util.PinYinUtils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -39,13 +40,35 @@ public class SelfSelectCardScreen extends Screen {
     private static final int TEXT_DISABLED = 0xFF9A9A9A;
 
     private int selectedFaction = -1;
+    /** 当前阵营的**全部**可选职业（不受搜索影响） */
+    private final List<SRERole> allFactionRoles = new ArrayList<>();
+    /** 应用搜索过滤后、真正显示在网格里的职业 */
     private final List<SRERole> selectableRoles = new ArrayList<>();
     /** 当前列出的职业里，本局被禁用的职业 id */
     private final Set<String> disabledRoleIds = new HashSet<>();
     private int scrollOffset = 0; // 单位：行
 
+    // ===== 搜索框 =====
+    private static final int SEARCH_H = 18;
+    private static final int SEARCH_TOP = 24;
+    private String searchText = "";
+    private boolean searchFocused = false;
+
     public SelfSelectCardScreen() {
         super(Component.literal("自选职业卡"));
+    }
+
+    /** 搜索框矩形：宽度取 2 列卡片宽，水平居中 */
+    private int searchX() {
+        return width / 2 - searchW() / 2;
+    }
+
+    private int searchW() {
+        return Math.min(320, Math.max(160, gridCols() * (CARD_W + CARD_GAP) - CARD_GAP));
+    }
+
+    private boolean isInSearchBox(double mx, double my) {
+        return inside(mx, my, searchX(), SEARCH_TOP, searchW(), SEARCH_H);
     }
 
     @Override
@@ -73,8 +96,13 @@ public class SelfSelectCardScreen extends Screen {
 
     private void renderRoleSelection(GuiGraphics g, int mouseX, int mouseY) {
         g.drawCenteredString(font, "选择职业", width / 2, 40, 0xFFCCCCCC);
+
+        // ── 搜索框（职业太多时用来快速定位）──
+        renderSearchBox(g, mouseX, mouseY);
+
         if (selectableRoles.isEmpty()) {
-            g.drawCenteredString(font, "该阵营没有可选职业", width / 2, 90, 0xFF999999);
+            String msg = allFactionRoles.isEmpty() ? "该阵营没有可选职业" : "没有匹配「" + searchText + "」的职业";
+            g.drawCenteredString(font, msg, width / 2, 90, 0xFF999999);
         }
 
         int cols = gridCols();
@@ -112,11 +140,45 @@ public class SelfSelectCardScreen extends Screen {
         g.drawString(font, hint, width - font.width(hint) - 10, by + 6, 0xFFAAAAAA, false);
     }
 
+    /** 搜索框：点击聚焦后可直接输入，支持中文名 / 职业 id / 拼音 */
+    private void renderSearchBox(GuiGraphics g, int mouseX, int mouseY) {
+        int sx = searchX();
+        int sw = searchW();
+        boolean hovered = isInSearchBox(mouseX, mouseY);
+        int border = searchFocused ? 0xFF4488FF : (hovered ? 0xFF888888 : 0xFF555555);
+        g.fill(sx, SEARCH_TOP, sx + sw, SEARCH_TOP + SEARCH_H, 0xC0101420);
+        g.renderOutline(sx, SEARCH_TOP, sw, SEARCH_H, border);
+
+        String shown = searchText.isEmpty() ? "搜索职业…" : searchText;
+        int color = searchText.isEmpty() ? 0xFF777777 : 0xFFFFFFFF;
+        g.drawString(font, shown, sx + 5, SEARCH_TOP + (SEARCH_H - 8) / 2, color, false);
+
+        // 聚焦时画一个闪烁光标
+        if (searchFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
+            int cx = sx + 5 + font.width(searchText);
+            g.fill(cx, SEARCH_TOP + 3, cx + 1, SEARCH_TOP + SEARCH_H - 3, 0xFFFFFFFF);
+        }
+
+        // 右侧显示命中数量，方便判断是否搜到
+        if (!searchText.isEmpty()) {
+            String cnt = selectableRoles.size() + " 项";
+            g.drawString(font, cnt, sx + sw - 4 - font.width(cnt), SEARCH_TOP + (SEARCH_H - 8) / 2,
+                    0xFF88CC88, false);
+        }
+    }
+
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
+        // 搜索框最先处理：点它只切换聚焦，不要穿透到下面的技能格
+        if (selectedFaction >= 0 && isInSearchBox(mouseX, mouseY)) {
+            searchFocused = true;
+            return true;
+        }
+        searchFocused = false;
         if (selectedFaction < 0) {
             for (int i = 0; i < FACTION_TYPES.length; i++) {
                 if (inside(mouseX, mouseY, width / 2 - 110, 70 + i * 32, 220, 26)) {
@@ -153,6 +215,49 @@ public class SelfSelectCardScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    /** 搜索框聚焦时吞掉字符输入；Esc 先退出搜索，再退出界面 */
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (searchFocused && selectedFaction >= 0 && !Character.isISOControl(codePoint)) {
+            searchText += codePoint;
+            applySearchFilter();
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (searchFocused && selectedFaction >= 0) {
+            switch (keyCode) {
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE -> {
+                    if (!searchText.isEmpty()) {
+                        searchText = searchText.substring(0, searchText.length() - 1);
+                        applySearchFilter();
+                    }
+                    return true;
+                }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE -> {
+                    // 第一下先退出搜索框，不直接关界面，避免误触关掉
+                    searchFocused = false;
+                    return true;
+                }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE -> {
+                    searchText = "";
+                    applySearchFilter();
+                    return true;
+                }
+                case org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER, org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER -> {
+                    searchFocused = false;
+                    return true;
+                }
+                default -> {
+                }
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (selectedFaction >= 0) {
@@ -167,19 +272,46 @@ public class SelfSelectCardScreen extends Screen {
     private void selectFaction(int factionType) {
         selectedFaction = factionType;
         scrollOffset = 0;
+        searchText = "";
+        searchFocused = true; // 进阵营后直接把焦点给搜索框，方便立刻输入
+        allFactionRoles.clear();
         selectableRoles.clear();
         disabledRoleIds.clear();
         for (SRERole role : TMMRoles.ROLES.values()) {
             if (!TMMRoles.isSelfSelectableRole(role)) continue;
             if (roleFactionType(role) != factionType) continue;
-            selectableRoles.add(role);
+            allFactionRoles.add(role);
             // 每帧都查会反复扫描禁用列表，这里在打开阵营时缓存一次。
             // 判定复用角色介绍界面同一套 SREDisableManager，保证「显示为禁用」和「不可选」一致。
             if (SREDisableManager.isRoleDisabled(role)) {
                 disabledRoleIds.add(role.identifier().toString());
             }
         }
-        selectableRoles.sort((a, b) -> a.getName().getString().compareTo(b.getName().getString()));
+        allFactionRoles.sort((a, b) -> a.getName().getString().compareTo(b.getName().getString()));
+        applySearchFilter();
+    }
+
+    /**
+     * 按 {@link #searchText} 过滤出要显示的职业。
+     * <p>匹配中文名、职业 id，以及中文名的拼音（复用角色介绍界面同款 {@code PinYinUtils}），
+     * 这样中文名打不出字也能用拼音找。
+     */
+    private void applySearchFilter() {
+        selectableRoles.clear();
+        String q = searchText == null ? "" : searchText.trim();
+        for (SRERole role : allFactionRoles) {
+            if (q.isEmpty()) {
+                selectableRoles.add(role);
+                continue;
+            }
+            String name = role.getName().getString();
+            if (name.toLowerCase().contains(q.toLowerCase())
+                    || role.identifier().toString().toLowerCase().contains(q.toLowerCase())
+                    || PinYinUtils.contains(q, name)) {
+                selectableRoles.add(role);
+            }
+        }
+        scrollOffset = 0;
     }
 
     private boolean isDisabled(SRERole role) {

@@ -1549,6 +1549,7 @@
   "==================== 所有職業介紹UI ====================": "",
   "display.type.role": "職業",
   "screen.roleintroduce.category.all": "所有",
+  "screen.roleintroduce.category.special": "特殊職業",
   "screen.roleintroduce.category.item": "物品",
   "screen.roleintroduce.category.sponsor": "支持者",
   "block.noellesroles.custom_player_plush": "自定義玩家玩偶",

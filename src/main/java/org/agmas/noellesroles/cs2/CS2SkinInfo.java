@@ -5,7 +5,9 @@ import java.util.Map;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -222,8 +224,14 @@ public final class CS2SkinInfo {
 
     /**
      * 获取皮肤在仓库/开箱界面中的图标物品。
-     * 帽子皮肤无对应武器物品，按皮肤名反查对应玩偶方块物品作为图标；
-     * 返回 null 表示使用默认映射。
+     * <p>查找顺序：
+     * <ol>
+     * <li><b>瑞科德饰品</b>：皮肤 {@code hat/hat_ricord_xxx} 对应已注册的物品
+     * {@code noellesroles:ricord_xxx}，它自带 3D 物品模型 —— 直接用它，
+     * 这样界面显示的是帽子本身的模型，而不是皮革帽；</li>
+     * <li>玩偶帽：按皮肤名反查 {@code noellesroles:hat_xxx_plush} 玩偶方块物品；</li>
+     * <li>都没有则返回 null，由调用方决定回退（目前是皮革头盔）。</li>
+     * </ol>
      */
     public static ItemStack getIconStack(String skinId) {
         if (skinId == null || !skinId.startsWith("hat/")) {
@@ -231,6 +239,16 @@ public final class CS2SkinInfo {
         }
         String skinName = skinId.substring("hat/".length());
         String base = skinName.startsWith("hat_") ? skinName.substring("hat_".length()) : skinName;
+
+        // 1) 瑞科德饰品：皮肤名去掉 hat_ 前缀就是物品名（hat_ricord_limao -> ricord_limao）
+        //    这些物品已注册且各自有 3D 物品模型，用它当图标最准确。
+        Item ricordItem = BuiltInRegistries.ITEM
+                .get(ResourceLocation.fromNamespaceAndPath("noellesroles", base));
+        if (ricordItem != null && ricordItem != Items.AIR) {
+            return new ItemStack(ricordItem);
+        }
+
+        // 2) 玩偶帽
         var block = BuiltInRegistries.BLOCK
                 .get(ResourceLocation.fromNamespaceAndPath("noellesroles", base + "_plush"));
         if (block == null || block == Blocks.AIR) {

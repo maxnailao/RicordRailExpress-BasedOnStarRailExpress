@@ -15,6 +15,7 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
@@ -103,8 +104,12 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             }
             // 疾跑姿态
             fakePlayer.setSprinting((poseFlags & IllusionDecoyEntity.POSE_SPRINTING) != 0);
-            // 蹲下姿态
-            fakePlayer.setShiftKeyDown((poseFlags & IllusionDecoyEntity.POSE_CROUCHING) != 0);
+            // 蹲下姿态：必须显式设置 Pose，只调 setShiftKeyDown 不够 ——
+            // LivingEntity.updatePose 只在服务端 tick 里跑，而这个假玩家是渲染期临时造的、
+            // 从没 tick 过，所以光设 shift 键状态它的 Pose 仍然是 STANDING，模型不会蹲。
+            boolean crouching = (poseFlags & IllusionDecoyEntity.POSE_CROUCHING) != 0;
+            fakePlayer.setShiftKeyDown(crouching);
+            fakePlayer.setPose(crouching ? Pose.CROUCHING : Pose.STANDING);
             // 坐下姿态：原版 PlayerRenderer 不会设置模型的 riding（玩家模型没这条链路），
             // 因此把 UUID 登记到 SITTING_DECOYS，由 IllusionDecoySitPoseMixin 在
             // HumanoidModel.setupAnim 末尾补上坐姿；渲染完立即注销。
