@@ -1228,6 +1228,11 @@ public class ModEventsRegister {
                     items.remove(ModItems.ONCE_REVOLVER);
                 }
                 items.remove(ModItems.PATROLLER_REVOLVER);
+                // 双枪-左手/右手：左右手为独立冷却设计，不参与"所有枪械公用冷却"
+                // （否则开一枪后服务端会把另一把也锁进冷却，其射击包被 Receiver 静默丢弃，
+                // 表现为双持永远只能开一枪）
+                items.remove(ModItems.DUAL_PISTOL_LEFT);
+                items.remove(ModItems.DUAL_PISTOL_RIGHT);
                 if (mainHandStack.is(ModItems.PATROLLER_REVOLVER)) {
                     cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 3);
                 } else {
@@ -1251,12 +1256,15 @@ public class ModEventsRegister {
                 }
             }
         });
-        // 黄油手 - 手枪冷却随机变化
+        // 黄油手 - 手枪冷却随机变化（双枪左右手为独立冷却设计，不受黄油手改写）
         OnRevolverUsed.EVENT.register((player, target) -> {
             if (!(player instanceof ServerPlayer))
                 return;
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
             ItemStack mainHandStack = player.getMainHandItem();
+            if (mainHandStack.is(ModItems.DUAL_PISTOL_LEFT) || mainHandStack.is(ModItems.DUAL_PISTOL_RIGHT)) {
+                return;
+            }
             if (mainHandStack.is(TMMItemTags.GUNS)
                     && modifiers.isModifier(player.getUUID(), TraitorAndModifiers.BUTTER_FINGERS)) {
                 int roll = player.getRandom().nextInt(100);

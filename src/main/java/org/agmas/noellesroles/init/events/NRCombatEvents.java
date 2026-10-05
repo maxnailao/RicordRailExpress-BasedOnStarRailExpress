@@ -121,12 +121,15 @@ public class NRCombatEvents {
         }
     }
 
-    /** 黄油手 - 手枪冷却随机变化 */
+    /** 黄油手 - 手枪冷却随机变化（双枪左右手为独立冷却设计，不受黄油手改写） */
     private static void handleButterFingersCooldown(Player player) {
         if (!(player instanceof ServerPlayer))
             return;
         WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
         ItemStack mainHandStack = player.getMainHandItem();
+        if (mainHandStack.is(ModItems.DUAL_PISTOL_LEFT) || mainHandStack.is(ModItems.DUAL_PISTOL_RIGHT)) {
+            return;
+        }
         if (mainHandStack.is(TMMItemTags.GUNS)
                 && modifiers.isModifier(player.getUUID(), TraitorAndModifiers.BUTTER_FINGERS)) {
             int roll = player.getRandom().nextInt(100);

@@ -29,9 +29,9 @@ import org.jetbrains.annotations.NotNull;
  * 双枪（左手/右手）
  * - 双枪-右手：仅在主手时可以右键开枪，冷却独立计算
  * - 双枪-左手：仅在副手时可以右键开枪，冷却独立计算
- * - 两枪共用左轮手枪的射程、贴图与冷却时长，但冷却互相独立（不再要求"右手冷却中左手才能开"）：
- *   主手枪不在冷却时右键由右手枪开火；右手枪冷却中右键自动落到副手，由左手枪开火，
- *   两枪各自按自己的冷却独立射击
+ * - 一次右键只开一枪。不依赖原版"主手冷却→自动落副手"机制（该链路对模组 item 不可靠）：
+ *   双持时右键始终由主手右手枪的 use() 裁决——右手枪自身 CD 就绪则开右手；
+ *   右手枪冷却中则在同一入口代开副手左手枪（若左手 CD 就绪）；两枪 CD 都在则不开
  */
 public class DualPistolItem extends SkinableItem implements HeldLikeRevolver {
     /** 是否为左手枪（左手枪仅副手可用，冷却独立） */
@@ -62,17 +62,15 @@ public class DualPistolItem extends SkinableItem implements HeldLikeRevolver {
             if (hand != InteractionHand.OFF_HAND) {
                 return InteractionResultHolder.pass(stack);
             }
-            // 独立冷却：只检查左手枪自己的冷却，不再要求右手枪处于冷却中
+            // 独立冷却：只检查左手枪自己的冷却
             if (user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_LEFT)) {
                 return InteractionResultHolder.pass(stack);
             }
         } else {
-            // 右手枪：仅在主手生效
+            // 右手枪：仅在主手生效。
+            // 注意：右手枪冷却中不能提前 pass，否则会放弃"代开左手枪"的机会——
+            // 原版并不会因为主手 use() 返回 pass 就去调用副手的 use()
             if (hand != InteractionHand.MAIN_HAND) {
-                return InteractionResultHolder.pass(stack);
-            }
-            if (user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_RIGHT)) {
-                // 冷却中：放行右键，让副手的双枪-左手有机会开枪
                 return InteractionResultHolder.pass(stack);
             }
         }
@@ -87,32 +85,51 @@ public class DualPistolItem extends SkinableItem implements HeldLikeRevolver {
                 }
             }
 
-            // 射线检测目标（与左轮手枪一致）
-            HitResult collision = getGunTarget(user);
-            if (collision instanceof EntityHitResult entityHitResult) {
-                Entity target = entityHitResult.getEntity();
-                ClientPlayNetworking.send(new DualPistolShootPayload(left, target.getId()));
-                CrosshairaddonsCompat.arrowHit();
-            } else {
-                ClientPlayNetworking.send(new DualPistolShootPayload(left, -1));
+            // 一次右键只开一枪，左右手各自独立 CD：
+            // 右手枪在冷却中时，若副手是左手枪且左手自身 CD 就绪，则由主手入口代开左手
+            boolean firingLeft = left;
+            if (!left && user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_RIGHT)) {
+                if (user.getOffhandItem().is(ModItems.DUAL_PISTOL_LEFT)
+                        && !user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_LEFT)) {
+                    firingLeft = true;
+                } else {
+                    // 两枪都在冷却：不开枪
+                    return InteractionResultHolder.pass(stack);
+                }
             }
-
-            // 后坐力与枪口火焰粒子（与左轮手枪一致）
-            user.setXRot(user.getXRot() - 4.0F);
-            spawnHandParticle();
-
-            // 客户端冷却，防止连点
-            user.getCooldowns().addCooldown(stack.getItem(), getRevolverCooldown());
+            shootOne(user, firingLeft);
         } else {
-            // 服务端角色检查
+            // 服务端角色检查（真正的开火逻辑在 DualPistolShootPayload 服务端）
             SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(world);
             SRERole role = gameComponent.getRole(user);
             if (role != null && !role.onUseGun(user)) {
                 return InteractionResultHolder.fail(stack);
             }
+            if (!left && user.getCooldowns().isOnCooldown(ModItems.DUAL_PISTOL_RIGHT)) {
+                return InteractionResultHolder.pass(stack);
+            }
         }
 
         return InteractionResultHolder.consume(stack);
+    }
+
+    /** 客户端单枪开火：射线检测、发送射击包、后坐力/枪口粒子，并只给该枪自身加冷却（左右手独立 CD） */
+    private static void shootOne(Player user, boolean leftHand) {
+        HitResult collision = getGunTarget(user);
+        if (collision instanceof EntityHitResult entityHitResult) {
+            Entity target = entityHitResult.getEntity();
+            ClientPlayNetworking.send(new DualPistolShootPayload(leftHand, target.getId()));
+            CrosshairaddonsCompat.arrowHit();
+        } else {
+            ClientPlayNetworking.send(new DualPistolShootPayload(leftHand, -1));
+        }
+
+        user.setXRot(user.getXRot() - 4.0F);
+        spawnHandParticle();
+
+        user.getCooldowns().addCooldown(
+                leftHand ? ModItems.DUAL_PISTOL_LEFT : ModItems.DUAL_PISTOL_RIGHT,
+                getRevolverCooldown());
     }
 
     public static void spawnHandParticle() {

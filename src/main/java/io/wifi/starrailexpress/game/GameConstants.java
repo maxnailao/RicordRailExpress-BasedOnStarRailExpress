@@ -68,6 +68,13 @@ public class GameConstants {
         ITEM_COOLDOWNS.put(TMMItems.NUNCHUCK, 160); // 8秒冷却
         ITEM_COOLDOWNS.put(TMMItems.SNIPER_RIFLE, 80); // 4秒冷却
         ITEM_COOLDOWNS.put(org.agmas.noellesroles.init.ModItems.PIRATE_CUTLASS, 15 * 20); // 海盗弯刀15秒冷却
+        // 双枪-左手/右手：与左轮同冷却。必须注册，否则黄油手/JOJO 等按 getOrDefault(item, 400)
+        // 兜底，会把双枪客（常驻黄油手）的右手枪服务端冷却炸到 400+ tick，
+        // 导致客户端误判就绪、永远走主手、左手枪开不出第二枪
+        ITEM_COOLDOWNS.put(org.agmas.noellesroles.init.ModItems.DUAL_PISTOL_LEFT,
+                SREConfig.instance().revolverCooldown * 20);
+        ITEM_COOLDOWNS.put(org.agmas.noellesroles.init.ModItems.DUAL_PISTOL_RIGHT,
+                SREConfig.instance().revolverCooldown * 20);
 
         SRE.LOGGER.debug("物品冷却时间已重载: 小刀={}秒, 左轮={}秒",
                 SREConfig.instance().knifeCooldown, SREConfig.instance().revolverCooldown);
