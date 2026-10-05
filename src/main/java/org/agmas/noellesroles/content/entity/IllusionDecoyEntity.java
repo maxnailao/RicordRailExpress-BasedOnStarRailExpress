@@ -82,6 +82,14 @@ public class IllusionDecoyEntity extends PathfinderMob {
     public static final int POSE_SITTING = 1 << 3;
     public static final int POSE_OFFHAND_ITEM = 1 << 4;
 
+    /**
+     * 视角俯仰角（度）。
+     * <p>实体自身的 {@code xRot} 在跟随/追击逻辑里会被覆盖，无法表达「放置瞬间本体在看哪里」，
+     * 所以单独用一个同步字段保存，渲染时套到假玩家头上。
+     */
+    private static final EntityDataAccessor<Float> VIEW_X_ROT = SynchedEntityData.defineId(
+            IllusionDecoyEntity.class, EntityDataSerializers.FLOAT);
+
     private static final double BASE_SPEED = 0.25D;
 
     /** 所有者（幻术师）UUID */
@@ -143,6 +151,7 @@ public class IllusionDecoyEntity extends PathfinderMob {
         builder.define(OFFHAND_ITEM, ItemStack.EMPTY);
         builder.define(ITEM_LOCKED, false);
         builder.define(POSE_FLAGS, 0);
+        builder.define(VIEW_X_ROT, 0.0F);
     }
 
     /**
@@ -174,6 +183,11 @@ public class IllusionDecoyEntity extends PathfinderMob {
         lastOwnerY = owner.getY();
         lastOwnerZ = owner.getZ();
         hasLastOwnerPos = true;
+        // 捕捉放置瞬间的**视角俯仰**（抬头/低头）。实体自身的 xRot 会被跟随逻辑覆盖，
+        // 所以单独存一份同步字段，渲染时套到假玩家头上。
+        setViewXRot(owner.getXRot());
+        this.setXRot(owner.getXRot());
+        this.xRotO = owner.getXRot();
         // 姿态取「放置瞬间」所有者的动作（蹲下/坐着/举刀/疾跑）
         syncPoseFrom(owner);
     }
@@ -220,6 +234,19 @@ public class IllusionDecoyEntity extends PathfinderMob {
 
     public void setPoseFlags(int flags) {
         this.entityData.set(POSE_FLAGS, flags);
+    }
+
+    public float getViewXRot() {
+        return this.entityData.get(VIEW_X_ROT);
+    }
+
+    public void setViewXRot(float xRot) {
+        this.entityData.set(VIEW_X_ROT, xRot);
+    }
+
+    /** 当前是否处于「坐着」姿态（放置瞬间本体正坐在座位上） */
+    public boolean isSittingPose() {
+        return (getPoseFlags() & POSE_SITTING) != 0;
     }
 
     @Override
@@ -292,6 +319,13 @@ public class IllusionDecoyEntity extends PathfinderMob {
             case MODE_CHASE -> tickChase(serverLevel, owner);
             case MODE_FOLLOW -> tickFollow(serverLevel, owner);
             case MODE_STATIONARY -> { /* 原地不动 */ }
+        }
+
+        // 坐着放出来的分身：关掉重力并把位置钉在放下的地方（通常是座椅上）。
+        // 否则分身的碰撞箱比椅座大，会被挤出椅座、掉到椅子下面那块方块上。
+        if (isSittingPose()) {
+            this.setNoGravity(true);
+            this.setDeltaMovement(0.0D, 0.0D, 0.0D);
         }
     }
 
@@ -373,6 +407,8 @@ public class IllusionDecoyEntity extends PathfinderMob {
         this.setXRot(owner.getXRot());
         this.setYBodyRot(owner.getYRot());
         this.setYHeadRot(owner.getYRot());
+        // 技能二是「与你的行动一致」，视角俯仰也持续跟随本体
+        setViewXRot(owner.getXRot());
     }
 
     /**

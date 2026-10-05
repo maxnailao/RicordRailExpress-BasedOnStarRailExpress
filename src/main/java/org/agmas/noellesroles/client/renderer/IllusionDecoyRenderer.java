@@ -66,8 +66,11 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             fakePlayer.yBodyRotO = entity.yBodyRotO;
             fakePlayer.setYHeadRot(entity.getYHeadRot());
             fakePlayer.yHeadRotO = entity.yHeadRotO;
-            fakePlayer.setXRot(entity.getXRot());
-            fakePlayer.xRotO = entity.xRotO;
+            // 视角俯仰：用实体单独同步的 VIEW_X_ROT 字段（放置瞬间捕捉到的抬头/低头），
+            // 而不是 entity.getXRot() —— 后者会被跟随/追击逻辑覆盖，导致分身永远平视。
+            float viewXRot = entity.getViewXRot();
+            fakePlayer.setXRot(viewXRot);
+            fakePlayer.xRotO = viewXRot;
 
             // 同步行走动画
             fakePlayer.walkAnimation.speed = entity.walkAnimation.speed;

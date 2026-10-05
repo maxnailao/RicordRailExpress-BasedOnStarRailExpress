@@ -93,7 +93,11 @@ public class ClientAbilityHandler {
             var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(client.player);
             heldSlot = ability.getSelectedSkill();
             unifiedSkillHeld = true;
-            boolean sneaking = client.player.isShiftKeyDown();
+            // 「蹲下 + 技能键」的 Shift 变体只对该职业真的定义了 shifted 技能时才生效。
+            // 否则（例如幻术师三个技能都没变体）潜行时 applicable 会被过滤成空集合，
+            // 直接 return false —— 表现就是「蹲着按技能键没反应」。
+            // 技能本来就有独立的切换键（Y），不需要再占用 Shift。
+            boolean sneaking = client.player.isShiftKeyDown() && hasShiftedVariant(currentRole);
             ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
                     heldSlot, RoleSkill.Phase.PRESS, findTarget(client), sneaking));
             return;
@@ -173,6 +177,20 @@ public class ClientAbilityHandler {
         var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(client.player);
         int next = (ability.getSelectedSkill() + 1) % selectableDefs.size();
         ClientPlayNetworking.send(new org.agmas.noellesroles.packet.UnifiedSkillSelectC2SPacket(next));
+    }
+
+    /**
+     * 该职业是否真的定义了「Shift 变体」技能。
+     * <p>只有定义了变体，按技能键时的潜行状态才有意义；没定义时若仍把潜行状态发上去，
+     * 服务端会把技能集合过滤成 shifted 子集（空集）而直接失败 —— 也就是「蹲着放不出技能」。
+     */
+    private static boolean hasShiftedVariant(io.wifi.starrailexpress.api.SRERole role) {
+        for (RoleSkill.Definition definition : RoleSkill.getDefinitions(role)) {
+            if (definition.shifted()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static UUID findTarget(Minecraft client) {
