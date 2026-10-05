@@ -1045,6 +1045,7 @@
     "gui.sre.mailbox.back": "返回",
     "gui.sre.mailbox.claim": "领取",
     "gui.sre.mailbox.claim_all": "一键领取",
+    "message.sre.mail.claim_command_failed": "邮件奖励发放失败：指令 /%s 未生效。请联系管理员处理。",
     "gui.sre.mailbox.claimed_badge": "已领取",
     "gui.sre.mailbox.delete": "删除",
     "gui.sre.mailbox.delete_read": "删除已读",

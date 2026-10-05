@@ -4,11 +4,13 @@ import com.google.gson.*;
 import io.wifi.starrailexpress.SRE;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -214,18 +216,44 @@ public class MailboxComponent implements AutoSyncedComponent, ServerTickingCompo
         MinecraftServer server = serverPlayer.getServer();
         if (server == null) return;
         String playerName = serverPlayer.getName().getString();
-        CommandSourceStack source = server.createCommandSourceStack()
-                .withSuppressedOutput()
-                .withPermission(4);
         for (String cmd : commands) {
-            String resolved = cmd.replace("{player}", playerName);
+            String one = cmd.replace("{player}", playerName).trim();
+            if (one.isEmpty()) continue;
+            // 每条指令独立执行（不要把多条用 ';' 拼在一起：performPrefixedCommand 不认链式指令）。
+            // 成败判定：指令成功时会 sendSuccess→回调 success=true；失败时 sendFailure→success=false；
+            // 而像 /tmm:money 在 officialVerify 未通过时直接 return 0、什么都不发，回调根本不会触发。
+            // 三种情况都要能区分出来——旧实现 withSuppressedOutput() 且忽略返回值，
+            // 玩家会静默什么都拿不到，所以这里显式记日志 + 告知玩家。
+            final boolean[] ok = { false };
+            CommandSourceStack source = server.createCommandSourceStack()
+                    .withSuppressedOutput()
+                    .withPermission(4)
+                    .withCallback((success, result) -> {
+                        if (success) {
+                            ok[0] = true;
+                        }
+                    });
             try {
-                server.getCommands().performPrefixedCommand(source, resolved);
+                server.getCommands().performPrefixedCommand(source, one);
+                if (!ok[0]) {
+                    reportClaimFailure(serverPlayer, playerName, one);
+                }
             } catch (Exception e) {
+                reportClaimFailure(serverPlayer, playerName, one);
                 LOGGER.warn("Failed to execute mail claim command '{}' for player {}",
-                        resolved, playerName, e);
+                        one, playerName, e);
             }
         }
+    }
+
+    /** 领取指令没生效时：写日志 + 私聊提示玩家（不给管理员看，因为发件人可能早已离线） */
+    private void reportClaimFailure(ServerPlayer serverPlayer, String playerName, String command) {
+        LOGGER.warn("Mail claim command '{}' for player {} did not succeed (返回 0 或无输出)。"
+                + "常见原因：/tmm:money 需要 Harpymodloader.officialVerify 通过，"
+                + "或 giveCS2box 的 id 不存在。", command, playerName);
+        serverPlayer.displayClientMessage(Component
+                .translatable("message.sre.mail.claim_command_failed", command)
+                .withStyle(ChatFormatting.RED), false);
     }
 
     // =========================================================================

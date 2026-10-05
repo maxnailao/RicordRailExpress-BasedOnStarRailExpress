@@ -123,10 +123,18 @@ public final class ReplayBoardSavedData extends SavedData {
             int width,
             int height,
             Direction direction,
-            @Nullable UUID lastTextDisplay) {
+            @Nullable UUID lastTextDisplay,
+            /** 是否铺黑色羊毛底板。false = 纯文字"悬浮字幕"，不改变地图方块 */
+            boolean background) {
+
+        /** 默认建屏时铺底板（保持历史行为） */
+        public ReplayScreenEntry(String id, ResourceKey<Level> dimension, BlockPos origin,
+                int width, int height, Direction direction, @Nullable UUID lastTextDisplay) {
+            this(id, dimension, origin, width, height, direction, lastTextDisplay, true);
+        }
 
         public ReplayScreenEntry withLastTextDisplay(@Nullable UUID entityId) {
-            return new ReplayScreenEntry(id, dimension, origin, width, height, direction, entityId);
+            return new ReplayScreenEntry(id, dimension, origin, width, height, direction, entityId, background);
         }
 
         public CompoundTag save() {
@@ -139,6 +147,8 @@ public final class ReplayBoardSavedData extends SavedData {
             tag.putInt("Width", width);
             tag.putInt("Height", height);
             tag.putString("Direction", direction.getSerializedName());
+            // 缺省视为 true：老存档没有这个字段，应该保持原来的"有底板"行为
+            tag.putBoolean("Background", background);
             if (lastTextDisplay != null) {
                 tag.putUUID("LastTextDisplay", lastTextDisplay);
             }
@@ -155,6 +165,9 @@ public final class ReplayBoardSavedData extends SavedData {
                 direction = Direction.NORTH;
             }
             UUID lastTextDisplay = tag.hasUUID("LastTextDisplay") ? tag.getUUID("LastTextDisplay") : null;
+            // 老存档无此键 -> getBoolean 返回 false，会错误地变成"无底板"，
+            // 所以显式判断：没有该键时按 true 处理。
+            boolean background = !tag.contains("Background") || tag.getBoolean("Background");
             return new ReplayScreenEntry(
                     tag.getString("Id"),
                     ResourceKey.create(Registries.DIMENSION, dimensionId),
@@ -162,7 +175,8 @@ public final class ReplayBoardSavedData extends SavedData {
                     Math.max(1, tag.getInt("Width")),
                     Math.max(1, tag.getInt("Height")),
                     direction,
-                    lastTextDisplay);
+                    lastTextDisplay,
+                    background);
         }
     }
 }

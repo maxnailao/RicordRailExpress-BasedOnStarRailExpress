@@ -1552,6 +1552,7 @@
     "gui.sre.mailbox.stats":  "%s total | %s claimable",
     "gui.sre.mailbox.empty":  "No mail",
     "gui.sre.mailbox.claim_all":  "Claim All",
+    "message.sre.mail.claim_command_failed": "Mail reward failed: command /%s did not take effect. Please contact an admin.",
     "gui.sre.mailbox.delete_read":  "Delete Read",
     "gui.sre.mailbox.back":  "Back",
     "gui.sre.mailbox.claim":  "Claim",

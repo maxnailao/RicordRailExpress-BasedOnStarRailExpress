@@ -89,6 +89,10 @@ public class SREEventRegister {
             ServerMapConfig.getInstance(server);
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
             SRE.REPLAY_MANAGER = new GameReplayManager(server);
+            // 小脑排行榜：把上次的统计读回内存（重启后榜单不空）
+            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardStats.restoreFromSaved(server);
+            // 并把已存在的榜单投屏按当前数据画一次（只做一次，不做周期刷新）
+            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardService.restoreOnStartup(server);
             SyncMapConfigPayload.sendToAllPlayers();
             // 加载自定义职业
             try {

@@ -71,6 +71,8 @@ public class SRECommandRegister {
             FourthRoomCommand.register(dispatcher);
             ReloadMapConfigCommand.register(dispatcher);
             ProgressionCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.MailCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.XiaoNaoBoardCommand.register(dispatcher);
             BackpackCommand.register(dispatcher);
             BackpackGrantCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.RoleRosterCommand.register(dispatcher);
