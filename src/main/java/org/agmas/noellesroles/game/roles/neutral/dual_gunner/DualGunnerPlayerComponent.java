@@ -30,9 +30,10 @@ import java.util.OptionalInt;
 /**
  * 双枪客角色组件 - 中立独立胜利
  * - 刷新时必定获得黄油手修饰符（开局修饰符重随后每 40 tick 补回）
- * - 开局向全体玩家播报入场公告“空气中弥漫着左轮的火药味”（同其他中立角色，见 OnGameTrueStarted）；此后双枪客存活期间每 60s 循环播报一次（见 serverTick）
- * - 场上剩余 总人数/2 人时：获得双枪-右手，解锁透视
- * - 场上剩余 总人数/3 - 2 人时：获得双枪-左手，自动装配到副手
+ * - 开局向全体玩家播报入场公告"空气中弥漫着左轮的火药味"（同其他中立角色，见 OnGameTrueStarted）；此后双枪客存活期间每 60s 循环播报一次（见 serverTick）
+ * - 获枪双路径（每把枪只能获得一次，不会重复）：
+ *   路径1（狼人全灭）：杀手阵营全部死亡 → 获得双枪-右手+解锁透视；此后存活 ≤ 总人数/2 → 获得双枪-左手
+ *   路径2（原逻辑）：存活 ≤ 总人数/2 → 获得双枪-右手+解锁透视；存活 ≤ 总人数/3-2 → 获得双枪-左手
  * - 在场时游戏不会结束；胜利条件为除坠木/皮革嘎的外独自存活（判定见 CustomWinnerClass）
  */
 public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -139,20 +140,18 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
         // 入场提示循环播报：双枪客存活期间每 60s 向全体玩家播报一次
         long gameTime = serverLevel.getGameTime();
         if (nextEntryBroadcastTime < 0L) {
-            // 开局入场公告已由 OnGameTrueStarted 播报，这里从 60s 后开始循环
             nextEntryBroadcastTime = gameTime + ENTRY_BROADCAST_INTERVAL;
         } else if (gameTime >= nextEntryBroadcastTime) {
             broadcastEntry(serverLevel);
             nextEntryBroadcastTime = gameTime + ENTRY_BROADCAST_INTERVAL;
         }
 
-        // 强制保持黄油手修饰符：开局 assignModifiers 会清空全部修饰符再随机分配，
-        // init() 中加上的黄油手会被清掉，这里每 40 tick 补回，确保双枪客局内始终持有
+        // 强制保持黄油手修饰符
         if (player.level().getGameTime() % 40 == 0) {
             applyButterFingers();
         }
 
-        // 人数阈值判定：总人数以开局人数为准
+        // 计算存活人数
         int totalPlayers = gameWorld.getStartingPlayerCount();
         if (totalPlayers <= 0) {
             totalPlayers = gameWorld.getPlayerCount();
@@ -164,28 +163,51 @@ public class DualGunnerPlayerComponent implements RoleComponent, ServerTickingCo
             }
         }
 
-        // 剩余 总人数/2 人：获得双枪-右手 + 解锁透视
-        if (!rightGunGiven && aliveCount <= totalPlayers / 2) {
-            rightGunGiven = true;
-            espUnlocked = true;
-            giveRightGun(sp);
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.dual_gunner.right_gun")
-                            .withStyle(ChatFormatting.GOLD),
-                    true);
-            sync();
+        // 杀手（canUseKiller=true）是否全部死亡
+        boolean allKillersDead = isAllKillersDead(serverLevel, gameWorld);
+
+        // === 右手枪：两条路径任一满足即发放，已有则不重复 ===
+        // 路径1：狼人全灭
+        // 路径2（原逻辑）：存活人数 ≤ 总人数/2
+        if (!rightGunGiven) {
+            if (allKillersDead || aliveCount <= totalPlayers / 2) {
+                rightGunGiven = true;
+                espUnlocked = true;
+                giveRightGun(sp);
+                sp.displayClientMessage(
+                        Component.translatable("message.noellesroles.dual_gunner.right_gun")
+                                .withStyle(ChatFormatting.GOLD),
+                        true);
+                sync();
+            }
         }
 
-        // 剩余 总人数/3 - 2 人：获得双枪-左手，自动装配到副手
-        if (!leftGunGiven && aliveCount <= totalPlayers / 3 - 2) {
-            leftGunGiven = true;
-            giveLeftGunToOffhand(sp);
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.dual_gunner.left_gun")
-                            .withStyle(ChatFormatting.GOLD),
-                    true);
-            sync();
+        // === 左手枪：需先有右手枪；两条路径任一满足即发放，已有则不重复 ===
+        // 路径1左手（狼人全灭路线）：存活人数 ≤ 总人数/2
+        // 路径2左手（原逻辑）：存活人数 ≤ 总人数/3 - 2
+        if (rightGunGiven && !leftGunGiven) {
+            boolean path1LeftReady = allKillersDead && aliveCount <= totalPlayers / 2;
+            boolean path2LeftReady = aliveCount <= totalPlayers / 3 - 2;
+            if (path1LeftReady || path2LeftReady) {
+                leftGunGiven = true;
+                giveLeftGunToOffhand(sp);
+                sp.displayClientMessage(
+                        Component.translatable("message.noellesroles.dual_gunner.left_gun")
+                                .withStyle(ChatFormatting.GOLD),
+                        true);
+                sync();
+            }
         }
+    }
+
+    /** 判断杀手阵营是否全部死亡（仅检查 canUseKiller=true 的真正的狼人/杀手，不含杀手方中立） */
+    private boolean isAllKillersDead(ServerLevel serverLevel, SREGameWorldComponent gameWorld) {
+        for (ServerPlayer p : serverLevel.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(p)) continue;
+            var role = gameWorld.getRole(p);
+            if (role != null && role.canUseKiller()) return false;
+        }
+        return true;
     }
 
     /** 向全体玩家循环播报双枪客入场提示 */
