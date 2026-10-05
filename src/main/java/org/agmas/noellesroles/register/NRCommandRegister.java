@@ -25,11 +25,6 @@ public class NRCommandRegister {
         WheelchairFieldItemCommand.register();
         GamblerMiracleCommand.register();
         EggClearCommand.register();
-        RepairShopCommand.register();
-        RepairStartCommand.register();
-        RepairRoleCommand.register();
-        RepairMapCommand.register();
-        RepairPresetCommand.register();
         MurderTimeCommand.register();
 
         // 注册疫使测试指令

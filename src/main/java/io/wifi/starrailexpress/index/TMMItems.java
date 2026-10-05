@@ -62,8 +62,6 @@ public interface TMMItems {
             SRE.id("misc_items"));
 
     // === 特殊分类/汇总标签页 ===
-    ResourceKey<CreativeModeTab> REPAIR_MODE_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
-            SRE.id("repair_mode"));
     ResourceKey<CreativeModeTab> SEALED_ARTIFACTS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             SRE.id("sealed_artifacts"));
     ResourceKey<CreativeModeTab> SRE_ALL_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
@@ -225,10 +223,6 @@ public interface TMMItems {
                 .icon(() -> new ItemStack(FunnyItems.PROBLEM_SET))
                 .build());
         // 注册特殊分类/汇总标签页
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, REPAIR_MODE_GROUP, FabricItemGroup.builder()
-                .title(Component.translatable("itemGroup.starrailexpress.repair_mode"))
-                .icon(() -> new ItemStack(ModItems.REPAIR_TOOLBOX))
-                .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SEALED_ARTIFACTS_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.sealed_artifacts"))
                 .icon(() -> new ItemStack(ModItems.SEALED_BLIND_LANTERN))

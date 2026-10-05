@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.ModRoles;
@@ -97,16 +96,6 @@ public class ClientAbilityHandler {
             boolean sneaking = client.player.isShiftKeyDown();
             ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
                     heldSlot, RoleSkill.Phase.PRESS, findTarget(client), sneaking));
-            return;
-        }
-
-        boolean repairGameRunning = gameWorldComponent.isRunning()
-                && gameWorldComponent.getGameMode() == SREGameModes.REPAIR_ESCAPE_MODE;
-        var repairComponent = ModComponents.REPAIR_ROLES.get(client.player);
-        if (repairGameRunning && (RepairRoleDefinition.byId(repairComponent.activeRole).isPresent()
-                || repairComponent.carriedBy != null
-                || repairComponent.carrying != null)) {
-            ClientPlayNetworking.send(new RepairPrimarySkillC2SPacket());
             return;
         }
 

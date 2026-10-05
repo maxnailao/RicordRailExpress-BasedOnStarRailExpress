@@ -71,13 +71,12 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 【模式切换】四种模式：全部、谋杀、修机、过滤
+    // 【模式切换】四种模式：全部、谋杀、过滤
     // ══════════════════════════════════════════════════════════════════
     public enum IntroductionGameMode {
         ALL("screen.roleintroduce.mode.all", 0xFF55DD88),
         CURRENT("screen.roleintroduce.mode.current", 0xFF56A5AE),
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
-        REPAIR("screen.roleintroduce.mode.repair", 0xFF44AACC),
         FILTER("screen.roleintroduce.mode.flag", 0xFF11AA33);
 
         public final String labelKey;
@@ -395,8 +394,7 @@ public class RoleIntroduceScreen extends Screen {
     private boolean matchesMode(SRERole role) {
         return switch (currentMode) {
             case ALL -> true;
-            case MURDER -> !isRepairRole(role) && !role.isOtherModeRole();
-            case REPAIR -> isRepairRole(role);
+            case MURDER -> !role.isOtherModeRole();
             case FILTER -> role.isFlagWithInner(filterFlags);
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.gameComponent == null)
@@ -409,15 +407,10 @@ public class RoleIntroduceScreen extends Screen {
         };
     }
 
-    private boolean isRepairRole(SRERole role) {
-        return role instanceof RepairRole;
-    }
-
     private boolean matchesModifierMode(SREModifier mod) {
         return switch (currentMode) {
             case ALL -> true;
             case MURDER -> !mod.isOtherModeRole();
-            case REPAIR -> false;
             case FILTER -> mod.isFlagWithInner(filterFlags);
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.modifierComponent == null)
@@ -437,8 +430,7 @@ public class RoleIntroduceScreen extends Screen {
         String path = BuiltInRegistries.ITEM.getKey(item).getPath();
         return switch (currentMode) {
             case ALL -> true;
-            case MURDER -> !isRepairItem(path) && !isOtherModeItem(path);
-            case REPAIR -> isRepairItem(path);
+            case MURDER -> !isOtherModeItem(path);
             case FILTER -> filterFlags.isEmpty() || false;
             case CURRENT -> {
                 if (this.minecraft.player == null || this.minecraft.player.getInventory() == null)
@@ -446,13 +438,6 @@ public class RoleIntroduceScreen extends Screen {
                 yield this.minecraft.player.getInventory().hasAnyMatching((it) -> it.is(item));
             }
         };
-    }
-
-    private boolean isRepairItem(String path) {
-        return path.equals("repair_toolbox") || path.equals("spare_parts") || path.equals("rescue_flare")
-                || path.equals("hunter_chain") || path.equals("hunter_pulse") || path.equals("hunter_blink")
-                || path.equals("hunter_jammer") || path.equals("smoke_pellet") || path.equals("decoy_beacon")
-                || path.equals("escape_grapple");
     }
 
     private boolean isOtherModeItem(String path) {
@@ -1432,19 +1417,11 @@ public class RoleIntroduceScreen extends Screen {
 
     // 可重写此方法来定制哪些模式在小 UI 下隐藏
     protected boolean shouldHideModeButton(IntroductionGameMode mode) {
-        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
-            if (SREClient.gameComponent.getGameMode().identifier.equals(SREGameModes.REPAIR_ESCAPE_ID)) {
-                if (mode == IntroductionGameMode.MURDER)
-                    return true;
-            } else {
-                if (mode == IntroductionGameMode.REPAIR)
-                    return true;
-            }
-        } else {
-            if (mode == IntroductionGameMode.CURRENT)
-                return true;
+        if ((SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                && mode == IntroductionGameMode.CURRENT) {
+            return true;
         }
-        return isSmallUI() && (mode == IntroductionGameMode.REPAIR || mode == IntroductionGameMode.MURDER);
+        return isSmallUI() && mode == IntroductionGameMode.MURDER;
     }
 
     private void renderModeButtons(GuiGraphics g, int mouseX, int mouseY, int maxWidth) {

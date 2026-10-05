@@ -28,7 +28,6 @@ import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPla
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
-import org.agmas.noellesroles.init.ModMenus;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.register.RiceEventRegister;
@@ -149,7 +148,6 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 4. 注册实体
         ModEntities.init();
-        ModMenus.initialize();
 
         // 5. 注册 ScreenHandlers
         ModScreenHandlers.init();

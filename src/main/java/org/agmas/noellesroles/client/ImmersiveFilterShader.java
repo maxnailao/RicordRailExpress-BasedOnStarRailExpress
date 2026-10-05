@@ -1,15 +1,10 @@
 package org.agmas.noellesroles.client;
 
-import io.wifi.starrailexpress.api.RepairRole;
-import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.client.PostProcessor;
-import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 
@@ -25,7 +20,6 @@ public class ImmersiveFilterShader {
 
     private PostProcessor post;
     private float totalTime = 0.0f;
-    private float repairStrength = 0.0f;
 
     public void initPostProcessor() {
         if (post != null) return;
@@ -53,7 +47,6 @@ public class ImmersiveFilterShader {
             bindAfterlifeTextures(mc, afterlife.getInPass());
         }
         addPass(mc, "dreamcore", ModEffects.DREAMCORE_FILTER, 0.7f);
-        addRepairEscapePass(mc);
     }
 
     private PostProcessor.PostPassEntry addPass(Minecraft mc, String passName, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder, float defaultStrength) {
@@ -75,57 +68,6 @@ public class ImmersiveFilterShader {
             }
             return true;
         }));
-    }
-
-    private void addRepairEscapePass(Minecraft mc) {
-        post.addSinglePassEntry("repair_escape", pass -> process(mc.player, () -> {
-            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning()
-                    || SREClient.gameComponent.getGameMode() != SREGameModes.REPAIR_ESCAPE_MODE
-                    || !isRepairEscapePlayer()) {
-                repairStrength = 0.0f;
-                return false;
-            }
-            var component = ModComponents.REPAIR_ROLES.get(mc.player);
-            boolean active = component.downed || RepairRoleDefinition.byId(component.activeRole).isPresent();
-            if (!active) {
-                repairStrength = 0.0f;
-                return false;
-            }
-            totalTime += 0.016f;
-            repairStrength = Math.min(1.0f, repairStrength + 0.035f);
-            if (repairStrength <= 0.01f) return false;
-            var effect = pass.getEffect();
-            if (effect == null) return false;
-
-            boolean hunter = RepairRoleDefinition.byId(component.activeRole)
-                    .map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER).orElse(false);
-            float healthPct = mc.player.getHealth() / Math.max(1.0f, mc.player.getMaxHealth());
-            float hurt = Math.max(0.0f, 1.0f - healthPct);
-            boolean repairInjured = component.repairInjuryLevel > 0;
-            float darkness = component.downed ? 0.56f : hunter ? 0.20f : repairInjured ? 0.10f : hurt * 0.22f;
-            float vignette = component.downed ? 1.15f : hunter ? 1.28f : repairInjured ? 0.98f : 0.45f + hurt * 0.45f;
-            float red = component.downed ? 0.85f : Math.max(hurt, repairInjured ? 0.62f : 0.0f);
-            float madness = component.downed ? 1.0f : hunter ? 0.38f : hurt * 0.8f;
-
-            var strength = effect.safeGetUniform("Strength");
-            if (strength != null) strength.set(repairStrength);
-            var time = effect.safeGetUniform("Time");
-            if (time != null) time.set(totalTime);
-            var redPulse = effect.safeGetUniform("RedPulse");
-            if (redPulse != null) redPulse.set(red);
-            var darknessUniform = effect.safeGetUniform("Darkness");
-            if (darknessUniform != null) darknessUniform.set(darkness);
-            var vignetteUniform = effect.safeGetUniform("Vignette");
-            if (vignetteUniform != null) vignetteUniform.set(vignette);
-            var madnessUniform = effect.safeGetUniform("Madness");
-            if (madnessUniform != null) madnessUniform.set(madness);
-            return true;
-        }));
-    }
-
-    private boolean isRepairEscapePlayer() {
-        var role = SREClient.getCachedPlayerRole();
-        return role instanceof RepairRole;
     }
 
     private void bindAfterlifeTextures(Minecraft mc, PostPass pass) {

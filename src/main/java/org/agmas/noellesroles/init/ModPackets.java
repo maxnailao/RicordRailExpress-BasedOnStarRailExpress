@@ -127,37 +127,10 @@ public class ModPackets {
                 OpenVendingMachinesScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenSupplyCrateScreenS2CPacket.ID,
                 OpenSupplyCrateScreenS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenRepairStationScreenS2CPacket.ID,
-                OpenRepairStationScreenS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(RepairCoinRewardS2CPacket.ID,
-                RepairCoinRewardS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(RepairCombatFeedbackS2CPacket.ID,
-                RepairCombatFeedbackS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(MapStatusBarSyncS2CPacket.ID, MapStatusBarSyncS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BlizzardStateS2CPacket.ID, BlizzardStateS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SnowguaiBlizzardInfoS2CPacket.ID, SnowguaiBlizzardInfoS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenGameConsoleS2CPacket.ID, OpenGameConsoleS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairStationActionC2SPacket.ID,
-                RepairStationActionC2SPacket.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(RepairStationActionC2SPacket.ID, RepairStationActionC2SPacket::handle);
-        PayloadTypeRegistry.playS2C().register(OpenRepairRoleSelectionS2CPacket.ID,
-                OpenRepairRoleSelectionS2CPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenRepairRoleShopS2CPacket.ID,
-                OpenRepairRoleShopS2CPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairRoleSelectC2SPacket.ID, RepairRoleSelectC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairRolePurchaseC2SPacket.ID, RepairRolePurchaseC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairRoleShopPurchaseC2SPacket.ID, RepairRoleShopPurchaseC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairPrimarySkillC2SPacket.ID, RepairPrimarySkillC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairCarryStruggleC2SPacket.ID, RepairCarryStruggleC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairSearchBeginC2SPacket.ID, RepairSearchBeginC2SPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(RepairSearchCancelC2SPacket.ID, RepairSearchCancelC2SPacket.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(RepairRoleSelectC2SPacket.ID, RepairRoleSelectC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairRolePurchaseC2SPacket.ID, RepairRolePurchaseC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairRoleShopPurchaseC2SPacket.ID, RepairRoleShopPurchaseC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairPrimarySkillC2SPacket.ID, RepairPrimarySkillC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairCarryStruggleC2SPacket.ID, RepairCarryStruggleC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairSearchBeginC2SPacket.ID, RepairSearchBeginC2SPacket::handle);
-        ServerPlayNetworking.registerGlobalReceiver(RepairSearchCancelC2SPacket.ID, RepairSearchCancelC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(ReasonerOpenScreenS2CPacket.ID, ReasonerOpenScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);

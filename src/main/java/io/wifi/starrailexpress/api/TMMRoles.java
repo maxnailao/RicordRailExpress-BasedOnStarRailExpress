@@ -73,8 +73,8 @@ public class TMMRoles {
     /**
      * 是否可由「自选职业卡」选择。
      * <p>
-     * 只允许谋杀模式的职业：排除原版基础职业（{@code VANNILA_ROLES}）、其他模式职业、
-     * 修理逃脱模式职业（{@link RepairRole}）与特殊地图限定职业。此外排除不会自然刷新的职业
+     * 只允许谋杀模式的职业：排除原版基础职业（{@code VANNILA_ROLES}）、其他模式职业
+     * 与特殊地图限定职业。此外排除不会自然刷新的职业
      * （{@code defaultMaxCount <= 0}，如操纵师）；彩蛋职业（{@link EggRole}，如迪奥）
      * 与警长阵营虽默认不刷新，但作为特殊职业/阵营仍允许自选。
      * </p>
@@ -100,7 +100,6 @@ public class TMMRoles {
         // 只允许谋杀模式的职业（对齐 SREMurderGameMode.getAllRoles 的池构建）
         if (Harpymodloader.VANNILA_ROLES.contains(role)
                 || role.isOtherModeRole()
-                || role instanceof RepairRole
                 || role.isSpecialMapRole()) {
             return false;
         }

@@ -509,9 +509,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 殡仪员组件 - 平民阵营，透视物品和搜刮尸体
   public static final ComponentKey<MorticianPlayerComponent> MORTICIAN = MorticianPlayerComponent.KEY;
 
-  public static final ComponentKey<RepairRolePlayerComponent> REPAIR_ROLES = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "repair_roles"),
-      RepairRolePlayerComponent.class);
   // 画家组件 - 平民阵营，绘画灵感、求索、挚友技能
   public static final ComponentKey<PainterPlayerComponent> PAINTER = PainterPlayerComponent.KEY;
 
@@ -1293,9 +1290,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(GreatDetectivePlayerComponent::new);
 
-    registry.beginRegistration(Player.class, REPAIR_ROLES)
-        .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
-        .end(RepairRolePlayerComponent::new);
     // 注册画家组件 - 存储绘画灵感、求索、挚友技能状态
     registry.beginRegistration(Player.class, PAINTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)

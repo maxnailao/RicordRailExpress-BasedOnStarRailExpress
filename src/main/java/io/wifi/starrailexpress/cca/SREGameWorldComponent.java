@@ -910,8 +910,6 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (player.isSpectator() || player.isCreative())
             return;
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorldComponent.gameMode == SREGameModes.REPAIR_ESCAPE_MODE)
-            return;
         if (!(player.getZ() >= 19000)) {
             if (checkPlayerIsOutOfAreas(player, areas)) {
                 GameUtils.killPlayer(player, false,

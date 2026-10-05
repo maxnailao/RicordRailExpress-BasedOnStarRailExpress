@@ -79,9 +79,7 @@ import org.agmas.noellesroles.client.commands.SREClientCommand;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
-import org.agmas.noellesroles.client.hud.RepairEscapeHud;
 import org.agmas.noellesroles.client.renderer.GhostPhantomEntityRenderer;
-import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
@@ -122,7 +120,6 @@ import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKille
 public class NoellesrolesClient implements ClientModInitializer {
     public static boolean hasInitStatusBar = false;
     public static int insanityTime = 0;
-    private static BlockPos repairHeldSearchTarget = null;
 
     // ──── 雪怪暴风雪 HUD 数据（由 SnowguaiBlizzardInfoS2CPacket 同步） ────
     /** 距下一次普通暴风雪的 tick */
@@ -276,9 +273,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.VENDING_MACHINES_BLOCK_ENTITY,
                 VendingMachinesBlockEntityRenderer::new);
-        BlockEntityRenderers.register(
-                ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
-                HunterCageBlockEntityRenderer::new);
         // 关押门：复用核心 SmallDoorBlockEntityRenderer + 钢门贴图，使其外观/开关动画同铁门
         BlockEntityRenderers.register(
                 ModBlocks.DETENTION_DOOR_ENTITY,
@@ -862,13 +856,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
             RoleNameRenderer.displayTags.putAll(payload.nametags());
         });
-        ClientPlayNetworking.registerGlobalReceiver(RepairCoinRewardS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> RepairEscapeHud.pushCoinToast(payload.amount(), payload.sourceKey()));
-        });
-        ClientPlayNetworking.registerGlobalReceiver(RepairCombatFeedbackS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> RepairEscapeHud.pushCombatCue(payload.kind(), payload.entityId(),
-                    payload.x(), payload.y(), payload.z(), payload.weaponId()));
-        });
         ClientPlayNetworking.registerGlobalReceiver(MapStatusBarSyncS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> org.agmas.noellesroles.client.hud.MapStatusBarClientState
                     .set(payload.barType(), payload.value(), payload.maxValue()));
@@ -1024,37 +1011,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             }
         });
-        ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleSelectionS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> {
-                if (context
-                        .client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen) {
-                    return;
-                }
-                context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen(
-                        payload.faction(), payload.endTick(), payload.playerNames()));
-            });
-        });
-        ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleShopS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> {
-                if (context
-                        .client().screen instanceof org.agmas.noellesroles.client.screen.repair.RepairRoleShopScreen screen) {
-                    screen.updateData(payload.skinCoins(), payload.ownedRoles());
-                    screen.init(context.client(), context.client().getWindow().getGuiScaledWidth(),
-                            context.client().getWindow().getGuiScaledHeight());
-                } else {
-                    context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairRoleShopScreen(
-                            payload.skinCoins(), payload.ownedRoles()));
-                }
-            });
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(OpenRepairStationScreenS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> {
-                context.client().setScreen(
-                        new org.agmas.noellesroles.client.screen.repair.RepairStationScreen(payload.blockPos()));
-            });
-        });
-
         ClientPlayNetworking.registerGlobalReceiver(OpenVendingMachinesScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
                 BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());
@@ -1442,25 +1398,6 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
 
             ClientAbilityHandler.tickContinuousInput(client);
-            var repairInputComponent = org.agmas.noellesroles.component.ModComponents.REPAIR_ROLES.get(client.player);
-            boolean repairGameRunning = SREClient.gameComponent != null
-                    && SREClient.gameComponent.isRunning()
-                    && SREClient.gameComponent
-                            .getGameMode() == io.wifi.starrailexpress.api.SREGameModes.REPAIR_ESCAPE_MODE;
-            if (client.screen == null && repairGameRunning && repairInputComponent.carriedBy != null) {
-                if (client.options.keyAttack.consumeClick()) {
-                    ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("left"));
-                }
-                if (client.options.keyUse.consumeClick()) {
-                    ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("right"));
-                }
-            }
-            if (client.screen == null && repairGameRunning && repairInputComponent.downed
-                    && repairInputComponent.carriedBy == null
-                    && client.options.keyShift.consumeClick()) {
-                ClientPlayNetworking.send(new org.agmas.noellesroles.packet.RepairCarryStruggleC2SPacket("downed"));
-            }
-            handleRepairSearchInput(client);
             if (client.player.isCreative()) {
                 if (foolPrayerBind.consumeClick()) {
                     ClientPlayNetworking
@@ -1914,32 +1851,5 @@ public class NoellesrolesClient implements ClientModInitializer {
             return entry != null && entry.getGameMode() == GameType.ADVENTURE;
         }
         return false;
-    }
-
-    private static void handleRepairSearchInput(Minecraft client) {
-        if (client.player == null || client.level == null || client.screen != null) {
-            return;
-        }
-        boolean repairGameRunning = SREClient.gameComponent != null
-                && SREClient.gameComponent.isRunning()
-                && SREClient.gameComponent.getGameMode() == io.wifi.starrailexpress.api.SREGameModes.REPAIR_ESCAPE_MODE;
-        if (!repairGameRunning) {
-            repairHeldSearchTarget = null;
-            return;
-        }
-        if (!(client.hitResult instanceof net.minecraft.world.phys.BlockHitResult blockHit)
-                || !client.level.getBlockState(blockHit.getBlockPos()).is(ModBlocks.HOTBAR_STORAGE)
-                || !client.options.keyUse.isDown()) {
-            if (repairHeldSearchTarget != null) {
-                ClientPlayNetworking.send(new RepairSearchCancelC2SPacket());
-                repairHeldSearchTarget = null;
-            }
-            return;
-        }
-        BlockPos pos = blockHit.getBlockPos();
-        if (!pos.equals(repairHeldSearchTarget)) {
-            repairHeldSearchTarget = pos;
-            ClientPlayNetworking.send(new RepairSearchBeginC2SPacket(pos));
-        }
     }
 }
