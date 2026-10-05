@@ -253,6 +253,24 @@ public class RoleShopHandler {
         return comp != null && comp.choice == ConvictPlayerComponent.Choice.DESTROY;
     }
 
+    /**
+     * 初始化幻术师商店。
+     * <p>幻术师原本没有专属商店，走的是默认杀手商店；这里给它一份**副本**并剔除疯狂模式，
+     * 其余条目与默认杀手商店完全一致。改动只影响幻术师一个职业，
+     * 其它使用默认杀手商店的杀手职业不受影响。
+     */
+    public static void initializeHuanshushiShop() {
+        ArrayList<ShopEntry> HUANSHUSHI_SHOP = new ArrayList<>();
+        for (ShopEntry entry : ShopContent.getDefaultKnifeEntries()) {
+            // 剔除疯狂模式
+            if (entry.stack().is(TMMItems.PSYCHO_MODE)) {
+                continue;
+            }
+            HUANSHUSHI_SHOP.add(entry);
+        }
+        ShopContent.customEntries.put(ModRoles.HUANSHUSHI.getIdentifier(), HUANSHUSHI_SHOP);
+    }
+
     public static void shopRegister() {
         ShopContent.customEntries.clear();
         ShopContent.register();
@@ -263,6 +281,9 @@ public class RoleShopHandler {
 
         // 初始化仇杀客商店
         initializeBloodFeudistShop();
+
+        // 初始化幻术师商店（默认杀手商店副本，剔除疯狂模式）
+        initializeHuanshushiShop();
 
         ArrayList<ShopEntry> PELICAN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> CONSPIRATOR_SHOP = new ArrayList<>();

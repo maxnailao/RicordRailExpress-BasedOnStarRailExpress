@@ -876,11 +876,11 @@ public class ModItems {
             "rpg7_ammo", WEAPONS_GROUP);
 
     /**
-     * 瑞科德饰品 - 绿色迷彩钢盔+面罩（帽子，可在 CS2 仓库穿戴）
+     * 瑞科德饰品 - 钢盔（绿色迷彩钢盔，护耳与面罩一体，帽子）
      */
-    public static final Item RICORD_GREEN_CAMO_HELMET = register(
+    public static final Item RICORD_HELMET = register(
             new Item(new Item.Properties().stacksTo(1)),
-            "ricord_green_camo_helmet", RICORD_ACCESSORIES_GROUP);
+            "ricord_helmet", RICORD_ACCESSORIES_GROUP);
 
     /**
      * 瑞科德饰品 - 小猫耳机（猫耳头戴式耳机，帽子）
@@ -932,18 +932,74 @@ public class ModItems {
             "ricord_xiaoji", RICORD_ACCESSORIES_GROUP);
 
     /**
-     * 瑞科德饰品 - 绿色迷彩钢盔（无面罩，帽子）
+     * 瑞科德饰品 - 钢盔+T（加装 T 形挂件，帽子）
      */
-    public static final Item RICORD_GREEN_CAMO_BASE_HELMET = register(
+    public static final Item RICORD_HELMET_T = register(
             new Item(new Item.Properties().stacksTo(1)),
-            "ricord_green_camo_base_helmet", RICORD_ACCESSORIES_GROUP);
+            "ricord_helmet_t", RICORD_ACCESSORIES_GROUP);
 
     /**
-     * 瑞科德饰品 - 绿色迷彩钢盔+T（加装 T 形挂件，帽子）
+     * 瑞科德饰品 - 圣诞帽（帽子）
      */
-    public static final Item RICORD_GREEN_CAMO_T_HELMET = register(
+    public static final Item RICORD_SHENGDANMAO = register(
             new Item(new Item.Properties().stacksTo(1)),
-            "ricord_green_camo_t_helmet", RICORD_ACCESSORIES_GROUP);
+            "ricord_shengdanmao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 菜刀（帽子）
+     */
+    public static final Item RICORD_CAIDAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_caidao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 鸡蛋（帽子）
+     */
+    public static final Item RICORD_JIDAN = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_jidan", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 贝雷帽（帽子第二期，帽子）
+     */
+    public static final Item RICORD_BELEIMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_beleimao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 奶闹（帽子第二期，帽子）
+     */
+    public static final Item RICORD_NAINAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_nainao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 小红花（帽子第二期，帽子）
+     */
+    public static final Item RICORD_XIAOHONGHUA = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xiaohonghua", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 小鸡头套（帽子第二期，帽子）
+     */
+    public static final Item RICORD_XIAOJI_TAOTAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xiaoji_taotao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 小企鹅头套（帽子第二期，帽子）
+     */
+    public static final Item RICORD_XIAOQIE_TAOTAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xiaoqie_taotao", RICORD_ACCESSORIES_GROUP);
+
+    /**
+     * 瑞科德饰品 - 麦当当员工帽（帽子第二期，帽子）
+     */
+    public static final Item RICORD_MAIDANGDANG = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_maidangdang", RICORD_ACCESSORIES_GROUP);
 
     /**
      * 沙漠之鹰

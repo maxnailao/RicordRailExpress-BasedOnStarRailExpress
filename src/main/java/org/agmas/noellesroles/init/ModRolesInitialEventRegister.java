@@ -1550,7 +1550,10 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.SALTED_FISH,
                 RoleSkill.skill(SaltedFishPlayerComponent.SKILL_ID, "skill.noellesroles.salted_fish.sunbathe",
                         context -> SaltedFishPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
-                        .showOnHud(true).announceToSelf(false).build());
+                        // 冷却与组件内的 COOLDOWN_TICKS 对齐；toggleable 让「躺着时按技能键主动站起」
+                        // 在冷却期间也能触发（否则起身那一刻就被冷却挡住，站不起来）
+                        .cooldownTicks(SaltedFishPlayerComponent.COOLDOWN_TICKS)
+                        .toggleable(true).showOnHud(true).announceToSelf(false).build());
 
         // 纸片人技能注册：弦化 —— 变为纸片人（模型与判定箱压扁）30秒，
         // 获得缓降与跳跃提升 II，可自由切换视角，冷却 120 秒
@@ -1569,8 +1572,9 @@ public class ModRolesInitialEventRegister {
                                 .get(context.player()).useSkill(context.player()))
                         .cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
 
-        // 躲藏专家技能注册：变身躲藏 —— 花费 200 金币变身为准星对准的方块，
-        // 持续 40 秒，冷却 175 秒；变身期间隐身且无法使用任何道具，
+        // 躲藏专家技能注册：变身躲藏 —— 免费变身为准星对准的方块，
+        // 持续/冷却与咸鱼「晒太阳」一致（80 秒 / 40 秒，见 NoellesRolesConfig）；
+        // 变身期间隐身且无法使用任何道具，
         // toggleable 支持冷却中再按技能键主动退出（退出不会重置冷却）。
         // 注册普通 + 蹲下双定义：统一技能系统会按蹲下状态过滤技能定义，
         // 躲藏玩法中玩家常处于蹲下状态，双定义保证蹲下时也能正常释放/退出；
@@ -2158,7 +2162,9 @@ public class ModRolesInitialEventRegister {
                             return success;
                         }).cooldownSeconds(30).showOnHud(true).announceToSelf(true).build());
 
-        // ==================== 幻术师技能注册：三个技能通过V键切换，G键释放，共用CD 30s ====================
+        // ==================== 幻术师技能注册：三个技能通过V键切换，G键释放 ====================
+        // 三个技能**各自独立冷却**：技能一/技能二各 30s，技能三（幻影陷阱）10s。
+        // 用其中一个不会让另外两个进冷却 —— 冷却由统一技能框架按 SkillState 分开记录。
         RoleSkill.register(ModRoles.HUANSHUSHI,
                 RoleSkill.skill(SRE.id("huanshushi_skill1"),
                         "skill.noellesroles.huanshushi.skill1",
@@ -2167,7 +2173,9 @@ public class ModRolesInitialEventRegister {
                             var comp = ModComponents.HUANSHUSHI.get(player);
                             if (comp == null) return false;
                             return comp.useSkill1();
-                        }).showOnHud(true).announceToSelf(true).build(),
+                        }).cooldownSeconds(
+                                org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent.SKILL_COOLDOWN_TICKS / 20) // 技能一独立冷却 30s
+                        .showOnHud(true).announceToSelf(true).build(),
                 RoleSkill.skill(SRE.id("huanshushi_skill2"),
                         "skill.noellesroles.huanshushi.skill2",
                         context -> {
@@ -2175,7 +2183,9 @@ public class ModRolesInitialEventRegister {
                             var comp = ModComponents.HUANSHUSHI.get(player);
                             if (comp == null) return false;
                             return comp.useSkill2();
-                        }).showOnHud(true).announceToSelf(true).build(),
+                        }).cooldownSeconds(
+                                org.agmas.noellesroles.game.roles.killer.huanshushi.HuanshushiPlayerComponent.SKILL_COOLDOWN_TICKS / 20) // 技能二独立冷却 30s
+                        .showOnHud(true).announceToSelf(true).build(),
                 RoleSkill.skill(SRE.id("huanshushi_skill3"),
                         "skill.noellesroles.huanshushi.skill3",
                         context -> {
@@ -2183,7 +2193,8 @@ public class ModRolesInitialEventRegister {
                             var comp = ModComponents.HUANSHUSHI.get(player);
                             if (comp == null) return false;
                             return comp.useSkill3();
-                        }).showOnHud(true).announceToSelf(true).build());
+                        }).cooldownSeconds(10) // 技能三独立冷却 10s
+                        .showOnHud(true).announceToSelf(true).build());
 
         // ==================== 嘉豪技能注册：V/Y切换歌曲，G键播放当前歌曲，Shift+G聚光灯+播放音乐 ====================
         RoleSkill.register(ModRoles.JIAHAO,

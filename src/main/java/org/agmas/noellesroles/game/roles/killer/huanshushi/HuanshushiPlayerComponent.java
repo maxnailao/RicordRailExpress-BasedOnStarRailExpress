@@ -1,8 +1,6 @@
 package org.agmas.noellesroles.game.roles.killer.huanshushi;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.nbt.CompoundTag;
@@ -29,12 +27,16 @@ import java.util.UUID;
  * <p>技能一：在自身半径6格范围内随机位置释放4个同自身皮肤举刀的假人向最近的平民玩家靠拢，假人存在10s，被击中后释放闪光弹。
  * <p>技能二：在自身周围释放4个假人跟随，假人与你的行动一致（包括视角移动），被击中后释放闪光弹，击中者失明10s。
  * <p>技能三：在你的位置释放一个和你皮肤一样的假人原地不动，被击中后释放闪光弹，使半径10格内玩家受到黑暗I+失明I+缓慢I效果8s，并扣除25%理智值。
- * <p>三个技能共用CD 30s。
+ * <p>冷却：技能一/技能二 30s，技能三（幻影陷阱）10s —— 各技能独立冷却，
+ * 分别由 {@code RoleSkill} 定义上的 {@code cooldownSeconds(...)} 声明，
+ * 统一技能框架记录在 {@code SREAbilityPlayerComponent.getSkillState(skillId)} 里，
+ * {@code UnifiedSkillHud} 也直接读该状态，所以本组件不再自己维护共享冷却。
  * <p>被动：免疫霉运效果（minecraft:unluck）。
  */
 public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingComponent {
 
-    public static final int SHARED_COOLDOWN_TICKS = 30 * 20; // 30秒
+    /** 技能一 / 技能二的冷却：各 30 秒（技能三独立为 10 秒，见注册处） */
+    public static final int SKILL_COOLDOWN_TICKS = 30 * 20; // 30秒
     public static final int DECOY_LIFETIME_TICKS = 10 * 20;  // 10秒
 
     private final Player player;
@@ -44,9 +46,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
 
     /** 技能二的假人UUID列表（需要跟随玩家） */
     private final List<UUID> followDecoys = new ArrayList<>();
-
-    /** 延迟设置共享CD标记（等待框架 markSkillUsed 完成后再设置） */
-    private boolean pendingSharedCooldown = false;
 
     public HuanshushiPlayerComponent(Player player) {
         this.player = player;
@@ -70,7 +69,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
     public void init() {
         activeDecoys.clear();
         followDecoys.clear();
-        pendingSharedCooldown = false;
         sync();
     }
 
@@ -91,39 +89,11 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
     }
 
     /**
-     * 检查共享冷却是否就绪
-     */
-    public boolean isCooldownReady() {
-        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-        return ability.cooldown <= 0;
-    }
-
-    /**
-     * 标记需要设置共享CD（延迟到下一tick，等待框架 markSkillUsed 完成）
-     */
-    public void markSharedCooldown() {
-        pendingSharedCooldown = true;
-    }
-
-    /**
-     * 实际执行共享冷却设置
-     */
-    private void applySharedCooldown() {
-        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-        ability.setCooldown(SHARED_COOLDOWN_TICKS);
-        ability.setSkillCooldown(SRE.id("huanshushi_skill1"), SHARED_COOLDOWN_TICKS);
-        ability.setSkillCooldown(SRE.id("huanshushi_skill2"), SHARED_COOLDOWN_TICKS);
-        ability.setSkillCooldown(SRE.id("huanshushi_skill3"), SHARED_COOLDOWN_TICKS);
-        ability.sync();
-    }
-
-    /**
      * 技能一：释放4个假人向最近平民靠拢
      */
     public boolean useSkill1() {
         if (!(player instanceof ServerPlayer serverPlayer)) return false;
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
-        if (!isCooldownReady()) return false;
 
         ServerLevel serverLevel = serverPlayer.serverLevel();
         UUID skinUuid = serverPlayer.getUUID();
@@ -147,7 +117,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
             activeDecoys.add(decoy.getUUID());
         }
 
-        markSharedCooldown();
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.huanshushi.skill1_used")
                         .withStyle(net.minecraft.ChatFormatting.DARK_GRAY),
@@ -162,7 +131,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
     public boolean useSkill2() {
         if (!(player instanceof ServerPlayer serverPlayer)) return false;
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
-        if (!isCooldownReady()) return false;
 
         ServerLevel serverLevel = serverPlayer.serverLevel();
         UUID skinUuid = serverPlayer.getUUID();
@@ -178,14 +146,13 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
 
             IllusionDecoyEntity decoy = new IllusionDecoyEntity(ModEntities.ILLUSION_DECOY, serverLevel);
             decoy.setPos(x, y, z);
-            // 跟随假人生存时间与共享CD一致，物品不锁定（动态同步）
-            decoy.setup(serverPlayer, skinUuid, IllusionDecoyEntity.MODE_FOLLOW, SHARED_COOLDOWN_TICKS, offsetAngle, false);
+            // 跟随假人生存时间与技能二冷却一致，物品不锁定（手持物动态同步；姿态仍是放下瞬间取样）
+            decoy.setup(serverPlayer, skinUuid, IllusionDecoyEntity.MODE_FOLLOW, SKILL_COOLDOWN_TICKS, offsetAngle, false);
             serverLevel.addFreshEntity(decoy);
             activeDecoys.add(decoy.getUUID());
             followDecoys.add(decoy.getUUID());
         }
 
-        markSharedCooldown();
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.huanshushi.skill2_used")
                         .withStyle(net.minecraft.ChatFormatting.DARK_GRAY),
@@ -200,7 +167,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
     public boolean useSkill3() {
         if (!(player instanceof ServerPlayer serverPlayer)) return false;
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
-        if (!isCooldownReady()) return false;
 
         ServerLevel serverLevel = serverPlayer.serverLevel();
         UUID skinUuid = serverPlayer.getUUID();
@@ -213,7 +179,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
         serverLevel.addFreshEntity(decoy);
         activeDecoys.add(decoy.getUUID());
 
-        markSharedCooldown();
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.huanshushi.skill3_used")
                         .withStyle(net.minecraft.ChatFormatting.DARK_GRAY),
@@ -270,12 +235,6 @@ public class HuanshushiPlayerComponent implements RoleComponent, ServerTickingCo
         // 角色判定：仅幻术师生效（参照血仇者组件模式）
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (!gameWorld.isRole(player, ModRoles.HUANSHUSHI)) return;
-
-        // 延迟设置共享CD（在框架 markSkillUsed 之后执行）
-        if (pendingSharedCooldown) {
-            applySharedCooldown();
-            pendingSharedCooldown = false;
-        }
 
         // 被动：每 tick 检查并移除霉运与闪光弹致盲
         applyPassiveImmunities();

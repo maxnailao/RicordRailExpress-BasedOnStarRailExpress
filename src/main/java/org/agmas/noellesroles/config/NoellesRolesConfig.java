@@ -633,12 +633,12 @@ public class NoellesRolesConfig implements ConfigData {
     public int morphlingDummyLifetime = 10;
 
     // ==================== 躲藏专家 (duomaomao_meimeihide) ====================
-    /** 躲藏专家 - 变身躲藏技能金币花费 */
-    public int duomaomaoMeimeiHideCost = 200;
-    /** 躲藏专家 - 变身持续时间（秒） */
-    public int duomaomaoMeimeiHideDurationSeconds = 40;
-    /** 躲藏专家 - 变身躲藏技能冷却（秒） */
-    public int duomaomaoMeimeiHideCooldownSeconds = 175;
+    /** 躲藏专家 - 变身躲藏技能金币花费（0 = 免费） */
+    public int duomaomaoMeimeiHideCost = 0;
+    /** 躲藏专家 - 变身持续时间（秒）：与咸鱼「晒太阳」一致 */
+    public int duomaomaoMeimeiHideDurationSeconds = 80;
+    /** 躲藏专家 - 变身躲藏技能冷却（秒）：与咸鱼「晒太阳」一致 */
+    public int duomaomaoMeimeiHideCooldownSeconds = 40;
     /** 躲藏专家 - 准星选取方块的最大距离（格） */
     public double duomaomaoMeimeiHideReach = 5.0;
 

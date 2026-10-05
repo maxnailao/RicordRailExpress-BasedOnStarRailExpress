@@ -33,9 +33,9 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
  * 躲藏专家的角色组件
- * - 技能「变身躲藏」：花费 200 金币，变身为准星对准的方块
+ * - 技能「变身躲藏」：免费（无需金币），变身为准星对准的方块
  * - 变身期间玩家隐身（本体不可见），客户端将该方块的模型渲染在玩家位置
- * - 持续 40 秒，冷却 175 秒，可再次按技能键主动退出
+ * - 持续 80 秒，冷却 40 秒（与咸鱼「晒太阳」一致），可再次按技能键主动退出
  * - 变身期间施加隐身与禁用道具效果，无法使用任何道具
  */
 public class DuomaomaoMeimeiHidePlayerComponent implements RoleComponent, ServerTickingComponent {

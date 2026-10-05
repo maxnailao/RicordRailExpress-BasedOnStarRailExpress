@@ -237,7 +237,7 @@ public interface TMMItems {
                 .build());
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, RICORD_ACCESSORIES_GROUP, FabricItemGroup.builder()
                 .title(Component.literal("瑞科德饰品"))
-                .icon(() -> new ItemStack(ModItems.RICORD_GREEN_CAMO_HELMET))
+                .icon(() -> new ItemStack(ModItems.RICORD_HELMET))
                 .build());
 
         SkinableItem.add(TMMItems.KNIFE);

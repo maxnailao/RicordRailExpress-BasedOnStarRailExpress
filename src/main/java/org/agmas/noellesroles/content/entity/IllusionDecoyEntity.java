@@ -58,13 +58,29 @@ public class IllusionDecoyEntity extends PathfinderMob {
     private static final EntityDataAccessor<ItemStack> HELD_ITEM = SynchedEntityData.defineId(
             IllusionDecoyEntity.class, EntityDataSerializers.ITEM_STACK);
 
+    /** 副手物品（从所有者同步） */
+    private static final EntityDataAccessor<ItemStack> OFFHAND_ITEM = SynchedEntityData.defineId(
+            IllusionDecoyEntity.class, EntityDataSerializers.ITEM_STACK);
+
     /** 物品是否锁定（技能一/三为true，技能二为false） */
     private static final EntityDataAccessor<Boolean> ITEM_LOCKED = SynchedEntityData.defineId(
             IllusionDecoyEntity.class, EntityDataSerializers.BOOLEAN);
 
-    /** 姿态标志位：bit0=举刀/使用物品, bit1=疾跑 */
+    /**
+     * 姿态标志位：
+     * bit0=举刀/使用物品，bit1=疾跑，bit2=蹲下，bit3=坐着，bit4=左手持物。
+     * <p><b>只在放置瞬间取样一次</b>（{@link #setup}），之后固定不变：
+     * 蹲着放出来就是蹲着的分身，放开蹲键也不会跟着站起来。
+     */
     private static final EntityDataAccessor<Integer> POSE_FLAGS = SynchedEntityData.defineId(
             IllusionDecoyEntity.class, EntityDataSerializers.INT);
+
+    /** 姿态标志位定义 */
+    public static final int POSE_USING_ITEM = 1 << 0;
+    public static final int POSE_SPRINTING = 1 << 1;
+    public static final int POSE_CROUCHING = 1 << 2;
+    public static final int POSE_SITTING = 1 << 3;
+    public static final int POSE_OFFHAND_ITEM = 1 << 4;
 
     private static final double BASE_SPEED = 0.25D;
 
@@ -108,6 +124,7 @@ public class IllusionDecoyEntity extends PathfinderMob {
         builder.define(SKIN_UUID, Optional.empty());
         builder.define(BEHAVIOR_MODE, MODE_CHASE);
         builder.define(HELD_ITEM, ItemStack.EMPTY);
+        builder.define(OFFHAND_ITEM, ItemStack.EMPTY);
         builder.define(ITEM_LOCKED, false);
         builder.define(POSE_FLAGS, 0);
     }
@@ -128,6 +145,7 @@ public class IllusionDecoyEntity extends PathfinderMob {
         this.entityData.set(SKIN_UUID, Optional.ofNullable(skinUuid));
         this.entityData.set(BEHAVIOR_MODE, mode);
         this.entityData.set(HELD_ITEM, owner.getMainHandItem().copy());
+        this.entityData.set(OFFHAND_ITEM, owner.getOffhandItem().copy());
         this.entityData.set(ITEM_LOCKED, itemLocked);
         this.remainingLifetime = lifetime;
         this.followOffsetAngle = offsetAngle;
@@ -135,6 +153,24 @@ public class IllusionDecoyEntity extends PathfinderMob {
         this.yRotO = owner.getYRot();
         this.setYBodyRot(owner.getYRot());
         this.setYHeadRot(owner.getYRot());
+        // 姿态取「放置瞬间」所有者的动作（蹲下/坐着/举刀/疾跑）
+        syncPoseFrom(owner);
+    }
+
+    /**
+     * 把所有者的当前动作取样成姿态标志位（**只在放置瞬间调用一次**，之后姿态固定）。
+     * <p>坐下在这里表示为「玩家正骑乘座位实体」——原版玩家没有 SITTING 姿态枚举，
+     * 座位系统（{@code SeatEntity}/{@code MountableBlock}）就是通过骑乘表达的，
+     * 客户端渲染时据此把模型切成坐姿。
+     */
+    private void syncPoseFrom(Player owner) {
+        int flags = 0;
+        if (owner.isUsingItem()) flags |= POSE_USING_ITEM;
+        if (owner.isSprinting()) flags |= POSE_SPRINTING;
+        if (owner.isCrouching()) flags |= POSE_CROUCHING;
+        if (owner.isPassenger()) flags |= POSE_SITTING;
+        if (!owner.getOffhandItem().isEmpty()) flags |= POSE_OFFHAND_ITEM;
+        setPoseFlags(flags);
     }
 
     public UUID getSkinUuid() {
@@ -147,6 +183,10 @@ public class IllusionDecoyEntity extends PathfinderMob {
 
     public ItemStack getHeldItem() {
         return this.entityData.get(HELD_ITEM);
+    }
+
+    public ItemStack getOffhandItem() {
+        return this.entityData.get(OFFHAND_ITEM);
     }
 
     public boolean isItemLocked() {
@@ -166,7 +206,7 @@ public class IllusionDecoyEntity extends PathfinderMob {
         if (hand == InteractionHand.MAIN_HAND) {
             return getHeldItem();
         }
-        return ItemStack.EMPTY;
+        return getOffhandItem();
     }
 
     public Player getOwner() {
@@ -218,15 +258,13 @@ public class IllusionDecoyEntity extends PathfinderMob {
             return;
         }
 
-        // 仅在物品未锁定时动态同步（技能二）
+        // 物品在锁定模式下保持放置瞬间的手持物，不锁定时持续跟随所有者（技能二）
         if (!this.entityData.get(ITEM_LOCKED)) {
             this.entityData.set(HELD_ITEM, owner.getMainHandItem().copy());
-            // 技能二：同步疾跑和使用物品状态
-            int flags = 0;
-            if (owner.isSprinting()) flags |= 2;
-            if (owner.isUsingItem() && owner.getUseItem().is(io.wifi.starrailexpress.index.TMMItems.KNIFE)) flags |= 1;
-            this.entityData.set(POSE_FLAGS, flags);
+            this.entityData.set(OFFHAND_ITEM, owner.getOffhandItem().copy());
         }
+        // 姿态**只在 setup() 取样一次**（放置瞬间），之后固定不变：
+        // 蹲下放出来就是蹲着的分身、坐着放就是坐着的，放开按键也不会跟着站起来。
 
         int mode = getBehaviorMode();
         switch (mode) {

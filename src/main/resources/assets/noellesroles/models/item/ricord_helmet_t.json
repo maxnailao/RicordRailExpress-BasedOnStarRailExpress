@@ -1,5 +1,5 @@
 {
-    "parent": "starrailexpress:item/skins/hat/hat_ricord_cat_headset",
+    "parent": "starrailexpress:item/skins/hat/hat_ricord_helmet_t",
     "display": {
         "gui": {
             "rotation": [

@@ -1,26 +1,33 @@
 {
   "box_name": "帽子饰品箱",
   "key_name": "hat_key",
-  "common": 0.50,
-  "uncommon": 0.20,
+  "common": 0.5,
+  "uncommon": 0.2,
   "rare": 0.15,
   "epic": 0.09,
   "legendary": 0.04,
   "unbelievable": 0.02,
-  "common_skins": [
-    "hat/hat_ricord_green_camo"
-  ],
+  "common_skins": [],
   "uncommon_skins": [
     "hat/hat_ricord_chushimao",
     "hat/hat_ricord_matongchou",
     "hat/hat_ricord_kuanggongmao",
     "hat/hat_ricord_limao",
-    "hat/hat_ricord_green_camo_base",
-    "hat/hat_ricord_green_camo_t"
+    "hat/hat_ricord_xiaodangao",
+    "hat/hat_ricord_xiaoji",
+    "hat/hat_ricord_helmet",
+    "hat/hat_ricord_helmet_t"
   ],
   "rare_skins": [
-    "hat/hat_ricord_xiaodangao",
-    "hat/hat_ricord_xiaoji"
+    "hat/hat_ricord_shengdanmao",
+    "hat/hat_ricord_caidao",
+    "hat/hat_ricord_jidan",
+    "hat/hat_ricord_beleimao",
+    "hat/hat_ricord_nainao",
+    "hat/hat_ricord_xiaohonghua",
+    "hat/hat_ricord_xiaoji_taotao",
+    "hat/hat_ricord_xiaoqie_taotao",
+    "hat/hat_ricord_maidangdang"
   ],
   "epic_skins": [],
   "legendary_skins": [],

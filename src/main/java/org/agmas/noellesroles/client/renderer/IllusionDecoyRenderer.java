@@ -27,6 +27,17 @@ import java.util.UUID;
  */
 public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
 
+    /**
+     * 本帧被标记为「坐着」的分身假玩家 UUID。
+     * <p>原版玩家的 {@code PlayerModel} 从不设置 {@code riding}，没法通过模型字段表达坐姿，
+     * 所以渲染前登记、渲染后注销，由 {@code IllusionDecoySitPoseMixin} 读取并补上坐姿。
+     */
+    private static final java.util.Set<UUID> SITTING_DECOYS = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    public static boolean isMarkedSitting(UUID uuid) {
+        return uuid != null && SITTING_DECOYS.contains(uuid);
+    }
+
     public IllusionDecoyRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
     }
@@ -39,7 +50,8 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
         if (skinUuid != null && instance.level != null) {
             PlayerInfo entry = ClientSkinCache.getCachedPlayerInfo(skinUuid);
             String name = entry != null ? entry.getProfile().getName() : "Decoy";
-            // 重写 isModelPartShown 强制所有皮肤外层可见（帽子/外套/袖子/裤子）
+            // 强制皮肤外层可见（帽子/外套/袖子/裤子）——披风也照常显示：
+            // 分身有披风才算逼真，不能靠「关掉披风」来遮挡，否则一眼就能看出真假。
             RemotePlayer fakePlayer = new RemotePlayer(instance.level, new GameProfile(skinUuid, name)) {
                 @Override
                 public boolean isModelPartShown(PlayerModelPart part) {
@@ -62,25 +74,49 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             fakePlayer.walkAnimation.speedOld = entity.walkAnimation.speedOld;
             fakePlayer.walkAnimation.position = entity.walkAnimation.position;
 
-            // 设置手持物品（从服务端同步）
+            // 披风：CapeLayer 用 (xCloak - getX()) 这类位移差来算「风吹起」的幅度。
+            // 假玩家是临时 new 的，位置在场点 (0,0,0) 而 xCloak 等字段一直是 0，
+            // 但它的渲染坐标跟着分身在世界里，于是位移差变成很大的假值 → 披风被吹得立起来。
+            // 把上一帧与当前帧的披风跟踪点都设成同一个值，位移差为 0，披风就自然垂下。
+            fakePlayer.xCloakO = fakePlayer.xCloak = fakePlayer.getX();
+            fakePlayer.yCloakO = fakePlayer.yCloak = fakePlayer.getY();
+            fakePlayer.zCloakO = fakePlayer.zCloak = fakePlayer.getZ();
+
+            // 设置手持物品（主手 + 副手，从服务端同步）
             ItemStack heldItem = entity.getHeldItem();
             if (!heldItem.isEmpty()) {
                 fakePlayer.setItemInHand(InteractionHand.MAIN_HAND, heldItem);
             }
+            ItemStack offhandItem = entity.getOffhandItem();
+            if (!offhandItem.isEmpty()) {
+                fakePlayer.setItemInHand(InteractionHand.OFF_HAND, offhandItem);
+            }
 
-            // 姿态处理
+            // 姿态处理：位标志见 IllusionDecoyEntity.POSE_*
             int poseFlags = entity.getPoseFlags();
-            // 举刀姿态：主手持刀并摆出使用姿态
-            if ((poseFlags & 1) != 0 && !heldItem.isEmpty()) {
+            // 使用物品姿态（举刀/举枪等）
+            if ((poseFlags & IllusionDecoyEntity.POSE_USING_ITEM) != 0 && !heldItem.isEmpty()) {
                 fakePlayer.startUsingItem(InteractionHand.MAIN_HAND);
             }
             // 疾跑姿态
-            if ((poseFlags & 2) != 0) {
-                fakePlayer.setSprinting(true);
+            fakePlayer.setSprinting((poseFlags & IllusionDecoyEntity.POSE_SPRINTING) != 0);
+            // 蹲下姿态
+            fakePlayer.setShiftKeyDown((poseFlags & IllusionDecoyEntity.POSE_CROUCHING) != 0);
+            // 坐下姿态：原版 PlayerRenderer 不会设置模型的 riding（玩家模型没这条链路），
+            // 因此把 UUID 登记到 SITTING_DECOYS，由 IllusionDecoySitPoseMixin 在
+            // HumanoidModel.setupAnim 末尾补上坐姿；渲染完立即注销。
+            boolean sitting = (poseFlags & IllusionDecoyEntity.POSE_SITTING) != 0;
+            if (sitting) {
+                SITTING_DECOYS.add(fakePlayer.getUUID());
             }
-
-            instance.getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0.0D, 0, tickDelta, matrices,
-                    vertexConsumers, light);
+            try {
+                instance.getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0.0D, 0, tickDelta, matrices,
+                        vertexConsumers, light);
+            } finally {
+                if (sitting) {
+                    SITTING_DECOYS.remove(fakePlayer.getUUID());
+                }
+            }
             return;
         }
         super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);

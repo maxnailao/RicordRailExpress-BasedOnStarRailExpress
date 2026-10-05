@@ -142,6 +142,7 @@
     "client.roles.wizard.WizardShieldScreenMixin",
     "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.morphling.MorphlingCapeRendererMixin",
+    "client.roles.huanshushi.IllusionDecoySitPoseMixin",
     "client.roles.morphling.MorphlingRendererMixin",
     "client.roles.morphling.MorphlingScreenMixin",
     "client.roles.morphling.SPClientTick",
