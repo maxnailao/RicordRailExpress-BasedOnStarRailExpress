@@ -127,6 +127,13 @@ public class SREReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroRequestPayload.ID,
                 (payload, context) -> context.server().execute(() -> sendMapIntro(context.player())));
 
+        // 物品栏垃圾桶：删除光标上拿着的物品
+        ServerPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload.ID,
+                (payload, context) -> context.server()
+                        .execute(() -> io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload
+                                .handle(context.player())));
+
         // Mailbox receivers
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
                 new io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.Receiver());

@@ -24,6 +24,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
@@ -62,6 +63,26 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     public static final int menuButtonWidth = 100;
     public ArrayList<Button> menuSelections = new ArrayList<>();
     public boolean isMenuOpen = false;
+
+    // ===== 垃圾桶：放在物品栏面板右侧，把物品用鼠标拖到上面左键点击即可删除 =====
+    /** 垃圾桶方块边长 */
+    private static final int TRASH_SIZE = 24;
+    /** 垃圾桶与物品栏面板之间的间距 */
+    private static final int TRASH_GAP = 8;
+
+    private int trashX() {
+        return this.x + this.backgroundWidth + TRASH_GAP;
+    }
+
+    private int trashY() {
+        // 垂直方向与物品栏面板顶部对齐
+        return this.y;
+    }
+
+    private boolean isInTrash(double mx, double my) {
+        return mx >= trashX() && mx < trashX() + TRASH_SIZE
+                && my >= trashY() && my < trashY() + TRASH_SIZE;
+    }
 
     private final ArrayList<StoreItemWidget> shopWidgets = new ArrayList<>();
     private int shopCurrentPage = 0;
@@ -554,10 +575,82 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             context.drawString(this.font, pageText, textX, textY, 0xFFFFFF, false);
         }
 
+        // 垃圾桶（面板右侧）
+        renderTrash(context, mouseX, mouseY);
+
         // 面板在背景层绘制，菜单按钮和真实快捷栏槽位在其上层绘制。
 
         this.drawMouseoverTooltip(context, mouseX, mouseY);
         StoreRenderer.renderHud(this.font, this.player, context, delta);
+    }
+
+    /**
+     * 画垃圾桶：面板右侧一个方块，鼠标上拿着物品时把物品图标画在上面提示"将要删除的就是它"。
+     */
+    private void renderTrash(GuiGraphics g, int mouseX, int mouseY) {
+        int tx = trashX();
+        int ty = trashY();
+        boolean hovered = isInTrash(mouseX, mouseY);
+        ItemStack carried = this.getMenu().getCarried();
+        boolean hasItem = !carried.isEmpty();
+
+        int bg = hovered && hasItem ? 0xC0662222 : 0x90161B30;
+        g.fill(tx, ty, tx + TRASH_SIZE, ty + TRASH_SIZE, bg);
+        g.renderOutline(tx, ty, TRASH_SIZE, TRASH_SIZE,
+                hovered && hasItem ? 0xFFFF5555 : 0x66FFFFFF);
+
+        // 简笔垃圾桶：桶身 + 桶盖 + 提手
+        int c = hovered && hasItem ? 0xFFFF8888 : 0xFFBBBBBB;
+        g.fill(tx + 6, ty + 9, tx + TRASH_SIZE - 6, ty + TRASH_SIZE - 5, c);
+        g.fill(tx + 5, ty + 7, tx + TRASH_SIZE - 5, ty + 9, c);
+        g.fill(tx + TRASH_SIZE / 2 - 2, ty + 5, tx + TRASH_SIZE / 2 + 2, ty + 7, c);
+
+        if (hasItem) {
+            // 有物品在光标上时，把它的图标叠在垃圾桶上，明确"要删的是这个"
+            g.renderFakeItem(carried, tx + (TRASH_SIZE - 16) / 2, ty + (TRASH_SIZE - 16) / 2);
+        }
+        if (hovered) {
+            g.renderTooltip(this.font, Component.literal(
+                    hasItem ? "点击删除「" + carried.getHoverName().getString() + "」"
+                            : "垃圾桶：先用鼠标拿起物品再点这里"),
+                    mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && isInTrash(mouseX, mouseY)) {
+            ItemStack carried = this.getMenu().getCarried();
+            if (!carried.isEmpty()) {
+                askDeleteCarried(carried);
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** 弹出确认框：确认后才真正删除光标上拿着的物品。 */
+    private void askDeleteCarried(ItemStack carried) {
+        if (this.minecraft == null || carried.isEmpty()) {
+            return;
+        }
+        String itemName = carried.getHoverName().getString();
+        int count = carried.getCount();
+        this.minecraft.setScreen(new ConfirmScreen(
+                confirmed -> {
+                    this.minecraft.setScreen(this);
+                    if (confirmed) {
+                        // 服务端以 containerMenu.getCarried() 为准执行删除，客户端不传物品 id
+                        ClientPlayNetworking.send(
+                                new io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload());
+                    }
+                },
+                Component.literal("删除物品"),
+                Component.literal(count > 1
+                        ? "确定要删除 " + count + " 个「" + itemName + "」吗？此操作不可撤销。"
+                        : "确定要删除「" + itemName + "」吗？此操作不可撤销。"),
+                Component.literal("删除"),
+                Component.literal("取消")));
     }
 
     private void renderOverlayMessageOnScreen(GuiGraphics context, int mouseX, int mouseY, float delta) {

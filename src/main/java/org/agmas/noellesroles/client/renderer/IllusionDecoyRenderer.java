@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.renderer;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -9,16 +10,22 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
+import org.joml.Matrix4f;
 
 import java.util.UUID;
 
@@ -110,9 +117,11 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             boolean crouching = (poseFlags & IllusionDecoyEntity.POSE_CROUCHING) != 0;
             fakePlayer.setShiftKeyDown(crouching);
             fakePlayer.setPose(crouching ? Pose.CROUCHING : Pose.STANDING);
-            // 坐下姿态：原版 PlayerRenderer 不会设置模型的 riding（玩家模型没这条链路），
-            // 因此把 UUID 登记到 SITTING_DECOYS，由 IllusionDecoySitPoseMixin 在
-            // HumanoidModel.setupAnim 末尾补上坐姿；渲染完立即注销。
+            // 影子：原版影子是 LivingEntityRenderer 内部私有逻辑，EntityRenderer 只暴露
+            // getShadowRadius，没有可调用的公共方法；而本渲染器走的是「假玩家」路线，
+            // 所以这里手动在脚下画一个原版阴影贴图的贴地四边形，效果与真身一致。
+            renderShadow(fakePlayer, matrices, vertexConsumers);
+
             boolean sitting = (poseFlags & IllusionDecoyEntity.POSE_SITTING) != 0;
             if (sitting) {
                 SITTING_DECOYS.add(fakePlayer.getUUID());
@@ -128,6 +137,63 @@ public class IllusionDecoyRenderer extends EntityRenderer<IllusionDecoyEntity> {
             return;
         }
         super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
+    }
+
+    /** 原版阴影贴图 */
+    private static final ResourceLocation SHADOW_TEXTURE =
+            ResourceLocation.withDefaultNamespace("textures/misc/shadow.png");
+    /** 影子半径（格）——与玩家体积相当 */
+    private static final float SHADOW_RADIUS = 0.5F;
+    /** 影子透明度 */
+    private static final float SHADOW_ALPHA = 0.55F;
+
+    /**
+     * 在分身脚下画一个贴地的影子。
+     *
+     * <p>影子高度取「分身脚下的地面」：从分身位置向下探一小段距离找一个可站立的表面，
+     * 找不到就退回分身自身高度。这样站在地面、台阶、椅子上都不会把影子画到方块里面去。
+     */
+    private static void renderShadow(RemotePlayer fakePlayer, PoseStack matrices,
+            MultiBufferSource vertexConsumers) {
+        Level level = fakePlayer.level();
+        if (level == null) {
+            return;
+        }
+        double x = fakePlayer.getX();
+        double z = fakePlayer.getZ();
+        // 向下探测地面（最多 1.5 格），拿不到就退回分身当前 Y
+        double shadowY = fakePlayer.getY();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (double d = 0.0D; d <= 1.5D; d += 0.1D) {
+            double y = fakePlayer.getY() - d;
+            pos.set(Mth.floor(x), Mth.floor(y - 0.001D), Mth.floor(z));
+            var state = level.getBlockState(pos);
+            if (!state.isAir() && state.isSolidRender(level, pos)) {
+                shadowY = pos.getY() + 1.0D;
+                break;
+            }
+        }
+
+        VertexConsumer buffer = vertexConsumers.getBuffer(RenderType.entityTranslucent(SHADOW_TEXTURE));
+        matrices.pushPose();
+        // 转到以影子中心为原点的局部坐标，方便只用一个矩阵直接写顶点
+        matrices.translate(x, shadowY + 0.01D, z);
+        Matrix4f m = matrices.last().pose();
+        float r = SHADOW_RADIUS;
+        // 贴地四边形：朝上，UV 覆盖整张贴图（阴影贴图自带羽化 alpha）
+        buffer.addVertex(m, -r, 0.0F, -r).setColor(1.0F, 1.0F, 1.0F, SHADOW_ALPHA)
+                .setUv(0.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
+        buffer.addVertex(m, -r, 0.0F, r).setColor(1.0F, 1.0F, 1.0F, SHADOW_ALPHA)
+                .setUv(0.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
+        buffer.addVertex(m, r, 0.0F, r).setColor(1.0F, 1.0F, 1.0F, SHADOW_ALPHA)
+                .setUv(1.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
+        buffer.addVertex(m, r, 0.0F, -r).setColor(1.0F, 1.0F, 1.0F, SHADOW_ALPHA)
+                .setUv(1.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
+        matrices.popPose();
     }
 
     @Override

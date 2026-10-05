@@ -294,6 +294,11 @@ public class SREPayloadRegister {
                 org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload.CODEC);
 
+        // 物品栏垃圾桶：删除光标上拿着的物品
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload.ID,
+                io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload.CODEC);
+
         // CS2 箱子预览网络包
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.cs2.network.BoxPreviewRequestC2SPayload.ID,
