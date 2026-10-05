@@ -101,6 +101,22 @@ public class IllusionDecoyEntity extends PathfinderMob {
     /** 寻路重计算计时器 */
     private int repathTimer = 0;
 
+    /**
+     * 上一 tick 的本体位置，用于取本体的**真实位移**。
+     * <p>技能二跟随靠复刻这个位移实现「和本体一样快」；用 {@code getDeltaMovement()} 会被重力
+     * 与客户端输入不同步影响（跳跃时速度突变，会让分身后退再追上）。
+     */
+    private double lastOwnerX;
+    private double lastOwnerY;
+    private double lastOwnerZ;
+    /** 是否已经记录了上一 tick 的本体位置 */
+    private boolean hasLastOwnerPos = false;
+
+    /** 技能二：分身与本体允许的最大位置误差，超过就直接吸附到队列位（防止被卡在方块里落下） */
+    private static final double FOLLOW_MAX_ERROR = 3.0D;
+    /** 技能二：每 tick 向队列位收敛的最大距离（格） */
+    private static final double FOLLOW_CATCHUP_PER_TICK = 0.35D;
+
     public IllusionDecoyEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.setHealth(2.0F);
@@ -153,6 +169,11 @@ public class IllusionDecoyEntity extends PathfinderMob {
         this.yRotO = owner.getYRot();
         this.setYBodyRot(owner.getYRot());
         this.setYHeadRot(owner.getYRot());
+        // 记录放置瞬间的本体位置，作为技能二位移复刻的起点
+        lastOwnerX = owner.getX();
+        lastOwnerY = owner.getY();
+        lastOwnerZ = owner.getZ();
+        hasLastOwnerPos = true;
         // 姿态取「放置瞬间」所有者的动作（蹲下/坐着/举刀/疾跑）
         syncPoseFrom(owner);
     }
@@ -293,19 +314,61 @@ public class IllusionDecoyEntity extends PathfinderMob {
     }
 
     /**
-     * 技能二：跟随所有者移动
+     * 技能二：跟随所有者移动。
+     *
+     * <p>不用寻路（{@code getNavigation().moveTo}）：那样走的是分身自己的
+     * {@code MOVEMENT_SPEED}（0.25）× 速度系数，实际约 0.3 格/tick，
+     * 而玩家走路约 0.1、疾跑约 0.13 格/tick —— 分身会比本体快 2~3 倍，一眼就假。
+     *
+     * <p>改为直接复刻本体的**真实位移**，并持续收敛到队列位：
+     * <ol>
+     * <li>加上本体这一 tick 的位移增量 → 与本体同速同向，跳跃/走位都跟得上；</li>
+     * <li>再加一个小幅收敛量（每 tick 最多 {@link #FOLLOW_CATCHUP_PER_TICK} 格）→ 逐渐回到队列位；</li>
+     * <li>误差超过 {@link #FOLLOW_MAX_ERROR} 格时直接吸附（被方块卡住、传送后追上）。</li>
+     * </ol>
      */
     private void tickFollow(ServerLevel serverLevel, Player owner) {
-        double targetX = owner.getX() + Math.sin(Math.toRadians(owner.getYRot() + followOffsetAngle)) * FOLLOW_DISTANCE;
-        double targetZ = owner.getZ() + Math.cos(Math.toRadians(owner.getYRot() + followOffsetAngle)) * FOLLOW_DISTANCE;
-        double targetY = owner.getY();
-
-        // 平滑跟随
-        double dist = Math.sqrt(Math.pow(targetX - getX(), 2) + Math.pow(targetZ - getZ(), 2));
-        if (dist > 1.0) {
-            getNavigation().moveTo(targetX, targetY, targetZ, 1.2D);
+        if (!hasLastOwnerPos) {
+            lastOwnerX = owner.getX();
+            lastOwnerY = owner.getY();
+            lastOwnerZ = owner.getZ();
+            hasLastOwnerPos = true;
         }
-        // 同步视角朝向
+        double ownerDx = owner.getX() - lastOwnerX;
+        double ownerDy = owner.getY() - lastOwnerY;
+        double ownerDz = owner.getZ() - lastOwnerZ;
+        lastOwnerX = owner.getX();
+        lastOwnerY = owner.getY();
+        lastOwnerZ = owner.getZ();
+
+        // 队列位：本体周围按 followOffsetAngle 分布的固定偏移
+        double offsetRad = Math.toRadians(owner.getYRot() + followOffsetAngle);
+        double slotX = owner.getX() + Math.sin(offsetRad) * FOLLOW_DISTANCE;
+        double slotZ = owner.getZ() + Math.cos(offsetRad) * FOLLOW_DISTANCE;
+
+        // 1) 同速：跟本体走一样的位移
+        double x = getX() + ownerDx;
+        double y = getY() + ownerDy;
+        double z = getZ() + ownerDz;
+
+        // 2) 归位：只做小幅收敛，避免"贴脸—落后"来回摆
+        double errX = slotX - x;
+        double errZ = slotZ - z;
+        double err = Math.sqrt(errX * errX + errZ * errZ);
+        if (err > FOLLOW_MAX_ERROR) {
+            // 3) 被卡住/被传送：直接吸附回队列位
+            x = slotX;
+            z = slotZ;
+        } else if (err > 0.01D) {
+            double step = Math.min(FOLLOW_CATCHUP_PER_TICK, err);
+            x += errX / err * step;
+            z += errZ / err * step;
+        }
+
+        // setPos 会写 xOld/yOld/zOld，客户端据此做位置插值 —— 跟随才平滑、不一顿一顿
+        this.setPos(x, y, z);
+
+        // 同步朝向（与本体完全一致，包括抬头/低头与身体朝向）
         this.setYRot(owner.getYRot());
         this.setXRot(owner.getXRot());
         this.setYBodyRot(owner.getYRot());
