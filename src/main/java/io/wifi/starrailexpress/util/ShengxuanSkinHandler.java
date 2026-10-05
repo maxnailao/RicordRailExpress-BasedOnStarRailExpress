@@ -52,12 +52,10 @@ public final class ShengxuanSkinHandler {
      * </p>
      */
     public static boolean hasShengxuanSkinEquipped(Player player, ItemStack itemStack) {
-        // 1. 优先检查 ItemStack 自身的皮肤数据组件
-        if (itemStack.has(SREDataComponentTypes.SKIN)) {
-            String compSkin = itemStack.get(SREDataComponentTypes.SKIN);
-            boolean result = SKIN_ID.equals(compSkin);
-            SRE.LOGGER.debug("[圣宣] 检测到ItemStack皮肤组件: {}, 匹配结果: {}", compSkin, result);
-            return result;
+        // 1. 物品栈显式携带圣宣皮肤 → 直接命中
+        String compSkin = itemStack.get(SREDataComponentTypes.SKIN);
+        if (SKIN_ID.equals(compSkin)) {
+            return true;
         }
         // 2. 获取物品的皮肤类型（如 "revolver"），而非注册路径
         String skinType;
@@ -66,10 +64,10 @@ public final class ShengxuanSkinHandler {
         } else {
             skinType = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
         }
-        // 3. 按皮肤类型查询玩家装备的皮肤
+        // 3. 按皮肤类型实时查询玩家装备的皮肤（权威来源，避免过期组件导致特效/形态失效）
         String equippedSkin = PlayerEconomyManager.getEquippedSkinForItemType(player, skinType);
         boolean result = SKIN_ID.equals(equippedSkin);
-        SRE.LOGGER.debug("[圣宣] 皮肤类型: {}, 装备皮肤: {}, 匹配结果: {}", skinType, equippedSkin, result);
+        SRE.LOGGER.debug("[圣宣] 皮肤类型: {}, 装备皮肤: {}, 组件皮肤: {}, 匹配结果: {}", skinType, equippedSkin, compSkin, result);
         return result;
     }
 

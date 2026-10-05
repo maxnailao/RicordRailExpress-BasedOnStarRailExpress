@@ -25,9 +25,9 @@ public final class EmozhidaoSkinHandler {
             return true;
         }
         // 2) 否则实时查询玩家当前装备的皮肤。
-        //    关键修复：不能因为物品栈上存在「过期/默认」的 SKIN 组件就提前返回 false——
-        //    杀手刀会跨局留存，其 SKIN 组件在 inventoryTick 首次写入后便被冻结，
-        //    一旦那次写入的是 default，旧的「组件优先」逻辑会让特效永久消失且无法恢复。
+        //    关键修复：物品栈上「过期/默认」的 SKIN 组件不能提前返回 false——
+        //    杀手刀跨局留存，其组件在 inventoryTick 首次写入后便被冻结，
+        //    一旦那次写入的是 default，旧逻辑会让特效永久消失且无法恢复。
         String skinType;
         if (itemStack.getItem() instanceof SkinableItem skinable && skinable.getItemSkinType() != null) {
             skinType = skinable.getItemSkinType();
