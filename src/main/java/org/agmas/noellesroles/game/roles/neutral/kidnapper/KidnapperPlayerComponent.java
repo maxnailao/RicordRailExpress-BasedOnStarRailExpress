@@ -161,6 +161,9 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
 
         // 正在拖拽：把人质放在当前位置（仍然处于被绑状态）
         if (draggingTarget != null) {
+            Player dropped = sp.level().getPlayerByUUID(draggingTarget);
+            if (dropped != null)
+                KidnappedCCA.get(dropped).markBoundIdle();
             draggingTarget = null;
             sp.displayClientMessage(Component.translatable("message.noellesroles.kidnapper.dropped")
                     .withStyle(ChatFormatting.YELLOW), true);
@@ -278,7 +281,12 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
         }
 
         judgmentPhase = true;
-        // 冻结进入审判时的真实绑架人数：之后审判阶段杀人只计入 kidnapped（胜利判定），不再影响枪冷却缩减
+        // 进入审判时的当前拖拽目标就地放下：转为原地被绑姿态
+        if (draggingTarget != null) {
+            Player abandoned = sp.level().getPlayerByUUID(draggingTarget);
+            if (abandoned != null)
+                KidnappedCCA.get(abandoned).markBoundIdle();
+        }
         judgmentKidnapCount = kidnapped.size();
         // 审判阶段限时 2 分 30 秒
         judgmentRemainingTicks = JUDGMENT_DURATION_TICKS;

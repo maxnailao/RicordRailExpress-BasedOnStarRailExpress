@@ -46,6 +46,8 @@ public class KidnapperKillMixin {
         // 捆绑状态（禁移动/禁言/禁道具，每 tick 续期）
         boolean isKillerTarget = game.getAllKillerPlayers().contains(victim.getUUID());
         KidnappedCCA.get(victim).setKidnapped(killer.getUUID(), isKillerTarget);
+        // 被击杀后传回自己房间并捆绑：属「原地被绑」，渲染双手背后低头姿态
+        KidnappedCCA.get(victim).markBoundIdle();
 
         // 传送回受害者自己的房间
         GameUtils.teleportBackToRoom(victimSp);
