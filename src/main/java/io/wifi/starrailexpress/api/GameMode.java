@@ -322,6 +322,9 @@ public abstract class GameMode {
             GameReplayManager.sendSystemMessage(player, text);
         }
         ReplayBoardService.showDefault(world, SRE.REPLAY_MANAGER);
+        // 本局结束：刷新小脑 / 被小脑排行榜投屏（整局只更新这一次，避免屏幕闪烁）
+        io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardService
+                .refreshAll(world.getServer());
     }
 
     /**

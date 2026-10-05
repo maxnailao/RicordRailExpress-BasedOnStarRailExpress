@@ -24,7 +24,9 @@ import java.util.Set;
  * 与 {@code /sre:replay_screen} 完全一致。屏幕的**位置**存在
  * {@link ReplayBoardSavedData}（同一个存档文件），因此重启后依然在。
  *
- * <p>内容每 {@link #REPAINT_INTERVAL_TICKS} tick 重画一次，局内数据变化能自动跟上。
+ * <p>内容<b>不做周期刷新</b>：只在建屏、每局结束（{@code GameMode#showReplay}）、
+ * 管理员 show / reset 时更新一次。更新采用就地改文本而非销毁重建，
+ * 所以画面静止、不会闪烁。
  */
 public final class XiaoNaoBoardService {
 
@@ -36,17 +38,12 @@ public final class XiaoNaoBoardService {
     public static final String BOARD_BEI_XIAONAO = ID_PREFIX + "beaten";
     /** 榜单最多列几名 */
     private static final int MAX_ROWS = 10;
-    /** 重画间隔（tick） */
-    private static final int REPAINT_INTERVAL_TICKS = 20;
     /** 文字可见距离 */
     private static final float DISPLAY_VIEW_RANGE = 0.6F;
     private static final String ENTITY_NAME_PREFIX = "SRE XiaoNao Board:";
 
-    /** 当前需要持续刷新的榜单屏幕 id */
-    private static final Set<String> ACTIVE = new HashSet<>();
-    /** 重启后把存档里的榜单屏幕恢复显示（只做一次） */
-    private static boolean restored = false;
-    private static int tickCounter = 0;
+    /** 被 hide 关掉的投屏 id（不参与统一刷新） */
+    private static final Set<String> HIDDEN = new HashSet<>();
 
     private XiaoNaoBoardService() {
     }
@@ -93,7 +90,7 @@ public final class XiaoNaoBoardService {
         String id = kind.screenId + (slot == null || slot.isBlank() ? "" : "_" + slot);
         ReplayScreenEntry entry = ReplayBoardService.createScreen(level, id, origin, width, height,
                 direction, background);
-        ACTIVE.add(id);
+        HIDDEN.remove(id);
         repaint(level.getServer(), id);
         return entry;
     }
@@ -105,7 +102,7 @@ public final class XiaoNaoBoardService {
     }
 
     public static boolean remove(ServerLevel level, String id) {
-        ACTIVE.remove(id);
+        HIDDEN.remove(id);
         return ReplayBoardService.removeScreen(level, id);
     }
 
@@ -118,17 +115,17 @@ public final class XiaoNaoBoardService {
         if (ReplayBoardSavedData.get(level).getScreen(id).isEmpty()) {
             return false;
         }
-        ACTIVE.add(id);
+        HIDDEN.remove(id);
         return repaint(level.getServer(), id);
     }
 
     /**
-     * 停止刷新并清空画面，但**保留**屏幕定义（文件里位置还在，随时 show 回来）。
+     * 停止显示并清空画面，但**保留**屏幕定义（文件里位置还在，随时 show 回来）。
      *
      * @return 屏幕不存在时返回 false
      */
     public static boolean hide(ServerLevel level, String id) {
-        ACTIVE.remove(id);
+        HIDDEN.add(id);
         var opt = ReplayBoardSavedData.get(level).getScreen(id);
         if (opt.isEmpty()) {
             return false;
@@ -138,10 +135,41 @@ public final class XiaoNaoBoardService {
     }
 
     /**
-     * 重置榜单统计并**立刻**把已显示的投屏刷新成空榜。
+     * 刷新**所有**榜单投屏。由对局结束时调用（见 {@code GameMode#showReplay}）。
      *
-     * <p>如果没有这一步，重置后玩家要等下一个重画周期（最多 20 tick）才会看到变化，
-     * 期间屏幕上还挂着旧数据，容易以为没生效。
+     * <p>刻意不做成每 tick 周期重画：旧实现每 20 tick 丢弃并重建文字实体，
+     * 玩家看到的就是"一闪一闪"。现在只在
+     * <ul>
+     * <li>建屏时，</li>
+     * <li>每局结束时，</li>
+     * <li>管理员 show / reset 时</li>
+     * </ul>
+     * 各更新一次，画面静止不动。
+     *
+     * @return 实际刷新的投屏数量
+     */
+    public static int refreshAll(MinecraftServer server) {
+        if (server == null) {
+            return 0;
+        }
+        ServerLevel overworld = server.overworld();
+        if (overworld == null) {
+            return 0;
+        }
+        int n = 0;
+        for (String id : screenIdsOf(overworld)) {
+            if (HIDDEN.contains(id)) {
+                continue;
+            }
+            if (repaint(server, id)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * 重置榜单统计并**立刻**把投屏刷新成空榜。
      *
      * @return 被重置影响的投屏数量
      */
@@ -150,7 +178,10 @@ public final class XiaoNaoBoardService {
         XiaoNaoBoardStats.resetAll(server);
         int repainted = 0;
         for (String id : screenIdsOf(level)) {
-            if (ACTIVE.contains(id) && repaint(server, id)) {
+            if (HIDDEN.contains(id)) {
+                continue;
+            }
+            if (repaint(server, id)) {
                 repainted++;
             }
         }
@@ -172,7 +203,13 @@ public final class XiaoNaoBoardService {
     // 内容与绘制
     // =========================================================================
 
-    /** 把某个榜单的当前数据重画到屏幕上 */
+    /**
+     * 把某个榜单的当前数据画到屏幕上。
+     *
+     * <p><b>就地更新</b>：已经存在的行只改文本，不销毁重建。
+     * 早期实现每次重画都 discard 全部再 spawn，即使内容没变也会闪一下，
+     * 这正是"一闪一闪"的来源。
+     */
     private static boolean repaint(MinecraftServer server, String id) {
         if (server == null) {
             return false;
@@ -187,13 +224,46 @@ public final class XiaoNaoBoardService {
         if (level == null) {
             return false;
         }
-        List<Component> lines = buildLines(id, server);
-        clearTextDisplays(level, entry);
         int rows = ReplayBoardService.visibleRows(entry);
-        for (int i = 0; i < lines.size() && i < rows; i++) {
-            spawnLine(level, entry, lines.get(i), i, rows, server);
+        List<Component> lines = buildLines(id, server);
+        int want = Math.min(lines.size(), rows);
+
+        // 收集屏幕上现有的本榜单行
+        List<Display.TextDisplay> existing = findTextDisplays(level, entry);
+
+        for (int i = 0; i < want; i++) {
+            Component text = lines.get(i);
+            Display.TextDisplay display = i < existing.size() ? existing.get(i) : null;
+            if (display != null) {
+                // 内容没变就什么都不做，避免无谓的同步包
+                if (!text.equals(display.getText())) {
+                    display.setText(text);
+                }
+            } else {
+                spawnLine(level, entry, text, i, rows);
+            }
+        }
+        // 行数变少（例如重置后只剩标题）时，把多出来的行销毁
+        for (int i = want; i < existing.size(); i++) {
+            existing.get(i).discard();
         }
         return true;
+    }
+
+    /** 收集本榜单屏幕前方现有的文字实体，按行号（y 从高到低）排序 */
+    private static List<Display.TextDisplay> findTextDisplays(ServerLevel level, ReplayScreenEntry entry) {
+        String expected = ENTITY_NAME_PREFIX + entry.id();
+        List<Display.TextDisplay> found = new ArrayList<>();
+        level.getAllEntities().forEach(entity -> {
+            if (entity instanceof Display.TextDisplay) {
+                String name = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
+                if (expected.equals(name)) {
+                    found.add((Display.TextDisplay) entity);
+                }
+            }
+        });
+        found.sort((a, b) -> Double.compare(b.getY(), a.getY()));
+        return found;
     }
 
     /** 生成榜单文本（标题 + 名次行） */
@@ -231,7 +301,7 @@ public final class XiaoNaoBoardService {
 
     /** 在屏幕前方生成一行文字 */
     private static void spawnLine(ServerLevel level, ReplayScreenEntry entry, Component text,
-            double row, int visibleRows, MinecraftServer server) {
+            double row, int visibleRows) {
         Display.TextDisplay display = new Display.TextDisplay(EntityType.TEXT_DISPLAY, level);
         display.setText(text);
         display.setNoGravity(true);
@@ -267,34 +337,23 @@ public final class XiaoNaoBoardService {
     }
 
     // =========================================================================
-    // 每 tick 刷新
+    // 启动恢复
     // =========================================================================
 
-    public static void tick(MinecraftServer server) {
-        if (server == null) {
+    /** 服务器启动后只做一次的画面恢复（重启后屏幕不该是空的） */
+    private static boolean restored = false;
+
+    /**
+     * 服务器启动时调用一次：把存档里已有的榜单投屏按其统计数据重新画一遍。
+     *
+     * <p>注意这里**不是**周期刷新。之前每 20 tick 重画一次，因为会销毁重建文字实体，
+     * 屏幕上就一直"一闪一闪"。现在榜单只在建屏 / 每局结束 / 管理员操作时更新。
+     */
+    public static void restoreOnStartup(MinecraftServer server) {
+        if (restored || server == null) {
             return;
         }
-        // 服务器重启后：把存档里已有的榜单屏幕恢复成持续刷新
-        if (!restored) {
-            restored = true;
-            ServerLevel overworld = server.overworld();
-            if (overworld != null) {
-                for (String id : screenIdsOf(overworld)) {
-                    ACTIVE.add(id);
-                }
-            }
-        }
-        if (ACTIVE.isEmpty()) {
-            return;
-        }
-        if (++tickCounter < REPAINT_INTERVAL_TICKS) {
-            return;
-        }
-        tickCounter = 0;
-        for (String id : new ArrayList<>(ACTIVE)) {
-            if (!repaint(server, id)) {
-                ACTIVE.remove(id);
-            }
-        }
+        restored = true;
+        refreshAll(server);
     }
 }
