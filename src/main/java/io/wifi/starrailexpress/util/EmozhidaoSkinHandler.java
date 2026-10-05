@@ -20,9 +20,14 @@ public final class EmozhidaoSkinHandler {
     public static final String SKIN_ID = "knife_emozhidao_1";
 
     public static boolean hasEmozhidaoSkinEquipped(Player player, ItemStack itemStack) {
-        if (itemStack.has(SREDataComponentTypes.SKIN)) {
-            return SKIN_ID.equals(itemStack.get(SREDataComponentTypes.SKIN));
+        // 1) 物品栈显式携带恶魔之刃（指令/创造/开箱直接指定）→ 直接命中
+        if (SKIN_ID.equals(itemStack.get(SREDataComponentTypes.SKIN))) {
+            return true;
         }
+        // 2) 否则实时查询玩家当前装备的皮肤。
+        //    关键修复：不能因为物品栈上存在「过期/默认」的 SKIN 组件就提前返回 false——
+        //    杀手刀会跨局留存，其 SKIN 组件在 inventoryTick 首次写入后便被冻结，
+        //    一旦那次写入的是 default，旧的「组件优先」逻辑会让特效永久消失且无法恢复。
         String skinType;
         if (itemStack.getItem() instanceof SkinableItem skinable && skinable.getItemSkinType() != null) {
             skinType = skinable.getItemSkinType();
