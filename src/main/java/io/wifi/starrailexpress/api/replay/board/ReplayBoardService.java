@@ -41,10 +41,23 @@ public final class ReplayBoardService {
 
     public static ReplayBoardSavedData.ReplayScreenEntry createScreen(ServerLevel level, String id, BlockPos origin,
             int width, int height, Direction direction) {
+        return createScreen(level, id, origin, width, height, direction, true);
+    }
+
+    /**
+     * 建屏。
+     *
+     * @param background 是否铺黑色羊毛底板。<b>false</b> 时只留文字（悬浮字幕），
+     *                   不动地图上的任何方块 —— 适合不想在建筑里砌黑墙的场景。
+     */
+    public static ReplayBoardSavedData.ReplayScreenEntry createScreen(ServerLevel level, String id, BlockPos origin,
+            int width, int height, Direction direction, boolean background) {
         Direction horizontal = normalize(direction);
         ReplayBoardSavedData.ReplayScreenEntry entry = new ReplayBoardSavedData.ReplayScreenEntry(id,
-                level.dimension(), origin.immutable(), width, height, horizontal, null);
-        buildBackground(level, entry);
+                level.dimension(), origin.immutable(), width, height, horizontal, null, background);
+        if (background) {
+            buildBackground(level, entry);
+        }
         ReplayBoardSavedData.get(level).putScreen(entry, false);
         return entry;
     }
@@ -107,6 +120,10 @@ public final class ReplayBoardService {
      * 文字由 {@link #positionLine} 往朝向方向推出 {@link #TEXT_OFFSET}，恰好浮在底板前方。
      */
     public static void buildBackground(ServerLevel level, ReplayBoardSavedData.ReplayScreenEntry entry) {
+        // 建屏时选择了"不要底板"，任何刷新路径都不该偷偷把黑墙砌回来
+        if (!entry.background()) {
+            return;
+        }
         BlockPos origin = entry.origin();
         for (int w = 0; w < entry.width(); w++) {
             for (int h = 0; h < entry.height(); h++) {
@@ -175,7 +192,7 @@ public final class ReplayBoardService {
         return direction;
     }
 
-    private static float yawFor(Direction direction) {
+    public static float yawFor(Direction direction) {
         return switch (normalize(direction)) {
             case NORTH -> 180.0F;
             case SOUTH -> 0.0F;
@@ -185,7 +202,7 @@ public final class ReplayBoardService {
         };
     }
 
-    private static float textScale(ReplayBoardSavedData.ReplayScreenEntry entry) {
+    public static float textScale(ReplayBoardSavedData.ReplayScreenEntry entry) {
         return Math.max(0.35F, Math.min(1.25F, entry.width() / 8.0F));
     }
 
@@ -236,7 +253,7 @@ public final class ReplayBoardService {
         return display;
     }
 
-    private static void positionLine(Display.TextDisplay display, ReplayBoardSavedData.ReplayScreenEntry entry, double row,
+    public static void positionLine(Display.TextDisplay display, ReplayBoardSavedData.ReplayScreenEntry entry, double row,
             int visibleRows) {
         BlockPos origin = entry.origin();
         double x = origin.getX() + 0.5D;
@@ -252,7 +269,7 @@ public final class ReplayBoardService {
         display.moveTo(x, y, z, yawFor(entry.direction()), 0.0F);
     }
 
-    private static double lineSpacing(ReplayBoardSavedData.ReplayScreenEntry entry, int visibleRows) {
+    public static double lineSpacing(ReplayBoardSavedData.ReplayScreenEntry entry, int visibleRows) {
         if (visibleRows <= 1) {
             return 0.42D;
         }
@@ -261,7 +278,7 @@ public final class ReplayBoardService {
         return Math.min(readableSpacing, fittingSpacing);
     }
 
-    private static int visibleRows(ReplayBoardSavedData.ReplayScreenEntry entry) {
+    public static int visibleRows(ReplayBoardSavedData.ReplayScreenEntry entry) {
         return Math.max(2, entry.height() - 1);
     }
 

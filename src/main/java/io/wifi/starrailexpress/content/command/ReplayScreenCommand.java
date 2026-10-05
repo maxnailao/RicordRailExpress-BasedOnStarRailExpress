@@ -19,6 +19,8 @@ import net.minecraft.server.level.ServerLevel;
 
 public final class ReplayScreenCommand {
     private static final String[] DIRECTIONS = { "north", "south", "east", "west" };
+    /** 底板开关的写法 */
+    private static final String[] BACKGROUNDS = { "bg", "nobg" };
 
     private ReplayScreenCommand() {
     }
@@ -34,7 +36,16 @@ public final class ReplayScreenCommand {
                                                         .then(Commands.argument("direction", StringArgumentType.word())
                                                                 .suggests((context, builder) -> SharedSuggestionProvider
                                                                         .suggest(DIRECTIONS, builder))
-                                                                .executes(ReplayScreenCommand::create)))))))
+                                                                .executes(ctx -> create(ctx, true))
+                                                                // 是否铺黑色羊毛底板
+                                                                .then(Commands.argument("background",
+                                                                        StringArgumentType.word())
+                                                                        .suggests((c, b) -> SharedSuggestionProvider
+                                                                                .suggest(BACKGROUNDS, b))
+                                                                        .executes(ctx -> create(ctx,
+                                                                                parseBackground(StringArgumentType
+                                                                                        .getString(ctx,
+                                                                                                "background")))))))))))
                 .then(Commands.literal("remove")
                         .then(Commands.argument("id", StringArgumentType.word())
                                 .executes(ReplayScreenCommand::remove)))
@@ -47,7 +58,7 @@ public final class ReplayScreenCommand {
                                 .executes(ReplayScreenCommand::show))));
     }
 
-    private static int create(CommandContext<CommandSourceStack> context) {
+    private static int create(CommandContext<CommandSourceStack> context, boolean background) {
         ServerLevel level = context.getSource().getLevel();
         String id = StringArgumentType.getString(context, "id");
         BlockPos pos = BlockPosArgument.getBlockPos(context, "pos");
@@ -58,10 +69,22 @@ public final class ReplayScreenCommand {
             context.getSource().sendFailure(Component.literal("Direction must be north, south, east, or west."));
             return 0;
         }
-        ReplayBoardService.createScreen(level, id, pos, width, height, direction);
-        context.getSource().sendSuccess(() -> Component.literal("Created replay screen '" + id + "'.")
+        ReplayBoardService.createScreen(level, id, pos, width, height, direction, background);
+        context.getSource().sendSuccess(() -> Component.literal("Created replay screen '" + id + "'"
+                + (background ? " (with black wool background)." : " (text only, no background)."))
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
+    }
+
+    /** bg / nobg -> true / false（也接受 yes/no/true/false） */
+    private static boolean parseBackground(String value) {
+        if (value == null) {
+            return true;
+        }
+        return switch (value.toLowerCase()) {
+            case "nobg", "no", "false", "none", "0" -> false;
+            default -> true;
+        };
     }
 
     private static int remove(CommandContext<CommandSourceStack> context) {

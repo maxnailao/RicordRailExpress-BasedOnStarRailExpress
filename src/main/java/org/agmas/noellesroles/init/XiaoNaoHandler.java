@@ -82,6 +82,9 @@ public class XiaoNaoHandler {
                     TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (isXiaoNaoReason(deathReason)) {
+                            // 排行榜统计：与真正执行惩罚的位置同步，所以
+                            // 逃票者/家族/疯狂魔术师/复仇者等“不算误杀”的分支不会计入
+                            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardStats.record(victim, killer);
                             // 腐败修饰符：小脑触发转变为黑警
                             handleCorruptionModifier(killer, gameWorldComponent);
 
@@ -101,6 +104,7 @@ public class XiaoNaoHandler {
                     if (gameWorldComponent.isRole(killer, ModRoles.NIUZAI_JUEDOUBA)
                             && deathReason.getPath().equals("derringer_shot")) {
                         if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
+                            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardStats.record(victim, killer);
                             handleCorruptionModifier(killer, gameWorldComponent);
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
                             for (ServerPlayer player : victim.serverLevel().players()) {

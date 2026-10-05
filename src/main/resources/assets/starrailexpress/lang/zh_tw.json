@@ -1602,6 +1602,7 @@
     "gui.sre.mailbox.stats":  "共 %s 封 | 可領取 %s 封",
     "gui.sre.mailbox.empty":  "暫無郵件",
     "gui.sre.mailbox.claim_all":  "一鍵領取",
+    "message.sre.mail.claim_command_failed": "郵件獎勵發放失敗：指令 /%s 未生效。請聯繫管理員處理。",
     "gui.sre.mailbox.delete_read":  "刪除已讀",
     "gui.sre.mailbox.back":  "返回",
     "gui.sre.mailbox.claim":  "領取",

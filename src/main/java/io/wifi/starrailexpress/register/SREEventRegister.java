@@ -89,6 +89,8 @@ public class SREEventRegister {
             ServerMapConfig.getInstance(server);
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
             SRE.REPLAY_MANAGER = new GameReplayManager(server);
+            // 小脑排行榜：把上次的统计读回内存（重启后榜单不空）
+            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardStats.restoreFromSaved(server);
             SyncMapConfigPayload.sendToAllPlayers();
             // 加载自定义职业
             try {
@@ -108,6 +110,7 @@ public class SREEventRegister {
         ServerTickEvents.END_SERVER_TICK.register(serv -> {
             VoteManager.onServerTick();
             ReplayBoardService.tick(serv);
+            io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardService.tick(serv);
             SceneAssetServer.tick(serv);
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
