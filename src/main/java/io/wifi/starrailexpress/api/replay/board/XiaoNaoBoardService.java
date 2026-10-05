@@ -253,12 +253,20 @@ public final class XiaoNaoBoardService {
     // =========================================================================
 
     /**
-     * 找出"孤儿"榜单文字实体：名字带 {@link #ENTITY_NAME_PREFIX}，
-     * 但存档里已经没有对应的屏幕记录了。
+     * 找出"孤儿"榜单文字实体：**必须**是本模组排行榜的实体（名字形如
+     * {@code SRE XiaoNao Board:<xiaonao_ 开头的 id>[#行号]}），且存档里已经没有对应屏幕。
      *
-     * <p>产生原因：早期版本用同一个 id 建第二次屏时，新 entry 覆盖了旧的，
-     * 旧屏幕的文字实体却留在世界上 —— 于是它看得见、却因为没有 entry
-     * 而删不掉（{@code remove} 查不到它，{@code list} 也列不出它）。
+     * <p>判定条件收得很紧，三层都要满足，避免把别人的东西算进来：
+     * <ol>
+     * <li>自定义名以 {@link #ENTITY_NAME_PREFIX} 开头（回放屏是
+     * {@code SRE Replay Screen:...}，第一步就被排除）；</li>
+     * <li>去掉 {@code #行号} 后，剩下的 id 还要以 {@link #ID_PREFIX}（{@code xiaonao_}）
+     * 开头 —— 这是排行榜屏幕的专属前缀，不可能误伤其它屏；</li>
+     * <li>该 id 不在当前屏幕清单里（确实没有对应记录了）。</li>
+     * </ol>
+     *
+     * <p>之前这里只做了第 1 步，判定过宽，导致"幽灵屏"的统计会把无关的文字实体也算进去，
+     * 看起来像是有幽灵屏 —— 其实没有。
      */
     public static List<Entity> findOrphanTextDisplays(ServerLevel level) {
         Set<String> known = new HashSet<>();
@@ -271,7 +279,16 @@ public final class XiaoNaoBoardService {
                 if (!(entity instanceof Display.TextDisplay)) {
                     return;
                 }
-                if (!known.contains(baseNameOf(entity))) {
+                String base = baseNameOf(entity);
+                // 必须确实是排行榜实体：前缀 + xiaonao_ 开头的 id
+                if (!base.startsWith(ENTITY_NAME_PREFIX)) {
+                    return;
+                }
+                String screenId = base.substring(ENTITY_NAME_PREFIX.length());
+                if (!screenId.startsWith(ID_PREFIX)) {
+                    return;
+                }
+                if (!known.contains(base)) {
                     orphans.add(entity);
                 }
             });
@@ -404,8 +421,11 @@ public final class XiaoNaoBoardService {
     /**
      * 生成榜单文本（标题 + 名次行）。
      *
-     * <p>每一行都会按屏幕宽度**截断**，保证一条数据只占一行 ——
-     * 否则文字实体会自动折行，折出来的第二行会压到下一行上。
+     * <p>每行都按**像素**裁到屏幕宽度内，保证一条数据只占一行
+     * （否则文字实体会自动折行，折出的第二行会压到下一行上）。
+     *
+     * <p>版式尽量紧凑以给名字留空间：名次后面只跟一个空格，次数用 {@code ×N}
+     * 而不是 {@code "  x" + N}。3 格宽的屏幕本来就没多少余量，这几个字符很关键。
      */
     private static List<Component> buildLines(String id, MinecraftServer server) {
         Kind kind = id.startsWith(BOARD_BEI_XIAONAO) ? Kind.BEI_XIAONAO
@@ -416,9 +436,8 @@ public final class XiaoNaoBoardService {
             return lines;
         }
         ReplayScreenEntry entry = ReplayBoardSavedData.get(server).getScreen(id).orElse(null);
-        int budget = entry == null ? 24 : charBudget(entry.width());
-        // 标题也截断：窄屏放不下"—— 被小脑榜 ——"，让它折行同样会串行
-        lines.add(Component.literal(truncate(kind.title, budget))
+        int budget = entry == null ? 128 : lineBudgetPx(entry);
+        lines.add(Component.literal(TextFitter.fit(kind.title, budget))
                 .withStyle(kind.color, ChatFormatting.BOLD));
         List<XiaoNaoBoardStats.Entry> top = kind == Kind.XIAONAO
                 ? XiaoNaoBoardStats.topXiaoNao(MAX_RANK_ROWS)
@@ -436,81 +455,35 @@ public final class XiaoNaoBoardService {
                 default -> ChatFormatting.GRAY;
             };
             String rankStr = rank + " ";
-            String countStr = " x" + e.count();
+            String countStr = "×" + e.count();
             String name;
-            if (width(rankStr) + width(countStr) >= budget) {
-                // 极端情况：连名次和次数都放不下（窄屏 + 超高次数）。
-                // 退化成"名次 + 溢出标记 + 截断的名字"，总宽仍不超预算。
-                countStr = " 99+";
-                name = truncate(e.name(), Math.max(0, budget - width(rankStr) - width(countStr)));
-                lines.add(Component.literal(rankStr).withStyle(ChatFormatting.DARK_GRAY)
-                        .append(Component.literal(name).withStyle(nameColor))
-                        .append(Component.literal(countStr).withStyle(kind.color)));
+            if (TextFitter.pixelWidth(rankStr) + TextFitter.pixelWidth(countStr) >= budget) {
+                // 极端情况：名次+次数都放不下（窄屏 + 超高次数）。退化成溢出标记。
+                countStr = "×99+";
+                name = TextFitter.fit(e.name(), Math.max(0, budget
+                        - TextFitter.pixelWidth(rankStr) - TextFitter.pixelWidth(countStr)));
             } else {
-                name = truncate(e.name(), budget - width(rankStr) - width(countStr));
-                lines.add(Component.literal(rankStr).withStyle(ChatFormatting.DARK_GRAY)
-                        .append(Component.literal(name).withStyle(nameColor))
-                        .append(Component.literal(countStr).withStyle(kind.color)));
+                name = TextFitter.fit(e.name(), budget
+                        - TextFitter.pixelWidth(rankStr) - TextFitter.pixelWidth(countStr));
             }
+            lines.add(Component.literal(rankStr).withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(name).withStyle(nameColor))
+                    .append(Component.literal(countStr).withStyle(kind.color)));
             rank++;
         }
         return lines;
     }
 
     /**
-     * 一行能放多少个"半角单位"。
+     * 一行的像素预算（模型空间）。
      *
-     * <p>屏幕世界宽 = {@code width} 格 = {@code width × 16} 像素；
-     * 默认字体每个 ASCII 字符约 6px，所以半角预算 ≈ 宽 × 16 / 6。
+     * <p>屏幕世界宽 = {@code 宽格数 × 16} 像素；文字会被缩放 {@code textScale}，
+     * 所以模型空间里能用的宽度是 {@code 世界宽度 / scale}。
+     * 再留 2px 余量，避免刚好卡在边界上被自动折行。
      */
-    static int charBudget(int width) {
-        return Math.max(4, (int) ((width * 16) / 6.0D));
-    }
-
-    /** 全角（中日韩）算 2 个半角单位，其余算 1 */
-    static int width(String s) {
-        if (s == null) {
-            return 0;
-        }
-        int w = 0;
-        for (int i = 0; i < s.length(); i++) {
-            w += isWide(s.charAt(i)) ? 2 : 1;
-        }
-        return w;
-    }
-
-    private static boolean isWide(char c) {
-        return c >= 0x1100 && (c <= 0x115F || c == 0x2329 || c == 0x232A
-                || (c >= 0x2E80 && c <= 0xA4CF)
-                || (c >= 0xAC00 && c <= 0xD7A3)
-                || (c >= 0xF900 && c <= 0xFAFF)
-                || (c >= 0xFE30 && c <= 0xFE6F)
-                || (c >= 0xFF00 && c <= 0xFF60)
-                || (c >= 0xFFE0 && c <= 0xFFE6));
-    }
-
-    /** 按半角预算截断，超长时以 … 结尾 */
-    static String truncate(String s, int budget) {
-        if (s == null) {
-            return "";
-        }
-        if (budget <= 1) {
-            return "…";
-        }
-        if (width(s) <= budget) {
-            return s;
-        }
-        StringBuilder sb = new StringBuilder();
-        int used = 0;
-        for (int i = 0; i < s.length(); i++) {
-            int cw = isWide(s.charAt(i)) ? 2 : 1;
-            if (used + cw > budget - 1) {
-                break;
-            }
-            sb.append(s.charAt(i));
-            used += cw;
-        }
-        return sb + "…";
+    static int lineBudgetPx(ReplayScreenEntry entry) {
+        double scale = ReplayBoardService.textScale(entry);
+        return Math.max(24, (int) Math.floor(entry.width() * 16.0D / scale) - 2);
     }
 
     /** 在屏幕前方生成一行文字 */

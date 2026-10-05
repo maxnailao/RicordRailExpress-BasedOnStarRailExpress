@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ import java.util.UUID;
  */
 public final class XiaoNaoBoardCommand {
 
-    private static final String[] KINDS = { "xiaonao", "beixiaonao", "小脑", "被小脑" };
+    private static final String[] KINDS = { "xiaonao", "beixiaonao", "小脑", "被小脑", "replay" };
     private static final String[] DIRECTIONS = { "north", "south", "east", "west" };
     /** 底板开关的写法 */
     private static final String[] BACKGROUNDS = { "bg", "nobg" };
@@ -100,8 +101,11 @@ public final class XiaoNaoBoardCommand {
                                         .suggest(boardIds(context), builder))
                                 .executes(XiaoNaoBoardCommand::remove)))
                 .then(Commands.literal("list").executes(XiaoNaoBoardCommand::list))
-                // 清理"看得见但删不掉"的孤儿文字实体
-                .then(Commands.literal("purge").executes(XiaoNaoBoardCommand::purge))
+                // 清理"看得见但删不掉"的孤儿文字实体。破坏性操作，必须显式 confirm
+                .then(Commands.literal("purge")
+                        .executes(XiaoNaoBoardCommand::purgeNeedConfirm)
+                        .then(Commands.literal("confirm")
+                                .executes(XiaoNaoBoardCommand::purge)))
 
                 // ── 单独改某个人的次数 ──
                 // set/add/sub <小脑|被小脑> <玩家> <数量>，玩家支持名字或 UUID，逗号可多个
@@ -275,6 +279,19 @@ public final class XiaoNaoBoardCommand {
         }
         if (lines.isEmpty()) {
             body.append("\n（没有已登记的投屏）");
+        }
+        // 其它屏幕（回放屏等）也列出来，方便单独 remove，不会被误当成榜单
+        List<String> others = otherScreens(level);
+        if (!others.isEmpty()) {
+            body.append("\n§7其它屏幕（回放屏等，不参与榜单刷新）：");
+            for (int i = 0; i < others.size(); i++) {
+                var e = data.getScreen(others.get(i)).orElse(null);
+                String handle = i == 0 ? REPLAY_ALIAS : REPLAY_ALIAS + ":" + (i + 1);
+                body.append("\n§7- §f").append(handle).append(" §7→ ").append(others.get(i));
+                if (e != null) {
+                    body.append(" [").append(e.width()).append("x").append(e.height()).append("]");
+                }
+            }
         }
         if (orphanCount > 0) {
             body.append("\n§e⚠ 检测到 ").append(orphanCount)
@@ -478,6 +495,44 @@ public final class XiaoNaoBoardCommand {
         return out;
     }
 
+    /**
+     * 裸 purge：只**预览**会删掉些什么，不执行。
+     *
+     * <p>加这道闸是因为 purge 是破坏性的、且作用范围是"所有维度里所有本模组的文字实体"。
+     * 之前它直接执行，一旦匹配范围写宽了就会连带删掉别的东西（就发生过）。
+     */
+    private static int purgeNeedConfirm(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        List<Entity> orphans = XiaoNaoBoardService.findOrphanTextDisplays(level);
+        Component preview;
+        if (orphans.isEmpty()) {
+            preview = Component.literal("没有发现孤儿榜单文字实体，无需清理。")
+                    .withStyle(ChatFormatting.GRAY);
+        } else {
+            Map<String, Integer> nameCounts = new java.util.TreeMap<>();
+            for (Entity e : orphans) {
+                String n = e.getCustomName() == null ? "(无名)" : e.getCustomName().getString();
+                nameCounts.merge(n, 1, Integer::sum);
+            }
+            StringBuilder sb = new StringBuilder("将删除以下 ")
+                    .append(orphans.size()).append(" 个文字实体（不可撤销，请先核对名字）：");
+            // 直接列出**完整实体名**，让你能一眼看出有没有误伤（比如回放屏）
+            int shown = 0;
+            for (String n : new java.util.TreeSet<>(nameCounts.keySet())) {
+                if (shown++ >= 10) {
+                    sb.append("\n  … 还有 ").append(nameCounts.size() - 10).append(" 种未列出");
+                    break;
+                }
+                sb.append("\n  §f").append(nameCounts.get(n)).append("× §7").append(n);
+            }
+            sb.append("\n§e确认请执行: /sre:xiaonao_board purge confirm");
+            preview = Component.literal(sb.toString());
+        }
+        Component result = preview;
+        context.getSource().sendSuccess(() -> result, false);
+        return 0;
+    }
+
     private static int purge(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         int n = XiaoNaoBoardService.purgeOrphans(level);
@@ -505,6 +560,9 @@ public final class XiaoNaoBoardCommand {
      * <li>写 {@code 小脑:2}：取第 2 个前缀匹配（用于删掉"先放的那块"以外的任意一块）。</li>
      * </ul>
      */
+    /** 兼容的榜单别名：把 replay 之类也解析成具体屏幕 id */
+    private static final String REPLAY_ALIAS = "replay";
+
     private static String resolveId(CommandContext<CommandSourceStack> context, String raw) {
         ServerLevel level = context.getSource().getLevel();
         if (level == null) {
@@ -514,6 +572,23 @@ public final class XiaoNaoBoardCommand {
         // 精确匹配优先（用户可能直接粘贴 list 里的完整 id）
         if (data.getScreen(raw).isPresent()) {
             return raw;
+        }
+        // replay / replay:N -> 非小脑榜的屏幕（回放屏等）
+        if (raw.equalsIgnoreCase(REPLAY_ALIAS) || raw.toLowerCase().startsWith(REPLAY_ALIAS + ":")) {
+            List<String> others = otherScreens(level);
+            int pick = 1;
+            int colon = raw.lastIndexOf(':');
+            if (colon > 0) {
+                try {
+                    pick = Integer.parseInt(raw.substring(colon + 1));
+                } catch (NumberFormatException ignored) {
+                    pick = 1;
+                }
+            }
+            if (others.isEmpty()) {
+                return null;
+            }
+            return (pick >= 1 && pick <= others.size()) ? others.get(pick - 1) : null;
         }
         // 小脑:2 形式
         String name = raw;
@@ -542,7 +617,7 @@ public final class XiaoNaoBoardCommand {
         return matches.get(0);
     }
 
-    /** 某个榜单类型下的所有屏幕 id（精确 id 排最前，然后按后缀顺序） */
+    /** 某个"榜单类型"下所有匹配的 id。也负责把 replay 这种非榜单前缀单独归类 */
     private static List<String> matchesOf(ServerLevel level, XiaoNaoBoardService.Kind kind) {
         ReplayBoardSavedData data = ReplayBoardSavedData.get(level);
         List<String> out = new ArrayList<>();
@@ -568,6 +643,18 @@ public final class XiaoNaoBoardCommand {
             return a.compareTo(b);
         });
         out.addAll(rest);
+        return out;
+    }
+
+    /** 所有非小脑榜的屏幕（回放屏 / 任何其它屏），供 list 与 remove 兜底使用 */
+    private static List<String> otherScreens(ServerLevel level) {
+        List<String> out = new ArrayList<>();
+        for (String id : ReplayBoardSavedData.get(level).screens().keySet()) {
+            if (!id.startsWith(XiaoNaoBoardService.ID_PREFIX)) {
+                out.add(id);
+            }
+        }
+        out.sort(String::compareTo);
         return out;
     }
 
