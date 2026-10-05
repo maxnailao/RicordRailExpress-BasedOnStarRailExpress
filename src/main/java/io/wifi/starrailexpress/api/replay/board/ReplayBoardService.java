@@ -257,7 +257,7 @@ public final class ReplayBoardService {
             int visibleRows) {
         BlockPos origin = entry.origin();
         double x = origin.getX() + 0.5D;
-        double y = origin.getY() + entry.height() - 0.65D - row * lineSpacing(entry, visibleRows);
+        double y = origin.getY() + entry.height() - ROW_TOP_MARGIN - row * rowSpacing(entry);
         double z = origin.getZ() + 0.5D;
         if (entry.direction().getAxis() == Direction.Axis.Z) {
             x += (entry.width() - 1) / 2.0D;
@@ -267,6 +267,38 @@ public final class ReplayBoardService {
             z += (entry.width() - 1) / 2.0D;
         }
         display.moveTo(x, y, z, yawFor(entry.direction()), 0.0F);
+    }
+
+    /**
+     * 单行文字在屏幕局部坐标里的高度（约 9px 字形 / 16px 贴图）。
+     * <p>这个值已经是 {@code lineWidth} 那种"缩放后本地坐标"的单位。
+     */
+    private static final double LINE_TEXT_HEIGHT_LOCAL = 0.14D;
+    /** 排行榜每行最小间距（本地坐标），太小会糊成一团 */
+    private static final double MIN_ROW_SPACING_LOCAL = 0.10D;
+    /** 顶部留白（避免第一行糊在屏幕顶边） */
+    private static final double ROW_TOP_MARGIN = 0.55D;
+
+    /**
+     * 一份内容按"实际行距"最多能排几行。
+     *
+     * <p>与 {@link #visibleRows} 的区别：后者是"留 1 格给标题"的粗算，适合回放时间线；
+     * 排行榜这种逐行铺满的内容要用这里的精确算法 ——
+     * 行距和字号都随屏幕尺寸变化，所以**屏越大能放的排名越多**。
+     */
+    public static int maxRowsFor(ReplayBoardSavedData.ReplayScreenEntry entry) {
+        return Math.max(1, (int) Math.floor((entry.height() - ROW_TOP_MARGIN) / rowSpacing(entry)));
+    }
+
+    /**
+     * 排行榜一行占多高。
+     *
+     * <p>文字在世界里只有 {@code 0.14 × scale} 格高（scale 是模型的缩放），
+     * 所以行距也必须乘上 scale —— 早期忘了乘，导致 3×4 的小屏算出"能放 28 行"，
+     * 实际会挤成一片。这里再加一个最小值兜底，避免小屏糊在一起。
+     */
+    public static double rowSpacing(ReplayBoardSavedData.ReplayScreenEntry entry) {
+        return Math.max(MIN_ROW_SPACING_LOCAL, LINE_TEXT_HEIGHT_LOCAL * textScale(entry));
     }
 
     public static double lineSpacing(ReplayBoardSavedData.ReplayScreenEntry entry, int visibleRows) {

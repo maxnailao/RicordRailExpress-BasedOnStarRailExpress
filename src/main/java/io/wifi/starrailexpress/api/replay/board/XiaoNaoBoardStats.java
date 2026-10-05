@@ -106,6 +106,86 @@ public final class XiaoNaoBoardStats {
         NAMES.put(id, player.getScoreboardName());
     }
 
+    // =========================================================================
+    // 管理员单独改某个人的次数
+    // =========================================================================
+
+    /** 榜单种类（与 {@code XiaoNaoBoardService.Kind} 的语义一致） */
+    public enum Board {
+        /** 小脑榜：误杀别人的次数 */
+        XIAONAO,
+        /** 被小脑榜：被误杀的次数 */
+        BEI_XIAONAO
+    }
+
+    /** 查某人在某个榜上的次数（0 表示没有记录） */
+    public static int getCount(Board board, UUID id) {
+        return getCount(mapOf(board), id);
+    }
+
+    /**
+     * 直接设定某人的次数。
+     *
+     * @param count 小于等于 0 时等于把这个人从榜上移除
+     * @return 设定后的次数
+     */
+    public static int setCount(Board board, UUID id, String name, int count) {
+        Map<UUID, Integer> target = mapOf(board);
+        Map<UUID, Integer> other = board == Board.XIAONAO ? BEI_XIAONAO : XIAONAO;
+        return setCount(target, other, id, name, count, NAMES);
+    }
+
+    /** 在现有次数上增减（增量可为负），返回新值 */
+    public static int addCount(Board board, UUID id, String name, int delta) {
+        return setCount(board, id, name, getCount(board, id) + delta);
+    }
+
+    private static Map<UUID, Integer> mapOf(Board board) {
+        return board == Board.XIAONAO ? XIAONAO : BEI_XIAONAO;
+    }
+
+    // ── 与 Minecraft 类型解耦的核心逻辑（便于独立测试）──
+
+    static int getCount(Map<UUID, Integer> map, UUID id) {
+        return map.getOrDefault(id, 0);
+    }
+
+    /**
+     * 设定次数（核心逻辑）。
+     * <p>归零时把该玩家从榜上移除；若两个榜都没有他了，连同名字缓存一起清掉，
+     * 避免 {@code stats} 里查到一个已经不在任何榜上的"幽灵名字"。
+     */
+    static int setCount(Map<UUID, Integer> target, Map<UUID, Integer> other, UUID id, String name, int count,
+            Map<UUID, String> names) {
+        if (count <= 0) {
+            target.remove(id);
+            if (!other.containsKey(id)) {
+                names.remove(id);
+            }
+            return 0;
+        }
+        target.put(id, count);
+        if (name != null && !name.isBlank()) {
+            names.put(id, name);
+        }
+        return count;
+    }
+
+    /** 改动后落盘（与 record 相同的持久化路径） */
+    public static void save(MinecraftServer server) {
+        persist(server);
+    }
+
+    /** 某人是否已在名字缓存里（用于确认解析到的是服务器已知玩家） */
+    public static boolean isKnown(UUID id) {
+        return NAMES.containsKey(id);
+    }
+
+    /** 已验证过的名字缓存（供命令补全离线玩家用） */
+    public static Map<UUID, String> knownNames() {
+        return java.util.Collections.unmodifiableMap(NAMES);
+    }
+
     /** 小脑榜（误杀最多的人在前） */
     public static List<Entry> topXiaoNao(int limit) {
         return top(XIAONAO, limit);

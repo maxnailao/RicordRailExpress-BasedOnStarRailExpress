@@ -12,8 +12,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,8 +27,7 @@ import java.util.Set;
  * {@link ReplayBoardSavedData}（同一个存档文件），因此重启后依然在。
  *
  * <p>内容<b>不做周期刷新</b>：只在建屏、每局结束（{@code GameMode#showReplay}）、
- * 管理员 show / reset 时更新一次。更新采用就地改文本而非销毁重建，
- * 所以画面静止、不会闪烁。
+ * 管理员操作时更新一次。更新采用就地改文本而非销毁重建，所以画面静止、不会闪烁。
  */
 public final class XiaoNaoBoardService {
 
@@ -36,8 +37,8 @@ public final class XiaoNaoBoardService {
     public static final String BOARD_XIAONAO = ID_PREFIX + "top";
     /** 被小脑榜 id */
     public static final String BOARD_BEI_XIAONAO = ID_PREFIX + "beaten";
-    /** 榜单最多列几名 */
-    private static final int MAX_ROWS = 10;
+    /** 榜单最多列几名（屏幕再高也不会无限往下列） */
+    private static final int MAX_RANK_ROWS = 10;
     /** 文字可见距离 */
     private static final float DISPLAY_VIEW_RANGE = 0.6F;
     private static final String ENTITY_NAME_PREFIX = "SRE XiaoNao Board:";
@@ -87,12 +88,47 @@ public final class XiaoNaoBoardService {
      */
     public static ReplayScreenEntry create(ServerLevel level, Kind kind, BlockPos origin,
             int width, int height, Direction direction, String slot, boolean background) {
-        String id = kind.screenId + (slot == null || slot.isBlank() ? "" : "_" + slot);
+        return createUnique(level, kind, origin, width, height, direction, slot, background).entry();
+    }
+
+    /**
+     * 创建榜单屏幕，并保证 **id 唯一**。
+     *
+     * <p>为什么必须唯一：屏幕存档是 {@code Map<id, entry>}。若用同一个 id 建第二次，
+     * 新的 entry 会**覆盖**旧的，旧屏幕的文字实体却还留在地上 —— 于是出现
+     * "两块屏共用同一个 id / 只能删掉后放的那块 / 先放的那块删不掉"。
+     * 这里在 id 被占用时自动加 {@code _2}、{@code _3} 后缀，从根上避免。
+     *
+     * @return 实际使用的 id + 建好的 entry
+     */
+    public static Created createUnique(ServerLevel level, Kind kind, BlockPos origin,
+            int width, int height, Direction direction, String slot, boolean background) {
+        String base = kind.screenId + (slot == null || slot.isBlank() ? "" : "_" + slot);
+        String id = uniqueId(level, base);
         ReplayScreenEntry entry = ReplayBoardService.createScreen(level, id, origin, width, height,
                 direction, background);
         HIDDEN.remove(id);
         repaint(level.getServer(), id);
-        return entry;
+        return new Created(id, entry, !id.equals(base));
+    }
+
+    /** 实际使用的屏幕 id、Entry，以及是否因重名被自动改名 */
+    public record Created(String id, ReplayScreenEntry entry, boolean renamed) {
+    }
+
+    /** 找一个没被占用的 id：base → base_2 → base_3 … */
+    private static String uniqueId(ServerLevel level, String base) {
+        ReplayBoardSavedData data = ReplayBoardSavedData.get(level);
+        if (data.getScreen(base).isEmpty()) {
+            return base;
+        }
+        for (int n = 2; n < 1000; n++) {
+            String candidate = base + "_" + n;
+            if (data.getScreen(candidate).isEmpty()) {
+                return candidate;
+            }
+        }
+        return base + "_" + System.currentTimeMillis();
     }
 
     /** 兼容旧调用：默认铺底板 */
@@ -101,9 +137,22 @@ public final class XiaoNaoBoardService {
         return create(level, kind, origin, width, height, direction, slot, true);
     }
 
+    /**
+     * 删除榜单屏幕。
+     *
+     * <p>除了删掉存档里的 entry，还会按"自定义名"清掉**同 id 的所有残留文字实体**，
+     * 避免历史遗留（重名建屏时代留下的孤儿实体）继续挂在地图上。
+     */
     public static boolean remove(ServerLevel level, String id) {
         HIDDEN.remove(id);
-        return ReplayBoardService.removeScreen(level, id);
+        var opt = ReplayBoardSavedData.get(level).getScreen(id);
+        boolean removed = ReplayBoardService.removeScreen(level, id);
+        // 存档里已经没有 entry 了，但孤儿文字实体可能还在（按名字匹配清理）
+        clearTextDisplaysByName(level, id);
+        if (!removed && opt.isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -130,7 +179,7 @@ public final class XiaoNaoBoardService {
         if (opt.isEmpty()) {
             return false;
         }
-        clearTextDisplays(level, opt.get());
+        clearTextDisplaysByName(level, id);
         return true;
     }
 
@@ -142,7 +191,7 @@ public final class XiaoNaoBoardService {
      * <ul>
      * <li>建屏时，</li>
      * <li>每局结束时，</li>
-     * <li>管理员 show / reset 时</li>
+     * <li>管理员 show / reset / 改次数时</li>
      * </ul>
      * 各更新一次，画面静止不动。
      *
@@ -200,15 +249,82 @@ public final class XiaoNaoBoardService {
     }
 
     // =========================================================================
+    // 孤儿实体（看得见但存档无记录）
+    // =========================================================================
+
+    /**
+     * 找出"孤儿"榜单文字实体：名字带 {@link #ENTITY_NAME_PREFIX}，
+     * 但存档里已经没有对应的屏幕记录了。
+     *
+     * <p>产生原因：早期版本用同一个 id 建第二次屏时，新 entry 覆盖了旧的，
+     * 旧屏幕的文字实体却留在世界上 —— 于是它看得见、却因为没有 entry
+     * 而删不掉（{@code remove} 查不到它，{@code list} 也列不出它）。
+     */
+    public static List<Entity> findOrphanTextDisplays(ServerLevel level) {
+        Set<String> known = new HashSet<>();
+        for (String id : screenIdsOf(level)) {
+            known.add(ENTITY_NAME_PREFIX + id);
+        }
+        List<Entity> orphans = new ArrayList<>();
+        for (ServerLevel lv : allLevels(level)) {
+            lv.getAllEntities().forEach(entity -> {
+                if (!(entity instanceof Display.TextDisplay)) {
+                    return;
+                }
+                if (!known.contains(baseNameOf(entity))) {
+                    orphans.add(entity);
+                }
+            });
+        }
+        return orphans;
+    }
+
+    /**
+     * 清除所有孤儿榜单文字实体。
+     *
+     * <p>注意：孤儿屏的**黑板方块**清不掉 —— 底板的位置信息只存在被覆盖掉的 entry 里，
+     * 已经丢失了。那些黑羊毛需要管理员手动挖掉，本方法只负责让文字消失。
+     *
+     * @return 清掉的实体数量
+     */
+    public static int purgeOrphans(ServerLevel level) {
+        List<Entity> orphans = findOrphanTextDisplays(level);
+        for (Entity e : orphans) {
+            e.discard();
+        }
+        return orphans.size();
+    }
+
+    private static List<ServerLevel> allLevels(ServerLevel any) {
+        MinecraftServer server = any.getServer();
+        if (server == null) {
+            return List.of(any);
+        }
+        List<ServerLevel> out = new ArrayList<>();
+        for (ServerLevel lv : server.getAllLevels()) {
+            out.add(lv);
+        }
+        return out;
+    }
+
+    // =========================================================================
     // 内容与绘制
     // =========================================================================
 
     /**
      * 把某个榜单的当前数据画到屏幕上。
      *
-     * <p><b>就地更新</b>：已经存在的行只改文本，不销毁重建。
-     * 早期实现每次重画都 discard 全部再 spawn，即使内容没变也会闪一下，
-     * 这正是"一闪一闪"的来源。
+     * <p><b>按行号就地更新</b>：行号写在实体自定义名里（{@code <前缀><id>#<行号>}），
+     * 每行都有确定的实体，只改文本、不销毁重建。
+     *
+     * <p>早期实现有两处会让文字串到一起：
+     * <ol>
+     * <li>靠 {@code y} 坐标排序来"认"第几行 —— 行距是小数，排序结果一旦不稳定，
+     * 第 2 行就可能被当成第 1 行，于是把新文本写到了别的行上；</li>
+     * <li>文字超宽时实体会按 {@code lineWidth} 自动折成两行，而我的行距是按一行算的，
+     * 折出来的第二行就压到下一行上 —— 这正是"字体混一块去了"。</li>
+     * </ol>
+     * 现在前者改成按行号索引，后者由 {@link #truncate} 保证每行不超宽。
      */
     private static boolean repaint(MinecraftServer server, String id) {
         if (server == null) {
@@ -224,18 +340,17 @@ public final class XiaoNaoBoardService {
         if (level == null) {
             return false;
         }
-        int rows = ReplayBoardService.visibleRows(entry);
+        int rows = ReplayBoardService.maxRowsFor(entry);
         List<Component> lines = buildLines(id, server);
         int want = Math.min(lines.size(), rows);
 
-        // 收集屏幕上现有的本榜单行
-        List<Display.TextDisplay> existing = findTextDisplays(level, entry);
+        // 按行号建索引：rowIndex -> 实体。不认识的行号（旧格式无 # 的）归到 -1
+        Map<Integer, Display.TextDisplay> byRow = collectByRow(level, entry);
 
         for (int i = 0; i < want; i++) {
             Component text = lines.get(i);
-            Display.TextDisplay display = i < existing.size() ? existing.get(i) : null;
+            Display.TextDisplay display = byRow.remove(i);
             if (display != null) {
-                // 内容没变就什么都不做，避免无谓的同步包
                 if (!text.equals(display.getText())) {
                     display.setText(text);
                 }
@@ -243,30 +358,55 @@ public final class XiaoNaoBoardService {
                 spawnLine(level, entry, text, i, rows);
             }
         }
-        // 行数变少（例如重置后只剩标题）时，把多出来的行销毁
-        for (int i = want; i < existing.size(); i++) {
-            existing.get(i).discard();
+        // 不再需要的行（内容变短，或旧格式遗留）全部销毁
+        for (Display.TextDisplay leftover : byRow.values()) {
+            leftover.discard();
         }
         return true;
     }
 
-    /** 收集本榜单屏幕前方现有的文字实体，按行号（y 从高到低）排序 */
-    private static List<Display.TextDisplay> findTextDisplays(ServerLevel level, ReplayScreenEntry entry) {
-        String expected = ENTITY_NAME_PREFIX + entry.id();
-        List<Display.TextDisplay> found = new ArrayList<>();
+    /** 行号 -> 文字实体。行号取自自定义名里的 {@code #N}；旧格式（无 #）记为 -1 */
+    private static Map<Integer, Display.TextDisplay> collectByRow(ServerLevel level, ReplayScreenEntry entry) {
+        String prefix = ENTITY_NAME_PREFIX + entry.id();
+        Map<Integer, Display.TextDisplay> out = new HashMap<>();
         level.getAllEntities().forEach(entity -> {
-            if (entity instanceof Display.TextDisplay) {
-                String name = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
-                if (expected.equals(name)) {
-                    found.add((Display.TextDisplay) entity);
-                }
+            if (!(entity instanceof Display.TextDisplay)) {
+                return;
+            }
+            String name = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
+            if (name.equals(prefix)) {
+                out.put(-1, (Display.TextDisplay) entity);
+                return;
+            }
+            if (!name.startsWith(prefix + "#")) {
+                return;
+            }
+            try {
+                out.put(Integer.parseInt(name.substring(prefix.length() + 1)),
+                        (Display.TextDisplay) entity);
+            } catch (NumberFormatException ignored) {
+                out.put(-1, (Display.TextDisplay) entity);
             }
         });
-        found.sort((a, b) -> Double.compare(b.getY(), a.getY()));
-        return found;
+        return out;
     }
 
-    /** 生成榜单文本（标题 + 名次行） */
+    /** 实体自定义名去掉 {@code #行号} 后的基底名 */
+    private static String baseNameOf(Entity entity) {
+        String name = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
+        if (!name.startsWith(ENTITY_NAME_PREFIX)) {
+            return "";
+        }
+        int hash = name.lastIndexOf('#');
+        return hash >= 0 ? name.substring(0, hash) : name;
+    }
+
+    /**
+     * 生成榜单文本（标题 + 名次行）。
+     *
+     * <p>每一行都会按屏幕宽度**截断**，保证一条数据只占一行 ——
+     * 否则文字实体会自动折行，折出来的第二行会压到下一行上。
+     */
     private static List<Component> buildLines(String id, MinecraftServer server) {
         Kind kind = id.startsWith(BOARD_BEI_XIAONAO) ? Kind.BEI_XIAONAO
                 : id.startsWith(BOARD_XIAONAO) ? Kind.XIAONAO : null;
@@ -275,10 +415,14 @@ public final class XiaoNaoBoardService {
             lines.add(Component.literal("未知榜单: " + id).withStyle(ChatFormatting.GRAY));
             return lines;
         }
-        lines.add(Component.literal("—— " + kind.title + " ——").withStyle(kind.color, ChatFormatting.BOLD));
+        ReplayScreenEntry entry = ReplayBoardSavedData.get(server).getScreen(id).orElse(null);
+        int budget = entry == null ? 24 : charBudget(entry.width());
+        // 标题也截断：窄屏放不下"—— 被小脑榜 ——"，让它折行同样会串行
+        lines.add(Component.literal(truncate(kind.title, budget))
+                .withStyle(kind.color, ChatFormatting.BOLD));
         List<XiaoNaoBoardStats.Entry> top = kind == Kind.XIAONAO
-                ? XiaoNaoBoardStats.topXiaoNao(MAX_ROWS)
-                : XiaoNaoBoardStats.topBeiXiaoNao(MAX_ROWS);
+                ? XiaoNaoBoardStats.topXiaoNao(MAX_RANK_ROWS)
+                : XiaoNaoBoardStats.topBeiXiaoNao(MAX_RANK_ROWS);
         if (top.isEmpty()) {
             lines.add(Component.literal("（暂无记录）").withStyle(ChatFormatting.DARK_GRAY));
             return lines;
@@ -291,12 +435,82 @@ public final class XiaoNaoBoardService {
                 case 3 -> ChatFormatting.WHITE;
                 default -> ChatFormatting.GRAY;
             };
-            lines.add(Component.literal(rank + ". ").withStyle(ChatFormatting.DARK_GRAY)
-                    .append(Component.literal(e.name()).withStyle(nameColor))
-                    .append(Component.literal("  x" + e.count()).withStyle(kind.color)));
+            String rankStr = rank + " ";
+            String countStr = " x" + e.count();
+            String name;
+            if (width(rankStr) + width(countStr) >= budget) {
+                // 极端情况：连名次和次数都放不下（窄屏 + 超高次数）。
+                // 退化成"名次 + 溢出标记 + 截断的名字"，总宽仍不超预算。
+                countStr = " 99+";
+                name = truncate(e.name(), Math.max(0, budget - width(rankStr) - width(countStr)));
+                lines.add(Component.literal(rankStr).withStyle(ChatFormatting.DARK_GRAY)
+                        .append(Component.literal(name).withStyle(nameColor))
+                        .append(Component.literal(countStr).withStyle(kind.color)));
+            } else {
+                name = truncate(e.name(), budget - width(rankStr) - width(countStr));
+                lines.add(Component.literal(rankStr).withStyle(ChatFormatting.DARK_GRAY)
+                        .append(Component.literal(name).withStyle(nameColor))
+                        .append(Component.literal(countStr).withStyle(kind.color)));
+            }
             rank++;
         }
         return lines;
+    }
+
+    /**
+     * 一行能放多少个"半角单位"。
+     *
+     * <p>屏幕世界宽 = {@code width} 格 = {@code width × 16} 像素；
+     * 默认字体每个 ASCII 字符约 6px，所以半角预算 ≈ 宽 × 16 / 6。
+     */
+    static int charBudget(int width) {
+        return Math.max(4, (int) ((width * 16) / 6.0D));
+    }
+
+    /** 全角（中日韩）算 2 个半角单位，其余算 1 */
+    static int width(String s) {
+        if (s == null) {
+            return 0;
+        }
+        int w = 0;
+        for (int i = 0; i < s.length(); i++) {
+            w += isWide(s.charAt(i)) ? 2 : 1;
+        }
+        return w;
+    }
+
+    private static boolean isWide(char c) {
+        return c >= 0x1100 && (c <= 0x115F || c == 0x2329 || c == 0x232A
+                || (c >= 0x2E80 && c <= 0xA4CF)
+                || (c >= 0xAC00 && c <= 0xD7A3)
+                || (c >= 0xF900 && c <= 0xFAFF)
+                || (c >= 0xFE30 && c <= 0xFE6F)
+                || (c >= 0xFF00 && c <= 0xFF60)
+                || (c >= 0xFFE0 && c <= 0xFFE6));
+    }
+
+    /** 按半角预算截断，超长时以 … 结尾 */
+    static String truncate(String s, int budget) {
+        if (s == null) {
+            return "";
+        }
+        if (budget <= 1) {
+            return "…";
+        }
+        if (width(s) <= budget) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder();
+        int used = 0;
+        for (int i = 0; i < s.length(); i++) {
+            int cw = isWide(s.charAt(i)) ? 2 : 1;
+            if (used + cw > budget - 1) {
+                break;
+            }
+            sb.append(s.charAt(i));
+            used += cw;
+        }
+        return sb + "…";
     }
 
     /** 在屏幕前方生成一行文字 */
@@ -309,24 +523,29 @@ public final class XiaoNaoBoardService {
         display.setYRot(ReplayBoardService.yawFor(entry.direction()));
         display.setXRot(0.0F);
         display.setViewRange(DISPLAY_VIEW_RANGE);
-        display.setLineWidth(Math.max(80, entry.width() * 40));
+        // setLineWidth 是"缩放前"的模型空间单位：文字先按它换行，再整体乘 scale，
+        // 所以最终世界宽度 = lineWidth × scale。想收在 w 格内就该给 w×16/scale。
+        double scale = ReplayBoardService.textScale(entry);
+        display.setLineWidth(Math.max(16, (int) Math.floor(entry.width() * 16.0D / scale)));
         display.setBackgroundColor(0x00000000);
         display.setTransformation(new com.mojang.math.Transformation(
-                new org.joml.Matrix4f().scale(ReplayBoardService.textScale(entry))));
+                new org.joml.Matrix4f().scale((float) scale)));
         ReplayBoardService.positionLine(display, entry, row, visibleRows);
-        display.setCustomName(Component.literal(ENTITY_NAME_PREFIX + entry.id()).withStyle(ChatFormatting.GRAY));
+        // 行号写进名字：下次刷新按行号精确归位，不依赖 y 坐标排序
+        display.setCustomName(Component.literal(
+                ENTITY_NAME_PREFIX + entry.id() + "#" + (int) row).withStyle(ChatFormatting.GRAY));
         display.setCustomNameVisible(false);
         level.addFreshEntity(display);
     }
 
-    /** 只清掉本榜单自己生成的文字实体（按自定义名匹配，不误删回放屏幕的文字） */
-    private static void clearTextDisplays(ServerLevel level, ReplayScreenEntry entry) {
-        String expected = ENTITY_NAME_PREFIX + entry.id();
+    /** 按屏幕 id 清掉所有对应的文字实体（兼容新旧两种命名） */
+    private static void clearTextDisplaysByName(ServerLevel level, String screenId) {
+        String prefix = ENTITY_NAME_PREFIX + screenId;
         List<Entity> stale = new ArrayList<>();
         level.getAllEntities().forEach(entity -> {
             if (entity instanceof Display.TextDisplay) {
                 String name = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
-                if (expected.equals(name)) {
+                if (name.equals(prefix) || name.startsWith(prefix + "#")) {
                     stale.add(entity);
                 }
             }
