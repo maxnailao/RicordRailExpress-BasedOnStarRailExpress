@@ -46,9 +46,10 @@ public class SkinPreviewScreen extends Screen {
     };
     private static final String[] QUALITY_NAMES = {"普通", "罕见", "稀有", "史诗", "传说", "不可思议"};
 
-    /** 预览排除：双形态特别皮肤的内部切换变体（暗星 / 圣宣，非独立皮肤） */
+    /** 预览排除：双形态特别皮肤的内部切换变体（暗星 / 恶魔之刃举刀 / 圣宣，非独立皮肤） */
     private static final Set<String> PREVIEW_EXCLUDED_SKINS = Set.of(
             "knife/knife_anxing_1", "knife/knife_anxing_2",
+            "knife/knife_emozhidao_2",
             "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2");
 
     private static class Entry {

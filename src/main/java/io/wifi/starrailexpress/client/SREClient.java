@@ -793,6 +793,11 @@ public class SREClient implements ClientModInitializer {
                         }
                     });
                 });
+        // 恶魔之刃击杀特效接收器：仅击杀者客户端生成紫粉色粒子
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload.ID,
+                (payload, context) -> context.client().execute(EmozhidaoClientEffects::spawnKillFx));
+
         ClientPlayNetworking.registerGlobalReceiver(SniperScopeStateS2CPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 // 如果倍镜被卸下，退出开镜状态

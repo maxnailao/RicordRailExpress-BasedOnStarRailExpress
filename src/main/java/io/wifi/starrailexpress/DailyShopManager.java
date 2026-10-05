@@ -44,6 +44,7 @@ public class DailyShopManager {
     private static final Set<String> EXCLUDED_SKINS = Set.of(
             "knife/testofknifeskin",
             "knife/knife_anxing_1", "knife/knife_anxing_2",
+            "knife/knife_emozhidao_2",
             "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

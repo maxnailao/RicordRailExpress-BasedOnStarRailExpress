@@ -52,6 +52,12 @@ public final class CS2SkinInfo {
         register("knife/knife_yingren", "影刃", "藏于暗影中的传说之刃，出鞘必见血");
         register("knife/knife_sushuikunai", "塑水苦无", "以流水塑形的苦无，切刀与击杀之时，唯有持者能听见它的潮鸣");
         register("knife/knife_anxing", "暗星", "天使与恶魔交织的双生之刃，饮血之后光暗逆转");
+        register("knife/knife_emozhidao_1", "恶魔之刃", "漆黑气息凝聚的邪恶魔刃，挥动间似有低语");
+        register("knife/knife_bingzhui", "冰锥", "寒冰凝成的尖锐冰锥，触之刺骨生寒");
+        register("knife/knife_guaizhangtang", "糖果拐杖", "弯弯的拐杖糖，甜美外表下暗藏杀伤力");
+        register("knife/knife_lianhuadao", "莲花苦无", "莲纹点缀的苦无，于暗影中悄然绽放");
+        register("knife/knife_luosidao", "螺丝刀", "寻常五金工具，却能拧紧命运的螺丝");
+        register("knife/knife_gangbi", "钢笔", "文人雅士的随身利器，落笔即封喉");
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）
@@ -67,6 +73,10 @@ public final class CS2SkinInfo {
         register("revolver/revolver_dujinzuolun", "镀金左轮", "枪身镀金的左轮手枪，彰显非凡身份");
         register("revolver/revolver_jisuqiang", "激素枪", "注射激素般令人亢奋的狂暴火力");
         register("revolver/revolver_chuxingren", "处刑人", "处刑人的漆黑手枪，枪响即是宣判");
+        register("revolver/revolver_weilai", "未来", "来自未来的高科技手枪，流光溢彩");
+        register("revolver/revolver_qidingqiang", "气钉枪", "以气钉推进的趣味手枪，滑射出膛");
+        register("revolver/revolver_tugaibandai", "涂改板带", "涂改带改造而成的创意枪械");
+        register("revolver/revolver_tangguofasheqi", "糖果发射器", "把糖果当子弹射出的甜蜜武器");
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）
@@ -86,6 +96,9 @@ public final class CS2SkinInfo {
         register("bat/bat_pobanwangzheren", "破败王者之刃", "破败王者遗留的传说之刃，蕴含王者之力");
         register("bat/bat_nitai", "拟态", "嗜血的拟态之刃，剑身上的邪眼正凝视着下一个猎物");
         register("bat/bat_sushuiren", "塑水刃", "以流水塑形的利刃，挥动时水光潋滟，唯有持刃者能听见它的潮声");
+        register("bat/bat_juxingbangbangtang", "巨大棒棒糖", "比人还高的巨型棒棒糖，甜到爆头");
+        register("bat/bat_dianju", "电锯", "轰鸣作响的链锯，一路撕裂开路");
+        register("bat/bat_zuoyeben", "作业本", "厚重结实的作业本，拍人堪比板砖");
 
         // ═══════════════════════════════════════════════════════════════════
         // GRENADE（手雷）
@@ -105,6 +118,9 @@ public final class CS2SkinInfo {
         register("grenade/grenade_zhuzhu", "猪猪", "哼哼哼～圆滚滚的猪猪手雷，爆炸也要卖个萌");
         register("grenade/grenade_yanxiao114514", "yanxiao114514", "带着微妙笑容的神秘猫咪，没人知道它下一秒会做什么");
         register("grenade/grenade_hongwen", "红温", "已经红温了！这颗手雷的怒气即将爆发");
+        register("grenade/grenade_jingonglei", "进攻雷", "军用进攻型手雷，杀伤力惊人");
+        register("grenade/grenade_moshuiping", "墨水瓶", "爆开后墨水四溅，文人的愤怒");
+        register("grenade/grenade_huyaoweiyingtang", "糖果", "甜蜜诱人的糖果雷，爆炸也裹着糖霜");
 
         // ═══════════════════════════════════════════════════════════════════
         // HAT（帽子）— 瑞科德列车玩偶帽系列

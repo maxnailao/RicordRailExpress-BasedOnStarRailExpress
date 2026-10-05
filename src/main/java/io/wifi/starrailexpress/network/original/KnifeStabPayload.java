@@ -130,6 +130,11 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (io.wifi.starrailexpress.util.AnxingSkinHandler.hasAnxingSkinEquipped(player, knife)) {
                 io.wifi.starrailexpress.util.AnxingSkinHandler.switchForm(player);
             }
+            // 恶魔之刃特别皮肤：击杀玩家后，仅向击杀者本人发送紫粉色粒子特效
+            if (io.wifi.starrailexpress.util.EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, knife)) {
+                io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
+                        new io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload());
+            }
             // 成功捅人后消耗 1 点耐久；耗尽时提示重新购买。
             // Consume one durability after a successful stab; warn when it becomes depleted.
             if (durabilityKnife && KillerKnifeDurability.consumeOne(knife,player)) {
