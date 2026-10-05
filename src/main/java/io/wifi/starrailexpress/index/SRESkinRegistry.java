@@ -66,6 +66,8 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "knife_anxing", QualityColor.UNBELIEVABLE); // 特别皮肤：双形态+专属切刀音效
         registerSkin(SkinTypes.KNIFE, "knife_anxing_1", QualityColor.UNBELIEVABLE); // 暗星形态1（天使）
         registerSkin(SkinTypes.KNIFE, "knife_anxing_2", QualityColor.UNBELIEVABLE); // 暗星形态2（恶魔）
+        registerSkin(SkinTypes.KNIFE, "knife_emozhidao_1", QualityColor.LEGENDARY); // 恶魔之刃
+        registerSkin(SkinTypes.KNIFE, "knife_emozhidao_2", QualityColor.LEGENDARY); // 恶魔之刃·举刀形态（内部皮肤，不单独售卖）
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤 — 仅保留有贴图+模型资源的皮肤
@@ -197,26 +199,18 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.HAT, "hat_haozi", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_liangjie", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_liyu", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.HAT, "hat_ricord_green_camo", QualityColor.LEGENDARY);
         registerSkin(SkinTypes.HAT, "hat_ricord_cat_headset", QualityColor.LEGENDARY);
-        // 瑞科德饰品 — 稀有（绿色）品级
+        // 瑞科德饰品 — 普通（绿色）品级
         registerSkin(SkinTypes.HAT, "hat_ricord_chushimao", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.HAT, "hat_ricord_matongchou", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.HAT, "hat_ricord_kuanggongmao", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.HAT, "hat_ricord_limao", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.HAT, "hat_ricord_xiaodangao", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.HAT, "hat_ricord_xiaoji", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.HAT, "hat_ricord_helmet", QualityColor.UNCOMMON);
-        registerSkin(SkinTypes.HAT, "hat_ricord_helmet_t", QualityColor.UNCOMMON);
-        // 瑞科德饰品 — 稀有（蓝色）品级：帽子第二期 + 第一期后加的
-        registerSkin(SkinTypes.HAT, "hat_ricord_shengdanmao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_caidao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_jidan", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_beleimao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_nainao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_xiaohonghua", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_xiaoji_taotao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_xiaoqie_taotao", QualityColor.RARE);
-        registerSkin(SkinTypes.HAT, "hat_ricord_maidangdang", QualityColor.RARE);
+        registerSkin(SkinTypes.HAT, "hat_ricord_green_camo_base", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_green_camo_t", QualityColor.UNCOMMON);
+        // 瑞科德饰品 — 稀有（蓝色）品级
+        registerSkin(SkinTypes.HAT, "hat_ricord_xiaodangao", QualityColor.RARE);
+        registerSkin(SkinTypes.HAT, "hat_ricord_xiaoji", QualityColor.RARE);
 
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }

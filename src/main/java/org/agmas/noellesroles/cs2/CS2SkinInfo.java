@@ -52,6 +52,7 @@ public final class CS2SkinInfo {
         register("knife/knife_yingren", "影刃", "藏于暗影中的传说之刃，出鞘必见血");
         register("knife/knife_sushuikunai", "塑水苦无", "以流水塑形的苦无，切刀与击杀之时，唯有持者能听见它的潮鸣");
         register("knife/knife_anxing", "暗星", "天使与恶魔交织的双生之刃，饮血之后光暗逆转");
+        register("knife/knife_emozhidao_1", "恶魔之刃", "漆黑气息凝聚的邪恶魔刃，挥动间似有低语");
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）

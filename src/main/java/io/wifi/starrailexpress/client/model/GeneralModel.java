@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.client.model;
 
 import io.wifi.starrailexpress.index.SRECosmetics;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
+import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.util.ShengxuanSkinHandler;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
@@ -124,6 +125,18 @@ public class GeneralModel implements UnbakedModel, BakedModel {
                         variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
                         return;
                     }
+                }
+            }
+        }
+
+        // 恶魔之刃：举刀（蓄力/使用刀）时切换为形态2，平时形态1（纯客户端瞬时状态，无需同步）
+        if (skin != null && "knife_emozhidao_1".equals(skin.getName())) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null && player.isUsingItem() && player.getUseItem().is(TMMItems.KNIFE)) {
+                var variantMap = bakeModels.get("knife_emozhidao_2");
+                if (variantMap != null && variantMap.containsKey(variant)) {
+                    variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
+                    return;
                 }
             }
         }
