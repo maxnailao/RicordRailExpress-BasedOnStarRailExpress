@@ -47,7 +47,7 @@ public class WerewolfKillerPlayerComponent implements RoleComponent, ServerTicki
     /** 午夜狼嚎持续时间：30秒 = 600 ticks */
     public static final int HOWL_DURATION = 30 * 20;
     /** 午夜狼嚎期间狼刀击杀冷却：6秒 = 120 ticks */
-    public static final int HOWL_KNIFE_CD = 6 * 20;
+    public static final int HOWL_KNIFE_CD = 1 * 20;
     /** 黑灯状态下狼刀击杀冷却：18秒 = 360 ticks */
     public static final int BLACKOUT_KNIFE_CD = 18 * 20;
     /** 黑灯状态下狼人的透视半径 */

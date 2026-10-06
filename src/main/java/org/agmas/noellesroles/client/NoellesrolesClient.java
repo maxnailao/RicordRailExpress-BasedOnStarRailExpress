@@ -513,6 +513,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         org.agmas.noellesroles.client.blindness.TaskPointMaskBridge.init();
         // 杀手透视：红色轮廓显示地雷
         WorldRenderEvents.AFTER_TRANSLUCENT.register(LandmineOutlineRenderer::render);
+        // 关灯期间：狼人↔好人红色连线（仅杀手阵营可见）
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(WerewolfBlackoutLineRenderer::render);
         InstinctRenderer.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
