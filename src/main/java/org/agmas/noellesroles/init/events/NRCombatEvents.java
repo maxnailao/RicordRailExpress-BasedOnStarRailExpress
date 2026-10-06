@@ -98,10 +98,10 @@ public class NRCombatEvents {
             items.remove(ModItems.ONCE_REVOLVER);
         }
         items.remove(ModItems.PATROLLER_REVOLVER);
+        // 巡警手枪完全独立冷却：开火只锁自己并返回，不触发公用冷却 forEach
         if (mainHandStack.is(ModItems.PATROLLER_REVOLVER)) {
             cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 3);
-        } else {
-            cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 15);
+            return;
         }
         items.forEach((item) -> {
             cooldowns.addCooldown(item,

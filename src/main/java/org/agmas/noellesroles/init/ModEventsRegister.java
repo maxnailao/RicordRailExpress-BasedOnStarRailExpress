@@ -1233,12 +1233,14 @@ public class ModEventsRegister {
                 // 表现为双持永远只能开一枪）
                 items.remove(ModItems.DUAL_PISTOL_LEFT);
                 items.remove(ModItems.DUAL_PISTOL_RIGHT);
+                // 巡警手枪拥有完全独立冷却：
+                // 用它开火只锁自己并直接返回，绝不执行下面的"所有枪械公用冷却"forEach，
+                // 否则会把左轮等其它枪一起拖进冷却（本次要修的就是这个方向）。
                 if (mainHandStack.is(ModItems.PATROLLER_REVOLVER)) {
                     cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 3);
-                } else {
-                    cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 15);
+                    return;
                 }
-                // cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, 3 * 20);
+                // 其它枪开火才走公用冷却；巡警已被 items.remove，不会被 forEach 波及
                 items.forEach((item) -> {
                     cooldowns.addCooldown(item,
                             (Integer) GameConstants.ITEM_COOLDOWNS.getOrDefault(item, REVOLVER_COOLDOWN));
