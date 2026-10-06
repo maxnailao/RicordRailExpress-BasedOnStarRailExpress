@@ -41,6 +41,7 @@ public class CS2ServerReceiverRegister {
         registerBoxPreviewRequest();
         registerDailyShopSyncRequest();
         registerDailyShopBuy();
+        registerDestroyItem();
     }
 
     // ── 开箱 ──
@@ -101,8 +102,7 @@ public class CS2ServerReceiverRegister {
 
     // ── 商店购买 ──
 
-    private static void registerShopBuy() {
-        ServerPlayNetworking.registerGlobalReceiver(ShopBuyC2SPayload.ID, (payload, context) -> {
+    private static void registerShopBuy() {        ServerPlayNetworking.registerGlobalReceiver(ShopBuyC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 String itemType = payload.itemType();
@@ -442,5 +442,51 @@ public class CS2ServerReceiverRegister {
                 }
             });
         });
+    }
+
+    // ── 仓库：销毁物品（永久删除，用于清理幽灵物品）──
+
+    private static void registerDestroyItem() {
+        ServerPlayNetworking.registerGlobalReceiver(DestroyWarehouseItemC2SPayload.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    context.server().execute(() -> {
+                        String type = payload.itemType();
+                        String id = payload.itemId();
+                        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                        boolean ok;
+                        switch (type) {
+                            case "box" -> ok = inv.removeBox(id, 1);
+                            case "key" -> ok = inv.removeKey(id, 1);
+                            case "skin" -> ok = inv.removeSkin(id, 1);
+                            case "musicbox" -> {
+                                ok = inv.removeMusicBox(id, 1);
+                                // 如果销毁的正是当前装备中的音乐盒，顺手卸下，
+                                // 否则会出现"装备着一个已经不在仓库里的音乐盒"
+                                if (ok) {
+                                    io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
+                                            io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY
+                                                    .get(player);
+                                    if (id.equals(musicComp.getEquippedBox())) {
+                                        musicComp.setEquippedBox(null);
+                                    }
+                                }
+                            }
+                            default -> ok = false;
+                        }
+                        if (ok) {
+                            inv.sync();
+                            player.displayClientMessage(Component
+                                    .literal("§a已销毁: " + type + " " + id)
+                                    .withStyle(ChatFormatting.GREEN), true);
+                            Noellesroles.LOGGER.info("[CS2Warehouse] {} destroyed {} {}",
+                                    player.getName().getString(), type, id);
+                        } else {
+                            player.displayClientMessage(Component
+                                    .literal("§c销毁失败：仓库里没有这件物品（可能已被销毁）")
+                                    .withStyle(ChatFormatting.RED), true);
+                        }
+                    });
+                });
     }
 }

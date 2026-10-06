@@ -145,6 +145,8 @@ public final class CS2SkinInfo {
         register("hat/hat_ricord_xiaoji_taotao", "小鸡头套", "瑞科德饰品：整只小鸡头套，连脖子都裹进绒毛里");
         register("hat/hat_ricord_xiaoqie_taotao", "小企鹅头套", "瑞科德饰品：圆滚滚的小企鹅头套，走路一摇一摆");
         register("hat/hat_ricord_maidangdang", "麦当当员工帽", "瑞科德饰品：快餐店员工帽，欢迎光临麦当当");
+        // 第三期
+        register("hat/hat_ricord_t7", "T7 头盔", "瑞科德饰品：T7 战术头盔，视野开阔、防护到位");
         // 特殊玩偶帽
         registerHat("justacheese", "cheese");
         registerHat("spbgcp", "spbgcp");

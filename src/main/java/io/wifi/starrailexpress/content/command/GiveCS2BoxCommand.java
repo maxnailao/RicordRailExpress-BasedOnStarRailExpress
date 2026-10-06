@@ -106,6 +106,12 @@ public final class GiveCS2BoxCommand {
                                                 EntityArgument.getPlayers(ctx, "player"),
                                                 "skin",
                                                 StringArgumentType.getString(ctx, "skinId")))))
+
+                        // hat 子命令：只发放**帽子分类**的全部皮肤（含玩偶帽与瑞科德帽子）
+                        .then(Commands.literal("hat")
+                                .then(Commands.literal("all")
+                                        .executes(ctx -> executeAllHats(ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "player")))))
     
                         // music 子命令
                         .then(Commands.literal("music")
@@ -189,12 +195,37 @@ public final class GiveCS2BoxCommand {
      * </p>
      */
     private static int executeAllSkins(CommandSourceStack source, Collection<ServerPlayer> targets) {
+        return executeAllOfCategory(source, targets, false);
+    }
+
+    /**
+     * 发放**全部帽子**（{@code giveCS2box <玩家> hat all}）。
+     *
+     * <p>与 {@code skin all} 互补：那个明确排除帽子分类，这个只发帽子。
+     * 帽子里既有瑞科德饰品，也有玩偶帽（后者的模型来自方块物品），
+     * 所以这里按 {@code SkinTypes.HAT} 分类整体发放。
+     */
+    private static int executeAllHats(CommandSourceStack source, Collection<ServerPlayer> targets) {
+        return executeAllOfCategory(source, targets, true);
+    }
+
+    /**
+     * 按分类批量发放皮肤。
+     *
+     * @param onlyHats true = 只发帽子分类；false = 发除帽子外的所有分类
+     */
+    private static int executeAllOfCategory(CommandSourceStack source, Collection<ServerPlayer> targets,
+            boolean onlyHats) {
         // 收集所有可发放皮肤 [itemType, skinName]
         var allSkins = new java.util.ArrayList<String[]>();
         for (var entry : ItemSkinManager.getSkins().entrySet()) {
             String itemType = entry.getKey();
-            if (ItemSkinManager.SkinTypes.HAT.equals(itemType)) {
-                continue; // 排除帽子分类
+            boolean isHat = ItemSkinManager.SkinTypes.HAT.equals(itemType);
+            // 目标分类和当前 itemType 不一致就跳过：
+            //   onlyHats=true  时跳过所有非帽子
+            //   onlyHats=false 时跳过所有帽子（保持 skin all 的原有行为）
+            if (onlyHats != isHat) {
+                continue;
             }
             for (String skinName : entry.getValue().keySet()) {
                 if ("default".equals(skinName)) {
@@ -208,8 +239,10 @@ public final class GiveCS2BoxCommand {
                 allSkins.add(new String[]{itemType, skinName});
             }
         }
+        final String label = onlyHats ? "帽子" : "皮肤";
+        final String suffix = onlyHats ? "（仅帽子分类）" : "（不含帽子分类）";
         if (allSkins.isEmpty()) {
-            source.sendFailure(Component.literal("§c未找到可发放的皮肤"));
+            source.sendFailure(Component.literal("§c未找到可发放的" + label));
             return 0;
         }
 
@@ -224,12 +257,12 @@ public final class GiveCS2BoxCommand {
             }
             io.wifi.starrailexpress.cca.SREPlayerSkinsComponent.KEY.get(target).syncSkinsToClient();
             target.displayClientMessage(
-                    Component.literal("§6[CS2] §a你获得了全部皮肤（共 §e" + total + "§a 款，不含帽子分类）")
+                    Component.literal("§6[CS2] §a你获得了全部" + label + "（共 §e" + total + "§a 款" + suffix + "）")
                             .withStyle(ChatFormatting.GOLD), true);
         }
 
-        source.sendSuccess(() -> Component.literal("§a[CS2] 已将全部皮肤（共 " + total
-                + " 款，不含帽子分类）赠予 " + targets.size() + " 名玩家"), true);
+        source.sendSuccess(() -> Component.literal("§a[CS2] 已将全部" + label + "（共 " + total
+                + " 款" + suffix + "）赠予 " + targets.size() + " 名玩家"), true);
         return targets.size();
     }
 }

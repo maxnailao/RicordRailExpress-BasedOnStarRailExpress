@@ -31,6 +31,8 @@ TEX_OUT_DIR = os.path.join(
 
 HAT1 = os.path.join(ROOT, "帽子")
 HAT2 = os.path.join(ROOT, "帽子第二期")
+# 「临时」目录：用户直接丢进来的模型（如 T7），文件名不一定是中文原名
+TEMP = os.path.join(ROOT, "临时")
 
 
 def tex(skin, *suffix):
@@ -83,6 +85,8 @@ TASKS = [
     task(HAT2, "小鸡头套2", "小鸡头套.json", "小鸡头套.png", "hat_ricord_xiaoji_taotao"),
     task(HAT2, "小企鹅头套2", "小企鹅头套.json", "小企鹅头套.png", "hat_ricord_xiaoqie_taotao"),
     task(HAT2, "麦当当员工帽2", "麦当当员工帽.json", "麦当当员工帽.png", "hat_ricord_maidangdang"),
+    # 第三期：临时目录里直接给的 T7（rare）。贴图与模型同目录同名。
+    task(TEMP, "", "T7.json", "T7.png", "hat_ricord_t7"),
 ]
 
 # 非 T 版头盔是一个独立皮肤，但模型与 T 版只差「T 挂件」那几个元素，

@@ -1002,6 +1002,13 @@ public class ModItems {
             "ricord_maidangdang", RICORD_ACCESSORIES_GROUP);
 
     /**
+     * 瑞科德饰品 - T7（帽子第三期，rare）
+     */
+    public static final Item RICORD_T7 = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_t7", RICORD_ACCESSORIES_GROUP);
+
+    /**
      * 沙漠之鹰
      * - 左键开火，R键换弹
      * - 射程25格，射击冷却0.3秒

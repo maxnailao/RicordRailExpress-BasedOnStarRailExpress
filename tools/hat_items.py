@@ -37,6 +37,7 @@ HATS = [
     ("ricord_xiaoji_taotao", "hat_ricord_xiaoji_taotao", "小鸡头套"),
     ("ricord_xiaoqie_taotao", "hat_ricord_xiaoqie_taotao", "小企鹅头套"),
     ("ricord_maidangdang", "hat_ricord_maidangdang", "麦当当员工帽"),
+    ("ricord_t7", "hat_ricord_t7", "T7 头盔"),
 ]
 
 # 已废弃、需要从 lang 中清掉的旧条目
@@ -115,7 +116,8 @@ BOX_UNCOMMON = ["hat_ricord_chushimao", "hat_ricord_matongchou", "hat_ricord_kua
                 "hat_ricord_helmet", "hat_ricord_helmet_t"]
 BOX_RARE = ["hat_ricord_shengdanmao", "hat_ricord_caidao", "hat_ricord_jidan",
             "hat_ricord_beleimao", "hat_ricord_nainao", "hat_ricord_xiaohonghua",
-            "hat_ricord_xiaoji_taotao", "hat_ricord_xiaoqie_taotao", "hat_ricord_maidangdang"]
+            "hat_ricord_xiaoji_taotao", "hat_ricord_xiaoqie_taotao", "hat_ricord_maidangdang",
+            "hat_ricord_t7"]
 
 for rel in ["CS2_box/hat_box.json", "run/CS2_box/hat_box.json"]:
     p = os.path.join(ROOT, rel)
