@@ -4,10 +4,15 @@ import org.jetbrains.annotations.NotNull;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import io.wifi.starrailexpress.util.EmozhidaoSkinHandler;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.player.Player;
 
 public class RedScreenRenderer {
-    
+
+    // 恶魔之刃蓄满时的屏幕边缘颜色（粉紫色），可按需微调
+    private static final int EMOZHIDAO_EDGE_COLOR = 0xE066FF;
+
     // 添加屏幕边缘红色效果相关变量
     public static long screenRedEffectStartTime = 0L; // 屏幕红色效果开始时间（毫秒）
     private static final long SCREEN_RED_EFFECT_DURATION_MS = 300L; // 屏幕红色效果持续时间（毫秒）
@@ -18,12 +23,22 @@ public class RedScreenRenderer {
     private static long GENERAL_SCREEN_EFFECT_DURATION_MS = 300L; // 通用屏幕效果持续时间（毫秒）
     private static int generalScreenEffectColor = 0xFF0000; // 通用屏幕效果颜色，默认为红色
     private static float generalScreenEffectIntensity = 0.5f; // 通用屏幕效果强度
-     /**
+
+    /**
      * 渲染屏幕边缘红色效果（刀蓄力完毕时）
      */
     public static void renderScreenRedEffect(@NotNull GuiGraphics context, float delta) {
+        renderScreenRedEffect(context, delta, null);
+    }
+
+    public static void renderScreenRedEffect(@NotNull GuiGraphics context, float delta, Player player) {
         if (isScreenRedEffectActive()) {
-            renderScreenEdgeEffect(context, screenRedEffectStartTime, SCREEN_RED_EFFECT_DURATION_MS, 0xFF0000,
+            // 恶魔之刃→粉紫色，其余→红色
+            int edgeColor = (player != null
+                    && EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, player.getMainHandItem()))
+                            ? EMOZHIDAO_EDGE_COLOR
+                            : 0xFF0000;
+            renderScreenEdgeEffect(context, screenRedEffectStartTime, SCREEN_RED_EFFECT_DURATION_MS, edgeColor,
                     MAX_RED_INTENSITY);
         }
 

@@ -134,6 +134,13 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (io.wifi.starrailexpress.util.EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, knife)) {
                 io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
                         new io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload());
+                // 恶魔之刃击杀音效（独立事件）：仅击杀者本人听见
+                player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(
+                                io.wifi.starrailexpress.index.TMMSounds.ITEM_KNIFE_EMOZHIDAO_KILL),
+                        net.minecraft.sounds.SoundSource.PLAYERS,
+                        target.getX(), target.getY(), target.getZ(),
+                        1.0f, 1.0f, player.getRandom().nextLong()));
             }
             // 成功捅人后消耗 1 点耐久；耗尽时提示重新购买。
             // Consume one durability after a successful stab; warn when it becomes depleted.

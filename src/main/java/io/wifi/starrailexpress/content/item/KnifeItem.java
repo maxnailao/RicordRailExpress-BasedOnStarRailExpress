@@ -57,15 +57,24 @@ public class KnifeItem extends SkinableItem {
                 .hasKunaiSkinEquipped(user, itemStack);
         boolean hasAnxingSkin = io.wifi.starrailexpress.util.AnxingSkinHandler
                 .hasAnxingSkinEquipped(user, itemStack);
-        if (hasKunaiSkin || hasAnxingSkin) {
+        boolean hasEmozhidaoSkin = io.wifi.starrailexpress.util.EmozhidaoSkinHandler
+                .hasEmozhidaoSkinEquipped(user, itemStack);
+        if (hasKunaiSkin || hasAnxingSkin || hasEmozhidaoSkin) {
             if (user instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                 // 服务端：专属音效仅发给持刀者，正常切刀声排除持刀者
                 if (hasKunaiSkin) {
                     io.wifi.starrailexpress.util.SushuiKunaiSkinHandler.playSwitchSound(
                             serverPlayer, user.getX(), user.getY(), user.getZ());
-                } else {
+                } else if (hasAnxingSkin) {
                     io.wifi.starrailexpress.util.AnxingSkinHandler.playSwitchSound(
                             serverPlayer, user.getX(), user.getY(), user.getZ());
+                } else {
+                    // 恶魔之刃拔刀音效（独立事件）：仅持刀者本人听见
+                    serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+                            net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(
+                                    TMMSounds.ITEM_KNIFE_EMOZHIDAO_DRAW),
+                            net.minecraft.sounds.SoundSource.PLAYERS,
+                            user.getX(), user.getY(), user.getZ(), 1.0f, 1.0f, serverPlayer.getRandom().nextLong()));
                 }
                 user.level().playSound(serverPlayer, user.blockPosition(), TMMSounds.ITEM_KNIFE_PREPARE,
                         net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);

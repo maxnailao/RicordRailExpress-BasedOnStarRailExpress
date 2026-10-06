@@ -407,6 +407,24 @@
       }
     ]
   },
+  "item.knife.emozhidao.draw": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/sushuikunai_switch",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.emozhidao.kill": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/sushuikunai_kill",
+        "stream": false
+      }
+    ]
+  },
   "item.knife.anxing.switch": {
     "category": "player",
     "subtitle": "subtitle.starrailexpress.item.knife.anxing.switch",

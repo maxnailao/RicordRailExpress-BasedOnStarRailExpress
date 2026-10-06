@@ -1118,6 +1118,8 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
             StreamingSpectatorClient.renderHud(guiGraphics);
+            // 恶魔之刃击杀全屏粉红滤镜
+            io.wifi.starrailexpress.client.EmozhidaoClientEffects.renderKillTint(guiGraphics);
 
             // Subtitle 字幕报幕
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());

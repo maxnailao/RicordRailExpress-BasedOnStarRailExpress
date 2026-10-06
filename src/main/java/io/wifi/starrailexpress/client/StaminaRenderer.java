@@ -24,7 +24,7 @@ public class StaminaRenderer {
 			return;
 
 		// 渲染屏幕边缘红色效果
-		RedScreenRenderer.renderScreenRedEffect(context, delta);
+		RedScreenRenderer.renderScreenRedEffect(context, delta, player);
 
 		// 快捷栏上方冷却显示（默认开启）
 		if (CLIENT_CONFIG.showHotbarCooldown) {

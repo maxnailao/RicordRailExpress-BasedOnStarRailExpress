@@ -33,8 +33,11 @@ public class KnifeChargeableItem implements ChargeableItem {
 
     @Override
     public void onFullyCharged(ItemStack stack, Player player) {
-        // 触发屏幕边缘效果
-        StaminaRenderer.triggerScreenEdgeEffect(Color.WHITE.getRGB(), 300L, 0.5f);
+        // 恶魔之刃→粉紫色闪光，其余→白色闪光
+        int color = io.wifi.starrailexpress.util.EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, stack)
+                ? 0xE066FF
+                : Color.WHITE.getRGB();
+        StaminaRenderer.triggerScreenEdgeEffect(color, 300L, 0.5f);
         // 默认会触发
     }
 }
