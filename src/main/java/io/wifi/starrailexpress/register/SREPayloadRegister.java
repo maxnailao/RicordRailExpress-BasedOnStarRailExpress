@@ -304,6 +304,11 @@ public class SREPayloadRegister {
                 org.agmas.noellesroles.cs2.network.DestroyWarehouseItemC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.DestroyWarehouseItemC2SPayload.CODEC);
 
+        // 仓库：收藏 / 取消收藏
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.ToggleFavoriteC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.ToggleFavoriteC2SPayload.CODEC);
+
         // 物品栏垃圾桶：删除光标上拿着的物品
         PayloadTypeRegistry.playC2S().register(
                 io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload.ID,

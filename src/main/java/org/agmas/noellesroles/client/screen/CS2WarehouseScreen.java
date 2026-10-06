@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -23,11 +24,14 @@ import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.noellesroles.cs2.CS2BoxConfig;
 import org.agmas.noellesroles.cs2.CS2BoxManager;
 import org.agmas.noellesroles.cs2.CS2SkinInfo;
+import org.agmas.noellesroles.cs2.network.ToggleFavoriteC2SPayload;
+import org.agmas.noellesroles.cs2.network.DestroyWarehouseItemC2SPayload;
 import org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload;
 import org.agmas.noellesroles.cs2.network.EquipSkinC2SPayload;
 import org.agmas.noellesroles.cs2.network.OpenBoxC2SPayload;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * CS2 风格仓库界面
@@ -90,6 +94,14 @@ public class CS2WarehouseScreen extends Screen {
     private int selectedIndex = -1;  // 用索引追踪选中项，避免相同ID全部高亮
     private long lastClickTime = 0;
     private String lastClickItemId = null;
+    /** 右下角"销毁"按钮（选中物品时出现） */
+    private Button destroyButton = null;
+    /**
+     * 本地未确认的收藏覆盖：key 为 {@code type/id}，value 为本地期望的收藏状态。
+     * <p>按 F 收藏时服务端要一个往返才同步回来，这期间用它让界面先动起来；
+     * 一旦服务端数据与本地期望一致，条目就被清掉，服务端始终是权威。
+     */
+    private final Map<String, Boolean> pendingFavorites = new ConcurrentHashMap<>();
 
     // 布局
     private int sidebarWidth;
@@ -99,6 +111,8 @@ public class CS2WarehouseScreen extends Screen {
     private int cardGap = 6;
     private int cols;
     private int scrollOffset = 0;
+    /** 是否正在拖拽右侧滚动条滑块 */
+    private boolean draggingScrollbar = false;
 
     public CS2WarehouseScreen() {
         super(Component.literal("CS2 仓库"));
@@ -149,17 +163,90 @@ public class CS2WarehouseScreen extends Screen {
             minecraft.setScreen(null);
         }).pos(width / 2 + 40, btnY).size(60, 20).build());
 
+        // 右下角：销毁选中物品（用于清理幽灵物品），选中物品后才出现
+        destroyButton = Button.builder(Component.literal("销毁"), b -> askDestroy(selectedItem))
+                .pos(width - 66, height - 26).size(60, 20).build();
+        destroyButton.setTooltip(Tooltip.create(Component.literal(
+                "永久删除选中的仓库物品\n用于清理抽不出来、也用不掉的幽灵物品")));
+        addRenderableWidget(destroyButton);
+
         refreshItems();
+    }
+
+    /** 右下角销毁按钮；未选中物品时隐藏，选中已收藏物品时禁用并说明原因 */
+    private void updateDestroyButton() {
+        if (destroyButton == null) {
+            return;
+        }
+        boolean hasSelection = selectedItem != null;
+        boolean locked = hasSelection && selectedItem.favorite;
+        destroyButton.visible = hasSelection;
+        destroyButton.active = hasSelection && !locked;
+        destroyButton.setMessage(locked
+                ? Component.literal("已收藏")
+                : Component.literal("销毁"));
+        destroyButton.setTooltip(Tooltip.create(locked
+                ? Component.literal("该物品已收藏，无法销毁\n先在物品上按 F 取消收藏")
+                : Component.literal("永久删除选中的仓库物品\n用于清理抽不出来、也用不掉的幽灵物品")));
+    }
+
+    /**
+     * 弹出确认框，确认后请求服务端销毁。
+     *
+     * <p>走服务端而不是本地删：仓库数据是同步组件，客户端直接改会被服务端覆盖，
+     * 而且"能销毁什么东西"必须由服务端说了算。
+     */
+    private void askDestroy(WarehouseItem item) {
+        if (item == null || minecraft == null) {
+            return;
+        }
+        String name = item.displayName == null || item.displayName.isEmpty()
+                ? item.id : item.displayName;
+        minecraft.setScreen(new ConfirmScreen(
+                confirmed -> {
+                    minecraft.setScreen(this);
+                    if (confirmed) {
+                        ClientPlayNetworking.send(new DestroyWarehouseItemC2SPayload(
+                                item.type == null ? "" : item.type, item.id));
+                        // 物品没了，本地那条未确认的收藏覆盖也就没意义了，顺手清掉
+                        pendingFavorites.remove(CS2InventoryComponent.favoriteKey(item.type, item.id));
+                        // 服务端会同步回最新仓库；本地先把选中清掉，避免按钮指向已删物品
+                        selectedItem = null;
+                        selectedIndex = -1;
+                        updateDestroyButton();
+                    }
+                },
+                Component.literal("销毁物品"),
+                Component.literal("确定要永久销毁「" + name + "」吗？\n此操作不可撤销，物品不会返还。"),
+                Component.literal("销毁"),
+                Component.literal("取消")));
     }
 
     private void refreshItems() {
         items.clear();
         selectedItem = null;
         selectedIndex = -1;
+        updateDestroyButton();
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
         CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+        final Set<String> favs = inv.getFavorites();
+        // 收藏键 = type/id；皮肤本身就是 itemType/skinName，直接用 id
+        java.util.function.BiFunction<String, String, Boolean> isFav = (type, id) -> {
+            String key = CS2InventoryComponent.favoriteKey(type, id);
+            boolean server = favs.contains(key);
+            Boolean local = pendingFavorites.get(key);
+            if (local == null) {
+                return server;
+            }
+            if (local == server) {
+                // 服务端已经跟上本地那次操作，覆盖可以撤掉了
+                pendingFavorites.remove(key);
+                return server;
+            }
+            return local;
+        };
 
         // 箱子 — 同类堆叠，右下角显示 xN
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
@@ -168,7 +255,7 @@ public class CS2WarehouseScreen extends Screen {
                 // 从客户端缓存获取中文名称（服务端登录时同步）
                 String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(boxId);
                 String name = !cachedName.isEmpty() ? cachedName : formatBoxId(boxId);
-                items.add(new WarehouseItem("box", boxId, name, "", entry.getValue(), 0));
+                items.add(new WarehouseItem("box", boxId, name, "", entry.getValue(), 0, isFav.apply("box", boxId)));
             }
         }
 
@@ -176,7 +263,8 @@ public class CS2WarehouseScreen extends Screen {
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
             for (Map.Entry<String, Integer> entry : inv.getKeys().entrySet()) {
                 items.add(new WarehouseItem("key", entry.getKey(),
-                        entry.getKey().replace('_', ' '), "", entry.getValue(), 0));
+                        entry.getKey().replace('_', ' '), "", entry.getValue(), 0,
+                        isFav.apply("key", entry.getKey())));
             }
         }
 
@@ -198,7 +286,7 @@ public class CS2WarehouseScreen extends Screen {
                 items.add(new WarehouseItem("skin", skinId,
                         CS2SkinInfo.getName(skinId),
                         CS2SkinInfo.getDescription(skinId),
-                        count, quality));
+                        count, quality, isFav.apply("skin", skinId)));
             }
         }
 
@@ -214,7 +302,7 @@ public class CS2WarehouseScreen extends Screen {
                         ? box.displayName().getString()
                         : boxId.replace('_', ' ');
                 for (int i = 0; i < count; i++) {
-                    items.add(new WarehouseItem("music", boxId, displayName, "", 1, 0));
+                    items.add(new WarehouseItem("music", boxId, displayName, "", 1, 0, isFav.apply("music", boxId)));
                 }
             }
         }
@@ -225,16 +313,21 @@ public class CS2WarehouseScreen extends Screen {
             for (FactionCardType type : CARD_DISPLAY_ORDER) {
                 int count = backpack.cards.getOrDefault(type, 0);
                 if (count <= 0) continue;
-                items.add(new WarehouseItem("card", type.questKey, cardName(type), "", count, 0));
+                items.add(new WarehouseItem("card", type.questKey, cardName(type), "", count, 0, isFav.apply("card", type.questKey)));
             }
             // 自选职业卡
             if (backpack.selfSelectCards > 0) {
-                items.add(new WarehouseItem("selfselect", "selfselect", "自选职业卡", "", backpack.selfSelectCards, 0));
+                items.add(new WarehouseItem("selfselect", "selfselect", "自选职业卡", "", backpack.selfSelectCards, 0, isFav.apply("selfselect", "selfselect")));
             }
         }
 
-        // 按品质降序排序（高品质靠前）
-        items.sort((a, b) -> Integer.compare(b.quality, a.quality));
+        // 收藏的排最前，其次按品质降序（高品质靠前）
+        items.sort((a, b) -> {
+            if (a.favorite != b.favorite) {
+                return a.favorite ? -1 : 1;
+            }
+            return Integer.compare(b.quality, a.quality);
+        });
     }
 
     private static String cardName(FactionCardType type) {
@@ -294,6 +387,7 @@ public class CS2WarehouseScreen extends Screen {
         guiGraphics.fill(0, 0, width, height, BG_COLOR);
         renderSidebar(guiGraphics, mouseX, mouseY);
         renderGrid(guiGraphics, mouseX, mouseY, delta);
+        renderScrollbar(guiGraphics, mouseX, mouseY);
         renderHeader(guiGraphics);
         renderTooltip(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, delta);
@@ -370,6 +464,11 @@ public class CS2WarehouseScreen extends Screen {
             }
 
             renderItemIcon(guiGraphics, item, x, y);
+
+            // 收藏标记（左上角 ★）
+            if (item.favorite) {
+                guiGraphics.drawString(font, "★", x + 3, y + 3, 0xFFFFD24A, true);
+            }
 
             // 数量
             if (item.count > 1) {
@@ -552,6 +651,12 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // 滚动条优先：点到轨道就跳过去，点住滑块开始拖拽
+        if (button == 0 && overScrollbar(mouseX, mouseY)) {
+            draggingScrollbar = true;
+            dragScrollbarTo(mouseY);
+            return true;
+        }
         // 侧边栏分类点击
         if (mouseX < sidebarWidth) {
             Category[] categories = {Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
@@ -607,6 +712,7 @@ public class CS2WarehouseScreen extends Screen {
                 }
                 selectedItem = hoveredItem;
                 selectedIndex = items.indexOf(hoveredItem);
+                updateDestroyButton();
             } else if (button == 1) { // 右键装备/卸下 → 发送 C2S 网络包
                 if ("skin".equals(hoveredItem.type)) {
                     String[] parts = hoveredItem.id.split("/");
@@ -634,10 +740,167 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        int maxScroll = Math.max(0, (items.size() / cols + 1) * (cardSize + cardGap) - (height - gridStartY - 50));
-        scrollOffset -= (int) deltaY * 2;
-        scrollOffset = Math.max(0, Math.min(scrollOffset, items.size()));
+        scrollRows(-(int) deltaY * 2);
         return true;
+    }
+
+    // =========================================================================
+    // 收藏
+    // =========================================================================
+
+    /**
+     * 切换选中物品的收藏状态。
+     *
+     * <p>发到服务端改（仓库数据是同步组件），服务端改完会同步回来。
+     * 同时写一条 {@link #pendingFavorites} 本地覆盖并立刻重排，
+     * 免得等服务端往返时界面看着没反应。
+     */
+    private void toggleFavorite(WarehouseItem item) {
+        if (item == null) {
+            return;
+        }
+        ClientPlayNetworking.send(new ToggleFavoriteC2SPayload(item.type, item.id));
+        // 本地先翻转：服务端同步回来之前界面先动起来。
+        // 服务端仍会以权威数据覆盖（并强制"收藏中不可销毁"）。
+        String key = CS2InventoryComponent.favoriteKey(item.type, item.id);
+        pendingFavorites.put(key, !item.favorite);
+
+        String selType = item.type;
+        String selId = item.id;
+        refreshItems();
+        reselect(selType, selId);
+    }
+
+    /** 重排后按 type/id 把选中项找回来（收藏会让顺序变化） */
+    private void reselect(String type, String id) {
+        for (int i = 0; i < items.size(); i++) {
+            WarehouseItem it = items.get(i);
+            if (it.type.equals(type) && it.id.equals(id)) {
+                selectedItem = it;
+                selectedIndex = i;
+                break;
+            }
+        }
+        updateDestroyButton();
+    }
+
+    /** F 键收藏/取消收藏选中项（右键已被"装备"占用，避免语义冲突） */
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F && selectedItem != null) {
+            toggleFavorite(selectedItem);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (draggingScrollbar && button == 0) {
+            dragScrollbarTo(mouseY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0 && draggingScrollbar) {
+            draggingScrollbar = false;
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    // =========================================================================
+    // 滚动条（右侧，样式同网页滚动条）
+    // =========================================================================
+
+    private static final int SCROLLBAR_W = 6;
+    private static final int SCROLLBAR_MARGIN = 4;
+    /** 一屏可见的行数（与 renderGrid 的裁剪条件一致：y + cardSize 不得越过 height-40） */
+    private int visibleRows() {
+        int usable = (height - 40) - gridStartY;
+        return Math.max(1, usable / (cardSize + cardGap));
+    }
+
+    /** 内容总行数 */
+    private int totalRows() {
+        return (items.size() + cols - 1) / Math.max(1, cols);
+    }
+
+    /** 最大可滚动行数 */
+    private int maxScrollRows() {
+        return Math.max(0, totalRows() - visibleRows());
+    }
+
+    private int scrollbarX() {
+        return width - SCROLLBAR_MARGIN - SCROLLBAR_W;
+    }
+
+    private int scrollbarTop() {
+        return gridStartY;
+    }
+
+    private int scrollbarHeight() {
+        return Math.max(20, (height - 40) - gridStartY);
+    }
+
+    /** 滑块高度按"可见比例"算，最少 16px（拖得动） */
+    private int thumbHeight() {
+        int track = scrollbarHeight();
+        int total = Math.max(1, totalRows());
+        return Math.max(16, (int) ((long) track * visibleRows() / total));
+    }
+
+    private int thumbY() {
+        int maxRows = maxScrollRows();
+        if (maxRows <= 0) {
+            return scrollbarTop();
+        }
+        int travel = scrollbarHeight() - thumbHeight();
+        return scrollbarTop() + (int) ((long) travel * scrollOffset / maxRows);
+    }
+
+    /** 按行滚动，并夹到合法范围 */
+    private void scrollRows(int deltaRows) {
+        scrollOffset = Math.max(0, Math.min(maxScrollRows(), scrollOffset + deltaRows));
+    }
+
+    /** 把滑块拖到鼠标处：按比例换算成 scrollOffset */
+    private void dragScrollbarTo(double mouseY) {
+        int travel = scrollbarHeight() - thumbHeight();
+        if (travel <= 0) {
+            scrollOffset = 0;
+            return;
+        }
+        double ratio = (mouseY - scrollbarTop()) / (double) travel;
+        ratio = Math.max(0.0, Math.min(1.0, ratio));
+        scrollOffset = (int) Math.round(ratio * maxScrollRows());
+    }
+
+    /** 鼠标是否在滚动条轨道上（含滑块） */
+    private boolean overScrollbar(double mouseX, double mouseY) {
+        return maxScrollRows() > 0
+                && mouseX >= scrollbarX() && mouseX < scrollbarX() + SCROLLBAR_W
+                && mouseY >= scrollbarTop() && mouseY < scrollbarTop() + scrollbarHeight();
+    }
+
+    private void renderScrollbar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (maxScrollRows() <= 0) {
+            return; // 内容不足一屏，不需要滚动条
+        }
+        int x = scrollbarX();
+        int top = scrollbarTop();
+        int h = scrollbarHeight();
+        // 轨道
+        guiGraphics.fill(x, top, x + SCROLLBAR_W, top + h, 0x30FFFFFF);
+        // 滑块：hover 或拖拽中更亮
+        boolean active = draggingScrollbar || overScrollbar(mouseX, mouseY);
+        int thumb = thumbY();
+        int th = thumbHeight();
+        guiGraphics.fill(x, thumb, x + SCROLLBAR_W, thumb + th,
+                active ? 0xCCFFFFFF : 0x88FFFFFF);
     }
 
     @Override
@@ -653,14 +916,27 @@ public class CS2WarehouseScreen extends Screen {
         final String description;
         final int count;
         final int quality;
+        /** 是否已收藏（收藏排最前、且不可销毁） */
+        boolean favorite;
 
         WarehouseItem(String type, String id, String displayName, String description, int count, int quality) {
+            this(type, id, displayName, description, count, quality, false);
+        }
+
+        WarehouseItem(String type, String id, String displayName, String description, int count, int quality,
+                boolean favorite) {
             this.type = type;
             this.id = id;
             this.displayName = displayName;
             this.description = description;
             this.count = count;
             this.quality = quality;
+            this.favorite = favorite;
+        }
+
+        /** 服务端收藏表用的键：type/id（皮肤本身就是 itemType/skinName） */
+        String favoriteKey() {
+            return CS2InventoryComponent.favoriteKey(type, id);
         }
     }
 }

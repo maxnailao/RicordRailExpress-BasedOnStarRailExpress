@@ -49,6 +49,44 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
     /** 开箱保底计数器：每开一次 +1，达到 {@link #PITY_THRESHOLD} 或未达时 2% 提前命中会获得碎片并归零 */
     private int boxPityCounter = 0;
 
+    /**
+     * 收藏的物品键（{@code type/id}，如 {@code hat/hat_ricord_t7}、{@code box/hat_box}）。
+     * <p>收藏的物品在仓库里排在前面，且在取消收藏前**无法销毁**。
+     */
+    private final Set<String> favorites = ConcurrentHashMap.newKeySet();
+
+    /** 收藏键的构造规则：type + "/" + id（皮肤本身就是 itemType/skinName，直接拼） */
+    public static String favoriteKey(String type, String id) {
+        return type + "/" + id;
+    }
+
+    public Set<String> getFavorites() {
+        return java.util.Collections.unmodifiableSet(favorites);
+    }
+
+    public boolean isFavorite(String type, String id) {
+        return favorites.contains(favoriteKey(type, id));
+    }
+
+    /**
+     * 切换收藏状态。
+     *
+     * @return 切换后是否处于收藏状态
+     */
+    public boolean toggleFavorite(String type, String id) {
+        String key = favoriteKey(type, id);
+        boolean nowFavorited;
+        if (favorites.contains(key)) {
+            favorites.remove(key);
+            nowFavorited = false;
+        } else {
+            favorites.add(key);
+            nowFavorited = true;
+        }
+        sync();
+        return nowFavorited;
+    }
+
     public CS2InventoryComponent(Player player) {
         this.player = player;
     }
@@ -301,6 +339,13 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         tag.putInt("BoxDropChance", boxDropChance);
         tag.putInt("MythicShards", mythicShards);
         tag.putInt("BoxPityCounter", boxPityCounter);
+
+        // 收藏（用字符串列表，顺序无关）
+        net.minecraft.nbt.ListTag favTag = new net.minecraft.nbt.ListTag();
+        for (String key : favorites) {
+            favTag.add(net.minecraft.nbt.StringTag.valueOf(key));
+        }
+        tag.put("Favorites", favTag);
     }
 
     @Override
@@ -340,6 +385,17 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         boxDropChance = tag.contains("BoxDropChance") ? tag.getInt("BoxDropChance") : 10;
         mythicShards = tag.contains("MythicShards") ? tag.getInt("MythicShards") : 0;
         boxPityCounter = tag.contains("BoxPityCounter") ? tag.getInt("BoxPityCounter") : 0;
+
+        favorites.clear();
+        if (tag.contains("Favorites", Tag.TAG_LIST)) {
+            net.minecraft.nbt.ListTag favTag = tag.getList("Favorites", Tag.TAG_STRING);
+            for (int i = 0; i < favTag.size(); i++) {
+                String key = favTag.getString(i);
+                if (!key.isEmpty()) {
+                    favorites.add(key);
+                }
+            }
+        }
     }
 
     // AutoSyncedComponent 默认使用 writeToNbt/readFromNbt 进行同步

@@ -41,6 +41,8 @@ public class CS2ServerReceiverRegister {
         registerBoxPreviewRequest();
         registerDailyShopSyncRequest();
         registerDailyShopBuy();
+        registerDestroyItem();
+        registerToggleFavorite();
         registerMythicShopBuy();
     }
 
@@ -511,5 +513,76 @@ public class CS2ServerReceiverRegister {
                 }
             });
         });
+    }
+
+    // ── 仓库：收藏 / 取消收藏 ──
+
+    private static void registerToggleFavorite() {
+        ServerPlayNetworking.registerGlobalReceiver(ToggleFavoriteC2SPayload.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    context.server().execute(() -> {
+                        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                        boolean now = inv.toggleFavorite(payload.itemType(), payload.itemId());
+                        player.displayClientMessage(Component
+                                .literal(now ? "§a已收藏: " + payload.itemId()
+                                        + "（收藏中无法销毁）"
+                                        : "§e已取消收藏: " + payload.itemId())
+                                .withStyle(now ? ChatFormatting.GREEN : ChatFormatting.YELLOW), true);
+                    });
+                });
+    }
+
+    // ── 仓库：销毁物品（永久删除，用于清理幽灵物品）──
+
+    private static void registerDestroyItem() {
+        ServerPlayNetworking.registerGlobalReceiver(DestroyWarehouseItemC2SPayload.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    context.server().execute(() -> {
+                        String type = payload.itemType();
+                        String id = payload.itemId();
+                        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                        // 收藏中的物品不可销毁（服务端强制，客户端也做了提示）
+                        if (inv.isFavorite(type, id)) {
+                            player.displayClientMessage(Component
+                                    .literal("§c该物品已收藏，请先取消收藏再销毁")
+                                    .withStyle(ChatFormatting.RED), true);
+                            return;
+                        }
+                        boolean ok;
+                        switch (type) {
+                            case "box" -> ok = inv.removeBox(id, 1);
+                            case "key" -> ok = inv.removeKey(id, 1);
+                            case "skin" -> ok = inv.removeSkin(id, 1);
+                            case "musicbox" -> {
+                                ok = inv.removeMusicBox(id, 1);
+                                // 如果销毁的正是当前装备中的音乐盒，顺手卸下，
+                                // 否则会出现"装备着一个已经不在仓库里的音乐盒"
+                                if (ok) {
+                                    io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
+                                            io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY
+                                                    .get(player);
+                                    if (id.equals(musicComp.getEquippedBox())) {
+                                        musicComp.setEquippedBox(null);
+                                    }
+                                }
+                            }
+                            default -> ok = false;
+                        }
+                        if (ok) {
+                            inv.sync();
+                            player.displayClientMessage(Component
+                                    .literal("§a已销毁: " + type + " " + id)
+                                    .withStyle(ChatFormatting.GREEN), true);
+                            Noellesroles.LOGGER.info("[CS2Warehouse] {} destroyed {} {}",
+                                    player.getName().getString(), type, id);
+                        } else {
+                            player.displayClientMessage(Component
+                                    .literal("§c销毁失败：仓库里没有这件物品（可能已被销毁）")
+                                    .withStyle(ChatFormatting.RED), true);
+                        }
+                    });
+                });
     }
 }
