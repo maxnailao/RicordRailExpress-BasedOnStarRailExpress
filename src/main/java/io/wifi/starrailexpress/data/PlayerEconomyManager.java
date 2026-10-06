@@ -91,8 +91,27 @@ public final class PlayerEconomyManager {
     }
 
     public static String getEquippedSkin(Player player, ItemStack stack) {
-        String itemType = itemType(stack);
-        return getEquippedSkinForItemType(player, itemType);
+        return getEquippedSkinForItemType(player, skinLookupKey(stack));
+    }
+
+    /**
+     * 解析某个手持物品应查询的皮肤键。
+     * <p>
+     * 凡是 SkinableItem，一律按其"皮肤类型"查询，而非物品注册路径。
+     * 这样左轮家族的枪械（警长/巡警/一次性/假左轮/强盗/处刑者/零一五/双枪左右手/制式左轮，
+     * 皮肤类型均为 "revolver"）都会读取到左轮手枪已装备的皮肤，实现
+     * "左轮装什么皮肤、这些枪就显示什么皮肤"。
+     * 非皮肤物品或未声明皮肤类型时回退到注册路径，保持原有行为。
+     * </p>
+     */
+    private static String skinLookupKey(ItemStack stack) {
+        if (stack.getItem() instanceof io.wifi.starrailexpress.content.item.SkinableItem skinable) {
+            String type = skinable.getItemSkinType();
+            if (type != null && !type.isBlank()) {
+                return type;
+            }
+        }
+        return itemType(stack);
     }
 
     public static String getEquippedSkinForItemType(Player player, String itemType) {

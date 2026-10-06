@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.particle.HandParticle;
 import io.wifi.starrailexpress.client.render.TMMRenderLayers;
+import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -35,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
  * 对其他玩家开枪无效，不消耗子弹，播放空枪音效。
  * 子弹无法购买，只能通过塔罗会补充。
  */
-public class ExecutionerGunItem extends Item {
+public class ExecutionerGunItem extends SkinableItem {
 
     public ExecutionerGunItem(Properties settings) {
         super(settings);
@@ -153,5 +154,10 @@ public class ExecutionerGunItem extends Item {
         if (!hasExecutionerGun(player)) {
             player.getInventory().add(new ItemStack(ModItems.EXECUTIONER_GUN));
         }
+    }
+
+    @Override
+    public String getItemSkinType() {
+        return "revolver"; // 继承左轮手枪的皮肤：左轮装什么皮肤，处刑者手枪就显示什么
     }
 }
