@@ -793,6 +793,16 @@ public class SREClient implements ClientModInitializer {
                         }
                     });
                 });
+        // 坚守者之怒形态同步接收器：服务器击杀后切换形态时更新客户端本地状态
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.JianshouzheFormS2CPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        var player = context.client().player;
+                        if (player != null) {
+                            io.wifi.starrailexpress.util.JianshouzheSkinHandler.setClientForm(player, payload.form());
+                        }
+                    });
+                });
         // 恶魔之刃击杀特效接收器：仅击杀者客户端生成紫粉色粒子
         ClientPlayNetworking.registerGlobalReceiver(
                 io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload.ID,

@@ -129,6 +129,22 @@ public class GeneralModel implements UnbakedModel, BakedModel {
             }
         }
 
+        // 坚守者之怒：根据当前形态选择模型（形态1 ⇄ 形态2）
+        if (skin != null && io.wifi.starrailexpress.util.JianshouzheSkinHandler.SKIN_ID.equals(skin.getName())) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                String formSuffix = io.wifi.starrailexpress.util.JianshouzheSkinHandler.getCurrentFormSuffix(player);
+                String formSkinName = skin.getName() + formSuffix;
+                if (bakeModels.containsKey(formSkinName)) {
+                    var variantMap = bakeModels.get(formSkinName);
+                    if (variantMap != null && variantMap.containsKey(variant)) {
+                        variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
+                        return;
+                    }
+                }
+            }
+        }
+
         // 恶魔之刃：举刀（蓄力/使用刀）时切换为形态2，平时形态1（纯客户端瞬时状态，无需同步）
         if (skin != null && "knife_emozhidao_1".equals(skin.getName())) {
             Player player = Minecraft.getInstance().player;

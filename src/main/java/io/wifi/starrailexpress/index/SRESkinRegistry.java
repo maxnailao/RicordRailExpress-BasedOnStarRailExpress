@@ -89,6 +89,9 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.REVOLVER, "revolver_dujinzuolun", QualityColor.RARE);
         registerSkin(SkinTypes.REVOLVER, "revolver_jisuqiang", QualityColor.EPIC);
         registerSkin(SkinTypes.REVOLVER, "revolver_chuxingren", QualityColor.LEGENDARY);
+        registerSkin(SkinTypes.REVOLVER, "revolver_jianshouzhe", QualityColor.UNBELIEVABLE); // 坚守者之怒（神话，双形态）
+        registerSkin(SkinTypes.REVOLVER, "revolver_jianshouzhe_1", QualityColor.UNBELIEVABLE); // 形态1（内部）
+        registerSkin(SkinTypes.REVOLVER, "revolver_jianshouzhe_2", QualityColor.UNBELIEVABLE); // 形态2（内部）
 
         // ═══════════════════════════════════════════════════════════════════
         // BAT（球棒）皮肤 — 仅保留有贴图+模型资源的皮肤

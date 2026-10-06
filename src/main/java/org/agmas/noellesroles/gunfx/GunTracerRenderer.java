@@ -9,7 +9,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import io.wifi.starrailexpress.util.ShengxuanSkinHandler;
+import io.wifi.starrailexpress.util.JianshouzheSkinHandler;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,37 +21,35 @@ import java.util.List;
 import java.util.OptionalDouble;
 
 /**
- * 枪械射击轨迹渲染：收到 {@link GunTracerS2CPacket} 时按射手当前枪口位置定格一条轨迹线，
- * {@link #LIFE_TICKS} 内渐隐消失。挂在 WorldRenderEvents.AFTER_TRANSLUCENT。
- * 轨迹线走<b>常规深度测试</b>（{@link #THICK_LINES}），被墙体遮挡即不可见（不透视）。
+ * 枪械射击轨迹渲染。除默认黄色外，按射手皮肤切换特殊弹道：
+ * 圣宣＝黑白交替；坚守者之怒＝监守者咆哮射线（青/暗青交替）。
  */
 public final class GunTracerRenderer {
     private static final int LIFE_TICKS = 8;
     private static final List<Tracer> TRACERS = new ArrayList<>();
 
-    /**
-     * 弹道线渲染层：用 {@link RenderStateShard#LEQUAL_DEPTH_TEST} 参与深度测试、且输出到主渲染目标，
-     * 故被墙体/地形遮挡的部分会被剔除，实现「穿墙不可见」。仅写颜色不写深度。
-     */
+    private static final int STYLE_NORMAL = 0;
+    private static final int STYLE_BLACK_WHITE = 1;
+    private static final int STYLE_ROAR = 2;
+
     private static final RenderType THICK_LINES = RenderType.create("noellesroles_gun_tracer",
             DefaultVertexFormat.POSITION_COLOR_NORMAL,
             VertexFormat.Mode.LINES, 256, false, false,
             RenderType.CompositeState.builder()
                     .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
-                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(3.0))) // 线宽3.0
+                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(3.0)))
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)
                     .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
                     .createCompositeState(false));
 
-    private record Tracer(Vec3 from, Vec3 to, long expireGameTime) {
+    private record Tracer(Vec3 from, Vec3 to, long expireGameTime, int style) {
     }
 
     private GunTracerRenderer() {
     }
 
-    /** 客户端收包：以射手实体当前位置推算枪口，定格轨迹起点。 */
     public static void onPacket(GunTracerS2CPacket packet) {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) {
@@ -64,10 +66,19 @@ public final class GunTracerRenderer {
             return;
         }
         view = view.normalize();
-        // 枪口位置：视线前 0.6、右 0.12、下 0.18（与 PointerGuidanceRenderer 的枪口模拟一致）
         Vec3 side = view.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 from = eye.add(view.scale(0.6D)).add(side.scale(0.12D)).add(0, -0.18D, 0);
-        TRACERS.add(new Tracer(from, to, client.level.getGameTime() + LIFE_TICKS));
+
+        int style = STYLE_NORMAL;
+        if (shooter instanceof Player p) {
+            ItemStack held = p.getMainHandItem();
+            if (ShengxuanSkinHandler.hasShengxuanSkinEquipped(p, held)) {
+                style = STYLE_BLACK_WHITE;
+            } else if (JianshouzheSkinHandler.hasJianshouzheSkinEquipped(p, held)) {
+                style = STYLE_ROAR;
+            }
+        }
+        TRACERS.add(new Tracer(from, to, client.level.getGameTime() + LIFE_TICKS, style));
     }
 
     public static void render(WorldRenderContext context) {
@@ -96,8 +107,37 @@ public final class GunTracerRenderer {
                     tracer.from().z - cameraPos.z);
             PoseStack.Pose pose = matrices.last();
             Vec3 delta = tracer.to().subtract(tracer.from());
-            line(pose, vertexConsumer, delta, 1.0F, 0.85F, 0.4F, alpha);
+            switch (tracer.style()) {
+                case STYLE_BLACK_WHITE -> segmentedLine(pose, vertexConsumer, delta, alpha, false);
+                case STYLE_ROAR -> segmentedLine(pose, vertexConsumer, delta, alpha, true);
+                default -> line(pose, vertexConsumer, delta, 1.0F, 0.85F, 0.4F, alpha);
+            }
             matrices.popPose();
+        }
+    }
+
+    /**
+     * 分段交替着色线。roar=false 为圣宣黑/白交替；roar=true 为坚守者咆哮射线（亮青/暗青交替）。
+     */
+    private static void segmentedLine(PoseStack.Pose pose, VertexConsumer vertexConsumer, Vec3 delta, float alpha,
+            boolean roar) {
+        Vec3 normal = delta.normalize();
+        float nx = (float) normal.x, ny = (float) normal.y, nz = (float) normal.z;
+        final int segments = 12;
+        float[] even = roar ? new float[] { 0.25F, 0.95F, 1.0F } : new float[] { 1.0F, 1.0F, 1.0F };
+        float[] odd = roar ? new float[] { 0.03F, 0.30F, 0.42F } : new float[] { 0.0F, 0.0F, 0.0F };
+        for (int i = 0; i < segments; i++) {
+            float t0 = (float) i / segments;
+            float t1 = (float) (i + 1) / segments;
+            float[] c = (i % 2 == 0) ? even : odd;
+            float x0 = (float) (delta.x * t0), y0 = (float) (delta.y * t0), z0 = (float) (delta.z * t0);
+            float x1 = (float) (delta.x * t1), y1 = (float) (delta.y * t1), z1 = (float) (delta.z * t1);
+            vertexConsumer.addVertex(pose, x0, y0, z0)
+                    .setColor(c[0], c[1], c[2], alpha)
+                    .setNormal(pose, nx, ny, nz);
+            vertexConsumer.addVertex(pose, x1, y1, z1)
+                    .setColor(c[0], c[1], c[2], alpha)
+                    .setNormal(pose, nx, ny, nz);
         }
     }
 

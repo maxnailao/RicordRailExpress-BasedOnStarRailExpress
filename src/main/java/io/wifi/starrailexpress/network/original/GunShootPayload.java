@@ -71,11 +71,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             
             // 圣宣皮肤特殊处理：不播放扳机声，避免与专属枪声叠加产生延迟感
             boolean hasShengxuanSkin = ShengxuanSkinHandler.hasShengxuanSkinEquipped(player, mainHandStack);
+            boolean hasJianshouzheSkin = io.wifi.starrailexpress.util.JianshouzheSkinHandler.hasJianshouzheSkinEquipped(player, mainHandStack);
             io.wifi.starrailexpress.SRE.LOGGER.info("[圣宣] 玩家 {} 射击，持有物品: {}, 圣宣皮肤判定: {}",
                     player.getName().getString(),
                     net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(mainHandStack.getItem()),
                     hasShengxuanSkin);
-            if (!hasShengxuanSkin) {
+            if (!hasShengxuanSkin && !hasJianshouzheSkin) {
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
                         1f + player.getRandom().nextFloat() * .1f - .05f);
@@ -241,6 +242,8 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     // 圣宣皮肤特殊逻辑：击杀后切换形态（复用开头的判定结果，确保与其他特殊逻辑一致）
                     if (hasShengxuanSkin) {
                         ShengxuanSkinHandler.switchForm(player);
+                    } else if (hasJianshouzheSkin) {
+                        io.wifi.starrailexpress.util.JianshouzheSkinHandler.switchForm(player);
                     }
                 }
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, target);
@@ -254,6 +257,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 // 对射击者本人播放专属枪声（ClientboundSoundPacket 仅发送给射击者）
                 ShengxuanSkinHandler.playShootSound(player, player.getX(), player.getEyeY(), player.getZ());
                 // 对其他玩家播放普通枪声：传入 player 作为排除对象，确保射击者不会听到原版枪声
+                player.level().playSound(player, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+            } else if (hasJianshouzheSkin) {
+                // 坚守者之怒：射手本人听原版监守者咆哮，其他人听普通枪声
+                io.wifi.starrailexpress.util.JianshouzheSkinHandler.playShootSound(player, player.getX(), player.getEyeY(), player.getZ());
                 player.level().playSound(player, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
                         1f + player.getRandom().nextFloat() * .1f - .05f);

@@ -50,7 +50,8 @@ public class SkinPreviewScreen extends Screen {
     private static final Set<String> PREVIEW_EXCLUDED_SKINS = Set.of(
             "knife/knife_anxing_1", "knife/knife_anxing_2",
             "knife/knife_emozhidao_2",
-            "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2");
+            "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2",
+            "revolver/revolver_jianshouzhe_1", "revolver/revolver_jianshouzhe_2");
 
     private static class Entry {
         String type;    // "skin" | "music"

@@ -73,6 +73,7 @@ public final class CS2SkinInfo {
         register("revolver/revolver_dujinzuolun", "镀金左轮", "枪身镀金的左轮手枪，彰显非凡身份");
         register("revolver/revolver_jisuqiang", "激素枪", "注射激素般令人亢奋的狂暴火力");
         register("revolver/revolver_chuxingren", "处刑人", "处刑人的漆黑手枪，枪响即是宣判");
+        register("revolver/revolver_jianshouzhe", "坚守者之怒", "来自深暗之域的嘶吼");
         register("revolver/revolver_weilai", "未来", "来自未来的高科技手枪，流光溢彩");
         register("revolver/revolver_qidingqiang", "气钉枪", "以气钉推进的趣味手枪，滑射出膛");
         register("revolver/revolver_tugaibandai", "涂改板带", "涂改带改造而成的创意枪械");
