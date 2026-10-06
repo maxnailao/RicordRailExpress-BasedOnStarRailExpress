@@ -43,6 +43,12 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
     /** 箱子掉落累积概率（百分比，初始10，每次未掉落+5） */
     private int boxDropChance = 10;
 
+    /** 神话碎片数量（背包右上角展示，不作为皮肤入包） */
+    private int mythicShards = 0;
+
+    /** 开箱保底计数器：每开一次 +1，达到 {@link #PITY_THRESHOLD} 或未达时 2% 提前命中会获得碎片并归零 */
+    private int boxPityCounter = 0;
+
     public CS2InventoryComponent(Player player) {
         this.player = player;
     }
@@ -209,6 +215,51 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         this.boxDropChance = 10;
     }
 
+    // ── 神话碎片 / 开箱保底 ──
+
+    /** 保底触发阈值：累计开箱达到该次数必得 150 枚神话碎片 */
+    public static final int PITY_THRESHOLD = 80;
+
+    /** 未达保底时，每次开箱提前命中神话碎片的概率（百分比） */
+    public static final int LUCKY_SHARD_CHANCE_PERCENT = 2;
+
+    /** 神话商店购买一款神话皮肤所需神话碎片 */
+    public static final int MYTHIC_SKIN_SHARD_PRICE = 150;
+
+    /** 出售一款神话品质皮肤获得的神话碎片 */
+    public static final int MYTHIC_SHARD_SELL_AMOUNT = 125;
+
+    public int getMythicShards() {
+        return mythicShards;
+    }
+
+    public void addMythicShards(int count) {
+        if (count <= 0) return;
+        this.mythicShards += count;
+    }
+
+    /**
+     * 消费神话碎片（供后续兑换所使用）。余额不足时返回 false 且不扣减。
+     */
+    public boolean spendMythicShards(int count) {
+        if (count <= 0) return false;
+        if (this.mythicShards < count) return false;
+        this.mythicShards -= count;
+        return true;
+    }
+
+    public int getBoxPityCounter() {
+        return boxPityCounter;
+    }
+
+    public void increaseBoxPityCounter(int delta) {
+        this.boxPityCounter = Math.max(0, this.boxPityCounter + delta);
+    }
+
+    public void resetBoxPityCounter() {
+        this.boxPityCounter = 0;
+    }
+
     // ── 同步 ──
 
     public void sync() {
@@ -248,6 +299,8 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         tag.put("MusicBoxes", musicTag);
 
         tag.putInt("BoxDropChance", boxDropChance);
+        tag.putInt("MythicShards", mythicShards);
+        tag.putInt("BoxPityCounter", boxPityCounter);
     }
 
     @Override
@@ -285,6 +338,8 @@ public class CS2InventoryComponent implements AutoSyncedComponent {
         }
 
         boxDropChance = tag.contains("BoxDropChance") ? tag.getInt("BoxDropChance") : 10;
+        mythicShards = tag.contains("MythicShards") ? tag.getInt("MythicShards") : 0;
+        boxPityCounter = tag.contains("BoxPityCounter") ? tag.getInt("BoxPityCounter") : 0;
     }
 
     // AutoSyncedComponent 默认使用 writeToNbt/readFromNbt 进行同步

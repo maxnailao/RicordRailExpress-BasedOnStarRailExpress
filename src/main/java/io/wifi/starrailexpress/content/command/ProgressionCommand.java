@@ -53,8 +53,19 @@ public final class ProgressionCommand {
                     true);
             return 0;
         }
-        if (role == null || !TMMRoles.isSelfSelectableRole(role)
-                || !BackpackManager.useSelfSelectCard(player, role)) {
+        if (role == null || !TMMRoles.isSelfSelectableRole(role)) {
+            player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
+            return 0;
+        }
+        // 本局该职业已被其他玩家自选：保留（退回）自选卡，只给第一位
+        if (Harpymodloader.isRoleClaimedByOthers(role, player.getUUID())) {
+            player.displayClientMessage(
+                    Component.literal("该职业本局已被其他玩家自选，已为你保留自选卡：")
+                            .append(Harpymodloader.getRoleName(role)),
+                    true);
+            return 0;
+        }
+        if (!BackpackManager.useSelfSelectCard(player, role)) {
             player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
             return 0;
         }

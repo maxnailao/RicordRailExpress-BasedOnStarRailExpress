@@ -122,6 +122,33 @@ public class Harpymodloader implements ModInitializer {
         FORCED_MODDED_ROLE_FLIP.put(player.getUUID(), role);
     }
 
+    /** 本局该职业是否已被「其他玩家」占用（自选去重：同一职业只认第一位）。 */
+    public static boolean isRoleClaimedByOthers(SRERole role, UUID self) {
+        List<UUID> holders = FORCED_MODDED_ROLE.get(role);
+        if (holders == null)
+            return false;
+        for (UUID id : holders) {
+            if (!id.equals(self))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * 解除某玩家对某职业的占用。用于自选改选时清理旧记录，
+     * 避免同一个玩家同时占用多个职业、或重复占用同一职业。
+     */
+    public static void releaseSelfForcedRole(SRERole role, UUID player) {
+        List<UUID> holders = FORCED_MODDED_ROLE.get(role);
+        if (holders != null) {
+            holders.remove(player);
+            if (holders.isEmpty())
+                FORCED_MODDED_ROLE.remove(role);
+        }
+        if (FORCED_MODDED_ROLE_FLIP.get(player) == role)
+            FORCED_MODDED_ROLE_FLIP.remove(player);
+    }
+
     public static void setModifierMaximum(SREModifier modifier, Integer max) {
         if (modifier != null)
             setModifierMaximum(modifier.identifier(), max);

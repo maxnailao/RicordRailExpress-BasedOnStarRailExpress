@@ -41,7 +41,7 @@ public class CS2ServerReceiverRegister {
         registerBoxPreviewRequest();
         registerDailyShopSyncRequest();
         registerDailyShopBuy();
-        registerDestroyItem();
+        registerMythicShopBuy();
     }
 
     // ── 开箱 ──
@@ -102,7 +102,8 @@ public class CS2ServerReceiverRegister {
 
     // ── 商店购买 ──
 
-    private static void registerShopBuy() {        ServerPlayNetworking.registerGlobalReceiver(ShopBuyC2SPayload.ID, (payload, context) -> {
+    private static void registerShopBuy() {
+        ServerPlayNetworking.registerGlobalReceiver(ShopBuyC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 String itemType = payload.itemType();
@@ -181,6 +182,17 @@ public class CS2ServerReceiverRegister {
                     inv.removeSkin(itemId, 1);
                     // 根据品质定价
                     int quality = CS2BoxManager.getInstance().findSkinQuality(itemId);
+                    // 神话(不可思议)品质：以神话碎片结算，不发现金货币
+                    if (quality == 5) {
+                        int shards = CS2InventoryComponent.MYTHIC_SHARD_SELL_AMOUNT;
+                        inv.addMythicShards(shards);
+                        inv.sync();
+                        player.displayClientMessage(
+                                Component.literal("§d神话品质出售成功：+" + shards + " 神话碎片"), true);
+                        Noellesroles.LOGGER.info("[CS2Shop] {} sold mythic skin {} for {} shards",
+                                player.getName().getString(), itemId, shards);
+                        return;
+                    }
                     sellPrice = ShopConfig.getInstance().getSellPriceConfig()
                             .getSkinPriceByQuality(quality);
                 } else if ("musicbox".equals(itemType)) {
@@ -444,49 +456,60 @@ public class CS2ServerReceiverRegister {
         });
     }
 
-    // ── 仓库：销毁物品（永久删除，用于清理幽灵物品）──
+    // ── 神话商店：购买（消耗神话碎片） ──
 
-    private static void registerDestroyItem() {
-        ServerPlayNetworking.registerGlobalReceiver(DestroyWarehouseItemC2SPayload.ID,
-                (payload, context) -> {
-                    ServerPlayer player = context.player();
-                    context.server().execute(() -> {
-                        String type = payload.itemType();
-                        String id = payload.itemId();
-                        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
-                        boolean ok;
-                        switch (type) {
-                            case "box" -> ok = inv.removeBox(id, 1);
-                            case "key" -> ok = inv.removeKey(id, 1);
-                            case "skin" -> ok = inv.removeSkin(id, 1);
-                            case "musicbox" -> {
-                                ok = inv.removeMusicBox(id, 1);
-                                // 如果销毁的正是当前装备中的音乐盒，顺手卸下，
-                                // 否则会出现"装备着一个已经不在仓库里的音乐盒"
-                                if (ok) {
-                                    io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent musicComp =
-                                            io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent.KEY
-                                                    .get(player);
-                                    if (id.equals(musicComp.getEquippedBox())) {
-                                        musicComp.setEquippedBox(null);
-                                    }
-                                }
-                            }
-                            default -> ok = false;
-                        }
-                        if (ok) {
-                            inv.sync();
-                            player.displayClientMessage(Component
-                                    .literal("§a已销毁: " + type + " " + id)
-                                    .withStyle(ChatFormatting.GREEN), true);
-                            Noellesroles.LOGGER.info("[CS2Warehouse] {} destroyed {} {}",
-                                    player.getName().getString(), type, id);
-                        } else {
-                            player.displayClientMessage(Component
-                                    .literal("§c销毁失败：仓库里没有这件物品（可能已被销毁）")
-                                    .withStyle(ChatFormatting.RED), true);
-                        }
-                    });
-                });
+    private static void registerMythicShopBuy() {
+        ServerPlayNetworking.registerGlobalReceiver(MythicShopBuyC2SPayload.ID, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                try {
+                    String skinId = payload.skinId();
+                    String[] parts = skinId.split("/", 2);
+                    if (parts.length < 2) return;
+                    String itemType = parts[0];
+                    String skinName = parts[1];
+
+                    // 校验：必须是神话(不可思议)品质皮肤
+                    int color = ItemSkinManager.getColorFromName(itemType, skinName);
+                    if (ItemSkinManager.qualityFromColor(color) != 5) {
+                        player.displayClientMessage(Component.literal("§c非法的神话商店商品"), true);
+                        return;
+                    }
+
+                    CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                    // 仅当仓库中实际持有该神话皮肤（数量 > 0）才视为已拥有；
+                    // 不能用永久解锁集合判断——出售只扣数量、不撤销永久解锁，
+                    // 否则卖光后再次兑换会被误判为"已拥有"而永久无法再买。
+                    if (inv.getSkinCount(skinId) > 0) {
+                        player.displayClientMessage(Component.literal("§c你已拥有该神话皮肤"), true);
+                        return;
+                    }
+
+                    int price = CS2InventoryComponent.MYTHIC_SKIN_SHARD_PRICE;
+                    if (inv.getMythicShards() < price) {
+                        player.displayClientMessage(
+                                Component.literal("§c神话碎片不足，需要 " + price + " 神话碎片"), true);
+                        return;
+                    }
+                    if (!inv.spendMythicShards(price)) {
+                        player.displayClientMessage(Component.literal("§c扣除神话碎片失败"), true);
+                        return;
+                    }
+
+                    ItemSkinManager.unlockSkinForItemType(player, itemType, skinName);
+                    inv.addSkin(skinId, 1);
+                    SREPlayerSkinsComponent.KEY.get(player).syncSkinsToClient();
+                    inv.sync();
+
+                    player.displayClientMessage(
+                            Component.literal("§a神话商店兑换成功: " + skinName.replace('_', ' ')
+                                    + " (-" + price + " 神话碎片)"), true);
+                    Noellesroles.LOGGER.info("[CS2MythicShop] {} bought {} for {} shards",
+                            player.getName().getString(), skinId, price);
+                } catch (Exception e) {
+                    Noellesroles.LOGGER.error("[CS2MythicShop] Error in buy operation", e);
+                }
+            });
+        });
     }
 }

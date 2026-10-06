@@ -14,7 +14,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -24,7 +23,6 @@ import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.noellesroles.cs2.CS2BoxConfig;
 import org.agmas.noellesroles.cs2.CS2BoxManager;
 import org.agmas.noellesroles.cs2.CS2SkinInfo;
-import org.agmas.noellesroles.cs2.network.DestroyWarehouseItemC2SPayload;
 import org.agmas.noellesroles.cs2.network.EquipMusicBoxC2SPayload;
 import org.agmas.noellesroles.cs2.network.EquipSkinC2SPayload;
 import org.agmas.noellesroles.cs2.network.OpenBoxC2SPayload;
@@ -42,6 +40,11 @@ public class CS2WarehouseScreen extends Screen {
 
     /** 客户端开箱锁，防止重复发送请求 */
     public static boolean isBoxOpening = false;
+
+    /** 本次开箱数量（1~100），由 +/- 按钮调节 */
+    private int openCount = 1;
+    /** 开箱按钮引用，用于动态更新显示的数量 */
+    private Button openButton;
 
     /** 待预览的箱子 ID（双击时设置，收到服务端响应后清除） */
     private static String pendingPreviewBoxId = null;
@@ -87,8 +90,6 @@ public class CS2WarehouseScreen extends Screen {
     private int selectedIndex = -1;  // 用索引追踪选中项，避免相同ID全部高亮
     private long lastClickTime = 0;
     private String lastClickItemId = null;
-    /** 右下角"销毁"按钮（选中物品时出现） */
-    private Button destroyButton = null;
 
     // 布局
     private int sidebarWidth;
@@ -140,7 +141,7 @@ public class CS2WarehouseScreen extends Screen {
                     }
                 }
                 isBoxOpening = true;
-                ClientPlayNetworking.send(new OpenBoxC2SPayload(selectedItem.id));
+                ClientPlayNetworking.send(new OpenBoxC2SPayload(selectedItem.id, 1));
             }
         }).pos(width / 2 - 30, btnY).size(60, 20).build());
 
@@ -148,61 +149,13 @@ public class CS2WarehouseScreen extends Screen {
             minecraft.setScreen(null);
         }).pos(width / 2 + 40, btnY).size(60, 20).build());
 
-        // 右下角：销毁选中物品（用于清理幽灵物品），选中物品后才出现
-        destroyButton = Button.builder(Component.literal("销毁"), b -> askDestroy(selectedItem))
-                .pos(width - 66, height - 26).size(60, 20).build();
-        destroyButton.setTooltip(Tooltip.create(Component.literal(
-                "永久删除选中的仓库物品\n用于清理抽不出来、也用不掉的幽灵物品")));
-        addRenderableWidget(destroyButton);
-
         refreshItems();
-    }
-
-    /** 右下角销毁按钮；未选中物品时隐藏 */
-    private void updateDestroyButton() {
-        if (destroyButton == null) {
-            return;
-        }
-        boolean canDestroy = selectedItem != null;
-        destroyButton.visible = canDestroy;
-        destroyButton.active = canDestroy;
-    }
-
-    /**
-     * 弹出确认框，确认后请求服务端销毁。
-     *
-     * <p>走服务端而不是本地删：仓库数据是同步组件，客户端直接改会被服务端覆盖，
-     * 而且"能销毁什么东西"必须由服务端说了算。
-     */
-    private void askDestroy(WarehouseItem item) {
-        if (item == null || minecraft == null) {
-            return;
-        }
-        String name = item.displayName == null || item.displayName.isEmpty()
-                ? item.id : item.displayName;
-        minecraft.setScreen(new ConfirmScreen(
-                confirmed -> {
-                    minecraft.setScreen(this);
-                    if (confirmed) {
-                        ClientPlayNetworking.send(new DestroyWarehouseItemC2SPayload(
-                                item.type == null ? "" : item.type, item.id));
-                        // 服务端会同步回最新仓库；本地先把选中清掉，避免按钮指向已删物品
-                        selectedItem = null;
-                        selectedIndex = -1;
-                        updateDestroyButton();
-                    }
-                },
-                Component.literal("销毁物品"),
-                Component.literal("确定要永久销毁「" + name + "」吗？\n此操作不可撤销，物品不会返还。"),
-                Component.literal("销毁"),
-                Component.literal("取消")));
     }
 
     private void refreshItems() {
         items.clear();
         selectedItem = null;
         selectedIndex = -1;
-        updateDestroyButton();
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
@@ -352,6 +305,14 @@ public class CS2WarehouseScreen extends Screen {
         if (player != null) {
             int coins = PlayerEconomyManager.getCoinNum(player);
             guiGraphics.drawString(font, "货币: " + coins, width - 120, 8, 0xFFFFD700, false);
+            io.wifi.starrailexpress.cca.CS2InventoryComponent inv =
+                    io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player);
+            guiGraphics.drawString(font, "神话碎片: " + inv.getMythicShards(),
+                    width - 120, 20, 0xFFCC66FF, false);
+            guiGraphics.drawString(font,
+                    "保底进度: " + inv.getBoxPityCounter() + "/"
+                            + io.wifi.starrailexpress.cca.CS2InventoryComponent.PITY_THRESHOLD,
+                    width - 120, 32, 0xFFAA88FF, false);
         }
     }
 
@@ -519,7 +480,7 @@ public class CS2WarehouseScreen extends Screen {
                 net.minecraft.ChatFormatting.GRAY));
 
         if (hoveredItem.quality > 0) {
-            String[] qualityNames = {"普通", "罕见", "稀有", "史诗", "传说", "不可思议"};
+            String[] qualityNames = {"普通", "罕见", "稀有", "史诗", "传说", "神话"};
             int qIdx = Math.min(hoveredItem.quality, qualityNames.length - 1);
             tooltip.add(Component.literal("品质: " + qualityNames[qIdx]));
         }
@@ -646,7 +607,6 @@ public class CS2WarehouseScreen extends Screen {
                 }
                 selectedItem = hoveredItem;
                 selectedIndex = items.indexOf(hoveredItem);
-                updateDestroyButton();
             } else if (button == 1) { // 右键装备/卸下 → 发送 C2S 网络包
                 if ("skin".equals(hoveredItem.type)) {
                     String[] parts = hoveredItem.id.split("/");

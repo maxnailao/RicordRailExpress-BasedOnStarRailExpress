@@ -35,10 +35,10 @@ public class DailyShopManager {
     /** 每日商店商品数量 */
     public static final int ITEM_COUNT = 4;
 
-    /** 参与抽取的品质档位（白/绿/蓝/紫/橙/红 → 品质索引 0/1/2/3/4/5） */
-    private static final int[] QUALITY_TIERS = {0, 1, 2, 3, 4, 5};
-    /** 各档位抽取概率：白25% 绿25% 蓝20% 紫15% 橙10% 红5% */
-    private static final double[] QUALITY_WEIGHTS = {0.25, 0.25, 0.20, 0.15, 0.10, 0.05};
+    /** 参与抽取的品质档位（白/绿/蓝/紫/橙 → 品质索引 0/1/2/3/4；神话(红)不参与每日刷新） */
+    private static final int[] QUALITY_TIERS = {0, 1, 2, 3, 4};
+    /** 各档位抽取概率：白25% 绿25% 蓝20% 紫15% 橙15% */
+    private static final double[] QUALITY_WEIGHTS = {0.25, 0.25, 0.20, 0.15, 0.15};
 
     /** 不参与抽取的皮肤（测试皮 / 多形态变体） */
     private static final Set<String> EXCLUDED_SKINS = Set.of(
@@ -131,7 +131,9 @@ public class DailyShopManager {
                 if (skinName.equalsIgnoreCase("default")) continue;
                 String skinId = itemType + "/" + skinName;
                 if (EXCLUDED_SKINS.contains(skinId)) continue;
-                int rep = representativeTier(colorToQuality(skinEntry.getValue().getColor()));
+                int q = colorToQuality(skinEntry.getValue().getColor());
+                if (q >= 5) continue; // 神话(不可思议)品质不参与每日刷新
+                int rep = representativeTier(q);
                 List<String> list = pool.get(rep);
                 if (list != null) list.add(skinId);
             }

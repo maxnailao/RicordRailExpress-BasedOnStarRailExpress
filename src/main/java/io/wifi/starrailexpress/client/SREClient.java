@@ -1216,6 +1216,25 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
         ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.cs2.network.OpenBoxBatchResultS2CPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (payload.success()) {
+                            context.client().setScreen(
+                                    new org.agmas.noellesroles.client.screen.CS2BatchOpeningScreen(
+                                            payload.resultQualities(),
+                                            payload.resultSkinIds(),
+                                            payload.duplicates()));
+                        } else {
+                            org.agmas.noellesroles.client.screen.CS2WarehouseScreen.isBoxOpening = false;
+                            if (context.client().player != null) {
+                                context.client().player.displayClientMessage(
+                                        Component.literal("§c开箱失败：条件不满足"), true);
+                            }
+                        }
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.ID,
                 (payload, context) -> {
                     context.client().execute(() -> {

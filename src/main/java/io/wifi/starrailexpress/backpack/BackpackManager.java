@@ -110,9 +110,23 @@ public final class BackpackManager {
         if (entry.state.selfSelectCards < 1) {
             return false;
         }
+        UUID id = player.getUUID();
+        SRERole current = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(id);
+        // 同一玩家重复选同一职业：直接失败，不浪费卡
+        if (current == role) {
+            return false;
+        }
+        // 本局该职业已被其他玩家自选：不扣卡（等效于退回自选卡），只认第一位
+        if (Harpymodloader.isRoleClaimedByOthers(role, id)) {
+            return false;
+        }
+        // 改选其它职业：先解除自己此前的占用，避免一人占用多个职业
+        if (current != null) {
+            Harpymodloader.releaseSelfForcedRole(current, id);
+        }
+        Harpymodloader.addToForcedRoles(role, player);
         entry.state.selfSelectCards -= 1;
         markDirty(player, entry);
-        Harpymodloader.addToForcedRoles(role, player);
         return true;
     }
 

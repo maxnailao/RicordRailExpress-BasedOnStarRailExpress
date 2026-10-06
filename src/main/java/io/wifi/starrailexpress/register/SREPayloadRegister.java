@@ -258,6 +258,9 @@ public class SREPayloadRegister {
                 org.agmas.noellesroles.cs2.network.OpenBoxResultS2CPayload.ID,
                 org.agmas.noellesroles.cs2.network.OpenBoxResultS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.cs2.network.OpenBoxBatchResultS2CPayload.ID,
+                org.agmas.noellesroles.cs2.network.OpenBoxBatchResultS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
                 org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.ID,
                 org.agmas.noellesroles.cs2.network.BoxDropS2CPayload.CODEC);
 
@@ -333,5 +336,10 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.cs2.network.DailyShopBuyC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.DailyShopBuyC2SPayload.CODEC);
+
+        // CS2 神话商店网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.ID,
+                org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.CODEC);
     }
 }

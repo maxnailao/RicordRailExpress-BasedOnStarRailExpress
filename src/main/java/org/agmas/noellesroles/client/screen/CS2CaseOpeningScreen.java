@@ -34,7 +34,7 @@ public class CS2CaseOpeningScreen extends Screen {
             0x30CCCCCC, 0x4000FF00, 0x500088FF, 0x60CC44FF, 0x70FFCC00, 0x80FF6666,
     };
     private static final String[] QUALITY_NAMES = {
-            "普通", "罕见", "稀有", "史诗", "传说", "不可思议"
+            "普通", "罕见", "稀有", "史诗", "传说", "神话"
     };
     private static final int[] QUALITY_TEXT_COLORS = {
             0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F,

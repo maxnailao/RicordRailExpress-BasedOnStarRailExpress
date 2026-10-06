@@ -71,6 +71,23 @@ public class TMMRoles {
     }
 
     /**
+     * 自选职业卡黑名单：按职业 {@link ResourceLocation} 的 path 精确禁用（跨命名空间通用）。
+     * <p>
+     * 名单里的职业要么是靠转化 / 绑定 / 体系 / 玩法生成的派生职业，要么是被明确禁止自选的职业。
+     * 命中即 {@link #isSelfSelectableRole(SRERole)} 返回 {@code false}，客户端界面与服务端命令同时生效。
+     * 其中 majo / guardian / parasol / nutritionist / mafioso / janitor / qingsuanzhe_morelooseend
+     * 也已带 {@code setSelfSelectable(false)} 标记，这里再列入以保证单一可审计来源。
+     * </p>
+     */
+    public static final Set<String> SELF_SELECT_DENY_PATHS = Set.of(
+            "jojo", "guest_ghost", "ma_chen_xu", "banyanzhe", "dio", "poisoner", "gangsters",
+            "majo", "shadow_falcon", "witch_accomplice", "convict", "zhuimu_dream", "loose_end",
+            "initiate", "morichika_rinnosuke", "kawashiro_nitori", "furandoru", "super_loose_end",
+            "pilot", "guardian", "jingjiren_wow", "star", "singer", "fitter", "water_ghost",
+            "diver", "monokuma", "parasol", "nutritionist", "mafioso", "janitor",
+            "pigegade_piggod", "qingsuanzhe_morelooseend");
+
+    /**
      * 是否可由「自选职业卡」选择。
      * <p>
      * 只允许谋杀模式的职业：排除原版基础职业（{@code VANNILA_ROLES}）、其他模式职业
@@ -91,6 +108,10 @@ public class TMMRoles {
      */
     public static boolean isSelfSelectableRole(SRERole role) {
         if (role == null) {
+            return false;
+        }
+        // 自选黑名单：命中即禁用（按 path 精确匹配）
+        if (SELF_SELECT_DENY_PATHS.contains(role.identifier().getPath())) {
             return false;
         }
         // 显式声明不可自选（转化 / 派生生成的职业走这里）

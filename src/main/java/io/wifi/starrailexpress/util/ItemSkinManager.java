@@ -83,6 +83,29 @@ public class ItemSkinManager {
         return childSkinMap.get("default");
     }
 
+    public static int getColorFromName(String itemType, String skinName) {
+        Skin skin = getSkinFromName(itemType, skinName);
+        if (skin == null) {
+            return -1;
+        }
+        return skin.getColor();
+    }
+
+    /**
+     * 将皮肤颜色映射为品质档位（0~5），顺序与 {@link QualityColor} 一致。
+     * 未匹配到任何已知品质颜色时返回 -1。
+     */
+    public static int qualityFromColor(int color) {
+        int argb = color | 0xFF000000;
+        QualityColor[] values = QualityColor.values();
+        for (int i = 0; i < values.length; i++) {
+            if ((values[i].getColor() | 0xFF000000) == argb) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public static class KnifeSkin {
         public static final Skin DEFAULT_SKIN = new Skin(Colors.LIGHT_GRAY, "default");
     }

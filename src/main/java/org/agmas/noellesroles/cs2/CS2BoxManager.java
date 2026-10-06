@@ -215,6 +215,22 @@ public class CS2BoxManager {
         Noellesroles.LOGGER.info("[CS2Box] Player {} opened box '{}', got: quality={}, skin={}, duplicate={}",
                 player.getName().getString(), boxId, trueQuality, skinId, isDuplicate);
 
+        // ── 神话碎片保底：每开一次计数 +1；达保底必得碎片；未达时 2% 提前命中也得碎片；命中后计数归零 ──
+        inv.increaseBoxPityCounter(1);
+        boolean pityHit = inv.getBoxPityCounter() >= CS2InventoryComponent.PITY_THRESHOLD;
+        boolean luckyHit = !pityHit
+                && random.nextInt(100) < CS2InventoryComponent.LUCKY_SHARD_CHANCE_PERCENT;
+        if (pityHit || luckyHit) {
+            inv.addMythicShards(1);
+            inv.resetBoxPityCounter();
+            player.displayClientMessage(
+                    Component.literal((pityHit ? "§6[保底] " : "§d[幸运] ")
+                            + "§a恭喜获得 150 枚神话碎片！"), true);
+            Noellesroles.LOGGER.info("[CS2Box] Player {} gained mythic shard ({})",
+                    player.getName().getString(), pityHit ? "pity" : "lucky");
+        }
+        inv.sync();
+
         return new BoxRollResult(trueQuality, skinId, isDuplicate);
     }
 
@@ -313,6 +329,23 @@ public class CS2BoxManager {
      * @return 品质等级（0~5），未找到返回 0
      */
     public int findSkinQuality(String skinId) {
+        // 优先按皮肤注册颜色判定品质，与商店显示端 CS2ShopScreen#getSkinQuality 保持一致。
+        // 旧实现只遍历箱子配置奖池反查：当 run/CS2_box 未加载、或皮肤并非该箱子奖池成员
+        // （例如全部按 LEGENDARY 注册的帽子 hat/hat_*）时一律返回 0(普通)，
+        // 导致列表显示高价、实际只结算 commonSkinPrice(5 货币)。
+        String[] parts = skinId.split("/", 2);
+        if (parts.length == 2) {
+            io.wifi.starrailexpress.util.ItemSkinManager.Skin skin =
+                    io.wifi.starrailexpress.util.ItemSkinManager.getSkinFromName(parts[0], parts[1]);
+            if (skin != null) {
+                int q = io.wifi.starrailexpress.util.ItemSkinManager.qualityFromColor(skin.getColor());
+                if (q >= 0) {
+                    return q;
+                }
+            }
+        }
+
+        // 兜底：在箱子配置奖池中反查（皮肤未注册颜色时仍能定品）
         for (CS2BoxConfig config : boxConfigs.values()) {
             List<Pair<Double, List<String>>> allGroups = config.getAllQualityGroups();
             for (int i = 0; i < allGroups.size(); i++) {

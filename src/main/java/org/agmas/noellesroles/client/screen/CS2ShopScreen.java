@@ -3,6 +3,7 @@ package org.agmas.noellesroles.client.screen;
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -49,10 +50,10 @@ public class CS2ShopScreen extends Screen {
             0xFFFFAA55, // 4: legendary
             0xFFFF3F3F, // 5: unbelievable
     };
-    private static final String[] QUALITY_NAMES = {"\u666e\u901a", "\u7f55\u89c1", "\u7a00\u6709", "\u53f2\u8bd7", "\u4f20\u8bf4", "\u4e0d\u53ef\u601d\u8bae"};
+    private static final String[] QUALITY_NAMES = {"\u666e\u901a", "\u7f55\u89c1", "\u7a00\u6709", "\u53f2\u8bd7", "\u4f20\u8bf4", "\u795e\u8bdd"};
     private static final int[] QUALITY_TEXT_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F};
 
-    private enum Tab { BUY, SELL, MARKET, DAILY }
+    private enum Tab { BUY, SELL, MARKET, DAILY, MYTH }
     private Tab selectedTab = Tab.BUY;
 
     // 商店商品数据（从服务端配置加载，客户端使用缓存）
@@ -60,10 +61,20 @@ public class CS2ShopScreen extends Screen {
     private final List<ShopDisplayItem> sellItems = new ArrayList<>();
     private final List<MarketDisplayItem> marketItems = new ArrayList<>();
     private final List<DailyDisplayItem> dailyItems = new ArrayList<>();
+    private final List<ShopDisplayItem> mythItems = new ArrayList<>();
     private ShopDisplayItem hoveredBuyItem = null;
     private ShopDisplayItem hoveredSellItem = null;
     private MarketDisplayItem hoveredMarketItem = null;
     private DailyDisplayItem hoveredDailyItem = null;
+    private ShopDisplayItem hoveredMythItem = null;
+
+    /** 神话商店：内部形态/测试皮肤，不作为商品售卖 */
+    private static final Set<String> MYTH_EXCLUDED = Set.of(
+            "knife/knife_anxing_1", "knife/knife_anxing_2", "knife/knife_emozhidao_2",
+            "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2",
+            "knife/testofknifeskin");
+    private static final int MYTH_PRICE = CS2InventoryComponent.MYTHIC_SKIN_SHARD_PRICE;
+
     private int scrollOffset = 0;
 
     // 黑市上架模式
@@ -149,53 +160,32 @@ public class CS2ShopScreen extends Screen {
         sellItems.clear();
         marketItems.clear();
         dailyItems.clear();
+        mythItems.clear();
 
         // 购买商品 (从 ShopConfig 单例获取 - 客户端同步)
         for (ShopConfig.ShopItem item : ShopConfig.getInstance().getShopItems()) {
             buyItems.add(new ShopDisplayItem(item.name, item.type, item.id, item.price, -1));
         }
 
-        // 出售物品 (从玩家仓库获取 - 箱子 + 皮肤)
-        var player = Minecraft.getInstance().player;
-        if (player != null) {
-            CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
-            // 箱子
-            for (Map.Entry<String, Integer> entry : inv.getBoxes().entrySet()) {
-                int price = ShopConfig.getInstance().getSellPriceConfig()
-                        .boxPrices.getOrDefault(entry.getKey(), 10);
-                String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(entry.getKey());
-                String boxName = !cachedName.isEmpty()
-                        ? cachedName : entry.getKey().replace('_', ' ');
-                ShopDisplayItem item = new ShopDisplayItem(
-                        boxName,
-                        "box", entry.getKey(), price, -1);
-                item.count = entry.getValue();
-                sellItems.add(item);
-            }
-            // 皮肤
-            for (Map.Entry<String, Integer> entry : inv.getSkins().entrySet()) {
-                String skinId = entry.getKey();
-                int count = entry.getValue();
-                if (count <= 0) continue;
-                int quality = getSkinQuality(skinId);
-                int price = ShopConfig.getInstance().getSellPriceConfig()
-                        .getSkinPriceByQuality(quality);
-                String displayName = org.agmas.noellesroles.cs2.CS2SkinInfo.getName(skinId);
-                ShopDisplayItem item = new ShopDisplayItem(displayName, "skin", skinId, price, quality);
-                item.count = count;
-                sellItems.add(item);
-            }
-            // 音乐盒
-            for (Map.Entry<String, Integer> entry : inv.getMusicBoxes().entrySet()) {
-                if (entry.getValue() <= 0) continue;
-                String musicBoxId = entry.getKey();
-                int price = ShopConfig.getInstance().getSellPriceConfig().musicBoxSellPrice;
-                String displayName = getMusicBoxName(musicBoxId);
-                ShopDisplayItem item = new ShopDisplayItem(displayName, "musicbox", musicBoxId, price, -1);
-                item.count = entry.getValue();
-                sellItems.add(item);
+        // 神话商店商品：注册表中所有神话(不可思议)品质皮肤，固定神话碎片定价
+        for (var entry : ItemSkinManager.getSkins().entrySet()) {
+            String itemType = entry.getKey();
+            for (var se : entry.getValue().entrySet()) {
+                String skinName = se.getKey();
+                if ("default".equalsIgnoreCase(skinName)) continue;
+                String skinId = itemType + "/" + skinName;
+                if (MYTH_EXCLUDED.contains(skinId)) continue;
+                if (ItemSkinManager.qualityFromColor(se.getValue().getColor()) == 5) {
+                    mythItems.add(new ShopDisplayItem(
+                            CS2SkinInfo.getName(skinId), "skin", skinId, MYTH_PRICE, 5));
+                }
             }
         }
+
+        // 出售物品（从玩家仓库实时构建，含数量与售价/神话碎片）
+        buildSellItems();
+
+        var player = Minecraft.getInstance().player;
 
         // 黑市商品 (从服务端缓存解析)
         try {
@@ -288,6 +278,51 @@ public class CS2ShopScreen extends Screen {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * 从玩家仓库实时构建可出售列表：数量随仓库组件同步更新；
+     * 神话(品质5)皮肤以神话碎片计价（与服务端出售结算规则一致）。
+     */
+    private void buildSellItems() {
+        sellItems.clear();
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+        // 箱子
+        for (Map.Entry<String, Integer> entry : inv.getBoxes().entrySet()) {
+            int price = ShopConfig.getInstance().getSellPriceConfig()
+                    .boxPrices.getOrDefault(entry.getKey(), 10);
+            String cachedName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(entry.getKey());
+            String boxName = !cachedName.isEmpty() ? cachedName : entry.getKey().replace('_', ' ');
+            ShopDisplayItem item = new ShopDisplayItem(boxName, "box", entry.getKey(), price, -1);
+            item.count = entry.getValue();
+            sellItems.add(item);
+        }
+        // 皮肤
+        for (Map.Entry<String, Integer> entry : inv.getSkins().entrySet()) {
+            String skinId = entry.getKey();
+            int count = entry.getValue();
+            if (count <= 0) continue;
+            int quality = getSkinQuality(skinId);
+            int price = (quality == 5)
+                    ? CS2InventoryComponent.MYTHIC_SHARD_SELL_AMOUNT
+                    : ShopConfig.getInstance().getSellPriceConfig().getSkinPriceByQuality(quality);
+            String displayName = org.agmas.noellesroles.cs2.CS2SkinInfo.getName(skinId);
+            ShopDisplayItem item = new ShopDisplayItem(displayName, "skin", skinId, price, quality);
+            item.count = count;
+            sellItems.add(item);
+        }
+        // 音乐盒
+        for (Map.Entry<String, Integer> entry : inv.getMusicBoxes().entrySet()) {
+            if (entry.getValue() <= 0) continue;
+            String musicBoxId = entry.getKey();
+            int price = ShopConfig.getInstance().getSellPriceConfig().musicBoxSellPrice;
+            String displayName = getMusicBoxName(musicBoxId);
+            ShopDisplayItem item = new ShopDisplayItem(displayName, "musicbox", musicBoxId, price, -1);
+            item.count = entry.getValue();
+            sellItems.add(item);
+        }
+    }
+
     private static final FactionCardType[] CARD_ORDER = {
             FactionCardType.KILLER, FactionCardType.CIVILIAN,
             FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
@@ -311,14 +346,15 @@ public class CS2ShopScreen extends Screen {
         hoveredBuyItem = null;
         hoveredSellItem = null;
         hoveredMarketItem = null;
-        hoveredListItem = null;
         hoveredDailyItem = null;
+        hoveredMythItem = null;
 
         switch (selectedTab) {
             case BUY -> renderBuyTab(guiGraphics, mouseX, mouseY);
             case SELL -> renderSellTab(guiGraphics, mouseX, mouseY);
             case MARKET -> renderMarketTab(guiGraphics, mouseX, mouseY);
             case DAILY -> renderDailyTab(guiGraphics, mouseX, mouseY);
+            case MYTH -> renderMythTab(guiGraphics, mouseX, mouseY);
         }
 
         super.render(guiGraphics, mouseX, mouseY, delta);
@@ -331,12 +367,14 @@ public class CS2ShopScreen extends Screen {
         if (player != null) {
             int coins = PlayerEconomyManager.getCoinNum(player);
             guiGraphics.drawString(font, "货币: " + coins, width - 120, 8, GOLD, false);
+            int shards = CS2InventoryComponent.KEY.get(player).getMythicShards();
+            guiGraphics.drawString(font, "神话碎片: " + shards, width - 150, 20, 0xFFCC66FF, false);
         }
     }
 
     private void renderTabs(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY};
-        String[] labels = {"购买", "出售", "黑市", "每日商店"};
+        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY, Tab.MYTH};
+        String[] labels = {"购买", "出售", "黑市", "每日商店", "神话商店"};
         int tabWidth = width / tabs.length;
 
         for (int i = 0; i < tabs.length; i++) {
@@ -386,6 +424,9 @@ public class CS2ShopScreen extends Screen {
     }
 
     private void renderSellTab(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // 实时刷新：数量随仓库同步、奖励按品质动态计算（神话→神话碎片）
+        buildSellItems();
+
         if (sellItems.isEmpty()) {
             guiGraphics.drawCenteredString(font, "没有可出售的物品", width / 2, height / 2, TEXT_DIM);
             return;
@@ -402,17 +443,23 @@ public class CS2ShopScreen extends Screen {
             int bg = hovered ? CARD_HOVER : CARD_BG;
             guiGraphics.fill(20, y, width - 20, y + itemHeight - 2, bg);
 
-            guiGraphics.drawString(font, item.name, 30, y + 6, TEXT_COLOR, false);
+            guiGraphics.drawString(font, item.name + "  x" + item.count, 30, y + 6, TEXT_COLOR, false);
             // 品质标签（皮肤）
+            boolean shardReward = "skin".equals(item.type) && item.quality == 5;
             if (item.quality >= 0 && item.quality < QUALITY_NAMES.length) {
                 int qColor = QUALITY_TEXT_COLORS[item.quality];
                 guiGraphics.drawString(font, "[" + QUALITY_NAMES[item.quality] + "]",
                         30, y + 20, qColor, false);
             } else {
-                guiGraphics.drawString(font, "x" + item.count, 30, y + 20, TEXT_DIM, false);
+                guiGraphics.drawString(font, "[" + item.type + "]", 30, y + 20, TEXT_DIM, false);
             }
-            guiGraphics.drawString(font, "+" + item.price + " 货币",
-                    width - 130, y + 10, 0xFF44FF44, false);
+            if (shardReward) {
+                guiGraphics.drawString(font, "+" + item.price + " 神话碎片",
+                        width - 160, y + 10, 0xFFCC66FF, false);
+            } else {
+                guiGraphics.drawString(font, "+" + item.price + " 货币",
+                        width - 130, y + 10, 0xFF44FF44, false);
+            }
 
             if (hovered) {
                 guiGraphics.fill(width - 80, y + 4, width - 30, y + itemHeight - 6, 0x60FF8844);
@@ -573,6 +620,37 @@ public class CS2ShopScreen extends Screen {
         }
     }
 
+    private void renderMythTab(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        guiGraphics.drawCenteredString(font,
+                "神话商店 · 使用神话碎片兑换神话品质皮肤", width / 2, listStartY - 10, 0xFFCC66FF);
+        if (mythItems.isEmpty()) {
+            guiGraphics.drawCenteredString(font, "暂无神话皮肤", width / 2, height / 2, TEXT_DIM);
+            return;
+        }
+        for (int i = scrollOffset; i < mythItems.size(); i++) {
+            int y = listStartY + 8 + (i - scrollOffset) * itemHeight;
+            if (y + itemHeight > height - 40) break;
+
+            ShopDisplayItem item = mythItems.get(i);
+            boolean hovered = mouseX >= 20 && mouseX < width - 20 && mouseY >= y && mouseY < y + itemHeight - 2;
+            if (hovered) hoveredMythItem = item;
+
+            int bg = hovered ? CARD_HOVER : CARD_BG;
+            guiGraphics.fill(20, y, width - 20, y + itemHeight - 2, bg);
+            // 神话品质色条
+            guiGraphics.fill(20, y, 23, y + itemHeight - 2, QUALITY_COLORS[5]);
+
+            guiGraphics.drawString(font, item.name, 30, y + 6, TEXT_COLOR, false);
+            guiGraphics.drawString(font, "[" + QUALITY_NAMES[5] + "]", 30, y + 20, QUALITY_TEXT_COLORS[5], false);
+            guiGraphics.drawString(font, item.price + " 神话碎片", width - 160, y + 10, 0xFFCC66FF, false);
+
+            if (hovered) {
+                guiGraphics.fill(width - 80, y + 4, width - 30, y + itemHeight - 6, 0x60CC66FF);
+                guiGraphics.drawCenteredString(font, "兑换", width - 55, y + 10, 0xFFFFFFFF);
+            }
+        }
+    }
+
     private static String nextRefreshCountdown() {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime next = now.toLocalDate().plusDays(1).atStartOfDay();
@@ -590,7 +668,7 @@ public class CS2ShopScreen extends Screen {
         }
 
         // Tab 切换
-        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY};
+        Tab[] tabs = {Tab.BUY, Tab.SELL, Tab.MARKET, Tab.DAILY, Tab.MYTH};
         int tabWidth = width / tabs.length;
         if (mouseY >= 28 && mouseY < 52) {
             for (int i = 0; i < tabs.length; i++) {
@@ -643,6 +721,20 @@ public class CS2ShopScreen extends Screen {
                 }
             }
             ClientPlayNetworking.send(new DailyShopBuyC2SPayload(hoveredDailyItem.slot));
+            return true;
+        }
+
+        // 神话商店兑换点击
+        if (selectedTab == Tab.MYTH && hoveredMythItem != null && mouseX >= width - 80) {
+            var p = Minecraft.getInstance().player;
+            if (p != null) {
+                int shards = CS2InventoryComponent.KEY.get(p).getMythicShards();
+                if (shards < hoveredMythItem.price) {
+                    p.displayClientMessage(Component.literal("§c神话碎片不足，需要 " + hoveredMythItem.price + " 神话碎片"), true);
+                    return true;
+                }
+            }
+            ClientPlayNetworking.send(new MythicShopBuyC2SPayload(hoveredMythItem.id));
             return true;
         }
 
@@ -771,6 +863,9 @@ public class CS2ShopScreen extends Screen {
         if (selectedTab == Tab.BUY) {
             total = buyItems.size();
             effectiveStartY = listStartY;
+        } else if (selectedTab == Tab.MYTH) {
+            total = mythItems.size();
+            effectiveStartY = listStartY + 8;
         } else if (selectedTab == Tab.DAILY) {
             total = dailyItems.size();
             effectiveStartY = listStartY + 14;
