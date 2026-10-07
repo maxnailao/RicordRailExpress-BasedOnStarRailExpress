@@ -183,6 +183,9 @@ public class ItemSkinManager {
         public static final String BAT = "bat";
         public static final String GRENADE = "grenade";
         public static final String HAT = "hat";
+        // 弓 / 弩 —— 空壳皮肤类型，后续在此类型下注册具体皮肤
+        public static final String BOW = "bow";
+        public static final String CROSSBOW = "crossbow";
     }
 
     protected static final HashMap<String, HashMap<String, Skin>> skinMap = new HashMap<>();
@@ -207,7 +210,10 @@ public class ItemSkinManager {
 
     static {
         // 初始化皮肤类型ID映射（顺序固定，确保服务端和客户端一致）
-        String[] typeOrder = { SkinTypes.KNIFE, SkinTypes.REVOLVER, SkinTypes.BAT, SkinTypes.GRENADE, SkinTypes.HAT };
+        // ⚠️ 新类型只能追加到末尾：整数 ID 由注册顺序决定，客户端/服务端必须一致，
+        //    插入中间会导致所有皮肤的网络同步错位。
+        String[] typeOrder = { SkinTypes.KNIFE, SkinTypes.REVOLVER, SkinTypes.BAT, SkinTypes.GRENADE,
+                SkinTypes.HAT, SkinTypes.BOW, SkinTypes.CROSSBOW };
         for (int i = 0; i < typeOrder.length; i++) {
             registerType(typeOrder[i]);
         }

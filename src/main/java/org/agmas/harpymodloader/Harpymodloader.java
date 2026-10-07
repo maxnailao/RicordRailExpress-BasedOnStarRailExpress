@@ -122,16 +122,35 @@ public class Harpymodloader implements ModInitializer {
         FORCED_MODDED_ROLE_FLIP.put(player.getUUID(), role);
     }
 
-    /** 本局该职业是否已被「其他玩家」占用（自选去重：同一职业只认第一位）。 */
-    public static boolean isRoleClaimedByOthers(SRERole role, UUID self) {
+    /**
+     * 该职业本局的人数上限，与 RoleAssignmentPool 构池口径保持一致：
+     * ROLE_MAX（未配置时默认 1），并保证至少 1（首位玩家总能占用一个名额）。
+     */
+    public static int getRoleCapacity(SRERole role) {
+        if (role == null)
+            return 1;
+        return Math.max(1, ROLE_MAX.getOrDefault(role.identifier(), 1));
+    }
+
+    /** 统计该职业当前被「其它玩家」占用的名额数（排除 self）。 */
+    public static int countRoleClaims(SRERole role, UUID self) {
         List<UUID> holders = FORCED_MODDED_ROLE.get(role);
         if (holders == null)
-            return false;
+            return 0;
+        int n = 0;
         for (UUID id : holders) {
             if (!id.equals(self))
-                return true;
+                n++;
         }
-        return false;
+        return n;
+    }
+
+    /**
+     * 本局该职业是否已「溢出」：其它玩家已占名额是否达到人数上限。
+     * 自选按先后顺序占位——前 N（N=上限）位正常锁定，第 N+1 位起判溢出、退还自选卡。
+     */
+    public static boolean isRoleOverflow(SRERole role, UUID self) {
+        return countRoleClaims(role, self) >= getRoleCapacity(role);
     }
 
     /**

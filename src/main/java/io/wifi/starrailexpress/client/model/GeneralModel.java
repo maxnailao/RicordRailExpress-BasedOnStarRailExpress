@@ -61,6 +61,12 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         for (ItemSkinManager.Skin skin : ItemSkinManager.getSkins(itemType).values()) {
             Map<GeneralModelLoadingPlugin.Variant, BakedModel> variantMap = new HashMap<>();
             for (GeneralModelLoadingPlugin.Variant variant : GeneralModelLoadingPlugin.Variant.values()) {
+                // pulling 系列仅弓 / 弩需要，其它类型无 <皮肤>_pulling_x.json，跳过
+                if (variant.getSerializedName().startsWith("pulling")
+                        && !ItemSkinManager.SkinTypes.BOW.equals(itemType)
+                        && !ItemSkinManager.SkinTypes.CROSSBOW.equals(itemType)) {
+                    continue;
+                }
                 var bakedModel = baker.bake(
                         GeneralModelLoadingPlugin.getModelLocation(itemType, skin.getName(), variant),
                         settings);
@@ -153,6 +159,39 @@ public class GeneralModel implements UnbakedModel, BakedModel {
                 if (variantMap != null && variantMap.containsKey(variant)) {
                     variantMap.get(variant).emitItemQuads(stack, randomSupplier, context);
                     return;
+                }
+            }
+        }
+
+        // 弓 / 弩：手持且正在拉弓时，按蓄力进度切换 pulling_0/1/2 三档皮肤变体
+        // （仅手持/第一人称上下文生效，不影响背包与 GUI 图标；基于本地玩家，与他人无关）
+        if (skin != null
+                && variant == GeneralModelLoadingPlugin.Variant.IN_HAND
+                && (ItemSkinManager.SkinTypes.BOW.equals(itemType)
+                        || ItemSkinManager.SkinTypes.CROSSBOW.equals(itemType))) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null && player.isUsingItem()) {
+                ItemStack use = player.getUseItem();
+                if (use.is(TMMItems.BOW) || use.is(TMMItems.CROSSBOW)) {
+                    var pullMap = bakeModels.get(skin.getName());
+                    if (pullMap != null) {
+                        int ticks = player.getTicksUsingItem();
+                        GeneralModelLoadingPlugin.Variant stage = ticks >= 20
+                                ? GeneralModelLoadingPlugin.Variant.PULLING_2
+                                : ticks >= 7
+                                        ? GeneralModelLoadingPlugin.Variant.PULLING_1
+                                        : GeneralModelLoadingPlugin.Variant.PULLING_0;
+                        // 若对应档位缺文件，向低档回退，保证至少显示一个拉弓形态
+                        GeneralModelLoadingPlugin.Variant[] order = { stage,
+                                GeneralModelLoadingPlugin.Variant.PULLING_1,
+                                GeneralModelLoadingPlugin.Variant.PULLING_0 };
+                        for (GeneralModelLoadingPlugin.Variant v : order) {
+                            if (pullMap.containsKey(v)) {
+                                pullMap.get(v).emitItemQuads(stack, randomSupplier, context);
+                                return;
+                            }
+                        }
+                    }
                 }
             }
         }

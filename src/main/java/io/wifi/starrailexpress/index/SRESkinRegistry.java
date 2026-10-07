@@ -226,6 +226,11 @@ public final class SRESkinRegistry {
         // T7（本期新增，rare）
         registerSkin(SkinTypes.HAT, "hat_ricord_t7", QualityColor.RARE);
 
+        // ═══════════════════════════════════════════════════════════════════
+        // BOW（弓）皮肤
+        // ═══════════════════════════════════════════════════════════════════
+        registerSkin(SkinTypes.BOW, "bow_shenfa", QualityColor.UNBELIEVABLE); // 神罚（神话，带拉弓三档）
+
         LOGGER.info("[SkinRegistry] 物品皮肤注册完成");
     }
 

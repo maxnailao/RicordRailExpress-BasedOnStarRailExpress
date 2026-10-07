@@ -116,8 +116,8 @@ public final class BackpackManager {
         if (current == role) {
             return false;
         }
-        // 本局该职业已被其他玩家自选：不扣卡（等效于退回自选卡），只认第一位
-        if (Harpymodloader.isRoleClaimedByOthers(role, id)) {
+        // 本局该职业名额已满（按先后顺序，超出上限的后来者）：不扣卡（等效于退回自选卡）
+        if (Harpymodloader.isRoleOverflow(role, id)) {
             return false;
         }
         // 改选其它职业：先解除自己此前的占用，避免一人占用多个职业

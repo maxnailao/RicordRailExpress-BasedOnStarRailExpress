@@ -97,6 +97,11 @@ public interface TMMItems {
             WEAPONS_GROUP, SRE_ALL_GROUP);
     Item NUNCHUCK = registrar.create("nunchuck", new NunchuckItem(new Item.Properties().stacksTo(1)),
             WEAPONS_GROUP, SRE_ALL_GROUP);
+    // === 弓 / 弩 皮肤载体（空壳，供后续放置皮肤资源） ===
+    Item BOW = registrar.create("bow", new SkinableBowItem(new Item.Properties().stacksTo(1)),
+            WEAPONS_GROUP, SRE_ALL_GROUP);
+    Item CROSSBOW = registrar.create("crossbow", new SkinableCrossbowItem(new Item.Properties().stacksTo(1)),
+            WEAPONS_GROUP, SRE_ALL_GROUP);
 
     // === 工具 (TOOLS) ===
     Item KEY = registrar.create("key", new KeyItem(new Item.Properties().stacksTo(1)), TOOLS_GROUP, SRE_ALL_GROUP);
@@ -246,6 +251,10 @@ public interface TMMItems {
         SkinableItem.add(TMMItems.GRENADE);
 
         SkinableItem.add(TMMItems.BAT);
+        // 弓 / 弩 皮肤载体注册：加入此列表后 GeneralModelLoadingPlugin 会建立
+        // 皮肤类型→基础模型 的映射，皮肤管理界面也会新增对应页签
+        SkinableItem.add(TMMItems.BOW);
+        SkinableItem.add(TMMItems.CROSSBOW);
 
         // 注册蓄力物品
         ChargeableItemRegistry.register(TMMItems.KNIFE, new KnifeChargeableItem());

@@ -1377,8 +1377,32 @@ public class ModRoles {
                     false));
     public static SRERole PATROLLER = TMMRoles
             .registerRole(new NormalRole(PATROLLER_ID, 0x2F6BFF, true, false, SRERole.MoodType.REAL,
-                    io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), false)
-                    .setVigilanteTeam(true).setComponentKey(PatrollerPlayerComponent.KEY))
+                    io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), false) {
+                @Override
+                public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
+                                    net.minecraft.resources.ResourceLocation deathReason) {
+                    // 巡警身上不带枪死亡时，也在死亡位置掉落一把巡警手枪，
+                    // 与「带枪死亡会掉枪」的行为保持一致（身上已有枪时交由通用掉枪逻辑处理，避免重复掉落）。
+                    if (victim instanceof ServerPlayer sp) {
+                        boolean hasGun = false;
+                        for (ItemStack stack : sp.getInventory().items) {
+                            if (stack.is(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER)
+                                    || stack.is(TMMItems.REVOLVER)) {
+                                hasGun = true;
+                                break;
+                            }
+                        }
+                        if (!hasGun
+                                && !sp.getOffhandItem()
+                                .is(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER)
+                                && !sp.getOffhandItem().is(TMMItems.REVOLVER)) {
+                            sp.drop(new ItemStack(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER), false);
+                        }
+                    }
+                    super.onDeath(victim, spawnBody, killer, deathReason);
+                }
+            })
+            .setVigilanteTeam(true).setComponentKey(PatrollerPlayerComponent.KEY)
             .setCanPickUpRevolver(true).setSpecialVigilante(true).setDefaultMax(1)
             .setDefaultEnableChance(8000)
             .setRefreshableSpecialVigilante(2000, true);

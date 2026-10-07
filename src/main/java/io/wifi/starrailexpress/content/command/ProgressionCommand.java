@@ -65,6 +65,15 @@ public final class ProgressionCommand {
                     true);
             return 0;
         }
+        // 本局该职业名额已满（按先后顺序，后来者溢出）：保留（退回）自选卡
+        if (Harpymodloader.isRoleOverflow(role, player.getUUID())) {
+            player.displayClientMessage(
+                    Component.literal("该职业本局名额已满（最多 " + Harpymodloader.getRoleCapacity(role)
+                            + " 人），已为你保留自选卡：")
+                            .append(Harpymodloader.getRoleName(role)),
+                    true);
+            return 0;
+        }
         if (!BackpackManager.useSelfSelectCard(player, role)) {
             player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
             return 0;

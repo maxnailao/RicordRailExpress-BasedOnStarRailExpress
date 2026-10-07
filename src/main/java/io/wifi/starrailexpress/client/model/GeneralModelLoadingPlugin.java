@@ -52,6 +52,12 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
                     continue;
                 }
                 for (Variant variant : Variant.values()) {
+                    // pulling 系列变体只对弓 / 弩有意义，其它类型无对应模型文件，跳过避免缺失模型告警
+                    if (variant.getSerializedName().startsWith("pulling")
+                            && !ItemSkinManager.SkinTypes.BOW.equals(entry.getKey())
+                            && !ItemSkinManager.SkinTypes.CROSSBOW.equals(entry.getKey())) {
+                        continue;
+                    }
                     // 无物品载体的皮肤类型在 MODEL_IDS 中没有映射，跳过避免空指针
                     var modelLocation = getModelLocation(entry.getKey(), skin.getName(), variant);
                     if (modelLocation == null) {
@@ -85,7 +91,11 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
 
     public enum Variant implements StringRepresentable {
         DEFAULT("default"),
-        IN_HAND("in_hand");
+        IN_HAND("in_hand"),
+        // 弓 / 弩拉弓蓄力的三档变体，对应模型文件 <皮肤名>_pulling_0/1/2.json
+        PULLING_0("pulling_0"),
+        PULLING_1("pulling_1"),
+        PULLING_2("pulling_2");
 
         private final String name;
 
