@@ -85,7 +85,11 @@ public class TMMRoles {
             "initiate", "morichika_rinnosuke", "kawashiro_nitori", "furandoru", "super_loose_end",
             "pilot", "guardian", "jingjiren_wow", "star", "singer", "fitter", "water_ghost",
             "diver", "monokuma", "parasol", "nutritionist", "mafioso", "janitor",
-            "pigegade_piggod", "qingsuanzhe_morelooseend");
+            "pigegade_piggod", "qingsuanzhe_morelooseend",
+            // 不会自然刷新的职业，不能出现在自选卡里：
+            //   猫娘杀手 —— 蛋角色(EggRole)本来会被下面的例外放行，但它并不自然刷新；
+            //   工蜂 / 马蜂 —— 只能由蜂后召唤产生，从不自然刷新。
+            "cat_killer", "bee_worker", "bee_wasp");
 
     /**
      * 是否可由「自选职业卡」选择。

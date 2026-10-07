@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState;
+import io.wifi.starrailexpress.progression.SelfSelectClaimService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -57,31 +58,41 @@ public final class ProgressionCommand {
             player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
             return 0;
         }
-        // 本局该职业已被其他玩家自选：保留（退回）自选卡，只给第一位
-        if (Harpymodloader.isRoleClaimedByOthers(role, player.getUUID())) {
-            player.displayClientMessage(
-                    Component.literal("该职业本局已被其他玩家自选，已为你保留自选卡：")
-                            .append(Harpymodloader.getRoleName(role)),
-                    true);
-            return 0;
+
+        // 占位规则统一在 SelfSelectClaimService 里（先到先得 / 每局每种职业只出现一位 / 失败退还）
+        SelfSelectClaimService.Result result = SelfSelectClaimService.claim(player, role);
+        switch (result) {
+            case OK -> {
+                player.displayClientMessage(
+                        Component.literal("已使用自选职业卡，本局职业锁定为：")
+                                .append(Harpymodloader.getRoleName(role)),
+                        true);
+                return 1;
+            }
+            case SLOT_FULL -> {
+                // 不生效：广播提示，并且**没有扣卡**（等于返还自选卡）
+                SelfSelectClaimService.broadcastClaimed(player.getServer(), player, role);
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_claimed_self",
+                                Harpymodloader.getRoleName(role),
+                                Harpymodloader.getRoleCapacity(role)),
+                        true);
+                return 0;
+            }
+            case SAME_ROLE -> {
+                player.displayClientMessage(
+                        Component.literal("你本局已经选过这个职业了：")
+                                .append(Harpymodloader.getRoleName(role)),
+                        true);
+                return 0;
+            }
+            case NO_CARD -> {
+                player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
+                return 0;
+            }
+            default -> {
+                return 0;
+            }
         }
-        // 本局该职业名额已满（按先后顺序，后来者溢出）：保留（退回）自选卡
-        if (Harpymodloader.isRoleOverflow(role, player.getUUID())) {
-            player.displayClientMessage(
-                    Component.literal("该职业本局名额已满（最多 " + Harpymodloader.getRoleCapacity(role)
-                            + " 人），已为你保留自选卡：")
-                            .append(Harpymodloader.getRoleName(role)),
-                    true);
-            return 0;
-        }
-        if (!BackpackManager.useSelfSelectCard(player, role)) {
-            player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
-            return 0;
-        }
-        player.displayClientMessage(
-                Component.literal("已使用自选职业卡，本局职业锁定为：")
-                        .append(Harpymodloader.getRoleName(role)),
-                true);
-        return 1;
     }
 }

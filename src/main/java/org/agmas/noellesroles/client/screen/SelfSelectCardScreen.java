@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.client.util.PinYinUtils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.SREDisableManager;
 
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ public class SelfSelectCardScreen extends Screen {
     private static final int BG_DISABLED = 0x40000000;
     private static final int TEXT_NORMAL = 0xFFFFFFFF;
     private static final int TEXT_DISABLED = 0xFF9A9A9A;
+    /** 已被他人选走的角标颜色 */
+    private static final int TEXT_CLAIMED = 0xFFFFAA55;
 
     private int selectedFaction = -1;
     /** 当前阵营的**全部**可选职业（不受搜索影响） */
@@ -117,15 +120,29 @@ public class SelfSelectCardScreen extends Screen {
 
             SRERole role = selectableRoles.get(i);
             boolean disabled = isDisabled(role);
+            // 已被别人占用的职业：显示为不可选（服务端也会拦，这里只是提前告知）
+            boolean claimed = isClaimedByOther(role);
+            boolean unusable = disabled || claimed;
             boolean hovered = inside(mouseX, mouseY, x, y, CARD_W, CARD_H);
-            int bg = disabled ? BG_DISABLED : (hovered ? BG_HOVER : BG_NORMAL);
+            int bg = unusable ? BG_DISABLED : (hovered ? BG_HOVER : BG_NORMAL);
             g.fill(x, y, x + CARD_W, y + CARD_H, bg);
             g.drawCenteredString(font, truncate(role.getName().getString(), CARD_W - 12),
-                    x + CARD_W / 2, y + (CARD_H - 9) / 2, disabled ? TEXT_DISABLED : TEXT_NORMAL);
-            if (disabled && hovered) {
-                g.renderTooltip(font, Component.literal("该职业已在本局禁用")
-                        .append("\n")
-                        .append(Component.literal("§7无法使用自选职业卡（卡牌不会被消耗）")), mouseX, mouseY);
+                    x + CARD_W / 2, y + (CARD_H - 9) / 2, unusable ? TEXT_DISABLED : TEXT_NORMAL);
+            if (claimed) {
+                // 右上角标记，一眼看出"这个名额已经满了"
+                g.drawString(font, "已满", x + CARD_W - font.width("已满") - 4, y + 4,
+                        TEXT_CLAIMED, false);
+            }
+            if (unusable && hovered) {
+                Component tip = disabled
+                        ? Component.literal("该职业已在本局禁用")
+                                .append("\n")
+                                .append(Component.literal("§7无法使用自选职业卡（卡牌不会被消耗）"))
+                        : Component.literal("该职业本局名额已满")
+                                .append("\n")
+                                .append(Component.literal("§7上限 " + claimCapacity(role)
+                                        + " 人（卡牌不会被消耗）"));
+                g.renderTooltip(font, tip, mouseX, mouseY);
             }
         }
 
@@ -202,8 +219,8 @@ public class SelfSelectCardScreen extends Screen {
                 int y = GRID_TOP + row * (CARD_H + CARD_GAP);
                 if (inside(mouseX, mouseY, x, y, CARD_W, CARD_H)) {
                     SRERole role = selectableRoles.get(i);
-                    // 本局被禁用的职业不可选：不发送命令、不消耗卡牌
-                    if (isDisabled(role)) {
+                    // 本局被禁用、或已被别人选走的职业不可选：不发送命令、不消耗卡牌
+                    if (isDisabled(role) || isClaimedByOther(role)) {
                         return true;
                     }
                     sendCommand("sre:pass selfselect " + role.identifier());
@@ -350,6 +367,28 @@ public class SelfSelectCardScreen extends Screen {
         if (role.isNeutrals() && role.isNeutralForKiller()) return 3;
         if (role.canUseKiller()) return 4;
         return -1;
+    }
+
+    /** 该职业本局名额是否已满（按 ROLE_MAX；自己已占的不算冲突） */
+    private boolean isClaimedByOther(SRERole role) {
+        if (minecraft == null || minecraft.player == null || role == null) {
+            return false;
+        }
+        try {
+            return Harpymodloader.isRoleOverflow(role, minecraft.player.getUUID());
+        } catch (Throwable t) {
+            // 客户端拿不到服务端占位表时不要报错，交给服务端裁决
+            return false;
+        }
+    }
+
+    /** 该职业的本局名额上限（ROLE_MAX，默认 1），用于悬停提示 */
+    private int claimCapacity(SRERole role) {
+        try {
+            return Harpymodloader.getRoleCapacity(role);
+        } catch (Throwable t) {
+            return 1;
+        }
     }
 
     private static boolean inside(double mx, double my, int x, int y, int w, int h) {

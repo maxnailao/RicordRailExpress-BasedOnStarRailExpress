@@ -202,8 +202,19 @@ public final class ReplayBoardService {
         };
     }
 
+    /**
+     * 文字缩放。
+     *
+     * <p>窄屏（≤5 格）额外放大 1.5 倍：原来 {@code width/8} 在 3 格宽时只有 0.375，
+     * 字小到不好认。放大后 3 格宽约 0.56，仍然收在屏幕内（行宽预算会跟着变小，
+     * {@code TextFitter} 会自动截断，不会溢出）。
+     *
+     * <p>宽屏保持原公式，因为它们的字本来就够大，放大反而浪费空间。
+     */
     public static float textScale(ReplayBoardSavedData.ReplayScreenEntry entry) {
-        return Math.max(0.35F, Math.min(1.25F, entry.width() / 8.0F));
+        int w = Math.max(1, entry.width());
+        float boost = w <= 5 ? 1.5F : 1.0F;
+        return Math.max(0.35F, Math.min(1.25F, w / 8.0F * boost));
     }
 
     private static String animationKey(ServerLevel level, String id) {

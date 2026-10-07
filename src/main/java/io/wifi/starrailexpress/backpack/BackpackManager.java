@@ -102,32 +102,33 @@ public final class BackpackManager {
     }
 
     /** 使用一张自选职业卡并强制指定职业（写入 {@code FORCED_MODDED_ROLE_FLIP}）。 */
-    public static boolean useSelfSelectCard(ServerPlayer player, SRERole role) {
-        if (role == null) {
-            return false;
-        }
+    /**
+     * 只扣一张自选卡，不做任何占位判断。
+     *
+     * <p>占位规则统一由 {@code SelfSelectClaimService} 负责，这里只负责"账"。
+     *
+     * @return 扣成功返回 true；没有卡返回 false
+     */
+    public static boolean consumeSelfSelectCard(ServerPlayer player) {
         Entry entry = getEntry(player.getUUID());
         if (entry.state.selfSelectCards < 1) {
             return false;
         }
-        UUID id = player.getUUID();
-        SRERole current = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(id);
-        // 同一玩家重复选同一职业：直接失败，不浪费卡
-        if (current == role) {
-            return false;
-        }
-        // 本局该职业名额已满（按先后顺序，超出上限的后来者）：不扣卡（等效于退回自选卡）
-        if (Harpymodloader.isRoleOverflow(role, id)) {
-            return false;
-        }
-        // 改选其它职业：先解除自己此前的占用，避免一人占用多个职业
-        if (current != null) {
-            Harpymodloader.releaseSelfForcedRole(current, id);
-        }
-        Harpymodloader.addToForcedRoles(role, player);
         entry.state.selfSelectCards -= 1;
         markDirty(player, entry);
         return true;
+    }
+
+    /**
+     * 使用一张自选职业卡。
+     *
+     * <p>占位规则（先到先得 / 每局每种职业只出现一位 / 失败退还）全部交给
+     * {@code SelfSelectClaimService}，这里只把结果翻译成布尔值，
+     * 避免和命令入口出现两套口径。
+     */
+    public static boolean useSelfSelectCard(ServerPlayer player, SRERole role) {
+        return io.wifi.starrailexpress.progression.SelfSelectClaimService
+                .claim(player, role) == io.wifi.starrailexpress.progression.SelfSelectClaimService.Result.OK;
     }
 
     /** 逐字复刻 {@code ProgressionDataManager.activateFactionCard}：卡库写改为背包。 */

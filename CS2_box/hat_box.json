@@ -16,7 +16,9 @@
     "hat/hat_ricord_xiaodangao",
     "hat/hat_ricord_xiaoji",
     "hat/hat_ricord_helmet",
-    "hat/hat_ricord_helmet_t"
+    "hat/hat_ricord_helmet_t",
+    "hat/hat_ricord_xingjunmao",
+    "hat/hat_ricord_tianshiguanghuan"
   ],
   "rare_skins": [
     "hat/hat_ricord_shengdanmao",
@@ -30,7 +32,12 @@
     "hat/hat_ricord_maidangdang",
     "hat/hat_ricord_t7"
   ],
-  "epic_skins": [],
+  "epic_skins": [
+    "hat/hat_ricord_dajitui",
+    "hat/hat_ricord_wangguan",
+    "hat/hat_ricord_jiaohuang",
+    "hat/hat_ricord_sharenkuang"
+  ],
   "legendary_skins": [],
   "unbelievable_skins": []
 }

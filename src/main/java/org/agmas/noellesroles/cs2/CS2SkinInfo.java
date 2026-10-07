@@ -153,6 +153,12 @@ public final class CS2SkinInfo {
         register("hat/hat_ricord_maidangdang", "麦当当员工帽", "瑞科德饰品：快餐店员工帽，欢迎光临麦当当");
         // 第三期
         register("hat/hat_ricord_t7", "T7 头盔", "瑞科德饰品：T7 战术头盔，视野开阔、防护到位");
+        register("hat/hat_ricord_xingjunmao", "行军帽", "瑞科德饰品：轻便的行军帽，适合长途跋涉");
+        register("hat/hat_ricord_tianshiguanghuan", "小天使光环", "瑞科德饰品：头顶一圈柔光，看起来格外无辜");
+        register("hat/hat_ricord_dajitui", "大鸡腿头套", "瑞科德饰品：整只大鸡腿套在头上，饿了还能咬一口");
+        register("hat/hat_ricord_wangguan", "王冠", "瑞科德饰品：金光闪闪的王冠，戴上就是全场焦点");
+        register("hat/hat_ricord_jiaohuang", "教皇冠冕", "瑞科德饰品：三层冠冕，庄重得让人不敢直视");
+        register("hat/hat_ricord_sharenkuang", "杀人狂面具", "瑞科德饰品：一张让人后背发凉的面具");
         // 特殊玩偶帽
         registerHat("justacheese", "cheese");
         registerHat("spbgcp", "spbgcp");

@@ -1008,6 +1008,36 @@ public class ModItems {
             new Item(new Item.Properties().stacksTo(1)),
             "ricord_t7", RICORD_ACCESSORIES_GROUP);
 
+    /** 行军帽（第三期，uncommon） */
+    public static final Item RICORD_XINGJUNMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_xingjunmao", RICORD_ACCESSORIES_GROUP);
+
+    /** 小天使光环（第三期，uncommon） */
+    public static final Item RICORD_TIANSHIGUANGHUAN = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_tianshiguanghuan", RICORD_ACCESSORIES_GROUP);
+
+    /** 大鸡腿头套（第三期，epic） */
+    public static final Item RICORD_DAJITUI = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_dajitui", RICORD_ACCESSORIES_GROUP);
+
+    /** 王冠（第三期，epic） */
+    public static final Item RICORD_WANGGUAN = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_wangguan", RICORD_ACCESSORIES_GROUP);
+
+    /** 教皇冠冕（第三期，epic） */
+    public static final Item RICORD_JIAOHUANG = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_jiaohuang", RICORD_ACCESSORIES_GROUP);
+
+    /** 杀人狂面具（第三期，epic） */
+    public static final Item RICORD_SHARENKUANG = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_sharenkuang", RICORD_ACCESSORIES_GROUP);
+
     /**
      * 沙漠之鹰
      * - 左键开火，R键换弹

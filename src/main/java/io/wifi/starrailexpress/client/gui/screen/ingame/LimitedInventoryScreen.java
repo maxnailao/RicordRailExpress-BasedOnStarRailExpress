@@ -622,7 +622,23 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         if (button == 0 && isInTrash(mouseX, mouseY)) {
             ItemStack carried = this.getMenu().getCarried();
             if (!carried.isEmpty()) {
-                askDeleteCarried(carried);
+                // 关键枪械不允许销毁：直接提示，不弹确认框（服务端还会再拦一次）。
+                // 这里包一层 try：客户端物品类解析失败也不该让界面报错。
+                boolean protectedItem = false;
+                try {
+                    protectedItem = io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload
+                            .isProtectedItem(carried);
+                } catch (Throwable ignored) {
+                    // 解析不到就当不保护，交给服务端决定
+                }
+                if (protectedItem) {
+                    if (this.minecraft != null && this.minecraft.player != null) {
+                        this.minecraft.player.displayClientMessage(
+                                Component.literal("§c这件武器不能扔进垃圾桶"), true);
+                    }
+                } else {
+                    askDeleteCarried(carried);
+                }
             }
             return true;
         }

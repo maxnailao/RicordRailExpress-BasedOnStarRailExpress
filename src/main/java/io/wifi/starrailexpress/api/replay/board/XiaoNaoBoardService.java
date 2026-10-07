@@ -331,17 +331,13 @@ public final class XiaoNaoBoardService {
     /**
      * 把某个榜单的当前数据画到屏幕上。
      *
-     * <p><b>按行号就地更新</b>：行号写在实体自定义名里（{@code <前缀><id>#<行号>}），
-     * 每行都有确定的实体，只改文本、不销毁重建。
+     * <p><b>内容变了就整屏重建</b>，内容没变则一个包都不发。
      *
-     * <p>早期实现有两处会让文字串到一起：
-     * <ol>
-     * <li>靠 {@code y} 坐标排序来"认"第几行 —— 行距是小数，排序结果一旦不稳定，
-     * 第 2 行就可能被当成第 1 行，于是把新文本写到了别的行上；</li>
-     * <li>文字超宽时实体会按 {@code lineWidth} 自动折成两行，而我的行距是按一行算的，
-     * 折出来的第二行就压到下一行上 —— 这正是"字体混一块去了"。</li>
-     * </ol>
-     * 现在前者改成按行号索引，后者由 {@link #truncate} 保证每行不超宽。
+     * <p>为什么不做"逐行就地改文本"：那个方案要求把实体和行号一一对上，
+     * 一旦对应关系出问题（例如玩家改名导致行内容整体错位、或残留了同名的旧实体），
+     * 就会出现**文字叠在一起**，而且只有 hide+show 才能恢复。
+     * 整屏重建没有这种中间状态，代价也只在"内容确实变了"时付出 ——
+     * 而这不发生在逐帧/周期刷新上（只在建屏、每局结束、管理员操作时）。
      */
     private static boolean repaint(MinecraftServer server, String id) {
         if (server == null) {
@@ -361,23 +357,30 @@ public final class XiaoNaoBoardService {
         List<Component> lines = buildLines(id, server);
         int want = Math.min(lines.size(), rows);
 
-        // 按行号建索引：rowIndex -> 实体。不认识的行号（旧格式无 # 的）归到 -1
+        // 先看现有画面和期望值是否一致；一致就什么都不做（省掉全部同步包）
         Map<Integer, Display.TextDisplay> byRow = collectByRow(level, entry);
-
-        for (int i = 0; i < want; i++) {
-            Component text = lines.get(i);
-            Display.TextDisplay display = byRow.remove(i);
-            if (display != null) {
-                if (!text.equals(display.getText())) {
-                    display.setText(text);
-                }
-            } else {
-                spawnLine(level, entry, text, i, rows);
-            }
+        if (matches(byRow, lines, want)) {
+            return true;
         }
-        // 不再需要的行（内容变短，或旧格式遗留）全部销毁
-        for (Display.TextDisplay leftover : byRow.values()) {
-            leftover.discard();
+
+        // 不一致：整屏清掉重建，避免任何"部分更新"留下的错位/叠加
+        clearTextDisplaysByName(level, id);
+        for (int i = 0; i < want; i++) {
+            spawnLine(level, entry, lines.get(i), i, rows);
+        }
+        return true;
+    }
+
+    /** 现有行的数量与文本是否与期望完全一致（行号 0..want-1，且无多余行） */
+    private static boolean matches(Map<Integer, Display.TextDisplay> byRow, List<Component> lines, int want) {
+        if (byRow.size() != want) {
+            return false;
+        }
+        for (int i = 0; i < want; i++) {
+            Display.TextDisplay display = byRow.get(i);
+            if (display == null || !lines.get(i).equals(display.getText())) {
+                return false;
+            }
         }
         return true;
     }

@@ -211,6 +211,9 @@ public final class SRESkinRegistry {
         // 钢盔两个变体（材质图集共用 T.png，不含"非法旋转"的绿迷彩三件套）
         registerSkin(SkinTypes.HAT, "hat_ricord_helmet", QualityColor.UNCOMMON);
         registerSkin(SkinTypes.HAT, "hat_ricord_helmet_t", QualityColor.UNCOMMON);
+        // 第三期：行军帽 / 小天使光环 也是普通（绿色）品级
+        registerSkin(SkinTypes.HAT, "hat_ricord_xingjunmao", QualityColor.UNCOMMON);
+        registerSkin(SkinTypes.HAT, "hat_ricord_tianshiguanghuan", QualityColor.UNCOMMON);
         // 瑞科德饰品 — 稀有（蓝色）品级
         registerSkin(SkinTypes.HAT, "hat_ricord_xiaodangao", QualityColor.RARE);
         registerSkin(SkinTypes.HAT, "hat_ricord_xiaoji", QualityColor.RARE);
@@ -225,6 +228,11 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.HAT, "hat_ricord_maidangdang", QualityColor.RARE);
         // T7（本期新增，rare）
         registerSkin(SkinTypes.HAT, "hat_ricord_t7", QualityColor.RARE);
+        // 瑞科德饰品 — 史诗（紫色）品级：第三期其余帽子
+        registerSkin(SkinTypes.HAT, "hat_ricord_dajitui", QualityColor.EPIC);
+        registerSkin(SkinTypes.HAT, "hat_ricord_wangguan", QualityColor.EPIC);
+        registerSkin(SkinTypes.HAT, "hat_ricord_jiaohuang", QualityColor.EPIC);
+        registerSkin(SkinTypes.HAT, "hat_ricord_sharenkuang", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
         // BOW（弓）皮肤

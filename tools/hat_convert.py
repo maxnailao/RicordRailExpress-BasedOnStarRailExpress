@@ -33,6 +33,8 @@ HAT1 = os.path.join(ROOT, "帽子")
 HAT2 = os.path.join(ROOT, "帽子第二期")
 # 「临时」目录：用户直接丢进来的模型（如 T7），文件名不一定是中文原名
 TEMP = os.path.join(ROOT, "临时")
+# 帽子第三期：在「临时/帽子第三期」下按中文目录分组
+HAT3 = os.path.join(TEMP, "帽子第三期")
 
 
 def tex(skin, *suffix):
@@ -87,6 +89,16 @@ TASKS = [
     task(HAT2, "麦当当员工帽2", "麦当当员工帽.json", "麦当当员工帽.png", "hat_ricord_maidangdang"),
     # 第三期：临时目录里直接给的 T7（rare）。贴图与模型同目录同名。
     task(TEMP, "", "T7.json", "T7.png", "hat_ricord_t7"),
+    # 第三期：重制版（覆盖已有的麦当当员工帽 / 小鸡头套，品质不变 = rare）
+    task(HAT3, "麦当当员工帽2", "麦当当员工帽.json", "麦当当员工帽.png", "hat_ricord_maidangdang"),
+    task(HAT3, "小鸡头套2", "小鸡头套.json", "小鸡头套.png", "hat_ricord_xiaoji_taotao"),
+    # 第三期新增：行军帽 / 小天使光环 为 uncommon，其余为 epic
+    task(HAT3, "行军帽3", "行军帽.json", "行军帽.png", "hat_ricord_xingjunmao"),
+    task(HAT3, "小天使光环3", "小天使光环3.json", "小天使光环.png", "hat_ricord_tianshiguanghuan"),
+    task(HAT3, "大鸡腿头套3", "大鸡腿头套3.json", "大鸡腿头套.png", "hat_ricord_dajitui"),
+    task(HAT3, "王冠3", "王冠.json", "王冠.png", "hat_ricord_wangguan"),
+    task(HAT3, "教皇冠冕3", "教皇冠冕3.json", "教皇冠冕.png", "hat_ricord_jiaohuang"),
+    task(HAT3, "杀人狂面具3", "杀人狂面具.json", "杀人狂面具.png", "hat_ricord_sharenkuang"),
 ]
 
 # 非 T 版头盔是一个独立皮肤，但模型与 T 版只差「T 挂件」那几个元素，
@@ -214,6 +226,12 @@ def clean_number(v):
 
 
 def convert(src_path, skin_name, tex_map, tex_copy):
+    # 源目录可能已被清理（帽子/、帽子第二期/ 是早期批次，用户可能已删掉），
+    # 这种情况直接跳过而不是中断整轮转换。
+    if not os.path.isfile(src_path):
+        print("[SKIP ] %-34s 源文件不存在（%s）"
+              % (skin_name, os.path.relpath(src_path, ROOT)))
+        return None, None
     with open(src_path, encoding="utf-8") as f:
         src = json.load(f)
 
@@ -321,15 +339,25 @@ def convert_helmet_plain(spec):
 def main():
     only = sys.argv[1:] or None
     ran = 0
+    skipped = 0
     for t in TASKS:
         if only and not any(o in t["SKIN_NAME"] for o in only):
             continue
-        convert(t["SRC"], t["SKIN_NAME"], t["TEX_MAP"], t["TEX_COPY"])
-        ran += 1
+        model, _path = convert(t["SRC"], t["SKIN_NAME"], t["TEX_MAP"], t["TEX_COPY"])
+        if model is None:
+            skipped += 1
+        else:
+            ran += 1
     if not only or any("helmet" in o for o in only):
-        convert_helmet_plain(HELMET_PLAIN)
-        ran += 1
-    print("\n完成 %d 个帽子。" % ran)
+        # 派生头盔依赖 T 版产出；T 版源不在时同样跳过
+        if os.path.isfile(os.path.join(MODEL_OUT_DIR, HELMET_PLAIN["FROM_T_SKIN"] + ".json")):
+            convert_helmet_plain(HELMET_PLAIN)
+            ran += 1
+        else:
+            print("[SKIP ] %-34s 缺少 %s 的产出（源目录可能已清理）"
+                  % (HELMET_PLAIN["SKIN_NAME"], HELMET_PLAIN["FROM_T_SKIN"]))
+            skipped += 1
+    print("\n完成 %d 个帽子%s。" % (ran, ("，跳过 %d 个（源缺失）" % skipped) if skipped else ""))
 
 
 if __name__ == "__main__":

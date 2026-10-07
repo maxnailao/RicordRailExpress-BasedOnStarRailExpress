@@ -38,6 +38,14 @@ HATS = [
     ("ricord_xiaoqie_taotao", "hat_ricord_xiaoqie_taotao", "小企鹅头套"),
     ("ricord_maidangdang", "hat_ricord_maidangdang", "麦当当员工帽"),
     ("ricord_t7", "hat_ricord_t7", "T7 头盔"),
+    # 帽子第三期：行军帽 / 小天使光环（uncommon）
+    ("ricord_xingjunmao", "hat_ricord_xingjunmao", "行军帽"),
+    ("ricord_tianshiguanghuan", "hat_ricord_tianshiguanghuan", "小天使光环"),
+    # 帽子第三期：其余（epic）
+    ("ricord_dajitui", "hat_ricord_dajitui", "大鸡腿头套"),
+    ("ricord_wangguan", "hat_ricord_wangguan", "王冠"),
+    ("ricord_jiaohuang", "hat_ricord_jiaohuang", "教皇冠冕"),
+    ("ricord_sharenkuang", "hat_ricord_sharenkuang", "杀人狂面具"),
 ]
 
 # 已废弃、需要从 lang 中清掉的旧条目
@@ -113,11 +121,15 @@ print("[LANG] 缺失=%s  残留旧条目=%s" % (missing or "无", leftover or "�
 # ── 3. 帽子箱子：只改皮肤列表，保留用户自己调过的概率 ─────────────────────
 BOX_UNCOMMON = ["hat_ricord_chushimao", "hat_ricord_matongchou", "hat_ricord_kuanggongmao",
                 "hat_ricord_limao", "hat_ricord_xiaodangao", "hat_ricord_xiaoji",
-                "hat_ricord_helmet", "hat_ricord_helmet_t"]
+                "hat_ricord_helmet", "hat_ricord_helmet_t",
+                # 第三期（uncommon）
+                "hat_ricord_xingjunmao", "hat_ricord_tianshiguanghuan"]
 BOX_RARE = ["hat_ricord_shengdanmao", "hat_ricord_caidao", "hat_ricord_jidan",
             "hat_ricord_beleimao", "hat_ricord_nainao", "hat_ricord_xiaohonghua",
             "hat_ricord_xiaoji_taotao", "hat_ricord_xiaoqie_taotao", "hat_ricord_maidangdang",
             "hat_ricord_t7"]
+BOX_EPIC = ["hat_ricord_dajitui", "hat_ricord_wangguan",
+            "hat_ricord_jiaohuang", "hat_ricord_sharenkuang"]
 
 for rel in ["CS2_box/hat_box.json", "run/CS2_box/hat_box.json"]:
     p = os.path.join(ROOT, rel)
@@ -125,9 +137,10 @@ for rel in ["CS2_box/hat_box.json", "run/CS2_box/hat_box.json"]:
     box["common_skins"] = []
     box["uncommon_skins"] = ["hat/" + s for s in BOX_UNCOMMON]
     box["rare_skins"] = ["hat/" + s for s in BOX_RARE]
+    box["epic_skins"] = ["hat/" + s for s in BOX_EPIC]
     with open(p, "w", encoding="utf-8", newline="\n") as f:
         json.dump(box, f, ensure_ascii=False, indent=2)
         f.write("\n")
-    print("[BOX] %-28s 概率=%s 普通=%d 罕见=%d 稀有=%d"
+    print("[BOX] %-28s 概率=%s 罕见=%d 稀有=%d 史诗=%d"
           % (rel, {k: box[k] for k in ("common", "uncommon", "rare", "epic", "legendary", "unbelievable")},
-             len(box["common_skins"]), len(box["uncommon_skins"]), len(box["rare_skins"])))
+             len(box["uncommon_skins"]), len(box["rare_skins"]), len(box["epic_skins"])))
