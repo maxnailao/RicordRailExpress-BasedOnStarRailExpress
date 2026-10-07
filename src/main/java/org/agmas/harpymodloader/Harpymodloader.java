@@ -146,6 +146,14 @@ public class Harpymodloader implements ModInitializer {
     }
 
     /**
+     * 本局该职业是否已被「其它玩家」自选占用（至少 1 个名额被他人占据）。
+     * 用于自选卡拦截：先到先得，后来者若发现该职业已被别人锁定则退还自选卡。
+     */
+    public static boolean isRoleClaimedByOthers(SRERole role, UUID self) {
+        return countRoleClaims(role, self) > 0;
+    }
+
+    /**
      * 本局该职业是否已「溢出」：其它玩家已占名额是否达到人数上限。
      * 自选按先后顺序占位——前 N（N=上限）位正常锁定，第 N+1 位起判溢出、退还自选卡。
      */
