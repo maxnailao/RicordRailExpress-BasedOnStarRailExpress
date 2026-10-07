@@ -142,6 +142,11 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(ConvictChoiceSelectC2SPacket.ID,
                 ConvictChoiceSelectC2SPacket::handle);
 
+        // 点穴大师：穴位同步（S2C）与点击上报（C2S）
+        PayloadTypeRegistry.playS2C().register(DianxueMasterSyncS2CPacket.ID, DianxueMasterSyncS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(DianxueMasterClickC2SPacket.ID, DianxueMasterClickC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DianxueMasterClickC2SPacket.ID, DianxueMasterClickC2SPacket::handle);
+
         PayloadTypeRegistry.playS2C().register(DoomedSinnerFateRevealS2CPacket.ID, DoomedSinnerFateRevealS2CPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);

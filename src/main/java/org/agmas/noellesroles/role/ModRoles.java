@@ -184,6 +184,8 @@ public class ModRoles {
     public static ResourceLocation CORONER_ID = Noellesroles.id("coroner");
     public static ResourceLocation PATROLLER_ID = Noellesroles.id("patroller");
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
+    // 点穴大师角色 ID - 警长阵营
+    public static final ResourceLocation DIANXUE_MASTER_ID = Noellesroles.id("dianxue_master");
     /** 领袖职业 ID（当前未实装该职业，保留以对齐角色分配逻辑） */
     public static ResourceLocation LEADER_ID = Noellesroles.id("leader");
     // 鬼眼·杨间角色 ID - 警长阵营
@@ -1166,6 +1168,22 @@ public class ModRoles {
                 }
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true);
+
+    /**
+     * 点穴大师（警察阵营）。
+     * - 属于警长/警察阵营 (isInnocent = true, setVigilanteTeam = true)
+     * - 无本能 (canUseInstinct 默认 false)
+     * - 正常体力 (TMMRoles.CIVILIAN.getMaxSprintTime)
+     * - 正常理智 (SRERole.MoodType.REAL)
+     * - 先注册骨架，技能待后续实装
+     */
+    public static SRERole DIANXUE_MASTER = TMMRoles.registerRole(
+                    new NormalRole(DIANXUE_MASTER_ID, new Color(40, 90, 200).getRGB(), // 警蓝色
+                            true, false, SRERole.MoodType.REAL,
+                            TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setVigilanteTeam(true).setCanSeeCoin(true).setCanPickUpRevolver(false)
+            .setComponentKey(ModComponents.DIANXUE_MASTER)
+            .setDefaultMax(1);
 
     /**
      * 鬼眼·杨间（警长阵营）。完成两个任务后获得左轮手枪。

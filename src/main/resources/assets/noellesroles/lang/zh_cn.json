@@ -4866,5 +4866,21 @@
   "item.noellesroles.pressure_reagent": "压力试剂",
   "message.noellesroles.witch_accomplice.domain_in": "正在被压力领域影响..快出去！",
   "message.noellesroles.witch_accomplice.domain_prewitch": "你感到了些许压力...",
-  "info.screen.roleid.witch_accomplice": "杀手方中立\n与预备魔女绑定生成，可以透视绑定的预备魔女。\n压力试剂：右键投掷，以落点为中心展开持续30秒、半径10格的领域；领域内好人与会掉理智的职业心情值持续降低；离开领域或领域结束后，被扣除的心情值会逐渐恢复其中的50%%。"
+  "info.screen.roleid.witch_accomplice": "杀手方中立\n与预备魔女绑定生成，可以透视绑定的预备魔女。\n压力试剂：右键投掷，以落点为中心展开持续30秒、半径10格的领域；领域内好人与会掉理智的职业心情值持续降低；离开领域或领域结束后，被扣除的心情值会逐渐恢复其中的50%%。",
+  "=============== 点穴大师 ===============": "",
+  "role.noellesroles.dianxue_master": "点穴大师",
+  "role.noellesroles.dianxue_master.desc": "警察阵营角色，无本能。按技能键将准星玩家推出并定身3秒开始点穴，在其身上依次点亮5个穴位：理智恢复25%%、速度I(10秒)、恶心(10秒)、沉重I(10秒)、第5个穴位致死。定身3秒内未点第一个穴位则退出点穴并进入35秒冷却；此后不点穴位会自动冒出下一个。",
+  "skill.noellesroles.dianxue_master.press": "点穴",
+  "message.noellesroles.dianxue_master.no_target": "需要近处有视野的玩家才能点穴",
+  "message.noellesroles.dianxue_master.victim": "你被点穴大师制住了！",
+  "message.noellesroles.dianxue_master.gate_miss": "点穴失败，目标逃脱",
+  "screen.noellesroles.dianxue_master.title": "点穴·%s",
+  "screen.noellesroles.dianxue_master.gate_hint": "快点！在定身结束前点击红色穴位",
+  "screen.noellesroles.dianxue_master.hint": "点击红色穴位（第 %s/%s 个）",
+  "death_reason.noellesroles.dianxue": "被点穴击中",
+  "announcement.star.role.dianxue_master": "点穴大师",
+  "announcement.star.goals.dianxue_master": "使用你的点穴技巧保护人们",
+  "announcement.star.win.dianxue_master": "好人阵营胜利！",
+  "info.screen.roleid.dianxue_master": "警察阵营，无本能。\n按技能键将准星玩家推出一段距离并定身3秒，随后开始点穴。\n点穴界面中每次随机点亮一个红色穴位，必须在倒计时内点击它：\n第1个：理智恢复25%%；\n第2个：速度I（10秒）；\n第3个：恶心（10秒）；\n第4个：沉重I（10秒）；\n第5个：目标死亡。\n定身3秒内未点第一个穴位则退出点穴并进入35秒冷却；此后未及时点击会自动冒出下一个穴位。",
+  "role.noellesroles.dianxue_master": "点穴大师"
 }

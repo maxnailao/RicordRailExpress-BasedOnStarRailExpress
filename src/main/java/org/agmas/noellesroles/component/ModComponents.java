@@ -552,6 +552,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "witch_accomplice"),
           org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent.class);
 
+  // 点穴大师组件 - 警察阵营，点穴状态机（推出定身 + 五穴位序列）
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent> DIANXUE_MASTER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dianxue_master"),
+          org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent.class);
+
   // 摄影师组件 - 记录画框购买次数
   public static final ComponentKey<PhotographerPlayerComponent> PHOTOGRAPHER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "photographer"),
@@ -1604,8 +1609,13 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
     // 注册狼人组件 - 杀手阵营，黑灯增益 + 午夜狼嚎特殊模式
     registry.beginRegistration(Player.class, WEREWOLF_KILLER)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent::new);
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent::new);
+
+    // 注册点穴大师组件 - 警察阵营，点穴状态机
+    registry.beginRegistration(Player.class, DIANXUE_MASTER)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent::new);
 
   }
 }

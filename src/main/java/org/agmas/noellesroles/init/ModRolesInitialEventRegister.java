@@ -740,6 +740,28 @@ public class ModRolesInitialEventRegister {
                     return comp != null && comp.releaseLast();
                 }).shifted(true).announceToSelf(false).build());
 
+        // 点穴大师技能：推出并定身准星玩家 3 秒，开始点穴（35 秒冷却）
+        RoleSkill.register(ModRoles.DIANXUE_MASTER, RoleSkill.skill(
+                SRE.id("dianxue_master_press"),
+                "skill.noellesroles.dianxue_master.press",
+                context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator() || context.target() == null) return false;
+                    if (!(player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer target)) return false;
+                    if (target == player || !GameUtils.isPlayerAliveAndSurvival(target)) {
+                        player.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.no_target")
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    if (player.distanceToSqr(target) > 36.0D || !player.hasLineOfSight(target)) {
+                        player.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.no_target")
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    var comp = org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent.KEY.get(player);
+                    return comp != null && comp.startPressing(target);
+                }).cooldownSeconds(35).showOnHud(true).announceToSelf(false).build());
+
         // 阿蒙技能：
         // - G 键：对准星玩家静默种下时之虫（附身期间也可为其他人种虫）
         // - Shift+G 键：附身期间完成夺舍（变成目标、令其死亡、本体处生成尸体）

@@ -4187,5 +4187,21 @@
   "item.noellesroles.pressure_reagent": "壓力試劑",
   "message.noellesroles.witch_accomplice.domain_in": "正在被壓力領域影響..快出去！",
   "message.noellesroles.witch_accomplice.domain_prewitch": "你感到了些許壓力...",
-  "info.screen.roleid.witch_accomplice": "狼方中立\n與預備魔女綁定生成，可以透視綁定的預備魔女（藍色高亮）。\n商店可購買：撬鎖器(100金幣)、壓力試劑(200金幣)。\n壓力試劑：右鍵投擲，以落點為中心展開持續30秒、半徑10格的領域；領域內好人和會掉理智的職業心情值持續降低（預備魔女降低得更多），螢幕上方出現提示；離開領域或領域結束後，被扣除的心情值會逐漸恢復其中的50%%。"
+  "info.screen.roleid.witch_accomplice": "狼方中立\n與預備魔女綁定生成，可以透視綁定的預備魔女（藍色高亮）。\n商店可購買：撬鎖器(100金幣)、壓力試劑(200金幣)。\n壓力試劑：右鍵投擲，以落點為中心展開持續30秒、半徑10格的領域；領域內好人和會掉理智的職業心情值持續降低（預備魔女降低得更多），螢幕上方出現提示；離開領域或領域結束後，被扣除的心情值會逐漸恢復其中的50%%。",
+  "=============== 點穴大師 ===============": "",
+  "role.noellesroles.dianxue_master": "點穴大師",
+  "role.noellesroles.dianxue_master.desc": "警察陣營角色，無本能。按技能鍵將準星玩家推出並定身3秒開始點穴，在其身上依次點亮5個穴位：理智恢復25%%、速度I(10秒)、噁心(10秒)、沉重I(10秒)、第5個穴位致死。定身3秒內未點第一個穴位則退出點穴並進入35秒冷卻；此後不點穴位會自動冒出下一個。",
+  "skill.noellesroles.dianxue_master.press": "點穴",
+  "message.noellesroles.dianxue_master.no_target": "需要近處有視域的玩家才能點穴",
+  "message.noellesroles.dianxue_master.victim": "你被點穴大師制住了！",
+  "message.noellesroles.dianxue_master.gate_miss": "點穴失敗，目標逃脫",
+  "screen.noellesroles.dianxue_master.title": "點穴·%s",
+  "screen.noellesroles.dianxue_master.gate_hint": "快點！在定身結束前點擊紅色穴位",
+  "screen.noellesroles.dianxue_master.hint": "點擊紅色穴位（第 %s/%s 個）",
+  "death_reason.noellesroles.dianxue": "被點穴擊中",
+  "announcement.star.role.dianxue_master": "點穴大師",
+  "announcement.star.goals.dianxue_master": "用你的點穴技巧保護人們",
+  "announcement.star.win.dianxue_master": "好人陣營勝利！",
+  "info.screen.roleid.dianxue_master": "警察陣營，無本能。\n按技能鍵將準星玩家推出一段距離並定身3秒，隨後開始點穴。\n點穴介面中每次隨機點亮一個紅色穴位，必須在倒數計時內點擊它：\n第1個：理智恢復25%%；\n第2個：速度I（10秒）；\n第3個：噁心（10秒）；\n第4個：沉重I（10秒）；\n第5個：目標死亡。\n定身3秒內未點第一個穴位則退出點穴並進入35秒冷卻；此後未及時點擊會自動冒出下一個穴位。",
+  "role.noellesroles.dianxue_master": "點穴大師"
 }

@@ -221,12 +221,12 @@ public class CS2BoxManager {
         boolean luckyHit = !pityHit
                 && random.nextInt(100) < CS2InventoryComponent.LUCKY_SHARD_CHANCE_PERCENT;
         if (pityHit || luckyHit) {
-            inv.addMythicShards(1);
+            inv.addMythicShards(150);
             inv.resetBoxPityCounter();
             player.displayClientMessage(
                     Component.literal((pityHit ? "§6[保底] " : "§d[幸运] ")
                             + "§a恭喜获得 150 枚神话碎片！"), true);
-            Noellesroles.LOGGER.info("[CS2Box] Player {} gained mythic shard ({})",
+            Noellesroles.LOGGER.info("[CS2Box] Player {} gained mythic shards ({})",
                     player.getName().getString(), pityHit ? "pity" : "lucky");
         }
         inv.sync();
