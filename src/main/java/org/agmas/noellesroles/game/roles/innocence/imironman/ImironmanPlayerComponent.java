@@ -160,6 +160,10 @@ public class ImironmanPlayerComponent implements RoleComponent, ServerTickingCom
         // 击飞4格（附加垂直速度）
         target.setDeltaMovement(target.getDeltaMovement().add(0.0, cfg.imironmanLaunchVelocity, 0.0));
         target.hurtMarked = true;
+        // 记录击杀归属：把目标最近攻击者设为自己，
+        // 这样被击飞后摔到死亡地点（fall_damage / fell_out_of_train）也能算到铁傀儡头上，
+        // 从而正确触发好人不打好人的小脑惩罚
+        target.setLastHurtByPlayer(serverPlayer);
         // 玩家受服务端击退需主动同步速度
         target.connection
                 .send(new ClientboundSetEntityMotionPacket(target.getId(), target.getDeltaMovement()));

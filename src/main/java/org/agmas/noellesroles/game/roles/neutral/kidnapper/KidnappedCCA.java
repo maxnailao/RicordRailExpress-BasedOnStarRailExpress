@@ -205,6 +205,8 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         this.kidnappedTicks = 0;
         this.rescuer = null;
         this.rescueTicks = 0;
+        // 解除「不掉理智」保护：被救/挣脱后立即恢复正常的理智流失
+        player.removeEffect(ModEffects.MOOD_DRAIN_IMMUNITY);
         if (player instanceof ServerPlayer sp) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.kidnapper.released")
                     .withStyle(ChatFormatting.GREEN), false);
@@ -281,6 +283,8 @@ public class KidnappedCCA implements RoleComponent, ServerTickingComponent {
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 10, 0, true, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 10, 0, true, false, true));
+        // 被绑期间不掉理智：理智流失（mood drain）由 MOOD_DRAIN_IMMUNITY 归零
+        sp.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_IMMUNITY, 10, 0, true, false, true));
 
         // 被绑时长累计：平民/狼满 60 秒、中立满 120 秒后解锁「被解绳」
         kidnappedTicks++;

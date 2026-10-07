@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,7 +27,10 @@ public abstract class FallDamageCheckMixin {
                 var cca = AreasWorldComponent.KEY.get(player.level());
                 if (cca.areasSettings.fallToDeathHeight > 0) {
                     if (self.fallDistance >= cca.areasSettings.fallToDeathHeight) {
-                        GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.FALL_DAMAGE);
+                        // 摔到死亡地点也要归属最近攻击者（如铁傀儡击飞），
+                        // 否则击杀者为 null 就不会触发小脑惩罚
+                        Player lastAttacker = player.getLastAttacker() instanceof Player lp ? lp : null;
+                        GameUtils.killPlayer(player, true, lastAttacker, GameConstants.DeathReasons.FALL_DAMAGE);
                     }
                     self.resetFallDistance();
                     ci.cancel();
