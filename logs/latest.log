@@ -1,2 +1,0 @@
-[16:37:45] [main/INFO]: [STDOUT]: !! 初始化失败: java.lang.ExceptionInInitializerError
-[16:37:45] [main/INFO]: [STDOUT]:    caused by: java.lang.NullPointerException: Cannot invoke "java.nio.file.Path.getFileSystem()" because "path" is null
