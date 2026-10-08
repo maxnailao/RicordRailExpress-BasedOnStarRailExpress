@@ -1,0 +1,54 @@
+{
+  "shopprice": {
+    "1": {
+      "name": "武器箱I",
+      "type": "box",
+      "id": "weapon_case_1",
+      "price": 100
+    },
+    "2": {
+      "name": "武器箱钥匙",
+      "type": "key",
+      "id": "weapon_key_1",
+      "price": 50
+    },
+    "3": {
+      "name": "帽子饰品箱",
+      "type": "box",
+      "id": "hat_box",
+      "price": 100
+    },
+    "4": {
+      "name": "帽子饰品箱钥匙",
+      "type": "key",
+      "id": "hat_key",
+      "price": 100
+    },
+    "5": {
+      "name": "音乐盒箱",
+      "type": "box",
+      "id": "music_box",
+      "price": 100
+    },
+    "6": {
+      "name": "音乐盒箱钥匙",
+      "type": "key",
+      "id": "music_key",
+      "price": 50
+    }
+  },
+  "sellprice": {
+    "common_skinsprice": 5,
+    "uncommon_skinsprice": 15,
+    "rare_skinsprice": 50,
+    "epic_skinsprice": 150,
+    "legendary_skinsprice": 500,
+    "unbelievable_skinsprice": 2000,
+    "box_price": {
+      "weapon_case_1": 20,
+      "hat_box": 20,
+      "music_box": 20
+    },
+    "musicbox_price": 30
+  }
+}

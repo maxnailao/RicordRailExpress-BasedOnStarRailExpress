@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState;
 import io.wifi.starrailexpress.progression.SelfSelectClaimService;
+import io.wifi.starrailexpress.progression.SelfSelectGate;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -54,12 +55,12 @@ public final class ProgressionCommand {
                     true);
             return 0;
         }
-        if (role == null || !TMMRoles.isSelfSelectableRole(role)) {
+        if (role == null) {
             player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
             return 0;
         }
 
-        // 占位规则统一在 SelfSelectClaimService 里（先到先得 / 每局每种职业只出现一位 / 失败退还）
+        // 占位规则统一在 SelfSelectClaimService 里（人数门槛 / 先到先得 / 失败退还）
         SelfSelectClaimService.Result result = SelfSelectClaimService.claim(player, role);
         switch (result) {
             case OK -> {
@@ -67,6 +68,15 @@ public final class ProgressionCommand {
                         Component.literal("已使用自选职业卡，本局职业锁定为：")
                                 .append(Harpymodloader.getRoleName(role)),
                         true);
+                // 绑定职业（毒师→医生、悍匪→钳工、迪奥→承太郎…）由角色分配阶段补入
+                var companions = SelfSelectGate.companionsOf(role);
+                if (!companions.isEmpty()) {
+                    var names = companions.stream()
+                            .map(c -> Harpymodloader.getRoleName(c).getString())
+                            .collect(java.util.stream.Collectors.joining("、"));
+                    player.displayClientMessage(
+                            Component.literal("本局将同时生成绑定职业：").append(names), true);
+                }
                 return 1;
             }
             case SLOT_FULL -> {
@@ -77,6 +87,30 @@ public final class ProgressionCommand {
                                 Harpymodloader.getRoleName(role),
                                 Harpymodloader.getRoleCapacity(role)),
                         true);
+                return 0;
+            }
+            case PLAYER_COUNT -> {
+                // 人数不够：该职业本来就不该在这一局出现，自选同样拦下（不扣卡）
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_player_count",
+                                Harpymodloader.getRoleName(role),
+                                SelfSelectGate.describeRequirement(role),
+                                SelfSelectClaimService.currentPlayers(player).size()),
+                        true);
+                return 0;
+            }
+            case WRONG_MAP -> {
+                // 地图不对：特殊地图职业（雪原猎手 / 重刑犯…）只在特定地图刷新，不扣卡
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_wrong_map",
+                                Harpymodloader.getRoleName(role),
+                                String.valueOf(SelfSelectClaimService.currentMapName(player))),
+                        true);
+                return 0;
+            }
+            case NOT_SELECTABLE -> {
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_failed"), true);
                 return 0;
             }
             case SAME_ROLE -> {

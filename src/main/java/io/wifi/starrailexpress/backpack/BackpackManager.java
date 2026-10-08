@@ -120,6 +120,21 @@ public final class BackpackManager {
     }
 
     /**
+     * 退还一张自选卡。
+     *
+     * <p>用于"选了但最终没生效"的场景（人数不够 / 地图不对 / 被抢先），
+     * 与 {@link #consumeSelfSelectCard} 互为逆操作。
+     */
+    public static void refundSelfSelectCard(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        Entry entry = getEntry(player.getUUID());
+        entry.state.selfSelectCards += 1;
+        markDirty(player, entry);
+    }
+
+    /**
      * 使用一张自选职业卡。
      *
      * <p>占位规则（先到先得 / 每局每种职业只出现一位 / 失败退还）全部交给

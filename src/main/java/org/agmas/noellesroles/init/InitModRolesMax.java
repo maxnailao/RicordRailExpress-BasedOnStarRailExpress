@@ -407,6 +407,12 @@ public class InitModRolesMax {
                     currentMap = areas.mapName;
                 }
             }
+            // 自选卡的一致性复查：玩家选卡之后地图**仍可能被换掉**，
+            // 所以在真正开始分配角色之前，用实际地图再核一次。
+            // 不满足（人数不够 / 地图不对 / 职业不可选）就撤销占位并把自选卡退回去。
+            io.wifi.starrailexpress.progression.SelfSelectValidator.revalidate(
+                    serverLevel, currentMap, players);
+
             final int players_count = serverLevel.getServer().getPlayerCount();
             initModifiersCount(players_count);
 
@@ -589,7 +595,47 @@ public class InitModRolesMax {
         ModRoles.JINGJIREN_WOW.addBothRelatedRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
     }
 
+    /**
+     * 某个地图类型的名单为空时给出告警：空名单 = 不限地图，
+     * 该类型的特殊地图职业会在**所有地图**刷新（自选同理）。
+     *
+     * @param mapRoleType 该名单对应的地图类型
+     * @param listName    配置键名，便于用户直接去改
+     */
+    private static void warnIfMapListEmpty(NoellesRolesConfig config, List<String> list,
+            SRERole.SpecialMapRoleMap mapRoleType, String listName) {
+        if (list != null && !list.isEmpty()) {
+            return;
+        }
+        // 只有确实存在这类职业时才值得告警
+        List<String> affected = new ArrayList<>();
+        for (var role : TMMRoles.ROLES.values()) {
+            if (role.getSpecialMapRole() == mapRoleType) {
+                affected.add(role.identifier().getPath());
+            }
+        }
+        if (affected.isEmpty()) {
+            return;
+        }
+        SRE.LOGGER.warn("[SpecialMap] config 里的 {} 是空的 —— 空名单表示**不限地图**，"
+                        + "以下职业会在任何地图刷新/可自选：{}。想限制请填入地图名（如 [\"xueyuan_1\"]）。",
+                listName, affected);
+    }
+
     private static void applySpecialMapRoles(String currentMap, NoellesRolesConfig config) {
+        // 空的地图名单等价于"不限地图"（见 NoellesRolesConfig.matchesMapList），
+        // 特殊地图职业会因此在**任何地图**都刷新/可自选。这几乎总是配置漏填，
+        // 所以在日志里明确点出来，省得再去猜"为什么雪原猎手在监狱图也能选"。
+        warnIfMapListEmpty(config, config.snowRolesMaps, SRERole.SpecialMapRoleMap.SNOW, "snowRolesMaps");
+        warnIfMapListEmpty(config, config.prisonRolesMaps, SRERole.SpecialMapRoleMap.PRISON, "prisonRolesMaps");
+        warnIfMapListEmpty(config, config.witchPrisonRolesMaps, SRERole.SpecialMapRoleMap.WITCH_PRISON,
+                "witchPrisonRolesMaps");
+        warnIfMapListEmpty(config, config.trapRolesMaps, SRERole.SpecialMapRoleMap.TRAP, "trapRolesMaps");
+        warnIfMapListEmpty(config, config.desertRolesMaps, SRERole.SpecialMapRoleMap.DESERT, "desertRolesMaps");
+        warnIfMapListEmpty(config, config.underwaterRolesMaps, SRERole.SpecialMapRoleMap.UNDERWATER,
+                "underwaterRolesMaps");
+        warnIfMapListEmpty(config, config.airRolesMaps, SRERole.SpecialMapRoleMap.FLY, "airRolesMaps");
+
         for (var role : TMMRoles.ROLES.values()) {
             if (!role.isSpecialMapRole()) {
                 continue;
@@ -675,7 +721,13 @@ public class InitModRolesMax {
         return 0;
     }
 
-    private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
+    /**
+     * 该特殊地图职业在当前地图上是否启用。
+     *
+     * <p>公开出来是为了让自选职业卡也能用同一套判断 —— 避免"自然刷新被地图挡住、
+     * 自选却能选"的口径不一致。
+     */
+    public static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
             case ALL -> true;
             case QIYUCUN -> NoellesRolesConfig.matchesMapList(config.maChenXuMaps, currentMap);

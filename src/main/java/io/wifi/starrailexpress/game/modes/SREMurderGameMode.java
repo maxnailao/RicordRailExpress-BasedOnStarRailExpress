@@ -530,10 +530,92 @@ public class SREMurderGameMode extends GameMode {
         if (haveOccupationRoles) {
             resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstantList);
         }
+
         int needCivilian = (playerSize - forcedRoleSize) - resultRoleInstances.size();
         for (int i = 0; i < needCivilian; i++)
             resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
         return resultRoleInstances;
+    }
+
+    /**
+     * 把「自选职业带出来的绑定职业」合并进本局角色名单。
+     *
+     * <p>绑定关系由 {@code addOccupationRole} 注册（毒师→医生、悍匪→钳工、迪奥→承太郎…）。
+     * 正常随机刷出来的主职业，其绑定由 {@code expandWithCompanionRoles} 处理；
+     * 但**自选**的主职业是走 {@code forcedRolesMap} 直接指定给玩家的，不进角色池，
+     * 于是 {@code expandWithCompanionRoles} 看不到它，绑定职业就不会生成 —— 这是本次要修的核心问题。
+     *
+     * <p>做法：把每个绑定职业替换掉一个平民空位。这样：
+     * <ul>
+     * <li>绑定职业**一定**出现在本局名单里（会被分配给某位玩家）；</li>
+     * <li>总角色数不变（角色数 == 玩家数），不会因为补位而多出或挤掉别人；</li>
+     * <li>该绑定职业自身**名额已满**时直接跳过 —— 满足"角色上限依然生效"。</li>
+     * </ul>
+     */
+    private static void mergeCompanionRoles(List<RoleInstance> roles, List<SRERole> companions) {
+        if (roles == null || companions == null || companions.isEmpty()) {
+            return;
+        }
+        for (SRERole companion : companions) {
+            if (companion == null) {
+                continue;
+            }
+            final var cid = companion.identifier();
+            // 已经在名单里就不重复补（例如另一位玩家随机到了同一个职业）
+            if (roles.stream().anyMatch(ri -> ri.role().identifier().equals(cid))) {
+                continue;
+            }
+            // 找一个平民空位来替换；没有平民位说明这一局排满了，放弃补位
+            int idx = -1;
+            for (int i = roles.size() - 1; i >= 0; i--) {
+                if (roles.get(i).role() == TMMRoles.CIVILIAN) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx < 0) {
+                Harpymodloader.LOGGER.warn(
+                        "[SelfSelect] 没有平民空位可替换，绑定职业 {} 无法生成", cid);
+                break;
+            }
+            roles.set(idx, new RoleInstance(UUID.randomUUID(), companion));
+            Harpymodloader.LOGGER.info("[SelfSelect] 因自选主职业而补入绑定职业 {}", cid);
+        }
+    }
+
+    /**
+     * 收集本局「自选职业」带出来的绑定职业。
+     *
+     * <p>只有被自选（强制占位）的主职业才会在这里贡献绑定职业。
+     * "角色上限依然生效"：绑定职业自身名额已满时不再补，避免超出上限。
+     */
+    private static List<SRERole> collectSelfSelectedCompanions(Map<UUID, SRERole> forcedRolesMap) {
+        List<SRERole> out = new ArrayList<>();
+        for (SRERole main : forcedRolesMap.values()) {
+            if (main == null) {
+                continue;
+            }
+            var companions = org.agmas.harpymodloader.Harpymodloader.getOccupationRoles(main);
+            if (companions == null) {
+                continue;
+            }
+            for (SRERole companion : companions) {
+                if (companion == null) {
+                    continue;
+                }
+                // 上限保护：本局该绑定职业已经够人了就不再补
+                int cap = Harpymodloader.getRoleCapacity(companion);
+                long already = out.stream().filter(r -> r.identifier().equals(companion.identifier())).count();
+                if (already >= cap) {
+                    continue;
+                }
+                if (out.stream().anyMatch(r -> r.identifier().equals(companion.identifier()))) {
+                    continue;
+                }
+                out.add(companion);
+            }
+        }
+        return out;
     }
 
     private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
@@ -575,8 +657,13 @@ public class SREMurderGameMode extends GameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
+        // 自选职业带出来的绑定职业（毒师→医生、悍匪→钳工、迪奥→承太郎…）
+        List<SRERole> selfSelectCompanions = collectSelfSelectedCompanions(forcedRolesMap);
+
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
                 forcedRolesMap.size(), forcedRoles);
+        // 绑定职业必须由自选主职业触发，但上面的池展开看不到强制占位的职业，所以在这里补
+        mergeCompanionRoles(expandedRoles, selfSelectCompanions);
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();

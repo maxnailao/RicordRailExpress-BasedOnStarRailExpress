@@ -122,7 +122,9 @@ public class SelfSelectCardScreen extends Screen {
             boolean disabled = isDisabled(role);
             // 已被别人占用的职业：显示为不可选（服务端也会拦，这里只是提前告知）
             boolean claimed = isClaimedByOther(role);
-            boolean unusable = disabled || claimed;
+            // 人数不到该职业的刷新门槛：同样提前置灰
+            boolean tooFewPlayers = isPlayerCountGated(role);
+            boolean unusable = disabled || claimed || tooFewPlayers;
             boolean hovered = inside(mouseX, mouseY, x, y, CARD_W, CARD_H);
             int bg = unusable ? BG_DISABLED : (hovered ? BG_HOVER : BG_NORMAL);
             g.fill(x, y, x + CARD_W, y + CARD_H, bg);
@@ -132,16 +134,29 @@ public class SelfSelectCardScreen extends Screen {
                 // 右上角标记，一眼看出"这个名额已经满了"
                 g.drawString(font, "已满", x + CARD_W - font.width("已满") - 4, y + 4,
                         TEXT_CLAIMED, false);
+            } else if (tooFewPlayers) {
+                g.drawString(font, "人数不足", x + CARD_W - font.width("人数不足") - 4, y + 4,
+                        TEXT_CLAIMED, false);
             }
             if (unusable && hovered) {
-                Component tip = disabled
-                        ? Component.literal("该职业已在本局禁用")
-                                .append("\n")
-                                .append(Component.literal("§7无法使用自选职业卡（卡牌不会被消耗）"))
-                        : Component.literal("该职业本局名额已满")
-                                .append("\n")
-                                .append(Component.literal("§7上限 " + claimCapacity(role)
-                                        + " 人（卡牌不会被消耗）"));
+                Component tip;
+                if (disabled) {
+                    tip = Component.literal("该职业已在本局禁用")
+                            .append("\n")
+                            .append(Component.literal("§7无法使用自选职业卡（卡牌不会被消耗）"));
+                } else if (tooFewPlayers) {
+                    tip = Component.literal("人数不够，本局不会刷新该职业")
+                            .append("\n")
+                            .append(Component.literal("§7需要 " + io.wifi.starrailexpress.progression.SelfSelectGate
+                                    .describeRequirement(role)))
+                            .append("\n")
+                            .append(Component.literal("§7（卡牌不会被消耗）"));
+                } else {
+                    tip = Component.literal("该职业本局名额已满")
+                            .append("\n")
+                            .append(Component.literal("§7上限 " + claimCapacity(role)
+                                    + " 人（卡牌不会被消耗）"));
+                }
                 g.renderTooltip(font, tip, mouseX, mouseY);
             }
         }
@@ -219,8 +234,9 @@ public class SelfSelectCardScreen extends Screen {
                 int y = GRID_TOP + row * (CARD_H + CARD_GAP);
                 if (inside(mouseX, mouseY, x, y, CARD_W, CARD_H)) {
                     SRERole role = selectableRoles.get(i);
-                    // 本局被禁用、或已被别人选走的职业不可选：不发送命令、不消耗卡牌
-                    if (isDisabled(role) || isClaimedByOther(role)) {
+                    // 本局被禁用 / 已被别人占走 / 人数不够：不发送命令、不消耗卡牌
+                    // 地图不在这里判 —— 选卡时地图还没投票，由服务端开局复查
+                    if (isDisabled(role) || isClaimedByOther(role) || isPlayerCountGated(role)) {
                         return true;
                     }
                     sendCommand("sre:pass selfselect " + role.identifier());
@@ -295,7 +311,13 @@ public class SelfSelectCardScreen extends Screen {
         selectableRoles.clear();
         disabledRoleIds.clear();
         for (SRERole role : TMMRoles.ROLES.values()) {
-            if (!TMMRoles.isSelfSelectableRole(role)) continue;
+            // 彩蛋职业（芙兰朵露 / 迪奥…）与特殊地图职业（雪原猎手 / 重刑犯…）都允许直选，
+            // 因此这里用 SelfSelectGate 判定，而不是直接用 isSelfSelectableRole。
+            // 只用「职业本身是否允许自选」这一层来过滤列表；人数/地图这类**局内条件**
+            // 不在这里剔除，而是显示出来并置灰，让玩家知道"这个职业存在但本局用不了"。
+            if (denyReason(role) == io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NOT_SELECTABLE) {
+                continue;
+            }
             if (roleFactionType(role) != factionType) continue;
             allFactionRoles.add(role);
             // 每帧都查会反复扫描禁用列表，这里在打开阵营时缓存一次。
@@ -380,6 +402,57 @@ public class SelfSelectCardScreen extends Screen {
             // 客户端拿不到服务端占位表时不要报错，交给服务端裁决
             return false;
         }
+    }
+
+    /** 客户端能拿到的在线玩家列表（人数门槛判定用） */
+    private java.util.List<net.minecraft.server.level.ServerPlayer> clientPlayers() {
+        // 客户端没有 ServerPlayer 列表，人数改用 knownPlayerCount() 折算，
+        // 真实裁决始终在服务端，这里只用于置灰提示。
+        return java.util.List.of();
+    }
+
+    /**
+     * 客户端侧的可选性判断。
+     *
+     * <p><b>不判地图</b>：流程是「先选职业卡，再投票选地图」，选卡时还不知道地图，
+     * 所以特殊地图职业一律显示为可选。地图不匹配的情况由服务端在**开局时**复查，
+     * 不生效会自动退还自选卡。
+     *
+     * <p>人数门槛同样只在"已知人数"时生效，拿不到就不拦，交给服务端裁决。
+     */
+    private io.wifi.starrailexpress.progression.SelfSelectGate.Deny denyReason(SRERole role) {
+        // 「必须由别的职业产生」的职业（蜂后召唤的工蜂/马蜂、教父的家族成员、
+        // 猫娘杀手、操纵师…）先拦下 —— 与彩蛋例外无关
+        if (io.wifi.starrailexpress.progression.SelfSelectGate.isGeneratedOnly(role)) {
+            return io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NOT_SELECTABLE;
+        }
+        boolean special = role instanceof io.wifi.starrailexpress.api.EggRole || role.isSpecialMapRole();
+        if (!special && !TMMRoles.isSelfSelectableRole(role)) {
+            return io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NOT_SELECTABLE;
+        }
+        int min = io.wifi.starrailexpress.progression.SelfSelectGate.minPlayers(role);
+        int online = knownPlayerCount();
+        if (min > 0 && online > 0 && online < min) {
+            return io.wifi.starrailexpress.progression.SelfSelectGate.Deny.PLAYER_COUNT;
+        }
+        // 地图：选卡阶段还不知道（要等投票），故意不判
+        return io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NONE;
+    }
+
+    /** 该职业是否因为「人数不够」而此刻不可选 */
+    private boolean isPlayerCountGated(SRERole role) {
+        return denyReason(role) == io.wifi.starrailexpress.progression.SelfSelectGate.Deny.PLAYER_COUNT;
+    }
+
+    /** 已知的在线人数（取 Tab 列表，最接近真实对局人数）；未知返回 0 */
+    private int knownPlayerCount() {
+        try {
+            if (minecraft != null && minecraft.getConnection() != null) {
+                return minecraft.getConnection().getOnlinePlayers().size();
+            }
+        } catch (Throwable ignored) {
+        }
+        return 0;
     }
 
     /** 该职业的本局名额上限（ROLE_MAX，默认 1），用于悬停提示 */
