@@ -36,38 +36,40 @@ public class PlayerPrefixMixin {
         Player mainPlayer = (Player) (Object) this;
 
         // 称号：从记分板队伍取（服务端/客户端都有这份数据）。
-        // 有了称号就用「纯名字」当底，**不能**再用原版 getDisplayName() ——
-        // 那个已经含队伍 prefix 了，会变成 "[VIP] [VIP] Steve"。
         MutableComponent title = io.wifi.starrailexpress.content.title.TitleManager
                 .displayTitleFor(mainPlayer);
-        Component base;
-        MutableComponent out = Component.empty();
-        if (title != null) {
-            out.append(title);
-            base = Component.literal(mainPlayer.getName().getString());
-        } else {
-            // 没称号（或队伍还没同步）→ 保留原版行为（含队伍 prefix = 别的机制的前缀）
-            base = cir.getReturnValue();
-            if (base == null) {
-                base = Component.literal(mainPlayer.getName().getString());
-            }
-        }
-        out.append(base);
 
-        // 原有「名片」：只在服务端有组件数据
+        // 原有「名片」：只在服务端有组件数据。原来就是**放在名字前面**，这里保持同样位置。
+        MutableComponent nametag = null;
         if (mainPlayer instanceof ServerPlayer) {
             try {
-                MutableComponent nametag = NameTagInventoryComponent.KEY.get(mainPlayer).generate();
-                if (nametag != null) {
-                    out.append(nametag);
-                }
+                nametag = NameTagInventoryComponent.KEY.get(mainPlayer).generate();
             } catch (Throwable ignored) {
                 // 组件还没就绪时不影响名字显示
             }
         }
 
-        if (out.getString().isEmpty()) {
-            return; // 什么都没有：保持原样，避免多包一层
+        // 什么都没有：保持原样，不要多包一层
+        if (title == null && nametag == null) {
+            return;
+        }
+
+        // 组装：名片 + 称号 + 名字
+        // 有称号时**不能**再用原版 getDisplayName() 当底 —— 那个已经含队伍 prefix，
+        // 会变成 "[VIP] [VIP] Steve"。所以改用纯名字。
+        MutableComponent out = Component.empty();
+        if (nametag != null) {
+            out.append(nametag);
+        }
+        if (title != null) {
+            out.append(title);
+            out.append(Component.literal(mainPlayer.getName().getString()));
+        } else {
+            Component base = cir.getReturnValue();
+            if (base == null) {
+                base = Component.literal(mainPlayer.getName().getString());
+            }
+            out.append(base);
         }
         cir.setReturnValue(out);
     }

@@ -228,6 +228,24 @@ public class ShopConfig {
             item4.addProperty("price", 100);
             shopprice.add("4", item4);
 
+            // 音乐盒箱及其钥匙。
+            // 注意：这里必须和 CS2_box/music_box.json 的 key_name 对齐（music_key），
+            // 否则开箱会提示"缺钥匙"。早期版本漏了这两项，新服务器就会出现
+            // "有音乐盒箱配置、但商店里买不到也不到钥匙"的情况。
+            JsonObject item5 = new JsonObject();
+            item5.addProperty("name", "音乐盒箱");
+            item5.addProperty("type", "box");
+            item5.addProperty("id", "music_box");
+            item5.addProperty("price", 100);
+            shopprice.add("5", item5);
+
+            JsonObject item6 = new JsonObject();
+            item6.addProperty("name", "音乐盒箱钥匙");
+            item6.addProperty("type", "key");
+            item6.addProperty("id", "music_key");
+            item6.addProperty("price", 50);
+            shopprice.add("6", item6);
+
             root.add("shopprice", shopprice);
 
             JsonObject sellprice = new JsonObject();
@@ -240,6 +258,7 @@ public class ShopConfig {
             JsonObject boxPrice = new JsonObject();
             boxPrice.addProperty("weapon_case_1", 20);
             boxPrice.addProperty("hat_box", 20);
+            boxPrice.addProperty("music_box", 20);
             sellprice.add("box_price", boxPrice);
             sellprice.addProperty("musicbox_price", 30);
             root.add("sellprice", sellprice);

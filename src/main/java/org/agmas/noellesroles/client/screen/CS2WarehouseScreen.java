@@ -323,7 +323,7 @@ public class CS2WarehouseScreen extends Screen {
         if (selectedCategory == Category.ALL || selectedCategory == Category.BOXES) {
             for (Map.Entry<String, Integer> entry : inv.getKeys().entrySet()) {
                 items.add(new WarehouseItem("key", entry.getKey(),
-                        entry.getKey().replace('_', ' '), "", entry.getValue(), 0,
+                        resolveKeyDisplayName(entry.getKey()), "", entry.getValue(), 0,
                         isFav.apply("key", entry.getKey())));
             }
         }
@@ -599,6 +599,57 @@ public class CS2WarehouseScreen extends Screen {
                 active ? 0xCCFFFFFF : 0x88FFFFFF);
     }
 
+    /**
+     * 把一个钥匙 id 解析成**显示名**，按可靠性依次尝试：
+     * <ol>
+     * <li>商店配置（{@code shopprice.json} 里 {@code type=key} 的 {@code name}）—— 权威中文名；</li>
+     * <li>反查"哪个箱子需要这把钥匙"，用该箱子的显示名拼出「XXX箱钥匙」；</li>
+     * <li>都没有时退回把 id 里的下划线换成空格（{@code key_music} → {@code key music}），
+     *     保证至少能看出是什么，不至于显示空。</li>
+     * </ol>
+     *
+     * <p>存在的理由：商店用配置名、仓库原来用原始 id，同一个钥匙在两处叫法不一样，
+     * 看起来像两种东西（例如 {@code music_key} 在商店叫「音乐盒箱钥匙」、
+     * 在仓库却显示成 {@code music key}）。
+     */
+    private static String resolveKeyDisplayName(String keyId) {
+        if (keyId == null || keyId.isEmpty()) {
+            return "";
+        }
+        // 1) 商店配置名（最权威）
+        try {
+            for (org.agmas.noellesroles.cs2.ShopConfig.ShopItem item
+                    : org.agmas.noellesroles.cs2.ShopConfig.getInstance().getShopItems()) {
+                if ("key".equals(item.type) && keyId.equals(item.id)) {
+                    return item.name;
+                }
+            }
+        } catch (Throwable ignored) {
+            // 商店配置还没同步好：继续往下试
+        }
+        // 2) 反查箱子：哪只箱子的 key_name 是它
+        try {
+            for (String boxId : org.agmas.noellesroles.cs2.CS2BoxManager.getInstance().getBoxIds()) {
+                var cfg = org.agmas.noellesroles.cs2.CS2BoxManager.getInstance().getBox(boxId);
+                if (cfg == null || !keyId.equals(cfg.getKeyName())) {
+                    continue;
+                }
+                // 箱子名优先用客户端缓存（登录时同步），否则用配置里的
+                String boxName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getBoxName(boxId);
+                if (boxName == null || boxName.isEmpty()) {
+                    boxName = cfg.getBoxName();
+                }
+                if (boxName != null && !boxName.isEmpty()) {
+                    return boxName + "钥匙";
+                }
+            }
+        } catch (Throwable ignored) {
+            // 箱子管理器在客户端可能不可用：继续往下试
+        }
+        // 3) 兜底：下划线换空格
+        return keyId.replace('_', ' ');
+    }
+
     private void renderGrid(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         hoveredItem = null;
         for (int i = 0; i < items.size(); i++) {
@@ -793,7 +844,9 @@ public class CS2WarehouseScreen extends Screen {
             // 显示所需钥匙（从客户端缓存读取）
             String keyName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getKeyName(hoveredItem.id);
             if (keyName != null && !keyName.isEmpty()) {
-                String keyDisplayName = keyName.replace('_', ' ');
+                // 用和商店**同一个**名字来源（shopprice.json 里的 name），
+                // 避免商店显示"音乐盒箱钥匙"、这里却显示原始 id "music key"。
+                String keyDisplayName = resolveKeyDisplayName(keyName);
                 tooltip.add(Component.literal("需要钥匙: " + keyDisplayName).withStyle(
                         net.minecraft.ChatFormatting.AQUA));
             }
