@@ -123,7 +123,8 @@ public class XiaoNaoHandler {
     }
 
     public static boolean isXiaoNaoReason(ResourceLocation deathReason) {
-        return deathReason.getPath().equals("revolver_shot")
+        return deathReason.getPath().equals("dianxue")
+                || deathReason.getPath().equals("revolver_shot")
                 || deathReason.getPath().equals("fall_damage")
                 || deathReason.getPath().equals("cant_swim_drowned")
                 || deathReason.getPath().equals("swim_in_lava")

@@ -72,6 +72,7 @@ public class CS2ShopScreen extends Screen {
     private static final Set<String> MYTH_EXCLUDED = Set.of(
             "knife/knife_anxing_1", "knife/knife_anxing_2", "knife/knife_emozhidao_2",
             "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2",
+            "revolver/revolver_jianshouzhe_1", "revolver/revolver_jianshouzhe_2",
             "knife/testofknifeskin");
     private static final int MYTH_PRICE = CS2InventoryComponent.MYTHIC_SKIN_SHARD_PRICE;
 

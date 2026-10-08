@@ -301,7 +301,8 @@
       "noellesroles:kidnapper_role",
       "noellesroles:kidnapped",
       "noellesroles:bloodhound",
-      "noellesroles:witch_accomplice"
+      "noellesroles:witch_accomplice",
+      "noellesroles:dianxue_master"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

@@ -4417,5 +4417,21 @@
   "item.noellesroles.pressure_reagent": "Pressure Reagent",
   "message.noellesroles.witch_accomplice.domain_in": "Being drained by the Pressure Domain... get out!",
   "message.noellesroles.witch_accomplice.domain_prewitch": "You feel a slight pressure...",
-  "info.screen.roleid.witch_accomplice": "Killer-side Neutral\nSpawns bound to the Pre-Witch, and can see the bound Pre-Witch through walls (blue highlight).\nShop: Lockpick (100 coins), Pressure Reagent (200 coins).\nPressure Reagent: right-click to THROW it, creating a domain centered on the landing point for 30 seconds (radius 10). Innocents and SAN-draining roles inside continuously lose SAN and see a warning above their screen; the Pre-Witch loses more. After leaving the domain or when it ends, 50%% of the SAN lost inside gradually recovers."
+  "info.screen.roleid.witch_accomplice": "Killer-side Neutral\nSpawns bound to the Pre-Witch, and can see the bound Pre-Witch through walls (blue highlight).\nShop: Lockpick (100 coins), Pressure Reagent (200 coins).\nPressure Reagent: right-click to THROW it, creating a domain centered on the landing point for 30 seconds (radius 10). Innocents and SAN-draining roles inside continuously lose SAN and see a warning above their screen; the Pre-Witch loses more. After leaving the domain or when it ends, 50%% of the SAN lost inside gradually recovers.",
+  "=============== Acupressure Master ===============": "",
+  "role.noellesroles.dianxue_master": "Acupressure Master",
+  "role.noellesroles.dianxue_master.desc": "Police faction role, no instinct. Press the skill key to push the crosshair target away and immobilize it for 3 seconds to start acupressure, lighting 5 acupoints in order: +25%% SAN, Speed I (10s), Nausea (10s), Slowness I (10s), and the 5th kills. If the first acupoint is not clicked within the 3s immobilize, acupressure aborts and enters a 35s cooldown; afterwards unclicked acupoints auto-advance to the next.",
+  "skill.noellesroles.dianxue_master.press": "Acupressure",
+  "message.noellesroles.dianxue_master.no_target": "You need a nearby, visible player to perform acupressure",
+  "message.noellesroles.dianxue_master.victim": "You have been seized by the Acupressure Master!",
+  "message.noellesroles.dianxue_master.gate_miss": "Acupressure failed, the target escaped",
+  "screen.noellesroles.dianxue_master.title": "Acupressure · %s",
+  "screen.noellesroles.dianxue_master.gate_hint": "Quick! Click the red acupoint before the immobilize ends",
+  "screen.noellesroles.dianxue_master.hint": "Click the red acupoint (No. %s/%s)",
+  "death_reason.noellesroles.dianxue": "Struck by acupressure",
+  "announcement.star.role.dianxue_master": "Acupressure Master",
+  "announcement.star.goals.dianxue_master": "Use your acupoint techniques to protect people",
+  "announcement.star.win.dianxue_master": "Good faction wins!",
+  "info.screen.roleid.dianxue_master": "Police faction, no instinct.\nPress the skill key to push the crosshair target away and immobilize it for 3 seconds, then start acupressure.\nEach round randomly lights one red acupoint; you must click it before the countdown ends:\n1st: +25%% SAN;\n2nd: Speed I (10s);\n3rd: Nausea (10s);\n4th: Slowness I (10s);\n5th: the target dies.\nIf the first acupoint is not clicked within the 3s immobilize, acupressure aborts and enters a 35s cooldown; afterwards unclicked acupoints auto-advance to the next.",
+  "role.noellesroles.dianxue_master": "Acupressure Master"
 }

@@ -515,6 +515,9 @@ public class NoellesrolesClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(LandmineOutlineRenderer::render);
         // 关灯期间：狼人↔好人红色连线（仅杀手阵营可见）
         WorldRenderEvents.AFTER_TRANSLUCENT.register(WerewolfBlackoutLineRenderer::render);
+        // 点穴大师：在目标身上绘制穴位红框（仅大师客户端）
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(DianxueMasterAcupointRenderer::render);
+        DianxueMasterClientState.registerAttackHook();
         InstinctRenderer.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
@@ -526,6 +529,12 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.packet.ConvictChoiceOpenS2CPacket.ID, (payload, context) -> {
                     context.client().execute(() -> context.client()
                             .setScreen(new org.agmas.noellesroles.client.screen.ConvictChoiceScreen(payload)));
+                });
+
+        // 点穴大师：收到穴位同步后更新世界内身体穴位状态（不再打开全屏界面）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.DianxueMasterSyncS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> DianxueMasterClientState.handleSync(payload));
                 });
 
         // 木乃伊技能1：服务端通知打开背包，在背包中点头像选择诅咒目标（同操纵师选人交互）
