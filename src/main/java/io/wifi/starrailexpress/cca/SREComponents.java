@@ -86,6 +86,11 @@ public class SREComponents
         registry.beginRegistration(Player.class, CS2InventoryComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
                 .end(CS2InventoryComponent::new);
+        // 称号组件（拥有的称号 + 当前装备）
+        registry.beginRegistration(Player.class,
+                        io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
+                .end(io.wifi.starrailexpress.content.title.TitlePlayerComponent::new);
         // 职业卡（场外背包）本地 NBT 持久化组件，同 CS 仓库随玩家存档保存
         registry.beginRegistration(Player.class, io.wifi.starrailexpress.backpack.BackpackPersistenceComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)

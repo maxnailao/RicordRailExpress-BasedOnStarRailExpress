@@ -309,6 +309,15 @@ public class SREPayloadRegister {
                 org.agmas.noellesroles.cs2.network.ToggleFavoriteC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.ToggleFavoriteC2SPayload.CODEC);
 
+        // 称号：装备 / 卸下
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.content.title.network.EquipTitleC2SPayload.ID,
+                io.wifi.starrailexpress.content.title.network.EquipTitleC2SPayload.CODEC);
+        // 称号：定义表同步
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.content.title.network.TitleCatalogS2CPayload.ID,
+                io.wifi.starrailexpress.content.title.network.TitleCatalogS2CPayload.CODEC);
+
         // 物品栏垃圾桶：删除光标上拿着的物品
         PayloadTypeRegistry.playC2S().register(
                 io.wifi.starrailexpress.network.DeleteCarriedItemC2SPayload.ID,

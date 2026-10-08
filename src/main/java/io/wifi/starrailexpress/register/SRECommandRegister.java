@@ -90,6 +90,8 @@ public class SRECommandRegister {
             io.wifi.starrailexpress.content.command.GiveMusicBoxCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.GiveCS2BoxCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.GiveCoinCommand.register(dispatcher);
+            // 称号管理（管理员发放 / 收回 / 列举）
+            io.wifi.starrailexpress.content.command.TitleCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);

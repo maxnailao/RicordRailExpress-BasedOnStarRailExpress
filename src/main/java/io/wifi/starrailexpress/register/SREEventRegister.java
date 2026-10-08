@@ -71,6 +71,10 @@ public class SREEventRegister {
         // 玩家加入时同步当前赞助者名单
         ServerPlayConnectionEvents.JOIN.register((handler, sender,
                 server) -> io.wifi.starrailexpress.sponsor.SponsorManager.syncTo(handler.getPlayer()));
+        // 玩家加入时同步称号定义表，并把已装备的称号重新应用到记分板
+        ServerPlayConnectionEvents.JOIN.register((handler, sender,
+                server) -> io.wifi.starrailexpress.content.title.TitleNetwork
+                        .onPlayerJoin(handler.getPlayer()));
         EntitySleepEvents.ALLOW_SLEEP_TIME.register((player, pos, isNight) -> {
             if (SREGameWorldComponent.KEY.get(player.level()).isRunning())
                 return InteractionResult.SUCCESS;

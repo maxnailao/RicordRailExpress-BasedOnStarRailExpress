@@ -101,6 +101,9 @@ public class SREReceiverRegister {
         // CS2 开箱系统 C2S 接收器
         org.agmas.noellesroles.cs2.network.CS2ServerReceiverRegister.registerAll();
 
+        // 称号系统 C2S 接收器（装备 / 卸下）
+        io.wifi.starrailexpress.content.title.TitleNetwork.registerReceivers();
+
         // 职业轮换系统：管理员编辑名单
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 (payload, context) -> {

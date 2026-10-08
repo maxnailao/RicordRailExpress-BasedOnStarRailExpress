@@ -1341,6 +1341,12 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // 称号定义表同步接收器（登录 / 定义变化时服务端推送）
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.content.title.network.TitleCatalogS2CPayload.ID,
+                (payload, context) -> context.client().execute(() ->
+                        io.wifi.starrailexpress.content.title.TitleClientCache.setAll(payload.titles())));
+
         // CS2 商店配置同步接收器（登录时服务端推送）
         ClientPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.cs2.network.ShopConfigSyncS2CPayload.ID,

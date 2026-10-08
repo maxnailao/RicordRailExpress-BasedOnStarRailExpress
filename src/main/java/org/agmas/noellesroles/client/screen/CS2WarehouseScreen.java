@@ -79,8 +79,26 @@ public class CS2WarehouseScreen extends Screen {
     private static final int TEXT_DIM = 0xFF999999;
     private static final int ACCENT = 0xFF4488FF;
 
-    private enum Category { ALL, BOXES, KNIFE, REVOLVER, BAT, GRENADE, HAT, MUSIC, CARDS }
+    private enum Category { ALL, BOXES, KNIFE, REVOLVER, BAT, GRENADE, HAT, MUSIC, CARDS, TITLE }
     private Category selectedCategory = Category.ALL;
+
+    /** 侧栏分类的显示顺序与文案（顺序即显示顺序） */
+    private static final Category[] CATEGORY_ORDER = {
+            Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
+            Category.BAT, Category.GRENADE, Category.HAT, Category.MUSIC,
+            Category.CARDS, Category.TITLE };
+    private static final String[] CATEGORY_LABELS = {
+            "全部", "箱子/钥匙", "刀", "左轮手枪", "棒球棍", "手雷",
+            "帽子", "音乐盒", "职业卡", "称号" };
+
+    /** 侧栏布局 */
+    private static final int SIDEBAR_TOP = 40;
+    private static final int SIDEBAR_ROW_H = 32;
+    private static final int SIDEBAR_ROW_VISIBLE = 28;
+    /** 侧栏滚动偏移（行） */
+    private int sidebarScroll = 0;
+    /** 侧栏滚动条是否正在拖拽 */
+    private boolean draggingSidebar = false;
 
     /** 职业卡显示顺序与阵营名 */
     private static final FactionCardType[] CARD_DISPLAY_ORDER = {
@@ -96,6 +114,8 @@ public class CS2WarehouseScreen extends Screen {
     private String lastClickItemId = null;
     /** 右下角"销毁"按钮（选中物品时出现） */
     private Button destroyButton = null;
+    /** 右下角"装备/卸下称号"按钮（选中称号时出现） */
+    private Button equipTitleButton = null;
     /**
      * 本地未确认的收藏覆盖：key 为 {@code type/id}，value 为本地期望的收藏状态。
      * <p>按 F 收藏时服务端要一个往返才同步回来，这期间用它让界面先动起来；
@@ -170,7 +190,45 @@ public class CS2WarehouseScreen extends Screen {
                 "永久删除选中的仓库物品\n用于清理抽不出来、也用不掉的幽灵物品")));
         addRenderableWidget(destroyButton);
 
+        // 右下角：装备/卸下称号（选中称号时才出现）
+        equipTitleButton = Button.builder(Component.literal("装备"), b -> toggleSelectedTitle())
+                .pos(width - 132, height - 26).size(60, 20).build();
+        equipTitleButton.setTooltip(Tooltip.create(Component.literal(
+                "装备 / 卸下选中的称号\n装备后会显示在你的名字旁边")));
+        addRenderableWidget(equipTitleButton);
+
         refreshItems();
+    }
+
+    /** 装备 / 卸下当前选中的称号 */
+    private void toggleSelectedTitle() {
+        var p = Minecraft.getInstance().player;
+        if (p == null || selectedItem == null || !"title".equals(selectedItem.type)) {
+            return;
+        }
+        var tc = io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY.get(p);
+        ClientPlayNetworking.send(
+                new io.wifi.starrailexpress.content.title.network.EquipTitleC2SPayload(
+                        tc.isEquipped(selectedItem.id) ? "" : selectedItem.id));
+    }
+
+    /** 称号装备按钮：只在选中称号时出现 */
+    private void updateEquipTitleButton() {
+        if (equipTitleButton == null) {
+            return;
+        }
+        boolean isTitle = selectedItem != null && "title".equals(selectedItem.type);
+        equipTitleButton.visible = isTitle;
+        equipTitleButton.active = isTitle;
+        if (isTitle) {
+            var p = Minecraft.getInstance().player;
+            boolean equipped = false;
+            if (p != null) {
+                equipped = io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY.get(p)
+                        .isEquipped(selectedItem.id);
+            }
+            equipTitleButton.setMessage(Component.literal(equipped ? "卸下" : "装备"));
+        }
     }
 
     /** 右下角销毁按钮；未选中物品时隐藏，选中已收藏物品时禁用并说明原因 */
@@ -214,6 +272,7 @@ public class CS2WarehouseScreen extends Screen {
                         selectedItem = null;
                         selectedIndex = -1;
                         updateDestroyButton();
+        updateEquipTitleButton();
                     }
                 },
                 Component.literal("销毁物品"),
@@ -227,6 +286,7 @@ public class CS2WarehouseScreen extends Screen {
         selectedItem = null;
         selectedIndex = -1;
         updateDestroyButton();
+        updateEquipTitleButton();
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
@@ -287,6 +347,22 @@ public class CS2WarehouseScreen extends Screen {
                         CS2SkinInfo.getName(skinId),
                         CS2SkinInfo.getDescription(skinId),
                         count, quality, isFav.apply("skin", skinId)));
+            }
+        }
+
+        // 称号 — 来自 TitlePlayerComponent（拥有的称号），定义在服务端存档里
+        if (selectedCategory == Category.ALL || selectedCategory == Category.TITLE) {
+            var titleComp = io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY.get(player);
+            for (String titleId : titleComp.getOwned()) {
+                var title = io.wifi.starrailexpress.content.title.TitleClientCache.get(titleId);
+                if (title == null) {
+                    // 定义还没同步到客户端：先用 id 占位，避免"拥有却看不到"
+                    items.add(new WarehouseItem("title", titleId, titleId, "", 1, 0, false));
+                    continue;
+                }
+                boolean equipped = titleComp.isEquipped(titleId);
+                items.add(new WarehouseItem("title", titleId,
+                        title.displayText(), "", 1, 0, isFav.apply("title", titleId), equipped));
             }
         }
 
@@ -410,20 +486,117 @@ public class CS2WarehouseScreen extends Screen {
         }
     }
 
+    // ── 侧栏（分类列表）滚动 ──
+
+    /** 侧栏一屏能显示多少行分类 */
+    private int sidebarVisibleRows() {
+        return Math.max(1, (height - SIDEBAR_TOP - 8) / SIDEBAR_ROW_H);
+    }
+
+    private int sidebarMaxScroll() {
+        return Math.max(0, CATEGORY_ORDER.length - sidebarVisibleRows());
+    }
+
+    private void scrollSidebar(int deltaRows) {
+        sidebarScroll = Math.max(0, Math.min(sidebarMaxScroll(), sidebarScroll + deltaRows));
+    }
+
+    /** 侧栏滚动条轨道区域（只有分类多到放不下时才画） */
+    private int sidebarBarX() {
+        return Math.max(0, sidebarWidth - 6);
+    }
+
+    private int sidebarBarTop() {
+        return SIDEBAR_TOP;
+    }
+
+    private int sidebarBarHeight() {
+        return Math.max(20, (height - SIDEBAR_TOP - 8));
+    }
+
+    private int sidebarThumbHeight() {
+        int track = sidebarBarHeight();
+        int total = Math.max(1, CATEGORY_ORDER.length);
+        return Math.max(16, (int) ((long) track * sidebarVisibleRows() / total));
+    }
+
+    private int sidebarThumbY() {
+        int max = sidebarMaxScroll();
+        if (max <= 0) {
+            return sidebarBarTop();
+        }
+        int travel = sidebarBarHeight() - sidebarThumbHeight();
+        return sidebarBarTop() + (int) ((long) travel * sidebarScroll / max);
+    }
+
+    private void dragSidebarTo(double mouseY) {
+        int travel = sidebarBarHeight() - sidebarThumbHeight();
+        if (travel <= 0) {
+            sidebarScroll = 0;
+            return;
+        }
+        double ratio = (mouseY - sidebarBarTop()) / (double) travel;
+        ratio = Math.max(0.0, Math.min(1.0, ratio));
+        sidebarScroll = (int) Math.round(ratio * sidebarMaxScroll());
+    }
+
+    private boolean overSidebarBar(double mouseX, double mouseY) {
+        return sidebarMaxScroll() > 0
+                && mouseX >= sidebarBarX() && mouseX < sidebarBarX() + 6
+                && mouseY >= sidebarBarTop() && mouseY < sidebarBarTop() + sidebarBarHeight();
+    }
+
+    /** 某个分类行的 y 坐标（含滚动偏移）；不在可见范围内返回 -1 */
+    private int sidebarRowY(int index) {
+        int row = index - sidebarScroll;
+        if (row < 0) {
+            return -1;
+        }
+        int y = SIDEBAR_TOP + row * SIDEBAR_ROW_H;
+        if (y + SIDEBAR_ROW_VISIBLE > height - 4) {
+            return -1;
+        }
+        return y;
+    }
+
     private void renderSidebar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.fill(0, 0, sidebarWidth, height, SIDEBAR_COLOR);
-        Category[] categories = {Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
-                Category.BAT, Category.GRENADE, Category.HAT, Category.MUSIC, Category.CARDS};
-        String[] labels = {"全部", "箱子/钥匙", "刀", "左轮手枪", "棒球棍", "手雷", "帽子", "音乐盒", "职业卡"};
-        for (int i = 0; i < categories.length; i++) {
-            int y = 40 + i * 32;
-            boolean selected = categories[i] == selectedCategory;
-            boolean hovered = mouseX < sidebarWidth && mouseY >= y && mouseY < y + 28;
+        for (int i = 0; i < CATEGORY_ORDER.length; i++) {
+            int y = sidebarRowY(i);
+            if (y < 0) {
+                continue;
+            }
+            boolean selected = CATEGORY_ORDER[i] == selectedCategory;
+            boolean hovered = mouseX < sidebarBarX() && mouseY >= y && mouseY < y + SIDEBAR_ROW_VISIBLE;
             int bgColor = selected ? ACCENT : (hovered ? 0x30FFFFFF : 0x10FFFFFF);
-            guiGraphics.fill(4, y, sidebarWidth - 4, y + 28, bgColor);
-            guiGraphics.drawString(font, labels[i], 12, y + 9,
+            guiGraphics.fill(4, y, sidebarWidth - 4, y + SIDEBAR_ROW_VISIBLE, bgColor);
+            // 标签过长时截断，避免压到滚动条上
+            String label = CATEGORY_LABELS[i];
+            int maxW = sidebarWidth - 12 - 8;
+            if (font.width(label) > maxW) {
+                while (label.length() > 1 && font.width(label + "..") > maxW) {
+                    label = label.substring(0, label.length() - 1);
+                }
+                label = label + "..";
+            }
+            guiGraphics.drawString(font, label, 12, y + 9,
                     selected ? 0xFFFFFFFF : TEXT_DIM, false);
         }
+        renderSidebarBar(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderSidebarBar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (sidebarMaxScroll() <= 0) {
+            return; // 分类放得下就不显示
+        }
+        int x = sidebarBarX();
+        int top = sidebarBarTop();
+        int h = sidebarBarHeight();
+        guiGraphics.fill(x, top, x + 6, top + h, 0x30FFFFFF);
+        boolean active = draggingSidebar || overSidebarBar(mouseX, mouseY);
+        int thumb = sidebarThumbY();
+        guiGraphics.fill(x, thumb, x + 6, thumb + sidebarThumbHeight(),
+                active ? 0xCCFFFFFF : 0x88FFFFFF);
     }
 
     private void renderGrid(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
@@ -468,6 +641,10 @@ public class CS2WarehouseScreen extends Screen {
             // 收藏标记（左上角 ★）
             if (item.favorite) {
                 guiGraphics.drawString(font, "★", x + 3, y + 3, 0xFFFFD24A, true);
+            }
+            // 已装备标记（右上角）
+            if (item.equipped) {
+                guiGraphics.drawString(font, "E", x + cardSize - 9, y + 3, 0xFF7CFF7C, true);
             }
 
             // 数量
@@ -526,6 +703,28 @@ public class CS2WarehouseScreen extends Screen {
             }
             case "selfselect" -> {
                 guiGraphics.renderFakeItem(new ItemStack(Items.NAME_TAG), iconX, iconY);
+            }
+            case "title" -> {
+                // 称号：直接渲染成带颜色的文字，比图标更直观
+                var title = io.wifi.starrailexpress.content.title.TitleClientCache.get(item.id);
+                if (title != null) {
+                    var comp = title.component();
+                    int tw = font.width(comp);
+                    int maxW = cardSize - 6;
+                    if (tw <= maxW) {
+                        guiGraphics.drawCenteredString(font, comp, x + cardSize / 2, y + 14, 0xFFFFFFFF);
+                    } else {
+                        // 太长就截断显示，避免压出卡片
+                        String t = title.displayText();
+                        while (t.length() > 1 && font.width(t + "..") > maxW) {
+                            t = t.substring(0, t.length() - 1);
+                        }
+                        guiGraphics.drawCenteredString(font, t + "..",
+                                x + cardSize / 2, y + 14, title.rgb() | 0xFF000000);
+                    }
+                } else {
+                    guiGraphics.renderFakeItem(new ItemStack(Items.NAME_TAG), iconX, iconY);
+                }
             }
         }
     }
@@ -635,6 +834,27 @@ public class CS2WarehouseScreen extends Screen {
             }
         }
 
+        if ("title".equals(hoveredItem.type)) {
+            var title = io.wifi.starrailexpress.content.title.TitleClientCache.get(hoveredItem.id);
+            if (title != null) {
+                tooltip.add(Component.literal("颜色 #" + title.colorHex()
+                        + "　位置 " + (title.suffix() ? "名字后" : "名字前"))
+                        .withStyle(net.minecraft.ChatFormatting.GRAY));
+            }
+            tooltip.add(Component.literal("右键装备/卸下称号").withStyle(
+                    net.minecraft.ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("同时只能装备一个称号").withStyle(
+                    net.minecraft.ChatFormatting.DARK_GRAY));
+            var p = Minecraft.getInstance().player;
+            if (p != null) {
+                var tc = io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY.get(p);
+                if (tc.isEquipped(hoveredItem.id)) {
+                    tooltip.add(Component.literal("[已装备]").withStyle(
+                            net.minecraft.ChatFormatting.GREEN));
+                }
+            }
+        }
+
         guiGraphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
     }
 
@@ -645,6 +865,7 @@ public class CS2WarehouseScreen extends Screen {
             case "skin" -> "皮肤";
             case "music" -> "音乐盒";
             case "card" -> "职业卡";
+            case "title" -> "称号";
             default -> type;
         };
     }
@@ -657,14 +878,18 @@ public class CS2WarehouseScreen extends Screen {
             dragScrollbarTo(mouseY);
             return true;
         }
+        // 侧栏滚动条优先（它压在分类行右边）
+        if (button == 0 && overSidebarBar(mouseX, mouseY)) {
+            draggingSidebar = true;
+            dragSidebarTo(mouseY);
+            return true;
+        }
         // 侧边栏分类点击
-        if (mouseX < sidebarWidth) {
-            Category[] categories = {Category.ALL, Category.BOXES, Category.KNIFE, Category.REVOLVER,
-                    Category.BAT, Category.GRENADE, Category.HAT, Category.MUSIC, Category.CARDS};
-            for (int i = 0; i < categories.length; i++) {
-                int y = 40 + i * 32;
-                if (mouseY >= y && mouseY < y + 28) {
-                    selectedCategory = categories[i];
+        if (mouseX < sidebarBarX()) {
+            for (int i = 0; i < CATEGORY_ORDER.length; i++) {
+                int y = sidebarRowY(i);
+                if (y >= 0 && mouseY >= y && mouseY < y + SIDEBAR_ROW_VISIBLE) {
+                    selectedCategory = CATEGORY_ORDER[i];
                     scrollOffset = 0;
                     refreshItems();
                     return true;
@@ -713,6 +938,7 @@ public class CS2WarehouseScreen extends Screen {
                 selectedItem = hoveredItem;
                 selectedIndex = items.indexOf(hoveredItem);
                 updateDestroyButton();
+        updateEquipTitleButton();
             } else if (button == 1) { // 右键装备/卸下 → 发送 C2S 网络包
                 if ("skin".equals(hoveredItem.type)) {
                     String[] parts = hoveredItem.id.split("/");
@@ -730,6 +956,15 @@ public class CS2WarehouseScreen extends Screen {
                             ClientPlayNetworking.send(new EquipMusicBoxC2SPayload(hoveredItem.id));
                         }
                     }
+                } else if ("title".equals(hoveredItem.type)) {
+                    // 称号：已装备则卸下（发空串），否则装备
+                    var p = Minecraft.getInstance().player;
+                    if (p != null) {
+                        var tc = io.wifi.starrailexpress.content.title.TitlePlayerComponent.KEY.get(p);
+                        ClientPlayNetworking.send(
+                                new io.wifi.starrailexpress.content.title.network.EquipTitleC2SPayload(
+                                        tc.isEquipped(hoveredItem.id) ? "" : hoveredItem.id));
+                    }
                 }
             }
             return true;
@@ -740,6 +975,11 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        // 鼠标在侧栏上就滚分类列表，否则滚物品网格
+        if (mouseX < sidebarWidth && sidebarMaxScroll() > 0) {
+            scrollSidebar(-(int) deltaY);
+            return true;
+        }
         scrollRows(-(int) deltaY * 2);
         return true;
     }
@@ -782,6 +1022,7 @@ public class CS2WarehouseScreen extends Screen {
             }
         }
         updateDestroyButton();
+        updateEquipTitleButton();
     }
 
     /** F 键收藏/取消收藏选中项（右键已被"装备"占用，避免语义冲突） */
@@ -796,6 +1037,10 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (draggingSidebar && button == 0) {
+            dragSidebarTo(mouseY);
+            return true;
+        }
         if (draggingScrollbar && button == 0) {
             dragScrollbarTo(mouseY);
             return true;
@@ -805,8 +1050,9 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && draggingScrollbar) {
+        if (button == 0 && (draggingScrollbar || draggingSidebar)) {
             draggingScrollbar = false;
+            draggingSidebar = false;
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
@@ -918,13 +1164,20 @@ public class CS2WarehouseScreen extends Screen {
         final int quality;
         /** 是否已收藏（收藏排最前、且不可销毁） */
         boolean favorite;
+        /** 是否处于"已装备"状态（称号 / 音乐盒用） */
+        final boolean equipped;
 
         WarehouseItem(String type, String id, String displayName, String description, int count, int quality) {
-            this(type, id, displayName, description, count, quality, false);
+            this(type, id, displayName, description, count, quality, false, false);
         }
 
         WarehouseItem(String type, String id, String displayName, String description, int count, int quality,
                 boolean favorite) {
+            this(type, id, displayName, description, count, quality, favorite, false);
+        }
+
+        WarehouseItem(String type, String id, String displayName, String description, int count, int quality,
+                boolean favorite, boolean equipped) {
             this.type = type;
             this.id = id;
             this.displayName = displayName;
@@ -932,6 +1185,7 @@ public class CS2WarehouseScreen extends Screen {
             this.count = count;
             this.quality = quality;
             this.favorite = favorite;
+            this.equipped = equipped;
         }
 
         /** 服务端收藏表用的键：type/id（皮肤本身就是 itemType/skinName） */
