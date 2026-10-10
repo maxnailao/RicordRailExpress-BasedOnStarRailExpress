@@ -130,10 +130,12 @@ public record Title(String id, String text, String colorHex, boolean suffix) {
         }
     }
 
-    /** 带颜色的文本组件，按位置决定前后补一个空格（拼在名字旁用） */
+    /** 带颜色的文本组件，按位置决定前后补一个空格（拼在名字旁用）。
+     *  颜色必须挂在根组件上：记分板队伍前后缀按根样式取色，
+     *  若只把颜色放在嵌套子组件，准星名字/聊天前缀会退化成白色。 */
     public MutableComponent spacedComponent() {
-        return Component.literal(suffix ? " " : "").append(component())
-                .append(suffix ? "" : " ");
+        String spaced = (suffix ? " " : "") + displayText() + (suffix ? "" : " ");
+        return Component.literal(spaced).withStyle(Style.EMPTY.withColor(rgb()));
     }
 
     /** 纯文本形式（日志 / 提示用） */

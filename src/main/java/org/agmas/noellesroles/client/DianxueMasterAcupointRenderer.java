@@ -11,7 +11,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class DianxueMasterAcupointRenderer {
-    private static final double HW = 0.5;    // 穴位框水平半径（放宽，仅按高度区分部位）
+    private static final double DOT_HALF = 0.09; // 小点标记半边长
 
     public static void render(WorldRenderContext context) {
         if (!DianxueMasterClientState.active) return;
@@ -32,24 +32,33 @@ public class DianxueMasterAcupointRenderer {
         float pt = client.getTimer().getGameTimeDeltaPartialTick(true);
         Vec3 feet = target.getPosition(pt);
         Vec3 cam = context.camera().getPosition();
-        double h = target.getBbHeight();
-        int band = DianxueMasterClientState.activeIndex;
-        double y0 = DianxueMasterClientState.sliceBottomFrac(band) * h;
-        double y1 = DianxueMasterClientState.sliceTopFrac(band) * h;
 
         boolean blink = (System.currentTimeMillis() / 180L) % 2 == 0;
-        float r = 1.0F;
-        float g = blink ? 0.18F : 0.0F;
-        float b = 0.12F;
-        float a = 0.95F;
+        int activeIndex = DianxueMasterClientState.activeIndex;
 
         VertexConsumer lines = context.consumers()
                 .getBuffer(TaskBlockOverlayRenderer.ALWAYS_VISIBLE_THICK_LINES);
         PoseStack m = context.matrixStack();
-        m.pushPose();
-        m.translate(feet.x - cam.x, feet.y - cam.y, feet.z - cam.z);
-        AABB box = new AABB(-HW, y0, -HW, HW, y1, HW);
-        LevelRenderer.renderLineBox(m, lines, box, r, g, b, a);
-        m.popPose();
+
+        for (int i = 0; i < DianxueMasterClientState.POINT_COUNT; i++) {
+            Vec3 dot = DianxueMasterClientState.dotWorldPos(target, feet.x, feet.y, feet.z, i);
+            boolean isActive = i == activeIndex;
+
+            m.pushPose();
+            m.translate(dot.x - cam.x, dot.y - cam.y, dot.z - cam.z);
+
+            if (isActive) {
+                // 当前活动穴位：闪烁红点
+                AABB dotBox = new AABB(-DOT_HALF, -DOT_HALF, -DOT_HALF, DOT_HALF, DOT_HALF, DOT_HALF);
+                float g = blink ? 0.85F : 0.25F;
+                LevelRenderer.renderLineBox(m, lines, dotBox, 1.0F, g, 0.2F, 0.95F);
+            } else {
+                // 其余穴位：暗灰色小点
+                AABB dotBox = new AABB(-DOT_HALF, -DOT_HALF, -DOT_HALF, DOT_HALF, DOT_HALF, DOT_HALF);
+                LevelRenderer.renderLineBox(m, lines, dotBox, 0.35F, 0.35F, 0.45F, 0.5F);
+            }
+
+            m.popPose();
+        }
     }
 }

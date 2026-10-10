@@ -31,15 +31,13 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
     public static final ComponentKey<DianxueMasterPlayerComponent> KEY = ModComponents.DIANXUE_MASTER;
 
     public static final int POINT_COUNT = 5;
-    private static final int GATE_TICKS = 60;
-    private static final int STEP_TICKS = 80;
+    private static final int STEP_TICKS = 100;
     private static final double PUSH_STRENGTH = 0.5D;
     private static final double PUSH_UPWARD = 0.15D;
     private static final double MAX_RANGE_SQR = 64.0D * 64.0D;
     private static final int RESTRICT_TICKS = 40;
+    private static final float DOT_RADIUS = 0.35F;
 
-    private static final int PHASE_GATE = 0;
-    private static final int PHASE_SEQUENCE = 1;
     private static final int ACT_OPEN = 0;
     private static final int ACT_UPDATE = 1;
     private static final int ACT_CLOSE = 2;
@@ -49,10 +47,11 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
 
     private boolean active = false;
     private UUID targetId = null;
-    private int phase = PHASE_GATE;
     private int activeIndex = 0;
+    private final float[] dotHeightFracs = new float[POINT_COUNT];
+    private final float[] dotAzimuths = new float[POINT_COUNT];
     private int stepRemainingTicks = 0;
-    private int stepMaxTicks = GATE_TICKS;
+    private int stepMaxTicks = STEP_TICKS;
 
     public DianxueMasterPlayerComponent(Player player) {
         this.player = player;
@@ -64,7 +63,12 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
 
     @Override public void init() { resetState(); }
     @Override public void clear() { resetState(); }
-    private void resetState() { active = false; targetId = null; phase = PHASE_GATE; activeIndex = 0; stepRemainingTicks = 0; }
+    private void resetState() {
+        active = false;
+        targetId = null;
+        activeIndex = 0;
+        stepRemainingTicks = 0;
+    }
 
     public boolean startPressing(ServerPlayer target) {
         if (active) return false;
@@ -85,12 +89,23 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         target.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.victim")
                 .withStyle(ChatFormatting.DARK_RED), true);
 
+        // 生成 5 个随机位置小点：高度随机，方位偏向朝向大师一侧（可见半球内随机散布）
+        Vec3 toMaster = flatten(master.position().subtract(target.position()));
+        if (toMaster.lengthSqr() < 1.0e-4) toMaster = flatten(target.getLookAngle().scale(-1.0D));
+        if (toMaster.lengthSqr() < 1.0e-4) toMaster = new Vec3(0.0D, 0.0D, 1.0D);
+        toMaster = toMaster.normalize();
+        double baseAngle = Math.atan2(-toMaster.x, toMaster.z) - Math.toRadians(target.getYRot());
+        for (int i = 0; i < POINT_COUNT; i++) {
+            this.dotHeightFracs[i] = (float) (0.15D + random.nextDouble() * 0.7D);
+            double jitter = (random.nextDouble() - 0.5D) * Math.toRadians(160.0D);
+            this.dotAzimuths[i] = (float) (baseAngle + jitter);
+        }
+
         this.active = true;
         this.targetId = target.getUUID();
-        this.phase = PHASE_GATE;
-        this.activeIndex = random.nextInt(POINT_COUNT);
-        this.stepRemainingTicks = GATE_TICKS;
-        this.stepMaxTicks = GATE_TICKS;
+        this.activeIndex = 0;
+        this.stepRemainingTicks = STEP_TICKS;
+        this.stepMaxTicks = STEP_TICKS;
         send(master, ACT_OPEN);
         return true;
     }
@@ -113,7 +128,8 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
     }
 
     private void onStepTimeout(ServerPlayer master, ServerPlayer target) {
-        if (phase == PHASE_GATE) {
+        if (activeIndex >= POINT_COUNT - 1) {
+            // 最后一个（致死）穴位未及时点中：点穴失败，不击杀
             master.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.gate_miss")
                     .withStyle(ChatFormatting.GRAY), true);
             closeAndStop(master);
@@ -141,15 +157,6 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
             return;
         }
 
-        if (phase == PHASE_GATE) {
-            phase = PHASE_SEQUENCE;
-            activeIndex = 0;
-            stepRemainingTicks = STEP_TICKS;
-            stepMaxTicks = STEP_TICKS;
-            send(master, ACT_UPDATE);
-            return;
-        }
-
         applyEffect(target, master, activeIndex);
         if (activeIndex == POINT_COUNT - 1) {
             closeAndStop(master);
@@ -167,7 +174,7 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
             case 4 -> {
                 target.setLastHurtByMob(master);
                 target.setLastHurtByPlayer(master);
-                GameUtils.killPlayer(target, true, master, Noellesroles.id("dianxue"));
+                GameUtils.forceKillPlayer(target, true, master, Noellesroles.id("dianxue"));
             }
         }
     }
@@ -176,8 +183,9 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         String name = (targetId != null && master.level().getPlayerByUUID(targetId) != null)
                 ? master.level().getPlayerByUUID(targetId).getGameProfile().getName() : "";
         ServerPlayNetworking.send(master, new DianxueMasterSyncS2CPacket(
-                action, phase, activeIndex, targetId, name,
-                Math.max(0, stepRemainingTicks), stepMaxTicks));
+                action, 1, activeIndex, targetId, name,
+                Math.max(0, stepRemainingTicks), stepMaxTicks,
+                dotHeightFracs.clone(), dotAzimuths.clone(), DOT_RADIUS));
     }
 
     private void closeAndStop(ServerPlayer master) {

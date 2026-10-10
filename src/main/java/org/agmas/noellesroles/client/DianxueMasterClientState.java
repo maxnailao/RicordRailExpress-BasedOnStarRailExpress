@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.packet.DianxueMasterClickC2SPacket;
 import org.agmas.noellesroles.packet.DianxueMasterSyncS2CPacket;
@@ -14,55 +13,56 @@ import org.agmas.noellesroles.packet.DianxueMasterSyncS2CPacket;
 import java.util.UUID;
 
 public class DianxueMasterClientState {
+    /** 点穴小点的可命中容错半径（判定范围）。 */
+    public static final double DOT_TOLERANCE = 0.45;
+    public static final int POINT_COUNT = 5;
+
     public static boolean active = false;
     public static UUID targetId = null;
-    public static int phase = 0;
     public static int activeIndex = 0;
+    public static final double[] dotHeightFracs = new double[5];
+    public static final double[] dotAzimuths = new double[5];
+    public static double dotRadius = 0.35;
 
     public static void handleSync(DianxueMasterSyncS2CPacket p) {
         switch (p.action()) {
             case 0 -> {
                 active = true;
                 targetId = p.targetId();
-                phase = p.phase();
                 activeIndex = p.activeIndex();
+                applyDots(p);
             }
             case 1 -> {
                 if (active) {
-                    phase = p.phase();
                     activeIndex = p.activeIndex();
+                    applyDots(p);
                 }
             }
             case 2 -> clear();
         }
     }
 
+    private static void applyDots(DianxueMasterSyncS2CPacket p) {
+        dotRadius = p.dotRadius();
+        for (int i = 0; i < dotHeightFracs.length; i++) {
+            dotHeightFracs[i] = i < p.dotHeightFracs().length ? p.dotHeightFracs()[i] : 0.5F;
+            dotAzimuths[i] = i < p.dotAzimuths().length ? p.dotAzimuths()[i] : 0.0F;
+        }
+    }
+
     public static void clear() {
         active = false;
         targetId = null;
-        phase = 0;
         activeIndex = 0;
     }
 
-    /** 穴位高度分区：0=头 1=胸 2=腹 3=大腿 4=小腿，等宽 5 段（自上而下）。localY 为脚底到命中点高度。 */
-    public static int bandFromLocalY(double localY, double height) {
-        double t = height <= 0.0 ? 0.0 : localY / height;
-        if (t < 0.0) t = 0.0;
-        if (t > 1.0) t = 1.0;
-        int band = (int) Math.floor((1.0 - t) / 0.2);
-        if (band < 0) band = 0;
-        if (band > 4) band = 4;
-        return band;
-    }
-
-    /** 某穴位可点区间下沿占比（渲染与命中一致）。 */
-    public static double sliceBottomFrac(int band) {
-        return 1.0 - (band + 1) * 0.2;
-    }
-
-    /** 某穴位可点区间上沿占比。 */
-    public static double sliceTopFrac(int band) {
-        return 1.0 - band * 0.2;
+    /** 计算第 idx 个小点在目标身体上的世界坐标（跟随身体朝向）。feetX/Y/Z 为脚底世界坐标。 */
+    public static Vec3 dotWorldPos(Player target, double feetX, double feetY, double feetZ, int idx) {
+        double worldAngle = dotAzimuths[idx] + Math.toRadians(target.getYRot());
+        double dx = -Math.sin(worldAngle) * dotRadius;
+        double dz = Math.cos(worldAngle) * dotRadius;
+        double dy = dotHeightFracs[idx] * target.getBbHeight();
+        return new Vec3(feetX + dx, feetY + dy, feetZ + dz);
     }
 
     public static void registerAttackHook() {
@@ -72,25 +72,28 @@ public class DianxueMasterClientState {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || attacker != client.player) return InteractionResult.PASS;
             if (!(entity instanceof Player target) || !target.getUUID().equals(targetId)) return InteractionResult.PASS;
+            if (activeIndex < 0 || activeIndex >= dotHeightFracs.length) return InteractionResult.PASS;
 
-            double localY;
+            int idx = activeIndex;
+            Vec3 dot = dotWorldPos(target, target.getX(), target.getY(), target.getZ(), idx);
+
+            Vec3 hitPoint;
             if (hitResult != null) {
-                localY = hitResult.getLocation().y - target.getY();
+                hitPoint = hitResult.getLocation();
             } else {
-                // 回退：用视线与目标的水平距离推算瞄准高度（不依赖 hitResult）
+                // 回退：取视线射线上距小点最近的点
                 Vec3 eye = client.player.getEyePosition(1.0F);
                 Vec3 look = client.player.getLookAngle();
-                double dx = target.getX() - eye.x;
-                double dz = target.getZ() - eye.z;
-                double horiz = Math.sqrt(dx * dx + dz * dz);
-                double hzLen = Math.hypot(look.x, look.z);
-                double scale = hzLen < 1.0e-4 ? 0.0 : horiz / hzLen;
-                double aimY = eye.y + look.y * scale;
-                localY = aimY - target.getY();
+                Vec3 toDot = dot.subtract(eye);
+                double t = toDot.dot(look);
+                hitPoint = eye.add(look.x * t, look.y * t, look.z * t);
             }
-            int band = bandFromLocalY(localY, target.getBbHeight());
-            ClientPlayNetworking.send(new DianxueMasterClickC2SPacket(band));
-            // 取消普通近战伤害：本击用于点穴
+
+            // 仅命中"当前活动"穴位才推进；判定范围已放大
+            if (hitPoint.distanceToSqr(dot) <= DOT_TOLERANCE * DOT_TOLERANCE) {
+                ClientPlayNetworking.send(new DianxueMasterClickC2SPacket(idx));
+            }
+            // 点穴期间的近拳击用于瞄准小点，取消普通近战伤害
             return InteractionResult.SUCCESS;
         });
     }
