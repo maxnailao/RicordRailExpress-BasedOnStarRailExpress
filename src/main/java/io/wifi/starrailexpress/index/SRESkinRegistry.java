@@ -235,6 +235,22 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.HAT, "hat_ricord_sharenkuang", QualityColor.EPIC);
 
         // ═══════════════════════════════════════════════════════════════════
+        // 瑞科德饰品 — 第四期（品质取自素材目录名，如「皇冠4品质epic」）
+        // ═══════════════════════════════════════════════════════════════════
+        // 普通（白色）—— 第四期首次出现 common 品质
+        registerSkin(SkinTypes.HAT, "hat_ricord_zangxixi", QualityColor.COMMON);
+        // 罕见（绿色）
+        registerSkin(SkinTypes.HAT, "hat_ricord_tianyuanmao", QualityColor.UNCOMMON);
+        // 稀有（蓝色）
+        registerSkin(SkinTypes.HAT, "hat_ricord_wushamao", QualityColor.RARE);
+        registerSkin(SkinTypes.HAT, "hat_ricord_wushimao", QualityColor.RARE);
+        // 史诗（紫色）
+        registerSkin(SkinTypes.HAT, "hat_ricord_shibingmao", QualityColor.EPIC);
+        registerSkin(SkinTypes.HAT, "hat_ricord_huangguan", QualityColor.EPIC);
+        // 传说（金色）
+        registerSkin(SkinTypes.HAT, "hat_ricord_yuhuang", QualityColor.LEGENDARY);
+
+        // ═══════════════════════════════════════════════════════════════════
         // BOW（弓）皮肤
         // ═══════════════════════════════════════════════════════════════════
         registerSkin(SkinTypes.BOW, "bow_shenfa", QualityColor.UNBELIEVABLE); // 神罚（神话，带拉弓三档）

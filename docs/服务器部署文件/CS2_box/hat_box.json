@@ -7,7 +7,9 @@
   "epic": 0.09,
   "legendary": 0.04,
   "unbelievable": 0.02,
-  "common_skins": [],
+  "common_skins": [
+    "hat/hat_ricord_zangxixi"
+  ],
   "uncommon_skins": [
     "hat/hat_ricord_chushimao",
     "hat/hat_ricord_matongchou",
@@ -18,7 +20,8 @@
     "hat/hat_ricord_helmet",
     "hat/hat_ricord_helmet_t",
     "hat/hat_ricord_xingjunmao",
-    "hat/hat_ricord_tianshiguanghuan"
+    "hat/hat_ricord_tianshiguanghuan",
+    "hat/hat_ricord_tianyuanmao"
   ],
   "rare_skins": [
     "hat/hat_ricord_shengdanmao",
@@ -30,14 +33,20 @@
     "hat/hat_ricord_xiaoji_taotao",
     "hat/hat_ricord_xiaoqie_taotao",
     "hat/hat_ricord_maidangdang",
-    "hat/hat_ricord_t7"
+    "hat/hat_ricord_t7",
+    "hat/hat_ricord_wushamao",
+    "hat/hat_ricord_wushimao"
   ],
   "epic_skins": [
     "hat/hat_ricord_dajitui",
     "hat/hat_ricord_wangguan",
     "hat/hat_ricord_jiaohuang",
-    "hat/hat_ricord_sharenkuang"
+    "hat/hat_ricord_sharenkuang",
+    "hat/hat_ricord_shibingmao",
+    "hat/hat_ricord_huangguan"
   ],
-  "legendary_skins": [],
+  "legendary_skins": [
+    "hat/hat_ricord_yuhuang"
+  ],
   "unbelievable_skins": []
 }

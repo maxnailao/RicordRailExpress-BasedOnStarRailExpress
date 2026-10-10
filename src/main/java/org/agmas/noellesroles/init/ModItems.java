@@ -1038,6 +1038,43 @@ public class ModItems {
             new Item(new Item.Properties().stacksTo(1)),
             "ricord_sharenkuang", RICORD_ACCESSORIES_GROUP);
 
+    // ── 帽子第四期（品质取自素材目录名）──
+
+    /** 脏兮兮的头巾（第四期，common） */
+    public static final Item RICORD_ZANGXIXI = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_zangxixi", RICORD_ACCESSORIES_GROUP);
+
+    /** 田园帽（第四期，uncommon） */
+    public static final Item RICORD_TIANYUANMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_tianyuanmao", RICORD_ACCESSORIES_GROUP);
+
+    /** 乌纱帽（第四期，rare） */
+    public static final Item RICORD_WUSHAMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_wushamao", RICORD_ACCESSORIES_GROUP);
+
+    /** 巫师帽（第四期，rare） */
+    public static final Item RICORD_WUSHIMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_wushimao", RICORD_ACCESSORIES_GROUP);
+
+    /** 士兵帽（第四期，epic） */
+    public static final Item RICORD_SHIBINGMAO = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_shibingmao", RICORD_ACCESSORIES_GROUP);
+
+    /** 皇冠（第四期，epic） */
+    public static final Item RICORD_HUANGGUAN = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_huangguan", RICORD_ACCESSORIES_GROUP);
+
+    /** 玉皇大帝头冠（第四期，legendary） */
+    public static final Item RICORD_YUHUANG = register(
+            new Item(new Item.Properties().stacksTo(1)),
+            "ricord_yuhuang", RICORD_ACCESSORIES_GROUP);
+
     /**
      * 沙漠之鹰
      * - 左键开火，R键换弹

@@ -35,6 +35,8 @@ HAT2 = os.path.join(ROOT, "帽子第二期")
 TEMP = os.path.join(ROOT, "临时")
 # 帽子第三期：在「临时/帽子第三期」下按中文目录分组
 HAT3 = os.path.join(TEMP, "帽子第三期")
+# 帽子第四期：目录名直接带品质（如「皇冠4品质epic」）
+HAT4 = os.path.join(TEMP, "帽子第四期")
 
 
 def tex(skin, *suffix):
@@ -99,6 +101,16 @@ TASKS = [
     task(HAT3, "王冠3", "王冠.json", "王冠.png", "hat_ricord_wangguan"),
     task(HAT3, "教皇冠冕3", "教皇冠冕3.json", "教皇冠冕.png", "hat_ricord_jiaohuang"),
     task(HAT3, "杀人狂面具3", "杀人狂面具.json", "杀人狂面具.png", "hat_ricord_sharenkuang"),
+    # ── 第四期（目录名里直接带品质）──
+    task(HAT4, "脏兮兮的头巾4品质common", "脏兮兮的头巾.json", "脏兮兮的头巾.png",
+         "hat_ricord_zangxixi"),
+    task(HAT4, "田园帽4品质uncommon", "田园帽.json", "田园帽.png", "hat_ricord_tianyuanmao"),
+    task(HAT4, "乌纱帽4品质rare", "乌纱帽.json", "乌纱帽.png", "hat_ricord_wushamao"),
+    task(HAT4, "巫师帽4品质rare", "巫师帽.json", "巫师帽.png", "hat_ricord_wushimao"),
+    task(HAT4, "士兵帽4品质epic", "士兵帽.json", "士兵帽.png", "hat_ricord_shibingmao"),
+    task(HAT4, "皇冠4品质epic", "皇冠.json", "皇冠.png", "hat_ricord_huangguan"),
+    task(HAT4, "玉皇大帝头冠4品质legendary", "玉皇大帝头冠.json", "玉皇大帝头冠.png",
+         "hat_ricord_yuhuang"),
 ]
 
 # 非 T 版头盔是一个独立皮肤，但模型与 T 版只差「T 挂件」那几个元素，

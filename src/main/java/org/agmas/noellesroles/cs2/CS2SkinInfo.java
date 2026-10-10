@@ -159,6 +159,14 @@ public final class CS2SkinInfo {
         register("hat/hat_ricord_wangguan", "王冠", "瑞科德饰品：金光闪闪的王冠，戴上就是全场焦点");
         register("hat/hat_ricord_jiaohuang", "教皇冠冕", "瑞科德饰品：三层冠冕，庄重得让人不敢直视");
         register("hat/hat_ricord_sharenkuang", "杀人狂面具", "瑞科德饰品：一张让人后背发凉的面具");
+        // 第四期
+        register("hat/hat_ricord_zangxixi", "脏兮兮的头巾", "瑞科德饰品：沾满灰尘的旧头巾，倒是很透气");
+        register("hat/hat_ricord_tianyuanmao", "田园帽", "瑞科德饰品：宽檐草帽，适合下地也适合晒太阳");
+        register("hat/hat_ricord_wushamao", "乌纱帽", "瑞科德饰品：官帽一戴，气场两米八");
+        register("hat/hat_ricord_wushimao", "巫师帽", "瑞科德饰品：尖顶巫师帽，念咒之前先扶稳");
+        register("hat/hat_ricord_shibingmao", "士兵帽", "瑞科德饰品：制式士兵帽，帽檐压得很低");
+        register("hat/hat_ricord_huangguan", "皇冠", "瑞科德饰品：镶嵌宝石的皇冠，比王冠更沉一些");
+        register("hat/hat_ricord_yuhuang", "玉皇大帝头冠", "瑞科德饰品：珠帘垂落的帝王头冠，戴上便是天庭之主");
         // 特殊玩偶帽
         registerHat("justacheese", "cheese");
         registerHat("spbgcp", "spbgcp");

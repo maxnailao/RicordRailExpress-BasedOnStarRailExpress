@@ -46,6 +46,14 @@ HATS = [
     ("ricord_wangguan", "hat_ricord_wangguan", "王冠"),
     ("ricord_jiaohuang", "hat_ricord_jiaohuang", "教皇冠冕"),
     ("ricord_sharenkuang", "hat_ricord_sharenkuang", "杀人狂面具"),
+    # 帽子第四期（品质写在目录名里）
+    ("ricord_zangxixi", "hat_ricord_zangxixi", "脏兮兮的头巾"),
+    ("ricord_tianyuanmao", "hat_ricord_tianyuanmao", "田园帽"),
+    ("ricord_wushamao", "hat_ricord_wushamao", "乌纱帽"),
+    ("ricord_wushimao", "hat_ricord_wushimao", "巫师帽"),
+    ("ricord_shibingmao", "hat_ricord_shibingmao", "士兵帽"),
+    ("ricord_huangguan", "hat_ricord_huangguan", "皇冠"),
+    ("ricord_yuhuang", "hat_ricord_yuhuang", "玉皇大帝头冠"),
 ]
 
 # 已废弃、需要从 lang 中清掉的旧条目
@@ -119,28 +127,40 @@ print("[LANG] 缺失=%s  残留旧条目=%s" % (missing or "无", leftover or "�
 
 
 # ── 3. 帽子箱子：只改皮肤列表，保留用户自己调过的概率 ─────────────────────
+# 注意：分层必须与 SRESkinRegistry 里注册的品质一致，否则会出现
+# 「商店/仓库显示紫色、箱子却按白色掉」这类错位。
+BOX_COMMON = ["hat_ricord_zangxixi"]
 BOX_UNCOMMON = ["hat_ricord_chushimao", "hat_ricord_matongchou", "hat_ricord_kuanggongmao",
                 "hat_ricord_limao", "hat_ricord_xiaodangao", "hat_ricord_xiaoji",
                 "hat_ricord_helmet", "hat_ricord_helmet_t",
                 # 第三期（uncommon）
-                "hat_ricord_xingjunmao", "hat_ricord_tianshiguanghuan"]
+                "hat_ricord_xingjunmao", "hat_ricord_tianshiguanghuan",
+                # 第四期
+                "hat_ricord_tianyuanmao"]
 BOX_RARE = ["hat_ricord_shengdanmao", "hat_ricord_caidao", "hat_ricord_jidan",
             "hat_ricord_beleimao", "hat_ricord_nainao", "hat_ricord_xiaohonghua",
             "hat_ricord_xiaoji_taotao", "hat_ricord_xiaoqie_taotao", "hat_ricord_maidangdang",
-            "hat_ricord_t7"]
+            "hat_ricord_t7",
+            # 第四期
+            "hat_ricord_wushamao", "hat_ricord_wushimao"]
 BOX_EPIC = ["hat_ricord_dajitui", "hat_ricord_wangguan",
-            "hat_ricord_jiaohuang", "hat_ricord_sharenkuang"]
+            "hat_ricord_jiaohuang", "hat_ricord_sharenkuang",
+            # 第四期
+            "hat_ricord_shibingmao", "hat_ricord_huangguan"]
+BOX_LEGENDARY = ["hat_ricord_yuhuang"]
 
 for rel in ["CS2_box/hat_box.json", "run/CS2_box/hat_box.json"]:
     p = os.path.join(ROOT, rel)
     box = json.load(open(p, encoding="utf-8"))
-    box["common_skins"] = []
+    box["common_skins"] = ["hat/" + s for s in BOX_COMMON]
     box["uncommon_skins"] = ["hat/" + s for s in BOX_UNCOMMON]
     box["rare_skins"] = ["hat/" + s for s in BOX_RARE]
     box["epic_skins"] = ["hat/" + s for s in BOX_EPIC]
+    box["legendary_skins"] = ["hat/" + s for s in BOX_LEGENDARY]
     with open(p, "w", encoding="utf-8", newline="\n") as f:
         json.dump(box, f, ensure_ascii=False, indent=2)
         f.write("\n")
-    print("[BOX] %-28s 概率=%s 罕见=%d 稀有=%d 史诗=%d"
+    print("[BOX] %-28s 概率=%s 普通=%d 罕见=%d 稀有=%d 史诗=%d 传说=%d"
           % (rel, {k: box[k] for k in ("common", "uncommon", "rare", "epic", "legendary", "unbelievable")},
-             len(box["uncommon_skins"]), len(box["rare_skins"]), len(box["epic_skins"])))
+             len(box["common_skins"]), len(box["uncommon_skins"]), len(box["rare_skins"]),
+             len(box["epic_skins"]), len(box["legendary_skins"])))
