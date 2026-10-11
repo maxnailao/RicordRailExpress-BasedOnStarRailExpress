@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.MenuHubScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -36,13 +37,25 @@ public abstract class MinecraftClientMixin {
 
 
         }
-        boolean flag = SREClient.isPlayerAliveAndInSurvival();
+        boolean aliveSurvival = SREClient.isPlayerAliveAndInSurvival();
+        boolean flag = aliveSurvival;
         if(!flag && checkOnOpenInventory(player, screen)){
             flag = true;
         }
 
-        original.call(instance,
-                flag ? new MenuHubScreen() : screen);
+        if (!flag) {
+            original.call(instance, screen);
+            return;
+        }
+
+        // 局内（回合进行中且玩家存活）：打开受限物品栏，内含角色商店，可用 E 键购买并关闭；
+        // 非局内（等待 / 间歇）：打开自定义菜单栏（主菜单）。
+        boolean inRound = gameComponent != null && gameComponent.isRunning();
+        if (inRound && instance.player != null) {
+            original.call(instance, new LimitedInventoryScreen(instance.player));
+        } else {
+            original.call(instance, new MenuHubScreen());
+        }
     }
 
     private static boolean checkOnOpenInventory(LocalPlayer player, Screen screen) {

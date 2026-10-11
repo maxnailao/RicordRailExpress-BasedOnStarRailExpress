@@ -229,6 +229,19 @@ public class MenuHubScreen extends Screen {
         return false;
     }
 
+    // 主菜单是普通 Screen，原版 E 键关闭只对容器界面生效；这里显式支持 E 键关闭。
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.minecraft != null && this.minecraft.options != null
+                && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            // 消费掉本次按键点击，避免下一 tick 的 handleKeybinds 再次打开主菜单。
+            this.minecraft.options.keyInventory.consumeClick();
+            this.minecraft.setScreen(null);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     /** 白色/黑色方块按钮：纯色底 + 描边 + 居中文字 */
     private class SquareButton extends Button {
         private final int bg, hover, down, textColor;
