@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
+import io.wifi.starrailexpress.client.gui.screen.ingame.MenuHubScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -42,7 +42,7 @@ public abstract class MinecraftClientMixin {
         }
 
         original.call(instance,
-                flag ? new LimitedInventoryScreen(this.player) : screen);
+                flag ? new MenuHubScreen() : screen);
     }
 
     private static boolean checkOnOpenInventory(LocalPlayer player, Screen screen) {

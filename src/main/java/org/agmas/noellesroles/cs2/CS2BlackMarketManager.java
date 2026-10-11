@@ -32,7 +32,7 @@ public class CS2BlackMarketManager {
     private static CS2BlackMarketManager instance;
 
     /** 每人最大上架数量 */
-    public static final int MAX_LISTINGS_PER_PLAYER = 2;
+    public static final int MAX_LISTINGS_PER_PLAYER = 5;
 
     /** 黑市挂单列表 */
     private final List<MarketListing> listings = new CopyOnWriteArrayList<>();
@@ -40,8 +40,11 @@ public class CS2BlackMarketManager {
     /** 离线卖家待领取的货币：sellerUuid -> 累计待领金额 */
     private final Map<String, Integer> pendingCoins = new ConcurrentHashMap<>();
 
-    /** 黑市税率（0.0 ~ 1.0），默认 15% */
-    private double taxRate = 0.15;
+    /** 离线卖家待领取的神话碎片：sellerUuid -> 累计待领碎片 */
+    private final Map<String, Integer> pendingShards = new ConcurrentHashMap<>();
+
+    /** 黑市税率（0.0 ~ 1.0），自由市场默认 1%（由卖家承担，买家支付全额） */
+    private double taxRate = 0.01;
 
     /** 数据文件路径 */
     private Path dataFile;
@@ -56,17 +59,23 @@ public class CS2BlackMarketManager {
         public String itemType; // "box", "skin"
         public String itemId;
         public int price;
+        public String currency = "coin"; // "coin" | "shard"
         public long timestamp;
 
         public MarketListing() {}
 
         public MarketListing(String sellerUuid, String sellerName, String itemType, String itemId, int price) {
+            this(sellerUuid, sellerName, itemType, itemId, price, "coin");
+        }
+
+        public MarketListing(String sellerUuid, String sellerName, String itemType, String itemId, int price, String currency) {
             this.listingId = UUID.randomUUID().toString().substring(0, 8);
             this.sellerUuid = sellerUuid;
             this.sellerName = sellerName;
             this.itemType = itemType;
             this.itemId = itemId;
             this.price = price;
+            this.currency = currency;
             this.timestamp = System.currentTimeMillis();
         }
     }
@@ -75,6 +84,7 @@ public class CS2BlackMarketManager {
     private static class BlackMarketData {
         public List<MarketListing> listings = new ArrayList<>();
         public Map<String, Integer> pendingCoins = new HashMap<>();
+        public Map<String, Integer> pendingShards = new HashMap<>();
     }
 
     private CS2BlackMarketManager() {}
@@ -142,12 +152,25 @@ public class CS2BlackMarketManager {
     }
 
     /**
+     * 获取指定玩家的待领取神话碎片
+     */
+    public int getPendingShards(String playerUuid) {
+        return pendingShards.getOrDefault(playerUuid, 0);
+    }
+
+    /** 币种规范化：仅接受 "shard"，其余一律视为 "coin" */
+    private static String normCurrency(String c) {
+        return "shard".equals(c) ? "shard" : "coin";
+    }
+
+    /**
      * 向指定玩家同步黑市数据
      */
     public void syncToPlayer(ServerPlayer player) {
         String json = GSON.toJson(listings);
         int myPending = getPendingCoins(player.getUUID().toString());
-        ServerPlayNetworking.send(player, new BlackMarketSyncS2CPayload(json, myPending));
+        int myPendingShards = getPendingShards(player.getUUID().toString());
+        ServerPlayNetworking.send(player, new BlackMarketSyncS2CPayload(json, myPending, myPendingShards));
     }
 
     /**
@@ -158,15 +181,17 @@ public class CS2BlackMarketManager {
         String json = GSON.toJson(listings);
         for (ServerPlayer p : trigger.getServer().getPlayerList().getPlayers()) {
             int myPending = getPendingCoins(p.getUUID().toString());
-            ServerPlayNetworking.send(p, new BlackMarketSyncS2CPayload(json, myPending));
+            int myPendingShards = getPendingShards(p.getUUID().toString());
+            ServerPlayNetworking.send(p, new BlackMarketSyncS2CPayload(json, myPending, myPendingShards));
         }
     }
 
     /**
      * 上架物品
      */
-    public boolean list(ServerPlayer seller, String itemType, String itemId, int price) {
+    public boolean list(ServerPlayer seller, String itemType, String itemId, int price, String currency) {
         if (price <= 0) return false;
+        currency = normCurrency(currency);
 
         // 检查上架数量限制
         String sellerUuid = seller.getUUID().toString();
@@ -223,13 +248,13 @@ public class CS2BlackMarketManager {
         MarketListing listing = new MarketListing(
                 seller.getUUID().toString(),
                 seller.getName().getString(),
-                itemType, itemId, price);
+                itemType, itemId, price, currency);
         listings.add(listing);
         save();
         broadcastToAll(seller);
 
-        Noellesroles.LOGGER.info("[CS2Market] {} listed {} {} for {} coins",
-                seller.getName().getString(), itemType, itemId, price);
+        Noellesroles.LOGGER.info("[CS2Market] {} listed {} {} for {} {}",
+                seller.getName().getString(), itemType, itemId, price, currency);
         return true;
     }
 
@@ -251,14 +276,19 @@ public class CS2BlackMarketManager {
         // 不能买自己的
         if (listing.sellerUuid.equals(buyer.getUUID().toString())) return false;
 
-        int buyerCoins = PlayerEconomyManager.getCoinNum(buyer);
-        if (buyerCoins < listing.price) return false;
+        // 扣款 + 结算按挂单币种
+        boolean shard = "shard".equals(listing.currency);
+        CS2InventoryComponent buyerInv = CS2InventoryComponent.KEY.get(buyer);
 
-        // 扣款
-        PlayerEconomyManager.addCoinNum(buyer, -listing.price);
+        if (shard) {
+            if (!buyerInv.spendMythicShards(listing.price)) return false;
+        } else {
+            int buyerCoins = PlayerEconomyManager.getCoinNum(buyer);
+            if (buyerCoins < listing.price) return false;
+            PlayerEconomyManager.addCoinNum(buyer, -listing.price);
+        }
 
         // 给买家物品
-        CS2InventoryComponent buyerInv = CS2InventoryComponent.KEY.get(buyer);
         if ("box".equals(listing.itemType)) {
             buyerInv.addBox(listing.itemId, 1);
         } else if ("skin".equals(listing.itemType)) {
@@ -278,11 +308,15 @@ public class CS2BlackMarketManager {
         }
         buyerInv.sync();
 
-        // 卖家获得扣除税后的金额，始终存入 pendingCoins 等待手动领取
+        // 卖家获得扣除税后的金额，按同币种存入对应待领池（需手动领取）
         int sellerIncome = (int) Math.round(listing.price * (1.0 - taxRate));
-        pendingCoins.merge(listing.sellerUuid, sellerIncome, Integer::sum);
-        Noellesroles.LOGGER.info("[CS2Market] Seller {} earned {} coins (price={}, tax={}%)",
-                listing.sellerName, sellerIncome, listing.price, (int)(taxRate * 100));
+        if (shard) {
+            pendingShards.merge(listing.sellerUuid, sellerIncome, Integer::sum);
+        } else {
+            pendingCoins.merge(listing.sellerUuid, sellerIncome, Integer::sum);
+        }
+        Noellesroles.LOGGER.info("[CS2Market] Seller {} earned {} {} (price={}, tax={}%)",
+                listing.sellerName, sellerIncome, shard ? "shards" : "coins", listing.price, (int) (taxRate * 100));
 
         // 移除挂单
         listings.remove(listing);
@@ -329,22 +363,37 @@ public class CS2BlackMarketManager {
     }
 
     /**
-     * 玩家手动领取待发放的黑市货币
+     * 玩家手动领取待发放的黑市收入（货币 + 神话碎片一并结算）
      */
     public void claimPendingCoins(ServerPlayer player) {
         String uuid = player.getUUID().toString();
-        Integer amount = pendingCoins.remove(uuid);
-        if (amount != null && amount > 0) {
-            PlayerEconomyManager.addCoinNum(player, amount);
+        Integer coins = pendingCoins.remove(uuid);
+        Integer shards = pendingShards.remove(uuid);
+        boolean gotCoins = coins != null && coins > 0;
+        boolean gotShards = shards != null && shards > 0;
+
+        if (gotCoins || gotShards) {
+            StringBuilder msg = new StringBuilder("\uD83D\uDCB0 领取成功:");
+            boolean first = true;
+            if (gotCoins) {
+                PlayerEconomyManager.addCoinNum(player, coins);
+                msg.append(" +").append(coins).append(" 货币");
+                first = false;
+            }
+            if (gotShards) {
+                CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
+                inv.addMythicShards(shards);
+                inv.sync();
+                if (!first) msg.append(" /");
+                msg.append(" +").append(shards).append(" 神话碎片");
+            }
             player.displayClientMessage(
-                    net.minecraft.network.chat.Component.literal(
-                            "\uD83D\uDCB0 领取成功: +" + amount + " 货币")
+                    net.minecraft.network.chat.Component.literal(msg.toString())
                             .withStyle(net.minecraft.ChatFormatting.GREEN), true);
             save();
-            // 同步更新给客户端（刷新待领金额显示）
             syncToPlayer(player);
-            Noellesroles.LOGGER.info("[CS2Market] {} claimed {} pending coins",
-                    player.getName().getString(), amount);
+            Noellesroles.LOGGER.info("[CS2Market] {} claimed {} coins + {} shards",
+                    player.getName().getString(), gotCoins ? coins : 0, gotShards ? shards : 0);
         } else {
             player.displayClientMessage(
                     net.minecraft.network.chat.Component.literal(
@@ -367,6 +416,8 @@ public class CS2BlackMarketManager {
                     if (data.listings != null) listings.addAll(data.listings);
                     pendingCoins.clear();
                     if (data.pendingCoins != null) pendingCoins.putAll(data.pendingCoins);
+                    pendingShards.clear();
+                    if (data.pendingShards != null) pendingShards.putAll(data.pendingShards);
                     Noellesroles.LOGGER.info("[CS2Market] Loaded {} listings, {} pending",
                             listings.size(), pendingCoins.size());
                     return;
@@ -395,6 +446,7 @@ public class CS2BlackMarketManager {
             BlackMarketData data = new BlackMarketData();
             data.listings = new ArrayList<>(listings);
             data.pendingCoins = new HashMap<>(pendingCoins);
+            data.pendingShards = new HashMap<>(pendingShards);
             Files.writeString(dataFile, GSON.toJson(data));
             Noellesroles.LOGGER.debug("[CS2Market] Saved {} listings, {} pending to {}",
                     listings.size(), pendingCoins.size(), dataFile.toAbsolutePath());

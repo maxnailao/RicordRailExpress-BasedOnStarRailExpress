@@ -1275,9 +1275,12 @@ public class SREClient implements ClientModInitializer {
                         // 将服务端发来的 JSON 数据存入客户端缓存
                         org.agmas.noellesroles.client.screen.CS2ShopScreen.setMarketDataCache(payload.listingsJson());
                         org.agmas.noellesroles.client.screen.CS2ShopScreen.setMyPendingCoins(payload.myPendingCoins());
+                        org.agmas.noellesroles.client.screen.CS2ShopScreen.setMyPendingShards(payload.myPendingShards());
                         // 如果当前打开的是商店界面，刷新数据
                         if (context.client().screen instanceof org.agmas.noellesroles.client.screen.CS2ShopScreen shopScreen) {
                             shopScreen.refreshData();
+                        } else if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.ingame.ShopScreen shop) {
+                            shop.onMarketSync();
                         }
                     });
                 });
@@ -1290,6 +1293,8 @@ public class SREClient implements ClientModInitializer {
                         org.agmas.noellesroles.client.screen.CS2ShopScreen.setDailyShopCache(payload.shopJson());
                         if (context.client().screen instanceof org.agmas.noellesroles.client.screen.CS2ShopScreen shopScreen) {
                             shopScreen.refreshData();
+                        } else if (context.client().screen instanceof io.wifi.starrailexpress.client.gui.screen.ingame.ShopScreen shop) {
+                            shop.onDailySync();
                         }
                     });
                 });

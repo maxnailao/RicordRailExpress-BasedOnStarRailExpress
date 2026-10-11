@@ -165,6 +165,27 @@ public final class BackpackManager {
         return true;
     }
 
+    /**
+     * 取消使用职业卡：撤销 CARD 类型的阵营锁定并退还一张卡。
+     * 仅当当前锁定确由该类型的职业卡产生时生效（COMMAND/权重锁定不受影响）。
+     */
+    public static boolean cancelCard(ServerPlayer player, FactionCardType type) {
+        if (type == FactionCardType.NONE) {
+            return false;
+        }
+        ForceTeamInfo info = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+        if (info == null || info.type() != ForceTeamType.CARD || info.roleType() != type.getTypeId()) {
+            return false;
+        }
+        PlayerRoleWeightManager.ForcePlayerTeam.remove(player.getUUID());
+        addCard(player, type, 1);
+        Component message = Component.literal("已取消使用 ")
+                .append(Component.translatable(type.displayName));
+        player.sendSystemMessage(message);
+        player.displayClientMessage(message, true);
+        return true;
+    }
+
     /** 命令开屏前可调用以保证客户端数据新鲜。 */
     public static void resend(ServerPlayer player) {
         send(player, getEntry(player.getUUID()));

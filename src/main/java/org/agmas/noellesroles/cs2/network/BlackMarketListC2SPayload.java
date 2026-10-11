@@ -8,11 +8,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 /**
  * 客户端→服务端：黑市上架请求
  */
-public record BlackMarketListC2SPayload(String itemType, String itemId, int price) implements CustomPacketPayload {
+public record BlackMarketListC2SPayload(String itemType, String itemId, int price, String currency) implements CustomPacketPayload {
     public static final Type<BlackMarketListC2SPayload> ID = new Type<>(SRE.id("cs2_market_list"));
     public static final StreamCodec<FriendlyByteBuf, BlackMarketListC2SPayload> CODEC = StreamCodec.ofMember(
-            (p, buf) -> { buf.writeUtf(p.itemType, 64); buf.writeUtf(p.itemId, 128); buf.writeVarInt(p.price); },
-            buf -> new BlackMarketListC2SPayload(buf.readUtf(64), buf.readUtf(128), buf.readVarInt()));
+            (p, buf) -> { buf.writeUtf(p.itemType, 64); buf.writeUtf(p.itemId, 128); buf.writeVarInt(p.price); buf.writeUtf(p.currency == null ? "coin" : p.currency, 16); },
+            buf -> new BlackMarketListC2SPayload(buf.readUtf(64), buf.readUtf(128), buf.readVarInt(), buf.readUtf(16)));
 
     @Override
     public Type<? extends CustomPacketPayload> type() { return ID; }

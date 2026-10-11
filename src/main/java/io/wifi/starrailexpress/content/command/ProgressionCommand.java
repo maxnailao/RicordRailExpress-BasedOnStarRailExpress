@@ -32,7 +32,21 @@ public final class ProgressionCommand {
                         .then(Commands.argument("role", StringArgumentType.greedyString())
                                 .executes(context -> selfSelect(
                                         context.getSource().getPlayerOrException(),
-                                        StringArgumentType.getString(context, "role"))))));
+                                        StringArgumentType.getString(context, "role")))))
+                .then(Commands.literal("cancel")
+                        .then(Commands.argument("type", StringArgumentType.word())
+                                .executes(context -> cancel(
+                                        context.getSource().getPlayerOrException(),
+                                        StringArgumentType.getString(context, "type"))))));
+    }
+
+    private static int cancel(ServerPlayer player, String rawType) {
+        ProgressionState.FactionCardType type = ProgressionState.FactionCardType.fromString(rawType);
+        if (!BackpackManager.cancelCard(player, type)) {
+            player.displayClientMessage(Component.literal("§c没有可取消的该职业卡使用记录"), true);
+            return 0;
+        }
+        return 1;
     }
 
     private static int activate(ServerPlayer player, String rawType) {

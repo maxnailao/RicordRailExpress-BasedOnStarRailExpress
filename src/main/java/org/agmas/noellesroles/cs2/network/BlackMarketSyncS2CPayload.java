@@ -10,15 +10,16 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
  *
  * @param listingsJson JSON 格式的挂单列表（MarketListing 数组序列化）
  * @param myPendingCoins 当前玩家待领取的黑市货币（默认 0）
+ * @param myPendingShards 当前玩家待领取的黑市神话碎片（默认 0）
  */
-public record BlackMarketSyncS2CPayload(String listingsJson, int myPendingCoins)
+public record BlackMarketSyncS2CPayload(String listingsJson, int myPendingCoins, int myPendingShards)
         implements CustomPacketPayload {
 
     public static final Type<BlackMarketSyncS2CPayload> ID = new Type<>(SRE.id("cs2_market_sync"));
 
     public static final StreamCodec<FriendlyByteBuf, BlackMarketSyncS2CPayload> CODEC = StreamCodec.ofMember(
-            (payload, buf) -> { buf.writeUtf(payload.listingsJson, 65536); buf.writeInt(payload.myPendingCoins); },
-            buf -> new BlackMarketSyncS2CPayload(buf.readUtf(65536), buf.readInt()));
+            (payload, buf) -> { buf.writeUtf(payload.listingsJson, 65536); buf.writeInt(payload.myPendingCoins); buf.writeInt(payload.myPendingShards); },
+            buf -> new BlackMarketSyncS2CPayload(buf.readUtf(65536), buf.readInt(), buf.readInt()));
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
