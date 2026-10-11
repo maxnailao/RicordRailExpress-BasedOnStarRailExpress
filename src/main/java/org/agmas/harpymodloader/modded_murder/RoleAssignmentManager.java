@@ -120,7 +120,35 @@ public class RoleAssignmentManager {
         expandedRoles.addAll(
                 companionRoles.stream().map(r -> new RoleInstance(UUID.randomUUID(), r))
                         .toList());
-        return expandedRoles;
+
+        // ── 去重：互绑关系会产生重复 ──
+        //
+        // 迪奥与承太郎现在是**互相绑定**（DIO->JOJO 且 JOJO->DIO）。
+        // 当两者**同时已经在名单里**时（例如两人分别自选了一个），
+        // 逐条展开会各自把对方再"补"进来一次 → 名单里出现两个迪奥/两个承太郎。
+        //
+        // 这里按名额上限收敛：同一职业的数量超过 ROLE_MAX 的，从后往前移除多余的实例。
+        // 只处理"有互绑关系"的职业之外也一并兜住，不会有副作用
+        //（正常单绑展开本来就不会产生重复）。
+        java.util.Map<net.minecraft.resources.ResourceLocation, Integer> seenPerRole =
+                new java.util.HashMap<>();
+        java.util.List<RoleInstance> deduped = new ArrayList<>(expandedRoles.size());
+        for (var ri : expandedRoles) {
+            SRERole r = ri.role();
+            if (r == null) {
+                deduped.add(ri);
+                continue;
+            }
+            int cap = Math.max(1, Harpymodloader.getRoleCapacity(r));
+            int seen = seenPerRole.merge(r.identifier(), 1, Integer::sum);
+            if (seen > cap) {
+                Harpymodloader.LOGGER.warn(
+                        "[RolePool] 绑定展开产生重复的 {}（第 {} 个，上限 {}），已丢弃", r.identifier(), seen, cap);
+                continue;
+            }
+            deduped.add(ri);
+        }
+        return deduped;
     }
 
     /**

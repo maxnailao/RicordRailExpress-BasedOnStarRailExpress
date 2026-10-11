@@ -272,47 +272,56 @@ public class LightningDraftState {
     /**
      * 把某个阵营在池子里的数量压回预算。
      *
-     * <p><b>{@code occupiedRoleCount} 的正确口径</b>：它表示"这个角色顶得上几个槽位的分量"，
-     * 而不是"自己占几个玩家位"。所以 {@code occupiedRoleCount=2} 的职业
-     *（诡客 / 布袋鬼 / 迪奥）**自己仍只占 1 个玩家位**，但会吃掉 2 个名额 ——
-     * 也就是说它出现之后，该阵营**还要再补 1 个人**才算满编。
+     * <p><b>{@code occupiedRoleCount} 的口径</b>：表示"这个角色占几个名额"，
+     * 而不是"占几个玩家位"。{@code occupiedRoleCount=2} 的职业自己仍只占 1 个玩家位，
+     * 但吃掉 2 个名额。
      *
-     * <p>例：13 人局警长位 = 2，自选布袋鬼带出诡客（占位 2）→
-     * 正确结果是「诡客 + 1 个普通警长」共 2 人，**不是只有诡客一个**。
+     * <p>所以阵营的"人数上限"应该是
+     * {@code 预算 - Σ(保护角色的额外占用)}，而不是简单地 {@code 预算}。
+     * 否则只要保护角色（绑定职业 / 自选主职业）吃掉额外名额，就会把普通角色多摘掉。
      *
-     * <p>所以这里的裁剪策略是：超出预算时**优先摘掉普通职业**，
-     * 绑定职业与自选主职业留到最后一刻才考虑（保护名单）。
-     * 这样"3 个警长"会被压成"诡客 + 1 个普通警长"，而不是压成"只有诡客"。
+     * <p><b>保护角色一律不摘</b>（这是修回的关键）：绑定职业是主职业的硬依赖 ——
+     * 摘掉 {@code JAILER(狱警)} 就会让 {@code CONVICT(重刑犯)} 变成"没有狱警的重刑犯"，
+     * 实测表现为"监狱图刷了狱警但没有重刑犯 / 反过来"。
+     * 宁可某阵营超出预算 1 个人，也不能拆散成对角色。
      */
     private void trimFaction(java.util.Set<net.minecraft.resources.ResourceLocation> protect,
             java.util.function.Predicate<SRERole> belongs, int budget, String label) {
-        // 只统计"玩家位"数量：一个 RoleInstance 就是一个人
-        int cur = (int) rolePool.stream().filter(ri -> ri.role() != null && belongs.test(ri.role())).count();
-        int over = cur - budget;
+        // 统计"人头数"与"保护角色吃掉的额外名额"
+        int heads = 0;
+        int protectedHeads = 0;
+        int protectedExtra = 0;
+        for (var ri : rolePool) {
+            SRERole r = ri.role();
+            if (r == null || !belongs.test(r)) {
+                continue;
+            }
+            heads++;
+            if (protect.contains(r.identifier())) {
+                protectedHeads++;
+                // 超出 1 的部分算额外占用
+                protectedExtra += Math.max(0, r.getOccupiedRoleCount() - 1);
+            }
+        }
+        // 能给"普通角色"的名额 = 预算 - 额外占用；至少给保护角色留人头
+        int allowNormalHeads = Math.max(0, budget - protectedExtra);
+        int over = (heads - protectedHeads) - allowNormalHeads;
         if (over <= 0) {
             return;
         }
-        SRE.LOGGER.warn("[RolePool] {} 阵营 {} 人 > 预算 {}，需摘掉 {} 个", label, cur, budget, over);
+        SRE.LOGGER.warn(
+                "[RolePool] {} 阵营 {} 人（其中保护 {} 人，额外占额 {}）> 可用预算 {}，需摘掉 {} 个普通角色",
+                label, heads, protectedHeads, protectedExtra, allowNormalHeads, over);
 
-        // 两轮：第一轮只摘非保护角色；保护角色（绑定/自选）留到第二轮兜底。
-        // 这样保证了"有普通职业可摘时绝不摘绑定职业"。
-        for (int round = 0; round < 2 && over > 0; round++) {
-            for (int i = rolePool.size() - 1; i >= 0 && over > 0; i--) {
-                SRERole r = rolePool.get(i).role();
-                if (r == null || !belongs.test(r)) {
-                    continue;
-                }
-                boolean isProtected = protect.contains(r.identifier());
-                if (round == 0 && isProtected) {
-                    continue; // 第一轮跳过保护角色
-                }
-                if (round == 1 && !isProtected) {
-                    continue; // 第二轮只处理保护角色（前面已经摘干净了）
-                }
-                SRE.LOGGER.warn("[RolePool]   摘掉 {}（保护={}）", r.identifier(), isProtected);
-                rolePool.remove(i);
-                over--;
+        // 只摘"非保护"角色；保护角色（绑定职业 / 自选主职业）一律保留
+        for (int i = rolePool.size() - 1; i >= 0 && over > 0; i--) {
+            SRERole r = rolePool.get(i).role();
+            if (r == null || !belongs.test(r) || protect.contains(r.identifier())) {
+                continue;
             }
+            SRE.LOGGER.warn("[RolePool]   摘掉 {}", r.identifier());
+            rolePool.remove(i);
+            over--;
         }
         if (over > 0) {
             SRE.LOGGER.warn("[RolePool]   {} 阵营仍有 {} 个超出（全是被保护的），不再强摘", label, over);

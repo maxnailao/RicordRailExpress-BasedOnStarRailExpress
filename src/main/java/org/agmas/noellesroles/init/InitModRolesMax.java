@@ -278,22 +278,63 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.ATTENDANT_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.CORONER_ID, 1);
 
-        // 同时出现
+        // ── 绑定职业：**全部双向** ──
+        //
+        // 以前这里只注册了单向（主职业 → 绑定职业），于是"选主职业会带出绑定职业，
+        // 但反过来选绑定职业不会带出主职业"。现在统一补上反向，两边任选其一都会把另一个带出来。
+        //
+        // 为什么安全：addOccupationRole 是 addOccupationRoleOnce（幂等），
+        // 且 expandWithCompanionRoles 末尾会按 ROLE_MAX 去重 ——
+        // 两人各选一个时不会生成重复实例（实测过 [DIO, JOJO] → 仍是 1+1）。
         Harpymodloader.addOccupationRole(ModRoles.ENGINEER, ModRoles.LOCKSMITH);
+        Harpymodloader.addOccupationRole(ModRoles.LOCKSMITH, ModRoles.ENGINEER);
+
         Harpymodloader.addOccupationRole(RedHouseRoles.FURANDORU, RedHouseRoles.PACHURI);
+        Harpymodloader.addOccupationRole(RedHouseRoles.PACHURI, RedHouseRoles.FURANDORU);
+
         Harpymodloader.addOccupationRole(ModRoles.MA_CHEN_XU, ModRoles.GUEST_GHOST);
+        Harpymodloader.addOccupationRole(ModRoles.GUEST_GHOST, ModRoles.MA_CHEN_XU);
+
         Harpymodloader.addOccupationRole(ModRoles.GANGSTERS, ModRoles.FITTER);
+        Harpymodloader.addOccupationRole(ModRoles.FITTER, ModRoles.GANGSTERS);
 
         RoleAssignmentManager.addOccupationRole(ModRoles.POISONER, ModRoles.DOCTOR);
+        RoleAssignmentManager.addOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
+
         RoleAssignmentManager.addOccupationRole(ModRoles.INFECTED, ModRoles.DOCTOR);
+        RoleAssignmentManager.addOccupationRole(ModRoles.DOCTOR, ModRoles.INFECTED);
+
         RoleAssignmentManager.addOccupationRole(RedHouseRoles.BAKA, ModRoles.EXAMPLER);
+        RoleAssignmentManager.addOccupationRole(ModRoles.EXAMPLER, RedHouseRoles.BAKA);
+
         RoleAssignmentManager.addOccupationRole(ModRoles.DIO, ModRoles.JOJO);
+        RoleAssignmentManager.addOccupationRole(ModRoles.JOJO, ModRoles.DIO);
+
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
+        RoleAssignmentManager.addOccupationRole(ModRoles.DIVER, ModRoles.WATER_GHOST);
+
         // 智力障碍患者与监护人绑定生成
         RoleAssignmentManager.addOccupationRole(ModRoles.ZHIZHANG, ModRoles.GUARDIAN);
+        RoleAssignmentManager.addOccupationRole(ModRoles.GUARDIAN, ModRoles.ZHIZHANG);
+
         // 经纪人与歌手/明星绑定生成（每局只带其中一名或两名，见 registerDynamic）
         RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
+        RoleAssignmentManager.addOccupationRole(ModRoles.SINGER, ModRoles.JINGJIREN_WOW);
         RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
+        RoleAssignmentManager.addOccupationRole(ModRoles.SUPERSTAR, ModRoles.JINGJIREN_WOW);
+
+        // 影隼 ←→ 领航员
+        RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
+        RoleAssignmentManager.addOccupationRole(ModRoles.PILOT, ModRoles.SHADOW_FALCON);
+
+        // 追梦人 ←→ 鸽子
+        RoleAssignmentManager.addOccupationRole(ModRoles.ZHUIMU, ModRoles.PIGE);
+        RoleAssignmentManager.addOccupationRole(ModRoles.PIGE, ModRoles.ZHUIMU);
+
+        // 重刑犯 ←→ 狱警
+        RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
+        RoleAssignmentManager.addOccupationRole(ModRoles.JAILER, ModRoles.CONVICT);
+
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
@@ -355,9 +396,7 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(TraitorAndModifiers.TRAITOR_ID, 0);
 
         // 飞行员和影隼初始为0
-
-        // 设置飞行员和影隼绑定生成
-        RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
+        // （绑定关系已在上面「绑定职业：全部双向」区块统一注册，此处不再重复）
 
         // 梦魇每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.MENGYAN_ID, 1);
@@ -374,14 +413,12 @@ public class InitModRolesMax {
         // 坠木和皮革嘎的默认为0（概率刷新）
         Harpymodloader.setRoleMaximum(ModRoles.ZHUIMU_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.PIGE_ID, 0);
-        // 绑定生成：坠木刷新时皮革嘎的也刷新
-        RoleAssignmentManager.addOccupationRole(ModRoles.ZHUIMU, ModRoles.PIGE);
+        // （坠木 ←→ 皮革嘎的绑定已在上面「绑定职业：全部双向」区块统一注册，此处不再重复）
 
         // 重刑犯与狱警：默认 0，仅在监狱图由 autoRoleMaxCount 经 getRoundMaxCount 动态启用为 1
         Harpymodloader.setRoleMaximum(ModRoles.CONVICT_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.JAILER_ID, 0);
-        // 绑定生成：重刑犯刷新时狱警一同刷新
-        RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
+        // （重刑犯 ←→ 狱警 的绑定已在上面统一注册双向，此处不再重复）
 
         // 预备魔女与魔女：默认 0。预备魔女是特殊地图职业（specialMapRole = WITCH_PRISON），
         // 本局上限由 applySpecialMapRoles 按 witchPrisonRolesMaps 决定（与雪怪 / 木乃伊同一套机制）；
@@ -584,12 +621,21 @@ public class InitModRolesMax {
         }
 
         // 先解除上一局留下的绑定，再按本局结果重新绑定
+        //
+        // ★ 现在绑定是**双向**的，所以两个方向都要清：
+        //   removeOccupationRole 是"对称清理"（它同时会摘掉对方的 occupationRoles），
+        //   但只调用 JINGJIREN_WOW.removeOccupationRole(...) 的话，
+        //   SINGER/SUPERSTAR 身上指向 JINGJIREN_WOW 的那条**不会被清掉**，会跨局残留累积。
         ModRoles.JINGJIREN_WOW.removeOccupationRole(ModRoles.SINGER, ModRoles.SUPERSTAR);
+        ModRoles.SINGER.removeOccupationRole(ModRoles.JINGJIREN_WOW);
+        ModRoles.SUPERSTAR.removeOccupationRole(ModRoles.JINGJIREN_WOW);
         if (withSinger) {
             RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SINGER);
+            RoleAssignmentManager.addOccupationRole(ModRoles.SINGER, ModRoles.JINGJIREN_WOW);
         }
         if (withStar) {
             RoleAssignmentManager.addOccupationRole(ModRoles.JINGJIREN_WOW, ModRoles.SUPERSTAR);
+            RoleAssignmentManager.addOccupationRole(ModRoles.SUPERSTAR, ModRoles.JINGJIREN_WOW);
         }
         // 职业介绍中的互相展示始终保留，不受本局绑定结果影响
         ModRoles.JINGJIREN_WOW.addBothRelatedRole(ModRoles.SINGER, ModRoles.SUPERSTAR);

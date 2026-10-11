@@ -967,7 +967,29 @@ public class SREMurderGameMode extends GameMode {
                         "[RoleCount] 超标(杀手+{} 警长+{} 中立+{})，按预算 {}/{}/{} 裁剪超出的部分",
                         Math.max(0, overK), Math.max(0, overV), Math.max(0, overN),
                         budgetKiller, budgetVigilante, budgetNeutral);
-                // 自选/强制职业不能动，只在"随机分配"的人里裁
+                // 受保护角色：**所有**绑定职业（不管是被自选带出来的，还是自然刷新配对的）
+                // 加上所有自选主职业。
+                //
+                // ★ 之前只保护了 selfSelectCompanions，漏掉了"自然配对的绑定职业" ——
+                //   于是监狱图上自然刷出的 CONVICT(重刑犯) 的伙伴 JAILER(狱警) 会被降级成平民，
+                //   表现就是"刷了重刑犯却没有狱警 / 反过来"。这里把配对关系补全。
+                java.util.Set<SRERole> allCompanions = new java.util.HashSet<>();
+                if (selfSelectCompanions != null) {
+                    allCompanions.addAll(selfSelectCompanions);
+                }
+                for (SRERole r0 : roleAssignments.values()) {
+                    if (r0 == null) {
+                        continue;
+                    }
+                    var occ0 = Harpymodloader.getOccupationRoles(r0);
+                    if (occ0 != null) {
+                        for (SRERole c0 : occ0) {
+                            if (c0 != null) {
+                                allCompanions.add(c0);
+                            }
+                        }
+                    }
+                }
                 for (var e : new ArrayList<>(roleAssignments.entrySet())) {
                     SRERole r = e.getValue();
                     if (r == null || r == TMMRoles.CIVILIAN) {
@@ -977,11 +999,10 @@ public class SREMurderGameMode extends GameMode {
                         continue; // 自选的保留
                     }
                     // 绑定职业也保留：它是主职业的硬依赖（布袋鬼→诡客、悍匪→钳工、
-                    // 毒师→医生、迪奥→承太郎…），降级成平民就等于"主职业没有绑定职业"，
-                    // 这正是之前"警长阵营没刷诡客"的另一种成因。宁可某阵营多 1 个，
-                    // 也不能把绑定职业拆掉。
-                    if (selfSelectCompanions != null && selfSelectCompanions.stream()
-                            .anyMatch(c -> c != null && c.identifier().equals(r.identifier()))) {
+                    // 毒师→医生、迪奥→承太郎、重刑犯→狱警…），降级成平民就等于
+                    // "主职业没有绑定职业"。宁可某阵营多 1 个，也不能把配对拆掉。
+                    if (allCompanions.stream().anyMatch(c -> c != null
+                            && c.identifier().equals(r.identifier()))) {
                         continue;
                     }
                     boolean killer = r.canUseKiller();
