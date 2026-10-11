@@ -4,16 +4,20 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
@@ -31,7 +35,8 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
     public static final ComponentKey<DianxueMasterPlayerComponent> KEY = ModComponents.DIANXUE_MASTER;
 
     public static final int POINT_COUNT = 5;
-    private static final int STEP_TICKS = 100;
+    // 每次点穴后等待“下一次点穴”的窗口：3 秒（60 tick）。超时则结束点穴并立即结算已点中穴位的效果。
+    private static final int STEP_TICKS = 60;
     private static final double PUSH_STRENGTH = 0.5D;
     private static final double PUSH_UPWARD = 0.15D;
     private static final double MAX_RANGE_SQR = 64.0D * 64.0D;
@@ -68,6 +73,24 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         targetId = null;
         activeIndex = 0;
         stepRemainingTicks = 0;
+    }
+
+    /** 是否处于点穴状态（供技能再次发动时判断是否取消）。 */
+    public boolean isActive() {
+        return active;
+    }
+
+    /**
+     * 再次发动技能：取消当前点穴状态，不结算任何已点中穴位的效果。
+     */
+    public void cancelPressing() {
+        if (!active) return;
+        if (player instanceof ServerPlayer master) {
+            master.displayClientMessage(Component.literal("点穴已取消").withStyle(ChatFormatting.GRAY), true);
+            closeAndStop(master);
+        } else {
+            stop();
+        }
     }
 
     public boolean startPressing(ServerPlayer target) {
@@ -124,18 +147,19 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         applyRestrictions(target);
         stepRemainingTicks--;
         send(master, ACT_UPDATE);
-        if (stepRemainingTicks <= 0) onStepTimeout(master, target);
+        if (stepRemainingTicks <= 0) finishSequenceAndApply(master, target);
     }
 
-    private void onStepTimeout(ServerPlayer master, ServerPlayer target) {
-        if (activeIndex >= POINT_COUNT - 1) {
-            // 最后一个（致死）穴位未及时点中：点穴失败，不击杀
-            master.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.gate_miss")
-                    .withStyle(ChatFormatting.GRAY), true);
-            closeAndStop(master);
-            return;
+    /**
+     * 点穴结束（3 秒内未进行下一次点穴）：把已点中穴位（前四次）的效果一次性结算并立即生效。
+     * 第五次点穴的强制击杀只在“点击到该穴位”时立即触发，不会在此结算。
+     */
+    private void finishSequenceAndApply(ServerPlayer master, ServerPlayer target) {
+        int completed = Math.min(activeIndex, POINT_COUNT - 1); // 只结算 0..3 的非致死效果
+        for (int i = 0; i < completed; i++) {
+            applyEffect(target, master, i);
         }
-        advanceSequence(master);
+        closeAndStop(master);
     }
 
     private void advanceSequence(ServerPlayer master) {
@@ -157,11 +181,13 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
             return;
         }
 
-        applyEffect(target, master, activeIndex);
         if (activeIndex == POINT_COUNT - 1) {
+            // 第五次点穴：强制击杀立即生效，无需等待点穴结束
+            applyEffect(target, master, activeIndex);
             closeAndStop(master);
             return;
         }
+        // 前四次点穴：效果延后到点穴结束时统一生效，这里仅推进到下一个穴位并重置 3 秒窗口
         advanceSequence(master);
     }
 
@@ -174,9 +200,20 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
             case 4 -> {
                 target.setLastHurtByMob(master);
                 target.setLastHurtByPlayer(master);
+                Vec3 deathPos = target.position();
                 GameUtils.forceKillPlayer(target, true, master, Noellesroles.id("dianxue"));
+                dropRevolverAt(master, deathPos);
             }
         }
+    }
+
+    /** 点穴致死奖励：在死亡位置掉落一把左轮手枪 */
+    private void dropRevolverAt(ServerPlayer master, Vec3 pos) {
+        if (!(master.level() instanceof ServerLevel level)) return;
+        ItemEntity revolver = new ItemEntity(level, pos.x, pos.y + 1.0D, pos.z, new ItemStack(TMMItems.REVOLVER));
+        revolver.setDeltaMovement(0.0D, 0.2D, 0.0D);
+        revolver.setPickUpDelay(30);
+        level.addFreshEntity(revolver);
     }
 
     private void send(ServerPlayer master, int action) {
