@@ -194,6 +194,7 @@
   "message.sre.pass.selfselect_claimed": "「%s」想用自選卡選擇「%s」，但該職業本局名額已滿（上限 %s 人），自選卡已返還。",
   "message.sre.pass.selfselect_claimed_self": "「%s」本局名額已滿（上限 %s 人），自選卡已返還。",
   "message.sre.pass.selfselect_failed": "無法使用自選職業卡。",
+  "message.sre.pass.selfselect_companion_failed": "「%s」帶出的綁定職業本局無法生成（沒有空位），自選卡已返還。",
   "sre.pass.faction.activated": "%s (已啟動)",
   "sre.pass.faction.killer": "殺手陣營卡",
   "sre.pass.faction.civilian": "平民陣營卡",

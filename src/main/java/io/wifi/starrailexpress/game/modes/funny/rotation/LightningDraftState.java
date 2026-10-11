@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -149,19 +150,20 @@ public class LightningDraftState {
             rolePool.add(new RoleInstance(UUID.randomUUID(), role));
             forcedRoles.add(role);
             forceRoleCount++;
-            switch (role.getRoleType()) {
-                case 1:
-                    break;
-                case 2:
-                case 3:
-                    neutralsCount--;
-                    break;
-                case 4:
-                    killerCount--;
-                    break;
-                case 5:
-                    vigilanteCount--;
-                    break;
+            // 按「实际阵营」扣减名额，并且要按 occupiedRoleCount 扣。
+            // 之前这里是 `switch (role.getRoleType())`，有两个问题：
+            //   ① 只扣 1，忽略了 occupiedRoleCount —— 迪奥压 2 个杀手位
+            //      （ModRoles.DIO 设了 setOccupiedRoleCount(2)），配 3 狼的局会变成额外 3 个狼位；
+            //   ② type 1 被当成"不占名额"，但 type 1 是乘客（isInnocent），
+            //      乘客本该压平民数，口径和 getAllRoles 不一致。
+            // 现在统一成 getAllRoles / SREMurderGameMode 用的判断。
+            int occupied = Math.max(1, role.getOccupiedRoleCount());
+            if (role.canUseKiller()) {
+                killerCount -= occupied;
+            } else if (role.isVigilanteTeam()) {
+                vigilanteCount -= occupied;
+            } else if (!role.isInnocent()) {
+                neutralsCount -= occupied;
             }
         }
 
@@ -175,6 +177,11 @@ public class LightningDraftState {
                 rolePool.add(inst); // 保留原有UUID
             }
         }
+
+        // 自选主职业带出来的「绑定职业」（迪奥→承太郎、毒师→医生、悍匪→钳工…）必须补进池子。
+        // 普通模式在 SREMurderGameMode.mergeCompanionRoles 里做这件事，轮选模式以前完全没有这一步，
+        // 于是有人用自选卡选迪奥时，承太郎根本不会出现。
+        mergeCompanionRoles(rolePool);
 
         // 生成可替换职业列表
         List<SRERole> replaceableTypes = new ArrayList<>(civilianPool.selectRoles(PLAYER_SELECT_COUNT - 1,
@@ -197,8 +204,137 @@ public class LightningDraftState {
         initializeCardTracking();
     }
 
-    private void initializeCardTracking() {
-        cardUsedCount.clear();
+    /**
+     * 把「自选主职业」带出来的绑定职业补进轮选池。
+     *
+     * <p>背景：有人用自选卡选了迪奥（{@code ModRoles.DIO}），而迪奥的绑定职业是承太郎
+     * （{@code ModRoles.JOJO}，见 {@code Harpymodloader.getOccupationRoles}）。
+     * 普通模式由 {@code SREMurderGameMode.mergeCompanionRoles} 负责补位，轮选模式原先漏了这一步，
+     * 结果就是"选了迪奥但承太郎不会出现"。
+     *
+     * <p>做法和普通模式一致：**替换掉一个平民实例**。这样
+     * <ul>
+     * <li>总角色数不变（角色数 == 玩家数），不会挤掉别人；</li>
+     * <li>绑定职业一定出现在本局候选池里，会被分配给某位玩家；</li>
+     * <li>该绑定职业名额已满时跳过（"角色上限依然生效"）。</li>
+     * </ul>
+     *
+     * <p>补位后**必须**重新过一次 {@code lockedInstanceIds} 逻辑 ——
+     * 这里只动 rolePool，锁定的实例在 {@code startNextRound} 里重算，不受影响。
+     */
+    private void mergeCompanionRoles(List<RoleInstance> roles) {
+        // 收集本局自选主职业带出的绑定职业，按名额上限去重
+        // 注意：上限要拿「统计值」去比，不能在遍历中拿正在累加的集合去比 ——
+        // 否则第一个主职业会一口气塞进 cap 个，后面的主职业就永远补不进来。
+        Map<SRERole, Integer> capOf = new LinkedHashMap<>();
+        LinkedHashSet<SRERole> companions = new LinkedHashSet<>();
+        // 复制一份再遍历：下面 refundSelfSelectForCompanion 可能会 releaseSelfForcedRole，
+        // 而 FORCED_MODDED_ROLE_FLIP 是普通 HashMap —— 直接遍历会在改结构时抛
+        // ConcurrentModificationException。
+        for (SRERole main : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.values())) {
+            if (main == null) {
+                continue;
+            }
+            var occ = Harpymodloader.getOccupationRoles(main);
+            if (occ == null || occ.isEmpty()) {
+                continue;
+            }
+            for (SRERole companion : occ) {
+                if (companion == null) {
+                    continue;
+                }
+                int cap = Math.max(1, Harpymodloader.getRoleCapacity(companion));
+                capOf.putIfAbsent(companion, cap);
+                // 名额用尽 → 这个绑定职业不再补（"角色上限依然生效"）
+                if (capOf.get(companion) <= 0) {
+                    continue;
+                }
+                capOf.put(companion, capOf.get(companion) - 1);
+                companions.add(companion);
+            }
+        }
+        if (companions.isEmpty()) {
+            return;
+        }
+
+        for (SRERole companion : companions) {
+            final var cid = companion.identifier();
+            // 已经在池子里就不重复补（例如别的玩家自己选/抽到了同一个职业）
+            boolean present = roles.stream().anyMatch(ri -> ri.role() != null
+                    && ri.role().identifier().equals(cid));
+            if (present) {
+                continue;
+            }
+            // 找一个平民空位替换；没有平民位说明排满了，放弃这次自选并退还自选卡
+            int idx = -1;
+            for (int i = roles.size() - 1; i >= 0; i--) {
+                if (roles.get(i).role() == TMMRoles.CIVILIAN) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx < 0) {
+                // 补不进去 → 这张自选卡"选了但没生效"，按规则撤销占位并退还
+                refundSelfSelectForCompanion(cid);
+                Harpymodloader.LOGGER.warn(
+                        "[SelfSelect] 轮选模式没有平民空位可替换，绑定职业 {} 无法生成（已撤销自选并退还卡）", cid);
+                continue;
+            }
+            roles.set(idx, new RoleInstance(UUID.randomUUID(), companion));
+            Harpymodloader.LOGGER.info("[SelfSelect] 轮选模式因自选主职业而补入绑定职业 {}", cid);
+        }
+    }
+
+    /**
+     * 把自选卡退还给指定玩家，并提示原因。
+     *
+     * <p>用于「自选卡选了但这一局没生效」的各种情况：强制职业本轮没抽到、
+     * 绑定职业挤不进池子等。统一走这里，避免有的路径退、有的路径不退。
+     */
+    private void refundSelfSelect(UUID playerId, SRERole role) {
+        MinecraftServer server = SRE.SERVER;
+        if (server == null) {
+            return;
+        }
+        ServerPlayer sp = server.getPlayerList().getPlayer(playerId);
+        if (sp == null) {
+            return;
+        }
+        io.wifi.starrailexpress.backpack.BackpackManager.refundSelfSelectCard(sp);
+        sp.displayClientMessage(Component.translatable("message.sre.pass.selfselect_companion_failed",
+                Harpymodloader.getRoleName(role)).withStyle(ChatFormatting.RED), false);
+        Harpymodloader.LOGGER.info("[SelfSelect] 轮选模式下 {} 的自选职业 {} 本局未生效，已退还自选卡",
+                playerId, role.identifier());
+    }
+
+    /**
+     * 绑定职业补不进去时，把「因它而用掉的那张自选卡」退还给对应的玩家。
+     *
+     * <p>只退给"主职业的绑定职业正好是它"的那些玩家，避免误退给别人。
+     * 同时撤销该玩家的自选占位 —— 组合技既然凑不齐，就不该只生效一半。
+     */
+    private void refundSelfSelectForCompanion(net.minecraft.resources.ResourceLocation companionId) {
+        MinecraftServer server = SRE.SERVER;
+        if (server == null) {
+            return;
+        }
+        for (var entry : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet())) {
+            SRERole main = entry.getValue();
+            if (main == null) {
+                continue;
+            }
+            var occ = Harpymodloader.getOccupationRoles(main);
+            if (occ == null || occ.stream().noneMatch(c -> c != null && c.identifier().equals(companionId))) {
+                continue;
+            }
+            refundSelfSelect(entry.getKey(), main);
+            Harpymodloader.releaseSelfForcedRole(main, entry.getKey());
+            Harpymodloader.LOGGER.info("[SelfSelect] 绑定职业 {} 无法生成，已撤销 {} 的自选主职业 {}",
+                    companionId, entry.getKey(), main.identifier());
+        }
+    }
+
+    private void initializeCardTracking() {        cardUsedCount.clear();
         cardMaxPerType.clear();
         cardReturnedPlayers.clear();
         int limit = Math.max(1, totalPlayers / 10);
@@ -372,10 +508,17 @@ public class LightningDraftState {
             if (forcedRole != null) {
                 Optional<RoleInstance> match = remainingDrawn.stream()
                         .filter(ri -> ri.role() == forcedRole).findFirst();
-                match.ifPresent(ri -> {
+                if (match.isPresent()) {
+                    RoleInstance ri = match.get();
                     candidateMap.get(playerId).add(ri);
                     remainingDrawn.remove(ri);
-                });
+                } else {
+                    // 本轮抽签没抽到这个强制职业 → 自选卡本局无法生效。
+                    // 以前这里是 ifPresent 静默失败：卡被扣了、职业没拿到，玩家还得自己发现。
+                    // 现在撤销占位并把卡退回去（"不生效就退还"）。
+                    Harpymodloader.releaseSelfForcedRole(forcedRole, playerId);
+                    refundSelfSelect(playerId, forcedRole);
+                }
             }
         }
 
