@@ -740,13 +740,21 @@ public class ModRolesInitialEventRegister {
                     return comp != null && comp.releaseLast();
                 }).shifted(true).announceToSelf(false).build());
 
-        // 点穴大师技能：推出并定身准星玩家 3 秒，开始点穴（35 秒冷却）
+        // 点穴大师技能：推出并定身准星玩家，进入点穴状态；再次按技能取消点穴（35 秒冷却）
         RoleSkill.register(ModRoles.DIANXUE_MASTER, RoleSkill.skill(
                 SRE.id("dianxue_master_press"),
                 "skill.noellesroles.dianxue_master.press",
                 context -> {
                     ServerPlayer player = context.player();
-                    if (player.isSpectator() || context.target() == null) return false;
+                    if (player.isSpectator()) return false;
+                    var comp = org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent.KEY.get(player);
+                    if (comp == null) return false;
+                    // 已在点穴状态：再次发动技能 = 取消点穴（不结算任何效果，无需目标，toggleable 下不消耗冷却）
+                    if (comp.isActive()) {
+                        comp.cancelPressing();
+                        return true;
+                    }
+                    if (context.target() == null) return false;
                     if (!(player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer target)) return false;
                     if (target == player || !GameUtils.isPlayerAliveAndSurvival(target)) {
                         player.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.no_target")
@@ -758,9 +766,9 @@ public class ModRolesInitialEventRegister {
                                 .withStyle(ChatFormatting.RED), true);
                         return false;
                     }
-                    var comp = org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent.KEY.get(player);
-                    return comp != null && comp.startPressing(target);
-                }).cooldownSeconds(35).showOnHud(true).announceToSelf(false).build());
+                    return comp.startPressing(target);
+                }).cooldownSeconds(35).showOnHud(true).announceToSelf(false).toggleable(true).build());
+
 
         // 阿蒙技能：
         // - G 键：对准星玩家静默种下时之虫（附身期间也可为其他人种虫）

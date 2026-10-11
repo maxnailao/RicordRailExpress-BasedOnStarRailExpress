@@ -29,8 +29,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.commands.BroadcastCommand;
@@ -55,7 +53,7 @@ import java.util.UUID;
  * 绑架目标若是杀手，60 秒后可自行挣脱；可被……其他玩家救下；
  * 挣脱/被救都会提示绑匪「有人逃脱了」。
  *
- * <p>绑满 6 人且场上存活人数达标后，按 G（视线无目标时）进入『审判阶段』：
+ * <p>绑满 6 人且场上存活人数达标后，按蹲下+G（视线无目标时）进入『审判阶段』：
  * 绑架技能失效，获得枪、德林加与刀，枪击杀人不掉落；枪冷却按进入审判时的绑架人数快照递减
  * （6人-20%，7人获盾，8人-40%，9人-60%，10人-80%）；审判阶段绑匪杀死的人记为被绑架（在自己房间被捆绑）。
  * 当场上所有其他存活玩家都被绑架时绑匪胜利。
@@ -68,6 +66,8 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
 
     /** 绑架施法距离（格）：必须贴近目标 3 格内才能绑架 */
     public static final double KIDNAP_RANGE = 3.0;
+    /** 绑架目标人物判定横向半径（格）：比原版实体碰撞箱（半宽约 0.3）放大一点点，3 格内更容易抓到人 */
+    public static final double KIDNAP_TARGET_RADIUS = 0.75;
     /** 绑架技能冷却（10 秒） */
     public static final int KIDNAP_COOLDOWN_TICKS = 10 * 20;
     /** 绑架奖励：每成功绑架一名玩家获得的金币 */
@@ -177,14 +177,9 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
             return;
         }
 
-        // 视线射线选取附近目标（同 LEON 踢人）
-        HitResult hit = net.minecraft.world.entity.projectile.ProjectileUtil.getHitResultOnViewVector(sp,
-                e -> e instanceof ServerPlayer p
-                        && GameUtils.isPlayerAliveAndSurvival(p)
-                        && p != sp,
-                KIDNAP_RANGE);
-
-        if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof ServerPlayer victim) {
+        // 3 格内、大致朝向准星的目标视为可绑架（人物判定范围略放大，不再要求射线精确命中碰撞箱）
+        ServerPlayer victim = findKidnapTarget(sp);
+        if (victim != null) {
             if (kidnapped.contains(victim.getUUID())) {
                 sp.displayClientMessage(Component.translatable("message.noellesroles.kidnapper.already")
                         .withStyle(ChatFormatting.RED), true);
@@ -204,9 +199,49 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
             }
             kidnap(sp, victim, game);
         } else {
-            // 视线无目标：若绑满 6 人且场上人数达标，尝试进入审判阶段
+            // 审判阶段改为「蹲下 + 技能键」才能开启；不蹲下时仅提示
+            if (!sp.isShiftKeyDown()) {
+                if (!judgmentPhase && kidnapped.size() >= JUDGMENT_REQUIRED_COUNT) {
+                    sp.displayClientMessage(Component.literal("蹲下按技能键才能进入审判阶段")
+                            .withStyle(ChatFormatting.YELLOW), true);
+                }
+                return;
+            }
             tryEnterJudgmentPhase(sp, game);
         }
+    }
+
+    /**
+     * 绑架目标选取：在 {@link #KIDNAP_RANGE} 格内、大致朝向准星的玩家中，
+     * 取视线横向偏差 {@link #KIDNAP_TARGET_RADIUS} 格内、距离绑匪最近的目标。
+     * 相比原版射线命中实体碰撞箱，人物判定范围放大了一点点，贴近即可抓人。
+     */
+    private ServerPlayer findKidnapTarget(ServerPlayer sp) {
+        Vec3 eye = sp.getEyePosition();
+        Vec3 view = sp.getViewVector(1.0F);
+        ServerPlayer best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (Player other : sp.level().getEntitiesOfClass(Player.class,
+                sp.getBoundingBox().inflate(KIDNAP_RANGE + 1.0D))) {
+            if (!(other instanceof ServerPlayer victim) || victim == sp
+                    || !GameUtils.isPlayerAliveAndSurvival(victim))
+                continue;
+            Vec3 bodyCenter = victim.getEyePosition().subtract(new Vec3(0.0D, 0.5D, 0.0D));
+            Vec3 toTarget = bodyCenter.subtract(eye);
+            double along = toTarget.dot(view);
+            if (along <= 0.0D || along > KIDNAP_RANGE)
+                continue;
+            Vec3 closest = eye.add(view.scale(along));
+            if (closest.distanceTo(bodyCenter) > KIDNAP_TARGET_RADIUS)
+                continue;
+            if (!sp.hasLineOfSight(victim))
+                continue;
+            if (along < bestDist) {
+                bestDist = along;
+                best = victim;
+            }
+        }
+        return best;
     }
 
     private void kidnap(ServerPlayer sp, ServerPlayer victim, SREGameWorldComponent game) {
@@ -360,6 +395,9 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
                 endJudgmentPhase(sp, game);
             return;
         }
+
+        // 被绑架的人死亡 → 绑人进度 -1（拖拽中人质死亡由下方拖拽分支处理，避免重复）
+        reapDeadKidnaps(sp);
 
         // 审判阶段倒计时（2 分 30 秒，按秒同步给客户端 HUD）
         if (judgmentPhase && judgmentRemainingTicks > 0) {
@@ -567,6 +605,27 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
     public void removeFromKidnapped(UUID uuid) {
         if (kidnapped.remove(uuid))
             sync();
+    }
+
+    /** 人质死亡后不再计入绑人进度：从绑架名单移除并提示绑匪进度 -1 */
+    private void reapDeadKidnaps(ServerPlayer sp) {
+        boolean changed = false;
+        for (int i = kidnapped.size() - 1; i >= 0; i--) {
+            UUID uuid = kidnapped.get(i);
+            if (uuid.equals(draggingTarget))
+                continue;
+            Player t = sp.level().getPlayerByUUID(uuid);
+            if (t != null && !GameUtils.isPlayerAliveAndSurvival(t)) {
+                kidnapped.remove(i);
+                changed = true;
+            }
+        }
+        if (changed) {
+            sp.displayClientMessage(Component.literal("人质已死亡，绑人进度 -1（当前 "
+                            + kidnapped.size() + " 人）")
+                    .withStyle(ChatFormatting.RED), false);
+            sync();
+        }
     }
 
     public void notifyEscape(ServerPlayer sp) {
