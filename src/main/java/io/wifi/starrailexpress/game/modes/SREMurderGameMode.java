@@ -107,6 +107,40 @@ public class SREMurderGameMode extends GameMode {
                 .filter(role -> role != null && role != TMMRoles.CIVILIAN && role.canUseKiller())
                 .count();
 
+        // ── 诊断日志：定位"13 人局刷出 3 个杀手位/3 个警长" ──
+        // 把"预算"（各阵营该分几个）和"实得"（实际分到几个）一起打出来，
+        // 下次复现直接把这几行发出来即可定位差距来自哪一步。
+        {
+            int n = players.size();
+            int budgetK = RoleCountManager.getKillerCount(n);
+            int budgetV = RoleCountManager.getVigilanteCount(n);
+            int budgetN = RoleCountManager.getNeutralCount(n);
+            long gotK = roleAssignments.values().stream()
+                    .filter(r -> r != null && r.canUseKiller()).count();
+            long gotV = roleAssignments.values().stream()
+                    .filter(r -> r != null && r.isVigilanteTeam()).count();
+            long gotN = roleAssignments.values().stream()
+                    .filter(r -> r != null && !r.isInnocent() && !r.canUseKiller()
+                            && !r.isVigilanteTeam()).count();
+            io.wifi.starrailexpress.SRE.LOGGER.info(
+                    "[RoleCount] 玩家 {} 预算(杀手={} 警长={} 中立={}) 实得(杀手={} 警长={} 中立={}) 强制职业={}",
+                    n, budgetK, budgetV, budgetN, gotK, gotV, gotN,
+                    Harpymodloader.FORCED_MODDED_ROLE_FLIP.size());
+            // 逐个列出实际分配，便于核对到底谁多出来了
+            roleAssignments.forEach((p, r) -> {
+                if (r == null) {
+                    return;
+                }
+                if (r.canUseKiller() || r.isVigilanteTeam() || !r.isInnocent()) {
+                    io.wifi.starrailexpress.SRE.LOGGER.info(
+                            "[RoleCount]   {} -> {}（杀手={} 警长={} 中立={} 占位={}）",
+                            p.getName().getString(), r.identifier(), r.canUseKiller(),
+                            r.isVigilanteTeam(), !r.isInnocent() && !r.canUseKiller() && !r.isVigilanteTeam(),
+                            r.getOccupiedRoleCount());
+                }
+            });
+        }
+
         // 统一应用角色分配并触发相应事件
         for (Map.Entry<Player, SRERole> entry : roleAssignments.entrySet()) {
             final var key = entry.getKey();
@@ -598,6 +632,56 @@ public class SREMurderGameMode extends GameMode {
             }
         }
 
+        // ── 硬性收敛：池内角色数不得超过 `玩家数 - 强制职业数` ──
+        //
+        // 这是轮选模式的做法（LightningDraftState 里补位后总量受 rolePool 约束），
+        // 谋杀模式以前没有，于是出现"13 人局刷出 3 个杀手/3 个警长"这类超标。
+        //
+        // 为什么会超标：各阵营槽位数是**独立**算的（killerCount / vigilanteCount /
+        // neutralsCount 各自 selectRoles），而池内职业可能带 occupiedRoleCount(2)
+        //（布袋鬼 / 诡客 / 迪奥），`selectRoles` 又允许"挤掉已选的换入"（else 分支
+        // `selected.remove(0)`），再加上绑定职业补位 / expandWithCompanionRoles 腾位，
+        // 最终总数可能比玩家数多出 1。
+        //
+        // ★ 裁剪时必须**跳过绑定职业**：expandWithCompanionRoles 是把绑定职业
+        //   **追加在列表末尾**的，如果无脑从尾部裁，第一个被剪掉的就是刚补进来的绑定职业
+        //   （实测：自选布袋鬼 → 补入诡客 → 尾部裁剪把诡客删了 → 警长阵营没有诡客）。
+        //   绑定职业是主职业的硬依赖，宁可多留一个也不能剪掉它。
+        java.util.Set<net.minecraft.resources.ResourceLocation> companionIds = new java.util.HashSet<>();
+        if (selfSelectCompanions != null) {
+            for (SRERole c : selfSelectCompanions) {
+                if (c != null) {
+                    companionIds.add(c.identifier());
+                }
+            }
+        }
+        int maxPoolSize = Math.max(0, playerSize - forcedRoleSize);
+        if (resultRoleInstances.size() > maxPoolSize) {
+            int overflow = resultRoleInstances.size() - maxPoolSize;
+            Harpymodloader.LOGGER.warn(
+                    "[RoleCount] 角色池 {} 个 > 上限 {} 个（玩家 {} - 强制 {}），需要裁 {} 个",
+                    resultRoleInstances.size(), maxPoolSize, playerSize, forcedRoleSize, overflow);
+            // 从尾部往前找**非绑定职业**来裁；绑定职业一律保留
+            for (int i = 0; i < overflow; i++) {
+                int victim = -1;
+                for (int j = resultRoleInstances.size() - 1; j >= 0; j--) {
+                    SRERole r = resultRoleInstances.get(j).role();
+                    if (r != null && !companionIds.contains(r.identifier())) {
+                        victim = j;
+                        break;
+                    }
+                }
+                if (victim < 0) {
+                    Harpymodloader.LOGGER.warn(
+                            "[RoleCount]   剩下的都是绑定职业，停止裁剪（宁多勿剪，保护 {}）", companionIds);
+                    break;
+                }
+                Harpymodloader.LOGGER.warn("[RoleCount]   裁掉 {}",
+                        resultRoleInstances.get(victim).role().identifier());
+                resultRoleInstances.remove(victim);
+            }
+        }
+
         int needCivilian = (playerSize - forcedRoleSize) - resultRoleInstances.size();
         for (int i = 0; i < needCivilian; i++)
             resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
@@ -694,6 +778,14 @@ public class SREMurderGameMode extends GameMode {
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
 
         // 处理强制分配的角色，减少对应角色类型的数量需求
+        //
+        // ★ 按 occupiedRoleCount 扣，不是按个数扣 1。
+        //   语义就是"占用几个角色槽位"：布袋鬼 / 诡客 / 迪奥 都是 setOccupiedRoleCount(2)，
+        //   一个人吃满 2 个名额。
+        //   13 人局预算 killer=2 / vigilante=2 / neutral=2：
+        //     自选布袋鬼（occ=2）→ killer 2-2=0 → **场上只有布袋鬼一个狼**（期望值）
+        //     只扣 1 的话 → killer 剩 1 → 还会再刷一个狼，变成"布袋鬼 + 另一个狼"
+        //   角色总数依然守恒：平民 = 13 - (0+2+2) - 1 = 8，合计 1+4+8 = 13。
         for (Map.Entry<UUID, SRERole> entry : forcedRolesMap.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             if (player != null) {
@@ -702,13 +794,16 @@ public class SREMurderGameMode extends GameMode {
                     forcedRoles.add(role);
                     roleAssignments.put(player, role);
 
+                    // 占用的槽位数（默认 1；布袋鬼这类是 2）
+                    int occupied = Math.max(1, role.getOccupiedRoleCount());
+
                     // 根据角色类型减少对应的数量需求
                     if (role.canUseKiller()) {
-                        killerCount--;
+                        killerCount -= occupied;
                     } else if (role.isVigilanteTeam()) {
-                        vigilanteCount--;
+                        vigilanteCount -= occupied;
                     } else if (!role.isInnocent()) {
-                        neutralsCount--;
+                        neutralsCount -= occupied;
                     }
                 }
             }
@@ -845,6 +940,66 @@ public class SREMurderGameMode extends GameMode {
             // 职业不够分配平民
             roleAssignments.put(up, TMMRoles.CIVILIAN);
             ProgressionDataManager.onRoleAssigned((ServerPlayer) up, TMMRoles.CIVILIAN);
+        }
+
+        // ── 终局校验：各阵营实际人数不得超过预算 ──
+        //
+        // 这是轮选模式的思路搬到谋杀模式：轮选靠 rolePool 的总量约束住人数，
+        // 谋杀模式以前没有任何终局校验，于是可能出现"13 人局 3 个杀手 / 3 个警长"。
+        // 杀手/警长是**独立**取池的，池内又有 occupiedRoleCount(2) 的职业（布袋鬼/诡客/迪奥），
+        // 加上绑定补位腾位，最终可能多出一个人。这里兜底：超出的降级为平民。
+        {
+            int n = players.size();
+            int budgetKiller = RoleCountManager.getKillerCount(n);
+            int budgetVigilante = RoleCountManager.getVigilanteCount(n);
+            int budgetNeutral = RoleCountManager.getNeutralCount(n);
+
+            int overK = (int) roleAssignments.values().stream()
+                    .filter(r -> r != null && r.canUseKiller()).count() - budgetKiller;
+            int overV = (int) roleAssignments.values().stream()
+                    .filter(r -> r != null && r.isVigilanteTeam()).count() - budgetVigilante;
+            int overN = (int) roleAssignments.values().stream()
+                    .filter(r -> r != null && !r.isInnocent() && !r.canUseKiller() && !r.isVigilanteTeam())
+                    .count() - budgetNeutral;
+
+            if (overK > 0 || overV > 0 || overN > 0) {
+                Harpymodloader.LOGGER.warn(
+                        "[RoleCount] 超标(杀手+{} 警长+{} 中立+{})，按预算 {}/{}/{} 裁剪超出的部分",
+                        Math.max(0, overK), Math.max(0, overV), Math.max(0, overN),
+                        budgetKiller, budgetVigilante, budgetNeutral);
+                // 自选/强制职业不能动，只在"随机分配"的人里裁
+                for (var e : new ArrayList<>(roleAssignments.entrySet())) {
+                    SRERole r = e.getValue();
+                    if (r == null || r == TMMRoles.CIVILIAN) {
+                        continue;
+                    }
+                    if (Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(e.getKey().getUUID())) {
+                        continue; // 自选的保留
+                    }
+                    // 绑定职业也保留：它是主职业的硬依赖（布袋鬼→诡客、悍匪→钳工、
+                    // 毒师→医生、迪奥→承太郎…），降级成平民就等于"主职业没有绑定职业"，
+                    // 这正是之前"警长阵营没刷诡客"的另一种成因。宁可某阵营多 1 个，
+                    // 也不能把绑定职业拆掉。
+                    if (selfSelectCompanions != null && selfSelectCompanions.stream()
+                            .anyMatch(c -> c != null && c.identifier().equals(r.identifier()))) {
+                        continue;
+                    }
+                    boolean killer = r.canUseKiller();
+                    boolean vigil = r.isVigilanteTeam();
+                    boolean neutral = !r.isInnocent() && !killer && !vigil;
+                    if (killer && overK > 0) {
+                        overK--;
+                    } else if (vigil && overV > 0) {
+                        overV--;
+                    } else if (neutral && overN > 0) {
+                        overN--;
+                    } else {
+                        continue;
+                    }
+                    roleAssignments.put(e.getKey(), TMMRoles.CIVILIAN);
+                    Harpymodloader.LOGGER.warn("[RoleCount]   超标的 {} 已降级为平民", r.identifier());
+                }
+            }
         }
         return roleAssignments;
     }

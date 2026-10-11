@@ -208,9 +208,135 @@ public class LightningDraftState {
 
         SRE.LOGGER.info("Replaceable role size {}", replaceableTypes.size());
         for (var r : replaceableTypes) {
-            SRE.LOGGER.info("Replaceable Role {}", r.getName().getString());        }
+            SRE.LOGGER.info("Replaceable Role {}", r.getName().getString());
+        }
+
+        // ── 各阵营预算 ──
+        final int budgetK = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
+        final int budgetV = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
+        final int budgetN = Math.max(0, RoleCountManager.getNeutralCount(totalPlayers));
+
+        // ── 诊断：池内各阵营数量 ──
+        {
+            long cntK = rolePool.stream().filter(ri -> ri.role() != null && ri.role().canUseKiller()).count();
+            long cntV = rolePool.stream().filter(ri -> ri.role() != null && ri.role().isVigilanteTeam()).count();
+            long cntN = rolePool.stream().filter(ri -> ri.role() != null && !ri.role().isInnocent()
+                    && !ri.role().canUseKiller() && !ri.role().isVigilanteTeam()).count();
+            SRE.LOGGER.info(
+                    "[RolePool] 池内 {} 个角色：预算(杀手={} 警长={} 中立={}) 池内(杀手={} 警长={} 中立={})",
+                    rolePool.size(), budgetK, budgetV, budgetN, cntK, cntV, cntN);
+            if (cntV > budgetV || cntK > budgetK || cntN > budgetN) {
+                SRE.LOGGER.warn("[RolePool] 池内阵营超出预算，逐个列出：");
+                for (var ri : rolePool) {
+                    var rr = ri.role();
+                    if (rr == null) {
+                        continue;
+                    }
+                    if (rr.canUseKiller() || rr.isVigilanteTeam() || !rr.isInnocent()) {
+                        SRE.LOGGER.warn("[RolePool]   {}（杀手={} 警长={} 中立={} 占位={}）",
+                                rr.identifier(), rr.canUseKiller(), rr.isVigilanteTeam(),
+                                !rr.isInnocent() && !rr.canUseKiller() && !rr.isVigilanteTeam(),
+                                rr.getOccupiedRoleCount());
+                    }
+                }
+            }
+        }
+
+        // ── 阵营预算硬收敛（对齐谋杀模式的终局校验）──
+        //
+        // 轮选模式以前**没有**任何阵营校验，而它的池子是「baseRoles + 强制职业 + 绑定职业
+        // + 可替换位」拼起来的，各阵营是独立取的，就可能多出一个人。
+        // 实测：13 人局自选布袋鬼 → 池内警长 3 个（点穴大师 + 警卫 + 诡客），预算只有 2。
+        //
+        // 做法：超出预算的**非绑定、非自选**角色从池子里摘掉。
+        // 绑定职业（诡客/承太郎/钳工/医生…）和自选主职业一律保留 —— 它们是硬依赖。
+        {
+            java.util.Set<net.minecraft.resources.ResourceLocation> protect = new java.util.HashSet<>();
+            for (SRERole c : collectCompanionRoles()) {
+                protect.add(c.identifier());
+            }
+            for (SRERole f : Harpymodloader.FORCED_MODDED_ROLE_FLIP.values()) {
+                if (f != null) {
+                    protect.add(f.identifier());
+                }
+            }
+            trimFaction(protect, r -> r.canUseKiller(), budgetK, "杀手");
+            trimFaction(protect, r -> r.isVigilanteTeam(), budgetV, "警长");
+            trimFaction(protect, r -> !r.isInnocent() && !r.canUseKiller() && !r.isVigilanteTeam(),
+                    budgetN, "中立");
+        }
 
         initializeCardTracking();
+    }
+
+    /**
+     * 把某个阵营在池子里的数量压回预算。
+     *
+     * <p><b>{@code occupiedRoleCount} 的正确口径</b>：它表示"这个角色顶得上几个槽位的分量"，
+     * 而不是"自己占几个玩家位"。所以 {@code occupiedRoleCount=2} 的职业
+     *（诡客 / 布袋鬼 / 迪奥）**自己仍只占 1 个玩家位**，但会吃掉 2 个名额 ——
+     * 也就是说它出现之后，该阵营**还要再补 1 个人**才算满编。
+     *
+     * <p>例：13 人局警长位 = 2，自选布袋鬼带出诡客（占位 2）→
+     * 正确结果是「诡客 + 1 个普通警长」共 2 人，**不是只有诡客一个**。
+     *
+     * <p>所以这里的裁剪策略是：超出预算时**优先摘掉普通职业**，
+     * 绑定职业与自选主职业留到最后一刻才考虑（保护名单）。
+     * 这样"3 个警长"会被压成"诡客 + 1 个普通警长"，而不是压成"只有诡客"。
+     */
+    private void trimFaction(java.util.Set<net.minecraft.resources.ResourceLocation> protect,
+            java.util.function.Predicate<SRERole> belongs, int budget, String label) {
+        // 只统计"玩家位"数量：一个 RoleInstance 就是一个人
+        int cur = (int) rolePool.stream().filter(ri -> ri.role() != null && belongs.test(ri.role())).count();
+        int over = cur - budget;
+        if (over <= 0) {
+            return;
+        }
+        SRE.LOGGER.warn("[RolePool] {} 阵营 {} 人 > 预算 {}，需摘掉 {} 个", label, cur, budget, over);
+
+        // 两轮：第一轮只摘非保护角色；保护角色（绑定/自选）留到第二轮兜底。
+        // 这样保证了"有普通职业可摘时绝不摘绑定职业"。
+        for (int round = 0; round < 2 && over > 0; round++) {
+            for (int i = rolePool.size() - 1; i >= 0 && over > 0; i--) {
+                SRERole r = rolePool.get(i).role();
+                if (r == null || !belongs.test(r)) {
+                    continue;
+                }
+                boolean isProtected = protect.contains(r.identifier());
+                if (round == 0 && isProtected) {
+                    continue; // 第一轮跳过保护角色
+                }
+                if (round == 1 && !isProtected) {
+                    continue; // 第二轮只处理保护角色（前面已经摘干净了）
+                }
+                SRE.LOGGER.warn("[RolePool]   摘掉 {}（保护={}）", r.identifier(), isProtected);
+                rolePool.remove(i);
+                over--;
+            }
+        }
+        if (over > 0) {
+            SRE.LOGGER.warn("[RolePool]   {} 阵营仍有 {} 个超出（全是被保护的），不再强摘", label, over);
+        }
+    }
+
+    /** 收集本局所有绑定职业（自选主职业带出来的） */
+    private java.util.Set<SRERole> collectCompanionRoles() {
+        java.util.Set<SRERole> out = new java.util.LinkedHashSet<>();
+        for (SRERole main : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.values())) {
+            if (main == null) {
+                continue;
+            }
+            var occ = Harpymodloader.getOccupationRoles(main);
+            if (occ == null) {
+                continue;
+            }
+            for (SRERole c : occ) {
+                if (c != null) {
+                    out.add(c);
+                }
+            }
+        }
+        return out;
     }
 
     /**
@@ -268,10 +394,20 @@ public class LightningDraftState {
 
         for (SRERole companion : companions) {
             final var cid = companion.identifier();
-            // 已经在池子/可替换位里就不重复补（例如别的玩家自己选到了同一个职业）
-            boolean present = replaceableTypes.stream().anyMatch(r -> r != null
+            // 已经在**池子里**（baseRoles / 强制职业）或在**可替换位**里就不重复补。
+            //
+            // ★ 只查 replaceableTypes 是不够的：rolePool 里已经有 baseRoles 自然抽到的职业。
+            //   如果绑定职业恰好也被自然抽到，只查 replaceableTypes 就会再加一份 →
+            //   该阵营多出一个人（实测：自选布袋鬼时，诡客既被自然抽到、又被补入，
+            //   于是警长阵营变成 3 个）。
+            boolean inPool = rolePool.stream().anyMatch(ri -> ri.role() != null
+                    && ri.role().identifier().equals(cid));
+            boolean inReplaceable = replaceableTypes.stream().anyMatch(r -> r != null
                     && r.identifier().equals(cid));
-            if (present) {
+            if (inPool || inReplaceable) {
+                Harpymodloader.LOGGER.info(
+                        "[SelfSelect] 绑定职业 {} 已在{}里，不再重复补",
+                        cid, inPool ? "角色池" : "可替换位");
                 continue;
             }
             // 从后往前挑一个可替换位来顶掉；没有可替换位说明排满了，撤销这次自选并退还卡
