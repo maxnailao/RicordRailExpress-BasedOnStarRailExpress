@@ -157,6 +157,17 @@ public final class HatSkinRenderer {
     }
 
     /**
+     * 该帽子皮肤是否为"玩偶帽"（存在对应 {@code noellesroles:{base}_plush} 玩偶方块、
+     * 走玩偶缩放链路渲染，如"残月 玩偶帽"）。饰品帽（模型自带 display.head，如瑞科德钢盔）返回 false。
+     */
+    public static boolean isPlushHatSkin(String hatSkinName) {
+        if (hatSkinName == null || hatSkinName.isEmpty()) {
+            return false;
+        }
+        return resolvePlushBlock(hatSkinName) != null;
+    }
+
+    /**
      * 解析帽子皮肤的烘焙模型：优先取皮肤规范路径下注册的模型，
      * 缺失时回退为对应玩偶方块模型。
      */

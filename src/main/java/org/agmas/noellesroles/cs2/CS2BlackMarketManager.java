@@ -56,17 +56,25 @@ public class CS2BlackMarketManager {
         public String itemType; // "box", "skin"
         public String itemId;
         public int price;
+        /** 计价货币：{@code "coin"}（金币）或 {@code "shard"}（神话碎片） */
+        public String currency = "coin";
         public long timestamp;
 
         public MarketListing() {}
 
         public MarketListing(String sellerUuid, String sellerName, String itemType, String itemId, int price) {
+            this(sellerUuid, sellerName, itemType, itemId, price, "coin");
+        }
+
+        public MarketListing(String sellerUuid, String sellerName, String itemType, String itemId, int price,
+                String currency) {
             this.listingId = UUID.randomUUID().toString().substring(0, 8);
             this.sellerUuid = sellerUuid;
             this.sellerName = sellerName;
             this.itemType = itemType;
             this.itemId = itemId;
             this.price = price;
+            this.currency = currency;
             this.timestamp = System.currentTimeMillis();
         }
     }
@@ -163,10 +171,27 @@ public class CS2BlackMarketManager {
     }
 
     /**
-     * 上架物品
+     * 归一化货币标识：只接受 {@code "shard"}，其余一律按 {@code "coin"} 处理。
+     */
+    private static String normCurrency(String currency) {
+        return (currency != null && currency.equalsIgnoreCase("shard")) ? "shard" : "coin";
+    }
+
+    /**
+     * 上架物品（默认金币计价）
      */
     public boolean list(ServerPlayer seller, String itemType, String itemId, int price) {
+        return list(seller, itemType, itemId, price, "coin");
+    }
+
+    /**
+     * 上架物品
+     *
+     * @param currency 计价货币：{@code "coin"} 或 {@code "shard"}
+     */
+    public boolean list(ServerPlayer seller, String itemType, String itemId, int price, String currency) {
         if (price <= 0) return false;
+        currency = normCurrency(currency);
 
         // 检查上架数量限制
         String sellerUuid = seller.getUUID().toString();
@@ -223,13 +248,13 @@ public class CS2BlackMarketManager {
         MarketListing listing = new MarketListing(
                 seller.getUUID().toString(),
                 seller.getName().getString(),
-                itemType, itemId, price);
+                itemType, itemId, price, currency);
         listings.add(listing);
         save();
         broadcastToAll(seller);
 
-        Noellesroles.LOGGER.info("[CS2Market] {} listed {} {} for {} coins",
-                seller.getName().getString(), itemType, itemId, price);
+        Noellesroles.LOGGER.info("[CS2Market] {} listed {} {} for {} {}",
+                seller.getName().getString(), itemType, itemId, price, currency);
         return true;
     }
 

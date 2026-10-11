@@ -234,10 +234,13 @@ public class CS2ServerReceiverRegister {
             context.server().execute(() -> {
                 try {
                     boolean success = CS2BlackMarketManager.getInstance().list(
-                            player, payload.itemType(), payload.itemId(), payload.price());
+                            player, payload.itemType(), payload.itemId(), payload.price(), payload.currency());
                     if (success) {
+                        boolean shard = "shard".equalsIgnoreCase(payload.currency());
                         player.displayClientMessage(
-                                Component.literal("§a上架成功，价格: " + payload.price() + " 货币"), true);
+                                Component.literal("§a上架成功，价格: " + payload.price()
+                                        + (shard ? " 神话碎片" : " 金币")),
+                                true);
                     } else {
                         player.displayClientMessage(
                                 Component.literal("§c上架失败（物品不足或参数无效）"), true);

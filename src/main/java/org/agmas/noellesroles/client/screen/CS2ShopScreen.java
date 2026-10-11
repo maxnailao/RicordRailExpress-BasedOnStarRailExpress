@@ -90,6 +90,8 @@ public class CS2ShopScreen extends Screen {
     /** 服务端同步的黑市数据缓存 */
     private static String marketDataCache = "[]";
     private static int myPendingCoinsCache = 0;
+    /** 待领取的神话碎片数量（服务端同步） */
+    private static int myPendingShardsCache = 0;
     /** 服务端同步的每日商店数据缓存 */
     private static String dailyShopCache = "{}";
     private static final Gson GSON = new Gson();
@@ -123,6 +125,68 @@ public class CS2ShopScreen extends Screen {
      */
     public static void setDailyShopCache(String json) {
         dailyShopCache = json;
+    }
+
+    /**
+     * 服务端同步待领取神话碎片时调用（静态缓存）
+     */
+    public static void setMyPendingShards(int amount) {
+        myPendingShardsCache = amount;
+    }
+
+    // ========================================================================
+    // 只读访问器 + 神话皮肤清单
+    //
+    // 新主菜单的 ShopScreen 需要读取这些缓存（它不在本类内部，拿不到 private 字段）。
+    // 这些访问器在合并时被丢掉了，导致 ShopScreen 编译不过，这里补回。
+    // ========================================================================
+
+    /** 待领取金币（服务端同步） */
+    public static int getMyPendingCoins() {
+        return myPendingCoinsCache;
+    }
+
+    /** 待领取神话碎片（服务端同步） */
+    public static int getMyPendingShards() {
+        return myPendingShardsCache;
+    }
+
+    /** 黑市数据 JSON 缓存 */
+    public static String getMarketDataCache() {
+        return marketDataCache;
+    }
+
+    /** 每日商店数据 JSON 缓存 */
+    public static String getDailyShopCache() {
+        return dailyShopCache;
+    }
+
+    /**
+     * 收集所有「神话（不可思议）」品质的皮肤 id（形如 {@code hat/hat_xxx}）。
+     *
+     * <p>判定口径与 {@link #refreshData()} 里的神话商店完全一致：
+     * 跳过 {@code default}、跳过 {@link #MYTH_EXCLUDED}、品质为 5（UNBELIEVABLE）。
+     * 抽成静态方法是为了让新主菜单的 ShopScreen 能复用同一份清单，避免两处口径漂移。
+     */
+    public static java.util.List<String> buildMythSkinIds() {
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        for (var entry : ItemSkinManager.getSkins().entrySet()) {
+            String itemType = entry.getKey();
+            for (var se : entry.getValue().entrySet()) {
+                String skinName = se.getKey();
+                if ("default".equalsIgnoreCase(skinName)) {
+                    continue;
+                }
+                String skinId = itemType + "/" + skinName;
+                if (MYTH_EXCLUDED.contains(skinId)) {
+                    continue;
+                }
+                if (ItemSkinManager.qualityFromColor(se.getValue().getColor()) == 5) {
+                    ids.add(skinId);
+                }
+            }
+        }
+        return ids;
     }
 
     @Override
