@@ -80,10 +80,10 @@ public class TMMRoles {
      * </p>
      */
     public static final Set<String> SELF_SELECT_DENY_PATHS = Set.of(
-            "jojo", "guest_ghost", "ma_chen_xu", "banyanzhe", "dio", "poisoner", "gangsters",
+            "jojo", "guest_ghost", "ma_chen_xu", "banyanzhe", "dio", "poisoner",
             "majo", "shadow_falcon", "witch_accomplice", "convict", "zhuimu_dream", "loose_end",
             "initiate", "morichika_rinnosuke", "kawashiro_nitori", "furandoru", "super_loose_end",
-            "pilot", "guardian", "jingjiren_wow", "star", "singer", "fitter", "water_ghost",
+            "pilot", "guardian", "jingjiren_wow", "star", "singer", "water_ghost",
             "diver", "monokuma", "parasol", "nutritionist", "mafioso", "janitor",
             "pigegade_piggod", "qingsuanzhe_morelooseend",
             // ── 「必须由别的职业产生」的职业 ──
@@ -94,6 +94,10 @@ public class TMMRoles {
             //   医生 / 锁匠 / 钳工 —— 绑定副职业（毒师→医生、工程师→锁匠、悍匪→钳工）
             //   猫娘杀手 / 操纵师 / 傀儡师 —— 由别的职业产生
             //   黑手党 / 清洁工 / 营养师 / 阳伞 —— 教父家族（上面已列，勿重复）
+            //
+            // 注意：gangsters（悍匪）与 fitter（钳工）**已从本名单移除** ——
+            // 按需求这两件要能在自选卡里直接选；它们没有 setSelfSelectable(false)，
+            // 所以移除后即可自选。
             "bee_worker", "bee_wasp", "doctor", "locksmith",
             "cat_killer", "manipulator", "puppeteer");
 

@@ -43,6 +43,12 @@ public class SREEventRegister {
 
         OnGameEnd.EVENT.register((serverLevel, __cca) -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
+            // 自选卡兜底（第二道）：对局结束时账上还剩的，都说明这局没生效 → 退卡 + 提示。
+            // 正常情况在 GameUtils.initializeGame 收尾时就已经核对完并清空了，
+            // 这里只兜"玩家中途离线/换模式"这类边角。
+            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
+                    serverLevel.getServer(), net.minecraft.network.chat.Component.translatable(
+                            "message.sre.pass.selfselect_unapplied"));
         });
 
         OnGameStarted.EVENT.register(serverLevel -> {

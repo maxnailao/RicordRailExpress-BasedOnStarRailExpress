@@ -618,6 +618,14 @@ public class GameUtils {
         // --- 结束新增统计数据更新逻辑 ---
         OnTrainAreaHaveReseted.EVENT.invoker().onWorldHaveInited(serverWorld);
         isGameStarted = true;
+
+        // 自选职业卡兜底核对：所有游戏模式到这里角色都已分配完毕。
+        // 逐条检查"用了卡的玩家是否真的拿到了那个职业"，没拿到就退卡 + 提示
+        //（阵营卡同款红色弹窗）—— 见 SelfSelectPendingClaims 的说明。
+        // 放在这里而不是各模式内部，是为了覆盖全部模式，且以后新增模式也不用改。
+        io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
+                serverWorld.getServer(), net.minecraft.network.chat.Component.translatable(
+                        "message.sre.pass.selfselect_unapplied"));
     }
 
     /**

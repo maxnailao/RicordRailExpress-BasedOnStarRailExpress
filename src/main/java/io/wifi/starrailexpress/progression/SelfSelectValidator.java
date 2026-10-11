@@ -1,7 +1,6 @@
 package io.wifi.starrailexpress.progression;
 
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.backpack.BackpackManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -56,19 +55,35 @@ public final class SelfSelectValidator {
             if (deny == SelfSelectGate.Deny.NONE) {
                 continue;
             }
-            Harpymodloader.releaseSelfForcedRole(role, uuid);
             revoked++;
             ServerPlayer player = findPlayer(players, uuid);
-            // 退还自选卡：这是"选了但没生效"的补偿
-            if (player != null) {
-                BackpackManager.refundSelfSelectCard(player);
-                player.displayClientMessage(refundMessage(role, deny, currentMap, players.size()), false);
+            // 统一退还入口：撤销占位 + 退卡 + 用「阵营卡同款」提示通知玩家。
+            // 注意：**即使玩家不在本局名单里也要退还**（他可能中途离线/被移出 ready），
+            // 所以这里用 server 的玩家列表再兜一次，避免"卡被吃了但没人退"。
+            ServerPlayer target = player != null ? player : findOnline(serverLevel, uuid);
+            SelfSelectClaimService.refundAndNotify(target, role,
+                    refundMessage(role, deny, currentMap, players.size()));
+            // 已经先行退款，把记账划掉，避免 GameUtils 收尾时再退一次
+            SelfSelectPendingClaims.unrecord(uuid);
+            if (target == null) {
+                org.agmas.noellesroles.Noellesroles.LOGGER.warn(
+                        "[SelfSelect] 撤销 {} 的自选职业 {}，但玩家不在线，卡片未能实际退还（下次上线后背包仍缺 1 张）",
+                        uuid, role.identifier());
             }
             org.agmas.noellesroles.Noellesroles.LOGGER.info(
-                    "[SelfSelect] 撤销 {} 的自选职业 {}（原因 {}，地图 {}，人数 {}），已退还自选卡",
+                    "[SelfSelect] 撤销 {} 的自选职业 {}（原因 {}，地图 {}，人数 {}），已退还自选卡并提示",
                     uuid, role.identifier(), deny, currentMap, players.size());
         }
         return revoked;
+    }
+
+    /** 在本局名单之外，再从服务器在线列表里找一次（玩家可能中途离线/被移出 ready） */
+    @Nullable
+    private static ServerPlayer findOnline(ServerLevel level, UUID uuid) {
+        if (level == null || level.getServer() == null) {
+            return null;
+        }
+        return level.getServer().getPlayerList().getPlayer(uuid);
     }
 
     @Nullable

@@ -195,6 +195,8 @@
   "message.sre.pass.selfselect_claimed_self": "%s is already full this round (limit %s). Your card has been refunded.",
   "message.sre.pass.selfselect_failed": "Unable to use the self-select role card.",
   "message.sre.pass.selfselect_companion_failed": "The companion role tied to %s could not be spawned this round (no free slot). Your card has been refunded.",
+  "message.sre.pass.selfselect_refunded": "Sorry, you didn't get to play your self-selected role %s this round. Your card has been refunded to your backpack.",
+  "message.sre.pass.selfselect_unapplied": "Sorry, your self-selected role %s could not take effect this round. Your card has been refunded to your backpack.",
   "sre.pass.faction.activated": "%s (Activated)",
   "sre.pass.faction.killer": "Killer Faction Card",
   "sre.pass.faction.civilian": "Civilian Faction Card",

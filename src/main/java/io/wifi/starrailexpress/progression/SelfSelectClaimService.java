@@ -146,6 +146,9 @@ public final class SelfSelectClaimService {
             return Result.NO_CARD;
         }
         Harpymodloader.addToForcedRoles(role, player);
+        // 记一笔账：角色分配完成后会核对"是否真拿到这个职业"，没拿到就自动退卡。
+        // 这是「选了没生效一定退卡」的兜底，见 SelfSelectPendingClaims。
+        SelfSelectPendingClaims.record(player, role);
         return Result.OK;
     }
 
@@ -168,5 +171,56 @@ public final class SelfSelectClaimService {
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             p.sendSystemMessage(message);
         }
+    }
+
+    // ========================================================================
+    // 统一退还入口
+    // ========================================================================
+
+    /**
+     * 自选卡「选了但这一局没生效」时，统一在这里**退还卡 + 提示玩家**。
+     *
+     * <p>这是唯一权威的退入口：撤销占位（{@code FORCED_MODDED_ROLE_FLIP}）+ 卡退回背包
+     * + 给玩家一条提示。所有"没生效"的路径都必须走这里，避免出现
+     * "有的路径退、有的路径不退"（玩家最直接的体感就是"卡被吃了"）。
+     *
+     * <p><b>提示方式对齐阵营卡</b>：阵营卡没生效时用的是
+     * {@code BroadcastCommand.BroadcastMessage} + {@code message.sre.pass.faction.assign_failed}
+     * （一条红色、客户端弹窗式的消息）。自选卡这里用同一套通道和同一个红色样式，
+     * 玩家看到的观感一致。
+     *
+     * @param player 用卡的玩家
+     * @param role   选中的职业
+     * @param reason 没生效的原因文案；{@code null} 表示用通用文案
+     * @return 是否真的退还成功（玩家在线且卡确实退回）
+     */
+    public static boolean refundAndNotify(@Nullable ServerPlayer player, @Nullable SRERole role,
+            @Nullable Component reason) {
+        if (player == null) {
+            return false;
+        }
+        // 1) 撤销占位：先释放，避免下一局还按"已自选"算
+        if (role != null) {
+            try {
+                Harpymodloader.releaseSelfForcedRole(role, player.getUUID());
+            } catch (Throwable t) {
+                org.agmas.noellesroles.Noellesroles.LOGGER.warn(
+                        "[SelfSelect] 撤销占位失败（role={}）", role.identifier(), t);
+            }
+        }
+        // 2) 退还卡
+        BackpackManager.refundSelfSelectCard(player);
+        // 划掉记账：已经退了，避免收尾核对时再退一次
+        SelfSelectPendingClaims.unrecord(player.getUUID());
+        // 3) 提示（阵营卡同款通道 + 同款红色）
+        Component msg = reason != null ? reason
+                : Component.translatable("message.sre.pass.selfselect_refunded",
+                        role == null ? "?" : Harpymodloader.getRoleName(role).getString());
+        org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(
+                player, msg.copy().withStyle(net.minecraft.ChatFormatting.RED));
+        org.agmas.noellesroles.Noellesroles.LOGGER.info(
+                "[SelfSelect] 已退还自选卡并提示玩家 {}（职业 {}）",
+                player.getGameProfile().getName(), role == null ? "?" : role.identifier());
+        return true;
     }
 }
