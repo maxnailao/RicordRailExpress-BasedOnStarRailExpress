@@ -26,15 +26,6 @@ public class HatFeatureRenderer extends RenderLayer<AbstractClientPlayer, Player
     /** 诊断用：每个玩家每种帽子只记录一次渲染 */
     private static final java.util.Set<String> RENDER_LOGGED = new java.util.HashSet<>();
 
-    /** 饰品预览覆盖（仅作用于本地玩家）：null=不干预；空串=强制不戴帽（去掉玩偶自带帽）；其他=强制显示该帽子皮肤名 */
-    @Nullable
-    private static String previewHatOverride = null;
-
-    /** 供饰品界面调用：覆盖本地玩家头顶帽子渲染，实现"帽子戴在头上"的本地预览 */
-    public static void setPreviewHat(@Nullable String hatSkin) {
-        previewHatOverride = hatSkin;
-    }
-
     public HatFeatureRenderer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer) {
         super(renderer);
     }
@@ -46,19 +37,13 @@ public class HatFeatureRenderer extends RenderLayer<AbstractClientPlayer, Player
         if (player.isInvisible()) {
             return;
         }
-        String hat;
-        if (previewHatOverride != null && player == Minecraft.getInstance().player) {
-            // 饰品预览：强制覆盖本地玩家头顶帽子（空串=不戴帽，去除玩偶自带帽）
-            hat = previewHatOverride;
-        } else {
-            hat = PlayerHatSync.getHat(player);
-            if (PlayerHatSync.DEFAULT.equals(hat) && player == Minecraft.getInstance().player) {
-                // 回退：实体数据未到位时，本地玩家改读 CCA 组件（仅自身客户端有数据）
-                hat = SREPlayerSkinsComponent.KEY.get(player)
-                        .getEquippedSkin(ItemSkinManager.SkinTypes.HAT);
-            }
+        String hat = PlayerHatSync.getHat(player);
+        if (PlayerHatSync.DEFAULT.equals(hat) && player == Minecraft.getInstance().player) {
+            // 回退：实体数据未到位时，本地玩家改读 CCA 组件（仅自身客户端有数据）
+            hat = SREPlayerSkinsComponent.KEY.get(player)
+                    .getEquippedSkin(ItemSkinManager.SkinTypes.HAT);
         }
-        if (hat == null || hat.isEmpty() || PlayerHatSync.DEFAULT.equals(hat)) {
+        if (hat == null || PlayerHatSync.DEFAULT.equals(hat)) {
             return;
         }
 

@@ -52,45 +52,21 @@ public class CS2ServerReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(OpenBoxC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                final int count = Math.max(1, Math.min(100, payload.count()));
                 // 防止同一玩家并发开箱
                 if (openingBoxPlayers.contains(player.getUUID())) {
-                    sendOpenFailure(player, count);
+                    ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
+                            false, 0, "", false, 0, List.of(), List.of()));
                     return;
                 }
                 openingBoxPlayers.add(player.getUUID());
                 try {
                     String boxId = payload.boxId();
                     CS2BoxManager boxManager = CS2BoxManager.getInstance();
-
-                    if (count > 1) {
-                        // 批量开箱：逐次开（每次 openBox 自行扣料/发放/保底/同步），
-                        // 材料（箱子或钥匙）用尽即停，聚合结果走专用批处理包。
-                        List<Integer> qualities = new ArrayList<>();
-                        List<String> skins = new ArrayList<>();
-                        List<Boolean> dups = new ArrayList<>();
-                        for (int i = 0; i < count; i++) {
-                            CS2BoxManager.BoxRollResult r = boxManager.openBox(boxId, player);
-                            if (r == null) {
-                                break; // 已无箱子或钥匙
-                            }
-                            qualities.add(r.quality);
-                            skins.add(r.skinId);
-                            dups.add(r.isDuplicate);
-                        }
-                        boolean success = !qualities.isEmpty();
-                        ServerPlayNetworking.send(player,
-                                new OpenBoxBatchResultS2CPayload(success, qualities, skins, dups));
-                        Noellesroles.LOGGER.info("[CS2Box] Batch opened {} boxes for {} ({} results)",
-                                count, player.getName().getString(), qualities.size());
-                        return;
-                    }
-
-                    // 单个开箱：保留原有横向滚动动画流程
                     CS2BoxManager.BoxRollResult result = boxManager.openBox(boxId, player);
 
                     if (result == null) {
-                        sendOpenFailure(player, 1);
+                        ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
+                                false, 0, "", false, 0, List.of(), List.of()));
                         return;
                     }
 
@@ -117,26 +93,13 @@ public class CS2ServerReceiverRegister {
                     // 异常兜底：通知客户端开箱失败，避免客户端 isBoxOpening 锁死
                     Noellesroles.LOGGER.error("[CS2Box] Unexpected error opening box for {}",
                             player.getName().getString(), e);
-                    sendOpenFailure(player, count);
+                    ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
+                            false, 0, "", false, 0, List.of(), List.of()));
                 } finally {
                     openingBoxPlayers.remove(player.getUUID());
                 }
             });
         });
-    }
-
-    /**
-     * 统一发送开箱失败：按本次请求数量选择回包类型，
-     * 保证客户端无论处于单个还是批量等待状态都能解除 isBoxOpening 锁。
-     */
-    private static void sendOpenFailure(ServerPlayer player, int count) {
-        if (count > 1) {
-            ServerPlayNetworking.send(player,
-                    new OpenBoxBatchResultS2CPayload(false, List.of(), List.of(), List.of()));
-        } else {
-            ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
-                    false, 0, "", false, 0, List.of(), List.of()));
-        }
     }
 
     // ── 商店购买 ──
@@ -219,8 +182,6 @@ public class CS2ServerReceiverRegister {
                         return;
                     }
                     inv.removeSkin(itemId, 1);
-                    // 出售后若该皮肤已彻底不再拥有且正装备中，自动卸下，避免出现"装备着一个仓库里已经不存在的皮肤"
-                    unequipIfOrphan(player, itemId, inv);
                     // 根据品质定价
                     int quality = CS2BoxManager.getInstance().findSkinQuality(itemId);
                     // 神话(不可思议)品质：以神话碎片结算，不发现金货币
@@ -273,11 +234,10 @@ public class CS2ServerReceiverRegister {
             context.server().execute(() -> {
                 try {
                     boolean success = CS2BlackMarketManager.getInstance().list(
-                            player, payload.itemType(), payload.itemId(), payload.price(), payload.currency());
+                            player, payload.itemType(), payload.itemId(), payload.price());
                     if (success) {
-                        String unit = "shard".equals(payload.currency()) ? "神话碎片" : "货币";
                         player.displayClientMessage(
-                                Component.literal("§a上架成功，价格: " + payload.price() + " " + unit), true);
+                                Component.literal("§a上架成功，价格: " + payload.price() + " 货币"), true);
                     } else {
                         player.displayClientMessage(
                                 Component.literal("§c上架失败（物品不足或参数无效）"), true);
@@ -518,12 +478,6 @@ public class CS2ServerReceiverRegister {
                         return;
                     }
 
-                    // 已下架的神话皮肤不允许兑换（与客户端 MYTH_EXCLUDED 保持一致）
-                    if ("bow/bow_shenfa".equals(skinId)) {
-                        player.displayClientMessage(Component.literal("§c该神话皮肤已下架"), true);
-                        return;
-                    }
-
                     CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
                     // 仅当仓库中实际持有该神话皮肤（数量 > 0）才视为已拥有；
                     // 不能用永久解锁集合判断——出售只扣数量、不撤销永久解锁，
@@ -600,13 +554,7 @@ public class CS2ServerReceiverRegister {
                         switch (type) {
                             case "box" -> ok = inv.removeBox(id, 1);
                             case "key" -> ok = inv.removeKey(id, 1);
-                            case "skin" -> {
-                                ok = inv.removeSkin(id, 1);
-                                if (ok) {
-                                    // 销毁后若该皮肤已彻底不再拥有且正装备中，自动卸下
-                                    unequipIfOrphan(player, id, inv);
-                                }
-                            }
+                            case "skin" -> ok = inv.removeSkin(id, 1);
                             case "musicbox" -> {
                                 ok = inv.removeMusicBox(id, 1);
                                 // 如果销毁的正是当前装备中的音乐盒，顺手卸下，
@@ -636,24 +584,5 @@ public class CS2ServerReceiverRegister {
                         }
                     });
                 });
-    }
-
-    /**
-     * 皮肤从仓库被移除（出售 / 销毁）后的收尾处理：
-     * 若该皮肤已彻底不再拥有（数量为 0）且当前正装备在对应武器类型上，自动卸下还原为原皮
-     * （与 {@link CS2BlackMarketManager} 上架时的处理保持一致，避免出现"装备着一个仓库里已经不存在的皮肤"的幽灵装备）。
-     * 还剩副本（数量 &gt; 0）时不动装备状态。
-     */
-    private static void unequipIfOrphan(ServerPlayer player, String skinId, CS2InventoryComponent inv) {
-        if (inv.getSkinCount(skinId) > 0) return; // 仍有副本，保留装备
-        String[] parts = skinId.split("/", 2);
-        if (parts.length < 2) return;
-        String itemType = parts[0];
-        String skinName = parts[1];
-        SREPlayerSkinsComponent skins = SREPlayerSkinsComponent.KEY.get(player);
-        if (skinName.equals(skins.getEquippedSkin(itemType))) {
-            ItemSkinManager.setEquippedSkinForItemType(player, itemType, "default");
-            ItemSkinManager.sync(player);
-        }
     }
 }

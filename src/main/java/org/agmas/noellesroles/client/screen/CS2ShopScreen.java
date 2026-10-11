@@ -73,7 +73,6 @@ public class CS2ShopScreen extends Screen {
             "knife/knife_anxing_1", "knife/knife_anxing_2", "knife/knife_emozhidao_2",
             "revolver/revolver_shengxuan_1", "revolver/revolver_shengxuan_2",
             "revolver/revolver_jianshouzhe_1", "revolver/revolver_jianshouzhe_2",
-            "bow/bow_shenfa",
             "knife/testofknifeskin");
     private static final int MYTH_PRICE = CS2InventoryComponent.MYTHIC_SKIN_SHARD_PRICE;
 
@@ -91,7 +90,6 @@ public class CS2ShopScreen extends Screen {
     /** 服务端同步的黑市数据缓存 */
     private static String marketDataCache = "[]";
     private static int myPendingCoinsCache = 0;
-    private static int myPendingShardsCache = 0;
     /** 服务端同步的每日商店数据缓存 */
     private static String dailyShopCache = "{}";
     private static final Gson GSON = new Gson();
@@ -120,54 +118,11 @@ public class CS2ShopScreen extends Screen {
         myPendingCoinsCache = amount;
     }
 
-    /** 供其它界面（如新版 ShopScreen 自由市场）读取黑市挂单缓存 */
-    public static String getMarketDataCache() {
-        return marketDataCache;
-    }
-
-    /** 供其它界面读取当前玩家待领取货币 */
-    public static int getMyPendingCoins() {
-        return myPendingCoinsCache;
-    }
-
-    /** 服务端同步待领取神话碎片时调用（静态缓存） */
-    public static void setMyPendingShards(int amount) {
-        myPendingShardsCache = amount;
-    }
-
-    /** 供其它界面读取当前玩家待领取神话碎片 */
-    public static int getMyPendingShards() {
-        return myPendingShardsCache;
-    }
-
-    /** 供新版神话商城复用：所有可兑换的神话(品质5)皮肤 id，已排除内部形态/测试皮肤 */
-    public static java.util.List<String> buildMythSkinIds() {
-        java.util.List<String> ids = new java.util.ArrayList<>();
-        for (var entry : ItemSkinManager.getSkins().entrySet()) {
-            String itemType = entry.getKey();
-            for (var se : entry.getValue().entrySet()) {
-                String skinName = se.getKey();
-                if ("default".equalsIgnoreCase(skinName)) continue;
-                String skinId = itemType + "/" + skinName;
-                if (MYTH_EXCLUDED.contains(skinId)) continue;
-                if (ItemSkinManager.qualityFromColor(se.getValue().getColor()) == 5) {
-                    ids.add(skinId);
-                }
-            }
-        }
-        return ids;
-    }
-
     /**
      * 服务端同步每日商店数据时调用（静态缓存）
      */
     public static void setDailyShopCache(String json) {
         dailyShopCache = json;
-    }
-
-    /** 供新版商店界面读取每日商店服务端缓存 */
-    public static String getDailyShopCache() {
-        return dailyShopCache;
     }
 
     @Override
@@ -809,7 +764,7 @@ public class CS2ShopScreen extends Screen {
                             int price = Integer.parseInt(priceStr);
                             if (price > 0) {
                                 ClientPlayNetworking.send(new BlackMarketListC2SPayload(
-                                        selectedListingType, selectedListingId, price, "coin"));
+                                        selectedListingType, selectedListingId, price));
                                 listingMode = false;
                                 priceInputBox.setVisible(false);
                                 selectedListingType = "";

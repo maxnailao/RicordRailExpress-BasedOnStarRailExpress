@@ -156,25 +156,10 @@ public class CS2WarehouseScreen extends Screen {
         // 底部按钮
         int btnY = height - 30;
         addRenderableWidget(Button.builder(Component.literal("商店"), b -> {
-            minecraft.setScreen(new io.wifi.starrailexpress.client.gui.screen.ingame.ShopScreen(this));
+            minecraft.setScreen(new CS2ShopScreen());
         }).pos(width / 2 - 100, btnY).size(60, 20).build());
 
-        // 开箱数量选择器：位于"开箱"按钮上方（-  数量  +）
-        int qtyY = btnY - 24;
-        addRenderableWidget(Button.builder(Component.literal("-"), b -> {
-            if (openCount > 1) {
-                openCount--;
-                refreshOpenButton();
-            }
-        }).pos(width / 2 - 46, qtyY).size(20, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("+"), b -> {
-            if (openCount < maxOpenCount()) {
-                openCount++;
-                refreshOpenButton();
-            }
-        }).pos(width / 2 + 26, qtyY).size(20, 20).build());
-
-        openButton = addRenderableWidget(Button.builder(Component.literal("开箱"), b -> {
+        addRenderableWidget(Button.builder(Component.literal("开箱"), b -> {
             if (isBoxOpening) {
                 var p = Minecraft.getInstance().player;
                 if (p != null) p.displayClientMessage(Component.literal("§c正在开箱，请稍候..."), true);
@@ -189,13 +174,10 @@ public class CS2WarehouseScreen extends Screen {
                         return;
                     }
                 }
-                int n = Math.min(openCount, maxOpenCount());
-                if (n < 1) n = 1;
                 isBoxOpening = true;
-                ClientPlayNetworking.send(new OpenBoxC2SPayload(selectedItem.id, n));
+                ClientPlayNetworking.send(new OpenBoxC2SPayload(selectedItem.id, 1));
             }
         }).pos(width / 2 - 30, btnY).size(60, 20).build());
-        refreshOpenButton();
 
         addRenderableWidget(Button.builder(Component.literal("关闭"), b -> {
             minecraft.setScreen(null);
@@ -216,32 +198,6 @@ public class CS2WarehouseScreen extends Screen {
         addRenderableWidget(equipTitleButton);
 
         refreshItems();
-    }
-
-    /** 当前选中箱子最多能开多少个：min(箱子数, 钥匙数[若需要], 100)；未选箱子时上限 100 */
-    private int maxOpenCount() {
-        var p = Minecraft.getInstance().player;
-        if (p == null || selectedItem == null || !"box".equals(selectedItem.type)) {
-            return 100;
-        }
-        CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(p);
-        int max = inv.getBoxCount(selectedItem.id);
-        String keyName = org.agmas.noellesroles.client.data.CS2ClientBoxCache.getKeyName(selectedItem.id);
-        if (keyName != null && !keyName.isEmpty()) {
-            max = Math.min(max, inv.getKeyCount(keyName));
-        }
-        max = Math.min(max, 100);
-        return Math.max(1, max);
-    }
-
-    /** 把开箱数量夹到合法范围，并刷新按钮文案"开箱xN" */
-    private void refreshOpenButton() {
-        int max = maxOpenCount();
-        if (openCount > max) openCount = max;
-        if (openCount < 1) openCount = 1;
-        if (openButton != null) {
-            openButton.setMessage(Component.literal(openCount > 1 ? "开箱x" + openCount : "开箱"));
-        }
     }
 
     /** 装备 / 卸下当前选中的称号 */
@@ -511,10 +467,6 @@ public class CS2WarehouseScreen extends Screen {
         renderHeader(guiGraphics);
         renderTooltip(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, delta);
-        // 开箱数量数字（居中于 - / + 之间）
-        refreshOpenButton();
-        int qtyY = height - 30 - 24;
-        guiGraphics.drawCenteredString(font, String.valueOf(openCount), width / 2, qtyY + 6, TEXT_COLOR);
     }
 
     private void renderHeader(GuiGraphics guiGraphics) {
