@@ -232,10 +232,10 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             Map<UUID, SRERole> selectedRoles) {
         SRERoleWorldComponent roleComp = SRERoleWorldComponent.KEY.get(world);
 
-        // ── 绑定职业去重（面向**所有**轮选模式）──
-        // 绑定关系是双向的，自选主职业时会多生成一份主职业 + 一份绑定职业。
-        // 详见 RotationRoleDedup 的说明。普通/不可见轮选都走这里。
-        RotationRoleDedup.dedup(selectedRoles, "RolePool/轮选");
+        // ── 绑定职业去重 + 成对补齐 + 阵营预算（面向**所有**轮选模式）──
+        // 绑定是双向的；自选任一方时既可能重复、也可能缺另一半，还可能在补齐后挤爆阵营预算。
+        // 这三件事在这里一次性收敛，详见 RotationRoleDedup 的说明。
+        RotationRoleDedup.dedup(selectedRoles, world.players().size(), "RolePool/轮选");
 
         for (ServerPlayer p : world.players()) {
             SRERole role = selectedRoles.get(p.getUUID());

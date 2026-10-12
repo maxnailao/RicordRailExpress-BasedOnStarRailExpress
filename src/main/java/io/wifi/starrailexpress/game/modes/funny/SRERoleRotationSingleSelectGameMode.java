@@ -205,9 +205,10 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
             Map<UUID, SRERole> selectedRoles) {
         SRERoleWorldComponent roleComp = SRERoleWorldComponent.KEY.get(world);
 
-        // 绑定职业去重：与普通/不可见轮选共用同一套逻辑（本类是独立实现，继承不到父类那份）。
+        // 绑定职业去重 + 成对补齐 + 阵营预算：与普通/不可见轮选共用同一套逻辑
+        //（本类是独立实现，继承不到父类那份）。
         io.wifi.starrailexpress.game.modes.funny.rotation.RotationRoleDedup
-                .dedup(selectedRoles, "RolePool/单选轮选");
+                .dedup(selectedRoles, world.players().size(), "RolePool/单选轮选");
 
         for (ServerPlayer p : world.players()) {
             SRERole role = selectedRoles.get(p.getUUID());
