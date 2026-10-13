@@ -9,7 +9,7 @@
 在开始开发前，确保项目可以正常编译和运行：
 
 ```bash
-# 编译并打包（产物在 build/libs/）
+# 编译并打包（产物在 build/libs/starrailexpress.jar）
 ./gradlew build
 
 # 启动测试客户端
@@ -23,24 +23,244 @@
 ```
 
 > **环境要求：** JDK 21，并能访问 `maven.fabricmc.net`、`maven.terraformersmc.com` 等 Maven 仓库。
+>
+> 依赖已在本机缓存时，加 `--offline` 更快（`./gradlew compileJava --offline`）。若 `GRADLE_USER_HOME=E:\gradle_home` 报 `Plugin [id: 'fabric-loom'] was not found`，说明该目录的缓存不全 —— 用默认 gradle home（`~/.gradle`）即可。
 
-## 抽奖系统
+## 注册新角色/职业
 
-### 创建新的稀有度
-
-- 在"StarRailExpress\src\main\resources\assets\noellesroles\textures\gui\loot"中添加新的稀有度背景
-- 在LootManager 的 qualityBgList 列表添加该文件路径
-- 在lootpool配置文件中添加对应级别稀有度即为稀有度
-- 注意：超过最大稀有度默认显示最大稀有度
-
-## 注册新角色
+> **动手前先看 [`docs/AI创建新职业攻略.md`](docs/AI创建新职业攻略.md)**：可直接抄的角色/物品/商店/技能/网络包/GUI 模板、翻译键位置对照表与踩坑清单（核心原则：职业相关逻辑集中在 `SRERole` 子类与 `RoleData` 里）。
 
 ### 注册方式：
 
-在ModRoles.java文件中
+普通职业写在 `org/agmas/noellesroles/role/ModRoles.java`，彩蛋职业写在 `org/agmas/noellesroles/role/bouns/BounsRoles.java`（复杂职业单独建类放 `role/bouns/roles/XxxRole.java`）。
 
-- 添加自定义角色id
-- 注册公有静态角色：可以在初始化函数中初始化或直接在声明时初始化
+- 添加自定义角色id（`ResourceLocation`，注意**路径不能与已有角色重复**，重复会抛 `IllegalArgumentException`）
+- 注册公有静态角色：`TMMRoles.registerRole(new NormalRole(...))`，可以在初始化函数中初始化或直接在声明时初始化
+- 补翻译键：`announcement.star.role.<路径>` / `announcement.star.goals.<路径>` / `info.screen.roleid.<路径>`（缺了游戏里会显示错误文本）
+
+## 注册角色/职业数据（CCA替代品）
+
+本模组使用 `RoleData` 接口及其实现类来管理玩家职业的持久化数据，写职业逻辑时不再需要自己碰 Cardinal Components API（CCA）。下文将介绍如何为您的职业创建数据类，并将其注册到职业系统中。
+
+---
+
+### 1. 概述
+
+- **`RoleData`** 是玩家职业数据的顶层接口，定义了数据的生命周期（`init`、`clear`）、同步（`writeToSyncNbt`、`readFromSyncNbt`）以及客户端/服务端 Tick 回调。
+
+- **`SimpleRoleData`** 是一个基础抽象实现，提供了 NBT 读写辅助方法，推荐直接继承该类以简化开发。
+
+- 每个职业可以拥有独立的 `RoleData` 实例，当玩家切换职业时，旧实例会被丢弃，新职业会创建新的数据对象。
+
+---
+
+### 2. 创建职业数据类
+
+您需要创建一个类，实现 `RoleData` 接口（或继承 `SimpleRoleData`），并实现所有抽象方法。
+
+#### 示例：继承 `SimpleRoleData`
+
+```java
+import io.wifi.starrailexpress.api.impl.SimpleRoleData;
+import io.wifi.starrailexpress.api.data.RoleDataContext;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+
+public class YourRoleDataClass extends SimpleRoleData {
+    
+    private int customValue;
+
+    public YourRoleDataClass(RoleDataContext context) {
+        super(context);
+        // 初始化自定义字段
+        this.customValue = 0;
+    }
+
+    @Override
+    public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+        // 写入数据
+        tag.putInt("CustomValue", customValue);
+    }
+
+    @Override
+    public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+        // 读取数据
+        this.customValue = tag.getInt("CustomValue");
+    }
+
+    // 可选：重写 init/clear/clientTick/serverTick
+    @Override
+    public void init() {
+        // 职业赋予时触发
+    }
+
+    @Override
+    public void clear() {
+        // 职业移除时触发
+    }
+
+    // 自定义业务方法
+    public int getCustomValue() {
+        return customValue;
+    }
+
+    public void setCustomValue(int value) {
+        this.customValue = value;
+    }
+}
+```
+
+> **注意**：构造方法必须接受一个 `RoleDataContext` 参数，用于获取玩家对象及其他上下文信息。
+
+---
+
+### 3. 注册职业数据
+
+在定义职业（`Role` 实现类）时，通过 `setRoleData` 方法绑定数据工厂。该方法接受一个函数式接口，用于在玩家获得该职业时创建 `RoleData` 实例。
+
+#### 3.1 简单注册（通过构造方法引用）
+
+如果您的数据类构造方法与 `RoleDataContext` 匹配，可以直接使用方法引用：
+
+```java
+role.setRoleData(YourRoleDataClass::new);
+```
+
+#### 3.2 自定义初始化逻辑
+
+如果您需要在创建时执行额外操作，可以使用 Lambda 表达式：
+
+```java
+role.setRoleData((ctx) -> {
+ // 可以在这里根据上下文做额外处理
+ YourRoleDataClass data = new YourRoleDataClass(ctx);
+ data.setCustomValue(100); // 初始值
+ return data;
+});
+```
+
+
+
+> **说明**：`setRoleData` 会在玩家被赋予该职业时调用，返回的 `RoleData` 实例将被关联到玩家的组件中。
+
+---
+
+### 4. 获取职业数据
+
+在游戏逻辑中，您可以使用 `RoleData` 提供的静态工具方法获取当前玩家的职业数据。
+
+#### 4.1 获取任意类型的职业数据
+
+```java
+// 返回 Optional<RoleData>
+Optional<RoleData> optional = RoleData.getOptional(player);
+optional.ifPresent(data -> {
+ // 处理数据
+});
+```
+
+
+
+#### 4.2 获取指定类型的数据
+
+```java
+// 返回 Optional<YourRoleDataClass>
+Optional<YourRoleDataClass> opt = RoleData.getOptional(YourRoleDataClass.class, player);
+opt.ifPresent(data -> {
+ int val = data.getCustomValue();
+});
+```
+
+
+
+#### 4.3 直接获取或创建
+
+若数据不存在或类型不匹配，会自动创建新实例（但不会自动绑定到玩家，需自行处理）：
+
+```java
+YourRoleDataClass data = RoleData.getOrCreate(YourRoleDataClass.class, player);
+if (data != null) {
+ // 使用数据
+}
+```
+
+
+
+---
+
+### 5. 同步与持久化
+
+- **同步**：`writeToSyncNbt` 和 `readFromSyncNbt` 用于客户端-服务端数据同步，系统会在合适时机调用。
+- **不支持持久化**
+
+---
+
+### 6. 生命周期回调
+
+| 方法             | 触发时机            |
+| -------------- | --------------- |
+| `init()`       | 玩家被赋予该职业时（仅服务端） |
+| `clear()`      | 玩家离开该职业时（仅服务端）  |
+| `clientTick()` | 客户端每 tick 调用    |
+| `serverTick()` | 服务端每 tick 调用    |
+
+您可以根据需要重写这些方法。
+
+---
+
+### 7. 注意事项
+
+- 每个玩家同时只能拥有一个职业的 `RoleData` 实例，切换职业时会自动替换。
+- 数据类必须提供 `RoleDataContext` 构造器，否则 `RoleData.create()` 会失败。
+- 若使用 `SimpleRoleData`，您可以直接使用其提供的 `getXxxTag` 辅助方法简化 NBT 操作。
+
+- 包名核对（写错直接编译失败）：`RoleData` = `io.wifi.starrailexpress.api.data.RoleData`；`RoleDataContext` = `io.wifi.starrailexpress.api.data.RoleDataContext`；**`SimpleRoleData` = `io.wifi.starrailexpress.api.impl.SimpleRoleData`**（不是 `api.data`）；NBT 辅助方法（`getIntTag` / `getStringTag` / `getBooleanTag` / `getLongTag` …）是 `RoleData` 接口上的 default 方法。
+
+---
+
+### 8. 完整示例
+
+```java
+// 1. 定义数据类
+public class WarriorData extends SimpleRoleData {
+ private int rage;
+ public WarriorData(RoleDataContext ctx) { super(ctx); }
+ @Override
+ public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+ tag.putInt("Rage", rage);
+ }
+ @Override
+ public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+ this.rage = tag.getInt("Rage");
+ }
+ public void addRage(int amount) { this.rage += amount; }
+}
+// 2. 在职业注册处绑定（角色类型是 io.wifi.starrailexpress.api.SRERole / NormalRole / EggRole）
+SRERole warriorRole = TMMRoles.registerRole(new NormalRole(...));
+warriorRole.setRoleData(WarriorData::new);
+// 3. 在逻辑中获取
+Optional<WarriorData> data = RoleData.getOptional(WarriorData.class, player);
+data.ifPresent(d -> d.addRage(10));
+```
+
+---
+
+### 9. 迁移自 CCA
+
+如果您之前使用了 Cardinal Components API，现在只需：
+
+- 移除对 `Component` 和 `ComponentKey` 的依赖。
+- 将原有组件类改为实现 `RoleData`（或继承 `SimpleRoleData`）。
+- 使用 `role.setRoleData(factory)` 替代原有的 `setComponentKey(KEY)`。
+- 使用 `RoleData.getOptional(clazz, player)` 替代原有的 `KEY.get(player)`。
+
+如此即可平滑迁移。
+
+### 10. 无法从CCA迁移的情况
+
+- 玩家职业会变更，需要持续化的数据。
+- 非特定职业玩家的数据。
+- 保存到世界的全局数据。
 
 ## 注册新物品
 
@@ -61,17 +281,17 @@
 实体类创建java文件后在ModEntities.java件中进行注册
 
 再在client.renderer中创建EntityRender.java渲染器类用于客户端渲染，
-并在NoellesrolesClient.java中的registerEntityRenderers方法中对实体的渲染器进行注册
+并在 `org.agmas.noellesroles.client.RicesRoleRhapsodyClient` 的 `registerEntityRenderers(...)` 里注册渲染器
+（`NoellesrolesClient.onInitializeClient` 会调用它；在 `NoellesrolesClient` 里搜不到这个方法名是正常的）。
 
 ## 注册新商店
 
 ### 注册方式：
 
-在Noellesroles.java文件中
+集中在 `org/agmas/noellesroles/init/RoleShopHandler.java`（由 `Noellesroles` 初始化时调用 `RoleShopHandler.shopRegister()`）：
 
-- 声明新的静态商品对象列表
-- 在initShops()函数中对列表进行初始化添加新物品
-- 在shopRegiester()函数中为角色注册商店
+- 在 `shopRegister()` 里声明并填充 `ArrayList<ShopEntry>`（或专用的 `initializeXxxShop()` 方法）
+- 用 `ShopContent.customEntries.put(roleId, 列表)` 为角色注册商店；**更推荐**直接在职业类里覆写 `SRERole.getShopEntries()`（逻辑跟着职业走，见 `docs/AI创建新职业攻略.md` §5）
 
 ## 注册网络包
 
@@ -94,8 +314,8 @@
 
 对于S2C网络包
 
-- 在registerPackets1中进行注册
-- 在Client主类中进行处理
+- 在 `PayloadTypeRegistry.playS2C().register(ID, CODEC)` 里注册；统一入口是 `io.wifi.starrailexpress.register.PayloadBootstrap.registerAll()`（它会依次调用 `SREPayloadRegister` / `ModPackets` / `RicePacketTypeRegister` 等），所以通常写进 `org.agmas.noellesroles.init.ModPackets#registerPackets()` 就够了
+- 在客户端用 `ClientPlayNetworking.registerGlobalReceiver(ID, (payload, ctx) -> ctx.client().execute(() -> ...))` 处理（位置：`client/NoellesrolesClient.onInitializeClient`）
 
 ## 创建GUI
 
@@ -109,10 +329,12 @@ client下创建___Screen.java类继承Screen作为新GUI
 
 ### 代码混合：
 
-- 在mixin文件夹内创建java类，使用@Minin注解进行混合
-- 在noellesroles.minin.json文件中添加混合配置
+- 在mixin文件夹内创建java类，使用 `@Mixin` 注解进行混合
+- 在 `src/main/resources/noellesroles.mixins.json`（noellesroles 侧；主模组是 `starrailexpress.mixins.json`）中添加混合配置
 
 ## 翻译
 
 在en_us.json 和 zh_cn.json中添加注册的id对应的汉化（根据已有汉化即可）
+
+> 完整位置对照（职业文案是重点，缺了会显示错误文本）：职业名/目标在 `assets/noellesroles/lang/{zh_cn,zh_tw,en_us}.json`（键 `announcement.star.role.<路径>` / `announcement.star.goals.<路径>`，`<路径>` 是 `identifier().getPath()` 而不是完整 id）；职业详细介绍在 `assets/role_modifier_intro/lang/*`（`info.screen.roleid.<路径>`）；物品名/`<id>.tooltip` 在 `assets/noellesroles/lang/*`；物品介绍 `item.<命名空间>.<id>.desc` 在 `assets/item_intro/lang/*`。
 
