@@ -479,6 +479,7 @@ public class SREClient implements ClientModInitializer {
             areaComponent = null;
             trainComponent = null;
             moodComponent = null;
+            io.wifi.starrailexpress.anticheat.ClickAntiCheatClient.clear();
             isBlizzardActive = false;
             blizzardPhase = 0;
             blizzardRemainingTicks = 0;
@@ -1361,6 +1362,12 @@ public class SREClient implements ClientModInitializer {
                 io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
                 (payload, context) -> context.client().execute(
                         () -> io.wifi.starrailexpress.client.particle.CustomParticleHandlers.dispatch(payload)));
+
+        // 点击频率反作弊：锁定状态同步
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.ClickLockoutPayload.TYPE,
+                (payload, context) -> io.wifi.starrailexpress.anticheat.ClickAntiCheatClient
+                        .applyLockout(payload.remainingMillis()));
 
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

@@ -70,6 +70,9 @@ public class SREConfig implements ConfigData {
     public int customRolePermission = 3;
     @ConfigEntry.Category(value = "commands")
     public int scheduleCommandPermission = 3;
+    @ConfigEntry.Category(value = "anticheat")
+    @Tooltip
+    public boolean enableClickAc = true; // 点击频率反作弊
     @ConfigEntry.Category(value = "commands")
     public int startGameRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")

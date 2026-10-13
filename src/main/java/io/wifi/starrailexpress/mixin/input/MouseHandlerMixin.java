@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.mixin.input;
 
+import io.wifi.starrailexpress.anticheat.ClickAntiCheatClient;
 import io.wifi.starrailexpress.client.gui.ScopeOverlayRenderer;
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
@@ -71,6 +72,14 @@ public class MouseHandlerMixin {
     // 捕获鼠标点击事件用于狙击枪操作
     @Inject(method = "onPress", at = @At("HEAD"), cancellable = true)
     public void TMM$onPress(long window, int button, int action, int mods, CallbackInfo ci) {
+        if (action == GLFW.GLFW_PRESS && ClickAntiCheatClient.isLocked()) {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.screen == null
+                    && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+                ci.cancel();
+                return;
+            }
+        }
         // 只处理左键（button = 0）
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && action == GLFW.GLFW_PRESS) {
             // 获取 Minecraft 客户端实例

@@ -2855,6 +2855,7 @@
     "message.starrailexpress.ticket_office.saved":  "Ticket office saved",
     "message.starrailexpress.ticket_office.no_money":  "Not enough currency",
     "message.starrailexpress.ticket_office.hotbar_full":  "Hotbar is full",
+    "message.starrailexpress.click_ac.locked": "Clicked too fast! Left/right click locked for %s seconds",
     "message.starrailexpress.ticket_office.bought":  "Ticket purchased",
     "message.starrailexpress.ticket_gate.bound":  "Ticket bound to gate",
     "message.starrailexpress.ticket_gate.not_bound":  "Ticket gate is not bound",

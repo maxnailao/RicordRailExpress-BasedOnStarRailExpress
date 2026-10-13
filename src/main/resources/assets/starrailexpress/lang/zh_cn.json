@@ -1476,6 +1476,7 @@
     "message.starrailexpress.effect_generator.saved": "药水效果发生器配置已保存",
     "message.starrailexpress.emoji_helmet.selected": "已切换到Emoji %s",
     "message.starrailexpress.ticket_gate.bound": "已将入场券绑定到检票门",
+    "message.starrailexpress.click_ac.locked": "点击过快，左右键已锁定 %s 秒",
     "message.starrailexpress.ticket_gate.invalid_ticket": "这张入场券没有有效绑定数据",
     "message.starrailexpress.ticket_gate.not_bound": "检票门尚未绑定入场券",
     "message.starrailexpress.ticket_gate.requires_ticket": "需要对应的入场券",

@@ -2757,6 +2757,7 @@
     "message.starrailexpress.ticket_office.saved":  "售票處設定已儲存",
     "message.starrailexpress.ticket_office.no_money":  "貨幣不足",
     "message.starrailexpress.ticket_office.hotbar_full":  "快捷欄已滿",
+    "message.starrailexpress.click_ac.locked": "點擊過快，左右鍵已鎖定 %s 秒",
     "message.starrailexpress.ticket_office.bought":  "購買成功",
     "message.starrailexpress.ticket_gate.bound":  "已將入場券綁定到檢票門",
     "message.starrailexpress.ticket_gate.not_bound":  "檢票門尚未綁定入場券",

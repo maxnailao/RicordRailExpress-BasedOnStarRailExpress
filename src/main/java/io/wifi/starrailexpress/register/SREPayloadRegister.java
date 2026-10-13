@@ -361,5 +361,10 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
                 io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.CODEC);
+
+        // 点击频率反作弊：服务端锁定左右键时通知客户端
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.ClickLockoutPayload.TYPE,
+                io.wifi.starrailexpress.network.ClickLockoutPayload.CODEC);
     }
 }

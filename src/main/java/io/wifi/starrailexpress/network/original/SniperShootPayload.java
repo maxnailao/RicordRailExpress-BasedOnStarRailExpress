@@ -68,6 +68,9 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
         @Override
         public void receive(@NotNull SniperShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
             if (!GameUtils.isPlayerAliveAndSurvival(player))
                 return;
             ItemStack mainHandStack = player.getMainHandItem();

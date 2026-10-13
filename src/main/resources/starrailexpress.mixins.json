@@ -37,6 +37,7 @@
     "network.NetworkStatisticsMixin",
     "network.ServerListFixMixin",
     "network.ServerPlayNetworkHandlerMixin",
+    "network.ClickAntiCheatMixin",
     "server.DecServerJoinPlayer",
     "server.DedicatedPlayerManagerMixin",
     "server.MaxPlayerAccessor",
