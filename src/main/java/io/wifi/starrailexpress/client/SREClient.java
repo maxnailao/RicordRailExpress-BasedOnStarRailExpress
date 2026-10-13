@@ -1356,6 +1356,12 @@ public class SREClient implements ClientModInitializer {
                     });
                 });
 
+        // 自定义形状粒子接收器
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
+                (payload, context) -> context.client().execute(
+                        () -> io.wifi.starrailexpress.client.particle.CustomParticleHandlers.dispatch(payload)));
+
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (gameComponent == null || client.level == null)

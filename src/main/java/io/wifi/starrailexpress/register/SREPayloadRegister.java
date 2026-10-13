@@ -356,5 +356,10 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.CODEC);
+
+        // 自定义形状粒子（服务端只发 id + 原点 + 时长 + 参数，形状由客户端生成）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.CODEC);
     }
 }
