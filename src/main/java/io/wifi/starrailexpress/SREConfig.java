@@ -69,6 +69,8 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "commands")
     public int customRolePermission = 3;
     @ConfigEntry.Category(value = "commands")
+    public int scheduleCommandPermission = 3;
+    @ConfigEntry.Category(value = "commands")
     public int startGameRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int stopGameRequiredPermission = 3;

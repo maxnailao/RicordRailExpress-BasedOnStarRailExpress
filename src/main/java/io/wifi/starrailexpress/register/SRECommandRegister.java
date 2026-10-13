@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
 import io.wifi.starrailexpress.content.command.argument.SkinArgumentType;
 import io.wifi.starrailexpress.content.command.argument.TimeOfDayArgumentType;
 import io.wifi.starrailexpress.content.vote.command.SREVoteCommand;
+import io.wifi.starrailexpress.schedule.ScheduleManager;
 import net.exmo.sre.mod_whitelist.server.command.ModWhitelistCommand;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -30,6 +31,7 @@ public class SRECommandRegister {
 
     public static void registerCommands() {
         StreamingSpectatorCommand.registerEvents();
+        ScheduleManager.registerEvents();
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             ServerUtilsCommands.register(dispatcher,registryAccess,environment);
 			ModWhitelistCommand.registerGlobal(dispatcher);
@@ -92,6 +94,7 @@ public class SRECommandRegister {
             io.wifi.starrailexpress.content.command.GiveCoinCommand.register(dispatcher);
             // 称号管理（管理员发放 / 收回 / 列举）
             io.wifi.starrailexpress.content.command.TitleCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.ScheduleCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);
