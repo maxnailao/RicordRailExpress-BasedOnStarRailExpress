@@ -335,6 +335,9 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.CONVICT, ModRoles.JAILER);
         RoleAssignmentManager.addOccupationRole(ModRoles.JAILER, ModRoles.CONVICT);
 
+        // 预备魔女 ←→ 魔女共犯（同在魔女监牢地图，双向绑定刷新；与重刑犯/狱警同一套机制）
+        RoleAssignmentManager.addOccupationRole(ModRoles.PRE_WITCH, ModRoles.WITCH_ACCOMPLICE);
+        RoleAssignmentManager.addOccupationRole(ModRoles.WITCH_ACCOMPLICE, ModRoles.PRE_WITCH);
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
@@ -425,6 +428,8 @@ public class InitModRolesMax {
         // 魔女的 getRoundMaxCount 恒为 0（只能由预备魔女转化产生）
         Harpymodloader.setRoleMaximum(ModRoles.PRE_WITCH_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.MAJO_ID, 0);
+        // 魔女共犯：与预备魔女同图绑定刷新，默认 0；命中魔女监牢地图时由 applySpecialMapRoles 放开为 1
+        Harpymodloader.setRoleMaximum(ModRoles.WITCH_ACCOMPLICE_ID, 0);
     }
 
     public static void registerDynamic() {
