@@ -4433,5 +4433,7 @@
   "announcement.star.goals.dianxue_master": "Use your acupoint techniques to protect people",
   "announcement.star.win.dianxue_master": "Good faction wins!",
   "info.screen.roleid.dianxue_master": "Police faction, no instinct.\nPress the skill key to push the crosshair target away and immobilize it for 3 seconds, then start acupressure.\nEach round randomly lights one red acupoint; you must click it before the countdown ends:\n1st: +25%% SAN;\n2nd: Speed I (10s);\n3rd: Nausea (10s);\n4th: Slowness I (10s);\n5th: the target dies.\nIf the first acupoint is not clicked within the 3s immobilize, acupressure aborts and enters a 35s cooldown; afterwards unclicked acupoints auto-advance to the next.",
-  "role.noellesroles.dianxue_master": "Acupressure Master"
+  "role.noellesroles.dianxue_master": "Acupressure Master",
+  "item.noellesroles.wall_break_grenade": "Wall-Break Grenade",
+  "item.noellesroles.wall_break_grenade.tooltip": "Throw at a wall to break blocks within radius 2; they restore after 5s (persistent, survives restart). Blocks with NBT (containers/vending machines/lottery machines/task points) won't be removed"
 }

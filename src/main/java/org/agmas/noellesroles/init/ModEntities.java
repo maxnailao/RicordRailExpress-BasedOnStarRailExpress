@@ -51,6 +51,17 @@ public class ModEntities {
                     .build());
 
     @SuppressWarnings("deprecation")
+    public static final EntityType<WallBreakGrenadeEntity> WALL_BREAK_GRENADE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("wall_break_grenade"),
+            FabricEntityTypeBuilder
+                    .<WallBreakGrenadeEntity>create(MobCategory.MISC, WallBreakGrenadeEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(4)
+                    .trackedUpdateRate(10)
+                    .build());
+
+    @SuppressWarnings("deprecation")
     public static final EntityType<ThrowingKnifeEntity> THROWING_KNIFE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "throwing_knife"),

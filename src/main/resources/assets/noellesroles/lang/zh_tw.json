@@ -4203,5 +4203,7 @@
   "announcement.star.goals.dianxue_master": "用你的點穴技巧保護人們",
   "announcement.star.win.dianxue_master": "好人陣營勝利！",
   "info.screen.roleid.dianxue_master": "警察陣營，無本能。\n按技能鍵將準星玩家推出一段距離並定身3秒，隨後開始點穴。\n點穴介面中每次隨機點亮一個紅色穴位，必須在倒數計時內點擊它：\n第1個：理智恢復25%%；\n第2個：速度I（10秒）；\n第3個：噁心（10秒）；\n第4個：沉重I（10秒）；\n第5個：目標死亡。\n定身3秒內未點第一個穴位則退出點穴並進入35秒冷卻；此後未及時點擊會自動冒出下一個穴位。",
-  "role.noellesroles.dianxue_master": "點穴大師"
+  "role.noellesroles.dianxue_master": "點穴大師",
+  "item.noellesroles.wall_break_grenade": "破牆彈",
+  "item.noellesroles.wall_break_grenade.tooltip": "投擲命中牆壁，拆除半徑2內的方塊；5秒後自動恢復（持久化，重啟不丟失）。帶NBT的方塊（容器/售貨機/抽獎機/任務點）不會被拆除"
 }
