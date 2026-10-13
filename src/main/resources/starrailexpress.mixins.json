@@ -33,7 +33,6 @@
     "item.ItemPickupProgressionMixin",
     "item.ItemStackMixin",
     "item.UseItemProgressionMixin",
-    "network.NetworkReceiveStatisticsMixin",
     "network.NetworkStatisticsMixin",
     "network.ServerListFixMixin",
     "network.ServerPlayNetworkHandlerMixin",

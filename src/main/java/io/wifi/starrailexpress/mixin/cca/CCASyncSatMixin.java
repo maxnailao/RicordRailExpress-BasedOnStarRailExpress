@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.mixin.cca;
 
 import io.netty.buffer.Unpooled;
@@ -33,17 +48,20 @@ public abstract class CCASyncSatMixin<C extends Component>  {
         CustomPacketPayload payload = provider.toComponentPacket(key, predicate.isRequiredOnClient(), buf);
         if (payload != null) {
             if (ServerPlayNetworking.canSend(player, payload.type())) {
-                // 记录网络统计信息
-                try {
-                    long packetSize = buf.readableBytes();
-                    String packetId = "CCA_" + payload.type().id().toString() + key.toString();
-                    io.wifi.starrailexpress.network.NetworkStatistics.getInstance().recordPacketSend(
-                        packetId, packetSize, net.minecraft.network.protocol.PacketFlow.CLIENTBOUND, player.getName().getString()
-                    );
-                } catch (Exception e) {
-                    // 忽略统计错误，避免影响正常功能
+                // CCA 同步的统计要区分是哪个组件在同步（key），而 Connection 层看不到这个信息，
+                // 所以这里自行记账；同时把该包类型标记为外部记账，让 Connection 层跳过这一个类型，
+                // 避免同一个包被统计两次（每个类型只标记一次，不影响热路径）。
+                io.wifi.starrailexpress.network.NetworkStatistics stats =
+                        io.wifi.starrailexpress.network.NetworkStatistics.getInstance();
+                if (stats.isRecording()) {
+                    stats.markExternallyTracked(payload.type());
+                    stats.recordExternal(
+                            "CCA_" + payload.type().id() + key,
+                            buf.readableBytes(),
+                            true,
+                            stats.playerStatsFor(player.getName().getString()));
                 }
-                
+
                 PacketSender var10000 = ServerPlayNetworking.getSender(player);
                 Objects.requireNonNull(buf);
                 var10000.sendPacket(payload, PacketSendListener.thenRun(buf::release));

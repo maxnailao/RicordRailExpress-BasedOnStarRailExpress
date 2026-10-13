@@ -229,6 +229,21 @@ public class SREClient implements ClientModInitializer {
         return cachedPlayerCreative;
     }
 
+    /**
+     * 客户端侧网络统计：注册 {@code /tmm:netstatsc}，并给统计内核补上只有客户端才知道的两件事——
+     * 编码载荷时用的注册表访问，以及本地玩家名（用于按玩家归集）。
+     */
+    private static void initNetworkStatisticsClient() {
+        io.wifi.starrailexpress.network.NetworkStatistics clientStats =
+                io.wifi.starrailexpress.network.NetworkStatistics.getClientInstance();
+        clientStats.setRegistryAccessSupplier(() -> {
+            LocalPlayer player = Minecraft.getInstance().player;
+            return player != null ? player.level().registryAccess() : null;
+        });
+        clientStats.setLocalPlayerSupplier(() -> Minecraft.getInstance().player);
+        io.wifi.starrailexpress.client.command.NetworkStatsClientCommand.register();
+    }
+
     @Override
     public void onInitializeClient() {
         SceneAssetClient.initialize();
@@ -236,6 +251,7 @@ public class SREClient implements ClientModInitializer {
         ClientScheduler.init();
         ClientSkinCache.init();
         ClientConfigEvents.register();
+        initNetworkStatisticsClient();
         new EXSREClient().onInitializeClient();
         // Load config
         ModWhitelistClient.onInitializeClient();
