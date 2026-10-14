@@ -64,6 +64,14 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "gamemodes")
     public boolean roleRotationForceRoleSettings = false;
+
+    // 破镜重圆结束特效（服务端）：游戏结束进入黑幕收尾时是否播放破镜崩裂/还原。
+    // 可由命令 /sre:mirror_end_egg on|off 修改并保存到本配置。
+    @Tooltip
+    public boolean enableMirrorReunionEndEgg = false;
+    // 时长（tick）。实际结局还会再多 1.5 秒。
+    public int mirrorReunionEndEggTime = 5 * 20;
+
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")
@@ -79,6 +87,8 @@ public class SREConfig implements ConfigData {
     public int stopGameRequiredPermission = 3;
     @ConfigEntry.Category(value = "commands")
     public int switchMapRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int meetingVoteProcessorFunctionPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int modifyEnableStatusRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")

@@ -41,10 +41,6 @@ public final class MapIntroClientCache {
     private MapIntroClientCache() {
     }
 
-    public static void update(MapIntroSyncPayload payload) {
-        accept(payload);
-    }
-
     /**
      * 合并分块：{@code chunkIndex == 0} 时重置，后续块继续追加。
      * 返回当前已累积的完整视图，供界面一次性刷新。

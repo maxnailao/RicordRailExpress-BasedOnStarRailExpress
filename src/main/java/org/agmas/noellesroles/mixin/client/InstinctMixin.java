@@ -50,7 +50,9 @@ public abstract class InstinctMixin {
         }
 
         // 鬼眼·杨间 诡域内：禁止开启杀手透视
-        if (player.hasEffect(org.agmas.noellesroles.init.ModEffects.EERIE_DOMAIN)) {
+        // 会议中被施加 NO_INSTINCT 时同样禁止
+        if (player.hasEffect(org.agmas.noellesroles.init.ModEffects.EERIE_DOMAIN)
+                || player.hasEffect(org.agmas.noellesroles.init.ModEffects.NO_INSTINCT)) {
             cir.setReturnValue(false);
             cir.cancel();
             return;

@@ -23,6 +23,7 @@ public final class TwoDimensionalCameraClientHandle {
     private static final float MIN_OCCLUDED_FOREGROUND_CLIP_DISTANCE = 3.0F;
     private static final double PLAYER_CLIP_MARGIN = 0.25D;
     private static volatile boolean active;
+    private static volatile Vec3 currentCameraPos;
     private static volatile float foregroundClipDistance = DEFAULT_FOREGROUND_CLIP_DISTANCE;
     private static volatile Vec3 voiceListenerPosition;
 
@@ -58,6 +59,7 @@ public final class TwoDimensionalCameraClientHandle {
         voiceListenerPosition = player.getEyePosition(1.0F);
         Vec3 lookAt = player.getEyePosition(1.0F).add(0.0D, 0.5D, 0.0D);
         Vec3 cameraPos = cameraPosition(lookAt, effect.getAmplifier(), cameraDistance(player));
+        currentCameraPos = cameraPos;
         foregroundClipDistance = smartForegroundClipDistance(client, player, cameraPos, lookAt);
         Vec3 delta = lookAt.subtract(cameraPos);
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
@@ -68,6 +70,7 @@ public final class TwoDimensionalCameraClientHandle {
 
     private static void deactivate() {
         active = false;
+        currentCameraPos = null;
         foregroundClipDistance = DEFAULT_FOREGROUND_CLIP_DISTANCE;
         voiceListenerPosition = null;
     }
@@ -182,6 +185,11 @@ public final class TwoDimensionalCameraClientHandle {
 
     public static boolean isActive() {
         return active;
+    }
+
+    /** 当前二维相机的世界坐标；未激活时为 null。供箱庭视野遮挡剔除读取。 */
+    public static Vec3 cameraPosition() {
+        return active ? currentCameraPos : null;
     }
 
     public static Vec3 voiceListenerPosition() {

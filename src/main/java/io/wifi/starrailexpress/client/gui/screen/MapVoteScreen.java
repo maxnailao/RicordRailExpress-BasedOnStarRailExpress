@@ -45,6 +45,9 @@ public class MapVoteScreen extends Screen {
 
     /** PageUp/PageDown 一次翻几行详情 */
     private static final int DETAIL_PAGE_LINES = 8;
+    /** 补发地图展示数据请求：本次界面内最多几次、两次之间至少间隔多久 */
+    private static final int INTRO_REQUEST_MAX_ATTEMPTS = 8;
+    private static final long INTRO_REQUEST_RETRY_MS = 2_000L;
     private final MapBackdropRenderer backdrop = new MapBackdropRenderer(0.28F);
     private final List<MapRow> rows = new ArrayList<>();
     private int focusIndex;
@@ -54,7 +57,6 @@ public class MapVoteScreen extends Screen {
     private long selectionChangedAt;
     private float routePosition;
     private float resultTitleHeight = 22;
-    private boolean introDataReceived;
     private MapCapabilitySummary summary;
     /** 与地图轮换界面同源的完整详情行（MapIntroDetail.build） */
     private List<FormattedCharSequence> detailLines = List.of();
@@ -62,6 +64,10 @@ public class MapVoteScreen extends Screen {
     private int detailScroll = 0;
     private long lastMapClickAt;
     private int lastMapClickIndex = -1;
+    /** 上一次补发地图展示数据请求的时间（配合 {@link MapIntroClientCache#isRefreshPending()} 做节流） */
+    private long lastIntroRequestAt;
+    /** 本次界面内已补发请求的次数，避免服务端始终无响应时无节制重试 */
+    private int introRequestAttempts;
 
     public MapVoteScreen() { super(Component.translatable("gui.sre.map_vote.logo")); }
 
@@ -79,16 +85,37 @@ public class MapVoteScreen extends Screen {
         backdrop.resize(width, height);
         if (selectionChangedAt == 0) selectionChangedAt = System.currentTimeMillis();
         summary = MapCapabilitySummary.forMap(targetMapId());
-        if (!introDataReceived) ClientPlayNetworking.send(new MapIntroRequestPayload(false));
+        introRequestAttempts = 0;
+        requestMapIntrosIfEmpty();
     }
 
-    public void updateIntroFromPacket(MapIntroSyncPayload payload) {
-        MapIntroClientCache.update(payload);
-        if (payload == null || payload.isIgnored()) {
-            return; // 不兼容/损坏的包：不标记已收到，避免用空数据重建列表
+    /**
+     * 列表为空时补发一次地图展示数据请求。
+     *
+     * <p>候选 id 与地图展示 DTO 走两条包：投票包先给 id，DTO 后到。所以打开界面时列表
+     * 往往还是空的，需要主动要一次。有 {@link MapIntroClientCache#isRefreshPending()}
+     * 节流，同一请求窗口内不会重复发送。
+     */
+    private void requestMapIntrosIfEmpty() {
+        if (!rows.isEmpty() || introRequestAttempts >= INTRO_REQUEST_MAX_ATTEMPTS
+                || MapIntroClientCache.isRefreshPending()) {
+            return;
         }
-        introDataReceived = true;
-        // 候选 id 可能先到、DTO 后到：数据到齐后重建列表（否则会出现空列表）
+        introRequestAttempts++;
+        lastIntroRequestAt = System.currentTimeMillis();
+        MapIntroClientCache.beginRefresh(false);
+        ClientPlayNetworking.send(new MapIntroRequestPayload(false));
+    }
+
+    /**
+     * 地图展示数据到达（接收器已合并分块）：重建候选列表。
+     * 候选 id 先到、DTO 后到时，这里是「把空列表恢复成可选地图」的唯一入口。
+     */
+    public void updateIntroFromPacket(MapIntroSyncPayload view) {
+        if (view == null || view.isIgnored()) {
+            return; // 不兼容/损坏的包：不重建，避免用空数据清掉已有选项
+        }
+        introRequestAttempts = 0;
         rebuildRows();
         summary = MapCapabilitySummary.forMap(targetMapId());
     }
@@ -453,6 +480,11 @@ public class MapVoteScreen extends Screen {
         if (isShowingResult() && System.currentTimeMillis() - resultStartedAt > RESULT_SAFETY_CLOSE_MS
                 && minecraft != null) {
             minecraft.setScreen(null);
+        }
+        // 服务端已给出候选、但展示数据一直没到时按节流补发（丢包或刚进服的兜底）
+        if (!isShowingResult() && rows.isEmpty() && !MapIntroClientCache.getCandidateIds().isEmpty()
+                && System.currentTimeMillis() - lastIntroRequestAt > INTRO_REQUEST_RETRY_MS) {
+            requestMapIntrosIfEmpty();
         }
     }
 

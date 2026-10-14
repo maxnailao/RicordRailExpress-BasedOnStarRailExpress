@@ -25,6 +25,7 @@ public class TimeStopShader {
     private float blackScreenStrength = 0.0f; // 黑屏强度 (0~1)
     @SuppressWarnings("unused")
     private boolean hasBlackMonitorEffect = false;// 是否有黑屏监控效果
+    private boolean mirrorBlack = false; // 破镜重圆触发的黑屏（消退更慢）
 
     // 水墨风状态
     private float inkStrength = 0.0f; // 水墨风强度 (0~1)
@@ -174,13 +175,30 @@ public class TimeStopShader {
 
         // 黑屏监控着色器
         m_post.addSinglePassEntry("black", pass -> processPlayer(mc.player, () -> {
-            boolean flag = mc.player.hasEffect(ModEffects.BLACK_MONITOR);
+            boolean flag = mc.player.hasEffect(ModEffects.BLACK_MONITOR)
+                    || MirrorReunionSceneManager.INSTANCE.wantsBlackMonitor();
+            if (MirrorReunionSceneManager.INSTANCE.wantsBlackMonitor()) {
+                mirrorBlack = true;
+            }
             if (!flag) {
-                // 如果没有效果，逐渐减少黑屏强度
+                // 如果没有效果，逐渐减少黑屏强度（魔女黑屏消退更慢）
+                float step = mirrorBlack ? 0.01f : 0.05f;
                 if (blackScreenStrength > 0) {
-                    blackScreenStrength = Math.max(0, blackScreenStrength - 0.05f);
+                    blackScreenStrength = Math.max(0, blackScreenStrength - step);
                 }
-                return blackScreenStrength > 0.01f;
+                if (blackScreenStrength <= 0.01f) {
+                    mirrorBlack = false;
+                    lastHasBlackMonitor = false;
+                    return false;
+                }
+                var fading = pass.getEffect();
+                if (fading != null) {
+                    var blackStrengthUniform = fading.safeGetUniform("BlackStrength");
+                    if (blackStrengthUniform != null) {
+                        blackStrengthUniform.set(blackScreenStrength);
+                    }
+                }
+                return true;
             }
 
             var effect = pass.getEffect();
@@ -364,6 +382,13 @@ public class TimeStopShader {
     public void renderPostProcess(float partialTicks) {
         if (m_post == null)
             return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && (mc.player.hasEffect(ModEffects.BLACK_MONITOR)
+                || MirrorReunionSceneManager.INSTANCE.wantsBlackMonitor()
+                || blackScreenStrength > 0.01f)) {
+            m_post.renderAllowCreative(partialTicks);
+            return;
+        }
         m_post.render(partialTicks);
     }
 
@@ -377,6 +402,7 @@ public class TimeStopShader {
         blackScreenStrength = 0.0f;
         hasBlackMonitorEffect = false;
         lastHasBlackMonitor = false;
+        mirrorBlack = false;
         inkStrength = 0.0f;
         rewindStrength = 0.0f;
         nostalgistGray = 0.0f;

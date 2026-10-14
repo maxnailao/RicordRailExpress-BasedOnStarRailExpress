@@ -33,6 +33,19 @@ public class SREReceiverRegister {
         // 表情系统服务端接收器与 tick 检测
         io.wifi.starrailexpress.emote.EmoteServerManager.register();
 
+        // 紧急会议系统：服务端核心 + 发言/跳票请求
+        net.exmo.sre.meeting.MeetingManager.register();
+        net.exmo.sre.meeting.MeetingReportServerHandler.register();
+        org.agmas.noellesroles.game.roles.neutral.pelican.PelicanMeetingHandler.register();
+        ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.ID,
+                (payload, context) -> context.server().execute(
+                        () -> net.exmo.sre.meeting.MeetingManager.setManualSpeaking(context.player(),
+                                payload.speaking())));
+        ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.meeting.network.MeetingSkipC2SPayload.ID,
+                (payload, context) -> context.server().execute(
+                        () -> net.exmo.sre.meeting.MeetingManager.setSkipVote(context.player(),
+                                payload.skip())));
+
         UpdateSkinSelectedPayload.registerReceiver();
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包
@@ -72,6 +85,8 @@ public class SREReceiverRegister {
 
         // 实体交互方块服务端网络处理
         EntityInteractionBlockServerNetwork.register();
+        // 展示方块（文本 / 方块 / 物品 / 实体展示）服务端网络处理
+        io.wifi.starrailexpress.network.DisplayBlockServerNetwork.register();
         MinigameQuestServerNetwork.register();
         TicketOfficeServerNetwork.register();
         EffectGeneratorServerNetwork.register();

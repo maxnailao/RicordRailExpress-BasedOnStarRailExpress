@@ -109,9 +109,12 @@ public final class GuiAnim {
         return cubicBezier1D(u, y1, y2);
     }
 
-    /** 打开界面常用的减速出场：快起、末端贴停。 */
+    /**
+     * 打开界面用的滑入曲线：起步略缓、中段推完大部分位移、末段贴停。
+     * 控制点若让 y 在最初几十毫秒就冲到 1（如 P1=(0,0)、P2=(0.2,1)），位移会在前 ~20% 时长走完，肉眼等于没动画。
+     */
     public static float openBezier(float t) {
-        return cubicBezierEase(t, 0.22f, 1.0f, 0.36f, 1.0f);
+        return cubicBezierEase(t, 0.25f, 0.0f, 0.45f, 1.0f);
     }
 
     private static float cubicBezier1D(float t, float a, float b) {

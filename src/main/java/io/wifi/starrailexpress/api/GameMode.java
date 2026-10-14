@@ -753,4 +753,19 @@ public abstract class GameMode {
     public boolean canAllPeopleSeeTime() {
         return false;
     }
+
+    /**
+     * 本游戏模式是否允许召开会议（紧急会议 / 尸体上报 / 摇铃）。默认允许。<br/>
+     * 会议系统还需要地图设置中开启 {@code AreasSettings#meetingEnabled}。
+     */
+    public boolean canHaveMeeting() {
+        return true;
+    }
+
+    /**
+     * 会议讨论结束后是否允许进入投票阶段。默认允许。
+     */
+    public boolean canHaveMeetingVote() {
+        return true;
+    }
 }

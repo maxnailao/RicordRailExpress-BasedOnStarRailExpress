@@ -19,20 +19,29 @@ public class ImmersiveFilterShader {
     private static final ResourceLocation AFTERLIFE_CONTRAST_NOISE = ResourceLocation.withDefaultNamespace("textures/gui/shaders/contrast_noise.png");
 
     private PostProcessor post;
+    private PostProcessor mirrorPost;
     private float totalTime = 0.0f;
+    private float mirrorStrength = 0.0f;
 
     public void initPostProcessor() {
-        if (post != null) return;
-        post = new PostProcessor();
-        initPasses();
+        if (post == null) {
+            post = new PostProcessor();
+            initPasses();
+        }
+        if (mirrorPost == null) {
+            mirrorPost = new PostProcessor();
+            addMirrorReunionPass(Minecraft.getInstance(), mirrorPost);
+        }
     }
 
     public void resize(int w, int h) {
         if (post != null) post.resize(w, h);
+        if (mirrorPost != null) mirrorPost.resize(w, h);
     }
 
     public void renderPostProcess(float partialTicks) {
         if (post != null) post.render(partialTicks);
+        if (mirrorPost != null) mirrorPost.renderAllowCreative(partialTicks);
     }
 
     private boolean process(LocalPlayer player, BooleanSupplier action) {
@@ -47,6 +56,35 @@ public class ImmersiveFilterShader {
             bindAfterlifeTextures(mc, afterlife.getInPass());
         }
         addPass(mc, "dreamcore", ModEffects.DREAMCORE_FILTER, 0.7f);
+    }
+
+    // 破镜重圆：药水效果驱动的画面坍缩滤镜，强度由场景管理器平滑过渡。
+    private void addMirrorReunionPass(Minecraft mc, PostProcessor target) {
+        target.addSinglePassEntry("mirror_reunion", pass -> process(mc.player, () -> {
+            float want = MirrorReunionSceneManager.INSTANCE.getFilterStrength();
+            if (want > mirrorStrength) {
+                mirrorStrength = Math.min(want, mirrorStrength + 0.07f);
+            } else {
+                mirrorStrength = Math.max(0.0f, mirrorStrength - 0.09f);
+            }
+            if (mirrorStrength <= 0.01f) {
+                return false;
+            }
+            totalTime += 0.016f;
+            var effect = pass.getEffect();
+            if (effect == null) {
+                return false;
+            }
+            var strength = effect.safeGetUniform("Strength");
+            if (strength != null) {
+                strength.set(mirrorStrength);
+            }
+            var time = effect.safeGetUniform("Time");
+            if (time != null) {
+                time.set(totalTime);
+            }
+            return true;
+        }));
     }
 
     private PostProcessor.PostPassEntry addPass(Minecraft mc, String passName, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder, float defaultStrength) {

@@ -286,6 +286,16 @@ public final class PelicanManager {
         return pelicanByStashed.get(playerId);
     }
 
+    /** 只读视图：每只鹈鹕 -> 肚内玩家队列（供会议联动使用）。 */
+    public static Map<UUID, Deque<UUID>> getStashedByPelican() {
+        return Collections.unmodifiableMap(stashedByPelican);
+    }
+
+    /** 标记某玩家已在肚内死亡，防止释放时复活。 */
+    public static void markStashedDead(UUID playerId) {
+        stashedDead.add(playerId);
+    }
+
     public static Set<UUID> getBellyReceivers(UUID senderId) {
         if (senderId == null)
             return Set.of();

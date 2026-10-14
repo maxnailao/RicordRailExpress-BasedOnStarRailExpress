@@ -29,5 +29,7 @@ public class NREventRegister {
 
         // 注册疫使胜利检测
         org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.registerEvent();
+        // 破镜重圆结局彩蛋：镜像世界终幕检测
+        org.agmas.noellesroles.game.MirrorReunionEndEgg.register();
     }
 }

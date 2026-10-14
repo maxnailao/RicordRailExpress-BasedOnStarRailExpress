@@ -389,5 +389,27 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.ID,
                 io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.CODEC);
+
+        // 展示方块（文本 / 方块 / 物品 / 实体展示）数据包：保存后的同步复用原版方块实体更新包，不需要额外类型
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.DisplayBlockPayload.OpenUI.TYPE,
+                io.wifi.starrailexpress.network.DisplayBlockPayload.OpenUI.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.DisplayBlockPayload.Save.TYPE,
+                io.wifi.starrailexpress.network.DisplayBlockPayload.Save.CODEC);
+
+        // 紧急会议系统网络包
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingStateS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingStateS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingReportC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingReportC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingCooldownS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingCooldownS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingSkipC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSkipC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.CODEC);
     }
 }

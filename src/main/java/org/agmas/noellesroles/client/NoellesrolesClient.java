@@ -225,6 +225,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
+        // 破镜重圆：药水驱动的客户端坍缩/还原与坠落方块动画
+        MirrorReunionSceneManager.register();
         // 视觉干扰花屏覆盖渲染
         org.agmas.noellesroles.client.hud.VisualInterferenceOverlay.register();
         // 阿蒙终幕「阿蒙时刻」：全屏稍偏灰滤镜。
@@ -288,6 +290,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.init.ModSceneBlocks.POISON_ZONE, RenderType.translucent());
         BlockRenderLayerMap.INSTANCE.putBlock(
                 org.agmas.noellesroles.init.ModSceneBlocks.FOG_ZONE, RenderType.translucent());
+        LoopingMirrorClientRenderer.register();
         // 灌木（树叶贴图）使用 cutout 渲染层
         BlockRenderLayerMap.INSTANCE.putBlock(
                 org.agmas.noellesroles.init.ModSceneBlocks.BUSH, RenderType.cutoutMipped());
@@ -466,6 +469,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         KalabiqiumiaoClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
+        HakoniwaVisionClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         // 坠木角色皮肤替换
         io.wifi.starrailexpress.event.OnGettingPlayerSkin.EVENT.register((player) -> {
@@ -815,6 +819,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.maprotation.MapRotationScreen rotationScreen) {
                         // 地图轮换界面复用同一份地图介绍数据（Fabric 每个包 ID 只允许一个全局接收器）
                         rotationScreen.updateFromPacket(view);
+                    } else if (context
+                            .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapVoteScreen voteScreen) {
+                        // 地图投票界面同样复用这份数据：候选 id 先到、DTO 后到，靠这里补出选项
+                        voteScreen.updateIntroFromPacket(view);
                     }
                 }));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapRotationSyncPayload.ID,
@@ -853,8 +861,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(PlayerResetS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
+            MirrorReunionSceneManager.INSTANCE.clearHideState();
             client.player.getActiveEffects().clear();
             client.execute(() -> {
+                MirrorReunionSceneManager.INSTANCE.abortForTransfer();
                 if (client.player != null) {
                     // client.player.sendSystemMessage(Component.translatable("screen.noellesroles.guess_role.reset")
                     // .withColor(Color.ORANGE.getRGB()));
@@ -1851,7 +1861,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         SREClientCommand.register();
     }
 
-    private void ShowBroadcastMessage(Component message) {
+    public static void ShowBroadcastMessage(Component message) {
         var client = Minecraft.getInstance();
         if (client == null)
             return;

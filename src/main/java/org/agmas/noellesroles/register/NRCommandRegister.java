@@ -25,6 +25,7 @@ public class NRCommandRegister {
         WheelchairFieldItemCommand.register();
         GamblerMiracleCommand.register();
         EggClearCommand.register();
+        MirrorReunionEndEggCommand.register();
         MurderTimeCommand.register();
 
         // 注册疫使测试指令

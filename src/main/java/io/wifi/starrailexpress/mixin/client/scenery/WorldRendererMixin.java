@@ -13,6 +13,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.world.effect.MobEffects;
+import org.agmas.noellesroles.client.VerticalLoopingMirrorClient;
 import org.agmas.noellesroles.init.ModEffects;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,6 +43,10 @@ public abstract class WorldRendererMixin {
         }
         if (SREClient.isInLobby) {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
+            return;
+        }
+        // ── 垂直无限镜面：镜面底部雾墙（覆盖常规地图雾）──
+        if (VerticalLoopingMirrorClient.applyBottomFog(camera)) {
             return;
         }
         LocalPlayer player = Minecraft.getInstance().player;

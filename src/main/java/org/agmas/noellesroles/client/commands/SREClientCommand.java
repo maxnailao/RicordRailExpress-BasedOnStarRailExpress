@@ -2,6 +2,9 @@ package org.agmas.noellesroles.client.commands;
 
 import io.wifi.ConfigCompact.ui.SettingMenuScreen;
 import io.wifi.ConfigCompact.ui.TestScreen;
+import io.wifi.rhythm.client.RhythmMapManager;
+import io.wifi.rhythm.client.screen.RhythmGameListScreen;
+import io.wifi.rhythm.client.screen.RhythmGameScreen;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.util.ClientScheduler;
@@ -9,10 +12,14 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
+
+import com.mojang.brigadier.arguments.StringArgumentType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class SREClientCommand {
   public static void register() {
@@ -43,6 +50,57 @@ public class SREClientCommand {
                             SREClientConfig.instance().enableRandomSkinForStreaming = false;
                             SREClientConfig.HANDLER.save();
 
+                            return 1;
+                          }))))
+              .then(ClientCommandManager.literal("debug")
+                  .then(ClientCommandManager.literal("rhythm_game")
+                      .executes((ctx) -> {
+                        ClientScheduler.schedule(() -> {
+                          ctx.getSource().getClient().setScreen(new RhythmGameListScreen(null));
+                        }, 1);
+                        return 1;
+                      })
+                      .then(ClientCommandManager.literal("random")
+                          .executes((ctx) -> {
+                            var mapDatas = new ArrayList<>(RhythmMapManager.MAP_NAMES.keySet());
+                            if (mapDatas.isEmpty()) {
+                              ctx.getSource().sendError(Component.literal("No available maps found!"));
+                              return 0;
+                            }
+                            final var mapKey = mapDatas.get(new Random().nextInt(0, mapDatas.size()));
+                            final var mapData = RhythmMapManager.MAP_NAMES.get(mapKey);
+                            if (mapData == null) {
+                              ctx.getSource().sendError(Component.literal("Not a valid src!"));
+                              return 0;
+                            }
+                            ClientScheduler.schedule(() -> {
+                              RhythmGameScreen.open(mapData);
+                            }, 1);
+                            ctx.getSource().sendFeedback(Component.literal("Successfully!"));
+                            return 1;
+                          }))
+                      .then(ClientCommandManager.argument("src", StringArgumentType.greedyString()).suggests((c, b) -> {
+                        for (final var t : RhythmMapManager.MAP_NAMES.keySet()) {
+                          b.suggest(t.toString());
+                        }
+                        return b.buildFuture();
+                      })
+                          .executes((ctx) -> {
+                            String str = StringArgumentType.getString(ctx, "src");
+                            var t = ResourceLocation.tryParse(str);
+                            if (t == null) {
+                              ctx.getSource().sendError(Component.literal("Not a valid src!"));
+                              return 0;
+                            }
+                            var mapData = RhythmMapManager.MAP_NAMES.get(t);
+                            if (mapData == null) {
+                              ctx.getSource().sendError(Component.literal("Not a valid src!"));
+                              return 0;
+                            }
+                            ClientScheduler.schedule(() -> {
+                              RhythmGameScreen.open(mapData);
+                            }, 1);
+                            ctx.getSource().sendFeedback(Component.literal("Successfully!"));
                             return 1;
                           }))))
               .then(ClientCommandManager.literal("screen")

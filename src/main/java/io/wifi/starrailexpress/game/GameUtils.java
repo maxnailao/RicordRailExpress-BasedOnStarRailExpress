@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameInitialized;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
 import io.wifi.starrailexpress.event.ShouldDropOnDeath;
@@ -559,6 +560,16 @@ public class GameUtils {
         SREWorldBlackoutComponent.KEY.get(world).reset();
         component.setGameStatus(SREGameWorldComponent.GameStatus.STOPPING);
         component.gameMode.stopGame(world);
+        org.agmas.noellesroles.game.MirrorReunionEndEgg.onGameStopping(world, component);
+    }
+
+    public static void executeFunction(net.minecraft.server.MinecraftServer server, int permission, String function) {
+        try {
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withPermission(permission),
+                    "function " + function);
+        } catch (Exception e) {
+            Log.warn(LogCategory.GENERAL, "Failed to execute function: " + function + ", error: " + e.getMessage());
+        }
     }
 
     public static void executeFunction(CommandSourceStack source, String function) {
@@ -570,6 +581,7 @@ public class GameUtils {
     }
 
     public static void initializeGame(ServerLevel serverWorld) {
+        OnGameInitialized.EVENT.invoker().onGameInitialized(serverWorld);
         isGameStarted = false;
         var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
         for (var p : serverWorld.players()) {

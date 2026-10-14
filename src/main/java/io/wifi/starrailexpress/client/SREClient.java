@@ -253,6 +253,7 @@ public class SREClient implements ClientModInitializer {
         SceneAssetNetwork.registerClientReceivers();
         ClientScheduler.init();
         ClientSkinCache.init();
+        io.wifi.rhythm.client.RhythmMapManager.registerEvents();
         ClientConfigEvents.register();
         playerHUDScale = SREClientConfig.instance().playerHudScale;
         if (playerHUDScale <= 0)
@@ -400,6 +401,16 @@ public class SREClient implements ClientModInitializer {
         BlockEntityRenderers.register(TMMBlockEntities.ZIPLINE, ZiplineBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
 
+        // 展示方块：方块本体不渲染，内容全部由方块实体渲染器按原版展示实体的规则画
+        BlockEntityRenderers.register(io.wifi.starrailexpress.index.SREDisplayBlocks.TEXT_DISPLAY_BLOCK_ENTITY,
+                io.wifi.starrailexpress.client.render.block_entity.TextDisplayBlockEntityRenderer::new);
+        BlockEntityRenderers.register(io.wifi.starrailexpress.index.SREDisplayBlocks.BLOCK_DISPLAY_BLOCK_ENTITY,
+                io.wifi.starrailexpress.client.render.block_entity.BlockDisplayBlockEntityRenderer::new);
+        BlockEntityRenderers.register(io.wifi.starrailexpress.index.SREDisplayBlocks.ITEM_DISPLAY_BLOCK_ENTITY,
+                io.wifi.starrailexpress.client.render.block_entity.ItemDisplayBlockEntityRenderer::new);
+        BlockEntityRenderers.register(io.wifi.starrailexpress.index.SREDisplayBlocks.ENTITY_DISPLAY_BLOCK_ENTITY,
+                io.wifi.starrailexpress.client.render.block_entity.EntityDisplayBlockEntityRenderer::new);
+
         AmbienceUtil.registerBackgroundAmbience(
                 new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE,
                         player -> gameComponent != null && gameComponent.isPsychoActive(), 20));
@@ -533,6 +544,10 @@ public class SREClient implements ClientModInitializer {
         // 客户端接收器 (在客户端初始化中调用)
         VoteClientReceiver.register();
         StreamingSpectatorClient.register();
+        // 紧急会议系统：客户端运镜/HUD/上报交互
+        net.exmo.sre.meeting.client.MeetingClientHandler.register();
+        net.exmo.sre.meeting.client.MeetingHud.register();
+        net.exmo.sre.meeting.client.MeetingReportClientHandler.register();
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
 
@@ -1002,6 +1017,8 @@ public class SREClient implements ClientModInitializer {
         });
         // 注册实体交互方块的客户端网络接收器
         io.wifi.starrailexpress.client.network.EntityInteractionBlockClientNetwork.register();
+        // 注册展示方块（文本 / 方块 / 物品 / 实体展示）的客户端网络接收器
+        io.wifi.starrailexpress.client.network.DisplayBlockClientNetwork.register();
         // 注册小游戏任务点的客户端网络接收器
         io.wifi.starrailexpress.client.network.MinigameQuestClientNetwork.register();
         io.wifi.starrailexpress.client.network.TicketOfficeClientNetwork.register();

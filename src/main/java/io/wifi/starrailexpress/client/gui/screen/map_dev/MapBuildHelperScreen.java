@@ -128,6 +128,7 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext, InvNo
         modules.put("all", new AllSettingsModule());
         modules.put("scene", new SceneModule());
         modules.put("map", new MapModule());
+        modules.put("meeting", new MeetingModule());
     }
 
     // ── ModuleContext implementation ─────────────────────────────────

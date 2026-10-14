@@ -68,7 +68,7 @@ public class NewspaperScreen extends Screen {
     private static final int SCREEN_MARGIN = 20;
     private static final int MAX_PAGES = 5;
     private static final int MAX_LENGTH = 2048;
-    private static final int OPEN_ANIM_MS = 260;
+    private static final int OPEN_ANIM_MS = 420;
 
     // ---------- 界面文本 ----------
     private static final Component EDIT_TITLE_LABEL = Component.translatable("book.editTitle");
@@ -125,7 +125,8 @@ public class NewspaperScreen extends Screen {
 
     private int newspaperX, newspaperY, newspaperWidth, newspaperHeight;
     private int textX, textY, textWidth, textHeight;
-    private final long openAtMs = System.currentTimeMillis();
+    /** 首次渲染才开始计时：界面构建后到首次绘制之间若发生卡顿，不会吃掉滑入动画。 */
+    private long openAtMs = 0L;
 
     // ==================== 构造函数 ====================
 
@@ -520,6 +521,9 @@ public class NewspaperScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        if (openAtMs == 0L) {
+            openAtMs = System.currentTimeMillis();
+        }
         float slideY = openSlideY();
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0F, slideY, 0.0F);
@@ -531,6 +535,7 @@ public class NewspaperScreen extends Screen {
         } else {
             renderContent(guiGraphics, mouseX, localMouseY);
         }
+        guiGraphics.pose().popPose();
     }
 
     private boolean openAnimationEnabled() {
