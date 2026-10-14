@@ -175,6 +175,16 @@ public final class AdvancedCameraDirector {
         return active != null && !SecurityMonitorBlock.isInSecurityMode();
     }
 
+    /** 当前是否正有一条高级相机轨道在播放（不含结束后用于过渡的黑幕渐显）。 */
+    public static boolean isTrackActive() {
+        return active != null && !SecurityMonitorBlock.isInSecurityMode();
+    }
+
+    /** 含收尾黑幕渐显：开场流程据此判断「运镜仍在掌屏」，避免后续文字画在其上。 */
+    public static boolean isPresentationActive() {
+        return (active != null || returnFade != null) && !SecurityMonitorBlock.isInSecurityMode();
+    }
+
     public static Vec3 getCameraPos(float partialTick) {
         Pose pose = currentPose(partialTick);
         return pose == null ? Vec3.ZERO : pose.pos;

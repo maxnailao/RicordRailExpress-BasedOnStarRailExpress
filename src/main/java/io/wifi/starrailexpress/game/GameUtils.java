@@ -1034,6 +1034,11 @@ public class GameUtils {
         forcedReadyPlayers = null;
     }
 
+    /** 本局实际参战人数（含强制准备名单/准备区过滤）。 */
+    public static int getStartingPlayerCount(ServerLevel serverWorld) {
+        return getStartingPlayers(serverWorld).size();
+    }
+
     private static List<ServerPlayer> getStartingPlayers(ServerLevel serverWorld) {
         ParticipationComponent participation = ParticipationComponent.KEY.get(serverWorld);
         if (forcedReadyPlayers != null && !forcedReadyPlayers.isEmpty()) {

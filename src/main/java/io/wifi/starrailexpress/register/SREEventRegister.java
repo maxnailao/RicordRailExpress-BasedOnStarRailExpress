@@ -53,8 +53,10 @@ public class SREEventRegister {
 
         OnGameStarted.EVENT.register(serverLevel -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
+            String authoritativeMapId = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel).mapName;
             for (ServerPlayer player : serverLevel.players()) {
-                PacketTracker.sendToClient(player, new OnGameStartedPayload());
+                // 权威地图 id 同时驱动「未走地图投票」时的开场简报
+                PacketTracker.sendToClient(player, new OnGameStartedPayload(authoritativeMapId));
                 // 仅向本局参与者（冒险模式）播放"由远及近到玩家位置"的开场镜头
                 if (player.gameMode.getGameModeForPlayer() == net.minecraft.world.level.GameType.ADVENTURE) {
                     net.exmo.sre.camera.AdvancedCameraCommand.sendIntro(player,

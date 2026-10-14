@@ -757,6 +757,7 @@ public class SREClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
+            io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
             FourthRoomClientState.clear();
@@ -769,6 +770,7 @@ public class SREClient implements ClientModInitializer {
             SceneAssetClient.clearRuntime();
             ClientPlayerStatsCache.clear();
             RoleRotationCache.clear();
+            io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
             // 清理自定义职业客户端缓存
             io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
             // 清理 OpenAL 语音特效资源
@@ -883,10 +885,17 @@ public class SREClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(OnGameFinishedPayload.TYPE, (payload, context) -> {
             MapStatusBarClientState.set(MapStatusBarType.NONE, 20, 20);
+            io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
             OnGameFinishedClient.EVENT.invoker().gameFinished();
         });
         ClientPlayNetworking.registerGlobalReceiver(OnGameStartedPayload.TYPE, (payload, context) -> {
             MapStatusBarClientState.set(MapStatusBarType.NONE, 20, 20);
+            context.client().execute(() -> {
+                // 直接发车（不走地图投票）也要拿到同一份地图简报名单
+                io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache.beginRefresh();
+                ClientPlayNetworking.send(new io.wifi.starrailexpress.network.MapIntroRequestPayload());
+                io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.onGameStarted(payload.mapId());
+            });
             OnGameStartedClient.EVENT.invoker().gameStarted();
         });
         ClientPlayNetworking.registerGlobalReceiver(SyncRoomToPlayerPayload.ID, (payload, context) -> {
@@ -906,25 +915,32 @@ public class SREClient implements ClientModInitializer {
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ShowSelectedMapUIPayload.ID, (payload, context) -> {
-            var str = payload.serverConfig();
-
-            // @SuppressWarnings("unchecked")
-            try {
-                var a = MapConfig.gson.fromJson(str, MapConfig.class);
-                MapConfig.getInstance().maps.clear();
-                MapConfig.getInstance().maps.addAll(a.maps);
-            } catch (JsonSyntaxException e) {
-                LoggerFactory.getLogger("TMMClient").error(e.getMessage());
-                e.printStackTrace();
-            }
+            // 候选只有 id；地图展示数据来自 MapIntroSyncPayload（MapIntroClientCache）
+            io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache
+                    .setCandidateIds(payload.candidateIds());
             context.client().execute(() -> {
-                context.client().setScreen(new MapSelectorScreen());
+                io.wifi.starrailexpress.content.vote.client.VoteFlowTransition.beginIfArmed();
+                context.client().setScreen(MapVoteScreen.create());
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(MapVotingResultsPayload.TYPE, (payload, context) -> {
-            MapDetailsRenderer.triggerMapDetails(
-                    payload.result);
+            context.client().execute(() -> {
+                io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.queueMap(payload.result);
+                if (context.client().screen instanceof MapVoteScreen mapVoteScreen) {
+                    mapVoteScreen.showResult(payload.result);
+                } else {
+                    context.client().setScreen(
+                            new io.wifi.starrailexpress.client.gui.screen.MapVoteResultScreen(payload.result));
+                }
+            });
         });
+        // 服务端无法"发车"（如玩家人数不足）时，关闭地图投票结果页的铺黑显示，避免卡黑屏
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapDepartCancelPayload.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context.client().screen instanceof MapVoteScreen) {
+                        context.client().setScreen(null);
+                    }
+                }));
         ClientPlayNetworking.registerGlobalReceiver(OpenSkinScreenPaylod.ID, (payload, context) -> {
             // 皮肤菜单已移除，重定向到仓库系统
             context.client().execute(() -> {
@@ -969,6 +985,9 @@ public class SREClient implements ClientModInitializer {
         // });
         ClientPlayNetworking.registerGlobalReceiver(CloseUiPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
+                if (io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.shouldHoldVoteGui()) {
+                    return;
+                }
                 context.client().setScreen(null);
             });
         });
@@ -1142,29 +1161,55 @@ public class SREClient implements ClientModInitializer {
 
         // Register HUD rendering for security camera
         HudRenderCallback.EVENT.register((guiGraphics, deltaTick) -> {
-            SecurityCameraHUD.render(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
-                    Minecraft.getInstance().getWindow().getGuiScaledHeight());
-            SecurityCameraHUD.renderCameraFeed(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
-                    Minecraft.getInstance().getWindow().getGuiScaledHeight());
-            ScopeOverlayRenderer.renderScopeOverlay(guiGraphics, deltaTick);
-            WaypointHUD.renderHUD(guiGraphics, deltaTick.getRealtimeDeltaTicks());
-            AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+            boolean suppressGameplayHud = io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator
+                    .shouldSuppressGameplayHud();
+            if (!suppressGameplayHud) {
+                SecurityCameraHUD.render(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
+                        Minecraft.getInstance().getWindow().getGuiScaledHeight());
+                SecurityCameraHUD.renderCameraFeed(guiGraphics, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
+                        Minecraft.getInstance().getWindow().getGuiScaledHeight());
+                ScopeOverlayRenderer.renderScopeOverlay(guiGraphics, deltaTick);
+                WaypointHUD.renderHUD(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+                AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+                FourthRoomTableHud.render(guiGraphics);
+                StreamingSpectatorClient.renderHud(guiGraphics);
+                // 恶魔之刃击杀全屏粉红滤镜
+                io.wifi.starrailexpress.client.EmozhidaoClientEffects.renderKillTint(guiGraphics);
+
+                // Subtitle 字幕报幕
+                net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics,
+                        deltaTick.getRealtimeDeltaTicks());
+
+                // 滞时雷引爆倒计时 HUD
+                io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics,
+                        deltaTick.getRealtimeDeltaTicks());
+                org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
+
+                // 狼人杀 HUD
+                org.agmas.noellesroles.game.modes.werewolf.client.WerewolfHudRenderer.render(guiGraphics,
+                        deltaTick.getRealtimeDeltaTicks());
+            }
+            // 摄像机叠加层与开场运镜不受开场演出抑制，始终渲染
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
-            FourthRoomTableHud.render(guiGraphics);
-            StreamingSpectatorClient.renderHud(guiGraphics);
-            // 恶魔之刃击杀全屏粉红滤镜
-            io.wifi.starrailexpress.client.EmozhidaoClientEffects.renderKillTint(guiGraphics);
-
-            // Subtitle 字幕报幕
-            net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
-
-            // 滞时雷引爆倒计时 HUD
-            io.wifi.starrailexpress.client.hud.TimedGrenadeHUD.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
-            org.agmas.noellesroles.client.hud.MapStatusBarHudRenderer.render(guiGraphics);
-            
-            // 狼人杀 HUD
-            org.agmas.noellesroles.game.modes.werewolf.client.WerewolfHudRenderer.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+        });
+        // 地图规则卡：放进项目的帧生命周期渲染，手持信件时文字也不会消失
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, width, height) ->
+                net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterRender(screen).register(
+                        (renderedScreen, graphics, mouseX, mouseY, partialTick) ->
+                                io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator
+                                        .renderScreenOverlay(renderedScreen, graphics, partialTick)));
+        io.wifi.utils.client.betterrender.FakeHudRenderCallback.EVENT.register((fakeGraphics, deltaTick) -> {
+            io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.render(fakeGraphics,
+                    deltaTick.getGameTimeDeltaPartialTick(false));
+        });
+        // 规则卡展示期间，切换副手键可跳过
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.isRulesVisible()) {
+                while (client.options.keySwapOffhand.consumeClick()) {
+                    io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.skip();
+                }
+            }
         });
         
         // === 狼人杀 S2C 接收器 ===
@@ -1399,6 +1444,7 @@ public class SREClient implements ClientModInitializer {
                 return;
             FourthRoomCameraDirector.tick(client);
             net.exmo.sre.camera.client.AdvancedCameraDirector.tick(client);
+            io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.tick(client);
             if (SREClient.gameComponent == null)
                 return;
 

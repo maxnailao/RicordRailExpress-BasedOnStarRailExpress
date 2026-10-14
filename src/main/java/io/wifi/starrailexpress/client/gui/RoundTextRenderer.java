@@ -84,7 +84,7 @@ public class RoundTextRenderer {
         GameMode gamemode = SREGameWorldComponent.KEY.get(player.level()).getGameMode();
         boolean isLooseEnds = gamemode.isLooseEndMode();
 
-        if (welcomeTime > 0) {
+        if (welcomeTime > 0 && !OpeningPresentationCoordinator.shouldWaitForWelcome()) {
             if (welcomeTime <= WELCOME_DURATION - GameConstants.FADE_TIME + 15) {
                 MapDetailsRenderer.renderHud(renderer, player, context, partialTicks);
             }
@@ -491,7 +491,7 @@ public class RoundTextRenderer {
     public static void tick() {
         if (Minecraft.getInstance().level != null) {
             LocalPlayer player = Minecraft.getInstance().player;
-            if (welcomeTime > 0) {
+            if (!OpeningPresentationCoordinator.shouldWaitForWelcome() && welcomeTime > 0) {
                 switch (welcomeTime) {
                     case 200 -> {
                         if (player != null)
@@ -549,6 +549,19 @@ public class RoundTextRenderer {
         RoundTextRenderer.cachedCanJumpTip = null;
         RoundTextRenderer.cachedGoalText = null;
         RoundTextRenderer.cachedPremiseText = null;
+    }
+
+    /** 开局角色公布文案是否仍在播放（供开场流程判断文案与规则卡谁掌屏）。 */
+    public static boolean isWelcomeActive() {
+        return welcomeTime > 0;
+    }
+
+    /** 立即结束欢迎文案（切换世界 / 断开连接时清理，避免残留显示）。 */
+    public static void clearWelcome() {
+        welcomeTime = 0;
+        cachedWelcomeText = null;
+        cachedPremiseText = null;
+        cachedGoalText = null;
     }
 
     public static void startEnd() {

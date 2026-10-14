@@ -179,6 +179,15 @@ public class RoleRotationCache {
         return isSelecting || confirmCountdown > 0;
     }
 
+    /**
+     * 结束轮选阶段（真开局镜头开始、职业已确定时调用）：只收起「轮选进行中」判定，
+     * 让轮选界面不再被反复顶出。玩家数据留待 {@link #clear()} 在整局结束时清理。
+     */
+    public static void finishRotation() {
+        isSelecting = false;
+        confirmCountdown = -1;
+    }
+
     // 清空（游戏结束）
     public static void clear() {
         isSelecting = false;
