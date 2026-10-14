@@ -263,6 +263,7 @@
     "gui.sre.map_selector.voting_timer":  "Voting will end in %s seconds",
     "gui.sre.map_selector.preset_mode":  "Preset Game Mode: %s",
     "hud.sre.tip.gamemode.murder":  "Murder Mode",
+    "hud.time.frozen":  "(Frozen)",
     "hud.sre.tip.gamemode.loose_ends":  "Outlaw Mode",
     "hud.sre.tip.gamemode.gambler":  "Gambler Mode",
     "hud.sre.tip.gamemode.role_pick":  "Sunshine Free Pick Mode",

@@ -1239,6 +1239,7 @@
     "hud.noellesroles.repair.struggle_line": "左右点击挣扎 %s%%",
     "hud.noellesroles.stalker.dash_cooldown": "冲刺冷却 %s",
     "hud.sre.clue_archive.count": "线索 %s | 可发送 %s 次",
+    "hud.time.frozen": "(已冻结)",
     "hud.sre.clue_archive.prompt": "%s 打开线索档案库",
     "hud.sre.custom_role.skill_cooldown": "§c技能冷却: %ss",
     "hud.sre.custom_role.skill_ready": "§a技能已就绪",
