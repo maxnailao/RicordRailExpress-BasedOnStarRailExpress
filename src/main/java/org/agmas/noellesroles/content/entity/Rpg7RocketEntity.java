@@ -147,7 +147,8 @@ public class Rpg7RocketEntity extends AbstractArrow {
         if (!player.isCreative()) {
             Rpg7Item.setAmmoCount(stack, Rpg7Item.getAmmoCount(stack) - 1);
         }
-        player.getCooldowns().addCooldown(stack.getItem(), Rpg7Item.COOLDOWN_TICKS);
+        // 炮管冷却：冒险模式 30 秒，其余用默认值
+        player.getCooldowns().addCooldown(stack.getItem(), Rpg7Item.cooldownTicksFor(player));
 
         ServerLevel level = player.serverLevel();
         Vec3 look = player.getLookAngle();
@@ -186,6 +187,9 @@ public class Rpg7RocketEntity extends AbstractArrow {
         }
 
         Rpg7Item.setAmmoCount(stack, 1);
+        // 换弹后进入换弹冷却（5 秒）。以前这里不加冷却，只有客户端那份 1 秒的冷却，
+        // 于是服务端可以被连续触发换弹 —— 两端都按 RELOAD_TICKS 对齐。
+        player.getCooldowns().addCooldown(stack.getItem(), Rpg7Item.RELOAD_TICKS);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ARMOR_EQUIP_IRON, SoundSource.PLAYERS, 0.6f, 1f);
     }

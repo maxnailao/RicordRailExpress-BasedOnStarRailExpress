@@ -38,8 +38,26 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
     public static double ROCKET_GRAVITY = 0.03;
     /** 爆炸半径（可动态调整，默认同 C4） */
     public static float BLAST_RADIUS = 7.0f;
-    /** 射击冷却（tick） */
+    /** 射击冷却（tick）：普通模式炮管冷却 */
     public static int COOLDOWN_TICKS = 20 * 3;
+    /** 冒险模式（非创造）射击后的炮管冷却（tick）：30 秒 */
+    public static final int ADVENTURE_COOLDOWN_TICKS = 20 * 30;
+    /** 换弹耗时（tick）：5 秒 */
+    public static final int RELOAD_TICKS = 20 * 5;
+    /**
+     * 单次火箭弹击杀可获得的金币上限。
+     *
+     * <p>火箭弹爆炸是范围伤害，会同时对多名玩家结算击杀奖励，
+     * 所以这个上限是**按每次击杀逐个**扣的（与手雷的
+     * {@code grenadeMaxMoneyReward} 是"整颗雷总额"不同 —— 火箭弹的奖励走的是
+     * 通用击杀奖励链路，每名受害者一次）。
+     */
+    public static final int MAX_MONEY_PER_KILL = 350;
+
+    /** 按游戏模式取炮管冷却：冒险模式 30 秒，其余用默认值 */
+    public static int cooldownTicksFor(Player player) {
+        return (player != null && !player.isCreative()) ? ADVENTURE_COOLDOWN_TICKS : COOLDOWN_TICKS;
+    }
 
     public Rpg7Item(Properties settings) {
         super(settings.stacksTo(1));
@@ -127,7 +145,7 @@ public class Rpg7Item extends Item implements HeldLikeRevolver {
             return;
 
         ClientPlayNetworking.send(new Rpg7ShootPayload(Rpg7ShootPayload.Action.RELOAD));
-        user.getCooldowns().addCooldown(ModItems.RPG7, 20);
+        user.getCooldowns().addCooldown(ModItems.RPG7, RELOAD_TICKS);
     }
 
     // === Tooltip / 耐久条 ===

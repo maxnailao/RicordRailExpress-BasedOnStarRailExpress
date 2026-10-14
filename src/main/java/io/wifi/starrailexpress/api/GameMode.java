@@ -696,6 +696,15 @@ public abstract class GameMode {
                     && shouldGiveKillerBalance(victim, killer, deathReason)) {
                 int gift = OnGiveKillerBalance.EVENT.invoker().onGiveKillerBalance(victim, killer, deathReason);
                 gift += GameConstants.getMoneyPerKill();
+                // 悍匪 RPG-7：单次火箭弹击杀的金币收益封顶。
+                // 火箭弹是范围伤害，会对每名受害者各走一次结算，所以这里逐个封顶。
+                if (isRpgExplosion(deathReason)
+                        && gift > org.agmas.noellesroles.content.item.Rpg7Item.MAX_MONEY_PER_KILL) {
+                    SRE.LOGGER.info("[RPGReward] {} 的火箭弹击杀奖励 {} 超过上限 {}，已封顶",
+                            killer.getName().getString(), gift,
+                            org.agmas.noellesroles.content.item.Rpg7Item.MAX_MONEY_PER_KILL);
+                    gift = org.agmas.noellesroles.content.item.Rpg7Item.MAX_MONEY_PER_KILL;
+                }
                 SREPlayerShopComponent.KEY.get(killer).addToBalance(gift);
             }
             if (killer != null) {
@@ -737,6 +746,16 @@ public abstract class GameMode {
         if (result.equals(TrueFalseResult.FALSE))
             return false;
         return true;
+    }
+
+    /**
+     * 该死亡原因是否来自悍匪 RPG-7 的火箭弹爆炸。
+     *
+     * <p>死亡原因由 {@code Rpg7RocketEntity.explode()} 传入
+     * {@code Noellesroles.id("rpg_explosion")}。
+     */
+    public static boolean isRpgExplosion(ResourceLocation deathReason) {
+        return deathReason != null && "rpg_explosion".equals(deathReason.getPath());
     }
 
     /**
