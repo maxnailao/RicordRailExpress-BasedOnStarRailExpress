@@ -46,11 +46,21 @@ public class EntityRendererDispatchMixin {
                     context -> new PlayerBodyEntityRenderer<>(context, false),
                     PlayerSkin.Model.SLIM,
                     context -> new PlayerBodyEntityRenderer<>(context, true));
+    @Unique
+    private static final Map<PlayerSkin.Model, EntityRendererProvider<io.wifi.starrailexpress.traindummy.TrainDummyEntity>> TRAIN_DUMMY_RENDERER_FACTORIES = Map
+            .of(
+                    PlayerSkin.Model.WIDE,
+                    context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, false),
+                    PlayerSkin.Model.SLIM,
+                    context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, true));
 
     @Unique
     private Map<PlayerSkin.Model, EntityRenderer<? extends PlayerBodyEntity>> bodyModelRenderers = Map.of();
     @Unique
     private Map<PlayerSkin.Model, EntityRenderer<? extends PuppeteerBodyEntity>> puppeteerBodyModelRenderers = Map.of();
+    @Unique
+    private Map<PlayerSkin.Model, EntityRenderer<? extends io.wifi.starrailexpress.traindummy.TrainDummyEntity>> trainDummyModelRenderers = Map
+            .of();
 
     @Inject(method = "renderHitbox", at = @At("HEAD"), cancellable = true)
     private static void disableF3B(PoseStack poseStack, VertexConsumer vertexConsumer, Entity entity, float f, float g,
@@ -70,6 +80,7 @@ public class EntityRendererDispatchMixin {
     public void reload(ResourceManager manager, CallbackInfo ci, @Local EntityRendererProvider.Context context) {
         this.bodyModelRenderers = reloadPlayerBodyRenderers(context);
         this.puppeteerBodyModelRenderers = reloadPuppeteerBodyRenderers(context);
+        this.trainDummyModelRenderers = reloadTrainDummyRenderers(context);
     }
 
     @Inject(method = "getRenderer", at = @At("HEAD"), cancellable = true)
@@ -104,6 +115,40 @@ public class EntityRendererDispatchMixin {
                         : (EntityRenderer<? super T>) this.puppeteerBodyModelRenderers.get(PlayerSkin.Model.WIDE)));
             }
         }
+    }
+
+    @Inject(method = "getRenderer", at = @At("HEAD"), cancellable = true)
+    public <T extends Entity> void sre$addTrainDummyRenderer(T entity,
+            CallbackInfoReturnable<EntityRenderer<? super T>> cir) {
+        if (!(entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy)) {
+            return;
+        }
+        PlayerSkin.Model model = io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer.slim(dummy)
+                ? PlayerSkin.Model.SLIM
+                : PlayerSkin.Model.WIDE;
+        EntityRenderer<? extends io.wifi.starrailexpress.traindummy.TrainDummyEntity> renderer = this.trainDummyModelRenderers
+                .get(model);
+        if (renderer == null) {
+            renderer = this.trainDummyModelRenderers.get(PlayerSkin.Model.WIDE);
+        }
+        if (renderer != null) {
+            cir.setReturnValue((EntityRenderer<? super T>) renderer);
+        }
+    }
+
+    @Unique
+    private static Map<PlayerSkin.Model, EntityRenderer<? extends io.wifi.starrailexpress.traindummy.TrainDummyEntity>> reloadTrainDummyRenderers(
+            EntityRendererProvider.Context ctx) {
+        ImmutableMap.Builder<PlayerSkin.Model, EntityRenderer<? extends io.wifi.starrailexpress.traindummy.TrainDummyEntity>> builder = ImmutableMap
+                .builder();
+        TRAIN_DUMMY_RENDERER_FACTORIES.forEach((model, factory) -> {
+            try {
+                builder.put(model, factory.create(ctx));
+            } catch (Exception failure) {
+                throw new IllegalArgumentException("Failed to create train dummy model for " + model, failure);
+            }
+        });
+        return builder.build();
     }
 
     @Unique

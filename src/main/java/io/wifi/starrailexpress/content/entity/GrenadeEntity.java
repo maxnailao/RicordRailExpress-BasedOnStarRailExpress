@@ -124,6 +124,11 @@ public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile
                     ghostPhantomEntity.playerHurt(this.getOwner() instanceof Player playerEntity ? playerEntity : null,
                             GameConstants.DeathReasons.PHANTOM_DESTROYED);
                 }
+                if (entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                        && dummy.canReceiveHits()) {
+                    io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, attacker,
+                            GameConstants.DeathReasons.GRENADE);
+                }
                 count++;
                 if (count >= MAX_KILL_PLAYER_COUNT)
                     break;
@@ -241,6 +246,17 @@ public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile
                         continue;
                     affected.add(ghostPhantomEntity);
                 }
+            }
+            if (entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()) {
+                double distance = Math.sqrt(dummy.distanceToSqr(center));
+                double v = distance / diameter;
+                if (v > 1.0)
+                    continue;
+                double visibility = computeSpatialVisibility(level, center, dummy);
+                if (visibility < MIN_VISIBILITY_THRESHOLD)
+                    continue;
+                affected.add(dummy);
             }
         }
 

@@ -1,6 +1,22 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeBat;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -10,6 +26,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -27,7 +44,7 @@ import org.agmas.noellesroles.init.NRSounds;
 
 import java.util.List;
 
-public class ShortShotgunItem extends Item implements HeldLikeBat {
+public class ShortShotgunItem extends Item implements HeldLikeBat, TrainWeapon {
     /** 最小蓄力时间：0.2秒 = 4刻 */
     private static final int MIN_CHARGE_TICKS = 4;
     private static final int MAX_CHARGE_TICKS = 40;
@@ -105,18 +122,19 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
         // 生成与实际扇形射程一致的粒子效果
         spawnFlameParticles(serverLevel, player, killRange);
 
-        // 扇形范围检测：击杀范围随蓄力从2格提升到4格，达到3格后外扩2格造成1点伤害并击退。
+        // 锥形范围检测：以玩家视线（含俯仰角）为轴，
+        // 击杀范围随蓄力从2格提升到4格，达到3格后外扩2格造成1点伤害并击退。
         Vec3 look = player.getLookAngle();
-        Vec3 l2 = new Vec3(look.x, 0, look.z);
-        double llen = Math.sqrt(l2.x * l2.x + l2.z * l2.z);
-        if (llen > 0) {
-            Vec3 nlook = l2.scale(1.0 / llen);
-            double cosHalfAngle = Math.cos(Math.toRadians(FAN_HALF_ANGLE_DEGREES)); // 70度扇形
+        double lookLength = look.length();
+        if (lookLength > 1e-6) {
+            Vec3 aim = look.scale(1.0 / lookLength);
+            Vec3 origin = player.getEyePosition();
+            double cosHalfAngle = Math.cos(Math.toRadians(FAN_HALF_ANGLE_DEGREES)); // 70度锥角
 
             java.util.Set<Integer> processed = new java.util.HashSet<>();
-            applyFanEffect(world, player, nlook, cosHalfAngle, 0.0, killRange, true, processed);
+            applyFanEffect(world, player, origin, aim, cosHalfAngle, 0.0, killRange, true, processed);
             if (killRange >= KNOCKBACK_UNLOCK_RANGE) {
-                applyFanEffect(world, player, nlook, cosHalfAngle,
+                applyFanEffect(world, player, origin, aim, cosHalfAngle,
                         killRange, killRange + KNOCKBACK_RANGE_EXTENSION, false, processed);
             }
         }
@@ -135,45 +153,78 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
         return MIN_KILL_RANGE + (MAX_KILL_RANGE - MIN_KILL_RANGE) * chargeProgress;
     }
 
-    private static void applyFanEffect(Level world, Player player, Vec3 nlook, double cosHalfAngle,
+    /**
+     * 锥形范围效果：以玩家视线（含俯仰角）为轴进行三维判定，向上或向下看时锥形随之倾斜。
+     *
+     * @param origin       锥形顶点（玩家眼睛位置）
+     * @param aim          玩家视线单位向量（含俯仰）
+     * @param cosHalfAngle 锥形半角的余弦值
+     */
+    private static void applyFanEffect(Level world, Player player, Vec3 origin, Vec3 aim, double cosHalfAngle,
                                        double minRange, double maxRange, boolean lethal,
                                        java.util.Set<Integer> processed) {
         int pBlockX = player.blockPosition().getX();
-        int pBlockZ = player.blockPosition().getZ();
         int pBlockY = player.blockPosition().getY();
+        int pBlockZ = player.blockPosition().getZ();
         int blockRange = (int) Math.ceil(maxRange);
+        double reach = maxRange + 1.5;
+        double reachSq = reach * reach;
 
         for (int dx = -blockRange; dx <= blockRange; dx++) {
-            for (int dz = -blockRange; dz <= blockRange; dz++) {
-                int bx = pBlockX + dx;
-                int bz = pBlockZ + dz;
-
-                if (dx * nlook.x + dz * nlook.z <= 0.1) {
-                    continue;
-                }
-
-                if (!isBlockInFan(bx, bz, player.getX(), player.getZ(), nlook, cosHalfAngle, maxRange)) {
-                    continue;
-                }
-                if (minRange > 0.0
-                        && isBlockInFan(bx, bz, player.getX(), player.getZ(), nlook, cosHalfAngle, minRange)) {
-                    continue;
-                }
-
-                AABB tileBox = new AABB(bx, pBlockY - 1, bz, bx + 1, pBlockY + 2, bz + 1);
-                List<Player> tilePlayers = world.getEntitiesOfClass(Player.class, tileBox,
-                        p -> p != player && GameUtils.isPlayerAliveAndSurvival(p));
-                for (Player target : tilePlayers) {
-                    if (processed.contains(target.getId()) || !canSeeTarget(world, player, target)) {
+            for (int dy = -blockRange; dy <= blockRange; dy++) {
+                for (int dz = -blockRange; dz <= blockRange; dz++) {
+                    if (dx * dx + dy * dy + dz * dz > reachSq) {
                         continue;
                     }
-                    processed.add(target.getId());
-                    if (lethal) {
-                        io.wifi.starrailexpress.game.GameUtils.killPlayer(target, true, player,
-                                Noellesroles.id("short_shotgun"));
-                    } else {
-                        target.hurt(player.damageSources().playerAttack(player), 1.0F);
-                        target.knockback(0.5F, player.getX() - target.getX(), player.getZ() - target.getZ());
+
+                    int bx = pBlockX + dx;
+                    int by = pBlockY + dy;
+                    int bz = pBlockZ + dz;
+
+                    if (!isBlockInCone(bx, by, bz, origin, aim, cosHalfAngle, maxRange)) {
+                        continue;
+                    }
+                    if (minRange > 0.0
+                            && isBlockInCone(bx, by, bz, origin, aim, cosHalfAngle, minRange)) {
+                        continue;
+                    }
+
+                    // 玩家高度接近2格，向上多取一格以确保覆盖站在该方块上的目标
+                    AABB tileBox = new AABB(bx, by, bz, bx + 1, by + 2, bz + 1);
+                    List<Player> tilePlayers = world.getEntitiesOfClass(Player.class, tileBox,
+                            p -> p != player && GameUtils.isPlayerAliveAndSurvival(p));
+                    for (Player target : tilePlayers) {
+                        if (processed.contains(target.getId()) || !canSeeTarget(world, player, target)) {
+                            continue;
+                        }
+                        processed.add(target.getId());
+                        // 防暴盾牌格挡：无论本次是致命扇形还是击退扇形，正举盾正面朝向枪口的目标
+                        // 都会被挡下（消耗盾牌 1 点耐久），不吃击杀也不吃伤害与击退
+                        if (RiotShieldHandler.tryBlockAttack(target, player)) {
+                            continue;
+                        }
+                        if (lethal) {
+                            io.wifi.starrailexpress.game.GameUtils.killPlayer(target, true, player,
+                                    Noellesroles.id("short_shotgun"));
+                        } else {
+                            target.hurt(player.damageSources().playerAttack(player), 1.0F);
+                            // 沿射击方向击退（knockback 内部取反，故传入 -aim）
+                            target.knockback(0.5F, -aim.x, -aim.z);
+                        }
+                    }
+                    for (io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy : world.getEntitiesOfClass(
+                            io.wifi.starrailexpress.traindummy.TrainDummyEntity.class, tileBox,
+                            io.wifi.starrailexpress.traindummy.TrainDummyEntity::canReceiveHits)) {
+                        if (processed.contains(dummy.getId()) || !canSeeTarget(world, player, dummy)) {
+                            continue;
+                        }
+                        processed.add(dummy.getId());
+                        if (lethal) {
+                            io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player,
+                                    Noellesroles.id("short_shotgun"));
+                        } else {
+                            dummy.showHit(player);
+                        }
                     }
                 }
             }
@@ -185,9 +236,13 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
      */
     private void spawnFlameParticles(ServerLevel serverLevel, Player player, double killRange) {
         Vec3 look = player.getLookAngle();
-        double startX = player.getX() + look.x * 0.5;
-        double startY = player.getY() + player.getEyeHeight() * 0.5;
-        double startZ = player.getZ() + look.z * 0.5;
+        Vec3 aim = look.length() > 1e-6 ? look.normalize() : new Vec3(0.0, 0.0, 1.0);
+        Vec3 right = getFanRight(aim);
+        // 粒子从持枪的手部（枪口）发射，而不是头部
+        Vec3 origin = getHandPosition(player, aim, right);
+        double startX = origin.x + aim.x * 0.5;
+        double startY = origin.y + aim.y * 0.5;
+        double startZ = origin.z + aim.z * 0.5;
 
         // 发射方向的火焰粒子
         for (int i = 0; i < 15; i++) {
@@ -201,9 +256,9 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
                     ParticleTypes.FLAME,
                     startX + offsetX, startY + offsetY, startZ + offsetZ,
                     1,
-                    look.x * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
-                    look.y * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
-                    look.z * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
+                    aim.x * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
+                    aim.y * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
+                    aim.z * speed + (serverLevel.random.nextDouble() - 0.5) * 0.05,
                     0.02);
         }
 
@@ -219,9 +274,9 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
                     ParticleTypes.SMOKE,
                     startX + offsetX, startY + offsetY, startZ + offsetZ,
                     1,
-                    look.x * speed,
-                    look.y * speed + 0.02,
-                    look.z * speed,
+                    aim.x * speed,
+                    aim.y * speed + 0.02,
+                    aim.z * speed,
                     0.01);
         }
 
@@ -237,99 +292,131 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
                     ParticleTypes.SOUL_FIRE_FLAME,
                     startX + offsetX, startY + offsetY, startZ + offsetZ,
                     1,
-                    look.x * speed + (serverLevel.random.nextDouble() - 0.5) * 0.03,
-                    look.y * speed + 0.03,
-                    look.z * speed + (serverLevel.random.nextDouble() - 0.5) * 0.03,
+                    aim.x * speed + (serverLevel.random.nextDouble() - 0.5) * 0.03,
+                    aim.y * speed + 0.03,
+                    aim.z * speed + (serverLevel.random.nextDouble() - 0.5) * 0.03,
                     0.01);
         }
 
-        Vec3 horizontalLook = new Vec3(look.x, 0.0, look.z);
-        double lookLength = horizontalLook.length();
-        if (lookLength <= 0.0) {
-            return;
-        }
-
-        Vec3 nlook = horizontalLook.scale(1.0 / lookLength);
-        spawnFanParticles(serverLevel, player, nlook, 0.4, killRange, ParticleTypes.FLAME, 0.02);
-        spawnFanBoundaryParticles(serverLevel, player, nlook, killRange, ParticleTypes.SOUL_FIRE_FLAME);
+        // 扇面粒子：铺在由"视线"和"水平右方向"张成的平面上，
+        // 保持原本的水平扇形外观，但整体随俯仰角倾斜
+        spawnFanParticles(serverLevel, origin, aim, right, 0.4, killRange, ParticleTypes.FLAME, 0.02);
+        spawnFanBoundaryParticles(serverLevel, origin, aim, right, 0.4, killRange,
+                ParticleTypes.SOUL_FIRE_FLAME);
 
         if (killRange >= KNOCKBACK_UNLOCK_RANGE) {
             double knockbackRange = killRange + KNOCKBACK_RANGE_EXTENSION;
-            spawnFanParticles(serverLevel, player, nlook, killRange, knockbackRange, ParticleTypes.SMOKE, 0.01);
-            spawnFanBoundaryParticles(serverLevel, player, nlook, knockbackRange, ParticleTypes.SMOKE);
+            spawnFanParticles(serverLevel, origin, aim, right, killRange, knockbackRange,
+                    ParticleTypes.SMOKE, 0.01);
+            spawnFanBoundaryParticles(serverLevel, origin, aim, right, killRange, knockbackRange,
+                    ParticleTypes.SMOKE);
         }
     }
 
-    private static void spawnFanParticles(ServerLevel serverLevel, Player player, Vec3 nlook,
+    /**
+     * 求扇面所在平面内的"右方向"：水平朝向绕 Y 轴右侧 90°，始终水平。
+     * 扇面由该向量与视线共同张成，因此抬头/低头时扇面会整体倾斜。
+     */
+    private static Vec3 getFanRight(Vec3 aim) {
+        Vec3 horizontal = new Vec3(aim.x, 0.0, aim.z);
+        if (horizontal.lengthSqr() < 1e-8) {
+            // 视线近乎垂直时水平朝向退化，取一个固定朝向兜底
+            horizontal = new Vec3(0.0, 0.0, 1.0);
+        }
+        return horizontal.normalize().cross(new Vec3(0.0, 1.0, 0.0)).normalize();
+    }
+
+    /**
+     * 在扇面内取方向：以视线为轴、在扇面内左右偏转 angle 弧度。
+     */
+    private static Vec3 fanDirection(Vec3 aim, Vec3 right, double radians) {
+        return aim.scale(Math.cos(radians)).add(right.scale(Math.sin(radians)));
+    }
+
+    /**
+     * 估算持枪手部（枪口）的世界坐标：由眼睛位置向下移到手部高度，
+     * 并向持枪侧（右手）与视线前方各偏移一点。随俯仰/转身一起变化。
+     */
+    private static Vec3 getHandPosition(Player player, Vec3 aim, Vec3 right) {
+        return player.getEyePosition()
+                .add(new Vec3(0.0, -0.5, 0.0)) // 眼睛 -> 手部高度
+                .add(right.scale(0.25))        // 偏向持枪手（右手）
+                .add(aim.scale(0.15));         // 略微前伸
+    }
+
+    private static void spawnFanParticles(ServerLevel serverLevel, Vec3 origin, Vec3 aim, Vec3 right,
                                           double minRange, double maxRange,
                                           net.minecraft.core.particles.ParticleOptions particle,
                                           double speed) {
-        double y = player.getY() + 0.85;
         for (double distance = minRange; distance <= maxRange + 0.001; distance += 0.35) {
             for (double angle = -FAN_HALF_ANGLE_DEGREES; angle <= FAN_HALF_ANGLE_DEGREES + 0.001; angle += 7.0) {
-                Vec3 dir = rotateHorizontal(nlook, Math.toRadians(angle));
+                Vec3 dir = fanDirection(aim, right, Math.toRadians(angle));
+                Vec3 pos = origin.add(dir.scale(distance));
                 double jitter = (serverLevel.random.nextDouble() - 0.5) * 0.12;
-                double x = player.getX() + dir.x * distance + jitter;
-                double z = player.getZ() + dir.z * distance + jitter;
-                serverLevel.sendParticles(particle, x, y, z, 1, 0.03, 0.02, 0.03, speed);
+                serverLevel.sendParticles(particle,
+                        pos.x + jitter, pos.y, pos.z + jitter,
+                        1, 0.03, 0.02, 0.03, speed);
             }
         }
     }
 
-    private static void spawnFanBoundaryParticles(ServerLevel serverLevel, Player player, Vec3 nlook,
-                                                  double range,
+    private static void spawnFanBoundaryParticles(ServerLevel serverLevel, Vec3 origin, Vec3 aim, Vec3 right,
+                                                  double minRange, double range,
                                                   net.minecraft.core.particles.ParticleOptions particle) {
-        double y = player.getY() + 0.9;
+        // 外弧
         for (double angle = -FAN_HALF_ANGLE_DEGREES; angle <= FAN_HALF_ANGLE_DEGREES + 0.001; angle += 3.5) {
-            Vec3 dir = rotateHorizontal(nlook, Math.toRadians(angle));
-            double x = player.getX() + dir.x * range;
-            double z = player.getZ() + dir.z * range;
-            serverLevel.sendParticles(particle, x, y, z, 1, 0.02, 0.02, 0.02, 0.0);
+            Vec3 dir = fanDirection(aim, right, Math.toRadians(angle));
+            Vec3 pos = origin.add(dir.scale(range));
+            serverLevel.sendParticles(particle, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.0);
+        }
+        // 两条直边（随俯仰一起倾斜，用于直观体现扇面的朝向）
+        for (double edge : new double[]{-FAN_HALF_ANGLE_DEGREES, FAN_HALF_ANGLE_DEGREES}) {
+            Vec3 dir = fanDirection(aim, right, Math.toRadians(edge));
+            for (double distance = minRange; distance <= range + 0.001; distance += 0.35) {
+                Vec3 pos = origin.add(dir.scale(distance));
+                serverLevel.sendParticles(particle, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.0);
+            }
         }
     }
 
-    private static Vec3 rotateHorizontal(Vec3 vec, double radians) {
-        double cos = Math.cos(radians);
-        double sin = Math.sin(radians);
-        return new Vec3(vec.x * cos - vec.z * sin, 0.0, vec.x * sin + vec.z * cos);
-    }
+    /** 方块取样的8个角 + 中心点（相对方块最小坐标的偏移） */
+    private static final double[][] BLOCK_CORNER_OFFSETS = {
+        {0.0, 0.0, 0.0},
+        {1.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0},
+        {1.0, 1.0, 0.0},
+        {0.0, 0.0, 1.0},
+        {1.0, 0.0, 1.0},
+        {0.0, 1.0, 1.0},
+        {1.0, 1.0, 1.0},
+        {0.5, 0.5, 0.5}
+    };
 
     /**
-     * 检查方块是否与扇形区域相交。
-     * 检查方块的四个角和中心点，只要有一个点在扇形内（距离<=maxRange 且 角度<=半角），
+     * 检查方块是否与锥形区域相交（三维判定，随俯仰角倾斜）。
+     * 检查方块的8个角和中心点，只要有一个点在锥体内（距离&lt;=maxRange 且 与视线夹角&lt;=半角），
      * 就认为该方块命中——即"不完整的部分也算作一格"。
      *
      * @param bx           方块X坐标
+     * @param by           方块Y坐标
      * @param bz           方块Z坐标
-     * @param playerX      玩家精确X
-     * @param playerZ      玩家精确Z
-     * @param nlook        玩家视线方向单位向量（XZ平面）
-     * @param cosHalfAngle 扇形半角的余弦值
+     * @param origin       锥形顶点（玩家眼睛位置）
+     * @param aim          玩家视线单位向量（含俯仰）
+     * @param cosHalfAngle 锥形半角的余弦值
      * @param maxRange     最大射程（格）
-     * @return 方块是否与扇形相交
+     * @return 方块是否与锥形相交
      */
-    private static boolean isBlockInFan(int bx, int bz, double playerX, double playerZ,
-                                         Vec3 nlook, double cosHalfAngle, double maxRange) {
-        // 检查方块的4个角和中心点
-        double[][] checkPoints = {
-            {bx + 0.0, bz + 0.0},
-            {bx + 1.0, bz + 0.0},
-            {bx + 0.0, bz + 1.0},
-            {bx + 1.0, bz + 1.0},
-            {bx + 0.5, bz + 0.5}
-        };
-
-        for (double[] point : checkPoints) {
-            double cx = point[0];
-            double cz = point[1];
-            double dx = cx - playerX;
-            double dz = cz - playerZ;
-            double dist = Math.sqrt(dx * dx + dz * dz);
-            if (dist == 0)
+    private static boolean isBlockInCone(int bx, int by, int bz, Vec3 origin, Vec3 aim,
+                                         double cosHalfAngle, double maxRange) {
+        for (double[] offset : BLOCK_CORNER_OFFSETS) {
+            double dx = bx + offset[0] - origin.x;
+            double dy = by + offset[1] - origin.y;
+            double dz = bz + offset[2] - origin.z;
+            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist <= 1e-6 || dist > maxRange) {
                 continue;
-            if (dist > maxRange)
-                continue;
-            double dot = nlook.x * (dx / dist) + nlook.z * (dz / dist);
+            }
+            double dot = aim.x * (dx / dist) + aim.y * (dy / dist) + aim.z * (dz / dist);
             if (dot >= cosHalfAngle) {
                 return true;
             }
@@ -345,7 +432,7 @@ public class ShortShotgunItem extends Item implements HeldLikeBat {
      * @param target  目标玩家
      * @return true 表示视线畅通，false 表示被方块阻挡
      */
-    private static boolean canSeeTarget(Level world, Player shooter, Player target) {
+    private static boolean canSeeTarget(Level world, Player shooter, Entity target) {
         Vec3 from = shooter.getEyePosition(); // 射击者眼睛位置
         Vec3 to = target.getEyePosition(); // 目标眼睛位置
 

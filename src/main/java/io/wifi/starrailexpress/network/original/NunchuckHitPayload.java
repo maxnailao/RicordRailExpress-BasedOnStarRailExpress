@@ -18,6 +18,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
@@ -39,7 +40,7 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
         return ID;
     }
 
-    public static void onHurt(ServerPlayer attacker, Player target, int direction_) {
+    public static void onHurt(ServerPlayer attacker, LivingEntity target, int direction_) {
         // 检查冷却
         if (attacker.getCooldowns().isOnCooldown(TMMItems.NUNCHUCK)) {
             return;
@@ -64,12 +65,17 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
         // 检查游戏状态
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(attacker.level());
         final var role = game.getRole(attacker);
-        if (role != null && !role.onGunHit(attacker, target)) {
-            return;
-        }
+        if (target instanceof ServerPlayer playerTarget) {
+            if (role != null && !role.onGunHit(attacker, playerTarget)) {
+                return;
+            }
 
-        // 检查目标是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(target)) {
+            // 检查目标是否存活
+            if (!GameUtils.isPlayerAliveAndSurvival(playerTarget)) {
+                return;
+            }
+        } else if (!(target instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy)
+                || !dummy.canReceiveHits()) {
             return;
         }
 
@@ -114,14 +120,31 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
         // 造成1点伤害
         target.hurt(attacker.level().damageSources().playerAttack(attacker), 1.0f);
 
+        if (target instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy) {
+            io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyEffect(dummy,
+                    new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 1));
+            if (dummy.noteNunchuckHit(attacker.getUUID(), nearSolid(dummy))) {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, attacker,
+                        GameConstants.DeathReasons.NUNCHUCK);
+                if (!attacker.isCreative()) {
+                    attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 5 * 20);
+                }
+            } else if (!attacker.isCreative()) {
+                attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, shouldApplyCooldown ? cooldownTicks : 0);
+            }
+            return;
+        }
+
+        Player playerTarget = (Player) target;
+
         // 给目标施加1.5秒缓慢2效果
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 1));
 
         // 检查目标是否在方块侧面
-        boolean targetNearBlock = NunchuckItem.isPlayerNearBlock(target);
+        boolean targetNearBlock = NunchuckItem.isPlayerNearBlock(playerTarget);
 
         // 获取目标的击打记录组件
-        SREPlayerNunchuckComponent targetComponent = SREPlayerNunchuckComponent.KEY.get(target);
+        SREPlayerNunchuckComponent targetComponent = SREPlayerNunchuckComponent.KEY.get(playerTarget);
         SREPlayerNunchuckComponent.HitRecord record = targetComponent.getHitRecord(attacker.getUUID());
 
         boolean shouldKill = false;
@@ -148,7 +171,7 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
 
         // 如果应该击杀，执行击杀
         if (shouldKill) {
-            GameUtils.killPlayer(target, true, attacker, GameConstants.DeathReasons.NUNCHUCK);
+            GameUtils.killPlayer(playerTarget, true, attacker, GameConstants.DeathReasons.NUNCHUCK);
             targetComponent.clearHitRecord(attacker.getUUID());
 
             // 设置物品冷却
@@ -203,6 +226,23 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
             if (targetEntity instanceof Player targetP) {
                 onHurt(attacker, targetP, payload.direction);
             }
+
+            // 检查是否是列车假人
+            if (targetEntity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()) {
+                onHurt(attacker, dummy, payload.direction);
+            }
         }
+    }
+
+    private static boolean nearSolid(LivingEntity entity) {
+        var pos = entity.blockPosition();
+        int[][] offsets = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+        for (int[] offset : offsets) {
+            if (!entity.level().getBlockState(pos.offset(offset[0], offset[1], offset[2])).isAir()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.innocence.fool;
 
 import io.wifi.starrailexpress.SRE;
@@ -51,10 +66,13 @@ public record FoolExecutionerGunShootC2SPacket(int targetId) implements CustomPa
                     TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5f,
                     1f + shooter.getRandom().nextFloat() * .1f - .05f);
 
+            var aimed = shooter.serverLevel().getEntity(payload.targetId());
             ServerPlayer target = null;
-            if (shooter.serverLevel().getEntity(payload.targetId()) instanceof ServerPlayer foundTarget
-                    && foundTarget.distanceTo(shooter) < 70.0) {
+            if (aimed instanceof ServerPlayer foundTarget && foundTarget.distanceTo(shooter) < 70.0) {
                 target = foundTarget;
+            } else if (aimed instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits() && dummy.distanceTo(shooter) < 70.0) {
+                dummy.showHit(shooter);
             }
 
             if (target != null) {
@@ -69,7 +87,7 @@ public record FoolExecutionerGunShootC2SPacket(int targetId) implements CustomPa
 
             shooter.level().playSound(null, shooter.getX(), shooter.getEyeY(), shooter.getZ(),
                     TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
-                    1f + shooter.getRandom().nextFloat() * .1f - .05f);
+                    0.7f + shooter.getRandom().nextFloat() * .1f - .05f);
 
             for (ServerPlayer tracking : PlayerLookup.tracking(shooter)) {
                 PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(shooter.getId()));

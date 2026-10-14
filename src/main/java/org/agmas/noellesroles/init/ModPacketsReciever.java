@@ -1042,13 +1042,17 @@ public class ModPacketsReciever {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       // 验证目标是否存在且在范围内
-      if (!(player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target))
+      var stabbed = player.serverLevel().getEntity(payload.target());
+      io.wifi.starrailexpress.traindummy.TrainDummyEntity dummyTarget = stabbed instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+          && dummy.canReceiveHits() ? dummy : null;
+      ServerPlayer target = stabbed instanceof ServerPlayer playerTarget ? playerTarget : null;
+      if (target == null && dummyTarget == null)
         return;
-      if (target.distanceTo(player) > 3.0)
+      if (stabbed.distanceTo(player) > 3.0)
         return;
 
       // 检查目标是否存活
-      if (!GameUtils.isPlayerAliveAndSurvival(target)) {
+      if (dummyTarget == null && !GameUtils.isPlayerAliveAndSurvival(target)) {
         player.displayClientMessage(
             Component.translatable("item.noellesroles.fire_axe.target_dead")
                 .withStyle(ChatFormatting.RED),
@@ -1091,8 +1095,14 @@ public class ModPacketsReciever {
       }
 
       // 执行击杀
-      GameUtils.killPlayer(target, true, player, org.agmas.noellesroles.content.item.FireAxeItem.DEATH_REASON_FIRE_AXE);
-      target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+      if (dummyTarget != null) {
+        io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummyTarget, player,
+            org.agmas.noellesroles.content.item.FireAxeItem.DEATH_REASON_FIRE_AXE);
+        dummyTarget.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+      } else {
+        GameUtils.killPlayer(target, true, player, org.agmas.noellesroles.content.item.FireAxeItem.DEATH_REASON_FIRE_AXE);
+        target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+      }
       player.swing(InteractionHand.MAIN_HAND);
 
       // 回放记录

@@ -85,6 +85,17 @@ public class RiotShieldHandler {
     }
 
     /**
+     * 供走原版攻击路线的武器（如短管霰弹枪）在结算伤害前调用：
+     * 复用 {@link #allowDeath} 的格挡判定（传入白名单内的死因），
+     * 正面举盾时播放音效并消耗 1 点耐久。
+     *
+     * @return true 已被格挡，调用方应放弃本次攻击的全部伤害
+     */
+    public static boolean tryBlockAttack(Player victim, Player attacker) {
+        return !allowDeath(victim, attacker, GameConstants.DeathReasons.BAT);
+    }
+
+    /**
      * 检查玩家是否正在举防暴盾牌
      */
     public static boolean isBlockingWithRiotShield(Player player) {

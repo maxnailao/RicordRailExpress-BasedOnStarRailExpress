@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.customrole.CustomRoleToolItem;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 
 // OP以及建造使用的物品
 public class DevItems {
@@ -23,6 +24,10 @@ public class DevItems {
             "map_tool");
     public static Item CUSTOM_ROLE_TOOL = register(new CustomRoleToolItem(new Item.Properties().stacksTo(1)),
             "custom_role_tool");
+    public static Item TRAIN_DUMMY_TOOL = register(
+            new io.wifi.starrailexpress.traindummy.TrainDummyToolItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
+            "train_dummy_tool");
     @SuppressWarnings("unchecked")
     public static Item register(Item item, String id) {
         // Create the identifier for the item.

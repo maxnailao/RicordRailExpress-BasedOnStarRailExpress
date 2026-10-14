@@ -149,6 +149,9 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(KnifeStabPayload.ID, KnifeStabPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(GunShootPayload.ID, GunShootPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SniperShootPayload.TYPE, SniperShootPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.network.original.TrainDummySpawnC2SPayload.ID,
+                io.wifi.starrailexpress.network.original.TrainDummySpawnC2SPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StoreBuyPayload.ID, StoreBuyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestOpenClueArchivePayload.ID, RequestOpenClueArchivePayload.CODEC);

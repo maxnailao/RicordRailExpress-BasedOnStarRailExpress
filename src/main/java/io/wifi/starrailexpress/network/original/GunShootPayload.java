@@ -173,6 +173,20 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 }
             }
             if (mainHandStack.is(TMMItemTags.GUNS)
+                    && player.serverLevel().getEntity(
+                            payload.target()) instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()
+                    && dummy.distanceToSqr(player) < 30 * 30) {
+                ResourceLocation dummyReason = mainHandStack.is(TMMItems.DERRINGER)
+                        ? GameConstants.DeathReasons.DERRINGER
+                        : GameConstants.DeathReasons.REVOLVER;
+                if (mainHandStack.is(ModItems.EXECUTIONER_GUN)) {
+                    dummyReason = GameConstants.DeathReasons.EXECUTE;
+                }
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player, dummyReason);
+                return;
+            }
+            if (mainHandStack.is(TMMItemTags.GUNS)
                     && player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
                     && target.distanceToSqr(player) < 30 * 30) {
                 SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());

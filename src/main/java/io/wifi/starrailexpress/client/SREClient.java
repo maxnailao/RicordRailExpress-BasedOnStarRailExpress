@@ -276,6 +276,8 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
         EntityRendererRegistry.register(TMMEntities.ZIPLINE_RIDER, NoopRenderer::new);
+        EntityRendererRegistry.register(io.wifi.starrailexpress.traindummy.TrainDummyEntity.TYPE,
+                context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, false));
 
         // Register entity model layers
         TMMModelLayers.initialize();

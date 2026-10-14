@@ -1,7 +1,23 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -22,7 +38,6 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -40,6 +55,12 @@ public class BombItem extends Item {
     public static Player findBomber(Player player, Player originalKiller, ResourceLocation deathReason) {
         var stack = MCItemsUtils.getFirstMatchedItem(player, (p) -> p.is(ModItems.BOMB));
         if (stack == null) {
+            return null;
+        }
+        if (stack.isEmpty()) {
+            return null;
+        }
+        if (stack.getCount() <= 0) {
             return null;
         }
         if (player.isSpectator())
@@ -63,7 +84,6 @@ public class BombItem extends Item {
             bomber = player.level().getPlayerByUUID(owner);
         if (bomber == null)
             return null;
-        // Removed the recursive killPlayer call that was causing StackOverflowError
         return bomber;
     }
 
@@ -124,7 +144,23 @@ public class BombItem extends Item {
         }
     }
 
-    private void explode(ServerPlayer player, ItemStack stack, CompoundTag customTag) {
+    public static void explode(ServerPlayer victim, Player killer) {
+        MCItemsUtils.clearItem(victim, ModItems.BOMB);
+        final var stack = ModItems.BOMB.getDefaultInstance();
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        CompoundTag tag = customData.copyTag();
+        if (killer != null)
+            tag.putUUID("owner", killer.getUUID());
+        explode(victim, stack, tag);
+    }
+
+    public static void explode(ServerPlayer player, ItemStack stack) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        CompoundTag tag = customData.copyTag();
+        explode(player, stack, tag);
+    }
+
+    private static void explode(ServerPlayer player, ItemStack stack, CompoundTag customTag) {
         stack.shrink(1);
         if (player.isSpectator())
             return;
@@ -139,15 +175,13 @@ public class BombItem extends Item {
         Player killer = null;
         if (owner != null)
             killer = player.level().getPlayerByUUID(owner);
-        if (killer == null)
-            killer = player;
-        GameUtils.killPlayer(player, true, killer, Noellesroles.id("bomb_death"));
+        GameUtils.killPlayer(player, true, killer, GameConstants.DeathReasons.BOMB_DEATH);
         ServerLevel serverLevel = player.serverLevel();
         serverLevel.players().forEach(
                 target -> {
                     if (SREGameWorldComponent.KEY.get(serverLevel).isRole(target, ModRoles.BOMBER)) {
                         SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(target);
-                        playerShopComponent.setBalance(90 + playerShopComponent.balance);
+                        playerShopComponent.addToBalance(90);
                         playerShopComponent.sync();
                     }
                 });
@@ -196,6 +230,25 @@ public class BombItem extends Item {
             // Play sound
             level.playSound(null, player.blockPosition(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 1.0f, 1.0f);
 
+            return InteractionResultHolder.consume(stack);
+        }
+        if (hitResult != null
+                && hitResult.getEntity() instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                && dummy.canReceiveHits()) {
+            if (blockHitResult.getType() == HitResult.Type.BLOCK
+                    && eyePosition.distanceTo(blockHitResult.getLocation()) < eyePosition.distanceTo(dummy.getEyePosition())) {
+                return InteractionResultHolder.pass(stack);
+            }
+            stack.shrink(1);
+            if (player instanceof ServerPlayer killer) {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, killer,
+                        GameConstants.DeathReasons.BOMB_DEATH);
+            } else {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, null,
+                        GameConstants.DeathReasons.BOMB_DEATH);
+            }
+            level.playSound(null, dummy.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.0f,
+                    1.0f);
             return InteractionResultHolder.consume(stack);
         }
 

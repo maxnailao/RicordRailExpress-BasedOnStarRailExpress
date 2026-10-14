@@ -55,5 +55,6 @@ public interface TMMEntities {
         registrar.registerEntries();
 
         FabricDefaultAttributeRegistry.register(PLAYER_BODY, PlayerBodyEntity.createAttributes());
+        io.wifi.starrailexpress.traindummy.TrainDummyEntity.init();
     }
 }
