@@ -811,6 +811,17 @@ public class NoellesrolesClient implements ClientModInitializer {
                     if (context
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen screen) {
                         screen.updateFromPacket(view);
+                    } else if (context
+                            .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.maprotation.MapRotationScreen rotationScreen) {
+                        // 地图轮换界面复用同一份地图介绍数据（Fabric 每个包 ID 只允许一个全局接收器）
+                        rotationScreen.updateFromPacket(view);
+                    }
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapRotationSyncPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    if (context
+                            .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.maprotation.MapRotationScreen rotationScreen) {
+                        rotationScreen.applyRotationSync(payload);
                     }
                 }));
 
