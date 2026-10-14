@@ -99,6 +99,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         SREEventRegister.registerServerPlayConnectionEvents();
         PlayerStatsManager.registerEvents();
         PlayerEconomyManager.registerEvents();
+        io.wifi.starrailexpress.morph.MorphManager.registerEvents();
+        io.wifi.starrailexpress.disguise.EntityDisguiseManager.registerEvents();
         ProgressionDataManager.registerEvents();
         io.wifi.starrailexpress.backpack.BackpackManager.registerEvents();
         io.wifi.starrailexpress.roster.RoleRosterManager.registerEvents();
@@ -306,6 +308,13 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     public static boolean isPlayerInGame(Player player) {
         return GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
+    }
+
+    public static long getTicksFromGameStart() {
+        if (SERVER == null) {
+            return 0;
+        }
+        return SREGameTimeComponent.KEY.get(SERVER.overworld()).getTicksFromGameStart();
     }
 
     public static class SRENetworking {

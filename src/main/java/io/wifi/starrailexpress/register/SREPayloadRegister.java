@@ -369,5 +369,15 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.network.ClickLockoutPayload.TYPE,
                 io.wifi.starrailexpress.network.ClickLockoutPayload.CODEC);
+
+        // 变形外观同步（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.MorphSyncPayload.ID,
+                io.wifi.starrailexpress.network.MorphSyncPayload.CODEC);
+
+        // 实体伪装状态同步（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.ID,
+                io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.CODEC);
     }
 }

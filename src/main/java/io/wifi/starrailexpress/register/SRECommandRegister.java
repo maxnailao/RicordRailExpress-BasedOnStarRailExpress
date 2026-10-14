@@ -95,6 +95,8 @@ public class SRECommandRegister {
             // 称号管理（管理员发放 / 收回 / 列举）
             io.wifi.starrailexpress.content.command.TitleCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.ScheduleCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.MorphCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.EntityDisguiseCommand.register(dispatcher, registryAccess);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);

@@ -1461,6 +1461,19 @@ public class SREClient implements ClientModInitializer {
             }
         });
         SREClientEvents.registerClientEvents();
+        // 变形（Morph）：皮肤 / 名牌覆盖 + 变形同步接收
+        io.wifi.starrailexpress.morph.MorphApiClient.registerClient();
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MorphSyncPayload.ID,
+                (payload, context) -> context.client().execute(
+                        () -> io.wifi.starrailexpress.client.morph.ClientMorphCache.applySync(payload)));
+        // 实体伪装：HUD / 同步接收 / 尺寸刷新
+        io.wifi.starrailexpress.client.disguise.EntityDisguiseClient.registerClient();
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket.ID,
+                (payload, context) -> io.wifi.starrailexpress.client.util.ClientScheduler.schedule(() -> {
+                    if (context.client().player != null) {
+                        context.client().player.refreshDimensions();
+                    }
+                }, 10));
     }
 
     private static void updateInstinctCache(Minecraft client) {

@@ -79,6 +79,7 @@ import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerCompon
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
+import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.LocalDateData;
@@ -1871,5 +1872,17 @@ public class GameUtils {
                 return null;
             return kills.getLast();
         }
+    }
+
+    /**
+     * 更新玩家的 dimension / 眼高：服务端先刷新，再通知客户端自己刷一遍。
+     * <p>
+     * 眼高来自 {@code Entity#getDefaultDimensions}，会被 {@code Entity} 缓存进 {@code eyeHeight}
+     * 字段，所以两端都要显式 {@code refreshDimensions()} 才生效。实体伪装改完眼高后调用本方法
+     * （见 {@code EntityDisguiseManager}）。
+     */
+    public static void refreshPlayerDimension(ServerPlayer player) {
+        player.refreshDimensions();
+        ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
     }
 }
