@@ -1,16 +1,32 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client.gui.screen.map_dev.modules;
 
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.client.gui.widget.SreButton;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.map_dev.*;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
-import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
-import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSide;
 import java.util.List;
 
 public class MapModule implements TabModule {
-    private EditBox mapNameBox, mapImportBox, initialItemsBox;
+    private EditBox mapNameBox, mapImportBox;
+    /** 内容总高（按本次实际排到哪一行算，供滚动条用）。 */
+    private int contentHeight = 0;
 
     @Override
     public Component getTabTitle() {
@@ -33,30 +49,30 @@ public class MapModule implements TabModule {
 
         int row1 = y + bh + gap;
         placements.add(
-                new WidgetPlacement(ModernButton.builder(Component.translatable("sre.map_helper.save_as_new"), b -> {
+                new WidgetPlacement(SreButton.create(Component.translatable("sre.map_helper.save_as_new"), b -> {
                     String name = mapNameBox.getValue().trim();
                     if (!name.isEmpty())
                         ctx.sendOnly("sre:area_manager map save " + ctx.quoteCommandArgument(name));
-                }).bounds(leftX, row1, layout.columnWidth(2, gap), bh).accentBar(AccentSide.LEFT).build(), row1));
+                }).bounds(leftX, row1, layout.columnWidth(2, gap), bh).build(), row1));
         placements.add(
-                new WidgetPlacement(ModernButton.builder(Component.translatable("sre.map_helper.save_overwrite"), b -> {
+                new WidgetPlacement(SreButton.create(Component.translatable("sre.map_helper.save_overwrite"), b -> {
                     String name = mapNameBox.getValue().trim();
                     if (!name.isEmpty())
                         ctx.sendOnly("sre:area_manager map save " + ctx.quoteCommandArgument(name) + " force");
-                }).bounds(rightX, row1, layout.columnWidth(2, gap), bh).accentBar(AccentSide.RIGHT).build(), row1));
+                }).bounds(rightX, row1, layout.columnWidth(2, gap), bh).build(), row1));
 
         int row2 = row1 + bh + gap;
         placements.add(new WidgetPlacement(
-                ModernButton.builder(Component.translatable("sre.map_helper.load_map_config"), b -> {
+                SreButton.create(Component.translatable("sre.map_helper.load_map_config"), b -> {
                     String name = mapNameBox.getValue().trim();
                     if (!name.isEmpty())
                         ctx.sendOnly("sre:area_manager map load " + ctx.quoteCommandArgument(name));
-                }).bounds(leftX, row2, layout.columnWidth(2, gap), bh).accentBar(AccentSide.LEFT).build(), row2));
+                }).bounds(leftX, row2, layout.columnWidth(2, gap), bh).build(), row2));
         placements.add(new WidgetPlacement(
-                ModernButton
+                SreButton
                         .builder(Component.translatable("sre.map_helper.list_maps"),
                                 b -> ctx.sendOnly("sre:area_manager map list"))
-                        .bounds(rightX, row2, layout.columnWidth(2, gap), bh).accentBar(AccentSide.RIGHT).build(),
+                        .bounds(rightX, row2, layout.columnWidth(2, gap), bh).build(),
                 row2));
 
         int row3 = row2 + bh + gap;
@@ -68,50 +84,28 @@ public class MapModule implements TabModule {
         int row4 = row3 + bh + gap;
         placements
                 .add(new WidgetPlacement(
-                        ModernButton
+                        SreButton
                                 .builder(Component.translatable("sre.map_helper.import_as_map"),
                                         b -> importMap(ctx, false))
-                                .bounds(leftX, row4, layout.columnWidth(2, gap), bh).accentBar(AccentSide.LEFT).build(),
+                                .bounds(leftX, row4, layout.columnWidth(2, gap), bh).build(),
                         row4));
         placements.add(new WidgetPlacement(
-                ModernButton
+                SreButton
                         .builder(Component.translatable("sre.map_helper.import_overwrite"), b -> importMap(ctx, true))
-                        .bounds(rightX, row4, layout.columnWidth(2, gap), bh).accentBar(AccentSide.RIGHT).build(),
+                        .bounds(rightX, row4, layout.columnWidth(2, gap), bh).build(),
                 row4));
 
         int row5 = row4 + bh + gap;
         placements.add(new WidgetPlacement(
-                ModernButton.builder(Component.translatable("sre.map_helper.create_blank_map"), b -> {
+                SreButton.create(Component.translatable("sre.map_helper.create_blank_map"), b -> {
                     ctx.sendOnly("sre:area_manager create_new");
                     String name = mapNameBox.getValue().trim();
                     if (!name.isEmpty())
                         ctx.sendOnly("sre:area_manager map name " + ctx.quoteCommandArgument(name));
-                }).bounds(leftX, row5, fullWidth, bh).accentBar(AccentSide.BOTTOM).build(), row5));
+                }).bounds(leftX, row5, fullWidth, bh).build(), row5));
 
-        int row6 = row5 + bh + gap;
-        String currentInitialItems = "";
-        if (areas != null && !areas.initialItems.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for (String item : areas.initialItems) {
-                String[] parts = item.split(";");
-                if (parts.length >= 2)
-                    sb.append(sb.length() > 0 ? "," : "").append(parts[0]).append(",").append(parts[1]);
-            }
-            currentInitialItems = sb.toString();
-        }
-        initialItemsBox = new EditBox(layout.font, leftX, row6, fullWidth, bh,
-                Component.translatable("sre.map_helper.initial_items_hint"));
-        initialItemsBox.setMaxLength(512);
-        initialItemsBox.setValue(currentInitialItems);
-        placements.add(new WidgetPlacement(initialItemsBox, row6));
-
-        int row7 = row6 + bh + gap;
-        placements.add(new WidgetPlacement(
-                ModernButton.builder(Component.translatable("sre.map_helper.set_initial_items"), b -> {
-                    String value = initialItemsBox.getValue().trim();
-                    if (!value.isEmpty())
-                        ctx.sendOnly("sre:area_manager set initialItems " + ctx.quoteCommandArgument(value));
-                }).bounds(leftX, row7, fullWidth, bh).accentBar(AccentSide.BOTTOM).build(), row7));
+        // 初始物品等条目请到「全部设置」页里改（那边的字段是反射出来的，这里不再重复放一个点了就崩的按钮）
+        contentHeight = row5 + bh + 8;
     }
 
     private void importMap(ModuleContext ctx, boolean force) {
@@ -125,6 +119,6 @@ public class MapModule implements TabModule {
 
     @Override
     public int getContentHeight() {
-        return 8 * 32;
+        return contentHeight;
     }
 }
