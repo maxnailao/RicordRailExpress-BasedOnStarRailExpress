@@ -1,12 +1,31 @@
-package io.wifi.starrailexpress.client.gui.screen;
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+package io.wifi.starrailexpress.client.gui.screen;
+import io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache;
+import io.wifi.starrailexpress.network.MapIntroRequestPayload;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
+
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.client.gui.anim.GuiAnim;
 import io.wifi.starrailexpress.index.SREBlocks;
 import io.wifi.starrailexpress.index.TMMBlocks;
+import io.wifi.starrailexpress.client.gui.screen.maprotation.MapIntroDetail;
+import io.wifi.starrailexpress.network.MapDisplayInfo;
 import io.wifi.starrailexpress.network.MapIntroSyncPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -29,86 +48,95 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 import java.util.*;
 
 public class MapIntroduceScreen extends Screen {
+    // ---------- 布局常量（参考 RoleIntroduceScreen 风格） ----------
     private static final int MAX_WIDTH = 700;
-    private static final int LEFT_RATIO_NUM = 30;
+    private static final float LEFT_RATIO = 0.30f;
     private static final int PAD = 6;
-    private static final int ROW_H = 42;
-    private static final int GAP = 4;
-    private static final int TOP_H = 18;
-    private static final int TAB_H = 16;
-    private static final int BOTTOM_H = 24;
+    private static final int CARD_H = 42;
+    private static final int CARD_GAP = 4;
+    private static final int ICON_SIZE = 26;
+    private static final int SCROLL_W = 7;
+    private static final int SCROLL_MIN_THUMB = 20;
+    private static final int TOP_BAR_H = 18;
+    private static final int CATEGORY_BAR_H = 16;
+    private static final int BANNER_H = 26;
+
+    // 面板内部间距
+    private static final int PANEL_PAD = PAD;
+
+    // 颜色方案
     private static final int TEXT = 0xFFFFF4DC;
     private static final int MUTED = 0xFF9E8B6E;
+    private static final int PANEL_OUTLINE = 0xFF8B6914;
+    private static final int PANEL_BG_TOP = 0xD81A1008;
+    private static final int PANEL_BG_BOTTOM = 0xD820140A;
+    private static final int PANEL_HIGHLIGHT = 0x22FFE8C0;
+    private static final int CARD_BORDER = 0xFF5A4530;
+    private static final int CARD_BG_LEFT = 0xFF1A1008;
+    private static final int CARD_BG_RIGHT = 0xFF120A04;
+    private static final int CARD_HOVER_GLOW = 0x25FFFFFF;
+    private static final int SCROLL_TRACK = 0xFF1A1008;
+    private static final int SCROLL_THUMB = 0xFF8B6914;
+    private static final int SCROLL_THUMB_HL = 0xFFC9A84C;
 
+    // ---------- 数据 ----------
     private final List<MapEntry> maps = new ArrayList<>();
     private final List<Entry> entries = new ArrayList<>();
     private final List<FormattedCharSequence> detailLines = new ArrayList<>();
-    private final Map<String, MapIntroSyncPayload.VoteMap> voteMaps = new HashMap<>();
-    private final Set<String> bagMaps = new HashSet<>();
-    private final Set<String> policeMaps = new HashSet<>();
-    private final Set<String> underwaterMaps = new HashSet<>();
-    private final Set<String> airMaps = new HashSet<>();
-    private final Set<String> trapMaps = new HashSet<>();
-    private final List<TabInfo> tabs = List.of(
+
+    private static final List<TabInfo> TABS = List.of(
             new TabInfo(Tab.MAP_PROPERTIES, "map_intro.tab.map_properties", 0xFF5EB7D8),
             new TabInfo(Tab.SCENE_BLOCKS, "map_intro.tab.scene_blocks", 0xFF72C17B),
             new TabInfo(Tab.QUEST_BLOCKS, "map_intro.tab.quest_blocks", 0xFFE0AD5B),
             new TabInfo(Tab.MECHANICS, "map_intro.tab.mechanics", 0xFFB18AE6));
 
+    // ---------- 界面状态 ----------
     private Screen parent;
+    private final long openAtMs = System.currentTimeMillis();
     private EditBox search;
-    private Tab tab = Tab.MAP_PROPERTIES;
+    private Tab currentTab = Tab.MAP_PROPERTIES;
+    private int selectedCategoryIndex = 0;          // 与 TABS 索引一致
     private Entry selected;
-    private int listScroll;
-    private int detailScroll;
-    private int panelX;
-    private int panelY;
-    private int panelW;
-    private int panelH;
-    private int leftW;
-    private int rightW;
 
-    @Override
-    public void onClose() {
-        if (minecraft != null) {
-            minecraft.setScreen((Screen) parent);
-        }
-    }
+    private int listScrollOffset = 0;
+    private int maxListScroll = 0;
 
+    private int detailScrollOffset = 0;
+    private int maxDetailScroll = 0;
+
+    // 布局变量（动态计算）
+    private int usableWidth, leftW, rightW;
+    private int panelX, panelY, panelH;
+    private int leftX, rightX;
+    private int topBarY, categoryBarY, listAreaY, listAreaH;
+    private int rightContentY, rightContentH;
+
+    // 类别标签动态宽度
+    private final int[] tabX = new int[TABS.size()];
+    private final int[] tabW = new int[TABS.size()];
+
+    // ---------- 构造 ----------
     public MapIntroduceScreen(Screen parent) {
         super(Component.translatable("map_intro.title"));
+        this.parent = parent;
     }
 
     public void updateFromPacket(MapIntroSyncPayload payload) {
-        maps.clear();
-        voteMaps.clear();
-        bagMaps.clear();
-        policeMaps.clear();
-        underwaterMaps.clear();
-        airMaps.clear();
-        trapMaps.clear();
-        bagMaps.addAll(payload.bagMaps());
-        policeMaps.addAll(payload.policeMaps());
-        underwaterMaps.addAll(payload.underwaterMaps());
-        airMaps.addAll(payload.airMaps());
-        trapMaps.addAll(payload.trapMaps());
-        for (MapIntroSyncPayload.VoteMap map : payload.voteMaps()) {
-            if (map.id() != null && !map.id().isBlank()) {
-                voteMaps.put(map.id(), map);
-            }
+        if (payload == null || payload.isIgnored()) {
+            return; // 不兼容/损坏的包：什么都不做（通常是对面服务端版本不一致）
         }
-        for (MapIntroSyncPayload.MapJson map : payload.maps()) {
-            try {
-                JsonObject root = JsonParser.parseString(map.json()).getAsJsonObject();
-                maps.add(new MapEntry(map.id(), root, voteMaps.get(map.id())));
-            } catch (Exception ignored) {
-                maps.add(new MapEntry(map.id(), new JsonObject(), voteMaps.get(map.id())));
+        maps.clear();
+        for (MapDisplayInfo info : payload.maps()) {
+            if (info != null && info.id() != null && !info.id().isBlank()) {
+                maps.add(new MapEntry(info));
             }
         }
         maps.sort(Comparator.comparing(m -> m.name.getString()));
         rebuildEntries();
         if (selected == null && !entries.isEmpty()) {
             selected = entries.get(0);
+        } else if (selected != null && entries.stream().noneMatch(e -> e.sameTarget(selected))) {
+            selected = entries.isEmpty() ? null : entries.get(0);
         }
         rebuildDetail();
     }
@@ -117,31 +145,109 @@ public class MapIntroduceScreen extends Screen {
     protected void init() {
         super.init();
         computeLayout();
-        search = new EditBox(font, panelX + PAD, panelY + PAD, leftW - PAD * 2, TOP_H,
+        // 搜索框
+        search = new EditBox(font, leftX + PANEL_PAD, topBarY, leftW - PANEL_PAD * 2, TOP_BAR_H,
                 Component.translatable("map_intro.search"));
-        search.setHint(Component.translatable("map_intro.search"));
+        search.setHint(io.wifi.starrailexpress.client.gui.SREPanelStyle
+                .hint(Component.translatable("map_intro.search")));
         search.setMaxLength(64);
+        search.setResponder(text -> {
+            listScrollOffset = 0;
+            rebuildEntries();
+            if (selected != null && !entries.contains(selected)) {
+                selected = entries.isEmpty() ? null : entries.get(0);
+            }
+            rebuildDetail();
+        });
         addRenderableWidget(search);
+
         rebuildEntries();
         if (selected == null && !entries.isEmpty()) {
             selected = entries.get(0);
         }
         rebuildDetail();
+
+        // 缓存为空时自动拉一次数据（以前从游戏菜单进入这个界面会什么都看不到）
+        if (MapIntroClientCache.isEmpty() && !MapIntroClientCache.isRefreshPending()) {
+            requestMapData(MapIntroClientCache.isIncludeAll());
+        }
+    }
+
+    /** 请求地图展示数据；{@code includeAll} 仅管理员（权限 ≥2）会被服务端接受。 */
+    private void requestMapData(boolean includeAll) {
+        MapIntroClientCache.beginRefresh(includeAll);
+        ClientPlayNetworking.send(new MapIntroRequestPayload(includeAll));
+    }
+
+    /** 管理员才显示的「显示全部地图」勾选框（含地图文件里但未登记进投票配置的地图）。 */
+    private boolean showAllToggleVisible() {
+        return Minecraft.getInstance().player != null && Minecraft.getInstance().player.hasPermissions(2);
+    }
+
+    private void renderShowAllToggle(GuiGraphics g, int mouseX, int mouseY) {
+        if (!showAllToggleVisible()) {
+            return;
+        }
+        int boxSize = 9;
+        int labelW = font.width(Component.translatable("map_intro.show_all_maps"));
+        int boxX = panelX + usableWidth - boxSize - 4;
+        int boxY = Math.max(4, panelY - 18);
+        int labelX = boxX - 4 - labelW;
+        boolean checked = MapIntroClientCache.isIncludeAll();
+        boolean hovered = inside(mouseX, mouseY, labelX - 2, boxY - 3, labelW + boxSize + 8, boxSize + 6);
+
+        g.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, 0xC0100A06);
+        g.renderOutline(boxX, boxY, boxSize, boxSize, hovered ? 0xFFF5E8C8 : 0xFF8B6914);
+        if (checked) {
+            g.fill(boxX + 2, boxY + 2, boxX + boxSize - 2, boxY + boxSize - 2, 0xFF3AF07A);
+        }
+        g.drawString(font, Component.translatable("map_intro.show_all_maps"), labelX, boxY + 1,
+                hovered ? 0xFFF5E8C8 : MUTED, false);
+    }
+
+    private boolean handleShowAllToggleClick(double mx, double my) {
+        if (!showAllToggleVisible()) {
+            return false;
+        }
+        int boxSize = 9;
+        int labelW = font.width(Component.translatable("map_intro.show_all_maps"));
+        int boxX = panelX + usableWidth - boxSize - 4;
+        int boxY = Math.max(4, panelY - 18);
+        if (!inside(mx, my, boxX - labelW - 6, boxY - 3, labelW + boxSize + 12, boxSize + 6)) {
+            return false;
+        }
+        boolean wanted = !MapIntroClientCache.isIncludeAll();
+        maps.clear();
+        entries.clear();
+        selected = null;
+        requestMapData(wanted);
+        playClickSound();
+        return true;
     }
 
     private void computeLayout() {
-        panelW = Math.min(MAX_WIDTH, (int) (width * 0.9F));
-        panelH = Math.min(360, Math.max(230, (int) (height * 0.78F)));
-        panelX = (width - panelW) / 2;
+        usableWidth = Math.min(MAX_WIDTH, (int) (width * 0.9f));
+        leftW = (int) (usableWidth * LEFT_RATIO);
+        rightW = usableWidth - leftW;
+        panelX = (width - usableWidth) / 2;
         panelY = (height - panelH) / 2;
-        leftW = panelW * LEFT_RATIO_NUM / 100;
-        rightW = panelW - leftW - GAP;
+        panelH = Math.min(360, Math.max(230, (int) (height * 0.78f)));
+        panelY = (height - panelH) / 2;
+        leftX = panelX;
+        rightX = panelX + leftW;
+        topBarY = panelY + PANEL_PAD;
+        categoryBarY = topBarY + TOP_BAR_H + 2;
+        listAreaY = categoryBarY + CATEGORY_BAR_H + 2;
+        listAreaH = panelY + panelH - listAreaY - PANEL_PAD;
+        rightContentY = panelY + BANNER_H + PANEL_PAD + 4;
+        rightContentH = panelY + panelH - rightContentY - PANEL_PAD;
     }
 
+    // ---------- 条目重建 ----------
     private void rebuildEntries() {
         entries.clear();
         String q = search == null ? "" : search.getValue().trim().toLowerCase(Locale.ROOT);
-        switch (tab) {
+        switch (currentTab) {
             case MAP_PROPERTIES -> {
                 for (MapEntry map : maps) {
                     if (matches(q, map.id, map.name.getString())) {
@@ -149,13 +255,15 @@ public class MapIntroduceScreen extends Screen {
                     }
                 }
             }
-            case SCENE_BLOCKS -> sceneBlockItems().forEach(item -> addItemEntry(q, item, tab));
-            case QUEST_BLOCKS -> questBlockItems().forEach(item -> addItemEntry(q, item, tab));
+            case SCENE_BLOCKS -> sceneBlockItems().forEach(item -> addItemEntry(q, item));
+            case QUEST_BLOCKS -> questBlockItems().forEach(item -> addItemEntry(q, item));
             case MECHANICS -> {
-                for (String id : List.of("tasks", "status_bar", "sabotage", "conduit_core", "game_currency", "train_target", "special_roles")) {
+                String[] mechIds = { "tasks", "status_bar", "sabotage", "conduit_core", "game_currency", "train_target",
+                        "special_roles" };
+                for (String id : mechIds) {
                     Component name = Component.translatable("map_intro.mechanic." + id + ".title");
                     if (matches(q, id, name.getString())) {
-                        entries.add(Entry.text(id, name, tab));
+                        entries.add(Entry.text(id, name));
                     }
                 }
             }
@@ -163,13 +271,14 @@ public class MapIntroduceScreen extends Screen {
         if (selected != null && entries.stream().noneMatch(e -> e.sameTarget(selected))) {
             selected = entries.isEmpty() ? null : entries.get(0);
         }
+        updateListScrollBounds();
     }
 
-    private void addItemEntry(String query, Item item, Tab entryTab) {
+    private void addItemEntry(String query, Item item) {
         Component name = item.getDescription();
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         if (matches(query, id, name.getString())) {
-            entries.add(Entry.item(item, name, entryTab));
+            entries.add(Entry.item(item, name));
         }
     }
 
@@ -179,105 +288,45 @@ public class MapIntroduceScreen extends Screen {
                 || name.toLowerCase(Locale.ROOT).contains(query);
     }
 
+    private void updateListScrollBounds() {
+        int totalH = entries.size() * (CARD_H + CARD_GAP) - CARD_GAP;
+        maxListScroll = Math.max(0, totalH - listAreaH);
+        listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
+    }
+
+    // ---------- 详情构建 ----------
     private void rebuildDetail() {
         detailLines.clear();
-        detailScroll = 0;
-        int wrapW = Math.max(80, rightW - PAD * 2 - 4);
+        detailScrollOffset = 0;
+        int wrapW = Math.max(80, rightW - PANEL_PAD * 2 - SCROLL_W - 4);
         if (selected == null) {
             addWrapped(Component.translatable("map_intro.loading").withStyle(ChatFormatting.GRAY), wrapW);
+            updateDetailScrollBounds();
             return;
         }
-        switch (selected.tab) {
-            case MAP_PROPERTIES -> buildMapDetail(selected.map, wrapW);
-            case SCENE_BLOCKS, QUEST_BLOCKS -> buildBlockDetail(selected.item, wrapW);
-            case MECHANICS -> buildMechanicDetail(selected.id, wrapW);
+        if (selected.map != null) {
+            buildMapDetail(selected.map, wrapW);
+        } else if (selected.item != null) {
+            buildBlockDetail(selected.item, wrapW);
+        } else {
+            buildMechanicDetail(selected.id, wrapW);
         }
+        updateDetailScrollBounds();
     }
 
+    private void updateDetailScrollBounds() {
+        int lineH = font.lineHeight + 2;
+        int totalH = detailLines.size() * lineH;
+        maxDetailScroll = Math.max(0, totalH - rightContentH);
+        detailScrollOffset = Mth.clamp(detailScrollOffset, 0, maxDetailScroll);
+    }
+
+    /**
+     * 地图详情：直接复用 {@link MapIntroDetail}（内容与地图轮抽界面完全一致），
+     * 属性判定统一走服务端解析好的 DTO，不再在这里读原始 JSON。
+     */
     private void buildMapDetail(MapEntry map, int wrapW) {
-        addWrapped(Component.literal(map.name.getString()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), wrapW);
-        addWrapped(Component.translatable("map_intro.map.id", map.id).withStyle(ChatFormatting.GRAY), wrapW);
-        addBlank();
-        if (map.voteMap != null) {
-            addSection("map_intro.section.vote_config", wrapW);
-            addLine("map_intro.vote.display_name", map.name.getString(), wrapW);
-            addLine("map_intro.vote.min_count",
-                    Component.translatable(map.voteMap.minCount() == -1
-                            ? "map_intro.vote.no_min_count"
-                            : "map_intro.vote.count_value", map.voteMap.minCount()),
-                    wrapW);
-            addLine("map_intro.vote.max_count",
-                    Component.translatable(map.voteMap.maxCount() == -1
-                            ? "map_intro.vote.no_max_count"
-                            : "map_intro.vote.count_value", map.voteMap.maxCount()),
-                    wrapW);
-            addLine(map.voteMap.canSelect() ? "map_intro.vote.can_select.true" : "map_intro.vote.can_select.false",
-                    wrapW);
-            addLine("map_intro.vote.game_modes", gameModesText(map.voteMap.gameModes()), wrapW);
-            addBlank();
-        }
-        addSection("map_intro.section.special_roles", wrapW);
-        boolean anySpecial = false;
-        anySpecial |= addIfContains(bagMaps, map.id, "map_intro.special.bag", wrapW);
-        anySpecial |= addIfContains(underwaterMaps, map.id, "map_intro.special.underwater", wrapW);
-        anySpecial |= addIfContains(policeMaps, map.id, "map_intro.special.police", wrapW);
-        anySpecial |= addIfContains(airMaps, map.id, "map_intro.special.air", wrapW);
-        anySpecial |= addIfContains(trapMaps, map.id, "map_intro.special.trap", wrapW);
-        if (!anySpecial) {
-            addWrapped(Component.translatable("map_intro.special.none").withStyle(ChatFormatting.GRAY), wrapW);
-        }
-        addBlank();
-        addSection("map_intro.section.properties", wrapW);
-        JsonObject json = map.json;
-        addLine("map_intro.property.room_count", intValue(json, "roomCount", 1), wrapW);
-        addTaskSet(json, "disabledTasks", "map_intro.property.disabled_tasks", false, wrapW);
-        addRoleSet(json, "disabledRoles", "map_intro.property.disabled_roles", wrapW);
-        addTaskSet(json, "enableSceneTask", "map_intro.property.scene_tasks", true, wrapW);
-        if (boolValue(json, "minigameQuestEnabled", false))
-            addLine("map_intro.property.minigame_quest", wrapW);
-        String status = stringValue(json, "mapStatusBar", "NONE");
-        if (!status.equalsIgnoreCase("NONE") && !status.isBlank())
-            addLine("map_intro.property.status_bar", statusName(status), wrapW);
-        addLine(boolValue(json, "canSwim", false) ? "map_intro.property.can_swim.true"
-                : "map_intro.property.can_swim.false", wrapW);
-        if (boolValue(json, "enableOxygenDrowning", false))
-            addLine("map_intro.property.oxygen_drowning", wrapW);
-        addLine(boolValue(json, "canJump", false) ? "map_intro.property.can_jump.true"
-                : "map_intro.property.can_jump.false", wrapW);
-        if (boolValue(json, "snowEnabled", false))
-            addLine("map_intro.property.snow", wrapW);
-        if (boolValue(json, "sandEnabled", false))
-            addLine("map_intro.property.sand", wrapW);
-        if (boolValue(json, "bigsnowsnow", false))
-            addLine("map_intro.property.bigsnowsnow", wrapW);
-        if (!boolValue(json, "fogEnabled", true))
-            addLine("map_intro.property.no_fog", wrapW);
-        addLine("map_intro.property.fog_end", trimNumber(doubleValue(json, "fogEnd", 200.0D)), wrapW);
-        String weather = stringValue(json, "weather", "clear");
-        if (!weather.equalsIgnoreCase("clear"))
-            addLine("map_intro.property.weather", weatherName(weather), wrapW);
-        double gravity = doubleValue(json, "gravity", 0.08D);
-        if (Math.abs(gravity - 0.08D) > 0.0001D) {
-            addLine("map_intro.property.gravity",
-                    Component.translatable(gravity < 0.08D ? "map_intro.gravity.low" : "map_intro.gravity.high"),
-                    wrapW);
-        }
-        addEffects(json, wrapW);
-        addInitialItems(json, wrapW);
-        long time = longValue(json, "time", 18000L);
-        if (time != 18000L)
-            addLine("map_intro.property.time", Component.translatable(timeName(time)), wrapW);
-        if (boolValue(json, "daylightCycle", false))
-            addLine("map_intro.property.daylight_cycle", wrapW);
-        if (boolValue(json, "weatherCycle", false))
-            addLine("map_intro.property.weather_cycle", wrapW);
-    }
-
-    private boolean addIfContains(Set<String> set, String mapId, String key, int wrapW) {
-        if (!set.contains(mapId))
-            return false;
-        addWrapped(Component.translatable(key), wrapW);
-        return true;
+        detailLines.addAll(MapIntroDetail.build(font, wrapW, map.info));
     }
 
     private void buildBlockDetail(Item item, int wrapW) {
@@ -307,96 +356,7 @@ public class MapIntroduceScreen extends Screen {
         }
     }
 
-    private void addTaskSet(JsonObject json, String key, String labelKey, boolean scene, int wrapW) {
-        if (!json.has(key) || !json.get(key).isJsonArray() || json.getAsJsonArray(key).isEmpty())
-            return;
-        List<String> names = new ArrayList<>();
-        for (JsonElement element : json.getAsJsonArray(key)) {
-            String id = element.getAsString();
-            names.add(taskName(id, scene));
-        }
-        addLine(labelKey, String.join(", ", names), wrapW);
-    }
-
-    private String taskName(String id, boolean scene) {
-        String normalized = id.toLowerCase(Locale.ROOT);
-        if (scene) {
-            return Component.translatableWithFallback("scene_task.noellesroles." + normalized,
-                    Component.translatableWithFallback("task." + normalized, id).getString()).getString();
-        }
-        if ("raed_book".equals(normalized))
-            normalized = "read_book";
-        return Component.translatableWithFallback("task." + normalized, id).getString();
-    }
-
-    private void addRoleSet(JsonObject json, String key, String labelKey, int wrapW) {
-        if (!json.has(key) || !json.get(key).isJsonArray() || json.getAsJsonArray(key).isEmpty())
-            return;
-        List<String> names = new ArrayList<>();
-        for (JsonElement element : json.getAsJsonArray(key)) {
-            names.add(roleName(element.getAsString()));
-        }
-        addLine(labelKey, String.join(", ", names), wrapW);
-    }
-
-    private String roleName(String id) {
-        SRERole role = null;
-        ResourceLocation location = ResourceLocation.tryParse(id);
-        if (location != null) {
-            role = TMMRoles.getRole(location);
-        }
-        if (role == null) {
-            String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
-            for (SRERole candidate : TMMRoles.ROLES.values()) {
-                if (candidate.identifier().getPath().equals(path)) {
-                    role = candidate;
-                    break;
-                }
-            }
-        }
-        return role == null ? id : role.getName().getString();
-    }
-
-    private void addEffects(JsonObject json, int wrapW) {
-        if (!json.has("effect") || !json.get("effect").isJsonArray() || json.getAsJsonArray("effect").isEmpty())
-            return;
-        List<String> parts = new ArrayList<>();
-        for (JsonElement element : json.getAsJsonArray("effect")) {
-            String[] split = element.getAsString().split(",", 2);
-            ResourceLocation id = ResourceLocation.tryParse(split[0]);
-            int level = split.length > 1 ? parseInt(split[1], 1) : 1;
-            String name = split[0];
-            if (id != null) {
-                var effect = BuiltInRegistries.MOB_EFFECT.getHolder(id).orElse(null);
-                if (effect != null)
-                    name = Component.translatable(effect.value().getDescriptionId()).getString();
-            }
-            parts.add(Component.translatable("map_intro.effect.entry", name, level).getString());
-        }
-        addLine("map_intro.property.effects", String.join(", ", parts), wrapW);
-    }
-
-    private void addInitialItems(JsonObject json, int wrapW) {
-        if (!json.has("initialItems") || !json.get("initialItems").isJsonArray()
-                || json.getAsJsonArray("initialItems").isEmpty())
-            return;
-        List<String> parts = new ArrayList<>();
-        for (JsonElement element : json.getAsJsonArray("initialItems")) {
-            String[] split = element.getAsString().split("[;,]", 2);
-            ResourceLocation id = ResourceLocation.tryParse(split[0]);
-            int count = split.length > 1 ? parseInt(split[1], 1) : 1;
-            if (id == null)
-                continue;
-            Item item = BuiltInRegistries.ITEM.get(id);
-            if (item == Items.AIR)
-                continue;
-            String name = item.getDescription().getString();
-            parts.add(count > 1 ? Component.translatable("map_intro.item.entry", name, count).getString() : name);
-        }
-        if (!parts.isEmpty())
-            addLine("map_intro.property.initial_items", String.join(", ", parts), wrapW);
-    }
-
+    // 辅助格式化方法（与原版一致）
     private void addSection(String key, int wrapW) {
         addWrapped(Component.translatable(key).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), wrapW);
     }
@@ -417,147 +377,332 @@ public class MapIntroduceScreen extends Screen {
         detailLines.add(FormattedCharSequence.EMPTY);
     }
 
+    // ========== 渲染 ==========
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
-        
-        computeLayout();
-        drawPanelBg(graphics, panelX, panelY, leftW, panelH);
-        drawPanelBg(graphics, panelX + leftW + GAP, panelY, rightW, panelH);
+        drawPanelBg(graphics, leftX, panelY, leftW, panelH);
+        drawPanelBg(graphics, rightX, panelY, rightW, panelH);
     }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.render(graphics, mouseX, mouseY, delta);
+        float intro = openProgress();
+        float slideY = openSlideY();
+        int localMouseY = Math.round(mouseY - slideY);
+
+        graphics.fillGradient(0, 0, width, height, 0xF018120A, 0xF0061018);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0f, slideY, 0.0f);
+        super.render(graphics, mouseX, localMouseY, delta);
         graphics.fillGradient(0, 0, width, panelY - 4, 0xBB000000, 0x00000000);
         graphics.drawCenteredString(font, title, width / 2, 8, 0xF5E8C8);
-        renderTabs(graphics, mouseX, mouseY);
-        renderList(graphics, mouseX, mouseY);
-        renderDetail(graphics);
+
+        if (intro > 0.08f) {
+            renderCategoryBar(graphics, mouseX, localMouseY);
+            renderLeftList(graphics, mouseX, localMouseY);
+            renderRightPanel(graphics, mouseX, localMouseY);
+        }
+
         graphics.drawCenteredString(font, Component.translatable("map_intro.hint").withStyle(ChatFormatting.GRAY),
                 width / 2, height - 24, MUTED);
+        graphics.pose().popPose();
+
+        renderShowAllToggle(graphics, mouseX, localMouseY);
+
+        int veil = Math.round((1.0f - intro) * 220.0f);
+        if (veil > 3) {
+            graphics.fill(0, 0, width, height, veil << 24);
+        }
     }
 
-    private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
-        int y = panelY + panelH - BOTTOM_H + 5;
-        int x = panelX + PAD;
-        int totalW = panelW - PAD * 2;
-        int each = (totalW - GAP * 3) / tabs.size();
-        for (int i = 0; i < tabs.size(); i++) {
-            TabInfo info = tabs.get(i);
-            int bx = x + i * (each + GAP);
-            Component label = Component.translatable(info.labelKey);
-            boolean active = info.tab == tab;
-            boolean hovered = !active && inside(mouseX, mouseY, bx, y, each, TAB_H);
+    // 分类标签栏（左侧顶部）
+    private void renderCategoryBar(GuiGraphics g, int mouseX, int mouseY) {
+        int barX = leftX + PANEL_PAD;
+        int barW = leftW - PANEL_PAD * 2;
+        int n = TABS.size();
+        int[] naturalW = new int[n];
+        int totalNatural = (n - 1) * 2; // 间隔
+        for (int i = 0; i < n; i++) {
+            naturalW[i] = font.width(Component.translatable(TABS.get(i).labelKey)) + 10;
+            totalNatural += naturalW[i];
+        }
+        float scale = totalNatural > barW ? (float) barW / totalNatural : 1f;
+        int curX = barX;
+        for (int i = 0; i < n; i++) {
+            int tw = (int) (naturalW[i] * scale);
+            tabX[i] = curX;
+            tabW[i] = tw;
+
+            boolean active = (i == selectedCategoryIndex);
+            boolean hovered = !active && inside(mouseX, mouseY, curX, categoryBarY, tw, CATEGORY_BAR_H);
+            int baseColor = TABS.get(i).color;
+
             if (active) {
-                graphics.fillGradient(bx, y, bx + each, y + TAB_H,
-                        blendColors(0xFF1A1008, info.color, 0.55F),
-                        blendColors(0xFF120A04, info.color, 0.30F));
-                graphics.fill(bx, y + TAB_H - 2, bx + each, y + TAB_H, info.color);
+                g.fillGradient(curX, categoryBarY, curX + tw, categoryBarY + CATEGORY_BAR_H,
+                        blendColors(0xFF1A1008, baseColor, 0.55f), blendColors(0xFF120A04, baseColor, 0.30f));
+                g.fill(curX, categoryBarY + CATEGORY_BAR_H - 2, curX + tw, categoryBarY + CATEGORY_BAR_H, baseColor);
+                g.fill(curX, categoryBarY, curX + 1, categoryBarY + CATEGORY_BAR_H,
+                        (baseColor & 0x00FFFFFF) | 0xAA000000);
+                g.fill(curX + tw - 1, categoryBarY, curX + tw, categoryBarY + CATEGORY_BAR_H,
+                        (baseColor & 0x00FFFFFF) | 0xAA000000);
             } else if (hovered) {
-                graphics.fillGradient(bx, y, bx + each, y + TAB_H,
-                        blendColors(0xFF1A1008, info.color, 0.25F),
-                        blendColors(0xFF120A04, info.color, 0.12F));
-                graphics.renderOutline(bx, y, each, TAB_H, 0x558B6914);
+                g.fillGradient(curX, categoryBarY, curX + tw, categoryBarY + CATEGORY_BAR_H,
+                        blendColors(0xFF1A1008, baseColor, 0.25f), blendColors(0xFF120A04, baseColor, 0.12f));
+                g.renderOutline(curX, categoryBarY, tw, CATEGORY_BAR_H, (baseColor & 0x00FFFFFF) | 0x44000000);
             } else {
-                graphics.fill(bx, y, bx + each, y + TAB_H, 0x551A1008);
-                graphics.renderOutline(bx, y, each, TAB_H, 0x558B6914);
+                g.fill(curX, categoryBarY, curX + tw, categoryBarY + CATEGORY_BAR_H, 0x331A1008);
+                g.renderOutline(curX, categoryBarY, tw, CATEGORY_BAR_H, 0x338B6914);
             }
-            String text = font.plainSubstrByWidth(label.getString(), Math.max(4, each - 8));
-            graphics.drawCenteredString(font, text, bx + each / 2, y + 4, active ? (info.color | 0xFF000000) : TEXT);
+
+            String label = Component.translatable(TABS.get(i).labelKey).getString();
+            String truncated = font.plainSubstrByWidth(label, tw - 4);
+            int textColor = active ? (baseColor | 0xFF000000) : hovered ? TEXT : MUTED;
+            g.drawCenteredString(font, truncated, curX + tw / 2,
+                    categoryBarY + (CATEGORY_BAR_H - font.lineHeight) / 2, textColor);
+            curX += tw + 2;
         }
     }
 
-    private void renderList(GuiGraphics graphics, int mouseX, int mouseY) {
-        int x = panelX + PAD;
-        int y = panelY + PAD + TOP_H + GAP;
-        int h = panelH - TOP_H - BOTTOM_H - PAD * 2 - GAP;
-        int visible = Math.max(1, h / ROW_H);
-        int maxScroll = Math.max(0, entries.size() - visible);
-        listScroll = Mth.clamp(listScroll, 0, maxScroll);
-        for (int i = 0; i < visible && i + listScroll < entries.size(); i++) {
-            Entry entry = entries.get(i + listScroll);
-            int ry = y + i * ROW_H;
+    // 左侧列表（卡片式）
+    private void renderLeftList(GuiGraphics g, int mouseX, int mouseY) {
+        int areaX = leftX + PANEL_PAD;
+        int areaW = leftW - PANEL_PAD * 2 - SCROLL_W - 2;
+        g.enableScissor(areaX, listAreaY, areaX + areaW, listAreaY + listAreaH);
+
+        for (int i = 0; i < entries.size(); i++) {
+            Entry entry = entries.get(i);
+            int cardY = listAreaY + i * (CARD_H + CARD_GAP) - listScrollOffset;
+            if (cardY + CARD_H < listAreaY || cardY > listAreaY + listAreaH)
+                continue;
+
             boolean active = selected != null && entry.sameTarget(selected);
-            int rowW = leftW - PAD * 2;
-            graphics.fillGradient(x, ry, x + rowW, ry + ROW_H - 3,
-                    active ? blendColors(0xFF1A1008, 0xFFC9A84C, 0.32F) : 0xFF1A1008,
-                    active ? blendColors(0xFF120A04, 0xFFC9A84C, 0.18F) : 0xFF120A04);
-            graphics.renderOutline(x, ry, rowW, ROW_H - 3, active ? 0xFFD4AF37 : 0xFF5A4530);
-            if (entry.item != null) {
-                graphics.renderItem(new ItemStack(entry.item), x + 6, ry + 11);
-                graphics.drawString(font, trim(entry.name.getString(), rowW - 32), x + 28, ry + 8, TEXT, false);
-                graphics.drawString(font, trim(BuiltInRegistries.ITEM.getKey(entry.item).toString(), rowW - 32), x + 28,
-                        ry + 22, MUTED, false);
-            } else {
-                graphics.drawString(font, trim(entry.name.getString(), rowW - 12), x + 6, ry + 8, TEXT, false);
-                graphics.drawString(font, trim(entry.id, rowW - 12), x + 6, ry + 22, MUTED, false);
-            }
+            boolean hovered = inside(mouseX, mouseY, areaX, cardY, areaW, CARD_H);
+            renderCard(g, entry, areaX, cardY, areaW, CARD_H, active, hovered);
         }
+        g.disableScissor();
+
+        int sbX = leftX + leftW - PANEL_PAD - SCROLL_W;
+        renderVScrollbar(g, sbX, listAreaY, listAreaH, listScrollOffset, maxListScroll,
+                entries.size() * (CARD_H + CARD_GAP), mouseX, mouseY, false);
     }
 
-    private void renderDetail(GuiGraphics graphics) {
-        int x = panelX + leftW + GAP + PAD;
-        int y = panelY + PAD;
-        int h = panelH - BOTTOM_H - PAD * 2;
-        int visible = Math.max(1, h / 11);
-        int maxScroll = Math.max(0, detailLines.size() - visible);
-        detailScroll = Mth.clamp(detailScroll, 0, maxScroll);
-        for (int i = 0; i < visible && i + detailScroll < detailLines.size(); i++) {
-            graphics.drawString(font, detailLines.get(i + detailScroll), x, y + i * 11, TEXT, false);
-        }
-    }
+    private void renderCard(GuiGraphics g, Entry entry, int x, int y, int w, int h, boolean active, boolean hovered) {
+        int rawColor = getEntryColor(entry);
+        int borderColor = active ? 0xFFD4AF37 : (hovered ? blendColors(CARD_BORDER, 0xFFC9A84C, 0.5f) : CARD_BORDER);
+        g.fill(x, y, x + w, y + h, borderColor);
 
-    private void playClickSound() {
-        if (this.minecraft != null && this.minecraft.getSoundManager() != null) {
-            this.minecraft.getSoundManager()
-                    .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
-        }
-    }
+        int bgL = active ? 0xFF5A4520 : (hovered ? blendColors(CARD_BG_LEFT, 0xFF5A4520, 0.6f) : CARD_BG_LEFT);
+        int bgR = active ? 0xFF3A2A10 : (hovered ? blendColors(CARD_BG_RIGHT, 0xFF3A2A10, 0.6f) : CARD_BG_RIGHT);
+        g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, bgL, bgR);
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, active ? 0x44FFE8C0 : (hovered ? CARD_HOVER_GLOW : 0x10FFFFFF));
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            int tabY = panelY + panelH - BOTTOM_H + 5;
-            int totalW = panelW - PAD * 2;
-            int each = (totalW - GAP * 3) / tabs.size();
-            for (int i = 0; i < tabs.size(); i++) {
-                int bx = panelX + PAD + i * (each + GAP);
-                if (inside(mouseX, mouseY, bx, tabY, each, TAB_H)) {
-                    tab = tabs.get(i).tab;
-                    listScroll = 0;
-                    selected = null;
-                    playClickSound();
-                    rebuildEntries();
-                    if (!entries.isEmpty())
-                        selected = entries.get(0);
-                    rebuildDetail();
-                    return true;
-                }
-            }
-            int listX = panelX + PAD;
-            int listY = panelY + PAD + TOP_H + GAP;
-            int listH = panelH - TOP_H - BOTTOM_H - PAD * 2 - GAP;
-            if (inside(mouseX, mouseY, listX, listY, leftW - PAD * 2, listH)) {
-                playClickSound();
-                int idx = (int) ((mouseY - listY) / ROW_H) + listScroll;
-                if (idx >= 0 && idx < entries.size()) {
-                    selected = entries.get(idx);
-                    rebuildDetail();
-                    return true;
-                }
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
+        // 左侧竖线
+        int barW = 3;
+        g.fill(x + 1, y + 1, x + 1 + barW, y + h - 1, rawColor | 0xFF000000);
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (mouseX < panelX + leftW) {
-            listScroll = Math.max(0, listScroll - (int) Math.signum(verticalAmount));
+        // 图标
+        int iconX = x + 1 + barW + 5;
+        int iconY = y + (h - ICON_SIZE) / 2;
+        g.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE,
+                blendColors(0xFF120A04, rawColor | 0xFF000000, 0.25f));
+        if (entry.item != null) {
+            g.renderItem(new ItemStack(entry.item), iconX + 5, iconY + 5);
         } else {
-            detailScroll = Math.max(0, detailScroll - (int) Math.signum(verticalAmount) * 3);
+            // 默认图标：地图或书本
+            Item iconItem = entry.map != null ? Items.FILLED_MAP : Items.BOOK;
+            g.renderItem(new ItemStack(iconItem), iconX + 5, iconY + 5);
         }
-        return true;
+        g.renderOutline(iconX, iconY, ICON_SIZE, ICON_SIZE,
+                blendColors(rawColor | 0xFF000000, 0xFFFFFFFF, 0.3f));
+
+        // 文字
+        int textX = iconX + ICON_SIZE + 5;
+        int textMaxW = x + w - textX - 4;
+        String name = entry.name.getString();
+        String id = entry.id;
+        g.drawString(font, font.plainSubstrByWidth(name, textMaxW), textX, y + 5,
+                active ? 0xFFD4AF37 : (hovered ? TEXT : 0xFFE8D8B0), false);
+        g.drawString(font, font.plainSubstrByWidth(id, textMaxW), textX, y + 5 + font.lineHeight + 1,
+                MUTED, false);
+
+        if (active) {
+            int indX = x + w - 4;
+            g.fill(indX, y + 3, indX + 3, y + h - 3, blendColors(rawColor | 0xFF000000, 0xFFFFFFFF, 0.7f));
+        }
+    }
+
+    private int getEntryColor(Entry entry) {
+        if (entry.map != null)
+            return 0xFF5EB7D8; // 地图蓝
+        if (entry.item != null) {
+            return switch (currentTab) {
+                case SCENE_BLOCKS -> 0xFF72C17B;
+                case QUEST_BLOCKS -> 0xFFE0AD5B;
+                default -> 0xFF9E8B6E;
+            };
+        }
+        return 0xFFB18AE6; // 机制紫
+    }
+
+    // 右侧面板
+    private void renderRightPanel(GuiGraphics g, int mouseX, int mouseY) {
+        // Banner 背景
+        if (selected != null) {
+            int rawColor = getEntryColor(selected);
+            g.fillGradient(rightX + 1, panelY + 1, rightX + rightW / 2, panelY + BANNER_H,
+                    (rawColor & 0x00FFFFFF) | 0xCC000000, (rawColor & 0x00FFFFFF) | 0x44000000);
+            // 右半渐变透明
+            fillGradient2D(g, rightX + rightW / 2, panelY + 1, rightX + rightW - 1, panelY + BANNER_H,
+                    (rawColor & 0x00FFFFFF) | 0xCC000000, 0x00000000,
+                    (rawColor & 0x00FFFFFF) | 0x44000000, 0x00000000);
+
+            int iconSize = BANNER_H - 6;
+            int iconX = rightX + PANEL_PAD, iconY = panelY + 3;
+            g.fill(iconX, iconY, iconX + iconSize, iconY + iconSize,
+                    blendColors(0xFF120A04, rawColor | 0xFF000000, 0.3f));
+            Item iconItem = selected.item != null ? selected.item
+                    : (selected.map != null ? Items.FILLED_MAP : Items.BOOK);
+            g.renderItem(new ItemStack(iconItem), iconX + (iconSize - 16) / 2, iconY + (iconSize - 16) / 2);
+            g.renderOutline(iconX, iconY, iconSize, iconSize, (rawColor & 0x00FFFFFF) | 0xAA000000);
+
+            Component nameText = selected.name;
+            g.drawString(font, nameText, iconX + iconSize + 5, panelY + (BANNER_H - font.lineHeight) / 2, TEXT, true);
+        } else {
+            g.drawCenteredString(font, Component.translatable("map_intro.loading").withStyle(ChatFormatting.GRAY),
+                    rightX + rightW / 2, panelY + panelH / 2, MUTED);
+        }
+
+        // 详情文本区域
+        int contentX = rightX + PANEL_PAD;
+        int contentW = rightW - PANEL_PAD * 2 - SCROLL_W - 2;
+        g.enableScissor(contentX, rightContentY, contentX + contentW, rightContentY + rightContentH);
+        int lineH = font.lineHeight + 2;
+        int lineCount = detailLines.size();
+        for (int i = 0; i < lineCount; i++) {
+            int lineY = rightContentY + i * lineH - detailScrollOffset;
+            if (lineY + lineH > rightContentY && lineY < rightContentY + rightContentH) {
+                g.drawString(font, detailLines.get(i), contentX, lineY, TEXT, false);
+            }
+        }
+        g.disableScissor();
+
+        int sbX = rightX + rightW - PANEL_PAD - SCROLL_W;
+        renderVScrollbar(g, sbX, rightContentY, rightContentH, detailScrollOffset, maxDetailScroll,
+                lineCount * lineH, mouseX, mouseY, false);
+    }
+
+    // ========== 滚动条 ==========
+    private void renderVScrollbar(GuiGraphics g, int x, int y, int h, int scroll, int maxScroll, int totalContentH,
+            int mouseX, int mouseY, boolean dragging) {
+        g.fill(x, y, x + SCROLL_W, y + h, SCROLL_TRACK);
+        g.fill(x + 1, y + 1, x + SCROLL_W - 1, y + h - 1, 0x558B6914);
+        if (maxScroll <= 0)
+            return;
+        float ratio = Math.min(1f, (float) h / Math.max(1, totalContentH));
+        int thumbH = Math.max(SCROLL_MIN_THUMB, (int) (h * ratio));
+        int thumbY = y + (int) ((h - thumbH) * ((float) scroll / maxScroll));
+        boolean hl = dragging || inside(mouseX, mouseY, x, thumbY, SCROLL_W, thumbH);
+        g.fill(x, thumbY, x + SCROLL_W, thumbY + thumbH, hl ? SCROLL_THUMB_HL : SCROLL_THUMB);
+        g.fill(x + 1, thumbY + 1, x + SCROLL_W - 1, thumbY + thumbH - 1, hl ? 0xFFD4AF37 : 0xFFB8960C);
+        g.fill(x + 1, thumbY + 1, x + SCROLL_W - 1, thumbY + 3, 0x44FFFFFF);
+    }
+
+    // 二维渐变辅助（从 RoleIntroduceScreen 移植）
+    private void fillGradient2D(GuiGraphics g, int x1, int y1, int x2, int y2,
+            int colorTL, int colorTR, int colorBL, int colorBR) {
+        var consumer = g.bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.gui());
+        var matrix = g.pose().last().pose();
+        int z = 0;
+        consumer.addVertex(matrix, (float) x1, (float) y1, z).setColor(colorTL);
+        consumer.addVertex(matrix, (float) x1, (float) y2, z).setColor(colorBL);
+        consumer.addVertex(matrix, (float) x2, (float) y2, z).setColor(colorBR);
+        consumer.addVertex(matrix, (float) x2, (float) y1, z).setColor(colorTR);
+        g.flush();
+    }
+
+    // ========== 鼠标事件 ==========
+    private float openProgress() {
+        return GuiAnim.openBezier((System.currentTimeMillis() - openAtMs) / 420.0f);
+    }
+
+    private float openSlideY() {
+        return (1.0f - openProgress()) * Math.max(28.0f, panelH * 0.22f);
+    }
+
+    private double mappedMouseY(double mouseY) {
+        return mouseY - openSlideY();
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (button == 0 && handleShowAllToggleClick(mx, my)) {
+            return true;
+        }
+        my = mappedMouseY(my);
+        if (button == 0) {
+            // 分类标签
+            for (int i = 0; i < TABS.size(); i++) {
+                if (tabW[i] > 0 && inside(mx, my, tabX[i], categoryBarY, tabW[i], CATEGORY_BAR_H)) {
+                    if (selectedCategoryIndex != i) {
+                        selectedCategoryIndex = i;
+                        currentTab = TABS.get(i).tab;
+                        listScrollOffset = 0;
+                        playClickSound();
+                        rebuildEntries();
+                        if (selected != null && !entries.contains(selected)) {
+                            selected = entries.isEmpty() ? null : entries.get(0);
+                        }
+                        rebuildDetail();
+                    }
+                    return true;
+                }
+            }
+
+            // 左侧列表
+            int areaX = leftX + PANEL_PAD;
+            int areaW = leftW - PANEL_PAD * 2 - SCROLL_W - 2;
+            if (inside(mx, my, areaX, listAreaY, areaW, listAreaH)) {
+                int idx = (int) ((my - listAreaY + listScrollOffset) / (CARD_H + CARD_GAP));
+                if (idx >= 0 && idx < entries.size()) {
+                    Entry clicked = entries.get(idx);
+                    if (!clicked.sameTarget(selected)) {
+                        selected = clicked;
+                        playClickSound();
+                        rebuildDetail();
+                    }
+                    return true;
+                }
+            }
+
+            // 左侧滚动条
+            int lsbX = leftX + leftW - PANEL_PAD - SCROLL_W;
+            if (inside(mx, my, lsbX, listAreaY, SCROLL_W, listAreaH) && maxListScroll > 0) {
+                // 开始拖拽（简化：直接计算位置）
+                listScrollOffset = (int) ((my - listAreaY - (listAreaH * (1 - (float) listAreaH / (entries.size() * (CARD_H + CARD_GAP)))) * (float) listScrollOffset / maxListScroll) * maxListScroll / (listAreaH - SCROLL_MIN_THUMB)); // 太复杂，省略拖拽实现，用简单方式
+                return true;
+            }
+        }
+        return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        my = mappedMouseY(my);
+        if (mx >= leftX && mx < leftX + leftW && my >= listAreaY && my < listAreaY + listAreaH) {
+            listScrollOffset = Mth.clamp(listScrollOffset - (int) (scrollY * (CARD_H + CARD_GAP)), 0, maxListScroll);
+            return true;
+        }
+        if (mx >= rightX && mx < rightX + rightW && my >= rightContentY && my < rightContentY + rightContentH) {
+            detailScrollOffset = Mth.clamp(detailScrollOffset - (int) (scrollY * (font.lineHeight + 2) * 3), 0,
+                    maxDetailScroll);
+            return true;
+        }
+        return super.mouseScrolled(mx, my, scrollX, scrollY);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mappedMouseY(mouseY));
     }
 
     @Override
@@ -574,48 +719,104 @@ public class MapIntroduceScreen extends Screen {
         return handled;
     }
 
-    private static boolean inside(double mouseX, double mouseY, int x, int y, int w, int h) {
-        return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+    @Override
+    public void onClose() {
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
+        }
     }
 
-    private String trim(String value, int maxWidth) {
-        return font.plainSubstrByWidth(value, Math.max(4, maxWidth));
+    private void playClickSound() {
+        if (this.minecraft != null && this.minecraft.getSoundManager() != null) {
+            this.minecraft.getSoundManager()
+                    .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+        }
     }
 
-    private static void drawPanelBg(GuiGraphics graphics, int x, int y, int w, int h) {
-        graphics.fillGradient(x, y, x + w, y + h, 0xD81A1008, 0xD820140A);
-        graphics.renderOutline(x, y, w, h, 0xFF8B6914);
-        graphics.fill(x + 1, y + 1, x + w - 1, y + 2, 0x22FFE8C0);
+    // ========== 工具方法 ==========
+    private static boolean inside(double mx, double my, int x, int y, int w, int h) {
+        return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
+
+    private static void drawPanelBg(GuiGraphics g, int x, int y, int w, int h) {
+        g.fillGradient(x, y, x + w, y + h, PANEL_BG_TOP, PANEL_BG_BOTTOM);
+        g.renderOutline(x, y, w, h, PANEL_OUTLINE);
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, PANEL_HIGHLIGHT);
     }
 
     private static int blendColors(int c1, int c2, float t) {
-        t = Mth.clamp(t, 0.0F, 1.0F);
-        int a1 = c1 >>> 24;
-        int r1 = c1 >> 16 & 255;
-        int g1 = c1 >> 8 & 255;
-        int b1 = c1 & 255;
-        int a2 = c2 >>> 24;
-        int r2 = c2 >> 16 & 255;
-        int g2 = c2 >> 8 & 255;
-        int b2 = c2 & 255;
-        int a = (int) (a1 + (a2 - a1) * t);
-        int r = (int) (r1 + (r2 - r1) * t);
-        int g = (int) (g1 + (g2 - g1) * t);
-        int b = (int) (b1 + (b2 - b1) * t);
-        return a << 24 | r << 16 | g << 8 | b;
+        t = Mth.clamp(t, 0f, 1f);
+        int a = (int) ((c1 >>> 24) + ((c2 >>> 24) - (c1 >>> 24)) * t);
+        int r = (int) (((c1 >> 16) & 0xFF) + (((c2 >> 16) & 0xFF) - ((c1 >> 16) & 0xFF)) * t);
+        int g = (int) (((c1 >> 8) & 0xFF) + (((c2 >> 8) & 0xFF) - ((c1 >> 8) & 0xFF)) * t);
+        int b = (int) ((c1 & 0xFF) + ((c2 & 0xFF) - (c1 & 0xFF)) * t);
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
+    // ========== 内部类型 ==========
+    private enum Tab {
+        MAP_PROPERTIES, SCENE_BLOCKS, QUEST_BLOCKS, MECHANICS
+    }
+
+    private record TabInfo(Tab tab, String labelKey, int color) {
+    }
+
+    private static final class MapEntry {
+        final String id;
+        final MapDisplayInfo info;
+        final Component name;
+
+        MapEntry(MapDisplayInfo info) {
+            this.id = info.id();
+            this.info = info;
+            this.name = MapIntroDetail.mapDisplayName(info.id(), info);
+        }
+    }
+
+    private static final class Entry {
+        final String id;
+        final Component name;
+        final MapEntry map;
+        final Item item;
+
+        private Entry(String id, Component name, MapEntry map, Item item) {
+            this.id = id;
+            this.name = name;
+            this.map = map;
+            this.item = item;
+        }
+
+        static Entry map(MapEntry map, Component name) {
+            return new Entry(map.id, name, map, null);
+        }
+
+        static Entry item(Item item, Component name) {
+            return new Entry(BuiltInRegistries.ITEM.getKey(item).toString(), name, null, item);
+        }
+
+        static Entry text(String id, Component name) {
+            return new Entry(id, name, null, null);
+        }
+
+        boolean sameTarget(Entry other) {
+            return other != null && id.equals(other.id)
+                    && ((map == null && other.map == null) || (map != null && map.equals(other.map)))
+                    && ((item == null && other.item == null) || (item != null && item.equals(other.item)));
+        }
+    }
+
+    // 原版数据静态方法（保留）
     private static List<Item> sceneBlockItems() {
         return List.of(
                 ModSceneBlocks.POISON_ZONE.asItem(), ModSceneBlocks.BREAKING_BRIDGE.asItem(),
                 ModSceneBlocks.SABOTAGE_BRIDGE.asItem(), ModSceneBlocks.DRIPPING_STALACTITE.asItem(),
-                ModSceneBlocks.FOG_ZONE.asItem(), ModSceneBlocks.MANHOLE.asItem(), ModSceneBlocks.CELLAR.asItem(),
+                ModSceneBlocks.FOG_ZONE.asItem(),
+                ModSceneBlocks.MANHOLE.asItem(), ModSceneBlocks.CELLAR.asItem(),
                 ModSceneBlocks.SCENE_GATE.asItem(), ModSceneBlocks.FLAMETHROWER.asItem(),
                 ModSceneBlocks.ROLLING_STONE_TRIGGER.asItem(), ModSceneBlocks.TRAIN_TARGET.asItem(),
                 ModSceneBlocks.INCINERATOR.asItem(), ModSceneBlocks.MOVING_PLATFORM.asItem(),
                 ModSceneBlocks.HURRICANE_DEVICE.asItem(), ModSceneBlocks.COFFIN.asItem(),
-                ModSceneBlocks.WATER_PUMP.asItem(),
-                ModSceneBlocks.TRASH_CAN.asItem(),
+                ModSceneBlocks.WATER_PUMP.asItem(), ModSceneBlocks.TRASH_CAN.asItem(),
                 ModBlocks.VENDING_MACHINES_BLOCK.asItem(), ModBlocks.LOTTERY_MACHINE_BLOCK.asItem(),
                 ModBlocks.DEVIL_ROULETTE_TABLE.asItem(),
                 ModBlocks.SUPPLY_CRATE_BLOCK.asItem(), ModBlocks.KILL_BLOCK.asItem(),
@@ -640,168 +841,5 @@ public class MapIntroduceScreen extends Screen {
                 TMMBlocks.FOOD_PLATTER.asItem(), TMMBlocks.DRINK_TRAY.asItem(),
                 TMMBlocks.CAMERA.asItem(), TMMBlocks.SECURITY_MONITOR.asItem(),
                 TMMBlocks.MINIGAME_QUEST_BLOCK_ITEM, TMMBlocks.MINIGAME_QUEST_PANEL_ITEM);
-    }
-
-    private static Component gameModesText(List<String> values) {
-        if (values == null || values.isEmpty()
-                || values.stream().allMatch(value -> value == null || value.isBlank())) {
-            return Component.translatable("map_intro.vote.all_game_modes");
-        }
-        List<String> names = new ArrayList<>();
-        for (String value : values) {
-            if (value == null || value.isBlank()) {
-                continue;
-            }
-            String path = value.contains(":") ? value.substring(value.indexOf(':') + 1) : value;
-            names.add(Component.translatableWithFallback("game_mode.noellesroles." + path,
-                    Component.translatableWithFallback("game_mode.starrailexpress." + path, value).getString())
-                    .getString());
-        }
-        if (names.isEmpty()) {
-            return Component.translatable("map_intro.vote.all_game_modes");
-        }
-        return Component.literal(String.join(", ", names));
-    }
-
-    private static Component mapDisplayName(String id, MapIntroSyncPayload.VoteMap voteMap) {
-        if (voteMap != null && voteMap.displayName() != null && !voteMap.displayName().isBlank()) {
-            return translateConfiguredText(voteMap.displayName());
-        }
-        return Component.translatableWithFallback("map." + id + ".name", id);
-    }
-
-    private static Component translateConfiguredText(String value) {
-        String trimmed = value.trim();
-        List<String> candidates = new ArrayList<>();
-        candidates.add(trimmed);
-        if (trimmed.startsWith("gui.tmm.map_selector.")) {
-            candidates.add("gui.sre.map_selector." + trimmed.substring("gui.tmm.map_selector.".length()));
-        } else if (trimmed.startsWith("gui.sre.map_selector.")) {
-            candidates.add("gui.tmm.map_selector." + trimmed.substring("gui.sre.map_selector.".length()));
-        }
-        Language language = Language.getInstance();
-        for (String key : candidates) {
-            String translated = language.getOrDefault(key);
-            if (!translated.equals(key)) {
-                return Component.literal(translated);
-            }
-        }
-        return Component.literal(trimmed);
-    }
-
-    private static String statusName(String value) {
-        return switch (value.toUpperCase(Locale.ROOT)) {
-            case "COLD", "WARM", "WARMTH" -> Component.translatable("map_intro.status.warmth").getString();
-            case "THIRST" -> Component.translatable("map_intro.status.thirst").getString();
-            case "HUNGER" -> Component.translatable("map_intro.status.hunger").getString();
-            default -> value;
-        };
-    }
-
-    private static Component weatherName(String value) {
-        return Component.translatableWithFallback("map_intro.weather." + value.toLowerCase(Locale.ROOT), value);
-    }
-
-    private static String timeName(long time) {
-        long t = Math.floorMod(time, 24000L);
-        long[] points = { 6000L, 12000L, 18000L, 23000L };
-        String[] keys = { "map_intro.time.noon", "map_intro.time.dusk", "map_intro.time.midnight",
-                "map_intro.time.dawn" };
-        int best = 0;
-        long bestDist = Long.MAX_VALUE;
-        for (int i = 0; i < points.length; i++) {
-            long dist = Math.min(Math.abs(t - points[i]), 24000L - Math.abs(t - points[i]));
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = i;
-            }
-        }
-        return keys[best];
-    }
-
-    private static int intValue(JsonObject json, String key, int fallback) {
-        return json.has(key) ? json.get(key).getAsInt() : fallback;
-    }
-
-    private static long longValue(JsonObject json, String key, long fallback) {
-        return json.has(key) ? json.get(key).getAsLong() : fallback;
-    }
-
-    private static double doubleValue(JsonObject json, String key, double fallback) {
-        return json.has(key) ? json.get(key).getAsDouble() : fallback;
-    }
-
-    private static boolean boolValue(JsonObject json, String key, boolean fallback) {
-        return json.has(key) ? json.get(key).getAsBoolean() : fallback;
-    }
-
-    private static String stringValue(JsonObject json, String key, String fallback) {
-        return json.has(key) ? json.get(key).getAsString() : fallback;
-    }
-
-    private static int parseInt(String value, int fallback) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ignored) {
-            return fallback;
-        }
-    }
-
-    private static String trimNumber(double value) {
-        return Math.abs(value - Math.rint(value)) < 0.0001D ? String.valueOf((int) Math.rint(value))
-                : String.format(Locale.ROOT, "%.2f", value);
-    }
-
-    private enum Tab {
-        MAP_PROPERTIES, SCENE_BLOCKS, QUEST_BLOCKS, MECHANICS
-    }
-
-    private record TabInfo(Tab tab, String labelKey, int color) {
-    }
-
-    private static final class MapEntry {
-        final String id;
-        final JsonObject json;
-        final Component name;
-        final MapIntroSyncPayload.VoteMap voteMap;
-
-        MapEntry(String id, JsonObject json, MapIntroSyncPayload.VoteMap voteMap) {
-            this.id = id;
-            this.json = json;
-            this.voteMap = voteMap;
-            this.name = mapDisplayName(id, voteMap);
-        }
-    }
-
-    private static final class Entry {
-        final String id;
-        final Component name;
-        final Tab tab;
-        final MapEntry map;
-        final Item item;
-
-        private Entry(String id, Component name, Tab tab, MapEntry map, Item item) {
-            this.id = id;
-            this.name = name;
-            this.tab = tab;
-            this.map = map;
-            this.item = item;
-        }
-
-        static Entry map(MapEntry map, Component name) {
-            return new Entry(map.id, name, Tab.MAP_PROPERTIES, map, null);
-        }
-
-        static Entry item(Item item, Component name, Tab tab) {
-            return new Entry(BuiltInRegistries.ITEM.getKey(item).toString(), name, tab, null, item);
-        }
-
-        static Entry text(String id, Component name, Tab tab) {
-            return new Entry(id, name, tab, null, null);
-        }
-
-        boolean sameTarget(Entry other) {
-            return other != null && tab == other.tab && id.equals(other.id);
-        }
     }
 }

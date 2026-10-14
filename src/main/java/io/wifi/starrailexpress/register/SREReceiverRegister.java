@@ -131,7 +131,34 @@ public class SREReceiverRegister {
                     });
                 });
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroRequestPayload.ID,
-                (payload, context) -> context.server().execute(() -> sendMapIntro(context.player())));
+                (payload, context) -> context.server().execute(
+                        () -> sendMapIntro(context.player(), payload.includeAll())));
+
+        // 地图轮换：管理员启用/停用地图
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapRotationTogglePayload.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    context.server().execute(() -> {
+                        if (!player.hasPermissions(2)) {
+                            player.displayClientMessage(Component.translatable("sre.command.permission_denied")
+                                    .withStyle(ChatFormatting.RED), false);
+                            return;
+                        }
+                        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
+                                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
+                        io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry =
+                                mapConfig.getMapById(payload.mapId());
+                        if (entry == null) {
+                            return;
+                        }
+                        entry.canSelect = payload.enabled();
+                        mapConfig.saveConfig(player.server);
+                        // 同步更新服务端展示缓存里的这一张图，避免同一局内界面显示过期
+                        io.wifi.starrailexpress.network.MapIntroData.updateCanSelect(payload.mapId(),
+                                payload.enabled());
+                        broadcastMapRotation(player.server);
+                    });
+                });
 
         // 物品栏垃圾桶：删除光标上拿着的物品
         ServerPlayNetworking.registerGlobalReceiver(
@@ -192,52 +219,36 @@ public class SREReceiverRegister {
                 });
     }
 
-    private static void sendMapIntro(ServerPlayer player) {
-        ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.MapJson> maps = new ArrayList<>();
-        ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap> voteMaps = new ArrayList<>();
-        Path mapsDir = player.server.getWorldPath(LevelResource.ROOT)
-                .resolve("train_maps")
-                .toAbsolutePath()
-                .normalize();
-        for (String mapId : io.wifi.starrailexpress.game.MapManager.getAvailableMaps(player.serverLevel(), true)) {
-            try {
-                Path path = mapsDir.resolve(mapId + ".json").normalize();
-                if (!path.startsWith(mapsDir) || !Files.isRegularFile(path)) {
-                    continue;
-                }
-                maps.add(new io.wifi.starrailexpress.network.MapIntroSyncPayload.MapJson(
-                        mapId,
-                        Files.readString(path, StandardCharsets.UTF_8)));
-            } catch (Exception e) {
-                SRE.LOGGER.warn("Failed to read map intro json for {}", mapId, e);
-            }
+    private static void sendMapIntro(ServerPlayer player, boolean includeAllRequested) {
+        // 只有管理员（权限 ≥2）能请求「显示全部地图」；普通请求只拿投票配置里的地图
+        boolean includeAll = includeAllRequested && player.hasPermissions(2);
+        java.util.List<io.wifi.starrailexpress.network.MapDisplayInfo> maps =
+                io.wifi.starrailexpress.network.MapIntroData.get(player.server, includeAll);
+        for (io.wifi.starrailexpress.network.MapIntroSyncPayload payload :
+                io.wifi.starrailexpress.network.MapIntroSyncPayload.chunk(maps)) {
+            ServerPlayNetworking.send(player, payload);
         }
+    }
+
+    /** 把全部地图的启用状态广播给所有在线玩家（比重发 MapIntroSyncPayload 便宜得多）。 */
+    private static void broadcastMapRotation(net.minecraft.server.MinecraftServer server) {
         io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
-                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
-        if (mapConfig.getMaps() != null) {
-            for (io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry : mapConfig.getMaps()) {
-                if (entry == null || entry.id == null || entry.id.isBlank()) {
-                    continue;
-                }
-                voteMaps.add(new io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap(
-                        entry.id,
-                        entry.displayName,
-                        entry.minCount,
-                        entry.maxCount,
-                        entry.canSelect,
-                        entry.gameModes == null ? java.util.List.of() : entry.gameModes));
-            }
+                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(server);
+        if (mapConfig.getMaps() == null) {
+            return;
         }
-        org.agmas.noellesroles.config.NoellesRolesConfig config =
-                org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance();
-        ServerPlayNetworking.send(player, new io.wifi.starrailexpress.network.MapIntroSyncPayload(
-                maps,
-                voteMaps,
-                config.maChenXuMaps,
-                config.swastMaps,
-                config.underwaterRolesMaps,
-                config.airRolesMaps,
-                config.trapRolesMaps));
+        java.util.List<io.wifi.starrailexpress.network.MapRotationSyncPayload.Entry> entries = new ArrayList<>();
+        for (io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry : mapConfig.getMaps()) {
+            if (entry == null || entry.id == null || entry.id.isBlank()) {
+                continue;
+            }
+            entries.add(new io.wifi.starrailexpress.network.MapRotationSyncPayload.Entry(entry.id, entry.canSelect));
+        }
+        io.wifi.starrailexpress.network.MapRotationSyncPayload payload =
+                new io.wifi.starrailexpress.network.MapRotationSyncPayload(entries);
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            ServerPlayNetworking.send(online, payload);
+        }
     }
 
     private static void executeDialogueCommand(ServerPlayNetworking.Context context, String command,

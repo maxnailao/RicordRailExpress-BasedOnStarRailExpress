@@ -807,9 +807,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroSyncPayload.ID,
                 (payload, context) -> context.client().execute(() -> {
+                    var view = io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache.accept(payload);
                     if (context
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen screen) {
-                        screen.updateFromPacket(payload);
+                        screen.updateFromPacket(view);
                     }
                 }));
 

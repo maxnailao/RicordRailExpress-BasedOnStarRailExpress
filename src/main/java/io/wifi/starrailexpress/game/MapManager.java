@@ -745,6 +745,9 @@ public class MapManager {
             io.wifi.starrailexpress.scenery.network.SceneAssetNetwork.sendManifestToAll(serverWorld);
             last_start_map = mapName;
 
+            // 重建地图展示缓存（每局一次的唯一权威刷新点）
+            io.wifi.starrailexpress.network.MapIntroData.rebuild(serverWorld.getServer(), mapName);
+
             SRE.LOGGER.info("Successfully loaded map: " + mapName);
             return true;
         } catch (Exception e) {
