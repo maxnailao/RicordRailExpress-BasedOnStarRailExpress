@@ -58,6 +58,13 @@ public record ZeroOneFiveShootPayload(int target, boolean isAutoSecondShot) impl
                 // 处理命中
                 ZeroOneFiveGunItem.onHit(player, target);
                 hit = true;
+            } else if (player.serverLevel().getEntity(payload.target()) instanceof
+                    io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()
+                    && dummy.distanceToSqr(player) < 30 * 30) {
+                // 处理命中假人
+                ZeroOneFiveGunItem.onHitDummy(player, dummy);
+                hit = true;
             }
 
             // 第一枪（不是自动第二枪）触发冷却

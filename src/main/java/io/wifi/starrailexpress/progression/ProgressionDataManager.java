@@ -92,6 +92,21 @@ public final class ProgressionDataManager {
         grantExperience(player, 1);
     }
 
+    /** 报告尸体（紧急会议）：给予少量经验。 */
+    public static void onReportBody(ServerPlayer player) {
+        grantExperience(player, 10);
+    }
+
+    /** 摇铃 / 紧急按钮召开会议：给予少量经验。 */
+    public static void onCallMeeting(ServerPlayer player) {
+        grantExperience(player, 15);
+    }
+
+    /** 参与投票：给予少量经验。 */
+    public static void onCastVote(ServerPlayer player) {
+        grantExperience(player, 5);
+    }
+
     // 阵营卡牌已迁移至场外背包系统（BackpackManager）；以下方法保留签名并委托，调用方无需改动。
     public static void addFactionCard(ServerPlayer player, ProgressionState.FactionCardType type, int count) {
         BackpackManager.addCard(player, type, count);

@@ -5,12 +5,13 @@ import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.gui.ScopeOverlayRenderer;
 import io.wifi.starrailexpress.client.gui.screen.CommandMacroScreen;
-import io.wifi.starrailexpress.client.gui.screen.MapSelectorScreen;
+import io.wifi.starrailexpress.client.gui.screen.MapVoteScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.VoteScreen;
+import net.exmo.sre.meeting.client.MeetingClientHandler;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import org.agmas.noellesroles.content.item.DesertEagleItem;
@@ -112,11 +113,16 @@ public class InputHandler {
         }
 
         if (openVotingScreenKeybind.consumeClick()) {
+            // 会议投票阶段：打开玩家投票界面
+            if (MeetingClientHandler.phase == 3 && ClientVoteCache.isActive()) {
+                client.setScreen(new VoteScreen());
+                return;
+            }
             // 检查是否处于投票阶段
             final MapVotingComponent mapVotingComponent = MapVotingComponent.KEY.get(client.level);
             if (mapVotingComponent.isVotingActive()) {
                 // 打开投票界面
-                client.setScreen(new MapSelectorScreen());
+                client.setScreen(MapVoteScreen.create());
             } else if (ClientVoteCache.canReOpen() && !(client.screen instanceof VoteScreen)) {
                 client.setScreen(new VoteScreen());
             }

@@ -83,6 +83,8 @@ public class VoteSession {
 
     @Nullable
     public Set<UUID> getTargetPlayers() {
+        if (targetPlayers == null)
+            return Set.of();
         return targetPlayers;
     }
 
@@ -91,7 +93,7 @@ public class VoteSession {
     }
 
     // 新投票方法：接收索引列表
-    boolean castVote(UUID playerId, List<Integer> optionIndices) {
+    public boolean castVote(UUID playerId, List<Integer> optionIndices) {
         if (ended || !isAllowedToVote(playerId))
             return false;
         if (optionIndices.isEmpty())
@@ -109,7 +111,7 @@ public class VoteSession {
     }
 
     // 保留旧接口以便兼容（内部转为列表调用）
-    boolean castVote(UUID playerId, int optionIndex) {
+    public boolean castVote(UUID playerId, int optionIndex) {
         return castVote(playerId, List.of(optionIndex));
     }
 
@@ -150,14 +152,24 @@ public class VoteSession {
         Map<Integer, Integer> tally = new LinkedHashMap<>();
         for (int i = 0; i < options.size(); i++)
             tally.put(i, 0);
-        for (Set<Integer> choices : votes.values()) {
-            for (int choice : choices) {
+        for (var entry : votes.entrySet()) {
+            int weight = getVoterWeight(entry.getKey());
+            for (int choice : entry.getValue()) {
                 if (choice >= 0 && choice < options.size()) {
-                    tally.merge(choice, 1, Integer::sum);
+                    tally.merge(choice, weight, Integer::sum);
                 }
             }
         }
         return tally;
+    }
+
+    /** 获取投票者的投票权重。优先从 MeetingManager 读取，无覆盖时返回 1。 */
+    protected int getVoterWeight(UUID voterId) {
+        try {
+            return net.exmo.sre.meeting.MeetingManager.getVoterWeight(voterId);
+        } catch (Exception e) {
+            return 1;
+        }
     }
 
     public Map<String, VoteResultOption> getResults() {
@@ -167,11 +179,14 @@ public class VoteSession {
             tally.put(opt.resultId(), new VoteResultOption(idx, opt, 0));
             idx++;
         }
-        for (Set<Integer> choices : votes.values()) {
-            for (int choice : choices) {
+        for (var entry : votes.entrySet()) {
+            int weight = getVoterWeight(entry.getKey());
+            for (int choice : entry.getValue()) {
                 if (choice >= 0 && choice < options.size()) {
                     var opt = options.get(choice);
-                    tally.get(opt.resultId()).add();
+                    for (int i = 0; i < weight; i++) {
+                        tally.get(opt.resultId()).add();
+                    }
                 }
             }
         }

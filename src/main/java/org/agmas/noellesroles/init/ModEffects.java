@@ -31,8 +31,14 @@ public class ModEffects {
     /** 仅禁止CCA/职业执行tick */
     public static final Holder<MobEffect> CCA_FREEZED = register("cca_freezed",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    /** 禁止商店购买 */
+    public static final Holder<MobEffect> SHOP_BANNED = register("shop_banned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+    /** 禁止技能使用与职业/CCA tick 执行 */
+    public static final Holder<MobEffect> SKILL_FREEZED = register("skill_freezed",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> INVENTORY_BANED = register("inventory_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> EAT_MEAT_FOOD = register("eat_meat_food",
@@ -376,6 +382,10 @@ public class ModEffects {
     public static final Holder<MobEffect> EERIE_DOMAIN = register("eerie_domain",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
 
+    /** 抑制杀手本能透视 */
+    public static final Holder<MobEffect> NO_INSTINCT = register("no_instinct",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
+
     /**
      * 视野迷雾
      * - 有害效果，灰蓝色
@@ -486,8 +496,42 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9B59B6));
 
     /**
+     * 破镜重圆：客户端世界坍缩回溯特效。
+     * <ul>
+     * <li>生效即视野震颤</li>
+     * <li>默认 4 秒后周围方块由外向内向下坍缩，10 秒时完全坍缩；药水更短时会按剩余时间加速崩解</li>
+     * <li>效果结束后面块由内向外升起还原</li>
+     * </ul>
+     * 方块坍缩/还原仅在客户端进行，见 {@code MirrorReunionSceneManager}。
+     */
+    public static final Holder<MobEffect> MIRROR_REUNION = register("mirror_reunion",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xB8C8D8));
+
+    /**
+     * 箱庭视野：自动切割遮挡面效果标记。
+     * 行为见 {@code HakoniwaVisionClientHandle}；区块网格级的方块剔除见
+     * {@code mixin/client/hakoniwa} 与 sodium 兼容层 {@code mixin/compat/sodium}。
+     */
+    public static final Holder<MobEffect> HAKONIWA_VISION = register("hakoniwa_vision",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9CCFB8));
+
+    /**
      * 注册药水效果到注册表
      */
+
+    /**
+     * 构造一个参数与原效果一致的 {@link MobEffectInstance}（纯包装，便于复制效果参数）。
+     */
+    public static MobEffectInstance of(Holder<MobEffect> holder, int time, int amplifier, boolean ambient,
+            boolean showParticles, boolean showIcon) {
+        return new MobEffectInstance(
+                holder,
+                time,
+                amplifier,
+                ambient,
+                showParticles,
+                showIcon);
+    }
 
     private static Holder<MobEffect> register(String id, MobEffect statusEffect) {
         return Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, Noellesroles.id(id), statusEffect);

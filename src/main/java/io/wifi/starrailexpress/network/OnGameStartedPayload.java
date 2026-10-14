@@ -7,7 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public record OnGameStartedPayload() implements CustomPacketPayload {
+public record OnGameStartedPayload(String mapId) implements CustomPacketPayload {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(SRE.MOD_ID,
             "on_game_started");
     public static final Type<OnGameStartedPayload> TYPE = new Type<>(ID);
@@ -18,13 +18,21 @@ public record OnGameStartedPayload() implements CustomPacketPayload {
         return TYPE;
     }
 
-    public void write(FriendlyByteBuf buf) {
+    public OnGameStartedPayload {
+        mapId = mapId == null ? "" : mapId;
+    }
 
+    public OnGameStartedPayload() {
+        this("");
+    }
+
+    public void write(FriendlyByteBuf buf) {
+        buf.writeUtf(mapId, 256);
 
     }
 
     public static OnGameStartedPayload read(FriendlyByteBuf buf) {
-        return new OnGameStartedPayload();
+        return new OnGameStartedPayload(buf.readUtf(256));
     }
 
     static {

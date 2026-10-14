@@ -1,4 +1,22 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import io.wifi.ConfigCompact.ConfigClassHandler;
 import me.shedaniel.autoconfig.ConfigData;
@@ -21,6 +39,12 @@ public class SREClientConfig implements ConfigData {
 
     @ConfigEntry.Gui.Tooltip
     public boolean ultraPerfMode = false;
+    @ConfigEntry.Gui.Tooltip
+    public boolean enhancedChatHud = true;
+    public boolean bgsoundForSpectator = false;
+
+    @ConfigEntry.Gui.Excluded
+    public HashMap<Integer, Boolean> taskStatus = new LinkedHashMap<>();
 
     // Skills configuration
     /**
@@ -41,6 +65,44 @@ public class SREClientConfig implements ConfigData {
     public int moodTopOffset = 0;
     @Category("style")
     public int moodLeftOffset = 0;
+    @Category("style")
+    public float playerHudScale = 0.6f;
+    @Category("style")
+    public float bodyHudScale = 0.6f;
+
+    @Category("style")
+    public int minWinCenterColumns = 3;
+    @Category("style")
+    public int maxWinCenterColumns = 8;
+    @Category("style")
+    public int winCenterColumnsDiv = 3;
+
+    @Category("style")
+    public int minWinSideColumns = 1;
+    @Category("style")
+    public int maxWinSideColumns = 5;
+    @Category("style")
+    public int winSideColumnsDiv = 2;
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean showInfoLinesInInventory = false; // 金币下方的信息行改为在物品栏界面中显示，不再显示在HUD上
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean showInfoLinesInHud = true; // 显示在HUD上
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean showDisguiseHud = true; // 伪装时在左上角信息行下方显示「当前伪装：xxx」
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean useLegacyMapSelector = false; // 使用旧版地图投票界面（卡片墙）
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean newspaperOpenAnimation = true; // 报纸界面打开时的自下而上入场动画
 
     @Category("style")
     public boolean showItemCooldownOverlayNum = false; // 物品栏物品上显示冷却数字
@@ -56,6 +118,7 @@ public class SREClientConfig implements ConfigData {
     public boolean disableCustomLoadingScreen = false;
     public boolean disableScreenShake = false;
     public boolean disableWaypoints = false;
+    public boolean creativeNoFog = true;
     @ConfigEntry.Gui.Tooltip
     public boolean enableMovingScenes = true;
     // VT主播随机内置皮肤（可资源包自定义，player_skins.json）
@@ -66,7 +129,21 @@ public class SREClientConfig implements ConfigData {
     public boolean enableSecurityCameraHUD = true; // 启用安全摄像头HUD显示
     public boolean welcome_voice = false;
 
+    @ConfigEntry.Gui.Excluded
+    public boolean gameDisclaimerAccepted = false; // 已阅读并同意开局免责声明，确认后不再弹出
+
     public boolean autoSortVotes = false;
+
+    @ConfigEntry.Gui.Tooltip
+    public boolean roleRotationAutoScroll = true; // 职业轮选界面：玩家列表自动滚动跟随当前选择玩家
+
+    @Category("skin")
+    @ConfigEntry.Gui.Tooltip
+    public boolean hideAllHats = false; // 不显示所有人的帽子
+
+    @Category("skin")
+    @ConfigEntry.Gui.Tooltip
+    public boolean showOwnHatOnly = false; // 只显示自己的帽子
 
     public boolean isUltraPerfMode() {
         return ultraPerfMode;

@@ -6,6 +6,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.HitResult;
+import org.agmas.noellesroles.client.MirrorReunionSceneManager;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.init.ModEffects;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,6 +30,14 @@ public abstract class MobEffectKeyMixin {
         if (player == null)
             return false;
         final var options = instance.options;
+        // 破镜重圆：坍缩期间锁定移动/跳跃/背包等操作键
+        if (MirrorReunionSceneManager.INSTANCE.blocksPlayerControl()) {
+            if (this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight)
+                    || this.same(options.keyUp) || this.same(options.keyShift) || this.same(options.keyDown)
+                    || this.same(options.keySprint) || this.same(options.keyInventory)) {
+                return true;
+            }
+        }
         if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)
                 || player.hasEffect(ModEffects.GHOST_CURSE)) {
             if (this.same(NoellesrolesClient.abilityBind)) {

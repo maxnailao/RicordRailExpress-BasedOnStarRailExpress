@@ -373,6 +373,11 @@ public class AccessoryScreen extends Screen {
         renderScrollbar(graphics, mouseX, mouseY);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
     private static float easeOut(float v) {
         float inv = 1F - v;
         return 1F - inv * inv * inv;

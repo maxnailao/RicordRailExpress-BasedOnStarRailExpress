@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.content.entity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -11,6 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
+import io.wifi.starrailexpress.SRE;
 import java.util.function.Supplier;
 
 public class NoteEntity extends Entity {
@@ -48,12 +50,31 @@ public class NoteEntity extends Entity {
         }
     }
 
-    public String[] getLines() {
-        return new String[] {
-                this.entityData.get(LINE1),
-                this.entityData.get(LINE2),
-                this.entityData.get(LINE3),
-                this.entityData.get(LINE4)
+    private Component stringToComponent(String string) {
+        if (string == null)
+            return Component.empty();
+        if (string.isBlank())
+            return Component.empty();
+        if (string.startsWith("\uE783")) {
+
+            try {
+                String rawJson = string.substring("\uE783".length());
+                Component msg = Component.Serializer.fromJson(rawJson, this.registryAccess());
+                return msg;
+            } catch (Exception e) {
+                SRE.LOGGER.error("[Note Entity] Error while transform Component from JSON to Component", e);
+            }
+        }
+
+        return Component.literal(string);
+    }
+
+    public Component[] getLines() {
+        return new Component[] {
+                stringToComponent(this.entityData.get(LINE1)),
+                stringToComponent(this.entityData.get(LINE2)),
+                stringToComponent(this.entityData.get(LINE3)),
+                stringToComponent(this.entityData.get(LINE4))
         };
     }
 

@@ -393,6 +393,7 @@ public class NRGameStateEvents {
         ServerTickEvents.END_SERVER_TICK.register((server) -> {
             ServerSmokeAreaManager.tick();
             HallucinationAreaManager.tick();
+            org.agmas.noellesroles.game.wallbreak.WallBreakManager.tick(server);
             ServerLevel level = server.overworld();
             TarotAssemblyManager.serverLevelTick(level);
 

@@ -2220,6 +2220,7 @@ public class ModEventsRegister {
             // 更新烟雾区域和迷幻区域
             ServerSmokeAreaManager.tick();
             HallucinationAreaManager.tick();
+            org.agmas.noellesroles.game.wallbreak.WallBreakManager.tick(server);
             ServerLevel level = server.overworld();
             {
                 org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager.serverLevelTick(level);

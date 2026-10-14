@@ -63,8 +63,14 @@ public interface ModSceneBlocks {
     Block CELLAR = registerBlock("cellar",
             new CellarBlock(Properties.ofFullCopy(Blocks.SPRUCE_PLANKS)));
 
+    Block LOOPING_MIRROR = registerBlock("looping_mirror",
+            new LoopingMirrorBlock(Properties.of().noOcclusion().noCollission()
+                    .strength(-1.0F, 3600000.0F).noLootTable().isValidSpawn(Blocks::never)));
     BlockEntityType<FogZoneBlockEntity> FOG_ZONE_ENTITY = blockEntityRegistrar.create("fog_zone",
             BlockEntityType.Builder.of(FogZoneBlockEntity::new, FOG_ZONE));
+    BlockEntityType<LoopingMirrorBlockEntity> LOOPING_MIRROR_ENTITY = blockEntityRegistrar.create(
+            "looping_mirror",
+            BlockEntityType.Builder.of(LoopingMirrorBlockEntity::new, LOOPING_MIRROR));
     BlockEntityType<ManholeBlockEntity> MANHOLE_ENTITY = blockEntityRegistrar.create("manhole",
             BlockEntityType.Builder.of(ManholeBlockEntity::new, MANHOLE));
 

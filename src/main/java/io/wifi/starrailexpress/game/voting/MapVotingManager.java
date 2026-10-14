@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.game.voting;
 
 import io.wifi.starrailexpress.SRE;
@@ -5,6 +20,10 @@ import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.MapVotingComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.data.MapConfig;
+import io.wifi.starrailexpress.game.data.ServerMapConfig;
+import io.wifi.starrailexpress.network.ShowSelectedMapUIPayload;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 
@@ -13,6 +32,11 @@ import java.util.UUID;
 
 public class MapVotingManager {
     private static MapVotingManager instance;
+    private MapConfig votingMapconfigs = null;
+
+    public MapConfig getMapVotingCache() {
+        return votingMapconfigs;
+    }
 
     private MapVotingManager() {
     }
@@ -37,8 +61,14 @@ public class MapVotingManager {
                 SRE.LOGGER.warn("Voting start failed: Game has already started!");
                 return;
             }
-
+            votingMapconfigs = new MapConfig();
+            votingMapconfigs.maps = ServerMapConfig.getInstance(server).getRandomMaps();
             MapVotingComponent votingComponent = MapVotingComponent.KEY.get(level);
+            server.getPlayerList().getPlayers().forEach(
+                    serverPlayer -> {
+                        ServerPlayNetworking.send(serverPlayer,
+                                ShowSelectedMapUIPayload.ofCandidates(votingMapconfigs.maps));
+                    });
             votingComponent.startVoting(votingTimeSeconds);
         }
     }

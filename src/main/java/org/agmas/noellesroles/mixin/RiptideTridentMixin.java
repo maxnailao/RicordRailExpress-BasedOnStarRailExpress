@@ -175,5 +175,16 @@ public class RiptideTridentMixin {
                 }
             }
         }
+
+        // 列车假人
+        for (io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy : serverLevel.getEntitiesOfClass(
+                io.wifi.starrailexpress.traindummy.TrainDummyEntity.class, hitBox,
+                io.wifi.starrailexpress.traindummy.TrainDummyEntity::canReceiveHits)) {
+            double distance = player.position().distanceTo(dummy.position());
+            double riptideRange = isWaterGhost ? 2.0 : 2.5;
+            if (distance < riptideRange && player.hasLineOfSight(dummy)) {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, serverPlayer, SRE.id("trident"));
+            }
+        }
     }
 }

@@ -64,16 +64,31 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "gamemodes")
     public boolean roleRotationForceRoleSettings = false;
+
+    // 破镜重圆结束特效（服务端）：游戏结束进入黑幕收尾时是否播放破镜崩裂/还原。
+    // 可由命令 /sre:mirror_end_egg on|off 修改并保存到本配置。
+    @Tooltip
+    public boolean enableMirrorReunionEndEgg = false;
+    // 时长（tick）。实际结局还会再多 1.5 秒。
+    public int mirrorReunionEndEggTime = 5 * 20;
+
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")
     public int customRolePermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int scheduleCommandPermission = 3;
+    @ConfigEntry.Category(value = "anticheat")
+    @Tooltip
+    public boolean enableClickAc = true; // 点击频率反作弊
     @ConfigEntry.Category(value = "commands")
     public int startGameRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int stopGameRequiredPermission = 3;
     @ConfigEntry.Category(value = "commands")
     public int switchMapRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int meetingVoteProcessorFunctionPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int modifyEnableStatusRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
@@ -103,7 +118,7 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "map")
     @Tooltip
-    public int mapRandomCount = -1;
+    public int mapRandomCount = 5;
 
     @ConfigEntry.Category(value = "map")
     @Tooltip(count = 3)
@@ -374,6 +389,15 @@ public class SREConfig implements ConfigData {
     public int dailyTaskCount = 6;
     @ConfigEntry.Category(value = "progression")
     public int weeklyTaskCount = 6;
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public boolean enableFactionCardTypeCooldown = true;
+    /** 同种类阵营卡再次使用所需间隔（分钟）。默认 45。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public int factionCardTypeCooldownMinutes = 45;
     // 皮肤设置
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinEnabled = true;

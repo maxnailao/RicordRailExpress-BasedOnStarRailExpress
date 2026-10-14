@@ -2,7 +2,10 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.ConfigCompact.annotation.Category;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableAABB;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableVec3;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -48,26 +51,6 @@ public class AreasSettings {
 
         public BlockPos toBlockPos() {
             return new BlockPos(x, y, z);
-        }
-    }
-
-    public static class StoreableVec3 {
-        double x = 0, y = 0, z = 0;
-
-        public StoreableVec3(net.minecraft.world.phys.Vec3 vec) {
-            this.x = vec.x;
-            this.y = vec.y;
-            this.z = vec.z;
-        }
-
-        public StoreableVec3(double x, double y, double z) {
-            this.x = x;
-            this.z = z;
-            this.y = y;
-        }
-
-        public net.minecraft.world.phys.Vec3 toVec3() {
-            return new Vec3(x, y, z);
         }
     }
 
@@ -194,4 +177,109 @@ public class AreasSettings {
 
     @Category("sound")
     public BackgroundAmbienceSound sceneOutsideSound = BackgroundAmbienceSound.train;
+
+    // ==================== meeting ====================
+    // ==================== 紧急会议系统 / Emergency Meeting ====================
+    // 见 net.exmo.sre.meeting.MeetingManager；地图配置 GUI 的「会议」标签页可视化编辑。
+
+    /** 是否启用会议系统（右键尸体召开紧急会议）。 */
+    @Category("meeting")
+    public boolean meetingEnabled = false;
+    @Category("meeting")
+    public boolean bodyMeetingEnabled = true;
+    /** 尸体会议不显示上报人 */
+    @Category("meeting")
+    public boolean meetingNoReporter = false;
+    @Category("meeting")
+    public TrueFalseResult emergencyMeetingNoReporter = TrueFalseResult.PASS;
+
+    @Category("meeting")
+    public boolean meetingVoteEnabled = false;
+    @Category("meeting")
+    public boolean meetingVoteShowResult = true;
+    @Category("meeting")
+    public int meetingVoteTimeSeconds = 30;
+    @Category("meeting")
+    public boolean meetingVoteAllowRevote = true;
+    @Category("meeting")
+    public int meetingVoteSelectionLimit = 1;
+    @Category("meeting")
+    public boolean meetingVoteAutoStop = false;
+    @Category("meeting")
+    public TrueFalseResult emergencyMeetingVoteEnabled = TrueFalseResult.PASS;
+
+    public enum VoteResultProcessor {
+        KILL, FORCE_KILL, GLOWING, FUNCTION, DEFAULT
+    }
+
+    @Category("meeting")
+    public VoteResultProcessor meetingVoteProcessor = VoteResultProcessor.GLOWING;
+
+    @Category("meeting")
+    public int meetingVoteProcessorGlowingTime = 60;
+
+    @Category("meeting")
+    public String meetingVoteProcessorFunction = "sre:meeting_vote_result";
+
+    // 紧急会议和摇铃会议的处理方法。
+    @Category("meeting")
+    public VoteResultProcessor emergencyMeetingVoteProcessor = VoteResultProcessor.DEFAULT;
+
+    @Category("meeting")
+    public int emergencyMeetingVoteProcessorGlowingTime = 60;
+
+    @Category("meeting")
+    public String emergencyMeetingVoteProcessorFunction = "";
+
+    /** 会议地点。使用 AreasSettingUtils 中可存储的 Vec3，跨包可读。 */
+    @Category("meeting")
+    public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);
+    /** 以会议地点为中心自动搜寻椅子（MountableBlock）的半径。 */
+    @Category("meeting")
+    public StoreableAABB meetingChairScanBox = new StoreableAABB(-12, -3, -12, 12, 3, 12);
+    /** 讨论阶段时长（秒）。 */
+    @Category("meeting")
+    public int meetingDiscussSeconds = 60;
+    /** 两次会议之间的冷却（秒）。 */
+    @Category("meeting")
+    public int meetingCooldownSeconds = 90;
+    /** 开局冷却（秒）：游戏开始后多少秒内不能召开会议（右键尸体 / API）。0 表示无开局冷却。 */
+    @Category("meeting")
+    public int meetingStartCooldown = 30;
+    /** 会议中「举手发言」冷却（秒）：每次开始发言后需间隔多少秒才能再次举手。0 表示无冷却。 */
+    @Category("meeting")
+    public int meetingSpeakCooldownSeconds = 5;
+
+    // ==================== 摇铃会议系统 / Bell Meeting ====================
+
+    /** 是否启用摇铃会议（右键原版钟方块召开紧急会议）。前提是 meetingEnabled 为 true。 */
+    @Category("meeting")
+    public boolean bellMeetingEnabled = false;
+    /** 摇铃开局冷却（秒）。开局后多少秒才能摇铃。 */
+    @Category("meeting")
+    public int bellMeetingStartCooldown = 120;
+    /** 摇铃冷却（秒）。摇铃后间隔多少秒才能再次摇铃。 */
+    @Category("meeting")
+    public int bellMeetingCooldown = 120;
+
+    // ==================== 地图事件 / Map Events ====================
+
+    /** 是否启用飞机坠落事件：开局刷新一架撞向地图中心的飞机，周期性震颤，建筑内会在客户端生成虚假火焰。 */
+    @Category("event")
+    public boolean planeCrashEventEnabled = false;
+
+    /**
+     * 震颤时玩家统一倾泻的水平朝向（度）。
+     * Minecraft：0=南（+Z），90=西（-X）。飞机也沿此方向撞向中心。
+     */
+    @Category("event")
+    public float planeCrashTiltYaw = 0f;
+
+    /** 飞机刷新的水平距离（相对地图中心）。小于等于 0 时按游戏区自动估算。 */
+    @Category("event")
+    public float planeCrashSpawnDistance = 0f;
+
+    /** 飞机刷新高度（相对游戏区顶）。 */
+    @Category("event")
+    public float planeCrashSpawnHeight = 36f;
 }

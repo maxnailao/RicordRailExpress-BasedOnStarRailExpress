@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client.gui.screen;
 
 import io.wifi.starrailexpress.content.item.DrawingBoardItem;
@@ -56,6 +71,12 @@ public class DrawingBoardScreen extends Screen {
     private Button btnBrush;
     private Button btnEraser;
     protected Button btnClose;
+
+    // 整体移动方向键（每次把画布内容朝对应方向挪一格；管理员画板不创建这组键）
+    private Button btnShiftUp;
+    private Button btnShiftDown;
+    private Button btnShiftLeft;
+    private Button btnShiftRight;
 
     private boolean isDrawing = false;
     private int lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
@@ -147,7 +168,92 @@ public class DrawingBoardScreen extends Screen {
                 .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 4, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         addRenderableWidget(btnClose);
 
+        // 整体移动：用小箭头组成的方向键，放在「关闭」按钮下方，并与工具按钮列（含「关闭」）左右对齐
+        // 管理员画板不要这组键（见 showShiftButtons()）
+        if (showShiftButtons()) {
+            int arrowW = 24;
+            // 间距取 4：3 个箭头 + 2 个间隙正好 = 工具按钮宽（80），整组与「关闭」按钮左右边缘对齐
+            int arrowGap = 4;
+            int moveX = btnX;
+            // 关闭按钮是工具列的第 5 行（offset 4），方向键从它下面 14px 处开始
+            int moveY = btnY + (BUTTON_HEIGHT + 5) * 5 + 14;
+            int secondRowY = moveY + BUTTON_HEIGHT + arrowGap;
+
+            btnShiftUp = Button.builder(Component.translatable("starrailexpress.drawing_board.shift_up"),
+                    b -> shiftCanvas(0, -1))
+                    .bounds(moveX + arrowW + arrowGap, moveY, arrowW, BUTTON_HEIGHT).build();
+            addRenderableWidget(btnShiftUp);
+
+            btnShiftLeft = Button.builder(Component.translatable("starrailexpress.drawing_board.shift_left"),
+                    b -> shiftCanvas(-1, 0))
+                    .bounds(moveX, secondRowY, arrowW, BUTTON_HEIGHT).build();
+            addRenderableWidget(btnShiftLeft);
+
+            btnShiftDown = Button.builder(Component.translatable("starrailexpress.drawing_board.shift_down"),
+                    b -> shiftCanvas(0, 1))
+                    .bounds(moveX + arrowW + arrowGap, secondRowY, arrowW, BUTTON_HEIGHT).build();
+            addRenderableWidget(btnShiftDown);
+
+            btnShiftRight = Button.builder(Component.translatable("starrailexpress.drawing_board.shift_right"),
+                    b -> shiftCanvas(1, 0))
+                    .bounds(moveX + (arrowW + arrowGap) * 2, secondRowY, arrowW, BUTTON_HEIGHT).build();
+            addRenderableWidget(btnShiftRight);
+        }
+
         updateToolButtons();
+    }
+
+    /**
+     * 是否创建「整体移动」方向键。
+     *
+     * <p>
+     * 管理员画板（{@code AdminDrawingBoardScreen}）不需要这组键，会重写成 {@code false}；
+     * 这里用方法而不是直接判断类型，是为了让子类替换布局时不用关心父类的控件创建细节。
+     */
+    protected boolean showShiftButtons() {
+        return true;
+    }
+
+    /**
+     * 把画布内容整体朝一个方向移动一格。
+     *
+     * <p>
+     * 移出画布的部分直接丢弃，空出来的那一行 / 一列填成背景白（与「清空」用的底色一致），
+     * 移动后立刻存回物品并同步给服务端，行为和画一笔是一样的。
+     *
+     * @param dx 水平方向：-1 左移，1 右移，0 不动
+     * @param dy 垂直方向：-1 上移，1 下移，0 不动
+     */
+    protected void shiftCanvas(int dx, int dy) {
+        if (dx == 0 && dy == 0) {
+            return;
+        }
+        byte[][] shifted = new byte[CANVAS_SIZE][CANVAS_SIZE];
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                shifted[y][x] = (byte) BACKGROUND_WHITE;
+            }
+        }
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx < 0 || nx >= CANVAS_SIZE || ny < 0 || ny >= CANVAS_SIZE) {
+                    continue;
+                }
+                shifted[ny][nx] = canvas[y][x];
+            }
+        }
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            System.arraycopy(shifted[y], 0, canvas[y], 0, CANVAS_SIZE);
+        }
+
+        // 和「应用模板」保持一致：画布变了就重置识别状态
+        canvasModifiedSinceLastRecognize = true;
+        lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
+        lastRecognizeMessage = "";
+        lastHint = "";
+        saveCanvas();
     }
 
     private void updateToolButtons() {

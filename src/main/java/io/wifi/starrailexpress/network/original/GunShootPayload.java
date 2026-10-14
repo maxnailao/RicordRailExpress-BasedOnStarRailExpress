@@ -56,6 +56,9 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull GunShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
             ItemStack mainHandStack = player.getMainHandItem();
 
             if (player.getCooldowns().isOnCooldown(mainHandStack.getItem()))
@@ -168,6 +171,20 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 if (!player.isCreative()) {
                     mainHandStack.set(SREDataComponentTypes.USED, true);
                 }
+            }
+            if (mainHandStack.is(TMMItemTags.GUNS)
+                    && player.serverLevel().getEntity(
+                            payload.target()) instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()
+                    && dummy.distanceToSqr(player) < 30 * 30) {
+                ResourceLocation dummyReason = mainHandStack.is(TMMItems.DERRINGER)
+                        ? GameConstants.DeathReasons.DERRINGER
+                        : GameConstants.DeathReasons.REVOLVER;
+                if (mainHandStack.is(ModItems.EXECUTIONER_GUN)) {
+                    dummyReason = GameConstants.DeathReasons.EXECUTE;
+                }
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player, dummyReason);
+                return;
             }
             if (mainHandStack.is(TMMItemTags.GUNS)
                     && player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target

@@ -180,6 +180,7 @@ public class VoteManager {
                 }
             }
             player.displayClientMessage(Component.translatable("vote.cast_success", names.toString().trim()), true);
+            io.wifi.starrailexpress.progression.ProgressionDataManager.onCastVote(player);
         } else {
             player.displayClientMessage(Component.translatable("vote.already_voted"), true);
         }
@@ -337,6 +338,18 @@ public class VoteManager {
 
         public VoteBuilder targetPlayers(Collection<ServerPlayer> players) {
             this.targetPlayers = players.stream().map(ServerPlayer::getUUID).collect(Collectors.toSet());
+            return this;
+        }
+
+        public VoteBuilder targetPlayerUUIDs(Set<UUID> uuids) {
+            this.targetPlayers = uuids;
+            return this;
+        }
+
+        /** 批量添加选项 */
+        public VoteBuilder options(List<VoteOption> opts) {
+            for (VoteOption opt : opts)
+                this.addOption(opt);
             return this;
         }
 

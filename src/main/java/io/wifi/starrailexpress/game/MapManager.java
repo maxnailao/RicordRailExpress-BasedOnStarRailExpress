@@ -453,6 +453,20 @@ public class MapManager {
                 areas.minigameQuestEnabled = false;
             }
 
+            // 飞机坠落地图事件（默认关闭）
+            if (jsonObject.has("planeCrashEventEnabled")) {
+                areas.areasSettings.planeCrashEventEnabled = jsonObject.get("planeCrashEventEnabled").getAsBoolean();
+            }
+            if (jsonObject.has("planeCrashTiltYaw")) {
+                areas.areasSettings.planeCrashTiltYaw = jsonObject.get("planeCrashTiltYaw").getAsFloat();
+            }
+            if (jsonObject.has("planeCrashSpawnDistance")) {
+                areas.areasSettings.planeCrashSpawnDistance = jsonObject.get("planeCrashSpawnDistance").getAsFloat();
+            }
+            if (jsonObject.has("planeCrashSpawnHeight")) {
+                areas.areasSettings.planeCrashSpawnHeight = jsonObject.get("planeCrashSpawnHeight").getAsFloat();
+            }
+
             // 加载地图初始物品配置
             areas.initialItems = new java.util.ArrayList<>();
             if (jsonObject.has("initialItems")) {
@@ -744,6 +758,9 @@ public class MapManager {
             io.wifi.starrailexpress.scenery.server.SceneAssetServer.activate(serverWorld);
             io.wifi.starrailexpress.scenery.network.SceneAssetNetwork.sendManifestToAll(serverWorld);
             last_start_map = mapName;
+
+            // 重建地图展示缓存（每局一次的唯一权威刷新点）
+            io.wifi.starrailexpress.network.MapIntroData.rebuild(serverWorld.getServer(), mapName);
 
             SRE.LOGGER.info("Successfully loaded map: " + mapName);
             return true;

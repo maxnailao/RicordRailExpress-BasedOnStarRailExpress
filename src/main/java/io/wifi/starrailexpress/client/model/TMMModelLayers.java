@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.client.render.block_entity.SmallDoorBlockEntityRe
 import io.wifi.starrailexpress.client.render.block_entity.UpSmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.client.render.block_entity.WheelBlockEntityRenderer;
 import io.wifi.starrailexpress.index.SREBlocks;
+import net.exmo.sre.planecrash.client.CrashPlaneEntityModel;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.minecraft.client.model.PlayerModel;
@@ -38,6 +39,8 @@ public interface TMMModelLayers {
                 () -> LayerDefinition.create(PlayerModel.createMesh(CubeDeformation.NONE, true), 64, 64));
         EntityModelLayerRegistry.registerModelLayer(WHEEL, WheelBlockEntityRenderer::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(PLAYER_SKELETON, PlayerSkeletonEntityModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(CrashPlaneEntityModel.LAYER_LOCATION,
+                CrashPlaneEntityModel::createBodyLayer);
     }
 
     public static ModelLayerLocation layer(String id, String name) {

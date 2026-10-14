@@ -68,6 +68,9 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
         @Override
         public void receive(@NotNull SniperShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
             if (!GameUtils.isPlayerAliveAndSurvival(player))
                 return;
             ItemStack mainHandStack = player.getMainHandItem();
@@ -113,6 +116,15 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     }
 
                     // 处理实体命中
+                    if (player.serverLevel().getEntity(
+                            payload.targetOrShooterId()) instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                            && dummy.canReceiveHits() && dummy.distanceTo(player) < 200.0) {
+                        if (player.distanceTo(dummy) >= 50.0) {
+                            dummy.clearShields();
+                        }
+                        io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player,
+                                GameConstants.DeathReasons.SNIPER_RIFLE);
+                    }
                     // 检查是否是幻术师假人
                     if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity illusionDecoy
                             && illusionDecoy.distanceTo(player) < 200.0) {

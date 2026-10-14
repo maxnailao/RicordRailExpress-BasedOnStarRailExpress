@@ -43,6 +43,12 @@ public class ModPackets {
     public static final CustomPacketPayload.Type<PhilanthropistC2SPacket> PHILANTHROPIST_DONATE_PACKET = PhilanthropistC2SPacket.ID;
 
     public static void registerPackets() {
+        // 音游：客户端结算分数上报
+        PayloadTypeRegistry.playC2S().register(RhythmGameResultC2SPacket.ID,
+                RhythmGameResultC2SPacket.CODEC);
+        // 实体伪装：让客户端重新计算玩家尺寸 / 眼高
+        PayloadTypeRegistry.playS2C().register(RefreshDimensionsS2CPacket.ID,
+                RefreshDimensionsS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(ProblemScreenOpenC2SPacket.ID,
                 ProblemScreenOpenC2SPacket.CODEC);
         // 对话 NPC：打开对话界面（S2C）与选项选择（C2S）

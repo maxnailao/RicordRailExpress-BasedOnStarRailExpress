@@ -102,6 +102,11 @@ public class PlayerStatsScreen extends Screen {
             r.render(graphics, mouseX, mouseY, delta);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免原版对已绘制内容再做模糊并叠加泥土遮罩。
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
     private void renderTabBar(GuiGraphics g, int mx, int my) {
         int[] tabColors = { 0xFF5577CC, 0xFFAA44CC };
         String[] labels = {

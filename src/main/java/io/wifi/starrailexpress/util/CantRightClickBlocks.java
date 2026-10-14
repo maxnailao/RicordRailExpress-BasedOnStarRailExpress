@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.util;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.AreasSettings;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -80,11 +81,28 @@ public class CantRightClickBlocks {
     public static boolean shouldPreventInteraction(Player player, Block block, Level level) {
         if (SRE.isLobby)
             return false;
+        // 开启摇铃会议的地图：放行钟方块。否则服务端 ServerGamePacketListenerImpl.handleUseItemOn
+        // 会因 canInteractWithBlock 返回 false 直接丢弃右键包，MeetingManager 监听钟交互的
+        // UseBlockCallback 永远不会触发，摇铃会议形同虚设。
+        if (block == Blocks.BELL && isBellMeetingAllowed(level))
+            return false;
         ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(block);
         String string = blockId.toString();
 
         return !isAllowedBlock(player, block, level) || cantClickItems.contains(string)
                 || isCannotInteractId(blockId);
+    }
+
+    /** 当前地图是否开启摇铃会议，判定条件与 MeetingManager.tryBellMeeting 保持一致。 */
+    private static boolean isBellMeetingAllowed(Level level) {
+        if (level == null)
+            return false;
+        try {
+            AreasSettings settings = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(level).areasSettings;
+            return settings != null && settings.meetingEnabled && settings.bellMeetingEnabled;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     /**

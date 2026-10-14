@@ -1,6 +1,22 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client.gui;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
@@ -9,6 +25,7 @@ import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.AllowNameRender;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.morph.MorphApiClient;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
@@ -24,23 +41,22 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.EntityHitResult;
+
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+// 有一堆 events 在 OnRenderRoleName 里可以注册。请避免 mixin 和直接修改本类。
 public class RoleNameRenderer {
     private static TrainRole targetRoleType = TrainRole.BYSTANDER;
     private static SRERole targetRole;
     private static Component roleText1;
     // private static float nametagAlpha = 0f;
     // private static float noteAlpha = 0f;
-    public static Map<UUID, String> displayTags = new HashMap<>();
 
     public static float getPlayerRange(Player player) {
         if (player.getMainHandItem().is(Items.SPYGLASS)) {
@@ -55,7 +71,7 @@ public class RoleNameRenderer {
         return 2f;
     }
 
-    public static void renderHud(Font renderer, @NotNull LocalPlayer player, FakeGuiGraphics context,
+    public static void renderHud(Font font, @NotNull LocalPlayer self, FakeGuiGraphics ctx,
             DeltaTracker tickCounter) {
 
         SREGameWorldComponent component = SREClient.gameComponent;
@@ -63,39 +79,45 @@ public class RoleNameRenderer {
             return;
 
         if (component.isRunning()) {
-            var result = OnRenderRoleName.RENDER_ALL.invoker().allowRender(player, context, tickCounter,
-                    renderer);
+            var result = OnRenderRoleName.RENDER_ALL.invoker().allowRender(self, ctx, tickCounter,
+                    font);
             if (result.equals(TrueFalseResult.FALSE))
                 return;
             if (result.equals(TrueFalseResult.PASS)) {
-                if (player.level().getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
-                        && player.level().getBrightness(LightLayer.SKY,
-                                BlockPos.containing(player.getEyePosition())) < 10)
-                    return;
+                if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(self)) {
+                    var role = component.getRole(self);
+                    if (role != null) {
+                        if (!(SREClient.hasInstinctNightVision() && SREClient.isInstinctEnabled())) {
+                            if (self.level().getBrightness(LightLayer.BLOCK,
+                                    BlockPos.containing(self.getEyePosition())) < 3
+                                    && self.level().getBrightness(LightLayer.SKY,
+                                            BlockPos.containing(self.getEyePosition())) < 10)
+                                return;
+                        }
+                    }
+                }
             }
         }
 
         Component nametag = Component.empty();
-        final Component[] note = new Component[] { Component.empty(), Component.empty(), Component.empty(),
-                Component.empty() };
-        float range = getPlayerRange(player);
+        float range = getPlayerRange(self);
         if (component.isRunning()) {
-            Optional<Float> result = OnRenderRoleName.RENDER_RANGE.invoker().getPlayerRange(player, range);
+            Optional<Float> result = OnRenderRoleName.RENDER_RANGE.invoker().getPlayerRange(self, range);
             range = result.orElse(range);
         }
         {
-            OnRenderRoleName.RENDER_START.invoker().render(player, range, context, tickCounter, renderer);
+            OnRenderRoleName.RENDER_START.invoker().render(self, range, ctx, tickCounter, font);
         }
         {
 
             Player target = null;
-            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player,
+            if (ProjectileUtil.getHitResultOnViewVector(self, entity -> entity instanceof Player,
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof Player) {
                 target = (Player) entityHitResult.getEntity();
                 {
-                    var result = OnRenderRoleName.RENDER_PLAYER.invoker().allowRender(player, target, context,
-                            tickCounter, renderer);
+                    var result = OnRenderRoleName.RENDER_PLAYER.invoker().allowRender(self, target, ctx,
+                            tickCounter, font);
                     if (result == TrueFalseResult.FALSE) {
                         targetRoleType = TrainRole.BYSTANDER;
                         targetRole = null;
@@ -107,7 +129,7 @@ public class RoleNameRenderer {
                             targetRole = null;
                             nametag = Component.literal("");
                             return;
-                        } else if (target.isInvisibleTo(player) && !GameUtils.isPlayerSpectatingOrCreative(player)) {
+                        } else if (target.isInvisibleTo(self) && !GameUtils.isPlayerSpectatingOrCreative(self)) {
                             targetRoleType = TrainRole.BYSTANDER;
                             targetRole = null;
                             nametag = Component.literal("");
@@ -116,21 +138,21 @@ public class RoleNameRenderer {
                     }
                 }
                 {
-                    var result = OnRenderRoleName.RENDER_PLAYER_NAME.invoker().allowRender(player, target, context,
-                            tickCounter, renderer);
+                    var result = OnRenderRoleName.RENDER_PLAYER_NAME.invoker().allowRender(self, target, ctx,
+                            tickCounter, font);
                     if (result.isFalse()) {
                         nametag = Component.empty();
                     } else if (result.isCustom()) {
                         nametag = result.getContent().orElse(Component.empty());
                     } else {
-                        nametag = getDisplayName(target);
+                        nametag = getName(target);
                     }
                 }
                 if (SREClient.modifierComponent != null) {
                     Component modifierText = Component.empty();
                     boolean shouldRender = false;
-                    var result = OnRenderRoleName.RENDER_PLAYER_MODIFIER.invoker().allowRender(player, target, context,
-                            tickCounter, renderer);
+                    var result = OnRenderRoleName.RENDER_PLAYER_MODIFIER.invoker().allowRender(self, target, ctx,
+                            tickCounter, font);
                     if (result.isFalse()) {
                         modifierText = Component.empty();
                         shouldRender = false;
@@ -138,7 +160,7 @@ public class RoleNameRenderer {
                         modifierText = result.getContent().orElse(Component.empty());
                         shouldRender = true;
                     } else {
-                        shouldRender = GameUtils.isPlayerSpectatingOrCreative(player);
+                        shouldRender = GameUtils.isPlayerSpectatingOrCreative(self);
                         MutableComponent temp = Component.literal("");
                         var modifiers = SREClient.modifierComponent.getModifiers(target);
                         for (SREModifier modifier : modifiers) {
@@ -163,97 +185,117 @@ public class RoleNameRenderer {
                 if (role != null) {
                     targetRole = role;
                 }
-                context.pose().pushPose();
-                context.pose().translate(context.guiWidth() / 2f, context.guiHeight() / 2f + 6, 0);
-                context.pose().scale(0.6f, 0.6f, 1f);
-                int nameWidth = renderer.width(nametag);
-                context.drawString(renderer, nametag, -nameWidth / 2, 16,
+                ctx.pose().pushPose();
+                ctx.pose().translate(ctx.guiWidth() / 2f, ctx.guiHeight() / 2f + 6, 0);
+                ctx.pose().scale(SREClient.playerHUDScale, SREClient.playerHUDScale, 1f);
+                int nameWidth = font.width(nametag);
+                ctx.drawString(font, nametag, -nameWidth / 2, 16,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
                 // 游戏未开始且不在大厅时，在名字下方提示该玩家是否参与本局
                 if (!component.isRunning() && !SREClient.isInLobby()
-                        && !ParticipationComponent.KEY.get(player.level()).isParticipating(target)) {
+                        && !ParticipationComponent.KEY.get(self.level()).isParticipating(target)) {
                     MutableComponent partTag = Component
                             .translatable("hud.sre.participation.not_participating")
                             .withStyle(ChatFormatting.GOLD);
-                    int partWidth = renderer.width(partTag);
-                    context.drawString(renderer, partTag, -partWidth / 2, 16 + renderer.lineHeight + 2,
+                    int partWidth = font.width(partTag);
+                    ctx.drawString(font, partTag, -partWidth / 2, 16 + font.lineHeight + 2,
                             Mth.color(1f, 0.69f, 0f) | (255 << 24));
                 }
+                ctx.pose().translate(0, 20, 0);
                 {
                     TrainRole selfRoleType = TrainRole.BYSTANDER;
-                    if (component.canUseKillerFeatures(player))
+                    if (component.canUseKillerFeatures(self))
                         selfRoleType = TrainRole.KILLER;
-                    if (component.isNeutralForKiller(player))
+                    if (component.isNeutralForKiller(self))
                         selfRoleType = TrainRole.KILLER;
                     if (targetRole != null) {
                         boolean allowRenderRole = true;
                         {
-                            var result = OnRenderRoleName.RENDER_PLAYER_ROLE.invoker().allowRender(player, target,
-                                    context,
-                                    tickCounter, renderer);
+                            var result = OnRenderRoleName.RENDER_PLAYER_ROLE.invoker().allowRender(self, target,
+                                    ctx,
+                                    tickCounter, font);
                             if (result.isFalse()) {
                                 roleText1 = null;
                                 allowRenderRole = false;
                             } else if (result.isCustom()) {
                                 roleText1 = result.getContent().orElse(Component.empty());
-                            } else if (result.isPass()) {
+                            } else {
                                 allowRenderRole = targetRoleType.equals(TrainRole.KILLER)
                                         && selfRoleType.equals(TrainRole.KILLER)
-                                        && component.canSeeKillerTeammate(player);
+                                        && component.canSeeKillerTeammate(self)
+                                        && SREClient.isPlayerAliveAndInSurvival();
                                 roleText1 = RoleUtils.getRoleName(targetRole.identifier());
                             }
                         }
                         if (allowRenderRole) {
-                            context.pose().translate(0, 20 + renderer.lineHeight, 0);
+                            ctx.pose().translate(0, 12, 0);
                             if (roleText1 != null) {
-                                int roleWidth1 = renderer.width(roleText1);
-                                context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,
+                                int roleWidth1 = font.width(roleText1);
+                                ctx.drawString(font, roleText1, -roleWidth1 / 2, 0,
                                         Mth.color(1f, 0f, 0f) | ((int) (1 * 255) << 24));
                             }
                         }
                     }
                     {
+
                         Component cohortText = Component.translatable("game.tip.cohort");
                         boolean allowRenderCohort = true;
                         {
-                            var result = OnRenderRoleName.RENDER_PLAYER_COHORT.invoker().allowRender(player, target,
-                                    context,
-                                    tickCounter, renderer);
+                            var result = OnRenderRoleName.RENDER_PLAYER_COHORT.invoker().allowRender(self, target,
+                                    ctx,
+                                    tickCounter, font);
                             if (result.isFalse()) {
                                 allowRenderCohort = false;
                             } else if (result.isCustom()) {
                                 cohortText = result.getContent().orElse(cohortText);
-                            } else if (result.isPass()) {
+                            } else {
                                 allowRenderCohort = selfRoleType == TrainRole.KILLER
-                                        && targetRoleType == TrainRole.KILLER && component.canSeeKillerTeammate(player);
+                                        && targetRoleType == TrainRole.KILLER && component.canSeeKillerTeammate(self)
+                                        && SREClient.isPlayerAliveAndInSurvival();
                             }
                         }
                         if (allowRenderCohort) {
-                            context.pose().translate(0, 20 + renderer.lineHeight, 0);
-                            int roleWidth = renderer.width(cohortText);
-                            context.drawString(renderer, cohortText, -roleWidth / 2, 0,
+                            ctx.pose().translate(0, 12, 0);
+                            int roleWidth = font.width(cohortText);
+                            ctx.drawString(font, cohortText, -roleWidth / 2, 0,
                                     Mth.color(1f, 0f, 0f) | ((int) (255) << 24));
+                        }
+
+                    }
+                    {
+                        if (SREClient.isPlayerSpectatingOrCreative()) {
+                            ctx.pose().translate(0, 12, 0);
+                            SRERole targetRole = SREClient.gameComponent.getRole(target);
+                            if (targetRole == null) {
+                                targetRole = TMMRoles.DISCOVERY_CIVILIAN;
+                            }
+                            MutableComponent name = RoleUtils.getRoleName(targetRole);
+                            int di_color = targetRole.color();
+
+                            // 不用考虑死亡惩罚，这已经在最开始被处理了。
+                            ctx.drawString(font, name, -font.width(name) / 2, 0,
+                                    di_color | (int) (1 * 255.0F) << 24);
                         }
                     }
                     {
-                        OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(player, target, context, tickCounter,
-                                renderer);
+                        OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(self, target, ctx, tickCounter,
+                                font);
                     }
                 }
-                context.pose().popPose();
+                ctx.pose().popPose();
             }
         }
         {
 
-            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof PuppeteerBodyEntity,
+            if (ProjectileUtil.getHitResultOnViewVector(self, entity -> entity instanceof PuppeteerBodyEntity,
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof PuppeteerBodyEntity pbe) {
                 {
-                    TrueFalseResult result = OnRenderRoleName.RENDER_PUPPETEER.invoker().allowRender(player, pbe,
-                            context, tickCounter,
-                            renderer);
+                    TrueFalseResult result = OnRenderRoleName.RENDER_PUPPETEER.invoker().allowRender(self, pbe,
+                            ctx, tickCounter,
+                            font);
                     if (result.isPass()) {
-                        if (!GameUtils.isPlayerSpectatingOrCreative(player)) {
+                        if (!GameUtils.isPlayerSpectatingOrCreative(self)) {
                             return;
                         }
                     } else if (result.isFalse()) {
@@ -263,55 +305,57 @@ public class RoleNameRenderer {
 
                 UUID uid = pbe.getOwnerUuid().orElse(null);
                 String name2 = SREClientUtils.getPlayerNameByUid(uid);
-                context.pose().pushPose();
-                context.pose().translate(context.guiWidth() / 2f, context.guiHeight() / 2f + 6, 0);
-                context.pose().scale(0.6f, 0.6f, 1f);
-                int nameWidth2 = renderer.width(name2);
+                ctx.pose().pushPose();
+                ctx.pose().translate(ctx.guiWidth() / 2f, ctx.guiHeight() / 2f + 6, 0);
+                ctx.pose().scale(SREClient.playerHUDScale, SREClient.playerHUDScale, 1f);
+                int nameWidth2 = font.width(name2);
                 Component tipC = Component.translatable("entity.noellesroles.puppeteer_body")
                         .withStyle(ChatFormatting.GRAY);
-                context.drawString(renderer, name2, -nameWidth2 / 2, 16,
+                ctx.drawString(font, name2, -nameWidth2 / 2, 16,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
-                context.drawString(renderer, tipC, -renderer.width(tipC) / 2, 4,
+                ctx.drawString(font, tipC, -font.width(tipC) / 2, 4,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
-                context.pose().popPose();
+                ctx.pose().popPose();
             }
 
         }
-        if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof NoteEntity,
+        if (ProjectileUtil.getHitResultOnViewVector(self, entity -> entity instanceof NoteEntity,
                 range) instanceof EntityHitResult entityHitResult
                 && entityHitResult.getEntity() instanceof NoteEntity notee) {
             {
-                TrueFalseResult result = OnRenderRoleName.RENDER_NOTE.invoker().allowRender(player, notee,
-                        context, tickCounter,
-                        renderer);
+                TrueFalseResult result = OnRenderRoleName.RENDER_NOTE.invoker().allowRender(self, notee,
+                        ctx, tickCounter,
+                        font);
                 if (result.isFalse()) {
                     return;
                 }
             }
-            note[0] = Component.literal(notee.getLines()[0]);
-            note[1] = Component.literal(notee.getLines()[1]);
-            note[2] = Component.literal(notee.getLines()[2]);
-            note[3] = Component.literal(notee.getLines()[3]);
+            final Component[] note = notee.getLines();
 
-            context.pose().pushPose();
-            context.pose().translate(context.guiWidth() / 2f, context.guiHeight() / 2f + 6, 0);
-            context.pose().scale(0.6f, 0.6f, 1f);
+            ctx.pose().pushPose();
+            ctx.pose().translate(ctx.guiWidth() / 2f, ctx.guiHeight() / 2f + 6, 0);
+            ctx.pose().scale(SREClient.playerHUDScale, SREClient.playerHUDScale, 1f);
+            int k = 0;
             for (int i = 0; i < note.length; i++) {
                 Component line = note[i];
-                int lineWidth = renderer.width(line);
-                context.drawString(renderer, line, -lineWidth / 2, 16 + (i * (renderer.lineHeight + 2)),
+                if (line == null)
+                    continue;
+                int lineWidth = font.width(line);
+                ctx.drawString(font, line, -lineWidth / 2, 16 + (k * (font.lineHeight + 2)),
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
+                k++;
             }
-            context.pose().popPose();
-
+            ctx.pose().popPose();
         }
         {
-            OnRenderRoleName.RENDER_END.invoker().render(player, range, context, tickCounter, renderer);
+            ctx.pose().pushPose();
+            OnRenderRoleName.RENDER_END.invoker().render(self, range, ctx, tickCounter, font);
+            ctx.pose().popPose();
         }
     }
 
-    private static Component getDisplayName(Player target) {
-        return target.getDisplayName();
+    private static Component getName(Player target) {
+        return MorphApiClient.getDisplayedName(target);
     }
 
     public enum TrainRole {

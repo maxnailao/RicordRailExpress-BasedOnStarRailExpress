@@ -352,10 +352,13 @@ public class MahjongMinigameScreen extends Screen {
     // 渲染
     // ══════════════════════════════════════════════
 
+    // 自绘牌桌已铺满整屏；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
+    }
+
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
-        renderBackground(g, mx, my, pt);
-
         // 牌桌
         g.fill(0, 0, width, height, C_TABLE);
         int innerM = 12;

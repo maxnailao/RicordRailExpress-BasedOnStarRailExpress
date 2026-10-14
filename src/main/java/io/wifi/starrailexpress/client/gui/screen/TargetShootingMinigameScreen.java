@@ -174,6 +174,11 @@ public class TargetShootingMinigameScreen extends Screen {
         }
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免原版对已绘制内容再做模糊并叠加泥土遮罩。
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    }
+
     // ── 难度选择 ──
 
     private void renderDifficultySelection(GuiGraphics g, int mx, int my) {

@@ -260,6 +260,7 @@ public interface TMMItems {
         ChargeableItemRegistry.register(TMMItems.KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(TMMItems.GRENADE, new GrenadeChargeableItem());
         ChargeableItemRegistry.register(TMMItems.STICKY_GRENADE, new GrenadeChargeableItem());
+        ChargeableItemRegistry.register(ModItems.WALL_BREAK_GRENADE, new GrenadeChargeableItem());
         WatheBridgerItems.initialize();
         sreRegistrar.registerEntries();
         SREItems.init();

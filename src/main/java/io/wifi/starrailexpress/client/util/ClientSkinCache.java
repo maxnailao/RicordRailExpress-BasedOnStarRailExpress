@@ -9,9 +9,12 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientSkinCache {
     public static final Map<UUID, PlayerInfo> PLAYER_ENTRIES_CACHE = new HashMap<>();
+    /** 服务端下发的玩家头顶名牌文本（NameTagSyncPayload），随连接刷新 */
+    public static final ConcurrentHashMap<UUID, String> displayTags = new ConcurrentHashMap<>();
 
     public static PlayerInfo getCachedPlayerInfo(UUID uid) {
         if (uid == null)

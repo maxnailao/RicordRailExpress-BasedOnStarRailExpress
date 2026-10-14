@@ -369,6 +369,11 @@ public class LootScreen extends AbstractPixelScreen {
         animations.add(speedAnimation);
     }
 
+    // 暗色自绘背景已铺满整屏；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta)
     {

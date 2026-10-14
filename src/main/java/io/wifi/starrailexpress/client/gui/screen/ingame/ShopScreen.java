@@ -298,6 +298,11 @@ public class ShopScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
     private void renderTabBar(GuiGraphics graphics, int mouseX, int mouseY) {
         int each = panelW / TAB_LABELS.length;
         for (int i = 0; i < TAB_LABELS.length; i++) {

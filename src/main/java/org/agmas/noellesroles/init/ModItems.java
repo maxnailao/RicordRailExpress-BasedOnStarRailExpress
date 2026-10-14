@@ -364,6 +364,13 @@ public class ModItems {
             "chlorine_bomb", WEAPONS_GROUP);
 
     /**
+     * 破墙弹：右键投掷，命中墙壁拆除半径2方块，5秒后持久化恢复（带NBT方块不拆）
+     */
+    public static final Item WALL_BREAK_GRENADE = register(
+            new org.agmas.noellesroles.content.item.WallBreakGrenadeItem(new Item.Properties().stacksTo(8)),
+            "wall_break_grenade", WEAPONS_GROUP);
+
+    /**
      * 毒气瓶
      * - 可投掷物品
      * - 右键投掷，落地后释放持续扩散的毒气云

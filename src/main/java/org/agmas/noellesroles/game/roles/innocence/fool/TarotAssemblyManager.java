@@ -277,6 +277,18 @@ public class TarotAssemblyManager {
         comp.sync();
     }
 
+    /** 亡命徒立马回去 */
+    public static void endMeeting(ServerLevel world) {
+        if (havingMeeting) {
+            SREGameWorldComponent gamecca = SREGameWorldComponent.KEY.get(world);
+            ServerPlayer player = world.players().stream()
+                    .filter((p) -> gamecca.isRole(p, ModRoles.THE_FOOL)).findFirst().orElse(null);
+            if (player != null) {
+                endMeeting(player);
+            }
+        }
+    }
+
     /**
      * 结束会议并将玩家送回原位
      */

@@ -156,6 +156,35 @@ public class ZeroOneFiveGunItem extends SkinableItem {
         }
     }
 
+    /**
+     * 处理命中列车假人
+     */
+    public static void onHitDummy(ServerPlayer shooter, io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy) {
+        UUID shooterUUID = shooter.getUUID();
+        UUID targetUUID = dummy.getUUID();
+
+        Map<UUID, Integer> shooterMarks = HIT_MARKS.computeIfAbsent(shooterUUID, k -> new HashMap<>());
+
+        if (shooterMarks.containsKey(targetUUID)) {
+            // 第二次命中，直接击杀
+            io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, shooter,
+                    GameConstants.DeathReasons.ZERO_ONE_FIVE);
+            shooterMarks.remove(targetUUID);
+        } else {
+            // 第一次命中，给3秒缓慢2
+            io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyEffect(dummy,
+                    new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, HIT_MARK_DURATION, 1, false, false));
+            if (dummy.level() instanceof ServerLevel dummyLevel) {
+                dummyLevel.sendParticles(
+                        ParticleTypes.CAMPFIRE_SIGNAL_SMOKE,
+                        dummy.getX(), dummy.getY() + 1, dummy.getZ(),
+                        5, 0.2, 0.2, 0.2, 0.35);
+            }
+            // 标记目标
+            shooterMarks.put(targetUUID, HIT_MARK_DURATION);
+        }
+    }
+
 
 
     public static int getCooldown() {
@@ -327,6 +356,10 @@ public class ZeroOneFiveGunItem extends SkinableItem {
                 return true;
             }
             if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
+                return true;
+            }
+            if (entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()) {
                 return true;
             }
             return false;

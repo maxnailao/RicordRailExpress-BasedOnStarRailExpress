@@ -52,6 +52,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canSeeBodyDeathReason = false;
     protected boolean canSeeBodyRoleInfo = false;
     protected boolean canUseInstinct = false;
+    protected boolean instinctNightVision = false;
     protected boolean canIgnoreBlackout = false;
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
@@ -634,7 +635,21 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setCanUseInstinct(boolean canUseInstinct) {
         this.canUseInstinct = canUseInstinct;
+        this.instinctNightVision = canUseInstinct;
         return this;
+    }
+
+    public SRERole setInstinctNightVision(boolean flag) {
+        this.instinctNightVision = flag;
+        return this;
+    }
+
+    public boolean haveInstinctNightVision() {
+        return this.instinctNightVision;
+    }
+
+    public boolean haveInstinctNightVision(Player player) {
+        return haveInstinctNightVision();
     }
 
     public boolean canUseInstinct() {
@@ -708,6 +723,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean autoReset = true;
     protected boolean ableToPickUpRevolver;
     protected boolean isNeutralForKiller = false;
+    protected boolean isNeutralForInnocent = false;
+    /** 是否为「事件中立」职业：其登场由局内随机事件决定的中立。 */
+    protected boolean isEventNeutral = false;
+    /** 是否为「特殊中立」职业：不属于偏好 / 杀手方 / 事件 / 独立胜利，单独归类展示的中立。 */
+    protected boolean isSpecialNeutral = false;
     protected boolean canSeeTeammateKiller = true;
     protected boolean canUseSabotage = false;
     protected boolean canJumpManhole = false;
@@ -727,6 +747,57 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public boolean getNeutralForKiller() {
         return this.isNeutralForKiller;
+    }
+
+    public boolean isNeutralForInnocent() {
+        return this.isNeutralForInnocent;
+    }
+
+    /** 是否为「事件中立」职业：其登场由局内随机事件决定的中立。 */
+    public boolean isEventNeutral() {
+        return this.isEventNeutral;
+    }
+
+    public SRERole setEventNeutral(boolean flag) {
+        this.isEventNeutral = flag;
+        if (flag) {
+            this.isNeutrals = true;
+        }
+        return this;
+    }
+
+    /** 是否为「特殊中立」职业：不属于偏好 / 杀手方 / 事件 / 独立胜利的特殊中立。 */
+    public boolean isSpecialNeutral() {
+        return this.isSpecialNeutral;
+    }
+
+    public SRERole setSpecialNeutral(boolean flag) {
+        this.isSpecialNeutral = flag;
+        if (flag) {
+            this.isNeutrals = true;
+        }
+        return this;
+    }
+
+    /**
+     * 是否为「中立阵营」（泛中立）：既不是好人阵营、也没有杀手能力，且带有任意中立标记。
+     * 这是各中立细分（偏好 / 杀手方 / 事件 / 特殊 / 独立胜利）共同的修饰前提。
+     */
+    public boolean isNeutralTeamBase() {
+        return !this.isInnocent() && !this.canUseKiller()
+                && (this.isNeutrals() || this.isNeutralForInnocent() || this.isNeutralForKiller());
+    }
+
+    /**
+     * 是否为「独立胜利中立」职业：属于中立阵营，但既不是偏好中立、也不是杀手方中立、
+     * 更不是事件中立或特殊中立时，自动归纳为独立胜利中立。
+     */
+    public boolean isIndependentWinNeutral() {
+        return this.isNeutralTeamBase()
+                && !this.isNeutralForInnocent()
+                && !this.isNeutralForKiller()
+                && !this.isEventNeutral()
+                && !this.isSpecialNeutral();
     }
 
     public boolean canSeeTeammateKiller() {
@@ -767,6 +838,13 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setNeutralForKiller(boolean forKiller) {
         this.isNeutralForKiller = forKiller;
+        this.isNeutrals = true;
+        return this;
+    }
+
+    /** 随好人（乘客）阵营胜利的中立：该中立职业在好人阵营胜利时一同获胜。 */
+    public SRERole setNeutralForInnocent(boolean forInnocent) {
+        this.isNeutralForInnocent = forInnocent;
         this.isNeutrals = true;
         return this;
     }

@@ -14,10 +14,10 @@
     // ===== 随机地图（特殊条目） =====
     {
       "id": "random",                                            // [必填] 特殊 ID
-      "displayName": "gui.tmm.map_selector.random",              // [必填] 显示名(支持翻译键)
+      "displayName": "gui.sre.map_selector.random",              // [必填] 显示名(支持翻译键)
       "maxcount": 100,                                           // [可选] 最大玩家数, -1 表示无限制
       "canSelect": true,                                         // [可选] 是否可选, 默认 true
-      "description": "gui.tmm.map_selector.random.desc",         // [可选] 描述(支持翻译键)
+      "description": "gui.sre.map_selector.random.desc",         // [可选] 描述(支持翻译键)
       "color": "0xFF4CC9F0",                                     // [可选] 颜色, ARGB 格式
       "gameModes": [],                                           // [可选] 支持的游戏模式, 空列表 = 所有模式
       "repair": {}                                               // [可选] 修复模式配置
@@ -26,9 +26,12 @@
     // ===== 普通地图条目 =====
     {
       // --- 基础标识 ---
-      "id": "areas3",                                            // [必填] 对应 train_maps/ 下的 JSON 文件名
-      "displayName": "gui.tmm.map_selector.pirate_ship",         // [必填] 显示名(翻译键或直)
-      "description": "gui.tmm.map_selector.pirate_ship.desc",    // [可选] 描述(翻译键或直)
+      // [必填] 对应 train_maps/ 下的 JSON 文件名；支持子目录写法（相对路径，不含 .json）
+      // 例："areas3"        -> train_maps/areas3.json
+      //     "season1/ice"   -> train_maps/season1/ice.json
+      "id": "areas3",
+      "displayName": "gui.sre.map_selector.pirate_ship",         // [必填] 显示名(翻译键或直)
+      "description": "gui.sre.map_selector.pirate_ship.desc",    // [可选] 描述(翻译键或直)
 
       // --- 人数限制 ---
       "mincount": -1,                                            // [可选] 最少玩家数, -1 表示无限制
@@ -110,7 +113,7 @@
 ```
 
 ## 第 2 层：地图实例配置
-**文件路径：** `<world>/train_maps/<mapName>.json`  
+**文件路径：** `<world>/train_maps/<mapName>.json`（支持子目录，如 `<world>/train_maps/season1/ice.json`，此时 id 为 `season1/ice`）
 **加载类：** `MapManager.java (loadMap)`  
 **设置模型：** `AreasSettings.java`
 
@@ -121,6 +124,8 @@
   // =================================================================
 
   // 玩家出生点
+  // ⚠️ 已废弃：加载时会被忽略，日志提示 "Spawn position is not support anymore! Use /setworldspawn instead!"
+  //    新图请用 /setworldspawn 设置世界出生点，这里保留只是为了兼容旧文件
   "spawnPos": {
     "x": 3.0,       // X 坐标
     "y": -2.0,      // Y 坐标
@@ -129,7 +134,7 @@
     "pitch": 0.0    // 垂直朝向(度)
   },
 
-  // 观战者出生点
+  // 观战者出生点（这个仍然有效）
   "spectatorSpawnPos": {
     "x": 523.0,
     "y": 80.0,
@@ -139,6 +144,8 @@
   },
 
   // 准备区域 (AABB)
+  // ⚠️ 已废弃：加载时会被忽略，日志提示 "Ready area config in map config is not support any more"
+  //    现在的准备区来自 <world>/readyArea.json（导入校验仍会检查这个键，所以留着无害）
   "readyArea": {
     "minX": -100, "minY": -10, "minZ": -100,
     "maxX":  100, "maxY":  10, "maxZ":  100
@@ -205,19 +212,17 @@
   // 支持的游戏模式列表 — 空数组 = 所有模式可用
   "gameModes": [],
 
-  // 禁用的任务 ID 列表
+  // 禁用的任务 / 职业 / 修饰符 ID 列表
+  // 已迁移到 "settings"（见下文「职业 / 修饰符 / 任务」）；写在根级仍会被读取，
+  // 但两者同时存在时以 "settings" 内的值为准，新保存的地图只写 "settings"。
   "disabledTasks": [
     "sleep",
     "eat"
   ],
-
-  // 禁用的职业 ID 列表
   "disabledRoles": [
     "killer",
     "jester"
   ],
-
-  // 禁用的修饰符 ID 列表
   "disabledModifiers": [
     "unstable"
   ],
@@ -265,42 +270,65 @@
     "gravityModifier": 0.0,                                    // 重力修正值, 最终重力 = 0.08 + modifier
     "fallToDeathHeight": 0,                                    // 摔落死亡高度, 0 = 禁用              默认: 0
 
-    "mapStatusBar": "NONE",                                    // 状态栏类型: "NONE" | "WARMTH" | "THIRST" | "HUNGER"
+    "mapStatusBar": "NONE",                                    // 状态栏类型: "NONE" | "WARMTH" | "THIRST" | "HUNGER" | "POLLUTION"
 
     // --- 视觉/环境类 ---
     "snowEnabled": false,                                      // 雪花效果                            默认: false
     "sandEnabled": false,                                      // 沙尘暴效果                          默认: false
     "fogEnabled": true,                                        // 雾气效果                            默认: true
-    "fogEnd": 200.0,                                           // 雾气可见距离(方块)                  默认: 200.0
+    "fogEnd": 200.0,                                           // 雾气可见距离(方块)                  代码默认值: 100.0
     "fogShape": "SPHERE",                                      // 雾气形状: "SPHERE" | "CYLINDER"
     "weather": "clear",                                        // 天气: "clear" | "rain" | "thunder"
     "time": 18000,                                             // 游戏内时间(tick)
     "daylightCycle": false,                                    // 是否启用昼夜循环                    默认: false
     "weatherCycle": false,                                     // 是否启用天气循环                    默认: false
 
+    // --- 药水效果（注意：写在 "settings" 里必须是 mobEffects；根级的 "effect" 是旧版别名） ---
+    "mobEffects": [
+      "minecraft:speed,2",
+      "minecraft:jump_boost,1"
+    ],
+
     // --- 音效类 ---
     "haveOutsideSound": false,                                 // 是否启用外部环境音效                默认: false
-    "sceneOutsideSound": "train",                              // 背景音效: "train" | "wind" | "sand_storm" | "snow_storm" | "circus"
+    "sceneOutsideSound": "train",                              // 背景音效: "none" | "train" | "wind" | "sand_storm" | "snow_storm" | "circus" | "flower_sea" | "indoor_music" | "unwelcome_school" | "zenrianbanka" | "sakura_moyu" | "custom"
 
     // --- 会议系统 ---
     "meetingEnabled": false,                                   // 是否启用紧急会议                    默认: false
-    "meetingX": 0.5,
-    "meetingY": 100.0,
-    "meetingZ": 0.5,
-    "meetingChairScanRadius": 12.0,                            // 自动搜索椅子的半径(方块)            默认: 12
+    "meetingPosition": { "x": 0.5, "y": 100.0, "z": 0.5 },     // 会议点坐标（注意不是 meetingX/Y/Z，那三个字段不存在）
+    "meetingChairScanBox": {                                   // 自动搜索椅子的范围(AABB)            默认: -12,-3,-12 → 12,3,12
+      "minX": -12.0, "minY": -3.0, "minZ": -12.0,
+      "maxX":  12.0, "maxY":  3.0, "maxZ":  12.0
+    },
     "meetingDiscussSeconds": 60,                               // 讨论阶段时长(秒)                    默认: 60
     "meetingCooldownSeconds": 90,                              // 会议冷却时间(秒)                    默认: 90
 
     // --- 摇铃会议系统 (右键原版钟方块召开会议) ---
     "bellMeetingEnabled": true,                                // 是否启用摇铃会议                    默认: false
     "bellMeetingStartCooldown": 120,                           // 开局冷却(秒), 开局后多少秒才能摇铃   默认: 120
-    "bellMeetingCooldown": 120                                 // 摇铃冷却(秒), 两次摇铃间隔          默认: 120
+    "bellMeetingCooldown": 120,                                // 摇铃冷却(秒), 两次摇铃间隔          默认: 120
+
+    // --- 飞机坠落事件 ---
+    "planeCrashEventEnabled": false,                           // 开局飞机坠落+震颤+室内客户端假火     默认: false
+    "planeCrashTiltYaw": 0.0,                                  // 震颤时玩家统一倾泻朝向(度)          默认: 0 (南)
+    "planeCrashSpawnDistance": 0.0,                            // 刷新距离, 0=按游戏区自动估算
+    "planeCrashSpawnHeight": 36.0,                             // 相对游戏区顶的高度
+
+    // --- 职业 / 修饰符 / 任务（禁用优先于强制） ---
+    "disabledTasks": ["sleep", "eat"],                          // 禁用的非场景任务名
+    "disabledRoles": ["killer", "jester"],                      // 禁用的职业 ID（完整 ID 或 path）
+    "disabledModifiers": ["unstable"],                          // 禁用的修饰符 ID
+    "enabledRoles": ["sre:detective"],                          // 强制进入选择池：无视概率/人数/地图条件
+    "enabledModifiers": [],                                     // 强制进入选择池的修饰符
+    "forcedRoles": [],                                          // 强制选择：入池 + 池内权重拉满（最大可能被选中）
+    "forcedModifiers": []                                       // 强制选择：入池 + 不限制数量（尽可能多分配）
   }
 }
 ```
 
 ## 附录 A：旧版兼容格式（根级直接写 Settings 字段）
 以下字段可直接置于根级，无需 `settings` 嵌套，系统会自动映射到 `AreasSettings`。
+（其中 `spawnPos` 与 `readyArea` 已废弃、加载时会被忽略：出生点用 `/setworldspawn`，准备区用 `<world>/readyArea.json`；`canSwim` 映射到 `canSimpleSwim`。另：`effect` 只在根级有效，写在 `settings` 里必须叫 `mobEffects`。）
 
 ```json5
 {
@@ -314,7 +342,7 @@
 
   // --- 旧版根级 Settings 字段 (自动映射) ---
   "canJump": true,
-  "canSwim": true,
+  "canSwim": true,                     // ⚠️ 根级的 canSwim 别名实际映射到 canSimpleSwim（不是 settings.canSwim）
   "gravity": 0.02,                     // 等价于 gravityModifier = 0.02 - 0.08 = -0.06
   "snowEnabled": false,
   "sandEnabled": true,
@@ -365,3 +393,18 @@
 - `13000` = 夜晚开始
 - `18000` = 午夜
 - `23000` = 黎明前夕
+
+## 附录 E：地图背景图 / 缩略图
+
+投票页（`MapVoteScreen`）与轮换页按地图 id 自动查找贴图，id 里的 `/` 会保留为目录层级：
+
+| 用途 | 资源路径 | 说明 |
+| --- | --- | --- |
+| 全屏背景（优先） | `assets/starrailexpress/textures/gui/maps/background/<id>.png` | 找不到时退回缩略图 |
+| 缩略图 | `assets/starrailexpress/textures/gui/maps/<id>.png` | 找不到时画程序化占位图 |
+
+例：id 为 `season1/ice` 时，依次查找 `.../maps/background/season1/ice.png` 与 `.../maps/season1/ice.png`。
+
+- 内置贴图由 **sre-resources**（必装依赖，mod id `sre_resource`）提供，与 `panorama` 等同仓库资源放在一起。
+- 贴图通过客户端 `ResourceManager` 实时查询，因此**任意已启用的资源包都可以覆盖或新增**地图背景，F3+T 重载后生效；服务端不做校验（`VERIFY_RESOURCE_PACK_HASHES` 默认关闭）。
+- 资源路径只允许 `a-z 0-9 / _ - .`，大写或空格会被归一化（小写化 + 非法字符替换为 `_`）后再查找一次，例如 id `My Maps/Map A` 会去查 `my_maps/map_a.png`。

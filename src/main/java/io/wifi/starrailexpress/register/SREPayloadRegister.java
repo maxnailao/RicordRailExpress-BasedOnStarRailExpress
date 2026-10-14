@@ -117,6 +117,16 @@ public class SREPayloadRegister {
                 io.wifi.starrailexpress.network.MapIntroRequestPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MapIntroSyncPayload.ID,
                 io.wifi.starrailexpress.network.MapIntroSyncPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.MapRotationTogglePayload.ID,
+                io.wifi.starrailexpress.network.MapRotationTogglePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MapRotationSyncPayload.ID,
+                io.wifi.starrailexpress.network.MapRotationSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MapDepartCancelPayload.TYPE,
+                io.wifi.starrailexpress.network.MapDepartCancelPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashIntroPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashIntroPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashTremorPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashTremorPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 io.wifi.starrailexpress.network.RoleRosterUpdatePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ShowSelectedMapUIPayload.ID, ShowSelectedMapUIPayload.CODEC);
@@ -149,6 +159,9 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(KnifeStabPayload.ID, KnifeStabPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(GunShootPayload.ID, GunShootPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SniperShootPayload.TYPE, SniperShootPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.network.original.TrainDummySpawnC2SPayload.ID,
+                io.wifi.starrailexpress.network.original.TrainDummySpawnC2SPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StoreBuyPayload.ID, StoreBuyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestOpenClueArchivePayload.ID, RequestOpenClueArchivePayload.CODEC);
@@ -356,5 +369,47 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.ID,
                 org.agmas.noellesroles.cs2.network.MythicShopBuyC2SPayload.CODEC);
+
+        // 自定义形状粒子（服务端只发 id + 原点 + 时长 + 参数，形状由客户端生成）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.CODEC);
+
+        // 点击频率反作弊：服务端锁定左右键时通知客户端
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.ClickLockoutPayload.TYPE,
+                io.wifi.starrailexpress.network.ClickLockoutPayload.CODEC);
+
+        // 变形外观同步（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.MorphSyncPayload.ID,
+                io.wifi.starrailexpress.network.MorphSyncPayload.CODEC);
+
+        // 实体伪装状态同步（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.ID,
+                io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.CODEC);
+
+        // 展示方块（文本 / 方块 / 物品 / 实体展示）数据包：保存后的同步复用原版方块实体更新包，不需要额外类型
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.DisplayBlockPayload.OpenUI.TYPE,
+                io.wifi.starrailexpress.network.DisplayBlockPayload.OpenUI.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.DisplayBlockPayload.Save.TYPE,
+                io.wifi.starrailexpress.network.DisplayBlockPayload.Save.CODEC);
+
+        // 紧急会议系统网络包
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingStateS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingStateS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingReportC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingReportC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingCooldownS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingCooldownS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingSkipC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSkipC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.CODEC);
     }
 }

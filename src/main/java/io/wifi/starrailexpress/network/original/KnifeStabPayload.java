@@ -68,6 +68,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
 
             // 检查是否是鬼魅幻影实体
@@ -92,6 +95,35 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 return;
             }
 
+            // 列车假人：可被匕首击杀
+            if (targetEntity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                    && dummy.canReceiveHits()) {
+                if (dummy.distanceTo(player) > 3.0) {
+                    return;
+                }
+                ItemStack dummyKnife = player.getMainHandItem();
+                boolean dummyDurabilityKnife = KillerKnifeDurability.isDurabilityModeEnabled(player.level())
+                        && KillerKnifeDurability.isMarkedKnife(dummyKnife);
+                if (dummyDurabilityKnife && KillerKnifeDurability.isDepleted(dummyKnife)) {
+                    player.displayClientMessage(
+                            Component.translatable("message.sre.knife.depleted")
+                                    .withStyle(ChatFormatting.DARK_RED),
+                            true);
+                    return;
+                }
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player,
+                        GameConstants.DeathReasons.KNIFE);
+                dummy.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+                if (dummyDurabilityKnife && KillerKnifeDurability.consumeOne(dummyKnife, player)) {
+                    player.displayClientMessage(
+                            Component.translatable("message.sre.knife.broken")
+                                    .withStyle(ChatFormatting.DARK_RED),
+                            true);
+                }
+                player.swing(InteractionHand.MAIN_HAND);
+                applyKnifeCooldown(player);
+                return;
+            }
             // 检查是否是玩家
             if (!(targetEntity instanceof ServerPlayer target))
                 return;

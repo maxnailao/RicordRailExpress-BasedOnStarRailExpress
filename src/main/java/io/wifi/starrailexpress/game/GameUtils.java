@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameInitialized;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
 import io.wifi.starrailexpress.event.ShouldDropOnDeath;
@@ -79,6 +80,7 @@ import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerCompon
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
+import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.LocalDateData;
@@ -110,6 +112,10 @@ public class GameUtils {
     private static Set<UUID> forcedReadyPlayers;
     public static boolean isStartingGame = false;
     public static boolean isGameStarted = false;
+
+    public static long getTicksFromGameStart(Level world) {
+        return SREGameTimeComponent.KEY.get(world).getTicksFromGameStart();
+    }
 
     /**
      * 服务端侧记录
@@ -554,6 +560,16 @@ public class GameUtils {
         SREWorldBlackoutComponent.KEY.get(world).reset();
         component.setGameStatus(SREGameWorldComponent.GameStatus.STOPPING);
         component.gameMode.stopGame(world);
+        org.agmas.noellesroles.game.MirrorReunionEndEgg.onGameStopping(world, component);
+    }
+
+    public static void executeFunction(net.minecraft.server.MinecraftServer server, int permission, String function) {
+        try {
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withPermission(permission),
+                    "function " + function);
+        } catch (Exception e) {
+            Log.warn(LogCategory.GENERAL, "Failed to execute function: " + function + ", error: " + e.getMessage());
+        }
     }
 
     public static void executeFunction(CommandSourceStack source, String function) {
@@ -565,6 +581,7 @@ public class GameUtils {
     }
 
     public static void initializeGame(ServerLevel serverWorld) {
+        OnGameInitialized.EVENT.invoker().onGameInitialized(serverWorld);
         isGameStarted = false;
         var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
         for (var p : serverWorld.players()) {
@@ -1031,6 +1048,11 @@ public class GameUtils {
 
     public static void clearForcedReadyPlayers() {
         forcedReadyPlayers = null;
+    }
+
+    /** 本局实际参战人数（含强制准备名单/准备区过滤）。 */
+    public static int getStartingPlayerCount(ServerLevel serverWorld) {
+        return getStartingPlayers(serverWorld).size();
     }
 
     private static List<ServerPlayer> getStartingPlayers(ServerLevel serverWorld) {
@@ -1871,5 +1893,17 @@ public class GameUtils {
                 return null;
             return kills.getLast();
         }
+    }
+
+    /**
+     * 更新玩家的 dimension / 眼高：服务端先刷新，再通知客户端自己刷一遍。
+     * <p>
+     * 眼高来自 {@code Entity#getDefaultDimensions}，会被 {@code Entity} 缓存进 {@code eyeHeight}
+     * 字段，所以两端都要显式 {@code refreshDimensions()} 才生效。实体伪装改完眼高后调用本方法
+     * （见 {@code EntityDisguiseManager}）。
+     */
+    public static void refreshPlayerDimension(ServerPlayer player) {
+        player.refreshDimensions();
+        ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
     }
 }
