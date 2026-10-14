@@ -71,6 +71,14 @@ public class AreasSettings {
     // @ConfigSync(shouldSync = false)
     // public boolean __isTest__ = true;
 
+    // ==================== map ====================
+    /** 跳过地图重置：启用后开局跳过地图重置阶段。 */
+    @Category("map")
+    public boolean noReset = false;
+    /** 地图重置必须完整复制地图：启用后地图重置走完整覆盖复制（而非常规的点位重置）。 */
+    @Category("map")
+    public boolean mustCopy = false;
+
     /** 是否可跳跃 */
     @Category("action")
     // 默认为 true，此处只是为了占位

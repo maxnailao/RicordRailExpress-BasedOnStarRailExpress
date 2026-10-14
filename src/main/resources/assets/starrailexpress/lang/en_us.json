@@ -256,6 +256,7 @@
     "gui.sre.map_briefing.explore":  "• Watch for special map mechanics",
     "gui.sre.map_briefing.minigame":  "• Minigame tasks are enabled on this map",
     "gui.sre.map_briefing.plane_crash":  "• Note: a plane is crashing toward the city; buildings tremor periodically and interiors may catch fire",
+    "gui.sre.opening.identity_confirmed":  "Crew identity confirmed",
     "message.starrailexpress.plane_crash.tremor_warn": "The buildings start to shake...",
     "subtitles.starrailexpress.plane_crash.engine": "Plane engine roars",
     "subtitles.starrailexpress.plane_crash.crash": "Plane crashes",

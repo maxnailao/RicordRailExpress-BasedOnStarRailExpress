@@ -128,11 +128,16 @@ public final class OpeningPresentationCoordinator {
         if (!screenOpen) {
             renderCurtain(graphics.getDefaultGuiGraphics(), partialTick, false);
         }
-        // 规则卡与开局运镜同步显示：聊天等悬浮屏打开也不暂停，卡片照常绘制在其背后。
-        // welcome 角色公布文案由 RoundTextRenderer.renderHud 负责绘制（开场流程只负责暂停它），
-        // 这里只叠加地图规则卡，避免重复绘制。
-        if (state == State.SHOWING_RULES) {
+        boolean welcomeActive = RoundTextRenderer.isWelcomeActive();
+        // 规则卡与开局运镜同步显示：聊天等悬浮屏打开也不暂停，卡片照常绘制在其背后；
+        // welcome 同样不因普通 UI 暂停，可绘制时照常绘制。
+        if (state == State.SHOWING_RULES && (!welcomeActive || shouldWaitForWelcome())) {
             MapRuleIntroHud.render(graphics.getDefaultGuiGraphics(), partialTick);
+            return;
+        }
+        if (welcomeActive && !shouldWaitForWelcome()) {
+            if (client.player != null)
+                RoundTextRenderer.renderWelcomeGui(client.font, client.player, graphics, partialTick);
         }
     }
 

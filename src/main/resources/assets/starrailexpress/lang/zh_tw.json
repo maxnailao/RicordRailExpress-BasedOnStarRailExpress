@@ -239,6 +239,7 @@
     "gui.sre.map_briefing.explore":  "• 請留意地圖中的特殊機制",
     "gui.sre.map_briefing.minigame":  "• 本地圖啟用了小遊戲任務",
     "gui.sre.map_briefing.plane_crash":  "• 注意：飛機正在撞向城區，建築會間歇震顫，室內可能起火",
+    "gui.sre.opening.identity_confirmed":  "乘員身份已確認",
     "message.starrailexpress.plane_crash.tremor_warn": "建築開始晃動……",
     "subtitles.starrailexpress.plane_crash.engine": "飛機引擎轟鳴",
     "subtitles.starrailexpress.plane_crash.crash": "飛機墜毀",

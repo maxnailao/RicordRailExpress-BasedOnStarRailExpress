@@ -451,13 +451,14 @@ public class GameUtils {
             MapManager.loadMap(world, areas.mapName);
         }
         MapResetManager.loadArea(world);
-        if (areas.noReset) {
+        if (areas.areasSettings.noReset) {
             resetEntities(world);
             SRE.LOGGER.info("NO RESET MAP!");
             trueStartGame(world, gameMode, time);
             return;
         }
-        if (areas.mustCopy || resetPoints.isEmpty() || SREConfig.instance().enableAutoTrainReset) {
+        if (areas.areasSettings.mustCopy || resetPoints.isEmpty()
+                || SREConfig.instance().enableAutoTrainReset) {
             var task = new ServerTaskInfoClasses.FullTrainResetTask(areas, world, gameMode, time);
             serverTaskQueue.add(task);
         } else {
