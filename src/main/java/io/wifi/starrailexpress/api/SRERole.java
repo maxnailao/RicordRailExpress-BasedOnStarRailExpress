@@ -52,6 +52,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canSeeBodyDeathReason = false;
     protected boolean canSeeBodyRoleInfo = false;
     protected boolean canUseInstinct = false;
+    protected boolean instinctNightVision = false;
     protected boolean canIgnoreBlackout = false;
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
@@ -634,7 +635,21 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public SRERole setCanUseInstinct(boolean canUseInstinct) {
         this.canUseInstinct = canUseInstinct;
+        this.instinctNightVision = canUseInstinct;
         return this;
+    }
+
+    public SRERole setInstinctNightVision(boolean flag) {
+        this.instinctNightVision = flag;
+        return this;
+    }
+
+    public boolean haveInstinctNightVision() {
+        return this.instinctNightVision;
+    }
+
+    public boolean haveInstinctNightVision(Player player) {
+        return haveInstinctNightVision();
     }
 
     public boolean canUseInstinct() {

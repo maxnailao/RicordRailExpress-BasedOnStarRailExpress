@@ -865,7 +865,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     () -> BloodParticle.clearParticlesInRange(payload.x(), payload.y(), payload.z(), payload.range()));
         });
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
-            RoleNameRenderer.displayTags.putAll(payload.nametags());
+            io.wifi.starrailexpress.client.util.ClientSkinCache.displayTags.clear();
+            io.wifi.starrailexpress.client.util.ClientSkinCache.displayTags.putAll(payload.nametags());
         });
         ClientPlayNetworking.registerGlobalReceiver(MapStatusBarSyncS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> org.agmas.noellesroles.client.hud.MapStatusBarClientState

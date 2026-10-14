@@ -42,9 +42,16 @@ public class SREClientConfig implements ConfigData {
     @Category("style")
     public int moodLeftOffset = 0;
 
+    @Category("style")
+    public float playerHudScale = 0.6f;
+
     // 左上角显示自己 / 瞄准目标的伪装状态（实体伪装与皮肤变形）
     @Category("style")
     public boolean showDisguiseHud = true;
+
+    @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean newspaperOpenAnimation = true; // 报纸界面打开时的自下而上入场动画
 
     @Category("style")
     public boolean showItemCooldownOverlayNum = false; // 物品栏物品上显示冷却数字

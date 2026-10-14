@@ -8,6 +8,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
@@ -147,6 +148,8 @@ public class SREClient implements ClientModInitializer {
     public static int blizzardRemainingTicks = 0;
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
+    /** 玩家名牌/HUD 缩放，取自客户端配置 playerHudScale */
+    public static float playerHUDScale = 0.6f;
     public static Player cached_player = null;
     /** 调试诊断：上一次记录的本地玩家帽子实体数据值（值变化时才打印） */
     private static String hatDebugLastLogged = "";
@@ -251,6 +254,9 @@ public class SREClient implements ClientModInitializer {
         ClientScheduler.init();
         ClientSkinCache.init();
         ClientConfigEvents.register();
+        playerHUDScale = SREClientConfig.instance().playerHudScale;
+        if (playerHUDScale <= 0)
+            playerHUDScale = 0.1f;
         initNetworkStatisticsClient();
         new EXSREClient().onInitializeClient();
         // Load config
@@ -1558,6 +1564,17 @@ public class SREClient implements ClientModInitializer {
 
     public static boolean isPlayerSpectatingOrCreative() {
         return cachedPlayerSpectatingOrCreative;
+    }
+
+    public static boolean hasInstinctNightVision() {
+        if (isPlayerSpectatingOrCreative()) {
+            return true;
+        }
+        SRERole role = getCachedPlayerRole();
+        if (role != null && cached_player != null) {
+            return role.haveInstinctNightVision(cached_player);
+        }
+        return false;
     }
 
     public static boolean isKiller() {

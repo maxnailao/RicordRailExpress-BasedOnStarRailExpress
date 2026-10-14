@@ -1,5 +1,22 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client.gui.screen;
 
+import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.client.gui.anim.GuiAnim;
 import io.wifi.starrailexpress.content.item.component.SREWritableBookContent;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -51,6 +68,7 @@ public class NewspaperScreen extends Screen {
     private static final int SCREEN_MARGIN = 20;
     private static final int MAX_PAGES = 5;
     private static final int MAX_LENGTH = 2048;
+    private static final int OPEN_ANIM_MS = 260;
 
     // ---------- 界面文本 ----------
     private static final Component EDIT_TITLE_LABEL = Component.translatable("book.editTitle");
@@ -74,6 +92,11 @@ public class NewspaperScreen extends Screen {
     private boolean isModified = false;
     private boolean isSigning = false;
     private int frameTick = 0;
+
+    // 只读模式正文缩放：>0 为固定倍数；<=0 表示按屏幕高度自适应（见 adaptiveBodyScale）。
+    // 无论固定还是自适应，都只作用于正文行文本，页码、标题等辅助文本不参与缩放
+    private float bodyTextScale = 1.0f;
+    private boolean autoBodyTextScale = false;
 
     @Nullable
     private final Player player;
@@ -102,6 +125,7 @@ public class NewspaperScreen extends Screen {
 
     private int newspaperX, newspaperY, newspaperWidth, newspaperHeight;
     private int textX, textY, textWidth, textHeight;
+    private final long openAtMs = System.currentTimeMillis();
 
     // ==================== 构造函数 ====================
 
@@ -184,7 +208,13 @@ public class NewspaperScreen extends Screen {
     }
 
     public NewspaperScreen(List<Component> readOnlyPages, Component title, Component author) {
+        this(readOnlyPages, title, author, 0f);
+    }
+
+    public NewspaperScreen(List<Component> readOnlyPages, Component title, Component author, float bodyTextScale) {
         super(GameNarrator.NO_TITLE);
+        this.autoBodyTextScale = bodyTextScale <= 0;
+        this.bodyTextScale = this.autoBodyTextScale ? 1.0f : bodyTextScale;
         this.editable = false;
         this.componentPages = new ArrayList<>(readOnlyPages);
         if (this.componentPages.isEmpty())
@@ -259,9 +289,10 @@ public class NewspaperScreen extends Screen {
     private void rebuildSubPages() {
         if (!editable) {
             subPages = new ArrayList<>();
-            int maxLines = Math.max(1, textHeight / font.lineHeight);
+            int wrapWidth = Math.max(1, (int) (textWidth / bodyTextScale));
+            int maxLines = Math.max(1, (int) (textHeight / bodyTextScale) / font.lineHeight);
             for (Component comp : componentPages) {
-                List<FormattedCharSequence> allLines = font.split(comp, textWidth);
+                List<FormattedCharSequence> allLines = font.split(comp, wrapWidth);
                 if (allLines.isEmpty()) {
                     subPages.add(Collections.emptyList());
                     continue;
@@ -293,7 +324,19 @@ public class NewspaperScreen extends Screen {
         clearDisplayCache();
     }
 
+    // 自适应正文缩放：仅按 GUI 缩放高度线性映射，区间外截断。
+    // 高度 240 -> 1.0f，492 -> 1.2f
+    private static float adaptiveBodyScale(int guiHeight) {
+        if (guiHeight <= 240)
+            return 1.0f;
+        if (guiHeight >= 492)
+            return 1.2f;
+        return 1.0f + (guiHeight - 240) * (0.2f / (492 - 240));
+    }
+
     private void calculateNewspaperSize() {
+        if (autoBodyTextScale)
+            bodyTextScale = adaptiveBodyScale(height);
         int availW = width - 2 * SCREEN_MARGIN;
         int availH = height - 2 * SCREEN_MARGIN;
         double ratio = 3.0 / 2.0;
@@ -477,13 +520,40 @@ public class NewspaperScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        float slideY = openSlideY();
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(0.0F, slideY, 0.0F);
+        int localMouseY = Math.round(mouseY - slideY);
+        super.render(guiGraphics, mouseX, localMouseY, partialTick);
 
         if (editable && isSigning) {
             renderSigning(guiGraphics);
         } else {
-            renderContent(guiGraphics, mouseX, mouseY);
+            renderContent(guiGraphics, mouseX, localMouseY);
         }
+    }
+
+    private boolean openAnimationEnabled() {
+        return SREClientConfig.instance().newspaperOpenAnimation;
+    }
+
+    private float openProgress() {
+        if (!openAnimationEnabled()) {
+            return 1.0F;
+        }
+        return GuiAnim.openBezier((System.currentTimeMillis() - openAtMs) / (float) OPEN_ANIM_MS);
+    }
+
+    private float openSlideY() {
+        float progress = openProgress();
+        if (progress >= 1.0F) {
+            return 0.0F;
+        }
+        return (1.0F - progress) * Math.max(180.0F, height * 0.72F);
+    }
+
+    private double mappedMouseY(double mouseY) {
+        return mouseY - openSlideY();
     }
 
     @Override
@@ -606,8 +676,18 @@ public class NewspaperScreen extends Screen {
             if (subPagesDirty)
                 rebuildSubPages();
             List<FormattedCharSequence> lines = subPages.get(currentPage);
-            for (int i = 0; i < lines.size(); i++) {
-                guiGraphics.drawString(font, lines.get(i), textX, textY + i * 9, 0x000000, false);
+            if (bodyTextScale == 1.0f) {
+                for (int i = 0; i < lines.size(); i++) {
+                    guiGraphics.drawString(font, lines.get(i), textX, textY + i * 9, 0x000000, false);
+                }
+            } else {
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(textX, textY, 0.0f);
+                guiGraphics.pose().scale(bodyTextScale, bodyTextScale, 1.0f);
+                for (int i = 0; i < lines.size(); i++) {
+                    guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0x000000, false);
+                }
+                guiGraphics.pose().popPose();
             }
             Style hoverStyle = getClickedComponentStyleAt(mouseX, mouseY);
             if (hoverStyle != null) {
@@ -776,8 +856,8 @@ public class NewspaperScreen extends Screen {
         if (lines.isEmpty())
             return null;
 
-        int x = mouseX - textX;
-        int y = mouseY - textY;
+        int x = (int) ((mouseX - textX) / bodyTextScale);
+        int y = (int) ((mouseY - textY) / bodyTextScale);
         if (x < 0 || y < 0)
             return null;
 
@@ -812,7 +892,12 @@ public class NewspaperScreen extends Screen {
             forwardButton.onPress();
             return true;
         }
-
+        if (!editable) {
+            if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+                this.saveChanges(false);
+                this.onClose();
+            }
+        }
         if (!editable)
             return false;
 
@@ -980,6 +1065,7 @@ public class NewspaperScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseY = mappedMouseY(mouseY);
         if (super.mouseClicked(mouseX, mouseY, button))
             return true;
 
@@ -1010,6 +1096,7 @@ public class NewspaperScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        mouseY = mappedMouseY(mouseY);
         if (super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY))
             return true;
         if (!editable || isSigning || pageEdit == null)
@@ -1027,6 +1114,21 @@ public class NewspaperScreen extends Screen {
             }
         }
         return false;
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mappedMouseY(mouseY));
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return super.mouseReleased(mouseX, mappedMouseY(mouseY), button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        return super.mouseScrolled(mouseX, mappedMouseY(mouseY), scrollX, scrollY);
     }
 
     public boolean handleComponentClicked(Style style) {
