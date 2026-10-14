@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.camera.client;
 
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
@@ -8,6 +23,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -41,6 +57,9 @@ public final class AdvancedCameraDirector {
     @Nullable
     private static FixedOverride fixedOverride;
 
+    @Nullable
+    private static EntityFocus entityFocus;
+
     /** 运镜结束回到玩家身上时的「黑屏渐显」过渡，独立于 {@link #active} 存活到淡出完成。 */
     @Nullable
     private static ReturnFade returnFade;
@@ -61,6 +80,7 @@ public final class AdvancedCameraDirector {
 
     /** 开始播放一条已解析的轨道。 */
     public static void start(AdvancedCameraSequence sequence) {
+        entityFocus = null;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || sequence.isEmpty()) {
@@ -83,14 +103,41 @@ public final class AdvancedCameraDirector {
 
     /** 清除当前轨道并按需恢复视角。 */
     public static void clear() {
-        if (active == null) {
+        CameraType restoreType = null;
+        if (active != null) {
+            restoreType = active.sequence.restore ? active.previousType : null;
+            active = null;
+        }
+        if (entityFocus != null) {
+            restoreType = entityFocus.previousType;
+            entityFocus = null;
+        }
+        if (restoreType != null && fixedOverride == null) {
+            Minecraft.getInstance().options.setCameraType(restoreType);
+        }
+    }
+
+    /**
+     * 开场镜头跟随并注视一个实体（用于飞机坠落等事件）。
+     * 与普通轨道一样计入 {@link #isTrackActive()}，以便规则卡 / welcome 与运镜同步。
+     */
+    public static void startEntityFocus(int entityId, int durationTicks, boolean blackBars) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || durationTicks <= 0) {
             return;
         }
-        ActiveSequence finished = active;
-        active = null;
-        if (finished.sequence.restore && fixedOverride == null) {
-            Minecraft.getInstance().options.setCameraType(finished.previousType);
+        CameraType previousType = active != null
+                ? active.previousType
+                : entityFocus != null ? entityFocus.previousType
+                : fixedOverride != null ? fixedOverride.previousType : minecraft.options.getCameraType();
+        if (minecraft.options.getCameraType() == CameraType.FIRST_PERSON) {
+            minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         }
+        active = null;
+        returnFade = null;
+        entityFocus = new EntityFocus(entityId, Math.max(1, durationTicks), previousType, blackBars,
+                player.getEyePosition(1.0f), player.getYRot(), player.getXRot());
     }
 
     /** 设置一个由外部效果驱动的固定镜头。高级轨道播放时仍优先显示轨道镜头。 */
@@ -132,7 +179,8 @@ public final class AdvancedCameraDirector {
      * 让镜头切回玩家瞬间先全屏黑、再渐显出画面。被外部 {@link #clear()} 中断时不触发。
      */
     private static void finish() {
-        boolean fade = active.sequence.blackBars;
+        boolean fade = (active != null && active.sequence.blackBars)
+                || (entityFocus != null && entityFocus.blackBars);
         clear();
         if (fade) {
             returnFade = new ReturnFade();
@@ -148,6 +196,17 @@ public final class AdvancedCameraDirector {
         }
         if (minecraft.player == null || minecraft.level == null) {
             clearFixedOverride();
+        }
+        if (entityFocus != null) {
+            if (minecraft.player == null || minecraft.level == null) {
+                clear();
+                return;
+            }
+            entityFocus.ticks++;
+            if (entityFocus.ticks >= entityFocus.durationTicks) {
+                finish();
+                return;
+            }
         }
         if (active == null) {
             return;
@@ -167,22 +226,24 @@ public final class AdvancedCameraDirector {
 
     /** 高级相机是否应当接管视角（激活且安全摄像头未开启）。 */
     public static boolean shouldOverride() {
-        return (active != null || fixedOverride != null) && !SecurityMonitorBlock.isInSecurityMode();
-    }
-
-    /** 只有高级运镜轨道播放时隐藏 HUD；固定镜头效果（如 2D 视角）保留玩家界面。 */
-    public static boolean shouldHideHudForCamera() {
-        return active != null && !SecurityMonitorBlock.isInSecurityMode();
+        return (active != null || fixedOverride != null || entityFocus != null)
+                && !SecurityMonitorBlock.isInSecurityMode();
     }
 
     /** 当前是否正有一条高级相机轨道在播放（不含结束后用于过渡的黑幕渐显）。 */
     public static boolean isTrackActive() {
-        return active != null && !SecurityMonitorBlock.isInSecurityMode();
+        return (active != null || entityFocus != null) && !SecurityMonitorBlock.isInSecurityMode();
     }
 
-    /** 含收尾黑幕渐显：开场流程据此判断「运镜仍在掌屏」，避免后续文字画在其上。 */
+    /** 只有高级运镜轨道播放时隐藏 HUD；固定镜头效果（如 2D 视角）保留玩家界面。 */
+    public static boolean shouldHideHudForCamera() {
+        return isTrackActive();
+    }
+
+    /** Includes the short return fade so following presentations never draw through it. */
     public static boolean isPresentationActive() {
-        return (active != null || returnFade != null) && !SecurityMonitorBlock.isInSecurityMode();
+        return (active != null || entityFocus != null || returnFade != null)
+                && !SecurityMonitorBlock.isInSecurityMode();
     }
 
     public static Vec3 getCameraPos(float partialTick) {
@@ -205,7 +266,8 @@ public final class AdvancedCameraDirector {
      * 安全摄像头开启时不覆盖。
      */
     public static float getFovOverride(float partialTick) {
-        if ((active == null && fixedOverride == null) || SecurityMonitorBlock.isInSecurityMode()) {
+        if ((active == null && fixedOverride == null && entityFocus == null)
+                || SecurityMonitorBlock.isInSecurityMode()) {
             return 0f;
         }
         Pose pose = currentPose(partialTick);
@@ -221,6 +283,9 @@ public final class AdvancedCameraDirector {
         if (active != null) {
             return active.poseAt(time(partialTick));
         }
+        if (entityFocus != null) {
+            return entityFocus.poseAt(partialTick);
+        }
         if (fixedOverride != null) {
             return fixedOverride.poseAt(partialTick);
         }
@@ -232,10 +297,14 @@ public final class AdvancedCameraDirector {
     public static void renderOverlay(GuiGraphics guiGraphics) {
         // 回到玩家身上后的全屏黑幕渐显，绘制在最上层（覆盖黑边与画面）。
         renderReturnFade(guiGraphics);
-        if (active == null || !active.sequence.blackBars) {
+        float alpha;
+        if (entityFocus != null && entityFocus.blackBars) {
+            alpha = entityFocus.barAlpha();
+        } else if (active != null && active.sequence.blackBars) {
+            alpha = active.barAlpha(time(0f));
+        } else {
             return;
         }
-        float alpha = active.barAlpha(time(0f));
         if (alpha <= 0f) {
             return;
         }
@@ -416,6 +485,80 @@ public final class AdvancedCameraDirector {
             float fade = Math.max(1f, totalTicks * BAR_FADE_RATIO);
             float fadeIn = Mth.clamp(t / fade, 0f, 1f);
             float fadeOut = Mth.clamp((totalTicks - t) / fade, 0f, 1f);
+            return Math.min(fadeIn, fadeOut);
+        }
+    }
+
+    /** 跟随实体并持续注视其当前位置。 */
+    private static final class EntityFocus {
+        final int entityId;
+        final int durationTicks;
+        final CameraType previousType;
+        final boolean blackBars;
+        final Vec3 fallbackPos;
+        final float fallbackYaw;
+        final float fallbackPitch;
+        int ticks;
+        Vec3 lastPos;
+        float lastYaw;
+        float lastPitch;
+
+        EntityFocus(int entityId, int durationTicks, CameraType previousType, boolean blackBars,
+                Vec3 fallbackPos, float fallbackYaw, float fallbackPitch) {
+            this.entityId = entityId;
+            this.durationTicks = durationTicks;
+            this.previousType = previousType;
+            this.blackBars = blackBars;
+            this.fallbackPos = fallbackPos;
+            this.fallbackYaw = fallbackYaw;
+            this.fallbackPitch = fallbackPitch;
+            this.lastPos = fallbackPos;
+            this.lastYaw = fallbackYaw;
+            this.lastPitch = fallbackPitch;
+        }
+
+        Pose poseAt(float partialTick) {
+            Minecraft minecraft = Minecraft.getInstance();
+            Entity target = minecraft.level == null ? null : minecraft.level.getEntity(entityId);
+            Vec3 lookAt;
+            Vec3 forward;
+            if (target != null) {
+                lookAt = target.getPosition(partialTick).add(0.0D, target.getBbHeight() * 0.45D, 0.0D);
+                Vec3 motion = target.getDeltaMovement();
+                if (motion.horizontalDistanceSqr() < 0.0004D) {
+                    float yawRad = target.getYRot() * Mth.DEG_TO_RAD;
+                    forward = new Vec3(-Mth.sin(yawRad), 0.0D, Mth.cos(yawRad));
+                } else {
+                    forward = new Vec3(motion.x, 0.0D, motion.z).normalize();
+                }
+            } else {
+                lookAt = lastPos;
+                float yawRad = lastYaw * Mth.DEG_TO_RAD;
+                forward = new Vec3(-Mth.sin(yawRad), 0.0D, Mth.cos(yawRad));
+            }
+            Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+            Vec3 side = forward.cross(up);
+            if (side.lengthSqr() < 0.0001D) {
+                side = new Vec3(1.0D, 0.0D, 0.0D);
+            } else {
+                side = side.normalize();
+            }
+            Vec3 camPos = lookAt.subtract(forward.scale(20.0D)).add(0.0D, 9.0D, 0.0D).add(side.scale(11.0D));
+            Vec3 delta = lookAt.subtract(camPos);
+            double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+            float yaw = (float) (Math.atan2(delta.z, delta.x) * (180.0D / Math.PI)) - 90.0F;
+            float pitch = (float) (-(Math.atan2(delta.y, horizontal) * (180.0D / Math.PI)));
+            lastPos = camPos;
+            lastYaw = yaw;
+            lastPitch = pitch;
+            return new Pose(camPos, yaw, pitch, 58.0F);
+        }
+
+        float barAlpha() {
+            float t = ticks;
+            float fade = Math.max(1f, durationTicks * BAR_FADE_RATIO);
+            float fadeIn = Mth.clamp(t / fade, 0f, 1f);
+            float fadeOut = Mth.clamp((durationTicks - t) / fade, 0f, 1f);
             return Math.min(fadeIn, fadeOut);
         }
     }

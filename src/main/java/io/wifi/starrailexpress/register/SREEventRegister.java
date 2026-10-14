@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import pro.fazeclan.river.stupid_express.StupidExpressConfig;
@@ -38,8 +39,7 @@ public class SREEventRegister {
         EntityInteractionHandler.register();
         AFKEventHandler.register();
         PlayerMountainHandler.register();
-
-        // 游戏开始：通知客户端（驱动 OnGameStartedClient 事件），并向本局玩家播放默认开场镜头
+        net.exmo.sre.planecrash.PlaneCrashManager.register();
 
         OnGameEnd.EVENT.register((serverLevel, __cca) -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
@@ -51,21 +51,50 @@ public class SREEventRegister {
                             "message.sre.pass.selfselect_unapplied"));
         });
 
+        // 游戏开始：通知客户端（驱动 OnGameStartedClient 事件），并向本局玩家播放默认开场镜头
         OnGameStarted.EVENT.register(serverLevel -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
+            boolean deferIntro = defersIntroUntilRolesChosen(serverLevel);
             String authoritativeMapId = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel).mapName;
+            net.exmo.sre.planecrash.PlaneCrashManager.onGameStarted(serverLevel);
+            boolean planeIntro = !deferIntro && net.exmo.sre.planecrash.PlaneCrashManager.startIntro(serverLevel);
             for (ServerPlayer player : serverLevel.players()) {
                 // 权威地图 id 同时驱动「未走地图投票」时的开场简报
                 PacketTracker.sendToClient(player, new OnGameStartedPayload(authoritativeMapId));
-                // 仅向本局参与者（冒险模式）播放"由远及近到玩家位置"的开场镜头
-                if (player.gameMode.getGameModeForPlayer() == net.minecraft.world.level.GameType.ADVENTURE) {
-                    net.exmo.sre.camera.AdvancedCameraCommand.sendIntro(player,
-                            net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_DURATION,
-                            net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_DISTANCE,
-                            net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_HEIGHT);
+                // 轮选模式职业尚未确定，开场镜头延后到 OnGameTrueStarted；飞机已接管则不重复发默认镜头
+                if (!deferIntro && !planeIntro) {
+                    sendDefaultIntroIfParticipant(player);
                 }
             }
         });
+        OnGameTrueStarted.EVENT.register(serverLevel -> {
+            if (!defersIntroUntilRolesChosen(serverLevel)) {
+                return;
+            }
+            if (net.exmo.sre.planecrash.PlaneCrashManager.startIntro(serverLevel)) {
+                return;
+            }
+            for (ServerPlayer player : serverLevel.players()) {
+                sendDefaultIntroIfParticipant(player);
+            }
+        });
+    }
+
+    /** 轮选类游戏模式的开场镜头要等职业确定后才能播（对应 OnGameTrueStarted）。 */
+    private static boolean defersIntroUntilRolesChosen(ServerLevel serverLevel) {
+        var mode = SREGameWorldComponent.KEY.get(serverLevel).getGameMode();
+        return mode instanceof io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode
+                || mode instanceof io.wifi.starrailexpress.game.modes.funny.SRERoleRotationSingleSelectGameMode;
+    }
+
+    /** 向本局参与者（冒险模式）播放"由远及近到玩家位置"的默认开场镜头。 */
+    private static void sendDefaultIntroIfParticipant(ServerPlayer player) {
+        if (player.gameMode.getGameModeForPlayer() == net.minecraft.world.level.GameType.ADVENTURE) {
+            net.exmo.sre.camera.AdvancedCameraCommand.sendIntro(player,
+                    net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_DURATION,
+                    net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_DISTANCE,
+                    net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_HEIGHT);
+        }
     }
 
     public static void registerServerLifecycleEvents() {

@@ -282,11 +282,14 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
         EntityRendererRegistry.register(TMMEntities.ZIPLINE_RIDER, NoopRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.CRASH_PLANE,
+                net.exmo.sre.planecrash.client.CrashPlaneEntityRenderer::new);
         EntityRendererRegistry.register(io.wifi.starrailexpress.traindummy.TrainDummyEntity.TYPE,
                 context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, false));
 
         // Register entity model layers
         TMMModelLayers.initialize();
+        net.exmo.sre.planecrash.client.PlaneCrashFakeFlames.register();
 
         // Block render layers
         BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
@@ -605,6 +608,7 @@ public class SREClient implements ClientModInitializer {
             // 游戏结束时清除高级相机轨道
             if (prevGameRunning && !gameComponent.isRunning()) {
                 net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+                net.exmo.sre.planecrash.client.PlaneCrashClientEffects.clear();
             }
             prevGameRunning = gameComponent.isRunning();
 
@@ -763,6 +767,7 @@ public class SREClient implements ClientModInitializer {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
             net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+            net.exmo.sre.planecrash.client.PlaneCrashClientEffects.clear();
             ClientSkincrawlerState.clearAll();
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
             org.agmas.noellesroles.game.modes.werewolf.client.WerewolfClientState.reset();
@@ -1098,6 +1103,23 @@ public class SREClient implements ClientModInitializer {
                             net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
                         } else {
                             net.exmo.sre.camera.client.AdvancedCameraDirector.play(payload.json());
+                        }
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.planecrash.PlaneCrashIntroPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> net.exmo.sre.camera.client.AdvancedCameraDirector
+                            .startEntityFocus(payload.entityId(), payload.durationTicks(), true));
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.planecrash.PlaneCrashTremorPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (payload.warning()) {
+                            net.exmo.sre.planecrash.client.PlaneCrashClientEffects
+                                    .startWarning(payload.tiltYaw(), payload.durationTicks());
+                        } else {
+                            net.exmo.sre.planecrash.client.PlaneCrashClientEffects
+                                    .startTremor(payload.tiltYaw(), payload.durationTicks());
                         }
                     });
                 });
@@ -1444,6 +1466,7 @@ public class SREClient implements ClientModInitializer {
                 return;
             FourthRoomCameraDirector.tick(client);
             net.exmo.sre.camera.client.AdvancedCameraDirector.tick(client);
+            net.exmo.sre.planecrash.client.PlaneCrashClientEffects.tick();
             io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.tick(client);
             if (SREClient.gameComponent == null)
                 return;

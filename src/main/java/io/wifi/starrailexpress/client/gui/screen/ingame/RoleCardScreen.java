@@ -183,6 +183,11 @@ public class RoleCardScreen extends Screen {
         }
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
     @Override
     public boolean isPauseScreen() {
         return false;

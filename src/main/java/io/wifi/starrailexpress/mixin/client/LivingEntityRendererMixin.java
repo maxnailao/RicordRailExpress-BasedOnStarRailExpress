@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import net.exmo.sre.planecrash.client.PlaneCrashClientEffects;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -16,6 +17,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extends EntityModel<T>, X extends Entity> extends EntityRenderer<T> {
@@ -37,6 +40,15 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
         boolean isItemRenderer = instance instanceof ItemInHandLayer<?, ?>;
         if (!isPsycho || isItemRenderer) {
             original.call(instance, matrixStack, vertexConsumerProvider, i, t, limbAngle, limbDistance, tickDelta, animationProgress, headYaw, headPitch);
+        }
+    }
+
+    @Inject(method = "setupRotations(Lnet/minecraft/world/entity/LivingEntity;Lcom/mojang/blaze3d/vertex/PoseStack;FFFF)V",
+            at = @At("TAIL"))
+    private void sre$planeCrashLean(LivingEntity entity, PoseStack poseStack, float bob, float yBodyRot,
+            float partialTick, float scale, CallbackInfo ci) {
+        if (entity instanceof Player) {
+            PlaneCrashClientEffects.applyPlayerLean(poseStack, entity, partialTick);
         }
     }
 

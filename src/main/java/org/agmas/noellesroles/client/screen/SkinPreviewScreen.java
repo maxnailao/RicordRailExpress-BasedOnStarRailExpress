@@ -170,6 +170,11 @@ public class SkinPreviewScreen extends Screen {
         super.render(g, mouseX, mouseY, delta);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    }
+
     private void renderGrid(GuiGraphics g, int mouseX, int mouseY) {
         if (entries.isEmpty()) {
             g.drawCenteredString(font, "暂无可预览内容", gridStartX + (panelX - gridStartX) / 2,

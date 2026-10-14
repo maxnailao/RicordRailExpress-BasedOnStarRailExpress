@@ -123,6 +123,10 @@ public class SREPayloadRegister {
                 io.wifi.starrailexpress.network.MapRotationSyncPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MapDepartCancelPayload.TYPE,
                 io.wifi.starrailexpress.network.MapDepartCancelPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashIntroPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashIntroPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashTremorPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashTremorPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 io.wifi.starrailexpress.network.RoleRosterUpdatePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ShowSelectedMapUIPayload.ID, ShowSelectedMapUIPayload.CODEC);

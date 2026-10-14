@@ -108,7 +108,7 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "map")
     @Tooltip
-    public int mapRandomCount = -1;
+    public int mapRandomCount = 5;
 
     @ConfigEntry.Category(value = "map")
     @Tooltip(count = 3)

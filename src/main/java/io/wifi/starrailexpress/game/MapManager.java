@@ -453,6 +453,20 @@ public class MapManager {
                 areas.minigameQuestEnabled = false;
             }
 
+            // 飞机坠落地图事件（默认关闭）
+            if (jsonObject.has("planeCrashEventEnabled")) {
+                areas.areasSettings.planeCrashEventEnabled = jsonObject.get("planeCrashEventEnabled").getAsBoolean();
+            }
+            if (jsonObject.has("planeCrashTiltYaw")) {
+                areas.areasSettings.planeCrashTiltYaw = jsonObject.get("planeCrashTiltYaw").getAsFloat();
+            }
+            if (jsonObject.has("planeCrashSpawnDistance")) {
+                areas.areasSettings.planeCrashSpawnDistance = jsonObject.get("planeCrashSpawnDistance").getAsFloat();
+            }
+            if (jsonObject.has("planeCrashSpawnHeight")) {
+                areas.areasSettings.planeCrashSpawnHeight = jsonObject.get("planeCrashSpawnHeight").getAsFloat();
+            }
+
             // 加载地图初始物品配置
             areas.initialItems = new java.util.ArrayList<>();
             if (jsonObject.has("initialItems")) {

@@ -86,6 +86,11 @@ public class SelfSelectCardScreen extends Screen {
         super.render(g, mouseX, mouseY, delta);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    }
+
     private void renderFactionSelection(GuiGraphics g, int mouseX, int mouseY) {
         g.drawCenteredString(font, "选择阵营", width / 2, 40, 0xFFCCCCCC);
         for (int i = 0; i < FACTION_TYPES.length; i++) {

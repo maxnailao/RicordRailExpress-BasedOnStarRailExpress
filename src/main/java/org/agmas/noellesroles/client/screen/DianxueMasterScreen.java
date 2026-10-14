@@ -84,6 +84,11 @@ public class DianxueMasterScreen extends Screen {
         g.drawCenteredString(this.font, hint.getString(), cx, top + 210, 0xFFFFDD00);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免原版对已绘制内容再做模糊并叠加泥土遮罩。
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    }
+
     private void renderTimerBar(GuiGraphics g) {
         int cx = this.width / 2;
         int bw = 200;

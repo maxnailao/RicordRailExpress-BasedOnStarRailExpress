@@ -112,6 +112,10 @@ public class GameUtils {
     public static boolean isStartingGame = false;
     public static boolean isGameStarted = false;
 
+    public static long getTicksFromGameStart(Level world) {
+        return SREGameTimeComponent.KEY.get(world).getTicksFromGameStart();
+    }
+
     /**
      * 服务端侧记录
      * 

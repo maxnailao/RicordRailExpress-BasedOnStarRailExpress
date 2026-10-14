@@ -453,6 +453,11 @@ public class TrainDummyScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免原版对已绘制内容再做模糊并叠加泥土遮罩。
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
     private void drawFormLabels(GuiGraphics graphics) {
         int x = panelX() + 12;
         int y = panelY() + 32 - scroll;

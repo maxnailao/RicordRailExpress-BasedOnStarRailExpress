@@ -81,7 +81,7 @@ public class ServerMapConfig {
             return a;
         }
         Collections.shuffle(a);
-        List<MapEntry> mapEntries = a.subList(0, count);
+        List<MapEntry> mapEntries = a.subList(0, Math.min(count, a.size()));
         cache_maps = mapEntries;
         return mapEntries;
     }
