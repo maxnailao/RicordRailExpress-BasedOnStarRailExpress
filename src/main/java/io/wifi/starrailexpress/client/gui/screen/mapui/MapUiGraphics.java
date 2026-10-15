@@ -127,28 +127,37 @@ public final class MapUiGraphics {
     }
 
     /**
-     * 按模板拼出地图贴图路径。
+     * 按模板拼出地图贴图路径，返回第一个真正存在的贴图，都没有则返回 null。
      *
      * <p>
      * 地图 id 允许是 {@code train_maps} 下的相对路径（子文件夹会被枚举成
      * {@code "文件夹名/地图配置名"}），所以这里必须保留 {@code /} 而不是当成扁平文件名。
-     * {@link ResourceLocation} 的路径只允许 {@code a-z 0-9 / _ - .}，
-     * 因此遇到大写或空格等字符时再退回一次归一化写法（小写化 + 非法字符替换为 {@code _}），
-     * 让 {@code "My Maps/Map A"} 也能命中 {@code my_maps/map_a.png}。
+     *
+     * <p>
+     * 查找顺序固定为「归一化（小写 + 非法字符换成 {@code _}）优先，原样次之」，不能反过来：
+     * 本版本的 {@link ResourceLocation#tryBuild} 并不拒绝大写路径，若先试原样路径，
+     * 开着 Windows 目录式资源的开发环境（大小写不敏感）能命中 {@code Polus.png}，
+     * 而发布后读的是 jar（zip 大小写敏感），同一张内置贴图 {@code polus.png} 就查不到，
+     * 于是 {@code Polus/Skeld/Vineyard/TheWitchPrison/TheWinterPalace/ResearchStation}
+     * 这几张文件名带大写的 map 在投票页只剩黑底。
      */
     public static ResourceLocation mapTexture(String pattern, String mapId) {
         if (pattern == null || mapId == null || mapId.isEmpty()) {
             return null;
         }
         String path = String.format(pattern, mapId);
-        ResourceLocation location = ResourceLocation.tryBuild(SRE.MOD_ID, path);
-        if (location != null) {
-            return location;
+        ResourceLocation sanitized = ResourceLocation.tryBuild(SRE.MOD_ID, sanitizePath(path));
+        if (sanitized != null && textureExists(sanitized)) {
+            return sanitized;
         }
-        return ResourceLocation.tryBuild(SRE.MOD_ID, sanitizePath(path));
+        ResourceLocation raw = ResourceLocation.tryBuild(SRE.MOD_ID, path);
+        if (raw != null && textureExists(raw)) {
+            return raw;
+        }
+        return null;
     }
 
-    /** 把路径里不被 {@link ResourceLocation} 接受的字符替换掉，保留目录分隔符。 */
+    /** 归一化路径：小写化，并把可能不被 {@link ResourceLocation} 接受的字符换成 {@code _}，保留目录分隔符。 */
     private static String sanitizePath(String path) {
         StringBuilder out = new StringBuilder(path.length());
         for (int i = 0; i < path.length(); i++) {
@@ -161,8 +170,7 @@ public final class MapUiGraphics {
     }
 
     public static ResourceLocation thumbnailTexture(String mapId) {
-        ResourceLocation location = mapTexture(THUMBNAIL_PATH, mapId);
-        return textureExists(location) ? location : null;
+        return mapTexture(THUMBNAIL_PATH, mapId);
     }
 
     /**
