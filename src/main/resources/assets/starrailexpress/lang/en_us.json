@@ -823,6 +823,13 @@
   "commands.sre.setvisual.time": "Time visual effect set to %s",
   "commands.sre.setvisual.trainspeed": "Train speed visual effect set to %s",
   "commands.sre.start": "Game started successfully!",
+  "commands.sre.shield.virtual.add": "Added %2$s virtual shield points to %1$s players",
+  "commands.sre.shield.virtual.set": "Set virtual shield for %1$s players: %2$s",
+  "commands.sre.shield.virtual.clear": "Cleared virtual shield for %s players",
+  "commands.sre.shield.virtual.get.header": "Virtual shield: ",
+  "commands.sre.shield.virtual.get.entry": "%s=%s points ",
+  "item.trainmurdermystery.virtual_defense_vial": "Virtual Shield Vial",
+  "item.trainmurdermystery.virtual_defense_vial.tooltip": "Slip into food or drink to give the next person who takes it 20 virtual shield!\nVirtual shield absorbs virtual health damage first but cannot block normal death.",
   "commands.sre.start.error.map_not_supported": "§cCurrent map %s does not support game mode: %s",
   "commands.sre.stop": "Game stopped successfully!",
   "commands.sre.updatedoors": "Train doors updated successfully",
@@ -3353,5 +3360,6 @@
   "sre.map_helper.meeting.toggle": "Meeting system",
   "sre.map_helper.value.on": "On",
   "sre.map_helper.value.off": "Off",
-  "death_reason.starrailexpress.cowboy_duel": "lost a duel"
+  "death_reason.starrailexpress.cowboy_duel": "lost a duel",
+  "gui.sre.opening.identity_confirmed": "Boarding identity confirmed"
 }

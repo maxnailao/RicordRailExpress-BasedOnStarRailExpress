@@ -365,6 +365,10 @@ public class ModPacketsReciever {
       ChefFoodItem.randomModel(cooked_food);
       RoleUtils.insertStackInFreeSlot(player, cooked_food);
     });
+    // 厨师「客户端」食物盘 / 饮料盘：客户端右键命中盘子时改发本包（服务端做放入 / 取出记账）
+    ServerPlayNetworking.registerGlobalReceiver(ChefTrayInteractC2SPacket.ID, (payload, context) ->
+        context.server().execute(() -> org.agmas.noellesroles.game.roles.neutral.chef.ChefTrayManager
+            .onRightClick(context.player(), payload.pos())));
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORPH_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
@@ -396,6 +400,12 @@ public class ModPacketsReciever {
                 GameReplayUtils.getReplayPlayerDisplayText(context.player(), true),
                 GameReplayUtils.getReplayPlayerDisplayText(context.player().level().getPlayerByUUID(payload.player()), true)));
 
+      }
+      // 占卜家：背包界面点击玩家头像选中占卜目标（复用变形包通道，不消耗冷却）
+      if (gameWorldComponent.isRole(context.player(), ModRoles.DIVINER)) {
+        io.wifi.starrailexpress.api.data.RoleData
+            .getOptional(org.agmas.noellesroles.role_data.innocence.DivinerRoleData.class, context.player())
+            .ifPresent(d -> d.setTarget(payload.player()));
       }
       if (gameWorldComponent.isRole(context.player(), ModRoles.MORPHLING)) {
         MorphlingPlayerComponent morphlingPlayerComponent = (MorphlingPlayerComponent) MorphlingPlayerComponent.KEY
@@ -921,6 +931,14 @@ public class ModPacketsReciever {
         });
     ServerPlayNetworking.registerGlobalReceiver(GamblerSelectRoleC2SPacket.ID,
         new GamblerSelectRoleC2SPacket.Receiver());
+
+    // 神父咏诵：客户端提交一句台词，服务端校验并推进
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.PriestChantC2SPacket.ID,
+        (payload, context) ->
+          context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.neutral.priest.PriestRole.submitLyric(
+                context.player(), payload.text())));
 
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BroadcasterC2SPacket.ID,
         (payload, context) -> {
@@ -1716,6 +1734,22 @@ public class ModPacketsReciever {
                 Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
           }
         });
+
+    // 船长舱门调度：选择目标房间门或取消（pos 为 null 表示取消）
+    ServerPlayNetworking.registerGlobalReceiver(ConductorSelectDoorC2SPacket.ID, (payload, context) -> {
+      context.server().execute(() -> {
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(context.player().level());
+        if (!gameWorldComponent.isRole(context.player(), ModRoles.CONDUCTOR)) {
+          return;
+        }
+        org.agmas.noellesroles.role_data.innocence.ConductorRoleData data =
+            io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                org.agmas.noellesroles.role_data.innocence.ConductorRoleData.class, context.player());
+        if (data != null) {
+          data.selectDestination(payload.pos());
+        }
+      });
+    });
   }
 
   private static boolean isChefCookableFood(ItemStack food) {

@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RolePassive;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
@@ -71,6 +72,7 @@ import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role_data.innocence.ClockmakerRoleData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
@@ -107,6 +109,8 @@ public class ModRolesInitialEventRegister {
 
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
+        // 欧拉一拳（不限职业，按玩家 UUID 维护连打状态，事件只注册一次）
+        org.agmas.noellesroles.content.item.ora.OraPunchManager.registerEvents();
         // 初始化熊孩子音频事件
         org.agmas.noellesroles.game.roles.innocence.child.ChildPunchHandler.register();
         // 初始化武术家击打事件
@@ -1267,6 +1271,19 @@ public class ModRolesInitialEventRegister {
                             return true;
                         }).shifted(true).announceToSelf(false).showOnHud(false).build());
 
+        // ==================== 厨师技能注册：按 G 在脚底放盘子，按技能切换键切换盘子类型 ====================
+        // RKD 的 RoleSkill.Definition 没有 modeSwitch 字段，模式切换技能与建筑师/管家一致用 shifted(true)，
+        // 由客户端 V 键（nextAbilityBind）在只有一个可选技能时触发 shifted 变体。
+        RoleSkill.register(ModRoles.CHEF,
+                RoleSkill.skill(SRE.id("chef_place_tray"),
+                        "skill.noellesroles.chef.place_tray",
+                        context -> org.agmas.noellesroles.game.roles.neutral.chef.ChefRole.useTrayAbility(context))
+                        .charges(2).cooldownSeconds(30).showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("chef_switch_tray_mode"),
+                        "skill.noellesroles.chef.switch_tray_mode",
+                        context -> org.agmas.noellesroles.game.roles.neutral.chef.ChefRole.switchTrayMode(context))
+                        .shifted(true).announceToSelf(false).showOnHud(false).build());
+
         // ==================== 管家技能注册：普通按 G 放置家具，按 Shift+G 切换家具类型 ====================
         RoleSkill.register(ModRoles.HOUSEKEEPER,
                 RoleSkill.skill(SRE.id("housekeeper_ability"),
@@ -1527,9 +1544,18 @@ public class ModRolesInitialEventRegister {
                 SRE.id("clockmaker_use_skill"),
                 "skill.noellesroles.clockmaker.use_skill",
                 context -> {
-                    ModComponents.CLOCKMAKER.get(context.player()).useSkill();
+                    RoleData.getOptional(ClockmakerRoleData.class, context.player())
+                            .ifPresent(ClockmakerRoleData::useSkill);
                     return true;
                 }).build());
+
+        // 神父技能注册：打开「天堂制造」咏诵界面（无冷却，可在转职阶段反复打开）
+        RoleSkill.register(ModRoles.PRIEST, RoleSkill.skill(
+                SRE.id("priest_open_chant"),
+                "skill.noellesroles.priest.open_chant",
+                context -> org.agmas.noellesroles.game.roles.neutral.priest.PriestRole
+                        .openChant(context.player())
+        ).showOnHud(true).cooldownTicks(0).build());
 
         // 超级亡命徒技能注册：使用技能，蹲下+ G 为特殊模式
         RoleSkill.register(SpecialGameModeRoles.SUPER_LOOSE_END,
@@ -2311,6 +2337,52 @@ public class ModRolesInitialEventRegister {
                         context -> org.agmas.noellesroles.game.roles.neutral.prewitch.PreWitchSkillDispatcher.use(
                                 context.player(), context.target(), true))
                         .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
+
+        // 船长·舱门调度：对准一扇门使用，花费金币，前摇结束后选择其他房间门传送
+        RoleSkill.register(ModRoles.CONDUCTOR,
+                RoleSkill.skill(org.agmas.noellesroles.role_data.innocence.ConductorRoleData.SKILL_ID,
+                        "skill.noellesroles.conductor.door_warp",
+                        context -> {
+                            org.agmas.noellesroles.role_data.innocence.ConductorRoleData data =
+                                    io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                                            org.agmas.noellesroles.role_data.innocence.ConductorRoleData.class,
+                                            context.player());
+                            return data != null && data.useSkill(context.player());
+                        })
+                        .cooldownSeconds(org.agmas.noellesroles.role_data.innocence.ConductorRoleData.COOLDOWN_SECONDS)
+                        .showOnHud(true).announceToSelf(false).build());
+
+        // Dream（Dream）技能注册：制酒 —— 酿一瓶酒，喝下隐身 5s（期间无法攻击/无法受伤）
+        RoleSkill.register(ModRoles.DREAM,
+                RoleSkill.skill(SRE.id("dream_brew"), "skill.noellesroles.dream.brew", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    if (!GameUtils.isPlayerAliveAndSurvival(player))
+                        return false;
+                    // 已持有酒时不能再酿新的
+                    if (SREItemUtils.hasItem(player, ModItems.DREAM_WINE)) {
+                        player.displayClientMessage(Component
+                                .translatable("message.noellesroles.dream.brew_already_has")
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    if (!SREItemUtils.insertStackInFreeSlot(player,
+                            ModItems.DREAM_WINE.getDefaultInstance())) {
+                        player.displayClientMessage(Component
+                                .translatable("message.noellesroles.dream.brew_no_space")
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    player.level().playSound(null, player.blockPosition(),
+                            SoundEvents.BREWING_STAND_BREW,
+                            SoundSource.PLAYERS, 1.0f, 1.0f);
+                    player.displayClientMessage(Component
+                            .translatable("message.noellesroles.dream.brew_done")
+                            .withStyle(ChatFormatting.GREEN), true);
+                    return true;
+                }).cooldownSeconds(NoellesRolesConfig.instance().dreamBrewCooldownSeconds)
+                        .showOnHud(true).announceToSelf(true).build());
 
     }
 

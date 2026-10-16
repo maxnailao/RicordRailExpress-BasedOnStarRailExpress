@@ -62,6 +62,14 @@ import java.util.*;
  *
  * <p>
  * 隐私要点：时之虫状态仅同步给阿蒙本人，且绝不给受害者任何可见效果。
+ *
+ * <p>
+ * 寄宿（夺舍准备）期间阿蒙贴附跟随宿主，<b>不操控宿主</b>：宿主仍可自由移动与转向，
+ * 也不会被致盲；按 潜行+技能键 停留足够时间后才完成夺舍。
+ *
+ * <p>
+ * 阿蒙透视：开启直觉后阿蒙只能看到已种下时之虫的宿主（潜伏中或已成熟），其余玩家一律不可见。
+ * 该判定依赖只同步给阿蒙本人的客户端镜像 {@link #clientSeedHosts} / {@link #clientMaturedHosts}。
  */
 public final class AmonPlayerComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<AmonPlayerComponent> KEY = ComponentRegistry.getOrCreate(
@@ -89,7 +97,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private final Set<UUID> maturedHosts = new HashSet<>();
     /** 当前伪装目标（夺舍后顶替其皮肤+名字）。 */
     private UUID disguiseTarget;
-    /** 正在附身的目标（须为成熟宿主）；非空即处于附身中，按 G 完成夺舍。 */
+    /** 正在寄宿的目标（须为成熟宿主）；非空即处于寄宿中，按 潜行+技能键 完成夺舍。 */
     public UUID possessTarget;
     private int possessTicks;
     /** 附身开始时记录的「本体」位置（完成夺舍时在此生成阿蒙自己的尸体）。 */
@@ -117,6 +125,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     public int clientMatured;
     /** 客户端镜像：成熟宿主 UUID（仅同步给阿蒙本人，供背包选目标界面显示）。 */
     public final Set<UUID> clientMaturedHosts = new HashSet<>();
+    /** 客户端镜像：潜伏中的时之虫宿主 UUID（仅同步给阿蒙本人，供直觉透视）。 */
+    public final Set<UUID> clientSeedHosts = new HashSet<>();
     /** 客户端镜像：当前附身的目标。 */
     public UUID clientPossessTarget;
 
@@ -158,6 +168,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         clientSeeds = 0;
         clientMatured = 0;
         clientMaturedHosts.clear();
+        clientSeedHosts.clear();
         clientPossessTarget = null;
         sync();
     }
@@ -193,6 +204,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         clientSeeds = 0;
         clientMatured = 0;
         clientMaturedHosts.clear();
+        clientSeedHosts.clear();
         clientPossessTarget = null;
         sync();
     }
@@ -249,18 +261,17 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         boolean changed = false;
 
         // 潜伏与成熟
-        Iterator<Map.Entry<UUID, Integer>> it = seeds.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Integer> entry = it.next();
+        // 快照迭代：寄生击杀会跑完整条死亡链，可能重入并改动 seeds（职业撤销/回溯都会 clear 本集合）。
+        for (Map.Entry<UUID, Integer> entry : new ArrayList<>(seeds.entrySet())) {
             Player host = amon.level().getPlayerByUUID(entry.getKey());
             if (host == null || !GameUtils.isPlayerAliveAndSurvival(host)) {
-                it.remove();
+                seeds.remove(entry.getKey(), entry.getValue());
                 changed = true;
                 continue;
             }
             int ticks = entry.getValue() + 1;
             if (ticks >= INCUBATION_TICKS) {
-                it.remove();
+                seeds.remove(entry.getKey(), entry.getValue());
                 // 控制名额已满（≥3）：不再走附身流程，直接寄生杀死宿主
                 if (controlCount >= MAX_CONTROL_COUNT) {
                     Player hostPlayer = amon.level().getPlayerByUUID(entry.getKey());
@@ -378,12 +389,22 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         return true;
     }
 
-    /** 是否正在附身（此时按 G 完成夺舍）。 */
+    /** 是否正在寄宿（此时按 潜行+技能键 完成夺舍）。 */
     public boolean isPossessing() {
         return possessTarget != null;
     }
 
-    /** 附身每 tick：跟随目标并维持隐身/无敌；目标失效则解除附身。 */
+    /** 客户端：该玩家是否被时之虫标记（潜伏中或已成熟）。供阿蒙透视判定使用。 */
+    public boolean isClientMarked(UUID uuid) {
+        return uuid != null && (clientSeedHosts.contains(uuid) || clientMaturedHosts.contains(uuid));
+    }
+
+    /**
+     * 寄宿每 tick：阿蒙潜入目标体内贴附跟随，<b>不操控宿主</b>；目标失效则解除寄宿。
+     *
+     * <p>
+     * 宿主全程自主行动：不再被施加移动/转向禁止、失明与黑暗，也不会被牵引到阿蒙的位置。
+     */
     private void handlePossessionTick(ServerPlayer amon) {
         if (!(amon.level() instanceof ServerLevel level))
             return;
@@ -394,14 +415,9 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         }
         possessTicks++;
         refreshPossessionEffects(amon);
-        // 阿蒙掌控目标移动：阿蒙隐身自由移动，目标被锁定移动/视角并每 tick 牵引到阿蒙位置；
-        // 二者均无碰撞箱，避免互相拥挤。目标被致盲失明，无法看见阿蒙。
-        target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 10, 0, false, false, false));
-        target.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, false, false, false));
-        target.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 10, 0, false, false, false));
-        target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 10, 0, false, false, false));
-        target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 10, 0, false, false, false));
-        target.teleportTo(level, amon.getX(), amon.getY(), amon.getZ(), amon.getYRot(), amon.getXRot());
+        // 未终局只能寄宿：阿蒙贴附跟随宿主，宿主仍自主行动。
+        amon.teleportTo(level, target.getX(), target.getY(), target.getZ(), amon.getYRot(), amon.getXRot());
+        amon.setDeltaMovement(target.getDeltaMovement());
     }
 
     /**
@@ -883,9 +899,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
         // 仅同步给阿蒙本人（见 shouldSyncWith）：写计数避免对其他人泄露；
-        // 成熟宿主 UUID 与锁定目标也仅发往阿蒙本人，供其背包选目标界面使用。
+        // 潜伏中/成熟宿主 UUID 与锁定目标也仅发往阿蒙本人，供其背包选目标界面与直觉透视使用。
         tag.putInt("Seeds", seeds.size());
         tag.putInt("Matured", maturedHosts.size());
+        net.minecraft.nbt.ListTag seedList = new net.minecraft.nbt.ListTag();
+        for (UUID u : seeds.keySet()) {
+            seedList.add(net.minecraft.nbt.StringTag.valueOf(u.toString()));
+        }
+        tag.put("SeedHosts", seedList);
         net.minecraft.nbt.ListTag maturedList = new net.minecraft.nbt.ListTag();
         for (UUID u : maturedHosts) {
             maturedList.add(net.minecraft.nbt.StringTag.valueOf(u.toString()));
@@ -906,6 +927,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
         clientSeeds = tag.getInt("Seeds");
         clientMatured = tag.getInt("Matured");
+        clientSeedHosts.clear();
+        net.minecraft.nbt.ListTag seedList = tag.getList("SeedHosts", net.minecraft.nbt.Tag.TAG_STRING);
+        for (int i = 0; i < seedList.size(); i++) {
+            try {
+                clientSeedHosts.add(UUID.fromString(seedList.getString(i)));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         clientMaturedHosts.clear();
         net.minecraft.nbt.ListTag maturedList = tag.getList("MaturedHosts", net.minecraft.nbt.Tag.TAG_STRING);
         for (int i = 0; i < maturedList.size(); i++) {

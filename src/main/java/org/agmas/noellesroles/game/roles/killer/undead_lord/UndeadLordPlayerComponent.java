@@ -26,8 +26,6 @@ import org.agmas.noellesroles.content.entity.UndeadEntity;
 import org.agmas.noellesroles.init.ModEntities;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.*;
 
@@ -35,10 +33,22 @@ import java.util.*;
  * 亡灵之主组件（杀手阵营，控场 / 滚雪球）。
  *
  * <p>
- * 统一管理：现存亡灵列表、所有玩家的感染值（衰减 / 满值死亡转化）、感染血条、
- * 瘟疫之雾区域、感染增幅计时，以及专属商店物品的效果结算。
+ * <b>已废弃，不再承担任何游戏逻辑。</b>亡灵之主的全部状态与结算已迁移到 RoleData 实现
+ * {@link org.agmas.noellesroles.role_data.killer.UndeadLordRoleData}（由
+ * {@code ModRoles.UNDEAD_LORD.setRoleData(...)} 挂载）。
+ * </p>
+ * <p>
+ * 本类保留的理由只有一个：{@code ModComponents.UNDEAD_LORD} 这个 CCA 组件键仍在注册表中，
+ * 删掉类会让注册失败。因此这里<b>刻意不再实现</b> {@code ServerTickingComponent} /
+ * {@code ClientTickingComponent}，也不再做任何感染结算，避免与 RoleData 里的结算重复计数。
+ * </p>
+ * <p>
+ * 旧实现曾在此处遍历 {@code infection} 时重入改动同一集合（{@code convertToUndead} →
+ * {@code GameUtils.forceKillPlayer} 跑完整条死亡链 → 职业撤销 → {@code clearState()} 清空该表），
+ * 会抛 {@code ConcurrentModificationException}。该崩溃已随本次迁移彻底移除。
+ * </p>
  */
-public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
+public class UndeadLordPlayerComponent implements RoleComponent {
 
     public static final ComponentKey<UndeadLordPlayerComponent> KEY = ModComponents.UNDEAD_LORD;
 
@@ -271,9 +281,10 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
         fogZones.add(new FogZone(player.position(), ticks));
     }
 
-    // ==================== 每 tick ====================
-    @Override
+    // ==================== 每 tick（已停用） ====================
+    /** 已停用：本类不再实现 CCA 的客户端 tick 接口。 */
     public void clientTick() {
+        // 计时统一由 UndeadLordRoleData.serverTick 负责，此处不再改动任何状态。
 
         // 亡者召唤符冷却计时
         if (summonCharmCooldown > 0) {
@@ -284,7 +295,13 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
         }
     }
 
-    @Override
+    /**
+     * 已停用：本类不再实现 CCA 的服务端 tick 接口，因此不会被组件系统调用。
+     * <p>
+     * 保留方法体仅作历史参考；即便被误调用，{@link org.agmas.noellesroles.role_data.killer.UndeadLordRoleData}
+     * 才是唯一的状态所有者，这里对空表的结算不会产生影响。
+     * </p>
+     */
     public void serverTick() {
         if (!(player.level() instanceof ServerLevel serverLevel)) {
             return;

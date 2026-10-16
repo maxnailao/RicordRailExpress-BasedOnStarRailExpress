@@ -2,6 +2,7 @@ package org.agmas.noellesroles.register;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
@@ -12,6 +13,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.util.SREItemUtils;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -36,7 +38,6 @@ import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
@@ -54,6 +55,7 @@ import org.agmas.noellesroles.packet.VeteranRollS2CPacket;
 import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.innocence.GreatDetectiveRoleData;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 
@@ -530,7 +532,7 @@ public class RiceReceiverRegister {
             }
         });
 
-        // 处理大侦探"目标情况"包：记录某凶手与侦探当前的距离快照
+        // 处理大侦探「目标情况」包：方位快照或生死，每名凶手只能查明一项
         ServerPlayNetworking.registerGlobalReceiver(GreatDetectiveRevealC2SPacket.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
@@ -543,27 +545,44 @@ public class RiceReceiverRegister {
             if (payload.killer() == null)
                 return;
 
-            GreatDetectivePlayerComponent comp = GreatDetectivePlayerComponent.KEY.get(player);
+            GreatDetectiveRoleData comp = RoleData.getNullable(GreatDetectiveRoleData.class, player);
+            if (comp == null)
+                return;
 
             // 至少 3 条线索才能查明目标情况
             if (comp.clueCount(payload.killer()) < 3)
                 return;
-            // 已揭示则冻结，不再刷新（只显示触发时的距离）
-            if (comp.hasRevealedDistance(payload.killer()))
+            // 方位与生死互斥：已查明过任意一项就冻结，不再刷新
+            if (comp.hasTargetReveal(payload.killer()))
                 return;
 
-            int distance = -1;
             Player killer = player.level().getPlayerByUUID(payload.killer());
-            if (killer != null && killer.level() == player.level()
-                    && GameUtils.isPlayerAliveAndSurvival(killer)) {
-                distance = (int) Math.round(player.distanceTo(killer));
-            }
-            comp.setRevealedDistance(payload.killer(), distance);
+            boolean killerAlive = killer != null && killer.level() == player.level()
+                    && GameUtils.isPlayerAliveAndSurvival(killer);
 
-            player.displayClientMessage(
-                    Component.translatable("message.noellesroles.great_detective.target_locked")
-                            .withStyle(ChatFormatting.AQUA),
-                    true);
+            if (payload.mode() == GreatDetectiveRevealC2SPacket.MODE_VITAL) {
+                comp.setRevealedVital(payload.killer(), killerAlive);
+                SRENetworkMessageUtils.sendBroadcast(player,
+                        Component.translatable(killerAlive
+                                        ? "message.noellesroles.great_detective.target_vital_alive"
+                                        : "message.noellesroles.great_detective.target_vital_dead")
+                                .withStyle(killerAlive ? ChatFormatting.GREEN : ChatFormatting.GRAY));
+            } else {
+                int distance = -1;
+                if (killerAlive) {
+                    distance = (int) Math.round(player.distanceTo(killer));
+                }
+                comp.setRevealedDistance(payload.killer(), distance);
+                if (distance < 0) {
+                    SRENetworkMessageUtils.sendBroadcast(player,
+                            Component.translatable("message.noellesroles.great_detective.target_distance_unknown")
+                                    .withStyle(ChatFormatting.GRAY));
+                } else {
+                    SRENetworkMessageUtils.sendBroadcast(player,
+                            Component.translatable("message.noellesroles.great_detective.target_distance", distance)
+                                    .withStyle(ChatFormatting.AQUA));
+                }
+            }
         });
 
         // 处理斗士技能包（扮演者伪装为斗士时可转发使用）

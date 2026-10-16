@@ -109,6 +109,11 @@ public class RoleShopHandler {
         return entries;
     }
 
+    /** 破法者商店：破法药剂的价格（金币） */
+    private static final int SPELLBREAKER_POTION_PRICE = 35;
+    /** 破法者商店：沉默图腾的价格（金币） */
+    private static final int SILENCE_TOTEM_PRICE = 80;
+
     public static void resetOldmanEasterEggState() {
         oldmanEasterEggTriggeredInRound = false;
     }
@@ -326,6 +331,7 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> WORKER_SHOP = new ArrayList<>();
+        ArrayList<ShopEntry> DREAM_SHOP = new ArrayList<>();
 
         // ---- 柜子区的商店（执行者） ----
         {
@@ -1745,31 +1751,16 @@ public class RoleShopHandler {
         }
 
         // 正片开始 (Spellbreaker)
+        // 移植自 StarRailExpress 提交 f6fc8b8f8「修破法者bug并加强破法者」：
+        // 原实现手写了一整份商店清单，漏掉了「疯狂模式」等通用杀手条目。
+        // 这里改为复用通用杀手商店（{@link ShopContent#getDefaultKnifeEntries()}，内含疯狂模式），
+        // 再额外挂上破法者专属的破法药剂 / 沉默图腾。
         {
-            var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), SREConfig.instance().lockpickPrice,
-                    ShopEntry.Type.TOOL));
-            SHOP.add(
-                    new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), SREConfig.instance().crowbarPrice,
-                            ShopEntry.Type.TOOL));
-            SHOP.add(
-                    new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
-            SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), SREConfig.instance().revolverPrice,
-                    ShopEntry.Type.WEAPON));
-            SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), SREConfig.instance().shortShotgunPrice,
-                    ShopEntry.Type.WEAPON));
-            SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), SREConfig.instance().grenadePrice,
-                    ShopEntry.Type.WEAPON));
-            SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 30, ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-            // 关灯 - 使用配置价格
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            List<ShopEntry> SHOP = ShopContent.getDefaultKnifeEntries();
+            SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(),
+                    SPELLBREAKER_POTION_PRICE, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(),
+                    SILENCE_TOTEM_PRICE, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
         }
 
@@ -2023,10 +2014,11 @@ public class RoleShopHandler {
         }
 
         // 占卜家商店 - 晶球（水晶球）可购买
+        // 售价与占卜家职业数据中的常量保持一致（对应开场提示中的价格）
         {
             var SHOP = new java.util.ArrayList<ShopEntry>();
             SHOP.add(new ShopEntry(ModItems.CRYSTAL_BALL.getDefaultInstance(),
-                    org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().divinerCrystalBallPrice,
+                    org.agmas.noellesroles.role_data.innocence.DivinerRoleData.CRYSTAL_BALL_PRICE,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
@@ -2821,7 +2813,7 @@ public class RoleShopHandler {
             List<ShopEntry> entries = new ArrayList<>();
             var SAKUYA_KNIFE = ModItems.THROWING_KNIFE.getDefaultInstance();
             SAKUYA_KNIFE.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(1));
-            entries.add(new ShopEntry(SAKUYA_KNIFE, 250,
+            entries.add(new ShopEntry(SAKUYA_KNIFE, 325,
                     ShopEntry.Type.TOOL));
             entries.add(new ShopEntry(FunnyItems.SHISIYE.getDefaultInstance(), 440,
                     ShopEntry.Type.TOOL));
@@ -3993,6 +3985,64 @@ public class RoleShopHandler {
             // 风弹 - 35金币
             PIGE_SHOP.add(new ShopEntry(net.minecraft.world.item.Items.WIND_CHARGE.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.PIGE_ID, PIGE_SHOP);
+        }
+
+        // ==================== Dream（Dream）商店 ====================
+        {
+            var dreamConfig = org.agmas.noellesroles.config.NoellesRolesConfig.instance();
+            // 铁斧 - 135金币，12耐久，第二次购买半价（动态价格，同杀手刀首购折扣）
+            ItemStack axeDisplay = ModItems.DREAM_AXE.getDefaultInstance();
+            var axeLore = new ArrayList<Component>();
+            axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore3")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            axeDisplay.set(DataComponents.LORE, new ItemLore(axeLore));
+            DREAM_SHOP.add(new org.agmas.noellesroles.content.item.DreamAxeShopEntry(axeDisplay,
+                    dreamConfig.dreamAxePrice));
+            // 巨幕面具 - 400金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具）
+            ItemStack maskDisplay = ModItems.DREAM_MASK.getDefaultInstance();
+            var maskLore = new ArrayList<Component>();
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore3")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskDisplay.set(DataComponents.LORE, new ItemLore(maskLore));
+            DREAM_SHOP.add(new ShopEntry(maskDisplay, dreamConfig.dreamMaskPrice, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (!(player instanceof ServerPlayer sp)) {
+                        return false;
+                    }
+                    return org.agmas.noellesroles.role_data.killer.DreamRoleData
+                            .activateMaskBerserk(sp);
+                }
+            });
+            // 钻石镐 - 90金币（右键像开锁器一样开门；shift撬门50s冷却；无法锁门）
+            ItemStack pickaxeDisplay = ModItems.DREAM_PICKAXE.getDefaultInstance();
+            var pickaxeLore = new ArrayList<Component>();
+            pickaxeLore.add(Component.translatable("item.noellesroles.dream_pickaxe.shop_lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            pickaxeLore.add(Component.translatable("item.noellesroles.dream_pickaxe.shop_lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            pickaxeDisplay.set(DataComponents.LORE, new ItemLore(pickaxeLore));
+            DREAM_SHOP.add(new ShopEntry(pickaxeDisplay,
+                    dreamConfig.dreamPickaxePrice, ShopEntry.Type.TOOL));
+            // 船 - 100金币（强制乘坐陷阱，60s冷却）
+            ItemStack boatDisplay = ModItems.DREAM_BOAT.getDefaultInstance();
+            var boatLore = new ArrayList<Component>();
+            boatLore.add(Component.translatable("item.noellesroles.dream_boat.shop_lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            boatLore.add(Component.translatable("item.noellesroles.dream_boat.shop_lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            boatDisplay.set(DataComponents.LORE, new ItemLore(boatLore));
+            DREAM_SHOP.add(new ShopEntry(boatDisplay,
+                    dreamConfig.dreamBoatPrice, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.DREAM_ID, DREAM_SHOP);
         }
     }
 

@@ -83,5 +83,17 @@ public class NoellesrolesClientAmbientSounds {
               return client.player.hasEffect(ModEffects.TINGJUEGANRAO);
             },
             1.0f, 2, 2));
+    // Dream（Dream）狂暴：MANHUNT_CHASE 追杀音乐，狂暴期间全程循环。
+    // 移植自 StarRailExpress：用 MASTER 声道（与小丑/猫娘/阿蒙等所有职业狂暴音乐一致），
+    // MUSIC 声道会被玩家的音乐音量滑块静音，导致开狂暴时听不到专属追杀音乐。
+    AmbienceUtil.registerBackgroundAmbience(
+        new MyBackgroundAmbience(NRSounds.MANHUNT_CHASE, SoundSource.MASTER,
+            player -> {
+              if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return false;
+              return org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler
+                  .isAnyDreamBerserk();
+            },
+            0.9f, 10, 20));
   }
 }

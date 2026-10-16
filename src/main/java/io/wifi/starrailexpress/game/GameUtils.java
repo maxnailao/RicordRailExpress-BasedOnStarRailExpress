@@ -424,6 +424,11 @@ public class GameUtils {
     }
 
     public static void startGame(ServerLevel world, GameMode gameMode, int time) {
+        // [诊断] 神父回合后「下一局不开始」的排查日志：确认 startGame 是否被调用、是否被守卫提前返回。
+        // 排查完成后可整体删除本段（搜索 "STARTGAME-DIAG"）。
+        SRE.LOGGER.info("[STARTGAME-DIAG] called mode={} isLobby={} isStartingGame={} isRunning={}",
+                gameMode == null ? "null" : gameMode.identifier,
+                SRE.isLobby, isStartingGame, SREGameWorldComponent.KEY.get(world).isRunning());
         if (SRE.isLobby || isStartingGame)
             return;
         if (SREGameWorldComponent.KEY.get(world).isRunning()) {
@@ -465,6 +470,9 @@ public class GameUtils {
             var task = new ServerTaskInfoClasses.OnlySomeBlockResetTask(resetPoints, world, gameMode, time, areas);
             serverTaskQueue.add(task);
         }
+        // [诊断] 见 startGame 开头注释（搜索 "STARTGAME-DIAG"）
+        SRE.LOGGER.info("[STARTGAME-DIAG] reset task queued, queueSize={} isStartingGame={}",
+                serverTaskQueue.size(), isStartingGame);
     }
 
     public static PlayerBodyEntity findPlayerBodyEntity(ServerPlayer player) {
@@ -525,6 +533,11 @@ public class GameUtils {
     public static void trueStartGame(ServerLevel world, GameMode gameMode, int time) {
         if (SRE.isLobby)
             return;
+        // 新一局开始时强制清掉神父「天堂制造」序列。
+        // 这是「本局开始」最确定的节点：若上一局的 session 残留（尤其 pendingOfficialEnd=true），
+        // PriestHeavenManager.allowGameEnd 会在新一局开局后立刻返回 WinStatus.PASSENGERS，
+        // 表现为「一开新局就瞬间判定乘客获胜」。此处不依赖 OnGameStarted 的注册顺序，直接清。
+        org.agmas.noellesroles.game.roles.neutral.priest.PriestHeavenManager.reset(world);
         // 延迟5s
         SRE.LOGGER.info("=".repeat(20));
         SRE.LOGGER.info("Game Started!");
@@ -1089,6 +1102,11 @@ public class GameUtils {
 
         RefugeeComponent.KEY.get(world).reset();
         world.setWeatherParameters(6000, 0, false, false);
+        // [诊断] 见 startGame 开头注释（搜索 "STARTGAME-DIAG"）：
+        // 若这里仍有未完成的重置任务，说明「下一局已排队的开局流程」被本局结束清掉了，
+        // 之后若无人再次调用 startGame，世界就会停在「无对局」状态（表现为回合结束后卡死）。
+        SRE.LOGGER.info("[STARTGAME-DIAG] stopGame clearing queue, queueSize={} isStartingGame={}",
+                serverTaskQueue.size(), isStartingGame);
         serverTaskQueue.clear();
         serverAsynTaskLists.clear();
 
@@ -1145,6 +1163,16 @@ public class GameUtils {
         roundEnd.CustomWinnerPlayers.clear();
 
         SREGameTimeComponent.KEY.get(world).reset();
+        // 回合结束兜底：彻底清掉「时间停止」。
+        // 时停会冻结服务端 tick，而解除时停的倒计时依赖服务端 tick —— 若「时停没走完这一局就结束了」
+        // （神父「天堂制造」加速阶段即为此类时序），倒计时永远走不完，玩家会永久残留 TIME_STOP 效果，
+        // 客户端一整套 mixin 会持续封锁移动/鼠标/用物品并一直绘制时停画面 → 表现为回合结束后卡死。
+        org.agmas.noellesroles.content.effects.TimeStopEffect.forceStop(world);
+        // 回合结束兜底：直接清掉神父「天堂制造」序列（不依赖 OnGameEnd 监听器的注册顺序）。
+        // 若 session 残留（尤其 pendingOfficialEnd=true），下一局会被 PriestHeavenManager.allowGameEnd
+        // 立刻判定为「乘客获胜」，即「一开新局就瞬间结束」；同时客户端会一直收到非 IDLE 的
+        // priest_heaven_state，导致时停 HUD/滤镜挂在屏幕上不消失。
+        org.agmas.noellesroles.game.roles.neutral.priest.PriestHeavenManager.reset(world);
         gameComponent.clearRoleMap(false);
         gameComponent.resetPerPlayerKills(); // 重置本局击杀数
         gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
@@ -1500,6 +1528,8 @@ public class GameUtils {
 
     public static void resetPlayer(ServerPlayer player) {
         SREItemUtils.clearItem(player, (item) -> true, -1);
+        // 职业数据（RoleData）：重置玩家时一并清空
+        io.wifi.starrailexpress.cca.SRERoleDataPlayerComponent.KEY.get(player).clear();
         SREPlayerMoodComponent.KEY.get(player).clear();
         SREPlayerShopComponent.KEY.get(player).clear();
         io.wifi.starrailexpress.cca.DynamicShopComponent.KEY.get(player).clear();

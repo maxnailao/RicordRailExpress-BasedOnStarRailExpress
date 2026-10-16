@@ -11,7 +11,6 @@ import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class THEventHandler {
     public static void registerEvents() {
@@ -48,13 +47,13 @@ public class THEventHandler {
     }
 
     public static String getRandomDeathReason() {
-        ArrayList<ResourceLocation> list = new ArrayList<>(List.of(DeathReasons.KNIFE,
-                DeathReasons.REVOLVER,
-                DeathReasons.DERRINGER,
-                DeathReasons.BAT,
-                DeathReasons.GRENADE,
-                DeathReasons.POISON,
-                DeathReasons.ARROW));
+        // 移植自 SRE THRemiliaRole.getRandomDeathReason：使用完整的死亡原因集合，
+        // 而不是原来那 7 个硬编码的原因。
+        ArrayList<ResourceLocation> list = new ArrayList<>(
+                io.wifi.starrailexpress.game.GameConstants.DeathReasons.getAllDeathReasons());
+        if (list.isEmpty()) {
+            return DeathReasons.GENERIC.toString();
+        }
         Collections.shuffle(list);
         return list.getFirst().toString();
     }

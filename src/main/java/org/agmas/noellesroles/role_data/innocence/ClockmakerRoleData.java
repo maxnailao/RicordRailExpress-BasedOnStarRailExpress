@@ -1,6 +1,22 @@
-package org.agmas.noellesroles.game.roles.innocence.clock_maker;
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
-import io.wifi.starrailexpress.api.RoleComponent;
+package org.agmas.noellesroles.role_data.innocence;
+
+import io.wifi.starrailexpress.api.data.RoleDataContext;
+import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -14,13 +30,10 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.ConfigWorldComponent;
-import org.agmas.noellesroles.component.ModComponents;
 import org.jetbrains.annotations.NotNull;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
- * 钟表匠组件
+ * 钟表匠职业数据
  *
  * 管理"时间削减"技能：
  * - 能看到游戏时间
@@ -29,10 +42,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * - 世界时间加快2000tick
  * - 游戏时间最多减少至1分30秒
  */
-public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingComponent {
-
-    /** 组件键 - 用于从玩家获取此组件 */
-    public static final ComponentKey<ClockmakerPlayerComponent> KEY = ModComponents.CLOCKMAKER;
+public class ClockmakerRoleData extends SimpleRoleData {
 
     // ==================== 常量定义 ====================
 
@@ -50,25 +60,18 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
 
     // ==================== 状态变量 ====================
 
-    private final Player player;
-
     /** 是否正在使用技能 */
     public boolean isUsingSkill = false;
 
     /**
      * 构造函数
      */
-    public ClockmakerPlayerComponent(Player player) {
-        this.player = player;
-    }
-
-    @Override
-    public Player getPlayer() {
-        return player;
+    public ClockmakerRoleData(RoleDataContext context) {
+        super(context);
     }
 
     /**
-     * 重置组件状态
+     * 重置状态
      * 在游戏开始时或角色分配时调用
      */
     @Override
@@ -102,7 +105,6 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
             player.displayClientMessage(Component.translatable("message.noellesroles.clockmaker.already_using").withStyle(ChatFormatting.RED), true);
             return true;
         }
-        ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) player);
         // 检查游戏时间是否已到最小值
         SREGameTimeComponent gameTime = SREGameTimeComponent.KEY.get(player.level());
         long currentTime = gameTime.getTime();
@@ -121,6 +123,8 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
         // 扣除金币
         shopComponent.balance -= SKILL_COST;
         shopComponent.sync();
+        // 只有在所有校验通过并扣款后才计入"使用过技能"
+        ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) player);
 
         // 执行时间削减
         executeTimeReduction();
@@ -204,13 +208,6 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
         return shopComponent.balance >= SKILL_COST;
     }
 
-    /**
-     * 同步到客户端
-     */
-    public void sync() {
-        ModComponents.CLOCKMAKER.sync(this.player);
-    }
-
     @Override
     public void serverTick() {
         // 验证是钟表匠
@@ -233,12 +230,5 @@ public class ClockmakerPlayerComponent implements RoleComponent, ServerTickingCo
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.isUsingSkill = tag.contains("isUsingSkill") && tag.getBoolean("isUsingSkill");
     }
-    
-    @Override
-    public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-    }
 
-    @Override
-    public void readFromNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-    }
 }

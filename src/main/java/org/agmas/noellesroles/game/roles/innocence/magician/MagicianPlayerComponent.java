@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -103,7 +104,11 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
 
     public void startDisguiseRandomRole() {
         ArrayList<ResourceLocation> killerRoles = new ArrayList<>();
-        // 白名单：允许模拟的杀手职业
+        // 白名单：允许模拟的杀手职业。
+        // 移植自 StarRailExpress 新版 MagicianRoleData#startDisguiseRandomRole：
+        // 上游把可扮演名单扩到了 23 个；其中上游有、而本仓库没有的职业（如 YOULU 幽露）按需求跳过，
+        // 另外补入本仓库自己特有的杀手，让魔术师的可扮演范围更宽。
+        // ── 与上游共有的基础名单 ──
         killerRoles.add(ModRoles.MORPHLING_ID);
         killerRoles.add(ModRoles.BLOOD_FEUDIST_ID);
         killerRoles.add(ModRoles.WATCHER_ID);
@@ -121,6 +126,39 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
         killerRoles.add(ModRoles.DELAYER_ID);
         killerRoles.add(ModRoles.SILENCER_ID);
         killerRoles.add(ModRoles.SKINCRAWLER_ID);
+        // ── 上游新增、本仓库同样存在的职业 ──
+        killerRoles.add(ModRoles.EXAMPLER_ID);
+        killerRoles.add(ModRoles.WARLOCK_ID);
+        killerRoles.add(BounsRoles.CREEPER.identifier());
+        killerRoles.add(SERoles.NECROMANCER.identifier());
+        killerRoles.add(BounsRoles.CAT_NECROMANCER.identifier());
+        // ── 上游没有的职业 ──
+        killerRoles.add(ModRoles.BOMBER_ID);
+        killerRoles.add(ModRoles.CONSPIRATOR_ID);
+        killerRoles.add(ModRoles.NINJA_ID);
+        killerRoles.add(ModRoles.MANIPULATOR_ID);
+        killerRoles.add(ModRoles.EMBALMER_ID);
+        killerRoles.add(ModRoles.MA_CHEN_XU_ID);
+        killerRoles.add(ModRoles.NOSTALGIST_ID);
+        killerRoles.add(ModRoles.UNDEAD_LORD_ID);
+        killerRoles.add(ModRoles.WIZARD_ID);
+        killerRoles.add(ModRoles.WRAITH_ASSASSIN_ID);
+        killerRoles.add(ModRoles.WATER_GHOST_ID);
+        killerRoles.add(ModRoles.SHADOW_FALCON_ID);
+        killerRoles.add(ModRoles.SPELLBREAKER_ID);
+        killerRoles.add(ModRoles.DIO_ID);
+        // ── 本仓库特有的杀手 ──
+        killerRoles.add(ModRoles.BANYANZHE_ID);
+        killerRoles.add(ModRoles.BETTER_KILLER_GHOST_ID);
+        killerRoles.add(ModRoles.BLOODHOUND_ID);
+        killerRoles.add(ModRoles.ELING_APEX_ID);
+        killerRoles.add(ModRoles.GHOSTOFANYING_ID);
+        killerRoles.add(ModRoles.GHOUL_ID);
+        killerRoles.add(ModRoles.HUANMOZHE_ID);
+        killerRoles.add(ModRoles.HUANSHUSHI_ID);
+        killerRoles.add(ModRoles.POACHER_ID);
+        killerRoles.add(ModRoles.RECALL_KILLER_ID);
+        killerRoles.add(ModRoles.SNOW_HUNTER_ID);
 
         if (killerRoles.isEmpty()) {
             killerRoles.add(TMMRoles.KILLER.identifier());

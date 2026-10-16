@@ -133,6 +133,13 @@ public class RoleInitialItems {
         }
 
         {
+            // 女仆咲夜：初始武器（左轮手枪）。移植自 SRE RoleInitialItems 的 sakuya 初始物品。
+            List<Supplier<ItemStack>> item = new ArrayList<>();
+            item.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+            INITIAL_ITEMS_MAP.put(RedHouseRoles.MAID_SAKUYA, item);
+        }
+
+        {
             // JOJO
             List<Supplier<ItemStack>> items = new ArrayList<>();
             items.add(() -> FunnyItems.BOWEN_BADGE.getDefaultInstance());

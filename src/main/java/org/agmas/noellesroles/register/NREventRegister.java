@@ -29,7 +29,11 @@ public class NREventRegister {
 
         // 注册疫使胜利检测
         org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.registerEvent();
+        // 注册神父「天堂制造」序列事件（胜负拦截 + 咏诵/加速推进）
+        org.agmas.noellesroles.game.roles.neutral.priest.PriestEventHandler.register();
         // 破镜重圆结局彩蛋：镜像世界终幕检测
         org.agmas.noellesroles.game.MirrorReunionEndEgg.register();
+        // 注册「入梦」药水效果处理（睡觉时恢复理智并给予迅捷）
+        org.agmas.noellesroles.content.effects.DreamEffectHandler.register();
     }
 }

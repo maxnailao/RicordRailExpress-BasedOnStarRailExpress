@@ -56,6 +56,31 @@ public class ImmersiveFilterShader {
             bindAfterlifeTextures(mc, afterlife.getInPass());
         }
         addPass(mc, "dreamcore", ModEffects.DREAMCORE_FILTER, 0.7f);
+        addMadeInHeavenPass(mc);
+    }
+
+    // 神父「天堂制造」：强度由 PriestHeavenClient 随序列相位平滑爬升，时间轴随强度加快
+    private void addMadeInHeavenPass(Minecraft mc) {
+        post.addSinglePassEntry("made_in_heaven", pass -> process(mc.player, () -> {
+            float want = PriestHeavenClient.shaderStrength();
+            if (want <= 0.01f) {
+                return false;
+            }
+            totalTime += 0.03f + want * 0.05f;
+            var effect = pass.getEffect();
+            if (effect == null) {
+                return false;
+            }
+            var strength = effect.safeGetUniform("Strength");
+            if (strength != null) {
+                strength.set(want);
+            }
+            var time = effect.safeGetUniform("Time");
+            if (time != null) {
+                time.set(totalTime);
+            }
+            return true;
+        }));
     }
 
     // 破镜重圆：药水效果驱动的画面坍缩滤镜，强度由场景管理器平滑过渡。

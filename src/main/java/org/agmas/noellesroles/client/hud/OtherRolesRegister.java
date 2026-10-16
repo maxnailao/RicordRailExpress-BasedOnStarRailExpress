@@ -88,6 +88,10 @@ public class OtherRolesRegister {
         ConvictHud.register();
         KidnapperHud.register();
         KidnappedHud.register();
+        // 船长·舱门调度 HUD（前摇倒计时 / 选门提示）
+        ConductorHud.register();
+        // 厨师：当前选择的盘子类型（食物盘 / 饮料盘）与切换键提示
+        ChefHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

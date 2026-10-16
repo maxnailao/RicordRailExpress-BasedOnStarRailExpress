@@ -65,6 +65,7 @@ import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComp
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.RoleShopHandler;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -834,6 +835,18 @@ public class NRDeathEvents {
     // --- OnPlayerDeathWithKiller ---
 
     private static void registerOnPlayerDeathWithKiller() {
+        // 苦力怕被左轮手枪击杀 → 就地爆炸（命中的玩家 > 5 时 1 秒后再炸一次）
+        // 移植自 StarRailExpress 的 CreeperRoleData#onRevolverDeath 注册块
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (!(victim instanceof ServerPlayer creeper)
+                    || !GameConstants.DeathReasons.REVOLVER.equals(deathReason))
+                return;
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(creeper.level());
+            if (gameWorld != null && gameWorld.isRole(creeper, BounsRoles.CREEPER)) {
+                org.agmas.noellesroles.game.roles.killer.creeper.CreeperPlayerComponent.onRevolverDeath(creeper);
+            }
+        });
+
         // 渡鸦击杀目标
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
             if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN))

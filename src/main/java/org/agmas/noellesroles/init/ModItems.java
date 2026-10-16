@@ -1359,6 +1359,71 @@ public class ModItems {
                     new Item.Properties().stacksTo(1)
                             .attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
             "scarlet_perception_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+
+    // ==================== Dream（Dream）专属 ====================
+    /**
+     * Dream 的铁斧
+     * - 12点耐久，命中消耗1点；商店第二次购买半价
+     * - 左键：蓄力条满才能攻击，扣虚拟血量（平A 9 / 跳劈 12；狂暴 12 / 20），命中眩晕
+     * - 右键：原地跳跃（0.2s冷却）
+     */
+    public static final Item DREAM_AXE = register(
+            new org.agmas.noellesroles.content.item.DreamAxeItem(
+                    new Item.Properties().stacksTo(1).durability(12)
+                            // 斧头攻速：蓄力条 ~1.1 秒充满（伤害走虚拟血量，原版攻击力无效）
+                            .attributes(AxeItem.createAttributes(Tiers.IRON, 0.0F, -3.1F))),
+            "dream_axe", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    /**
+     * Dream 的钻石剑
+     * - 继承原版钻石剑（属性/材质/耐久与原版一致），攻击逻辑复刻原版（蓄力/暴击/横扫）
+     * - 伤害扣除的是虚拟血量
+     */
+    public static final Item DREAM_DIAMOND_SWORD = register(
+            new org.agmas.noellesroles.content.item.DreamDiamondSwordItem(
+                    new Item.Properties().stacksTo(1).durability(12)
+                            // 与原版钻石剑完全一致：攻击力 3+4=7、攻速 -2.4
+                            .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 3,
+                                    -2.4F))),
+            "dream_diamond_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    /**
+     * Dream 的重锤
+     * - 继承原版重锤（属性/材质/耐久与原版一致），攻击逻辑复刻原版（下落高度加伤/坠击击退/免摔伤）
+     * - 伤害扣除的是虚拟血量，且无视一切护盾
+     */
+    public static final Item DREAM_MACE = register(
+            new org.agmas.noellesroles.content.item.DreamMaceItem(
+                    new Item.Properties().stacksTo(1).durability(12)
+                            .attributes(MaceItem.createAttributes())),
+            "dream_mace", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    /**
+     * 巨幕面具
+     * - 右键：Dream 进入狂暴状态（冷却 120s）；商店购买时直接触发（不入背包）
+     */
+    public static final Item DREAM_MASK = register(
+            new org.agmas.noellesroles.content.item.DreamMaskItem(new Item.Properties().stacksTo(1)),
+            "dream_mask", ROLE_ITEMS_GROUP);
+    /**
+     * Dream 的钻石镐
+     * - 右键像开锁器一样开门；潜行+右键撬开门（无法锁门），破坏动静很大
+     */
+    public static final Item DREAM_PICKAXE = register(
+            new org.agmas.noellesroles.content.item.DreamPickaxeItem(new Item.Properties().stacksTo(1)),
+            "dream_pickaxe", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    /**
+     * Dream 的船
+     * - 对地面使用：放置一条船，强制周围玩家乘坐，10s后消失；60s冷却
+     */
+    public static final Item DREAM_BOAT = register(
+            new org.agmas.noellesroles.content.item.DreamBoatItem(new Item.Properties().stacksTo(1)),
+            "dream_boat", ROLE_ITEMS_GROUP);
+    /**
+     * Dream 酿的酒
+     * - 制酒技能产物；喝下隐身 5s，期间无法攻击、无法受伤
+     */
+    public static final Item DREAM_WINE = register(
+            new org.agmas.noellesroles.content.item.DreamWineItem(new Item.Properties().stacksTo(1)),
+            "dream_wine", ROLE_ITEMS_GROUP, CONSUMABLES_GROUP);
+
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     static {
@@ -1369,7 +1434,6 @@ public class ModItems {
         ExamplerPsychoItemStack.set(DataComponents.ITEM_NAME,
                 Component.translatable("itemstack.exampler.psychoitem.item_name"));
         ChargeableItemRegistry.register(ANTIDOTE_REAGENT, new AntidoteReagentChargeItem());
-        ChargeableItemRegistry.register(FunnyItems.BOWEN_BADGE, new BowenBadgeChargeItem());
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE, new StalkerKnifeChargeItem());
         ChargeableItemRegistry.register(ModItems.SILENCE_TOTEM, new SilenceTotemChargeItem());
         ChargeableItemRegistry.register(ModItems.STALKER_KNIFE_OFFHAND, new StalkerKnifeChargeItem());

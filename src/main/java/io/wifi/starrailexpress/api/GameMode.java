@@ -738,6 +738,10 @@ public abstract class GameMode {
                 TrainVoicePlugin.addPlayer(victim.getUUID());
             }
             GameUtils.recordPlayerKill(killer, victim, deathReason, true);
+
+            // 移植自 StarRailExpress：整条死亡流程走完后再广播一次，
+            // 供「击杀后把死者转成仆从」这类必须先死透才能改职业的逻辑使用。
+            OnPlayerDeathWithKiller.FINAL_EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
         }
     }
 

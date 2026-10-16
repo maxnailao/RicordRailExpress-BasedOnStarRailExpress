@@ -225,6 +225,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
+        // Dream（Dream）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
+        org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler.register();
         // 破镜重圆：药水驱动的客户端坍缩/还原与坠落方块动画
         MirrorReunionSceneManager.register();
         // 视觉干扰花屏覆盖渲染
@@ -235,6 +237,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0x33707078);
             }
         });
+        // 神父「天堂制造」：全屏时钟 HUD 与滤镜强度推进
+        org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT
+                .register(PriestHeavenClient::renderHud);
         // 注册游戏结束事件，清除建筑师客户端墙
         {
             NewspaperItem.runner = (stack, hand) -> {
@@ -263,6 +268,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
+            // 厨师：清除所有「客户端」食物盘 / 饮料盘
+            ClientChefTrayManager.clearAll();
+            // 神父「天堂制造」：结算时播放尾奏并复位客户端序列状态
+            if (PriestHeavenClient.consumePendingEnding()) {
+                PriestHeavenClient.playEnding();
+            }
+            PriestHeavenClient.reset();
             // 关闭推理师罗盘界面
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.screen instanceof ReasonerCompassScreen) {
@@ -282,6 +294,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                         ctx));
 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
+
+        // 厨师「客户端」食物盘 / 饮料盘：盘内物品的渲染（BE 由 ClientChefTrayManager 在客户端挂上）
+        BlockEntityRenderers.register(ModBlocks.CHEF_TRAY_BLOCK_ENTITY,
+                org.agmas.noellesroles.client.render.ChefPlateRenderer::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.LOTTERY_MACHINE_BLOCK, RenderType.translucent());
@@ -304,6 +320,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
                         registrationHelper.register(new C4BackFeatureRenderer(pr));
                         registrationHelper.register(new HandCuffsFeatureRenderer(pr));
+                        // 欧拉一拳：持有时手臂呈金色包裹（第三人称）
+                        registrationHelper.register(new OraGoldArmFeatureRenderer(pr));
                     }
                 });
 
@@ -535,6 +553,19 @@ public class NoellesrolesClient implements ClientModInitializer {
                             .setScreen(new org.agmas.noellesroles.client.screen.ConvictChoiceScreen(payload)));
                 });
 
+        // 神父：天堂序列状态同步（HUD / 滤镜 / 镜头）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.PriestHeavenStateS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> PriestHeavenClient.apply(payload));
+                });
+
+        // 神父：服务端通知开启「天堂制造」咏诵界面
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> context.client()
+                            .setScreen(new org.agmas.noellesroles.client.screen.PriestChantScreen()));
+                });
+
         // 点穴大师：收到穴位同步后更新世界内身体穴位状态（不再打开全屏界面）
         ClientPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.packet.DianxueMasterSyncS2CPacket.ID, (payload, context) -> {
@@ -658,11 +689,17 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
 
+        // 厨师「客户端」食物盘 / 饮料盘：服务端广播的增删改（PLACE / UPDATE / REMOVE）
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ChefTrayS2CPacket.ID,
+                (payload, context) -> context.client().execute(() -> ClientChefTrayManager.handle(payload)));
+
         // 每 tick 清理过期的翻滚动画状态
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level != null) {
                 VeteranRollTracker.cleanup(client.level.getGameTime());
             }
+            // 厨师盘子：恢复被破坏 / 被服务端区块更新覆盖的盘子
+            ClientChefTrayManager.tick();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
@@ -1273,6 +1310,14 @@ public class NoellesrolesClient implements ClientModInitializer {
                     });
                 });
 
+        // 船长·舱门调度：收到可选房间门列表后打开选门界面（关闭界面即回传取消）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.ConductorDoorListS2CPacket.ID, (payload, context) -> {
+                    var client = context.client();
+                    client.execute(() -> client
+                            .setScreen(new org.agmas.noellesroles.client.screen.ConductorDoorSelectScreen(payload.doors())));
+                });
+
         AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
         // 幻灵附身期间：屏蔽聊天栏，不接收其他玩家发送的聊天消息（发送已由 CHAT_BAN 拦截）
@@ -1291,6 +1336,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             RoleManageConfigUI.RoleEnableStatus.clear();
             RoleManageConfigUI.ModifierEnableStatus.clear();
             ClientRoleRosterCache.clear();
+            // 厨师：断线时清掉客户端残留的盘子
+            ClientChefTrayManager.clearAll();
         });
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -1336,6 +1383,16 @@ public class NoellesrolesClient implements ClientModInitializer {
                             }
                         });
             }
+            // 移植自 StarRailExpress：检测「上一次有 → 这一次没有」时清除时停缓存。
+            // 这些缓存是 static 字段，在单人游戏里与客户端同处一个 JVM，跨「退出存档 / 重进」不会自动清空。
+            // 若不清，重进世界后 GameTimeFreezeMixin（把客户端时间钉在 freezeStatedTime）与
+            // TimeStopShader（按 freezeMaxTime 算进度）仍按时停状态工作 —— 表现为画面一直挂着时停、
+            // 操作被封锁，必须重启整个客户端才能恢复。
+            boolean currentHasTimeStop = client.player.hasEffect(ModEffects.TIME_STOP);
+            if (hasTimeStop.get() && !currentHasTimeStop) {
+                clearTimeStopCache();
+            }
+            hasTimeStop.set(currentHasTimeStop);
         });
         // 操纵师附身：相机绑定到目标 + 远程驱动目标移动
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -1885,5 +1942,28 @@ public class NoellesrolesClient implements ClientModInitializer {
             return entry != null && entry.getGameMode() == GameType.ADVENTURE;
         }
         return false;
+    }
+
+    /** 上一次客户端 tick 时本地玩家是否处于「时间停止」状态（用于检测状态切换）。 */
+    private static final java.util.concurrent.atomic.AtomicBoolean hasTimeStop = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
+
+    /**
+     * 清除客户端的「时间停止」静态缓存（移植自 StarRailExpress）。
+     *
+     * <p>这些字段都是 static：{@code clientPositions} / {@code canMovePlayers} /
+     * {@code freezeStatedTime} / {@code freezeMaxTime}。在单人游戏里客户端与服务端同处一个 JVM，
+     * 跨「退出存档 / 重进世界」不会自动清空；只要残留，时停的客户端 mixin 与画面就会继续生效，
+     * 导致重进世界也玩不了，必须重启客户端。回合开始 / 结束时都应调用一次。</p>
+     */
+    public static void clearTimeStopCache() {
+        Minecraft.getInstance().execute(() -> {
+            clientPositions.clear();
+            TimeStopEffect.canMovePlayers.clear();
+            TimeStopEffect.freezeStatedTime = 0;
+            TimeStopEffect.freezeMaxTime = 0;
+            lastTimeStopRenderPlayer.clear();
+            hasTimeStop.set(false);
+        });
     }
 }

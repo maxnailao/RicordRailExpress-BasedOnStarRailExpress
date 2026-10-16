@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.creeper;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
@@ -19,6 +20,9 @@ import org.agmas.noellesroles.role.BounsRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 苦力怕组件
@@ -218,6 +222,66 @@ public class CreeperPlayerComponent implements RoleComponent, ServerTickingCompo
      */
     public void sync() {
         // ModComponents.CREEPER.sync(this.player);
+    }
+
+    // ==================== 被左轮击杀后的爆炸（移植自 SRE CreeperRoleData） ====================
+
+    /**
+     * 在固定位置执行一次爆炸，并返回被命中的玩家数量。
+     * <p>
+     * 先统计目标、再逐个击杀：这样即使目标有免死能力（护盾 / 夺舍续命等），也仍然算作「被命中」。
+     * </p>
+     *
+     * @param level        爆炸所在的服务端世界
+     * @param pos          爆炸中心
+     * @param damageSource 伤害来源（苦力怕本人，不会被这次爆炸击杀）
+     * @param radius       爆炸半径（格）
+     * @return 被命中的玩家数量
+     */
+    private static int explodeAt(ServerLevel level, Vec3 pos, Player damageSource, float radius) {
+        List<Player> targets = new ArrayList<>();
+        for (Player target : level.players()) {
+            if (!target.isSpectator() && target != damageSource
+                    && target.distanceToSqr(pos) <= radius * radius) {
+                targets.add(target);
+            }
+        }
+
+        for (Player target : targets) {
+            GameUtils.killPlayer(target, true, damageSource, GameConstants.DeathReasons.GRENADE);
+        }
+
+        level.playSound(null, pos.x, pos.y, pos.z,
+                SoundEvents.GENERIC_EXPLODE, SoundSource.MASTER, 4.0F, 1.0F);
+        spawnRainbowParticlesAt(level, pos);
+        return targets.size();
+    }
+
+    /**
+     * 苦力怕被左轮手枪击杀时触发：就地产生一次半径 5 格的爆炸；
+     * 若这次爆炸命中了超过 5 名玩家，则 1 秒后再产生一次。
+     *
+     * @param creeper 已被左轮击杀的苦力怕
+     */
+    public static void onRevolverDeath(ServerPlayer creeper) {
+        if (creeper == null || !(creeper.level() instanceof ServerLevel level))
+            return;
+
+        Vec3 explosionPos = creeper.position();
+        int hitCount = explodeAt(level, explosionPos, creeper, NORMAL_RADIUS);
+        if (hitCount > 5) {
+            io.wifi.starrailexpress.util.Scheduler.schedule(
+                    () -> explodeAt(level, explosionPos, creeper, NORMAL_RADIUS), 20);
+        }
+    }
+
+    /** 向 64 格内的玩家广播彩虹爆炸区域表现（静态版，供左轮击杀路径复用）。 */
+    private static void spawnRainbowParticlesAt(ServerLevel level, Vec3 pos) {
+        for (ServerPlayer p : level.players()) {
+            if (p.distanceToSqr(pos) <= 4096) {
+                ServerPlayNetworking.send(p, new CreateCreeperBombAreaPacket(pos));
+            }
+        }
     }
 
     // ==================== Tick 处理 ====================

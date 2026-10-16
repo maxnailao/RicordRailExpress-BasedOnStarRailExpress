@@ -1,8 +1,24 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.content.item.api.SREItemProperties;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -11,7 +27,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.config.NoellesRolesConfig;
 
 import java.util.List;
 
@@ -22,23 +37,38 @@ import java.util.List;
  * - 左键攻击玩家时为目标增加感染值，每次攻击消耗 1 点耐久。
  * - 耐久耗尽后<b>不会消失</b>，而是进入充能冷却；冷却结束后自动恢复满耐久。
  * </p>
- * 攻击逻辑在服务端 {@link BoneStaffHandler}（{@code AttackEntityCallback}）中实现，
- * 本类负责物品定义、耐久自动恢复与提示。
+ * 攻击逻辑在服务端 {@link BoneStaffHandler} 中实现（{@code onServerAttack} 为主路径），
+ * 本类负责物品定义、耐久自动恢复与提示。左键命中玩家只注入感染，不造成击杀。
  */
 public class BoneStaffItem extends Item implements SREItemProperties.LeftClickHurtable {
+    /**
+     * 骨杖每次攻击为玩家注入的感染值（写死在代码中，不再读取配置）。
+     * 耐久上限为 5，5 次攻击累计 150% 感染值，配合衰减也能在耐久耗尽前稳定致死。
+     */
+    public static final float BONE_STAFF_INFECTION_PER_HIT = 30.0f;
+
     public BoneStaffItem(Properties settings) {
         super(settings);
     }
 
-    /** 骨杖逻辑耐久（攻击次数），与提示及恢复逻辑保持一致。 */
+    /** 骨杖逻辑耐久（攻击次数），写死在代码中，不再读取配置。 */
+    public static final int BONE_STAFF_MAX_DURABILITY = 5;
+
     public static int maxDurability() {
-        return Math.max(1, NoellesRolesConfig.HANDLER.instance().undeadLordBoneStaffDurability);
+        return BONE_STAFF_MAX_DURABILITY;
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
-        // 仅用于触发挥动动作，攻击逻辑在攻击回调中实现
+        // 仅用于触发挥动动作，攻击逻辑在 onServerAttack / BoneStaffHandler 中实现
         return InteractionResultHolder.pass(user.getItemInHand(hand));
+    }
+
+    @Override
+    public boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+        BoneStaffHandler.tryApplyInfection(attacker, target, mainhandItem);
+        // 取消原版击杀，仅注入感染。
+        return false;
     }
 
     @Override
@@ -55,12 +85,11 @@ public class BoneStaffItem extends Item implements SREItemProperties.LeftClickHu
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag type) {
-        NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
         int max = maxDurability();
         tooltip.add(Component.translatable("item.noellesroles.bone_staff.tooltip.durability",
                 max - stack.getDamageValue(), max).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("item.noellesroles.bone_staff.tooltip.infection",
-                (int) config.undeadLordBoneStaffInfection).withStyle(ChatFormatting.DARK_PURPLE));
+                (int) BONE_STAFF_INFECTION_PER_HIT).withStyle(ChatFormatting.DARK_PURPLE));
         super.appendHoverText(stack, context, tooltip, type);
     }
 }

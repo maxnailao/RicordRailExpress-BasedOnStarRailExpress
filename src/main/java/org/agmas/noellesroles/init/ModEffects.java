@@ -23,6 +23,7 @@ import org.agmas.noellesroles.content.effects.NightmareEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.content.effects.VirtualHealthRestoreEffect;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
 import org.agmas.noellesroles.role.ModRoles;
@@ -180,6 +181,17 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> NOSTALGIST_BACKWORLD = register("nostalgist_backworld",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBFBFBF));
+
+    /**
+     * 里世界·同界描边
+     * - 中性效果，青白色
+     * - 仅作为「客户端渲染标记」：当本地玩家自身也持有该效果时，才会给同样持有该效果的
+     *   其他玩家绘制发光轮廓（类似原版发光，但只有里世界内的人能互相看见）。
+     * - 由 {@code BackworldOutlineEffectSync} 同步给所有客户端（原版只会把效果同步给持有者本人）。
+     * - 使用方：怀旧者里世界、布袋鬼里世界。
+     */
+    public static final Holder<MobEffect> BACKWORLD_OUTLINE = register("backworld_outline",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7FE7E0));
 
     /**
      * 寻血猎犬·狂野猎人疯魔标记
@@ -387,6 +399,37 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
 
     /**
+     * 入梦（Dream 体系）：拥有者在睡觉时恢复理智并获得迅捷，触发一次后清除。
+     * 等级越高，恢复的理智与给予的迅捷等级越高。
+     * 触发逻辑见 {@link org.agmas.noellesroles.content.effects.DreamEffectHandler}。
+     */
+    public static final Holder<MobEffect> ENTER_DREAM = register("enter_dream",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x8E7CFF));
+
+    /**
+     * 颤抖（Dream 体系）。
+     * - 有害效果，暗红色
+     * - 拥有者因恐惧而双手发抖：客户端准星/视角会缓慢随机漂移。
+     * 漂移逻辑见
+     * {@code org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler}
+     * （客户端 tick，纯本地视角偏移，不发包）。
+     * Dream（Dream）狂暴时被"看到"的玩家会获得此效果。
+     */
+    public static final Holder<MobEffect> TREMBLE = register("tremble",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B1A1A));
+
+    /**
+     * 虚拟血量恢复（Dream 虚拟血量体系）
+     * - 有益效果，粉红色
+     * - 拥有此效果的玩家每秒恢复 1 点虚拟血量（等级越高恢复越多），
+     *   行为见 {@link VirtualHealthRestoreEffect} 与
+     *   {@code org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent#restore}。
+     *   移植自 SRE 的同名效果。
+     */
+    public static final Holder<MobEffect> VIRTUAL_HEALTH_RESTORE = register("virtual_health_restore",
+            new VirtualHealthRestoreEffect(MobEffectCategory.BENEFICIAL, 0xFF6B9D));
+
+    /**
      * 视野迷雾
      * - 有害效果，灰蓝色
      * - 拥有者视野被浓雾笼罩；等级越高雾的距离越远（看得越远）。
@@ -514,6 +557,27 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> HAKONIWA_VISION = register("hakoniwa_vision",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9CCFB8));
+
+    /**
+     * 胆小鬼修饰符的标记效果（修饰符 {@code noellesroles:coward} 持续挂载）。
+     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     */
+    public static final Holder<MobEffect> COWARD = register("coward",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6B8E6B));
+
+    /**
+     * 暴怒修饰符的标记效果（修饰符 {@code noellesroles:rage} 持续挂载）。
+     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     */
+    public static final Holder<MobEffect> RAGE = register("rage",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xC41E1E));
+
+    /**
+     * 怯懦修饰符的标记效果（修饰符 {@code noellesroles:cowardice} 持续挂载）。
+     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     */
+    public static final Holder<MobEffect> COWARDICE = register("cowardice",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A7A4A));
 
     /**
      * 注册药水效果到注册表
@@ -657,6 +721,9 @@ public class ModEffects {
         // 把怀旧者“里世界标记”效果同步给所有客户端，否则其它客户端查不到怀旧者的里世界状态，
         // 导致手持物品仍显示 / 仍能被杀手透视。
         NostalgistBackworldEffectSync.init();
+        // 把「里世界·同界描边」标记同步给所有客户端：原版只把效果下发给自己，
+        // 而里世界内互相可见需要每个客户端都能读到「对方也在里世界」。
+        org.agmas.noellesroles.game.backworld.BackworldOutlineEffectSync.init();
         WraithDimensionEffectSync.init();
         // 失明症：导盲杖探测服务（含掉线清理）与生物声纹扫描服务
         org.agmas.noellesroles.game.blindness.CaneContactService.register();

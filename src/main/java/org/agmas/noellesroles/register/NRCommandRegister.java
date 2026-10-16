@@ -39,5 +39,8 @@ public class NRCommandRegister {
 
         // 对话 NPC 管理指令
         DialogNpcCommand.register();
+
+        // 虚拟血量（Dream 体系）管理指令
+        VirtualHealthCommand.register();
     }
 }

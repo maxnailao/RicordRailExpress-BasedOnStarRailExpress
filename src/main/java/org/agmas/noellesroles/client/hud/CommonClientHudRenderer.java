@@ -3,6 +3,7 @@ package org.agmas.noellesroles.client.hud;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -32,11 +33,13 @@ import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.content.item.RiotShieldHandler;
+import org.agmas.noellesroles.content.item.ora.OraPunchManager;
+import org.agmas.noellesroles.content.item.ora.OraRushState;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
-import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.role_data.innocence.ClockmakerRoleData;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
@@ -831,7 +834,8 @@ public class CommonClientHudRenderer {
       var font = client.font;
       int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
       int xOffset = screenWidth - 10; // 距离右边缘
-      var abpc = ClockmakerPlayerComponent.KEY.get(client.player);
+      var abpc = RoleData.getNullable(ClockmakerRoleData.class, client.player);
+      if (abpc == null) return;
       Component text = Component
           .translatable("hud.noellesroles.clockmaker.use",
               NoellesrolesClient.abilityBind.getTranslatedKeyMessage())
@@ -1050,6 +1054,35 @@ public class CommonClientHudRenderer {
       }
       return;
     });
+    // 欧拉一拳的连打提示：不限职业，所以挂在通用 HUD 上而不是 JOJO 的职业 HUD 上。
+    // 位置与上面 JOJO 的技能行保持一致（右下角再往上一行），非 JOJO 玩家那一行本来就是空的。
+    CommonHudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client.player == null || client.level == null) {
+        return;
+      }
+      OraRushState ora = OraPunchManager.stateOf(client.player);
+      if (ora == null) {
+        return;
+      }
+      var font = client.font;
+      int yOffset = guiGraphics.guiHeight() - 10 - font.lineHeight;
+      int xOffset = guiGraphics.guiWidth() - 10;
+      Component oraText;
+      if (ora.bound()) {
+        oraText = Component.translatable(
+            "hud.noellesroles.jojo.ora.rush",
+            ora.punchCount(),
+            OraPunchManager.PUNCHES_TO_KILL,
+            String.format("%.1f", ora.remainingSeconds(client.level)))
+            .withStyle(ChatFormatting.GOLD);
+      } else {
+        oraText = Component.translatable("hud.noellesroles.jojo.ora.seeking")
+            .withStyle(ChatFormatting.YELLOW);
+      }
+      guiGraphics.drawString(font, oraText, xOffset - font.width(oraText),
+          yOffset - font.lineHeight * 2 - 8, Color.WHITE.getRGB());
+    });
     RoleHudRenderCallback.EVENT.register(RedHouseRoles.MAID_SAKUYA_ID, (guiGraphics, deltaTracker) -> {
       // 渲染SAKUYA的提示
       var client = Minecraft.getInstance();
@@ -1072,6 +1105,46 @@ public class CommonClientHudRenderer {
         guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
             Color.WHITE.getRGB());
       }
+      return;
+    });
+
+    // 蕾米莉亚：血仆转换冷却 / 就绪提示（移植自 SRE CommonClientHudRenderer.registerSons）
+    RoleHudRenderCallback.EVENT.register(RedHouseRoles.REMILIA_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client.player == null)
+        return;
+      var font = client.font;
+      int xOffset = guiGraphics.guiWidth() - 10;
+      int yOffset = guiGraphics.guiHeight() - 10 - font.lineHeight;
+      var abpc = SREAbilityPlayerComponent.KEY.get(client.player);
+      Component text;
+      if (abpc.cooldown > 0) {
+        text = Component.translatable("hud.noellesroles.remilia.cd",
+            String.format("%.1f", abpc.getCooldownSeconds())).withStyle(ChatFormatting.RED);
+      } else {
+        text = Component.translatable("hud.noellesroles.remilia.ready").withStyle(ChatFormatting.GREEN);
+      }
+      guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+          Color.WHITE.getRGB());
+      return;
+    });
+
+    // 蕾米莉亚的血仆：剩余存活时间提示
+    RoleHudRenderCallback.EVENT.register(RedHouseRoles.REMILIA_BLOOD_SERVANT_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client.player == null)
+        return;
+      var roleData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+          org.agmas.noellesroles.role_data.neutral.RemiliaBloodServantRoleData.class, client.player);
+      if (roleData == null || roleData.ticks <= 0)
+        return;
+      var font = client.font;
+      int xOffset = guiGraphics.guiWidth() - 10;
+      int yOffset = guiGraphics.guiHeight() - 10 - font.lineHeight;
+      Component text = Component.translatable("hud.noellesroles.remilia_servant.alive",
+          String.format("%.1f", roleData.ticks / 20f)).withStyle(ChatFormatting.RED);
+      guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+          Color.WHITE.getRGB());
       return;
     });
 

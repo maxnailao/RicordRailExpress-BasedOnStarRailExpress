@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.content.item.DisguiseEffectSync;
+import io.wifi.starrailexpress.event.client.OnGameFinishedClient;
 import io.wifi.starrailexpress.event.client.OnGameStartedClient;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName.RenderPlayerNameInterface;
@@ -15,6 +16,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseAndCustomResult;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -78,10 +80,27 @@ public class SREClientEvents {
     public static void registerClientEvents() {
         registerRoleNameRendererEvents();
         OnGameStartedClient.EVENT.register(() -> {
+            if (Minecraft.getInstance().player != null)
+                Minecraft.getInstance().player.refreshDimensions();
+            // 移植自 StarRailExpress：开局清一次时停客户端缓存，避免上一局的残留把这一局锁住
+            NoellesrolesClient.clearTimeStopCache();
             // 单人游戏也重建：初始化阶段商店注册可能早于依赖模组（如失明症的导盲杖）完成注册，
             // 此时所有模组均已初始化完毕，重建可补齐缺失的条目。
             SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
             RoleShopHandler.shopRegister();
+        });
+        // 移植自 StarRailExpress SREClientEvents：回合结束时停止声音引擎。
+        // 本仓库此前缺少本回调，导致上一局的音效与音乐一直占着 OpenAL 音源不释放，
+        // 跨局累积后声音引擎开始报
+        // "Allocate new source: Invalid parameter parameter value."，
+        // 表现为后续音效（例如神父「天堂制造」加速阶段的音效）完全放不出来，
+        // 严重时 OpenAL 调用阻塞渲染线程 → 客户端卡死。
+        OnGameFinishedClient.EVENT.register(() -> {
+            if (Minecraft.getInstance().player != null)
+                Minecraft.getInstance().player.refreshDimensions();
+            // 移植自 StarRailExpress：回合结束清一次时停客户端缓存（否则会残留到重进世界）
+            NoellesrolesClient.clearTimeStopCache();
+            Minecraft.getInstance().getSoundManager().stop();
         });
     }
 

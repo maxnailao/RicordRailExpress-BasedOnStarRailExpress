@@ -35,11 +35,13 @@ import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerCompon
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.zhizhang.ZhizhangPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnappedCCA;
@@ -162,6 +164,26 @@ public class InstinctRenderer {
                 return -2; // 变身方块中：禁用对该目标的本能高亮（避免透出方块轮廓）
             }
             return -1;
+        });
+        // 阿蒙透视：开启直觉后只能看到被时之虫标记过的玩家（潜伏中或已成熟），其余玩家一律不透视。
+        // 事件首个非 -1 返回值生效，必须早于通用回退逻辑注册，否则其他监听器/默认逻辑会先给出颜色。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            var self = Minecraft.getInstance().player;
+            if (self == null || SREClient.gameComponent == null)
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.AMON))
+                return -1;
+            if (!hasInstinct)
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer) || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            // 时之虫名单只同步给阿蒙本人，客户端镜像即权威判据。
+            AmonPlayerComponent amon = ModComponents.AMON.maybeGet(self).orElse(null);
+            if (amon == null)
+                return -2;
+            return amon.isClientMarked(targetPlayer.getUUID()) ? ModRoles.AMON.color() : -2;
         });
         TouhouInstincts.registerEvents();
         // 病娇：本能仅可透视爱慕对象（粉色）与目标（红色），其余玩家一律不透视
@@ -1237,14 +1259,19 @@ public class InstinctRenderer {
                     }
                     return -1;
                 }
-                // 傀儡师
+                // 傀儡师（移植自 SRE RoleInstinctRegister 的 PUPPETEER_ID 分支）
+                // 说明：
+                // 1) 只在「本人当前就是傀儡师」时生效。SRE 用 PUPPETEER_ID 注册监听器等价于此；
+                // 而 RKD 原来的写法没有这层判定，导致操控傀儡（职业已被换成随机杀手）时
+                // 仍然给所有人刷傀儡紫，看起来像「普通透视」而不是杀手透视。
+                // 2) 原有的「isPuppeteerMarked && phase >= 1 → return -1」被删除：init() 恒把 phase 置为 1，
+                // 于是这段会一直短路掉下面的杀手直觉（InstinctRenderer 的「杀手直觉」分支），
+                // 使傀儡师完全没有高亮。SRE 这里返回 pass()，即落回通用杀手直觉。
                 PuppeteerPlayerComponent selfPuppeteerComp = ModComponents.PUPPETEER.get(self);
-                if (selfPuppeteerComp.isControllingPuppet && SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
+                if (SREClient.gameComponent.isRole(self, ModRoles.PUPPETEER)
+                        && selfPuppeteerComp.isControllingPuppet
+                        && SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
                     return ModRoles.PUPPETEER.color();
-                }
-                if (selfPuppeteerComp.isPuppeteerMarked && SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()
-                        && selfPuppeteerComp.phase >= 1) {
-                    return -1;
                 }
                 // 黑白熊形态：对所有人隐藏高亮
                 if (SREClient.gameComponent.isRole(target_player, ModRoles.MONOKUMA)
@@ -1525,6 +1552,33 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 蕾米莉亚的血仆：笼统的杀手直觉只能认出蕾米莉亚，其余所有人（含其他杀手）一律不高亮。
+        // 移植自 SRE client/TouhouInstincts 的 REMILIA_BLOOD_SERVANT_ID OBSERVER_HIGHLIGHT_EVENT
+        // 分支；RKD 没有 RoleInstinctEvents，所以手写进这里。
+        // 注意：血仆带 setNeutralForKiller(true)，会被 isKillerTeam 判为杀手阵营，
+        // 因此这段必须独立于下面那个大监听器（事件只取第一个非 -1 的结果）。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, RedHouseRoles.REMILIA_BLOOD_SERVANT))
+                return -1;
+            if (!hasInstinct || GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (targetPlayer == self)
+                return -2;
+            if (SREClient.gameComponent.isRole(targetPlayer, RedHouseRoles.REMILIA))
+                return RedHouseRoles.REMILIA.color();
+            // 其它所有人（包括杀手同伙）对血仆来说都是同一个样子：不高亮
+            return -2;
+        });
+
         // 寻血猎犬：无本能，仅透视狼人队友（红）与「众神之眼」扫描到的玩家（含小透明/中立）
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (Minecraft.getInstance() == null)
@@ -1791,6 +1845,42 @@ public class InstinctRenderer {
                 }
                 // 仅透视坠木，其他玩家禁用
                 return -2;
+            }
+            return -1;
+        });
+
+        // 虚拟血量伤口透视（粉红色）：开启了 canUseSpVanillaWeapon 的职业
+        // （Dream 等能用特殊原版武器削减他人虚拟血量的职业），
+        // 可以看到 30 格内所有虚拟血量未满（即被自己打伤过）的玩家，颜色 0xFF8AB3。
+        // 移植自 SRE client/RoleInstinctRegister 里护士分支的血量透视逻辑；
+        // RKD 没有 RoleInstinctEvents，所以按本文件约定手写成 OnGetInstinctHighlight 监听器。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            // 安全时间（出生保护）期间不透视
+            if (self.hasEffect(ModEffects.SAFE_TIME))
+                return -1;
+            // 门禁：观察者职业必须开启了 canUseSpVanillaWeapon
+            SRERole selfRole = SREClient.gameComponent.getRole(self);
+            if (selfRole == null || !selfRole.canUseSpVanillaWeapon())
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (targetPlayer == self)
+                return -1;
+            if (targetPlayer.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -1;
+            if (self.distanceToSqr(targetPlayer) > 30.0D * 30.0D)
+                return -1;
+            DreamHealthComponent health = DreamHealthComponent.KEY.get(targetPlayer);
+            if (health.getEffectiveHealth(targetPlayer.level().getGameTime())
+                    < DreamHealthComponent.maxHealth()) {
+                return new Color(0xFF, 0x8A, 0xB3).getRGB();
             }
             return -1;
         });

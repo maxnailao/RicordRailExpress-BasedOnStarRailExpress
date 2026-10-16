@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.ConfigWorldComponent;
@@ -488,6 +489,8 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true; // 撬棍
         if (stack.is(TMMItems.LOCKPICK))
             return true; // 开锁器
+        if (stack.is(ModItems.INFERIOR_LOCKPICK))
+            return true; // 劣质开锁器
         if (stack.is(TMMItems.BODY_BAG))
             return true; // 裹尸袋
         if (stack.is(TMMItems.NOTE))
@@ -701,6 +704,64 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         if (stack.is(ModItems.TIME_STOP_CLOCK))
             return true;
 
+        // ==================== 新增可偷物品（移植自 SRE，仅保留 RKD 存在的物品）====================
+
+        // 花圈
+        if (stack.is(ModItems.WREATH))
+            return true;
+        // 巧克力 / 安神茶 / 蓝色草药 / 红色草药 / 提神咖啡
+        if (stack.is(ModItems.CHOCOLATE))
+            return true;
+        if (stack.is(ModItems.CALMING_TEA))
+            return true;
+        if (stack.is(ModItems.LEON_BLUE_HERB))
+            return true;
+        if (stack.is(ModItems.LEON_RED_HERB))
+            return true;
+        if (stack.is(ModItems.ENERGIZING_COFFEE))
+            return true;
+        // 护身符 / 荷官包裹
+        if (stack.is(ModItems.TALISMAN))
+            return true;
+        if (stack.is(ModItems.DEALER_PACKAGE))
+            return true;
+        // 磁铁
+        if (stack.is(ModItems.MAGNET))
+            return true;
+        // dream 系列：铁斧 / 钻石剑 / 重锤 / 钻石镐 / 船 / 酒（移植自 SRE ThiefRoleData）
+        if (stack.is(ModItems.DREAM_AXE))
+            return true;
+        if (stack.is(ModItems.DREAM_DIAMOND_SWORD))
+            return true;
+        if (stack.is(ModItems.DREAM_MACE))
+            return true;
+        if (stack.is(ModItems.DREAM_PICKAXE))
+            return true;
+        if (stack.is(ModItems.DREAM_BOAT))
+            return true;
+        if (stack.is(ModItems.DREAM_WINE))
+            return true;
+
+        // ==================== 4.5 版本新增可偷物品（移植自 SRE，仅保留 RKD 存在的物品）====================
+
+        // 三种伪装道具 / 入场券
+        if (stack.is(TMMItems.DISGUISE_1) || stack.is(TMMItems.DISGUISE_2) || stack.is(TMMItems.DISGUISE_3))
+            return true;
+        if (stack.is(TMMItems.ADMISSION_TICKET))
+            return true;
+        // 破墙弹
+        if (stack.is(ModItems.WALL_BREAK_GRENADE))
+            return true;
+        // 报纸
+        if (stack.is(ModItems.NEWSPAPER))
+            return true;
+        // 封印物
+        for (Item sealed : ModItems.SEALED_ARTIFACTS) {
+            if (stack.is(sealed)) {
+                return true; // 封印物
+            }
+        }
+
         // 其他物品不可偷取
         return false;
     }
@@ -806,6 +867,8 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true; // 撬棍
         if (stack.is(TMMItems.LOCKPICK))
             return true; // 开锁器
+        if (stack.is(ModItems.INFERIOR_LOCKPICK))
+            return true; // 劣质开锁器
         if (stack.is(TMMItems.BODY_BAG))
             return true; // 裹尸袋
         if (stack.is(TMMItems.NOTE))

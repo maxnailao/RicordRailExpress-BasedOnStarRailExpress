@@ -24,6 +24,8 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
+import java.util.List;
+
 public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     public static final ComponentKey<SREPlayerPsychoComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("psycho"),
             SREPlayerPsychoComponent.class);
@@ -253,6 +255,53 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     public boolean checkIsGameRunning() {
         gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         return gameWorldComponent.isRunning();
+    }
+
+    // ==================== 疯魔武器判定（切槽限制共用） ====================
+    // 移植自 StarRailExpress。服务端在疯魔期间会丢弃「切到非法武器」的选栏包，
+    // 但像 Dream 这种「疯魔物品从不入包」（巨幕面具）的职业，如果不区分
+    // 「手上有没有合法疯魔武器」，就会把所有选栏包全部丢掉，
+    // 导致服务端主手与客户端脱同步 —— 表现就是狂暴期间打不了人。
+
+    /** 该职业在疯魔模式下的兼容武器列表。 */
+    private List<Item> getPsychoSupportedWeapons(SRERole role) {
+        if (role == null) {
+            return List.of(TMMItems.BAT);
+        }
+        List<Item> weapons = role.getPsychoSupportedWeapons(player);
+        return weapons == null ? List.of() : weapons.stream().filter(item -> item != null).distinct().toList();
+    }
+
+    private boolean isPsychoSupportedWeapon(SRERole role, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        return role == null ? stack.is(TMMItems.BAT) : role.isPsychoSupportedWeapon(player, stack);
+    }
+
+    /** 供切槽、滚轮等输入限制共用。 */
+    public boolean isPsychoSupportedWeapon(ItemStack stack) {
+        SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(player);
+        return isPsychoSupportedWeapon(role, stack);
+    }
+
+    /** 玩家（含副手与背包）当前是否真的持有至少一件该职业的疯魔兼容武器。 */
+    public boolean hasPsychoSupportedWeapon() {
+        SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(player);
+        return isPsychoSupportedWeapon(role, player.getOffhandItem())
+                || findPsychoWeaponSlot(role, player.getInventory().getContainerSize()) >= 0;
+    }
+
+    private int findPsychoWeaponSlot(SRERole role, int slotLimit) {
+        int limit = Math.min(slotLimit, player.getInventory().items.size());
+        for (Item weapon : getPsychoSupportedWeapons(role)) {
+            for (int slot = 0; slot < limit; slot++) {
+                if (player.getInventory().getItem(slot).is(weapon)) {
+                    return slot;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override

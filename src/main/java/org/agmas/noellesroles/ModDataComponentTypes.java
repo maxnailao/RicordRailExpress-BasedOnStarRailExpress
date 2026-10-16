@@ -6,6 +6,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import org.agmas.noellesroles.content.item.ora.OraRushState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -16,6 +17,10 @@ public interface ModDataComponentTypes {
    DataComponentType<CompoundTag> COOKED = register("cooked", (tagBuilder) -> {
       return tagBuilder.persistent(CompoundTag.CODEC);
    });
+
+   /** 欧拉一拳连打的客户端镜像（见 {@link OraRushState}），随手持物品自动同步。 */
+   DataComponentType<OraRushState> ORA_RUSH = register("ora_rush",
+         (tagBuilder) -> tagBuilder.persistent(OraRushState.CODEC));
 
    private static <T> DataComponentType<T> register(String name,
          @NotNull UnaryOperator<DataComponentType.Builder<T>> builderOperator) {

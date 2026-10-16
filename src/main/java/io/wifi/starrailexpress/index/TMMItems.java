@@ -114,6 +114,10 @@ public interface TMMItems {
     Item DEFENSE_VIAL = registrar.create("defense_vial",
             new DefenseItem(new Item.Properties().stacksTo(1)),
             TOOLS_GROUP, SRE_ALL_GROUP);
+    /** 虚拟护盾试剂：给虚拟血量加一层「点数条」护盾（只挡虚拟血量伤害，挡不住正常死亡）。 */
+    Item VIRTUAL_DEFENSE_VIAL = registrar.create("virtual_defense_vial",
+            new VirtualDefenseItem(new Item.Properties().stacksTo(1)),
+            TOOLS_GROUP, SRE_ALL_GROUP);
     Item DISGUISE_1 = registrar.create("disguise_1",
             new DisguiseItem(new Item.Properties().stacksTo(16), 0),
             TOOLS_GROUP, SRE_ALL_GROUP);
@@ -173,6 +177,7 @@ public interface TMMItems {
     public static void initialize() {
         INVISIBLE_ITEMS.add(TMMItems.NOTE);
         INVISIBLE_ITEMS.add(TMMItems.DEFENSE_VIAL);
+        INVISIBLE_ITEMS.add(TMMItems.VIRTUAL_DEFENSE_VIAL);
 
         // 亡命徒，超级亡命徒，土块 可以直接使用防御药剂
         DefenseItem.canUseByRightClickRolePaths.add(TMMRoles.LOOSE_END.identifier().getPath());
@@ -180,6 +185,14 @@ public interface TMMItems {
         DefenseItem.canUseByRightClickRolePaths.add(ModRoles.LIQUIDATOR_LOOSE_END_ID.getPath());
         DefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.SUPER_LOOSE_END.identifier().getPath());
         DefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.DIRT.identifier().getPath());
+
+        // 虚拟护盾试剂：与防御药剂完全相同的可用职业（移植自 SRE TMMItems）
+        VirtualDefenseItem.canUseByRightClickRolePaths.add(TMMRoles.LOOSE_END.identifier().getPath());
+        VirtualDefenseItem.canUseByRightClickRolePaths.add(ModRoles.BUTCHER_LOOSE_END_ID.getPath());
+        VirtualDefenseItem.canUseByRightClickRolePaths.add(ModRoles.LIQUIDATOR_LOOSE_END_ID.getPath());
+        VirtualDefenseItem.canUseByRightClickRolePaths
+                .add(SpecialGameModeRoles.SUPER_LOOSE_END.identifier().getPath());
+        VirtualDefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.DIRT.identifier().getPath());
 
         registrar.registerEntries();
 

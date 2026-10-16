@@ -3087,5 +3087,6 @@
   "sre.map_helper.meeting.toggle": "會議系統",
   "sre.map_helper.value.on": "開",
   "sre.map_helper.value.off": "關",
-  "death_reason.starrailexpress.cowboy_duel": "決鬥中落敗"
+  "death_reason.starrailexpress.cowboy_duel": "決鬥中落敗",
+  "gui.sre.opening.identity_confirmed": "登車身份已確認"
 }

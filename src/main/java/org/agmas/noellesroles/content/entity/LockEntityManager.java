@@ -29,6 +29,9 @@ public class LockEntityManager {
         canBeAffectedItems.add(ModItems.MASTER_KEY);
         canBeAffectedItems.add(ModItems.MASTER_KEY_P);
         canBeAffectedItems.add(ModItems.NOELL_PAPERCLIP);
+        // Dream 的钻石镐：和撬锁器一样会被锁影响，并在 SmallDoorBlock 里被当作开锁器直接开门
+        // （移植自 SRE LockEntityManager）
+        canBeAffectedItems.add(ModItems.DREAM_PICKAXE);
         canBeAffectedItems.add(FunnyItems.BOWEN_BADGE);
         // 在此处添加可以撬锁的物品
         canBeUsedToUnLock.add(TMMItems.LOCKPICK);

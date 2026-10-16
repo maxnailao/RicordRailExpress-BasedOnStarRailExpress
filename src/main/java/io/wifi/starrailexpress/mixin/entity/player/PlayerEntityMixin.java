@@ -243,6 +243,19 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             // this.playSound(SoundEvents.SHIELD_BLOCK, 1f, 1f);
             bartenderPlayerComponent.giveArmor();
         }
+        String virtualArmorer = stack.getOrDefault(SREDataComponentTypes.VIRTUAL_ARMORER, null);
+        if (virtualArmorer != null) {
+            if (SRE.REPLAY_MANAGER != null) {
+                SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), "virtual_armor");
+            }
+            // 虚拟护盾是「点数条」而不是层数：只在空条时补满，避免重复进食无限叠加
+            org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent virtualShield =
+                    org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent.KEY.get(this);
+            if (virtualShield.currentShield() <= 0) {
+                virtualShield.setShield(
+                        org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent.DEFAULT_SHIELD);
+            }
+        }
         if (poisoner != null && armorer != null) {
             SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), "poison_and_armor");
         }

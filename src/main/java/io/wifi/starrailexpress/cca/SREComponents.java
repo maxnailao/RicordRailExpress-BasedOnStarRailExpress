@@ -40,6 +40,9 @@ public class SREComponents
     public void registerEntityComponentFactories(@NotNull EntityComponentFactoryRegistry registry) {
         registry.beginRegistration(Player.class, SREArmorPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREArmorPlayerComponent::new);
+        // 职业数据（RoleData）载体：换职业时重建，死亡重生不复用
+        registry.beginRegistration(Player.class, SRERoleDataPlayerComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SRERoleDataPlayerComponent::new);
         registry.beginRegistration(Player.class, SREPlayerTaskComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerTaskComponent::new);
         registry.beginRegistration(Player.class, ExtraSlotComponent.KEY)

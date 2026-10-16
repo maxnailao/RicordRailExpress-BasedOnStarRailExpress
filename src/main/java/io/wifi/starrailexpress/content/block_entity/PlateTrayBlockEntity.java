@@ -23,6 +23,8 @@ public abstract class PlateTrayBlockEntity extends BlockEntity {
     public final List<ItemStack> storedItems = new ArrayList<>();
     public String poisoner = null;
     public String armorer = null;
+    /** 虚拟护盾试剂的放置者 UUID（移植自 SRE；拿取时搬到物品的 VIRTUAL_ARMORER 组件上）。 */
+    public String virtualArmorer = null;
     public PlateType plate = PlateType.DRINK;
 
     public PlateTrayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -74,6 +76,16 @@ public abstract class PlateTrayBlockEntity extends BlockEntity {
         return this.armorer;
     }
 
+    /** 虚拟护盾试剂的放置者 UUID；null 表示这盘食物上没有虚拟护盾。 */
+    public String getVirtualArmorer() {
+        return this.virtualArmorer;
+    }
+
+    public void setVirtualArmorer(String virtualArmorer) {
+        this.virtualArmorer = virtualArmorer;
+        this.sync();
+    }
+
     public void setArmorer(String armorer) {
         this.armorer = armorer;
         this.sync();
@@ -106,6 +118,8 @@ public abstract class PlateTrayBlockEntity extends BlockEntity {
             nbt.putString("poisoner", this.poisoner);
         if (this.armorer != null)
             nbt.putString("armorer", this.armorer);
+        if (this.virtualArmorer != null)
+            nbt.putString("virtualArmorer", this.virtualArmorer);
         nbt.putBoolean("Drink", this.plate == PlateType.DRINK);
     }
 
@@ -122,6 +136,7 @@ public abstract class PlateTrayBlockEntity extends BlockEntity {
         }
         this.poisoner = nbt.contains("poisoner") ? nbt.getString("poisoner") : null;
         this.armorer = nbt.contains("armorer") ? nbt.getString("armorer") : null;
+        this.virtualArmorer = nbt.contains("virtualArmorer") ? nbt.getString("virtualArmorer") : null;
         this.plate = nbt.getBoolean("Drink") ? PlateType.DRINK : PlateType.FOOD;
     }
 

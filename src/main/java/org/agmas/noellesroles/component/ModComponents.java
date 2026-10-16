@@ -32,9 +32,7 @@ import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
-import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.diviner.DivinerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
@@ -406,10 +404,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "blood_feudist"),
       BloodFeudistPlayerComponent.class);
 
-  public static final ComponentKey<ClockmakerPlayerComponent> CLOCKMAKER = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "clockmaker"),
-      ClockmakerPlayerComponent.class);
-
   public static final ComponentKey<CreeperPlayerComponent> CREEPER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "creeper"),
       CreeperPlayerComponent.class);
@@ -531,11 +525,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<WizardPlayerComponent> WIZARD = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "wizard"),
       WizardPlayerComponent.class);
-
-  // 占卜家组件 - 乘客阵营，晶球占卜尸体
-  public static final ComponentKey<DivinerPlayerComponent> DIVINER = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "diviner"),
-      DivinerPlayerComponent.class);
 
   // 鬼眼·杨间组件 - 警长阵营，鬼眼扫描 + 诡域
   public static final ComponentKey<GhostEyePlayerComponent> GHOST_EYE = ComponentRegistry.getOrCreate(
@@ -799,6 +788,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent> WEREWOLF_KILLER = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "werewolf_killer"),
           org.agmas.noellesroles.game.roles.killer.werewolfkiller.WerewolfKillerPlayerComponent.class);
+
+  /** Dream（Dream）：全员虚拟血量（默认 20 滴血，只被 Dream 系列武器扣除）。 */
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent> DREAM_HEALTH = org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent.KEY;
+
+  /** Dream（Dream）：全员虚拟护盾（只抵挡虚拟血量伤害）。 */
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent> VIRTUAL_SHIELD = org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -1152,11 +1147,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BloodFeudistPlayerComponent::new);
 
-    // 注册钟表匠组件
-    registry.beginRegistration(Player.class, CLOCKMAKER)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(ClockmakerPlayerComponent::new);
-
     // 注册苦力怕组件
     registry.beginRegistration(Player.class, CREEPER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -1319,11 +1309,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, WIZARD)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(WizardPlayerComponent::new);
-
-    // 注册占卜家组件 - 晶球占卜冷却/已占卜尸体
-    registry.beginRegistration(Player.class, DIVINER)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(DivinerPlayerComponent::new);
 
     // 注册鬼眼·杨间组件 - 鬼眼扫描计时 / 诡域状态
     registry.beginRegistration(Player.class, GHOST_EYE)
@@ -1616,6 +1601,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, DIANXUE_MASTER)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent::new);
+
+    // 注册 Dream 虚拟血量组件 - 挂在所有玩家身上（默认 20 滴血，只被 Dream 系列武器扣除）
+    registry.beginRegistration(Player.class, DREAM_HEALTH)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent::new);
+
+    // 注册虚拟护盾组件 - 挂在所有玩家身上（只抵挡虚拟血量伤害）
+    registry.beginRegistration(Player.class, VIRTUAL_SHIELD)
+            .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent::new);
 
   }
 }

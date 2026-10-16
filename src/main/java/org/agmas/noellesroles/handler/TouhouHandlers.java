@@ -23,11 +23,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+import org.agmas.noellesroles.component.DefibrillatorComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TouhouHandlers {
@@ -37,6 +41,46 @@ public class TouhouHandlers {
   }
 
   public static void registerEvents() {
+    // 大小姐仆从不能杀蕾米莉亚
+    // （移植自 SRE TouhouHandlers.registerEvents 的 AllowPlayerDeathWithKiller 块）
+    AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+      if (killer == null)
+        return true;
+      if (RoleUtils.isPlayerTheJob(killer, RedHouseRoles.REMILIA_BLOOD_SERVANT)) {
+        if (RoleUtils.isPlayerTheJob(victim, RedHouseRoles.REMILIA))
+          return false;
+      }
+      return true;
+    });
+    // 蕾米莉亚杀人转换职业：最后再变，免得触发其它职业的被动
+    // 必须挂在 FINAL_EVENT 上：挂在普通 EVENT 上会在死亡流程中途改职业，把这次击杀取消掉。
+    OnPlayerDeathWithKiller.FINAL_EVENT.register((victim, killer, deathreason) -> {
+      if (killer == null)
+        return;
+      if (!RoleUtils.isPlayerTheJob(killer, RedHouseRoles.REMILIA))
+        return;
+      final var cdcca = SREAbilityPlayerComponent.KEY.get(killer);
+      if (cdcca.hasCooldown()) {
+        return;
+      }
+      MCItemsUtils.clearItem(victim, (item) -> !item.is(TMMItems.LETTER) && !item.is(TMMItems.KEY));
+      victim.displayClientMessage(
+          Component.translatable("hud.noellesroles.remilia.victim", killer.getName()).withStyle(ChatFormatting.GOLD),
+          true);
+      if (victim instanceof ServerPlayer svictim) {
+        SRENetworkMessageUtils.sendBroadcast(svictim, Component
+            .translatable("hud.noellesroles.remilia.victim", killer.getName()).withStyle(ChatFormatting.GOLD));
+      }
+      killer.displayClientMessage(Component.translatable("hud.noellesroles.remilia.success", victim.getName(),
+          RoleUtils.getRoleName(RoleUtils.getPlayerRole(victim))).withStyle(ChatFormatting.GREEN), true);
+      RoleUtils.changeRole(victim, RedHouseRoles.REMILIA_BLOOD_SERVANT);
+
+      DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
+      component.triggerDeath(30 * 20, null, victim.position());
+
+      // 血仆转换冷却 120s
+      cdcca.setCooldown(20 * 120);
+    });
     // 四季
     AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
       if (killer == null)

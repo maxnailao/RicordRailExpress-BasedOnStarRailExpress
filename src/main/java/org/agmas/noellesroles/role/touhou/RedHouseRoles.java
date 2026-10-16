@@ -62,6 +62,27 @@ public class RedHouseRoles {
         }
       }, "th_redhouse")
       .setCanSeeCoin(true).setCanSeeBodyDeathReason(true).setCanSeeBodyRoleInfo(true).setCanSeeBodyKiller(true);
+  // 蕾米莉亚的仆从（由蕾米莉亚击杀玩家转换而来，不会随机刷新）
+  // 移植自 SRE THRedHouseRoles.REMILIA_BLOOD_SERVANT。
+  // RKD 无以下 API，故省略：
+  //   setCanUseInstinctAndNightVision -> 拆成 setCanUseInstinct(true)
+  //   setCanSeeTeammateKillerRole(false) / setInstinctType(...) / setDarknessImmune(true)
+  //   canIncreaseSurvivingKillers()
+  // 「只认蕾米莉亚」的透视改写在 client/InstinctRenderer.java 里手写。
+  public static final ResourceLocation REMILIA_BLOOD_SERVANT_ID = id("remilia_blood_servant");
+  public static SRERole REMILIA_BLOOD_SERVANT = TMMRoles.registerRole(
+      new org.agmas.noellesroles.role.touhou.roles.THRemiliaServantRole(
+          REMILIA_BLOOD_SERVANT_ID, new Color(113, 98, 121).getRGB(),
+          false, false, SRERole.MoodType.FAKE,
+          Integer.MAX_VALUE, true),
+      "th_redhouse")
+      .setCanBeRandomedByOtherRoles(false)
+      .setNeutralForKiller(true)
+      .setDefaultMax(0)
+      .setCanSetSpawnInfoInConfig(false)
+      .setCanUseInstinct(true)
+      .setCanIgnoreBlackout(true)
+      .setRoleData(org.agmas.noellesroles.role_data.neutral.RemiliaBloodServantRoleData::new);
   // 独立中立：芙兰朵露
   public static SRERole FURANDORU = TMMRoles.registerRole(
       new TouhouRole(FURANDORU_ID, new Color(177, 153, 130).getRGB(),
@@ -85,7 +106,9 @@ public class RedHouseRoles {
       SRERole.MoodType.REAL, // 真实心情
       TMMRoles.CIVILIAN.getMaxSprintTime() * 2, // 2 倍冲刺时间
       false // 不隐藏计分板
-  ), "th_redhouse").setCanSeeCoin(true).setCanSeeTime(true).setDefaultMax(0);
+  ), "th_redhouse").setCanSeeCoin(true).setCanSeeTime(true).setDefaultMax(0)
+      // 移植自 SRE THRedHouseRoles：女仆咲夜改为警长阵营（拥有初始武器，但飞刀更贵）
+      .setVigilanteTeam(true).setSpecialPolice(true);
   // 好人：大妖精baka
   public static SRERole BAKA = TMMRoles.registerRole(
       new TouhouRole(BAKA_ID, new Color(185, 240, 243).getRGB(),

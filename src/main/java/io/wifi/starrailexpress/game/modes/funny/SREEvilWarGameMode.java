@@ -84,6 +84,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         EX_ABILITY_ROLE.add(BounsRoles.CREEPER);
         EX_ABILITY_ROLE.add(ModRoles.STALKER);
         EX_ABILITY_ROLE.add(ModRoles.INSANE_KILLER);
+        // Dream：邪恶战争专属强化（移植自 SRE 的 EX_ABILITY_ROLE）
+        EX_ABILITY_ROLE.add(ModRoles.DREAM);
     }
     public static final int ADD_BALANCE_TIME = 600;
     public static final int REVIVE_TIME = 200;
@@ -286,6 +288,17 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         else if (role == SERoles.NECROMANCER || role == BounsRoles.CAT_NECROMANCER) {
             player.addItem(new ItemStack(ModItems.WHEELCHAIR));
             player.addItem(new ItemStack(ModItems.WHEELCHAIR));
+        }
+        // Dream：邪恶战争里常驻迅捷 II + 急迫 II（移植自 SRE SREEvilWarGameMode）
+        else if (role == ModRoles.DREAM) {
+            if (player.hasEffect(MobEffects.MOVEMENT_SPEED)) {
+                player.removeEffect(MobEffects.MOVEMENT_SPEED);
+            }
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 1, false, true, true));
+            if (player.hasEffect(MobEffects.DIG_SPEED)) {
+                player.removeEffect(MobEffects.DIG_SPEED);
+            }
+            player.addEffect(new MobEffectInstance(MobEffects.DIG_SPEED, Integer.MAX_VALUE, 1, false, true, true));
         }
     }
     /** 初始化物品 */

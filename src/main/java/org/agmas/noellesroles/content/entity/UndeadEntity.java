@@ -23,8 +23,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.agmas.noellesroles.component.ModComponents;
+import io.wifi.starrailexpress.api.data.RoleData;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.role_data.killer.UndeadLordRoleData;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import java.util.UUID;
  * <ul>
  *   <li>使用死者生前的皮肤外观，周身环绕淡紫色雾气。</li>
  *   <li>未发现目标时在召唤点附近随机徘徊；发现 21 格内活人后无视墙壁直线穿墙追击（幽灵）。</li>
- *   <li>攻击不造成伤害，而是每 1.5 秒为目标增加感染值（由亡灵之主组件统一结算）。</li>
+ *   <li>攻击以召唤者身份造成少量真实伤害，并每 1.5 秒为目标增加感染值（由亡灵之主的 RoleData 统一结算）。</li>
  *   <li>持续 90 秒后化为紫色烟雾消散；剩余 30 秒减速、剩余 10 秒闪烁示警。</li>
  *   <li>无实体碰撞（穿墙、无重力悬浮），无法开门、无法使用道具。</li>
  * </ul>
@@ -288,7 +289,11 @@ public class UndeadEntity extends PathfinderMob {
         attackCooldown = ATTACK_INTERVAL;
         this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 
-        ModComponents.UNDEAD_LORD.maybeGet(owner).ifPresent(comp -> comp.addInfection(victim, INFECTION_PER_HIT));
+        // 经 RoleData 注入感染（旧的 CCA 组件已停用，避免重复计数）。
+        UndeadLordRoleData lordData = RoleData.getNullable(UndeadLordRoleData.class, owner);
+        if (lordData != null) {
+            lordData.addInfection(victim, INFECTION_PER_HIT);
+        }
 
         float damage = (float) NoellesRolesConfig.HANDLER.instance().undeadLordUndeadAttackDamage;
         if (damage > 0f) {
@@ -318,7 +323,10 @@ public class UndeadEntity extends PathfinderMob {
                 SoundSource.HOSTILE, 0.7f, 0.6f);
         Player owner = getOwner();
         if (owner != null) {
-            ModComponents.UNDEAD_LORD.maybeGet(owner).ifPresent(comp -> comp.onUndeadRemoved(this.getUUID()));
+            UndeadLordRoleData lordData = RoleData.getNullable(UndeadLordRoleData.class, owner);
+            if (lordData != null) {
+                lordData.onUndeadRemoved(this.getUUID());
+            }
         }
         discard();
     }

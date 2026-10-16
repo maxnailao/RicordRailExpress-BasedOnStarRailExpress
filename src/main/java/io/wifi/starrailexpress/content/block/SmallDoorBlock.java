@@ -412,7 +412,9 @@ public class SmallDoorBlock extends DoorPartBlock {
                     }
                 }
                 boolean hasLockpick = mainhandItem.is(TMMItems.LOCKPICK) || mainhandItem.is(ModItems.MASTER_KEY)
-                        || mainhandItem.is(FunnyItems.BOWEN_BADGE);
+                        || mainhandItem.is(FunnyItems.BOWEN_BADGE)
+                        // Dream 的钻石镐：像开锁器一样直接开门（不能锁门）（移植自 SRE SmallDoorBlock）
+                        || mainhandItem.is(ModItems.DREAM_PICKAXE);
                 if (mainhandItem.is(ModItems.MASTER_KEY_P)) {
                     if (!player.isCreative()) {
                         mainhandItem.hurtAndBreak(1, player, player.getEquipmentSlotForItem(mainhandItem));

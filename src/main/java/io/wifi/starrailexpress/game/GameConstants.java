@@ -263,6 +263,10 @@ public class GameConstants {
         public static ResourceLocation BOWEN = Noellesroles.id("bowen");
         public static ResourceLocation C4_EXPLOSION = Noellesroles.id("c4_explosion");
         public static ResourceLocation FIRE_AXE = Noellesroles.id("fire_axe");
+        // Dream 系列虚拟血量武器死因（伤害扣除虚拟血量，与铁斧 fire_axe 区分）
+        public static ResourceLocation DREAM_AXE = Noellesroles.id("dream_axe");
+        public static ResourceLocation DREAM_DIAMOND_SWORD = Noellesroles.id("dream_diamond_sword");
+        public static ResourceLocation DREAM_MACE = Noellesroles.id("dream_mace");
         public static ResourceLocation NINJA_KNIFE_KILL = Noellesroles.id("ninja_knife_kill");
         public static ResourceLocation NINJA_SHURIKEN_KILL = Noellesroles.id("ninja_shuriken_kill");
         public static ResourceLocation SHORT_SHOTGUN = Noellesroles.id("short_shotgun");
@@ -375,6 +379,11 @@ public class GameConstants {
         public static ResourceLocation BEE_USED_OUT_SKILL = Noellesroles.id("bee_used_out_skill");
         // 工蜂存活时间耗尽
         public static ResourceLocation BEE_WORKER_TIMEOUT = Noellesroles.id("bee_worker_timeout");
+        /**
+         * 存活时间耗尽（移植自 SRE：蕾米莉亚的血仆 180 秒到期后强制死亡）。
+         * 保留与 SRE 一致的键名 {@code noellesroles:timeout}，便于死亡原因翻译对齐。
+         */
+        public static ResourceLocation TIMEOUT = Noellesroles.id("timeout");
     }
 
     public static int getFurandoruSafeLine() {

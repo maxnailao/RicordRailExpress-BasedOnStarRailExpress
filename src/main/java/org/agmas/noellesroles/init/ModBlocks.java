@@ -104,6 +104,36 @@ public interface ModBlocks {
             new KillBlockPanel(BlockBehaviour.Properties.of().strength(-1.0f, 3600000.0f).noOcclusion()),
             CreativeModeTabs.OP_BLOCKS, ModSceneBlocks.SCENE_CREATIVE_GROUP);
 
+    // 厨师的「客户端」食物盘 / 饮料盘。
+    // 只注册方块、不给 BlockItem：它们由服务端发 S2C 包让客户端 setBlock 画出来，
+    // 不该被玩家在创造模式 legit 放置（服务端并不承认它们的存在）。
+    // 放在所有其它字段之后声明，避开接口字段的初始化顺序问题。
+    Block CHEF_FOOD_TRAY = registerBlockOnly("chef_food_tray", new ChefTrayBlock.Food(chefTrayProperties()));
+    Block CHEF_DRINK_TRAY = registerBlockOnly("chef_drink_tray", new ChefTrayBlock.Drink(chefTrayProperties()));
+
+    /**
+     * 厨师盘子的方块实体：承载「盘里装着什么」，由 {@code ChefPlateRenderer} 渲染。
+     *
+     * <p>必须是一个独立类型：{@code BlockEntity} 构造函数会校验 {@code type.isValid(state)}，
+     * 原版的 {@code trainmurdermystery:beverage_plate} 只接受 {@code food_platter} / {@code drink_tray}，
+     * 用厨师的方块状态去 new 它会直接抛异常。
+     *
+     * <p>声明在两个方块字段之后，接口字段按声明顺序初始化，保证 {@code of(...)} 能拿到方块。
+     */
+    BlockEntityType<ChefPlateBlockEntity> CHEF_TRAY_BLOCK_ENTITY = blockEntityRegistrar.create(
+            "chef_tray",
+            BlockEntityType.Builder.of(ChefPlateBlockEntity::new, CHEF_FOOD_TRAY, CHEF_DRINK_TRAY));
+
+    private static BlockBehaviour.Properties chefTrayProperties() {
+        return BlockBehaviour.Properties.of()
+                .noOcclusion()
+                .noCollission()
+                .instabreak()
+                .noLootTable()
+                .strength(-1.0F, 3600000.0F)
+                .sound(SoundType.WOOD);
+    }
+
     static void initialize() {
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, BLOCK_CREATIVE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("item_group.noellesroles.block")).icon(() -> {
@@ -140,5 +170,15 @@ public interface ModBlocks {
     @SuppressWarnings("unchecked")
     public static <T extends Block> T registerOpBlock(String id, T block) {
         return blockRegistrar.createWithItem(id, block, CreativeModeTabs.OP_BLOCKS);
+    }
+
+    /**
+     * 只注册方块、不附带 BlockItem，也不进任何创造分页。
+     *
+     * <p>用于「只由客户端画出来、服务端不承认存在」的方块（如厨师的客户端食物盘/饮料盘）。
+     * 这些方块没有物品形态，不能被玩家 legit 放置。
+     */
+    public static <T extends Block> T registerBlockOnly(String id, T block) {
+        return Registry.register(BuiltInRegistries.BLOCK, Noellesroles.id(id), block);
     }
 }

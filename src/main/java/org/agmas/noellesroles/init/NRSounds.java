@@ -15,6 +15,8 @@ public class NRSounds {
     public static final SoundEvent WIND = registrar.create("noellesroles.wind");
     public static final SoundEvent JESTER_AMBIENT = registrar.create("noellesroles.jester");
     public static final SoundEvent NYAN_CAT = registrar.create("noellesroles.nyan_cat");
+    /** 皮革噶的：Dream（Dream）疯魔模式专属追杀音乐（移植自 StarRailExpress）。 */
+    public static final SoundEvent MANHUNT_CHASE = registrar.create("noellesroles.manhunt_chase");
     
     public static final SoundEvent THMUSIC_UN_OWEN = registrar.create("noellesroles.who_kill_un_owen");
     public static final SoundEvent TIME_STOP = registrar.create("noellesroles.time_stop");
@@ -93,6 +95,18 @@ public class NRSounds {
     public static final SoundEvent JIAHAO_MUSIC_1 = registrar.create("noellesroles.jiahao_music_1");
     public static final SoundEvent JIAHAO_MUSIC_2 = registrar.create("noellesroles.jiahao_music_2");
     public static final SoundEvent JIAHAO_MUSIC_3 = registrar.create("noellesroles.jiahao_music_3");
+
+    // 神父咏诵：15 句台词槽位 + 咏诵循环 + 尾奏（音效文件暂缺，先占位注册）
+    public static final SoundEvent[] PRIEST_CHANT = new SoundEvent[15];
+    public static final SoundEvent PRIEST_CHANTING;
+    public static final SoundEvent PRIEST_ENDING;
+    static {
+        for (int i = 0; i < PRIEST_CHANT.length; i++) {
+            PRIEST_CHANT[i] = registrar.create("priest.chant." + String.format("%02d", i));
+        }
+        PRIEST_CHANTING = registrar.create("priest.chanting");
+        PRIEST_ENDING = registrar.create("priest.ending");
+    }
 
     public static void initialize() {
         registrar.registerEntries();

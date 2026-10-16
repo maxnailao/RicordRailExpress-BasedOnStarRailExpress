@@ -140,7 +140,6 @@
       "noellesroles:party_killer",
       "noellesroles:delayer",
       "noellesroles:blood_feudist",
-      "noellesroles:clockmaker",
       "noellesroles:undead_lord",
       "noellesroles:best_vigilante",
       "noellesroles:baseball_player",
@@ -206,6 +205,7 @@
       "stupid_express:split_personality",
       "harpymodloader:modifier",
       "starrailexpress:train",
+      "starrailexpress:role_data",
       "starrailexpress:extra_slots",
       "starrailexpress:clue",
       "starrailexpress:game",
@@ -303,7 +303,9 @@
       "noellesroles:kidnapped",
       "noellesroles:bloodhound",
       "noellesroles:witch_accomplice",
-      "noellesroles:dianxue_master"
+      "noellesroles:dianxue_master",
+      "noellesroles:dream_health",
+      "noellesroles:virtual_shield"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

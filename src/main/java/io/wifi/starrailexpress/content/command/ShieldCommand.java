@@ -3,16 +3,21 @@ package io.wifi.starrailexpress.content.command;
 import com.google.common.collect.ImmutableList;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
+import org.agmas.noellesroles.game.roles.killer.dream.VirtualShieldComponent;
 
 import java.util.Collection;
 
 public class ShieldCommand {
+  private static final String TYPE_VIRTUAL = "virtual";
+
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     var shieldCommand = dispatcher.register(Commands.literal("sre:shield")
         .requires(source -> source.hasPermission(2))
@@ -38,12 +43,114 @@ public class ShieldCommand {
             ImmutableList.of(context.getSource().getEntityOrException())))
             .then(Commands.argument("targets", EntityArgument.entities())
                 .executes(context -> executeGet(context.getSource(),
-                    EntityArgument.getEntities(context, "targets"))))));
+                    EntityArgument.getEntities(context, "targets")))))
+        // 虚拟护盾（点数条，只抵挡虚拟血量伤害）：移植自 SRE ShieldCommand 的 virtual 分支
+        .then(buildVirtual()));
 
     dispatcher.register(
         Commands.literal("sre:armor")
             .redirect(shieldCommand) // /h 会执行 /home 的逻辑
     );
+  }
+
+  /**
+   * {@code sre:shield virtual <add|set|get|clear> <值> [目标...]}。
+   *
+   * <p>虚拟护盾挂在 {@code VirtualShieldComponent} 上，只抵挡 Dream 虚拟血量伤害，
+   * 挡不住正常死亡。
+   */
+  private static LiteralArgumentBuilder<CommandSourceStack> buildVirtual() {
+    LiteralArgumentBuilder<CommandSourceStack> add = Commands.literal("add")
+        .then(Commands.argument("value", IntegerArgumentType.integer(1))
+            .executes(context -> virtualAdd(context.getSource(),
+                ImmutableList.of(context.getSource().getEntityOrException()),
+                IntegerArgumentType.getInteger(context, "value")))
+            .then(Commands.argument("targets", EntityArgument.entities())
+                .executes(context -> virtualAdd(context.getSource(),
+                    EntityArgument.getEntities(context, "targets"),
+                    IntegerArgumentType.getInteger(context, "value")))));
+    LiteralArgumentBuilder<CommandSourceStack> set = Commands.literal("set")
+        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+            .executes(context -> virtualSet(context.getSource(),
+                ImmutableList.of(context.getSource().getEntityOrException()),
+                IntegerArgumentType.getInteger(context, "value")))
+            .then(Commands.argument("targets", EntityArgument.entities())
+                .executes(context -> virtualSet(context.getSource(),
+                    EntityArgument.getEntities(context, "targets"),
+                    IntegerArgumentType.getInteger(context, "value")))));
+    LiteralArgumentBuilder<CommandSourceStack> get = Commands.literal("get")
+        .executes(context -> virtualGet(context.getSource(),
+            ImmutableList.of(context.getSource().getEntityOrException())))
+        .then(Commands.argument("targets", EntityArgument.entities())
+            .executes(context -> virtualGet(context.getSource(),
+                EntityArgument.getEntities(context, "targets"))));
+    LiteralArgumentBuilder<CommandSourceStack> clear = Commands.literal("clear")
+        .executes(context -> virtualClear(context.getSource(),
+            ImmutableList.of(context.getSource().getEntityOrException())))
+        .then(Commands.argument("targets", EntityArgument.entities())
+            .executes(context -> virtualClear(context.getSource(),
+                EntityArgument.getEntities(context, "targets"))));
+    return Commands.literal(TYPE_VIRTUAL)
+        .then(add)
+        .then(set)
+        .then(get)
+        .then(clear);
+  }
+
+  private static int virtualAdd(CommandSourceStack source, Collection<? extends Entity> targets, int value) {
+    int applied = 0;
+    for (Entity target : targets) {
+      if (VirtualShieldComponent.KEY.get(target).addShield(value) >= 0) {
+        applied++;
+      }
+    }
+    final int total = applied;
+    source.sendSuccess(
+        () -> Component.translatable("commands.sre.shield.virtual.add", total, value)
+            .withStyle(style -> style.withColor(0x00FF00)),
+        true);
+    return applied;
+  }
+
+  private static int virtualSet(CommandSourceStack source, Collection<? extends Entity> targets, int value) {
+    int applied = 0;
+    for (Entity target : targets) {
+      if (VirtualShieldComponent.KEY.get(target).setShield(value) >= 0) {
+        applied++;
+      }
+    }
+    final int total = applied;
+    source.sendSuccess(
+        () -> Component.translatable("commands.sre.shield.virtual.set", total, value)
+            .withStyle(style -> style.withColor(0x00FF00)),
+        true);
+    return applied;
+  }
+
+  private static int virtualGet(CommandSourceStack source, Collection<? extends Entity> targets) {
+    MutableComponent out = Component.translatable("commands.sre.shield.virtual.get.header")
+        .withStyle(style -> style.withColor(0x00FF00));
+    for (Entity target : targets) {
+      out.append(Component.translatable("commands.sre.shield.virtual.get.entry", target.getName().getString(),
+          VirtualShieldComponent.KEY.get(target).currentShield()));
+    }
+    source.sendSuccess(() -> out, true);
+    return 1;
+  }
+
+  private static int virtualClear(CommandSourceStack source, Collection<? extends Entity> targets) {
+    int applied = 0;
+    for (Entity target : targets) {
+      if (VirtualShieldComponent.KEY.get(target).clearShield() >= 0) {
+        applied++;
+      }
+    }
+    final int total = applied;
+    source.sendSuccess(
+        () -> Component.translatable("commands.sre.shield.virtual.clear", total)
+            .withStyle(style -> style.withColor(0x00FF00)),
+        true);
+    return applied;
   }
 
   private static int executeSet(CommandSourceStack source, Collection<? extends Entity> targets, int amount) {

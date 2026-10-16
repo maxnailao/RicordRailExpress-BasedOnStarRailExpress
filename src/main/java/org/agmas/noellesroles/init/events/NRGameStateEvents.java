@@ -103,6 +103,8 @@ public class NRGameStateEvents {
             }
             // 重置疫使时刻状态
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
+            // 复位神父「天堂制造」序列（含局内时间冻结与无碰撞/加速状态）
+            org.agmas.noellesroles.game.roles.neutral.priest.PriestHeavenManager.reset(serverLevel);
 
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverLevel);
@@ -155,6 +157,8 @@ public class NRGameStateEvents {
                 }
             }
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
+            // 复位神父「天堂制造」序列（含局内时间冻结与无碰撞/加速状态）
+            org.agmas.noellesroles.game.roles.neutral.priest.PriestHeavenManager.reset(world);
 
             // 清除建筑师客户端墙
             for (ServerPlayer player : world.players()) {
@@ -162,6 +166,9 @@ public class NRGameStateEvents {
                 builderComp.clearAllWalls();
             }
             org.agmas.noellesroles.game.roles.innocence.builder.BuilderWallPositions.clearAll();
+
+            // 清除厨师「客户端」食物盘 / 饮料盘（盘子应持续至当局游戏结束，结束时统一清除）
+            org.agmas.noellesroles.game.roles.neutral.chef.ChefTrayManager.clearAll(world);
 
             // 清除冒险家路径点
             io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())

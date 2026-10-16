@@ -39,6 +39,21 @@ public interface OnPlayerDeathWithKiller {
             });
 
     /**
+     * 完全走完 {@code GameUtils} 的死亡流程后触发（在所有与击杀相关的事件之后）。
+     *
+     * <p>移植自 StarRailExpress：需要在「玩家确实已经死透」之后再改职业 / 做转换的逻辑
+     * （例如蕾米莉亚把被击杀者转化为仆从）必须挂在这里；若挂在 {@link #EVENT} 上，
+     * 会在死亡处理途中改变职业，从而把这次击杀取消掉。</p>
+     */
+    Event<OnPlayerDeathWithKiller> FINAL_EVENT = createArrayBacked(OnPlayerDeathWithKiller.class,
+            listeners -> (player, killer, deathReason) -> {
+                for (OnPlayerDeathWithKiller listener : listeners) {
+                    listener.onPlayerDeath(player, killer, deathReason);
+                }
+                return;
+            });
+
+    /**
      * 玩家死亡时（有击杀者）的回调方法。
      *
      * <p>Callback invoked when a player dies with an optional killer.

@@ -351,6 +351,8 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.FURANDORU, 0);
         Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 0);
+        // 蕾米莉亚的血仆只能由蕾米莉亚击杀玩家转换而来，永不随机刷新
+        Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA_BLOOD_SERVANT, 0);
         Harpymodloader.setRoleMaximum(ModRoles.EXAMPLER, 0);
         Harpymodloader.setRoleMaximum(ModRoles.MANIPULATOR, 0);
         Harpymodloader.setRoleMaximum(ModRoles.EXECUTIONER_ID, 1);

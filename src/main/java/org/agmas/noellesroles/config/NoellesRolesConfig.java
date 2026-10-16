@@ -295,6 +295,16 @@ public class NoellesRolesConfig implements ConfigData {
     public int generalCooldownTicks = GameConstants.getInTicks(0, 30);
 
     /**
+     * 大侦探勘察尸体所需的静止时间（秒）
+     */
+    public int greatDetectiveChannelSeconds = 4;
+
+    /**
+     * 大侦探勘察完成后的冷却时间（秒）
+     */
+    public int greatDetectiveCooldownSeconds = 28;
+
+    /**
      * Enable client blood render
      */
 
@@ -569,7 +579,15 @@ public class NoellesRolesConfig implements ConfigData {
     public int undeadLordBoneStaffDurability = 5;
     /** Undead Lord - Bone Staff recharge time in seconds after durability is depleted (refills to full, never breaks) */
     public int undeadLordBoneStaffRechargeSeconds = 40;
-    /** Undead Lord - Bone Staff infection added per hit (0~100) */
+    /**
+     * Undead Lord - Bone Staff infection added per hit (0~100)
+     * <p>
+     * <b>已废弃，代码不再读取此值。</b>骨杖每次注入的感染值现已按上游 StarRailExpress 的设计
+     * 写死在代码中（{@code BoneStaffItem.BONE_STAFF_INFECTION_PER_HIT = 30}）。
+     * 保留该字段仅为兼容旧配置文件（删除后反序列化会报错），修改它不会影响游戏表现。
+     * </p>
+     */
+    @Deprecated
     public double undeadLordBoneStaffInfection = 24.0;
     /** Undead Lord - Bone Staff shop price */
     public int undeadLordBoneStaffPrice = 130;
@@ -600,6 +618,13 @@ public class NoellesRolesConfig implements ConfigData {
     public int grosellTravelogCooldownSeconds = 75;
     /** 格罗赛尔游记 - 瞄准放逐目标的最大距离（格） */
     public double grosellTravelogRange = 6;
+
+    /** 船长 - 舱门调度消耗的局内金币数 */
+    public int conductorDoorWarpCost = 125;
+    /** 船长 - 舱门调度前摇（秒） */
+    public int conductorDoorWarpWindupSeconds = 5;
+    /** 船长 - 舱门调度冷却（秒） */
+    public int conductorDoorWarpCooldownSeconds = 90;
 
     /** Leon (里昂) - Combat skill (kick) cooldown in seconds */
     public int leonKickCooldown = 12;
@@ -929,6 +954,50 @@ public class NoellesRolesConfig implements ConfigData {
     public int convictPassiveIncomeIntervalSeconds = 30;
     /** 重刑犯 - 开局「做出你的抉择」GUI 的选择时限（秒），超时默认「毁灭一切」 */
     public int convictChoiceSeconds = 30;
+
+    // ==================== Dream (Dream) ====================
+    /** Dream - 全员虚拟血量上限（Dream 系列武器攻击扣此血量，归零死亡） */
+    public int dreamMaxHealth = 20;
+    /** Dream - 是否启用「脱战自动回虚拟血量」；关闭后残血只能靠其它手段恢复 */
+    public boolean dreamHealthRegenEnabled = false;
+    /** Dream - 脱战多少秒后开始缓慢回血（仅在 {@link #dreamHealthRegenEnabled} 开启时生效） */
+    public int dreamHealthRegenDelaySeconds = 15;
+    /** Dream - 铁斧平A伤害 */
+    public int dreamAxeDamage = 9;
+    /** Dream - 铁斧跳劈伤害 */
+    public int dreamAxeCritDamage = 12;
+    /** Dream - 狂暴时铁斧平A伤害 */
+    public int dreamAxeBerserkDamage = 12;
+    /** Dream - 狂暴时铁斧跳劈伤害 */
+    public int dreamAxeBerserkCritDamage = 20;
+    /** Dream - 铁斧命中眩晕秒数（狂暴时见 dreamBerserkStunSeconds） */
+    public double dreamAxeStunSeconds = 1.0;
+    /** Dream - 狂暴时铁斧命中眩晕秒数 */
+    public double dreamBerserkStunSeconds = 2.0;
+    /** Dream - 巨幕面具冷却秒数（狂暴时长跟随疯魔 Psycho 计时器） */
+    public int dreamMaskCooldownSeconds = 120;
+    /** Dream - 狂暴时"看到 Dream"的最大判定距离（格），受障碍物遮挡影响 */
+    public double dreamFearSightDistance = 30.0;
+    /** Dream - "看到 Dream"的视线容错半径（格）：Dream 到玩家视线射线的垂距在此范围内即算看到 */
+    public double dreamFearSightRadius = 4.0;
+    /** Dream - 制酒技能冷却秒数 */
+    public int dreamBrewCooldownSeconds = 120;
+    /** Dream - 酒的隐身持续秒数（期间无法攻击、无法受伤） */
+    public int dreamWineDurationSeconds = 5;
+    /** Dream - 船强制乘坐半径（格） */
+    public double dreamBoatRadius = 3.0;
+    /** Dream - 船存在秒数 */
+    public int dreamBoatDurationSeconds = 10;
+    /** Dream - 船使用冷却秒数 */
+    public int dreamBoatCooldownSeconds = 60;
+    /** Dream - 铁斧价格 */
+    public int dreamAxePrice = 135;
+    /** Dream - 巨幕面具价格 */
+    public int dreamMaskPrice = 400;
+    /** Dream - 钻石镐价格 */
+    public int dreamPickaxePrice = 90;
+    /** Dream - 船价格 */
+    public int dreamBoatPrice = 100;
 
     /**
      * 地图列表匹配规则，与 {@link SpawnInfo#map} 的语义保持一致：

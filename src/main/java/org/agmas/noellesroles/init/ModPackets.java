@@ -91,6 +91,9 @@ public class ModPackets {
 
         PayloadTypeRegistry.playC2S().register(PlayerResetS2CPacket.ID, PlayerResetS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ChefCookC2SPacket.ID, ChefCookC2SPacket.CODEC);
+        // 厨师「客户端」食物盘 / 饮料盘：服务端广播盘子增删改（S2C），客户端右键改发交互包（C2S）
+        PayloadTypeRegistry.playS2C().register(ChefTrayS2CPacket.ID, ChefTrayS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ChefTrayInteractC2SPacket.ID, ChefTrayInteractC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(PlayerResetS2CPacket.ID, PlayerResetS2CPacket.CODEC);
 
         PayloadTypeRegistry.playC2S().register(GamblerSelectRoleC2SPacket.ID, GamblerSelectRoleC2SPacket.CODEC);
@@ -391,5 +394,21 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.game.modes.werewolf.network.WerewolfVoteC2SPacket.TYPE,
                 (payload, context) -> context.player().server.execute(() -> payload.handle(context.player())));
+
+        // 船长·舱门调度：服务端下发可选房间门列表，客户端回传选择结果
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.packet.ConductorDoorListS2CPacket.ID,
+                org.agmas.noellesroles.packet.ConductorDoorListS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.packet.ConductorSelectDoorC2SPacket.ID,
+                org.agmas.noellesroles.packet.ConductorSelectDoorC2SPacket.CODEC);
+
+        // 神父：咏诵台词提交（C2S）、天堂序列状态同步（S2C）、咏诵界面开启（S2C）
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.PriestChantC2SPacket.ID,
+                org.agmas.noellesroles.packet.PriestChantC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PriestHeavenStateS2CPacket.ID,
+                org.agmas.noellesroles.packet.PriestHeavenStateS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.ID,
+                org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.CODEC);
     }
 }

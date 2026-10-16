@@ -808,6 +808,13 @@
   "commands.sre.setshield": "给 %s 设置了 %s 层护盾",
   "commands.sre.setshield.multiple": "给 %s 个玩家设置了 %s 层护盾",
   "commands.sre.getshield": "总共有 %s 层护盾",
+  "commands.sre.shield.virtual.add": "已给 %1$s 名玩家增加 %2$s 点虚拟护盾",
+  "commands.sre.shield.virtual.set": "已给 %1$s 名玩家设置虚拟护盾: %2$s",
+  "commands.sre.shield.virtual.clear": "已清除 %s 名玩家的虚拟护盾",
+  "commands.sre.shield.virtual.get.header": "虚拟护盾: ",
+  "commands.sre.shield.virtual.get.entry": "%s=%s点 ",
+  "item.trainmurdermystery.virtual_defense_vial": "虚拟护盾试剂",
+  "item.trainmurdermystery.virtual_defense_vial.tooltip": "放入食物或饮料中，给下一个拿取的人补充20点虚拟护盾！\n虚拟护盾会优先抵消虚拟血量伤害，但无法抵挡正常死亡。",
   "argument.game_mode.invalid": "无效的游戏模式",
   "death_reason.starrailexpress.fall_damage": "从高处掉了下来",
   "death_reason.starrailexpress.ancient_bite": "被远古生物咬死",
@@ -3303,5 +3310,6 @@
   "sre.map_helper.meeting.toggle": "会议系统",
   "sre.map_helper.value.on": "开",
   "sre.map_helper.value.off": "关",
-  "death_reason.starrailexpress.cowboy_duel": "决斗中落败"
+  "death_reason.starrailexpress.cowboy_duel": "决斗中落败",
+  "gui.sre.opening.identity_confirmed": "登车身份已确认"
 }

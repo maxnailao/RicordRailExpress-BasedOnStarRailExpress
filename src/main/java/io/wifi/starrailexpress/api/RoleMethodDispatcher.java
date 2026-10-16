@@ -2,7 +2,9 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.cca.SRERoleDataPlayerComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
@@ -168,7 +170,33 @@ public class RoleMethodDispatcher {
         }
     }
 
+    /**
+     * 玩家失去职业时调用。
+     * <p>
+     * 顺序：停狂暴 → {@link SRERole#onRemove} → 清空该玩家的职业数据（{@code RoleData}）。
+     * </p>
+     */
+    public static void onRemoveRole(SRERole role, MinecraftServer server, ServerPlayer serverPlayer) {
+
+        if (role == null) {
+            return;
+        }
+        SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(serverPlayer);
+        if (psycho.getPsychoTicks() > 0) {
+            psycho.stopPsychoAndSync();
+        }
+        role.onRemove(serverPlayer);
+        final var cca = SRERoleDataPlayerComponent.KEY.get(serverPlayer);
+        cca.onRemoveRole();
+    }
+
     public static void onInit(SRERole role, MinecraftServer minecraftServer, ServerPlayer player) {
+        // 职业数据（RoleData）：按职业声明的工厂新建实例并同步。
+        // 放在 role.onInit 之前，与上游（StarRailExpress）的调用顺序保持一致。
+        {
+            final var cca = SRERoleDataPlayerComponent.KEY.get(player);
+            cca.init();
+        }
         role.onInit(minecraftServer, player);
         if (role.isAutoReset()) {
             ComponentKey<? extends RoleComponent> componentKey = role.getComponentKey();

@@ -213,5 +213,7 @@ public class NRCombatEvents {
         org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.registerEvents();
         // 寻血猎犬：50% 不掉枪 + 枪冷却 20s + 用枪击杀奖励 150 金币
         org.agmas.noellesroles.game.roles.killer.bloodhound.BloodhoundPlayerComponent.registerEvents();
+        // 占卜家：死亡时使周围 5 格内的玩家发光 8 秒
+        org.agmas.noellesroles.game.roles.innocence.diviner.DivinerDeathHandler.registerEvents();
     }
 }

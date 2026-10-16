@@ -313,6 +313,11 @@ public class RoleUtils extends MCItemsUtils {
         if (player instanceof ServerPlayer sp) {
             if (!noEventCall)
                 (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
+            else {
+                // 不触发事件时也要重建职业数据（RoleData），否则「恢复原职业」这类内部改职
+                // 会留下上一个职业的数据实例。
+                io.wifi.starrailexpress.cca.SRERoleDataPlayerComponent.KEY.get(player).init();
+            }
         }
     }
 
@@ -352,6 +357,28 @@ public class RoleUtils extends MCItemsUtils {
      * 
      * @return 返回Role
      */
+    /**
+     * 按职业标识的 path 反查职业。
+     * <p>
+     * 用于网络同步（{@code SRERoleDataPlayerComponent} 的 {@code __init__} 包）：客户端只知道职业
+     * path，需要据此还原出 {@link SRERole}。
+     * </p>
+     *
+     * @param rolePath 职业标识的 path（不含命名空间）
+     * @return 对应职业；找不到时返回 {@code null}
+     */
+    @Nullable
+    public static SRERole getRoleByPath(@Nullable String rolePath) {
+        if (rolePath == null || rolePath.isEmpty())
+            return null;
+        for (SRERole role : TMMRoles.ROLES.values()) {
+            if (role != null && role.identifier() != null && role.identifier().getPath().equals(rolePath)) {
+                return role;
+            }
+        }
+        return null;
+    }
+
     public static SRERole getRole(String roleName) {
         var roles = ResourceLocation.tryParse(roleName);
         if (roles == null)

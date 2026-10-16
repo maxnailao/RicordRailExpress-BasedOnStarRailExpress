@@ -21,7 +21,6 @@ import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.roles.innocence.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
@@ -534,11 +533,6 @@ public class AbilityHandler {
                 // 普通按技能键：使用技能
                 thiefComponent.useAbility();
             }
-            return;
-        }
-        if (gameWorldComponent.isRole(player, ModRoles.CLOCKMAKER)) {
-            ClockmakerPlayerComponent clockmakerComponent = ModComponents.CLOCKMAKER.get(player);
-            clockmakerComponent.useSkill();
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.ACCOUNTANT)) {

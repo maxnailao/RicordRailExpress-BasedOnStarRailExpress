@@ -5,6 +5,8 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
+import io.wifi.starrailexpress.api.data.RoleData;
+import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
@@ -53,6 +55,13 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canSeeBodyRoleInfo = false;
     protected boolean canUseInstinct = false;
     protected boolean instinctNightVision = false;
+    /**
+     * 能用特殊原版武器（Dream 的铁斧 / 钻石剑 / 重锤）削减他人的虚拟血量。
+     *
+     * <p>移植自 StarRailExpress。客户端也要能读到这个标记（虚拟血量条与「受伤者高亮」都靠它做
+     * 观察者门禁），所以只能读旗标本身，不能用带 {@code isClientSide()} 守卫的服务端方法判断。</p>
+     */
+    protected boolean canUseSpVanillaWeapon = false;
     protected boolean canIgnoreBlackout = false;
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
@@ -78,6 +87,38 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
+
+    /**
+     * 该职业的玩家数据工厂（{@link RoleData}）。用于替代 CCA。
+     * <p>
+     * 为 {@code null} 时该职业没有玩家数据；换职业时由
+     * {@code SRERoleDataPlayerComponent#serverInit()} 调用本工厂创建实例。
+     * </p>
+     */
+    protected Function<RoleDataContext, RoleData> roleDataFunc = null;
+
+    /**
+     * 获取职业数据工厂。用于替代 CCA。
+     *
+     * @return 职业数据工厂，未设置时为 {@code null}
+     */
+    public Function<RoleDataContext, RoleData> getRoleDataFunc() {
+        return this.roleDataFunc;
+    }
+
+    /**
+     * 设置职业数据工厂。用于替代 CCA。
+     * <p>
+     * 用法：{@code .setRoleData(WarlockRoleData::new)}
+     * </p>
+     *
+     * @param newFunc 依据 {@link RoleDataContext} 创建 {@link RoleData} 的函数
+     * @return 自身，便于链式调用
+     */
+    public SRERole setRoleData(Function<RoleDataContext, RoleData> newFunc) {
+        this.roleDataFunc = newFunc;
+        return this;
+    }
 
     public ArrayList<SRERole> occupationRoles = new ArrayList<>();
     /** 被哪些职业作为关联职业引用 */
@@ -639,6 +680,16 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    /** 设置该职业是否能用特殊原版武器（Dream 铁斧 / 钻石剑 / 重锤）削减他人虚拟血量。 */
+    public SRERole setCanUseSpVanillaWeapon(boolean can) {
+        this.canUseSpVanillaWeapon = can;
+        return this;
+    }
+
+    public boolean canUseSpVanillaWeapon() {
+        return canUseSpVanillaWeapon;
+    }
+
     public SRERole setInstinctNightVision(boolean flag) {
         this.instinctNightVision = flag;
         return this;
@@ -709,6 +760,26 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean isInnocent;
     protected boolean canUseKiller;
     protected MoodType moodType;
+
+    /**
+     * 结算时是否计入「存活好人」计数（移植自 StarRailExpress）。
+     *
+     * <p>构造时默认取 {@link #isInnocent()}；个别职业可用
+     * {@link #setCanIncreaseSurvivingInnocents(boolean)} 单独调整。神父「天堂制造」的
+     * 转职条件（只剩一名平民）使用的就是这个旗标。</p>
+     */
+    protected boolean canIncreaseSurvivingInnocents = false;
+
+    /** 是否计入「存活好人」结算计数。 */
+    public boolean canIncreaseSurvivingInnocents() {
+        return this.canIncreaseSurvivingInnocents;
+    }
+
+    /** 设置是否计入「存活好人」结算计数。 */
+    public SRERole setCanIncreaseSurvivingInnocents(boolean flag) {
+        this.canIncreaseSurvivingInnocents = flag;
+        return this;
+    }
 
     public boolean isAutoReset() {
         return autoReset;
@@ -1052,6 +1123,16 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     }
 
+    /**
+     * 玩家失去该职业时调用（由 {@code RoleMethodDispatcher#onRemoveRole} 触发）。
+     * <p>
+     * 职业数据的清理写在对应的 {@code RoleData#clear()} 里，本方法用于「不属于 RoleData 的
+     * 收尾工作」（例如卸下临时属性、还原被顶替的外观等）。
+     * </p>
+     */
+    public void onRemove(ServerPlayer player) {
+    }
+
     public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
         return SREAbilityPlayerComponent.KEY.get(player);
     }
@@ -1144,6 +1225,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
         this.maxSprintTime = maxSprintTime;
         this.canSeeTime = canSeeTime;
         this.canUseInstinct = this.canUseKiller;
+        // 移植自 StarRailExpress：默认只有平民阵营计入「存活好人」结算计数
+        this.canIncreaseSurvivingInnocents = isInnocent;
     }
 
     public SRERole setCanAutoAddMoney(boolean bl) {
@@ -1371,6 +1454,27 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public Item getPsychoItem() {
         return TMMItems.BAT;
     };
+
+    /**
+     * 返回该职业在疯魔（Psycho）模式中可以持有并切换的武器，按优先级排序。
+     *
+     * <p>移植自 StarRailExpress。默认只有 {@link #getPsychoItem()} 一件；拥有多把兼容武器的职业
+     * 可以覆写本方法。切换栏位的服务端校验会用它判断「当前手上这把算不算合法的疯魔武器」。</p>
+     *
+     * @param player 目标玩家
+     * @return 兼容武器列表，可能为空
+     */
+    public List<Item> getPsychoSupportedWeapons(Player player) {
+        Item weapon = getPsychoItem();
+        return weapon == null ? List.of() : List.of(weapon);
+    }
+
+    /** 判断物品是否是该职业在疯魔模式下的兼容武器。 */
+    public boolean isPsychoSupportedWeapon(Player player, ItemStack stack) {
+        return !stack.isEmpty() && getPsychoSupportedWeapons(player).stream()
+                .filter(java.util.Objects::nonNull)
+                .anyMatch(stack::is);
+    }
 
     /**
      * 获取普通状态下的皮肤

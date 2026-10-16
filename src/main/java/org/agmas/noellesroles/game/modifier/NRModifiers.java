@@ -10,9 +10,12 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.modifier.coward.CowardModifier;
+import org.agmas.noellesroles.game.modifier.cowardice.CowardiceModifier;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
 import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
+import org.agmas.noellesroles.game.modifier.rage.RageModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -83,12 +86,84 @@ public class NRModifiers {
             .setDefaultEnableChance(5000);
 
     /**
+     * 胆小鬼修饰符：仅平民可获得；持续获得胆小鬼药水。
+     *
+     * <p>可被心理学家技能治愈。上游「面前有人死亡时坐下发抖」的行为未移植。</p>
+     */
+    public static SREModifier COWARD = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("coward"),
+            0x6B8E6B,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(CowardModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000);
+
+    /**
+     * 暴怒修饰符：持续获得暴怒药水。
+     *
+     * <p>可被心理学家技能治愈。上游「附近有人死亡时红屏加速」的行为未移植。</p>
+     */
+    public static SREModifier RAGE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("rage"),
+            0xC41E1E,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(RageModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000);
+
+    /**
+     * 怯懦修饰符：持续获得怯懦药水。
+     *
+     * <p>可被心理学家技能治愈。上游「附近有人死亡后失控跑走」的行为未移植。</p>
+     */
+    public static SREModifier COWARDICE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("cowardice"),
+            0x8A7A4A,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(CowardiceModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000);
+
+    /**
+     * 神的使命：仅钟表匠，30% 刷新；场上只剩一名平民时钟表匠转变为神父（神父不自然刷新）。
+     *
+     * <p>上游额外调用了 {@code setAddedVersion("4.4")}，本仓库 {@code SREModifier} 没有该 API，故省略。</p>
+     */
+    public static SREModifier GODS_MISSION = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("gods_mission"),
+            0xF4E4A6,
+            null,
+            null,
+            false,
+            false))
+            .setHidden(true)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(3000)
+            .setDefaultEnableNeededPlayerCount(12);
+
+    /**
      * 初始化修饰符系统
      */
     public static void init() {
         EXPEDITION.civilianOnly = true;
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;
+        // 上游用 setCanOnlyBeAppliedToTeam(RoleTeam.CIVILIAN)，RKD 的 SREModifier 没有该 API，
+        // 改用公开字段 civilianOnly（与 EXPEDITION / INTROVERTED 的写法一致）。
+        COWARD.civilianOnly = true;
+        // 神的使命：只关联钟表匠：神父由转职产生，不能进关联扩展/名单刷新
+        GODS_MISSION.canOnlyBeAppliedTo = new HashSet<>(List.of(ModRoles.CLOCKMAKER));
+        GODS_MISSION.addBothRelatedRole(ModRoles.CLOCKMAKER);
+        ModRoles.PRIEST.addRelatedModifier(GODS_MISSION);
         excludeLeonFromAllModifiers();
         excludeChildFromScaleModifiers();
         assignModifierComponents();

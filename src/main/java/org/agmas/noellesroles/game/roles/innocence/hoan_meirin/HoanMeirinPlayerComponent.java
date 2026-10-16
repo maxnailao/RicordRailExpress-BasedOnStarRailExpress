@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.innocence.hoan_meirin;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
@@ -55,17 +56,28 @@ public class HoanMeirinPlayerComponent
     /**
      * 重置组件状态
      * 在游戏开始时或角色分配时调用
+     * <p>
+     * 移植自 StarRailExpress 的 {@code HoanMeirinRoleData#init()}：红美铃开局自带一层气盾
+     * （即 {@link SREArmorPlayerComponent} 的 1 点护盾，可抵挡一次致命伤）。
+     * {@code giveArmor()} 是幂等的（已有护盾时不会叠加），所以重复 init 也安全。
+     * </p>
      */
     @Override
     public void init() {
         this.cooldown = 0;
         this.loneyTime = 0;
+        // 开局一层气盾
+        SREArmorPlayerComponent.KEY.get(player).giveArmor();
         this.sync();
     }
 
     @Override
     public void clear() {
-        this.init();
+        // 与上游 HoanMeirinRoleData#clear 一致：卸下开局给的那层气盾，避免残留到下一个职业
+        SREArmorPlayerComponent.KEY.get(player).clear();
+        this.cooldown = 0;
+        this.loneyTime = 0;
+        this.sync();
     }
 
     /**

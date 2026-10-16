@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.roles.killer.undead_lord;
 
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -16,13 +17,14 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.role_data.killer.UndeadLordRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 
 /**
  * 亡灵之主事件注册：
  * <ul>
- *   <li>右键尸体发动【亡者复苏】——将尸体转化为无意识亡灵（45 秒冷却，最多同时 3 个）。</li>
- *   <li>角色分配时初始化组件状态。</li>
+ *   <li>右键尸体发动【亡者复苏】——将尸体转化为无意识亡灵（45 秒冷却，上限随开局人数动态计算，最多 4 个）。</li>
+ *   <li>角色分配时初始化职业数据（{@link UndeadLordRoleData}）。</li>
  * </ul>
  */
 public class UndeadLordHandler {
@@ -30,7 +32,10 @@ public class UndeadLordHandler {
     public static void init() {
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             if (role.equals(ModRoles.UNDEAD_LORD)) {
-                UndeadLordPlayerComponent.KEY.maybeGet(player).ifPresent(UndeadLordPlayerComponent::init);
+                UndeadLordRoleData data = RoleData.getNullable(UndeadLordRoleData.class, player);
+                if (data != null) {
+                    data.init();
+                }
             }
         });
 
@@ -60,7 +65,7 @@ public class UndeadLordHandler {
                 return InteractionResult.PASS;
             }
 
-            UndeadLordPlayerComponent comp = UndeadLordPlayerComponent.KEY.maybeGet(serverPlayer).orElse(null);
+            UndeadLordRoleData comp = RoleData.getNullable(UndeadLordRoleData.class, serverPlayer);
             if (comp == null) {
                 return InteractionResult.PASS;
             }

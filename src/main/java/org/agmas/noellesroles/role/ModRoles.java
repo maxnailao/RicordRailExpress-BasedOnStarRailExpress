@@ -43,12 +43,10 @@ import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerRole;
-import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
@@ -214,6 +212,7 @@ public class ModRoles {
     public static ResourceLocation CHEF_ID = Noellesroles.id("chef");
     public static ResourceLocation MAGICIAN_ID = Noellesroles.id("magician");
     public static ResourceLocation CLOCKMAKER_ID = Noellesroles.id("clockmaker");
+    public static final ResourceLocation PRIEST_ID = Noellesroles.id("priest");
     public static final ResourceLocation RESCUER_ID = Noellesroles.id("rescuer");
     public static final ResourceLocation FIREFIGHTER_ID = Noellesroles.id("firefighter");
     public static final ResourceLocation ACCOUNTANT_ID = Noellesroles.id("accountant");
@@ -425,6 +424,8 @@ public class ModRoles {
     // 幻音师 ID - 杀手方中立
     public static final ResourceLocation PHANTOM_MUSICIAN_ID = Noellesroles.id("musician_phantom");
     public static final ResourceLocation CUPID_ID = Noellesroles.id("cupid");
+    // Dream（Dream）ID - 杀手阵营
+    public static final ResourceLocation DREAM_ID = Noellesroles.id("dream");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
@@ -741,7 +742,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setComponentKey(GreatDetectivePlayerComponent.KEY).setDefaultMax(1);
+    )).setRoleData(org.agmas.noellesroles.role_data.innocence.GreatDetectiveRoleData::new).setDefaultMax(1);
 
     /**
      * 建筑师角色 - 平民阵营
@@ -836,7 +837,7 @@ public class ModRoles {
                     SRERole.MoodType.FAKE, // 假心情
                     Integer.MAX_VALUE, // 无限冲刺
                     true // 隐藏计分板
-            )).setCanSeeCoin(true).setComponentKey(ModComponents.UNDEAD_LORD)
+            )).setCanSeeCoin(true).setRoleData(org.agmas.noellesroles.role_data.killer.UndeadLordRoleData::new)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(5000)
             .setDefaultEnableNeededPlayerCount(12);
 
@@ -939,15 +940,16 @@ public class ModRoles {
             .setCanSeeCoin(true).setCanSeeTime(false);
 
     /**
-     * 占卜家（乘客阵营）。开局携带【晶球】，右键对准尸体开始 10 秒施法，获知死者死亡时间 + 随机凶手线索；
-     * 50% 概率晶球破碎，60 秒冷却，每具尸体一次。
-     * 若占卜对象为亡语杀手伪装的尸体，视为亡语杀手用刀刺死了自己。
+     * 占卜家（乘客阵营）。开局携带【晶球】（对他人不可见）：先在背包界面点选占卜目标，
+     * 再用晶球右键尸体开始 3 秒占卜，完成后传送到目标身边（存活→其位置；死亡→其尸体位置；死亡且无尸体→无法传送）。
+     * 传送后 10 秒内再次右键晶球可返回原位；超时则晶球进入 50 秒冷却。
+     * 占卜成功后有 50% 概率破坏晶球，每具尸体只能占卜一次。占卜家死亡时周围 5 格内的玩家发光 8 秒。
      */
     public static SRERole DIVINER = TMMRoles.registerRole(
             new NormalRole(DIVINER_ID, new Color(148, 0, 211).getRGB(), // 紫水晶色
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.DIVINER)
+            .setCanSeeCoin(true).setRoleData(org.agmas.noellesroles.role_data.innocence.DivinerRoleData::new)
             .setDefaultMax(1).setDefaultEnableChance(7000);
 
     public static SRERole SALTED_FISH = TMMRoles.registerRole(
@@ -1273,6 +1275,7 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true)
+            .setRoleData(org.agmas.noellesroles.role_data.neutral.ChefRoleData::new)
             .setComponentKey(FoodDrinkGlowComponent.KEY);
     public static SRERole CAKE_MAKER = TMMRoles.registerRole(
             new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
@@ -1314,9 +1317,12 @@ public class ModRoles {
             .setPassiveIncome(true)
             .setServerGameTickEvent((sp, cca) -> JesterHandler.handler(sp, cca))
             .setDefaultMax(1);
+    // 船长：技能「舱门调度」的逻辑集中在 ConductorRoleData 中（RoleData API）
     public static SRERole CONDUCTOR = TMMRoles
             .registerRole(new NormalRole(CONDUCTOR_ID, new Color(184, 134, 11).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setRoleData(org.agmas.noellesroles.role_data.innocence.ConductorRoleData::new)
+            .setCanSeeCoin(true)
             .setDefaultMax(1);
     public static SRERole BARTENDER = TMMRoles
             .registerRole(new NormalRole(BARTENDER_ID, new Color(217, 241, 240).getRGB(), true,
@@ -3082,8 +3088,9 @@ public class ModRoles {
     /**
      * 阿蒙（诡秘之主）—— 中立彩蛋独立胜利角色，核心机制「寄生」。
      * - 中立独立胜利 (setNeutrals(true)，setNeutralForKiller(false) 杀手视角为好人)
-     * - 无武器、不开杀手商店、不能捡枪、无杀手直觉
+     * - 无武器、不开杀手商店、不能捡枪
      * - 隐秘种下时之虫同化他人，可主动夺舍 / 致命伤时自动夺舍续命
+     * - 阿蒙透视：可开启直觉，但只能看到被时之虫标记的宿主（潜伏中或已成熟），见 InstinctRenderer
      * - 胜利条件「夺舍并幸存」在 CustomWinnerClass 判定
      */
     public static SRERole AMON = TMMRoles.registerRole(new EggRole(
@@ -3104,7 +3111,8 @@ public class ModRoles {
             .setComponentKey(org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY)
             .setNeutrals(true).setNeutralForKiller(false)
             .setCanSeeTeammateKiller(false).setCanPickUpRevolver(false)
-            .setCanUseInstinct(false)
+            // 阿蒙透视：允许使用直觉开关（高亮范围由 InstinctRenderer 限定为被标记的宿主）
+            .setCanUseInstinct(true)
             .setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1)
@@ -3181,8 +3189,32 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             true // 不显示计分板
-    )).setComponentKey(ClockmakerPlayerComponent.KEY).setCanSeeTime(true).setCanSeeCoin(true)
+    )).setRoleData(org.agmas.noellesroles.role_data.innocence.ClockmakerRoleData::new).setCanSeeTime(true).setCanSeeCoin(true)
             .setDefaultEnableNeededPlayerCount(12);
+
+    /**
+     * 神父：特殊中立，由持有神的使命的钟表匠转变而来，随平民获胜。
+     * 不参与随机刷新。
+     *
+     * <p>上游构造签名为 {@code (id, color, RoleTeam.NEUTRALS, MoodType.REAL, maxSprintTime, canSeeTime)}；
+     * 本仓库 {@code NormalRole} 使用 {@code (id, color, isInnocent, canUseKiller, ...)}，
+     * 故等价写为 isInnocent = true、canUseKiller = false（好人方、不使用杀手能力）。</p>
+     */
+    public static SRERole PRIEST = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.neutral.priest.PriestRole(
+            PRIEST_ID,
+            new Color(244, 232, 192).getRGB(),
+            true,
+            false,
+            SRERole.MoodType.REAL,
+            Integer.MAX_VALUE,
+            true
+    )).setRoleData(org.agmas.noellesroles.role_data.neutral.PriestRoleData::new)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true)
+            .setDefaultMax(0)
+            .setCanBeRandomedByOtherRoles(false)
+            .setCanSetSpawnInfoInConfig(false)
+            .setHiddenForRoleRotation(true);
 
     /**
      * 强盗角色 - 杀手阵营
@@ -3405,6 +3437,36 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 冲刺时间
             false // 不能看时间
     )).setDefaultMax(1).setCanSeeCoin(true);
+
+    // ==================== Dream（Dream）====================
+    // "噢，皮革噶的，i want to 和你蹦蹦蹦。"
+    public static SRERole DREAM = TMMRoles.registerRole(new EggRole(
+            DREAM_ID, new Color(0, 168, 107).getRGB(), false,
+            true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+        @Override
+        public boolean onPsychoGiveItem(Player player,
+                io.wifi.starrailexpress.cca.SREPlayerPsychoComponent psychoComponent) {
+            // 巨幕面具狂暴走 Psycho 逻辑，但不发球棒/面具到手上
+            return true;
+        }
+
+        @Override
+        public Item getPsychoItem() {
+            // 疯魔结束时的清理目标：面具从不入包，等于什么都不清理（避免误清球棒）
+            return org.agmas.noellesroles.init.ModItems.DREAM_MASK;
+        }
+    }).setRoleData(org.agmas.noellesroles.role_data.killer.DreamRoleData::new)
+            .setCanUseKiller(true)
+            .setCanSeeTeammateKiller(true)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            // 上游的 setCanUseInstinctAndNightVision(true)：本仓库拆成两个 setter
+            .setCanUseInstinct(true)
+            .setInstinctNightVision(true)
+            // 上游的 setCanUseSpVanillaWeapon(true)：能用铁斧/钻石剑/重锤削减他人的虚拟血量，
+            // 同时是「虚拟血量条」与「受伤者高亮」的观察者门禁（客户端也要读，见 DreamClientHandler）
+            .setCanUseSpVanillaWeapon(true)
+            .setCanSeeCoin(true);
 
     // ==================== 其他变量定义 ====================
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();
