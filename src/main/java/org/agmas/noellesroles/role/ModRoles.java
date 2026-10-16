@@ -1478,10 +1478,11 @@ public class ModRoles {
     /**
      * 西部牛仔（警长阵营）。
      * - 警长阵营（isInnocent = true, setVigilanteTeam = true），不能使用杀手能力。
-     * - 初始武器：德林加手枪（死亡时不掉落）。
+     * - 初始武器：一把左轮手枪（死亡时不掉落）。
      * - 死亡后掉落一把左轮手枪。
-     * - 德林加误杀平民时，牛仔自身死亡（小脑惩罚，不影响红海军）。
-     * - 商店：绳索（175金币）、德林加弹药重置（150金币，购买后6秒缓慢I，结束后重置弹药）。
+     * - 用枪误杀平民时，牛仔自身死亡（小脑惩罚，不影响红海军）。
+     * - 商店：绳索（175金币）、雪茄（20金币，抽一口获得 5 秒速度 I）。
+     * - 背包界面（按 E）可花费 200 金币拉取一名玩家进行决斗，见 {@code CowboyDuelManager}。
      */
     public static SRERole NIUZAI_JUEDOUBA = TMMRoles.registerRole(
             new NormalRole(NIUZAI_JUEDOUBA_ID, 0x8B4513, true, false, SRERole.MoodType.REAL,
@@ -1490,46 +1491,33 @@ public class ModRoles {
                 @Override
                 public java.util.List<net.minecraft.world.item.ItemStack> getDefaultItems() {
                     java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>();
-                    items.add(io.wifi.starrailexpress.index.TMMItems.DERRINGER.getDefaultInstance());
+                    items.add(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance());
                     return items;
                 }
 
                 @Override
                 public java.util.List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
                     java.util.ArrayList<io.wifi.starrailexpress.util.ShopEntry> shop = new java.util.ArrayList<>();
-                    // 绳索 - 175金币
-                    shop.add(new io.wifi.starrailexpress.util.ShopEntry(
-                            org.agmas.noellesroles.init.ModItems.ROPE.getDefaultInstance(),
-                            175,
-                            io.wifi.starrailexpress.util.ShopEntry.Type.TOOL));
-                    // 德林加弹药重置 - 150金币（图标为德林加手枪）
-                    shop.add(new io.wifi.starrailexpress.util.ShopEntry(
-                            io.wifi.starrailexpress.index.TMMItems.DERRINGER.getDefaultInstance(),
-                            150,
-                            io.wifi.starrailexpress.util.ShopEntry.Type.WEAPON) {
-                        @Override
-                        public boolean onBuy(@org.jetbrains.annotations.NotNull net.minecraft.world.entity.player.Player player) {
-                            if (!(player instanceof net.minecraft.server.level.ServerPlayer sp))
-                                return false;
-                            // 施加 6 秒缓慢 I
-                            sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                                    net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN,
-                                    120, 0));
-                            // 6 秒后通过 serverTaskQueue 延迟重置德林加弹药
-                            io.wifi.starrailexpress.game.GameUtils.serverTaskQueue.add(
-                                    new io.wifi.starrailexpress.game.ServerTaskInfoClasses.SchedulerTask(120, () -> {
-                                        if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(sp))
-                                            return;
-                                        io.wifi.starrailexpress.cca.SREGameWorldComponent gw =
-                                                io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level());
-                                        if (!gw.isRole(sp, ModRoles.NIUZAI_JUEDOUBA))
-                                            return;
-                                        org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyPlayerComponent
-                                                .resetDerringerAmmo(sp);
-                                    }));
-                            return true;
-                        }
-                    });
+                    // 注：绳索（原 175 金币）已移除，牛仔商店现在只有雪茄。
+                    // 雪茄 - 20金币：来自 libs/wathe-extra-items（watheextraitems:cigar）。
+                    // 抽一口 30 秒内只能一次，速度效果由 CowboyDuelManager 补（模组本身无增益）。
+                    // 该模组未安装时 cigarItem() 返回 null，这里跳过该条目而不是崩。
+                    var cigar = org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager
+                            .cigarItem();
+                    if (cigar != null) {
+                        shop.add(new io.wifi.starrailexpress.util.ShopEntry(
+                                cigar.getDefaultInstance(),
+                                20,
+                                io.wifi.starrailexpress.util.ShopEntry.Type.TOOL) {
+                            @Override
+                            public boolean canBuy(@org.jetbrains.annotations.NotNull
+                            net.minecraft.world.entity.player.Player player) {
+                                // 背包里只能有一个雪茄：已经有了就不给买
+                                return !org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager
+                                        .hasCigar(player);
+                            }
+                        });
+                    }
                     return shop;
                 }
 

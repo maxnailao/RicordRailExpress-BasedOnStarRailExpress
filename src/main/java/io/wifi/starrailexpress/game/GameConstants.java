@@ -211,6 +211,8 @@ public class GameConstants {
         public static ResourceLocation KNIFE = SRE.id("knife_stab");
         public static ResourceLocation REVOLVER = SRE.id("revolver_shot");
         public static ResourceLocation DERRINGER = SRE.id("derringer_shot");
+        /** 西部牛仔决斗：败者被"巫毒强制杀死"时使用的死亡原因。 */
+        public static ResourceLocation COWBOY_DUEL = SRE.id("cowboy_duel");
         public static ResourceLocation BAT = SRE.id("bat_hit");
         public static ResourceLocation GRENADE = SRE.id("grenade");
         public static ResourceLocation POISON = SRE.id("poison");

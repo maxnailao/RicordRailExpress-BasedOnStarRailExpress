@@ -154,6 +154,31 @@ public class SREClientCommand {
                         }, 1);
                         return 1;
                       })))));
+
+          // /sre:client pos —— 打印自己当前坐标。
+          // 冒险模式看不到 F3 调试屏，排查"决斗领域到底生成在哪"时需要坐标，
+          // 所以单独给一条客户端命令（纯本地读取，不发包、不需要权限）。
+          dispatcher.register(ClientCommandManager.literal("sre:client")
+              .then(ClientCommandManager.literal("pos")
+                  .executes(ctx -> {
+                    var player = ctx.getSource().getPlayer();
+                    if (player == null) {
+                      return 0;
+                    }
+                    String dim = player.level().dimension().location().toString();
+                    String pos = String.format("%.1f %.1f %.1f",
+                        player.getX(), player.getY(), player.getZ());
+                    String tp = String.format("%d %d %d",
+                        (int) Math.floor(player.getX()),
+                        (int) Math.floor(player.getY()),
+                        (int) Math.floor(player.getZ()));
+                    ctx.getSource().sendFeedback(
+                        Component.literal("维度 " + dim + "　坐标 " + pos)
+                            .withStyle(ChatFormatting.AQUA));
+                    ctx.getSource().sendFeedback(
+                        Component.literal("可直接 /tp " + tp).withStyle(ChatFormatting.GRAY));
+                    return 1;
+                  })));
         });
   }
 }

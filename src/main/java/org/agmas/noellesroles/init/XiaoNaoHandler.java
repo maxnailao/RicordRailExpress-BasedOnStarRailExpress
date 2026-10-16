@@ -100,9 +100,18 @@ public class XiaoNaoHandler {
                             }
                         }
                     }
-                    // 西部牛仔德林加误杀惩罚（不影响红海军）
+                    // 西部牛仔误杀惩罚（不影响红海军）。
+                    // 牛仔已改为左轮手枪起手（德林加手枪已移除），所以这里认左轮的 death reason。
+                    // 同时保留 derringer_shot：牛仔若在特殊模式捡到德林加，惩罚口径保持一致。
+                    //
+                    // ★ 决斗例外：决斗是牛仔主动发起的合法对决，被拉进来的人本来就可能是平民，
+                    //   打中他是**规则内的胜负判定**，不算"误杀"。所以只要任一方处于决斗领域
+                    //   （或死亡原因就是决斗处决），一律不触发惩罚 —— 否则赢一场就理智掉光。
                     if (gameWorldComponent.isRole(killer, ModRoles.NIUZAI_JUEDOUBA)
-                            && deathReason.getPath().equals("derringer_shot")) {
+                            && (deathReason.getPath().equals("revolver_shot")
+                                    || deathReason.getPath().equals("derringer_shot"))
+                            && !org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager
+                                    .isDuelRelated(killer, victim, deathReason)) {
                         if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                             io.wifi.starrailexpress.api.replay.board.XiaoNaoBoardStats.record(victim, killer);
                             handleCorruptionModifier(killer, gameWorldComponent);

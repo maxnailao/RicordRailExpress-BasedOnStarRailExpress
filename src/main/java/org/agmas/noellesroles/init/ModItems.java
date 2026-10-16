@@ -640,6 +640,8 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.LeonRedHerbItem(
                     new Item.Properties().stacksTo(1)),
             "leon_red_herb", ROLE_ITEMS_GROUP);
+    // 雪茄不再由本模组注册：改用 libs/wathe-extra-items 的 watheextraitems:cigar，
+    // 通过 CowboyDuelManager.cigarItem() 取（该模组未安装时返回 null）。
     public static final Item RADIO = register(
             new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
             "radio", TOOLS_GROUP);

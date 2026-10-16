@@ -1576,6 +1576,26 @@ public class ModPacketsReciever {
           }
         });
 
+    // ==================== 西部牛仔·决斗网络包 ====================
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CowboyDuelC2SPacket.ID,
+        (payload, context) -> {
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isSkillAvailable)
+            return;
+          if (player.hasEffect(ModEffects.SAFE_TIME))
+            return;
+          if (!gameWorld.isRole(player, ModRoles.NIUZAI_JUEDOUBA))
+            return;
+          if (!GameUtils.isPlayerAliveAndSurvival(player))
+            return;
+          if (payload.target() == null)
+            return;
+          // 领域互斥 / 角色校验 / 金币扣除 / 传送都在 start() 内部统一处理
+          org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager.start(player,
+              player.serverLevel().getServer().getPlayerList().getPlayer(payload.target()));
+        });
+
     // ==================== 嬉命人网络包 ====================
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.EmbalmerC2SPacket.ID,
         (payload, context) -> {

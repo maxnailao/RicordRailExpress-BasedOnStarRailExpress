@@ -1,9 +1,13 @@
 package org.agmas.noellesroles.mixin.roles.elf;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.event.OnShieldBroken;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.util.ParticleFx;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -82,12 +86,18 @@ public class ArrowMixin {
                             return;
                         }
                     } else if (gameWorld.isRole(serverPlayer, ModRoles.LIEMOREN)) {
-                        // 猎魔人的猎魔箭 - 强制击杀（无视护盾和无敌）
+                        // 猎魔人的猎魔箭 —— 双重伤害判定（不再是"巫毒式"无视护盾强制击杀）。
+                        //
+                        // 判定一：目标有护盾 → 只破盾，不致死（与狙击枪远距离一枪破盾一致）。
+                        // 判定二：护盾已被判掉（或本来就没有）→ 正常击杀。
+                        //
+                        // 以前这里是 GameUtils.forceKillPlayer(...)，会绕过护盾与所有否决战
+                        // （等效"巫毒魔法"）。改成走正常 killPlayer 管线后，护盾/无敌/否决战都重新生效。
                         if (entityHitResult.getEntity() instanceof ServerPlayer target) {
                             isHit = true;
-                            GameUtils.forceKillPlayer(target, true, serverPlayer, SRE.id("hunt_arrow"));
                             arrow.discard();
                             ci.cancel();
+                            noellesroles$huntArrowPierceAndKill(serverPlayer, target, arrow);
                             return;
                         }
                     } else {
@@ -183,6 +193,79 @@ public class ArrowMixin {
     }
 
     private static boolean isHit = false;
+
+    /**
+     * 猎魔箭：<b>穿透护盾，直接击杀</b>。
+     *
+     * <p>猎魔箭的定位是"无视防御的处决箭"，所以命中时不再走"先破盾、下一箭才致死"，
+     * 而是<b>先剥掉目标身上所有护盾层，再正常击杀</b>。
+     *
+     * <p>之所以是"先剥盾再击杀"而不是直接 {@code forceKillPlayer} 硬来：
+     * <ol>
+     *   <li>{@code GameMode.killPlayer} 里护盾会先吃掉这次死亡并提前 return
+     *       （见 {@code SREArmorPlayerComponent} 分支），不先剥盾就杀不掉；</li>
+     *   <li>走正常 {@code killPlayer} 能保留 {@code AllowPlayerDeath} 等否决战与
+     *       回放记录、死亡统计等既有管线，只把"护盾"这一层穿透掉 ——
+     *       不可被 {@code AllowPlayerDeath} 拦截的玩家（如某些无敌状态）依然拦得住。</li>
+     * </ol>
+     *
+     * <p>剥掉的护盾层：
+     * <ul>
+     *   <li>{@link SREArmorPlayerComponent} —— 通用护盾（里昂草药、巫师、决斗胜者等）；</li>
+     *   <li>{@code SREPlayerPsychoComponent} —— 疯魔护盾。</li>
+     * </ul>
+     */
+    @Unique
+    private static void noellesroles$huntArrowPierceAndKill(ServerPlayer shooter, ServerPlayer target,
+            AbstractArrow arrow) {
+        ServerLevel level = shooter.serverLevel();
+        pierceAllShields(shooter, target, level);
+        // 护盾已剥净 → 正常击杀管线
+        GameUtils.killPlayer(target, true, shooter, SRE.id("hunt_arrow"));
+    }
+
+    /**
+     * 剥掉目标身上所有护盾层；每剥掉一层都给双方反馈。
+     *
+     * @return 是否至少剥掉了一层
+     */
+    @Unique
+    private static boolean pierceAllShields(ServerPlayer shooter, ServerPlayer target, ServerLevel level) {
+        boolean pierced = false;
+
+        // ① 通用护盾层
+        SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(target);
+        if (armor != null && armor.getArmor() > 0) {
+            armor.armor = 0;
+            armor.sync();
+            OnShieldBroken.EVENT.invoker().onShieldBroken(target, shooter);
+            pierced = true;
+        }
+
+        // ② 疯魔护盾层
+        var psycho = SREPlayerPsychoComponent.KEY.get(target);
+        if (psycho != null && psycho.getArmour() > 0) {
+            psycho.setArmour(0);
+            pierced = true;
+        }
+
+        if (pierced) {
+            level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                    SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
+            ParticleFx.burst(level, ParticleTypes.ENCHANTED_HIT,
+                    target.getX(), target.getY() + 1.0, target.getZ(),
+                    24, 0.4, 0.4, 0.4, 0.05);
+            target.displayClientMessage(
+                    Component.translatable("message.noellesroles.liemoren.hunt_arrow_pierced")
+                            .withStyle(ChatFormatting.YELLOW),
+                    true);
+            shooter.displayClientMessage(
+                    Component.translatable("message.noellesroles.liemoren.hunt_arrow_pierced_self")
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
+        }
+        return pierced;
+    }
 
     @Inject(method = "onHitEntity", at = @At("TAIL"))
     private void noellesroles$onHitEntitTail(EntityHitResult entityHitResult, CallbackInfo ci) {

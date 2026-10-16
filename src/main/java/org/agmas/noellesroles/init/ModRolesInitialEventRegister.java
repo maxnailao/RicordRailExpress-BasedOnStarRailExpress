@@ -854,6 +854,8 @@ public class ModRolesInitialEventRegister {
 
         // 咒术师技能注册（重做版）：窃取发肤（G）/ 蚀骨之咒（V 切换）/ 领域展开（背包点选）
         org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager.register();
+        // 西部牛仔：决斗领域（背包点选对手 → 双方传送进领域 1v1）
+        org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager.register();
         RoleSkill.register(ModRoles.WARLOCK,
                 RoleSkill.skill(SRE.id("warlock_steal"), "skill.noellesroles.warlock.steal", context -> {
                     ServerPlayer player = context.player();

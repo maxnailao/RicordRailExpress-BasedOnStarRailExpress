@@ -284,6 +284,11 @@ public class ModPackets {
         // 注册咒术师网络包
         PayloadTypeRegistry.playC2S().register(WarlockDomainC2SPacket.ID, WarlockDomainC2SPacket.CODEC);
 
+        // 注册西部牛仔·决斗网络包
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.packet.CowboyDuelC2SPacket.ID,
+                org.agmas.noellesroles.packet.CowboyDuelC2SPacket.CODEC);
+
         // 注册嬉命人网络包
         PayloadTypeRegistry.playC2S().register(EmbalmerC2SPacket.ID, EmbalmerC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(EmbalmerSkinSwapS2CPacket.ID, EmbalmerSkinSwapS2CPacket.CODEC);
