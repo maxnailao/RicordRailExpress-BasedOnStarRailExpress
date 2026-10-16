@@ -240,8 +240,6 @@ public class MapManager {
         jsonObject.add("disabledRoles", gson.toJsonTree(areas.disabledRoles));
         jsonObject.add("disabledModifiers", gson.toJsonTree(areas.disabledModifiers));
         jsonObject.add("enableSceneTask", gson.toJsonTree(areas.enableSceneTask));
-        jsonObject.addProperty("noReset", areas.noReset);
-        jsonObject.addProperty("mustCopy", areas.mustCopy);
 
         // 保存支持的游戏模式列表
         jsonObject.add("gameModes", gson.toJsonTree(areas.gameModes));
@@ -315,16 +313,13 @@ public class MapManager {
                 areas.areasSettings = new AreasSettings();
             }
 
+            // noReset / mustCopy 已迁移到 areasSettings（写进 settings 段）；
+            // 此处保留旧版根级键的兼容读取。
             if (jsonObject.has("noReset")) {
-                areas.noReset = jsonObject.get("noReset").getAsBoolean();
-            } else {
-                areas.noReset = false;
+                areas.areasSettings.noReset = jsonObject.get("noReset").getAsBoolean();
             }
-
             if (jsonObject.has("mustCopy")) {
-                areas.mustCopy = jsonObject.get("mustCopy").getAsBoolean();
-            } else {
-                areas.mustCopy = false;
+                areas.areasSettings.mustCopy = jsonObject.get("mustCopy").getAsBoolean();
             }
             if (jsonObject.has("haveOutsideSound")) {
                 areas.areasSettings.haveOutsideSound = jsonObject.get("haveOutsideSound").getAsBoolean();

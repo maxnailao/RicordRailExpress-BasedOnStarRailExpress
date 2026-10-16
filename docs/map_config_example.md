@@ -188,10 +188,12 @@
     "3": { "x": 523.0, "y": 60.0, "z": 269.0 }
   },
 
-  // 是否禁用地图重置
+  // 跳过地图重置：true = 本局开始时不重置地图；false = 照常重置（默认）
+  // ⚠️ 这是“跳过重置”开关，写 false 仍会重置；要“不重置”必须写 true
   "noReset": false,
 
-  // 是否必须复制(不复用模板)
+  // 重置方式：true = 每次重置都完整复制模板区域（全量覆盖）；false = 只重置动态点位（轻量，默认）
+  // ⚠️ false 不会阻止重置，只是换成轻量方式；要阻止重置请用上面的 noReset=true
   "mustCopy": false,
 
   // 药水效果列表 — 格式: "namespace:id,level"
@@ -405,6 +407,10 @@
 
 例：id 为 `season1/ice` 时，依次查找 `.../maps/background/season1/ice.png` 与 `.../maps/season1/ice.png`。
 
-- 内置贴图由 **sre-resources**（必装依赖，mod id `sre_resource`）提供，与 `panorama` 等同仓库资源放在一起。
+- 本仓库已随模组内置 27 张整屏背景图（放在 `textures/gui/maps/background/`，2560×1494、24 位 PNG，合计约 130 MB，构建出的 jar 约 210 MB）。
+- 内置图只填了**整屏背景**这一格，缩略图那一格仍为空，所以轮换页列表卡片与右侧大图仍显示程序化占位图；需要的话把同一批图再复制一份到 `textures/gui/maps/<id>.png` 即可（会让 jar 再涨约 130 MB）。
+- `MapUiGraphics.mapTexture` 的查找顺序是**归一化路径优先**：先把 id 小写化、把不受支持的字符（资源路径只允许 `a-z 0-9 / _ - .`）换成 `_`，命中即用；没命中才按原样路径再查一次。所以内置图一律命名**全小写**且与 `train_maps/<地图>.json` 同名：`Polus` → `polus.png`、`Level_4` → `level_4.png`、`My Maps/Map A` → `my_maps/map_a.png`。
+- 归一化必须排在原样之前：本版本 `ResourceLocation.tryBuild` 并不拒绝大写路径，开发环境读目录式资源（Windows 大小写不敏感）能命中 `Polus.png`，而发布后读的是 jar（zip 大小写敏感），只有小写 `polus.png` 查得到；顺序反过来时，id 带大写的 `Polus`/`Skeld`/`Vineyard`/`ResearchStation`/`TheWinterPalace`/`TheWitchPrison` 在成品里就只剩黑底（开发环境看不出来）。
+- 当前仍无背景图的地图（沿用程序化背景）：`fyz`、`langrensha`、`level1`、`lyxz`、`ScarletDevilMansion`。补图只要把同名小写 PNG 放进 `src/main/resources/assets/starrailexpress/textures/gui/maps/background/` 再重新构建；只想临时换图、不想改模组时，放进任意已启用资源包的同一路径即可（客户端实时查询，F3+T 重载生效）。
+- 没有贴图时背景由 `client/gui/screen/mapui/MapBackdropRenderer` 程序化绘制（低多边形网格 + 冷灰渐变）：配色常量 `ACCENT` / `ACCENT_BRIGHT` / `VEIL`、底色 `0xFF080A0E`、网格渐变 `0xFF272C35 -> 0xFF10131A` 均在该文件内；投票页另外叠加的上下压暗渐变在 `MapVoteScreen.renderBackground`。
 - 贴图通过客户端 `ResourceManager` 实时查询，因此**任意已启用的资源包都可以覆盖或新增**地图背景，F3+T 重载后生效；服务端不做校验（`VERIFY_RESOURCE_PACK_HASHES` 默认关闭）。
-- 资源路径只允许 `a-z 0-9 / _ - .`，大写或空格会被归一化（小写化 + 非法字符替换为 `_`）后再查找一次，例如 id `My Maps/Map A` 会去查 `my_maps/map_a.png`。

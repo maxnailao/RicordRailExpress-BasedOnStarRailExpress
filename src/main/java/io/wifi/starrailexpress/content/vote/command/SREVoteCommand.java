@@ -152,7 +152,17 @@ public class SREVoteCommand {
                                         IntegerArgumentType.getInteger(ctx, "syncInterval"),
                                         EntityArgument.getPlayers(ctx, "targets"),
                                         IntegerArgumentType.getInteger(ctx, "multiSelect"),
-                                        FunctionArgument.getFunctionOrTag(ctx, "function"))))))))));
+                                        FunctionArgument.getFunctionOrTag(ctx, "function")))
+                                    .then(Commands.argument("modeUi", BoolArgumentType.bool())
+                                        .executes(ctx -> startVote(ctx,
+                                            IntegerArgumentType.getInteger(ctx, "duration"),
+                                            BoolArgumentType.getBool(ctx, "allowReVote"),
+                                            BoolArgumentType.getBool(ctx, "showResults"),
+                                            IntegerArgumentType.getInteger(ctx, "syncInterval"),
+                                            EntityArgument.getPlayers(ctx, "targets"),
+                                            IntegerArgumentType.getInteger(ctx, "multiSelect"),
+                                            BoolArgumentType.getBool(ctx, "modeUi"),
+                                            FunctionArgument.getFunctionOrTag(ctx, "function")))))))))));
 
     var stopNode = Commands.literal("stop").executes(ctx -> {
       VoteManager.stopCurrentVote();
@@ -268,6 +278,12 @@ public class SREVoteCommand {
   private static int startVote(CommandContext<CommandSourceStack> ctx, int dur, boolean allow, boolean show,
       int interval, @Nullable Collection<ServerPlayer> targets, int multiSelect,
       com.mojang.datafixers.util.Pair<ResourceLocation, Either<CommandFunction<CommandSourceStack>, Collection<CommandFunction<CommandSourceStack>>>> func) {
+    return startVote(ctx, dur, allow, show, interval, targets, multiSelect, null, func);
+  }
+
+  private static int startVote(CommandContext<CommandSourceStack> ctx, int dur, boolean allow, boolean show,
+      int interval, @Nullable Collection<ServerPlayer> targets, int multiSelect, @Nullable Boolean modeUi,
+      com.mojang.datafixers.util.Pair<ResourceLocation, Either<CommandFunction<CommandSourceStack>, Collection<CommandFunction<CommandSourceStack>>>> func) {
     var source = ctx.getSource();
     if (pendingOptions.size() < 2) {
       source.sendFailure(Component.literal("Need at least 2 options."));
@@ -279,6 +295,12 @@ public class SREVoteCommand {
         .showResults(show)
         .syncInterval(interval * 20)
         .maxSelect(multiSelect);
+    // modeUi 显式指定优先；未指定时沿用旧判定：所有选项都以 mode: 开头即为模式投票
+    boolean asModeVoteUi = modeUi != null ? modeUi
+        : pendingOptions.stream().allMatch(option -> option.resultId().startsWith("mode:"));
+    if (asModeVoteUi) {
+      builder.type("game_mode");
+    }
     for (VoteOption opt : pendingOptions)
       builder.addOption(opt);
     if (targets != null && !targets.isEmpty())

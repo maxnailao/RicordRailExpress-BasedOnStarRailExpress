@@ -8,7 +8,6 @@ package io.wifi.starrailexpress.client.gui.screen;
 
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.cca.MapVotingComponent;
-import io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapBackdropRenderer;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapCapabilitySummary;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache;
@@ -38,9 +37,8 @@ import org.lwjgl.glfw.GLFW;
 /** One information column, an open landscape, and a browsable destination route. */
 public class MapVoteScreen extends Screen {
     private static final long RESULT_COUNTDOWN_MS = 2_500L;
-    private static final float COVER_FADE_MS = 480.0F;
     private static final long DOUBLE_CLICK_MS = 400L;
-    /** 客户端自卫：结果页铺黑后超过该时长仍未开局则自动关闭，防止卡黑屏。 */
+    /** 客户端自卫：结果页停留超过该时长仍未开局则自动关闭，防止界面顶住不消失。 */
     private static final long RESULT_SAFETY_CLOSE_MS = 10_000L;
 
     /** PageUp/PageDown 一次翻几行详情 */
@@ -141,21 +139,11 @@ public class MapVoteScreen extends Screen {
 
     public boolean isShowingResult() { return resultMapId != null; }
 
-    /** 发车倒计时结束后才在 GUI 内铺黑。 */
-    public float guiCoverAmount() {
-        if (!isShowingResult()) return 0.0F;
-        return VoteFlowFrame.ease((System.currentTimeMillis() - resultStartedAt - RESULT_COUNTDOWN_MS) / COVER_FADE_MS);
-    }
-
     @Override public boolean isPauseScreen() { return false; }
     @Override public boolean shouldCloseOnEsc() { return !isShowingResult(); }
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        if (OpeningPresentationCoordinator.shouldCoverVoteGui()) {
-            g.fill(0, 0, width, height, 0xFF000000);
-            return;
-        }
         backdrop.renderBackdrop(g);
         g.fillGradient(0, 0, width, Math.min(height, 120), 0xED120D08, 0x00120D08);
         g.fillGradient(0, Math.max(0, height - 140), width, height, 0x00120D08, 0xF00B0907);
@@ -163,10 +151,6 @@ public class MapVoteScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        if (OpeningPresentationCoordinator.shouldCoverVoteGui()) {
-            g.fill(0, 0, width, height, 0xFF000000);
-            return;
-        }
         float dt = backdrop.advance(targetMapId());
         routePosition = MapUiGraphics.approach(routePosition, focusIndex, dt, 13);
         var l = MapVoteLayout.of(width, height);
@@ -476,7 +460,7 @@ public class MapVoteScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        // 客户端自卫：结果页铺黑后若长时间未真正开局（服务端没有推送关闭/开局），自动关闭黑屏
+        // 客户端自卫：结果页若长时间未等到开局（服务端没有推送关闭/开局），自动关闭
         if (isShowingResult() && System.currentTimeMillis() - resultStartedAt > RESULT_SAFETY_CLOSE_MS
                 && minecraft != null) {
             minecraft.setScreen(null);

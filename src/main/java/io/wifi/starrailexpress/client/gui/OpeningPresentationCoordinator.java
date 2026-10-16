@@ -103,7 +103,8 @@ public final class OpeningPresentationCoordinator {
             }
             boolean blocked = isPresentationBlocked(client, voteGui);
             quietTicks = blocked ? 0 : quietTicks + 1;
-            if (quietTicks >= 8 && (!voteGui || departure.isFullyCovered())) {
+            // 轮选要在黑幕铺满后再交接界面；没有轮选时黑幕不再出现，到点直接关。
+            if (quietTicks >= 8 && (!voteGui || !rotationReady || departure.isFullyCovered())) {
                 leaveVoteGui(client, voteGui, rotationReady);
                 // 没有开局运镜（如观战者收不到开场镜头）：不展示规则卡，直接结束开场流程。
                 if (!rotationReady && !RoundTextRenderer.isWelcomeActive()) {
@@ -128,19 +129,23 @@ public final class OpeningPresentationCoordinator {
         if (!screenOpen) {
             renderCurtain(graphics.getDefaultGuiGraphics(), partialTick, false);
         }
-        // 规则卡与开局运镜同步显示：聊天等悬浮屏打开也不暂停，卡片照常绘制在其背后。
-        // welcome 角色公布文案由 RoundTextRenderer.renderHud 负责绘制（开场流程只负责暂停它），
-        // 这里只叠加地图规则卡，避免重复绘制。
-        if (state == State.SHOWING_RULES) {
+        boolean welcomeActive = RoundTextRenderer.isWelcomeActive();
+        // 规则卡与开局运镜同步显示：聊天等悬浮屏打开也不暂停，卡片照常绘制在其背后；
+        // welcome 同样不因普通 UI 暂停，可绘制时照常绘制。
+        if (state == State.SHOWING_RULES && (!welcomeActive || shouldWaitForWelcome())) {
             MapRuleIntroHud.render(graphics.getDefaultGuiGraphics(), partialTick);
+            return;
+        }
+        if (welcomeActive && !shouldWaitForWelcome()) {
+            if (client.player != null)
+                RoundTextRenderer.renderWelcomeGui(client.font, client.player, graphics, partialTick);
         }
     }
 
     private static void tickDeparture(Minecraft client, boolean voteGui, boolean rotationReady) {
         if (voteGui) {
-            float cover = client.screen instanceof MapVoteScreen vote ? vote.guiCoverAmount() : 1.0F;
-            // 结果页只跟发车倒计时铺黑，不要因为游戏已开始就提前盖住。
-            departure.tick(cover, rotationReady);
+            // 结果页不铺黑：重置与开局等待期间保持结果页可见，切到世界交给开局演出。
+            departure.tick(0.0F, rotationReady);
             if (rotationReady && departure.canHandoff(true)) {
                 if (!departure.isReleasing())
                     departure.release();
@@ -164,10 +169,7 @@ public final class OpeningPresentationCoordinator {
             departure.tick(0, false);
             return;
         }
-        // Vote GUI already covered the start fade. After it closes, keep black until
-        // the
-        // world fade is finished, then drop the curtain instantly so there is no second
-        // fade.
+        // 轮选黑幕没走完就取消了轮选：等世界淡入结束再整块收掉，避免半途露出世界。
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(client.level);
         boolean stillFading = game != null && (!game.isRunning() || game.getFade() > 0);
         if (stillFading) {
@@ -283,13 +285,6 @@ public final class OpeningPresentationCoordinator {
         Screen screen = Minecraft.getInstance().screen;
         return isVoteResultScreen(screen) || screen instanceof MapVoteScreen
                 || screen instanceof MapSelectorScreen;
-    }
-
-    /**
-     * Vote result content can stop drawing once the GUI curtain is already opaque.
-     */
-    public static boolean shouldCoverVoteGui() {
-        return !departure.isReleasing() && departure.opacity() >= 0.55F;
     }
 
     public static State state() {

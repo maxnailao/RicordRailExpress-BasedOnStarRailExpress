@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
+import io.wifi.starrailexpress.content.vote.client.GameModeVoteScreen;
 import io.wifi.starrailexpress.content.vote.client.VoteScreen;
 import net.exmo.sre.meeting.client.MeetingClientHandler;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -22,6 +23,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
@@ -65,6 +67,15 @@ public class InputHandler {
 
     public static KeyMapping getOpenClueArchiveKeybind() {
         return openClueArchiveKeybind;
+    }
+
+    /** 按投票类型选界面：模式投票用专用界面，其余用通用投票界面。 */
+    private static Screen createVoteScreen() {
+        return ClientVoteCache.isGameModeVote() ? new GameModeVoteScreen() : new VoteScreen();
+    }
+
+    private static boolean isVoteScreenOpen(Screen screen) {
+        return screen instanceof VoteScreen || screen instanceof GameModeVoteScreen;
     }
 
     private static boolean canOpenFourthRoomTableUi(Minecraft client) {
@@ -115,7 +126,7 @@ public class InputHandler {
         if (openVotingScreenKeybind.consumeClick()) {
             // 会议投票阶段：打开玩家投票界面
             if (MeetingClientHandler.phase == 3 && ClientVoteCache.isActive()) {
-                client.setScreen(new VoteScreen());
+                client.setScreen(createVoteScreen());
                 return;
             }
             // 检查是否处于投票阶段
@@ -123,8 +134,8 @@ public class InputHandler {
             if (mapVotingComponent.isVotingActive()) {
                 // 打开投票界面
                 client.setScreen(MapVoteScreen.create());
-            } else if (ClientVoteCache.canReOpen() && !(client.screen instanceof VoteScreen)) {
-                client.setScreen(new VoteScreen());
+            } else if (ClientVoteCache.canReOpen() && !isVoteScreenOpen(client.screen)) {
+                client.setScreen(createVoteScreen());
             }
         }
 

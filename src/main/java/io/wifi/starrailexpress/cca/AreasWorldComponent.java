@@ -185,13 +185,10 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     int roomCount = 1;
     // Room positions map
     Map<Integer, Vec3> roomPositions = new HashMap<>();
-    public boolean noReset = false;
     public String mapName = null;
 
     // 药水效果配置（格式：["namespace:effect_id,level", ...]，为空数组则无效果）
     public List<String> effect = new ArrayList<>();
-
-    public boolean mustCopy = false;
 
     // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
     public boolean minigameQuestEnabled = false;

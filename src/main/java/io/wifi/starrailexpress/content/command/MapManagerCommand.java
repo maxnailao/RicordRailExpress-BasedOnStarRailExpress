@@ -131,8 +131,8 @@ public class MapManagerCommand {
                   areas.disabledRoles = new HashSet<>();
                   areas.enableSceneTask = new HashSet<>();
                   areas.mapName = "new_area";
-                  areas.mustCopy = false;
-                  areas.noReset = false;
+                  areas.areasSettings.mustCopy = false;
+                  areas.areasSettings.noReset = false;
                   io.wifi.starrailexpress.scenery.server.SceneLibrary.clearScene(areas);
                   areas.effect = new java.util.ArrayList<>();
                   areas.minigameQuestEnabled = false;
@@ -176,8 +176,8 @@ public class MapManagerCommand {
                 .then(getPlayAreaOffset())
                 .then(getRoomCount())
                 .then(getRoomPositions())
-                .then(buildGetSimple("noReset", a -> String.valueOf(a.noReset)))
-                .then(buildGetSimple("mustCopy", a -> String.valueOf(a.mustCopy)))
+                .then(buildGetSimple("noReset", a -> String.valueOf(a.areasSettings.noReset)))
+                .then(buildGetSimple("mustCopy", a -> String.valueOf(a.areasSettings.mustCopy)))
                 .then(buildGetSimple("effect", a -> a.effect.isEmpty() ? "(none)" : String.join(", ", a.effect)))
                 .then(buildGetSimple("minigameQuestEnabled", a -> String.valueOf(a.minigameQuestEnabled)))
                 .then(buildGetSimple("initialItems",
@@ -375,7 +375,7 @@ public class MapManagerCommand {
 
   private static void setNoReset(CommandSourceStack source, boolean value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
-    areas.noReset = value;
+    areas.areasSettings.noReset = value;
     areas.sync();
     sendSetFeedback(source, "noReset", String.valueOf(value));
   }
@@ -384,7 +384,7 @@ public class MapManagerCommand {
 
   private static void setMustCopy(CommandSourceStack source, boolean value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
-    areas.mustCopy = value;
+    areas.areasSettings.mustCopy = value;
     areas.sync();
     sendSetFeedback(source, "mustCopy", String.valueOf(value));
   }
@@ -513,8 +513,8 @@ public class MapManagerCommand {
     sb.append("playAreaOffset: ").append(formatVec3(areas.getPlayAreaOffset())).append("\n");
     sb.append("roomCount: ").append(areas.getRoomCount()).append("\n");
     sb.append("roomPositions: ").append(formatRoomPositions(areas.getRoomPositions())).append("\n");
-    sb.append("noReset: ").append(areas.noReset).append("\n");
-    sb.append("mustCopy: ").append(areas.mustCopy).append("\n");
+    sb.append("noReset: ").append(areas.areasSettings.noReset).append("\n");
+    sb.append("mustCopy: ").append(areas.areasSettings.mustCopy).append("\n");
     sb.append("mapName: \"").append(areas.mapName).append("\"\n");
     sb.append("effect: ").append(areas.effect.isEmpty() ? "(none)" : String.join(", ", areas.effect)).append("\n");
     sb.append("minigameQuestEnabled: ").append(areas.minigameQuestEnabled).append("\n");
