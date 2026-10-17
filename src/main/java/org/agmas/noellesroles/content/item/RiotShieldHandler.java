@@ -39,6 +39,8 @@ public class RiotShieldHandler {
                 || deathReason.equals(GameConstants.DeathReasons.BAT)
                 || deathReason.equals(SRE.TMMId("bat"))
                 || deathReason.equals(GameConstants.DeathReasons.GRENADE)
+                // 飞斧（实体用物品自身注册 id 作为死因）
+                || deathReason.equals(ModItems.THROWING_AXE_DEATH_REASON)
                 // 走原版攻击路线、伤害落在虚拟血量上的武器（Dream 铁斧 / 钻石剑 / 重锤）
                 || isVanillaRouteDeathReason(deathReason);
     }

@@ -418,6 +418,11 @@ public final class CowboyDuelManager {
                         return net.minecraft.world.InteractionResultHolder.success(stack);
                     }
                     comp.startCigarCooldown();
+                    // 同步到原版物品冷却：雪茄图标、商店条目上的冷却条读的是
+                    // ItemCooldowns（由服务端 addCooldown 发包给客户端后自行递减），
+                    // 只设组件字段的话那条进度条不会动，看上去就是"一直 30 秒"。
+                    sp.getCooldowns().addCooldown(stack.getItem(),
+                            CowboyPlayerComponent.CIGAR_COOLDOWN_TICKS);
                     // 抽完给速度 I。
                     // wathe-extra-items 的 ConsumableCigarItem 只做了烟雾粒子 + 音效 + 自带冷却，
                     // **没有任何增益效果**，所以"抽雪茄加速"必须由我们补上。
@@ -1385,10 +1390,15 @@ public final class CowboyDuelManager {
     }
 
     private static void tickAll(MinecraftServer server) {
-        // 决斗冷却递减：与是否有进行中的决斗无关，所以放在最前面、不受下面的提前 return 影响。
+        // 冷却递减：与是否有进行中的决斗无关，所以放在最前面、不受下面的提前 return 影响。
+        //
+        // ★ 条件必须是「任一条冷却在跑」，不能只判 duelCooldownTicks：
+        //   抽雪茄时 duelCooldownTicks 通常是 0，只判决斗冷却的话
+        //   tickDuelCooldown() 永远不会被调用 →
+        //   cigarCooldownTicks 卡在 600 不动，界面一直显示"30 秒"。
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             CowboyPlayerComponent comp = CowboyPlayerComponent.KEY.maybeGet(p).orElse(null);
-            if (comp != null && comp.duelCooldownTicks > 0) {
+            if (comp != null && (comp.duelCooldownTicks > 0 || comp.cigarCooldownTicks > 0)) {
                 comp.tickDuelCooldown();
             }
         }

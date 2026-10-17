@@ -134,7 +134,9 @@ public final class PriestHeavenManager {
                 clearMobility(player);
             }
             session = null;
-            syncToAll(level, PriestHeavenStateS2CPacket.SOUND_NONE);
+            // 序列结束（含游戏停止）：让客户端停掉加速阶段的 shenfu 长音乐。
+            // 用 SOUND_STOP 而不是 SOUND_NONE —— 后者只复位 HUD，不会停音乐。
+            syncToAll(level, PriestHeavenStateS2CPacket.SOUND_STOP);
         } else {
             session = null;
         }
@@ -487,7 +489,8 @@ public final class PriestHeavenManager {
             }
         }
         session = null;
-        syncToAll(level, PriestHeavenStateS2CPacket.SOUND_NONE);
+        // 序列被取消同样要收音乐（见 reset(ServerLevel) 的说明）
+        syncToAll(level, PriestHeavenStateS2CPacket.SOUND_STOP);
     }
 
     public static void syncToAll(ServerLevel level, int soundIndex) {

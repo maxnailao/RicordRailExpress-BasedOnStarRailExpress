@@ -13,6 +13,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -385,7 +386,16 @@ public final class PriestHeavenClient {
 
     private static void playReservedSound(int soundIndex) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || soundIndex == PriestHeavenStateS2CPacket.SOUND_NONE) {
+        if (soundIndex == PriestHeavenStateS2CPacket.SOUND_NONE) {
+            return;
+        }
+        // 收尾：停掉加速阶段那条长音乐（shenfu.ogg 约 3 分 29 秒，不停会播到自然结束）。
+        // 放在 player 判空之前 —— 即使玩家对象暂时不可用，停止操作也应当生效。
+        if (soundIndex == PriestHeavenStateS2CPacket.SOUND_STOP) {
+            mc.getSoundManager().stop(TMMSounds.ROLE_PRIEST_SHENFU.getLocation(), SoundSource.MASTER);
+            return;
+        }
+        if (mc.player == null) {
             return;
         }
         if (soundIndex == PriestHeavenStateS2CPacket.SOUND_ENDING) {
@@ -405,7 +415,8 @@ public final class PriestHeavenClient {
         return switch (soundIndex) {
             case PriestHeavenStateS2CPacket.SOUND_CHANTING -> SoundEvents.BEACON_ACTIVATE;
             case PriestHeavenStateS2CPacket.SOUND_TRANSFORM -> SoundEvents.END_PORTAL_SPAWN;
-            case PriestHeavenStateS2CPacket.SOUND_ACCEL -> SoundEvents.ENDER_DRAGON_GROWL;
+            // 咏诵成功、进入时间加速 → 播神父专属音源（原为 ENDER_DRAGON_GROWL 占位）
+            case PriestHeavenStateS2CPacket.SOUND_ACCEL -> TMMSounds.ROLE_PRIEST_SHENFU;
             case PriestHeavenStateS2CPacket.SOUND_FINALE -> SoundEvents.WITHER_SPAWN;
             default -> null;
         };
@@ -415,8 +426,10 @@ public final class PriestHeavenClient {
         if (soundIndex >= 0 && soundIndex < 15) {
             return 0.82F + soundIndex * 0.03F;
         }
+        // 加速阶段用的是流式（stream=true）音源，不做变速重采样，
+        // 所以固定原始音高 1.0（原先占位音效的 0.7 会失效甚至产生异常）。
         if (soundIndex == PriestHeavenStateS2CPacket.SOUND_ACCEL) {
-            return 0.7F;
+            return 1.0F;
         }
         if (soundIndex == PriestHeavenStateS2CPacket.SOUND_FINALE) {
             return 0.8F;

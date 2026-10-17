@@ -11,6 +11,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
@@ -740,6 +741,17 @@ public class ModItems {
     public static final Item THROWING_KNIFE = register(
             new ThrowingKnife((new Item.Properties()).stacksTo(1)), "throwing_knife",
             WEAPONS_GROUP);
+    // 飞斧 - 强盗的可投掷武器：直线飞行、穿透击杀 2 名玩家、撞墙钉住 5 秒后消失
+    public static final Item THROWING_AXE = register(
+            new ThrowingAxeItem((new Item.Properties()).stacksTo(1)), "throwing_axe",
+            WEAPONS_GROUP);
+    /**
+     * 飞斧唯一的死亡原因（与飞斧物品注册 id 一致）。
+     *
+     * <p>飞斧实体命中时优先用自身物品栈的注册 id 作为死因，物品栈为空时回退到这里；
+     * 两者同为 {@code noellesroles:throwing_axe}，不再存在 {@code throwing_axe_hit}。
+     */
+    public static final ResourceLocation THROWING_AXE_DEATH_REASON = Noellesroles.id("throwing_axe");
     /**
      * 绳索
      * - 2点耐久

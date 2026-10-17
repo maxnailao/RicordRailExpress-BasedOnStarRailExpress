@@ -79,22 +79,26 @@ public class CowboyPlayerComponent implements RoleComponent {
      * 不是冷却真的没走。
      */
     public void tickDuelCooldown() {
-        boolean dirty = false;
-        if (duelCooldownTicks > 0) {
-            duelCooldownTicks--;
-            dirty = true;
-        }
-        if (cigarCooldownTicks > 0) {
-            cigarCooldownTicks--;
-            dirty = true;
-        }
-        if (!dirty) {
+        boolean duelRunning = duelCooldownTicks > 0;
+        boolean cigarRunning = cigarCooldownTicks > 0;
+        if (!duelRunning && !cigarRunning) {
             return;
         }
-        // 只在"整秒边界"或归零时发包
-        boolean onBoundary = (duelCooldownTicks % SYNC_EVERY_TICKS == 0)
-                || (cigarCooldownTicks % SYNC_EVERY_TICKS == 0);
-        if (duelCooldownTicks == 0 || cigarCooldownTicks == 0 || onBoundary) {
+        if (duelRunning) {
+            duelCooldownTicks--;
+        }
+        if (cigarRunning) {
+            cigarCooldownTicks--;
+        }
+
+        // 整秒边界（只看真正在倒计时的那一条）
+        boolean onBoundary = (duelRunning && duelCooldownTicks % SYNC_EVERY_TICKS == 0)
+                || (cigarRunning && cigarCooldownTicks % SYNC_EVERY_TICKS == 0);
+        // 刚归零那一下要立刻同步，否则界面会停在"1 秒"
+        boolean justEnded = (duelRunning && duelCooldownTicks == 0)
+                || (cigarRunning && cigarCooldownTicks == 0);
+
+        if (onBoundary || justEnded) {
             sync();
         }
     }

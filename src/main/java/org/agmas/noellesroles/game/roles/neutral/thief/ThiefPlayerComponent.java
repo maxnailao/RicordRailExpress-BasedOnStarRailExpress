@@ -619,10 +619,12 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true;
         if (stack.is(ModItems.ALCHEMIST_BUFF_POTION))
             return true;
-        // 消防斧 / 飞刀 / 绳索 / 钳子 / 灭火器
+        // 消防斧 / 飞刀 / 飞斧 / 绳索 / 钳子 / 灭火器
         if (stack.is(ModItems.FIRE_AXE))
             return true;
         if (stack.is(ModItems.THROWING_KNIFE))
+            return true;
+        if (stack.is(ModItems.THROWING_AXE))
             return true;
         if (stack.is(ModItems.ROPE))
             return true;

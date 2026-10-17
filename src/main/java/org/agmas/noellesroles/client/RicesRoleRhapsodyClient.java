@@ -675,6 +675,8 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      */
     public static void registerEntityRenderers() {
         EntityRendererRegistry.register(ModEntities.THROWING_KNIFE, ThrowingKnifeRenderer::new);
+        // 飞斧实体渲染器 - 直接绘制飞斧物品模型并翻滚旋转（钉墙后冻结角度）
+        EntityRendererRegistry.register(ModEntities.FLYING_AXE, FlyingAxeRenderer::new);
         EntityRendererRegistry.register(ModEntities.FLARE, ThrownItemRenderer::new);
         // 烟雾弹实体渲染器 - 使用飞行物品渲染器
         EntityRendererRegistry.register(ModEntities.SMOKE_GRENADE, ThrownItemRenderer::new);

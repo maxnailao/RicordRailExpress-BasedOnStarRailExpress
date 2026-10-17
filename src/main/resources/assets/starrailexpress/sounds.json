@@ -1,4 +1,34 @@
 {
+  "role.priest.shenfu": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.role.priest.shenfu",
+    "sounds": [
+      {
+        "name": "starrailexpress:role/shenfu",
+        "stream": true
+      }
+    ]
+  },
+  "role.amon.finale": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.role.amon.finale",
+    "sounds": [
+      {
+        "name": "starrailexpress:role/a_meng",
+        "stream": true
+      }
+    ]
+  },
+  "role.dream.psycho": {
+    "category": "player",
+    "subtitle": "subtitle.starrailexpress.role.dream.psycho",
+    "sounds": [
+      {
+        "name": "starrailexpress:role/dream",
+        "stream": true
+      }
+    ]
+  },
   "event.plane_crash.engine": {
     "category": "weather",
     "subtitle": "subtitles.starrailexpress.plane_crash.engine",

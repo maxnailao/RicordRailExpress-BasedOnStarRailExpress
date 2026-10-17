@@ -3362,5 +3362,8 @@
   "sre.map_helper.value.off": "Off",
   "death_reason.starrailexpress.cowboy_duel": "lost a duel",
   "gui.sre.opening.identity_confirmed": "Boarding identity confirmed",
-  "message.tip.purchase_failed.duel_active": "You cannot shop during a duel"
+  "message.tip.purchase_failed.duel_active": "You cannot shop during a duel",
+  "subtitle.starrailexpress.role.dream.psycho": "Nightmare descends",
+  "subtitle.starrailexpress.role.priest.shenfu": "Heaven's Door",
+  "subtitle.starrailexpress.role.amon.finale": "Amon's Hour"
 }

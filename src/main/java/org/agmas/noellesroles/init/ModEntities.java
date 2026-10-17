@@ -71,6 +71,17 @@ public class ModEntities {
                     .trackedUpdateRate(10)
                     .build());
 
+    /** 飞斧实体 - 强盗蓄力投掷武器：直线飞行、穿透击杀 2 名玩家、撞墙钉住 5 秒后消失；渲染为翻滚的斧头物品模型 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<FlyingAxeEntity> FLYING_AXE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "flying_axe"),
+            FabricEntityTypeBuilder.<FlyingAxeEntity>create(MobCategory.MISC, FlyingAxeEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.4F, 0.4F))
+                    .trackRangeBlocks(4)
+                    .trackedUpdateRate(10)
+                    .build());
+
     /**
      * RPG-7 火箭弹抛射物 - 高速飞行，命中方块/实体引爆
      */

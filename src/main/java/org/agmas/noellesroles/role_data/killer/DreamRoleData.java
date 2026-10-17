@@ -22,11 +22,13 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -85,6 +87,13 @@ public class DreamRoleData extends SimpleRoleData {
     private long boatEndTick;
     /** 当前这条船已累计的强制乘坐人次（达到 {@link #BOAT_MAX_RIDES} 后不再拉新乘客）。 */
     private int boatRideCount;
+    /**
+     * 上一 tick 是否处于狂暴（服务端边沿检测用）。
+     *
+     * <p>只用来识别「刚退出狂暴」的那一刻，从而只发一次停止音效包，
+     * 顺便在 {@link #init()} 里复位。
+     */
+    private boolean wasBerserk;
 
     public DreamRoleData(RoleDataContext context) {
         super(context);
@@ -95,6 +104,7 @@ public class DreamRoleData extends SimpleRoleData {
         boatUuid = null;
         boatEndTick = 0;
         boatRideCount = 0;
+        wasBerserk = false;
         removeBerserkReach();
         sync();
     }
@@ -164,7 +174,11 @@ public class DreamRoleData extends SimpleRoleData {
         RoleData.ifPresent(DreamRoleData.class, sp, DreamRoleData::applyBerserkReach);
 
         ServerLevel level = sp.serverLevel();
-        level.playSound(null, sp.blockPosition(), SoundEvents.WARDEN_ROAR, SoundSource.PLAYERS, 1.5f, 0.8f);
+        // Dream 专属疯狂开始音效（替代原先共用的原版 WARDEN_ROAR 吼声）。
+        // 音源约 5 分 19 秒，sounds.json 里标了 stream=true 走流式播放，
+        // 因此这里用原始音高（流式音源不支持变速重采样）。
+        level.playSound(null, sp.blockPosition(), TMMSounds.ROLE_DREAM_PSYCHO,
+                SoundSource.PLAYERS, 1.5f, 1.0f);
         level.sendParticles(BLOOD_DUST, sp.getX(), sp.getY() + 1.2d, sp.getZ(), 30, 0.5d, 0.7d, 0.5d, 0.02d);
         sp.displayClientMessage(Component
                 .translatable("message.noellesroles.dream.berserk_start")
@@ -254,7 +268,8 @@ public class DreamRoleData extends SimpleRoleData {
         // 船：强制周围玩家乘坐，到点消失（无论 Dream 状态如何都要善后）
         tickBoat(sp, gameTime);
 
-        if (isActiveDream() && isBerserk()) {
+        boolean berserkNow = isActiveDream() && isBerserk();
+        if (berserkNow) {
             applyBerserkReach();
             // 每 10 tick 判定一次即可（效果时长 4s，滚动续期），避免每 tick 刷效果包
             if (gameTime % 10 == 0) {
@@ -263,6 +278,30 @@ public class DreamRoleData extends SimpleRoleData {
         } else {
             // 疯魔结束（Psycho 自然到点/被打断）→ 收回攻击距离加成
             removeBerserkReach();
+            // 狂暴音效也要停：只在「上一 tick 还在狂暴」的那一次发停止包，
+            // 避免每 tick 重发（那会让客户端反复 stop，虽然无害但没必要）。
+            if (wasBerserk) {
+                stopBerserkSound(sp);
+            }
+        }
+        wasBerserk = berserkNow;
+    }
+
+    /**
+     * 让客户端停掉 Dream 狂暴音效。
+     *
+     * <p>用原版 {@link ClientboundStopSoundPacket}，无需自定义包：它按
+     * 「音效 id + 音源类别」匹配，而 {@link TMMSounds#ROLE_DREAM_PSYCHO} 只有 Dream 用，
+     * 所以不会误伤别的音效。
+     *
+     * <p>广播给同维度所有玩家 —— 音效本身是按范围播放的，远处的玩家虽然没听到，
+     * 多发一个几字节的停止包也无害，比精确算范围更稳。
+     */
+    private static void stopBerserkSound(ServerPlayer sp) {
+        ResourceLocation id = TMMSounds.ROLE_DREAM_PSYCHO.getLocation();
+        ClientboundStopSoundPacket packet = new ClientboundStopSoundPacket(id, SoundSource.PLAYERS);
+        for (ServerPlayer target : sp.serverLevel().players()) {
+            target.connection.send(packet);
         }
     }
 

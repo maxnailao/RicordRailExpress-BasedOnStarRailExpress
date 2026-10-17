@@ -15,11 +15,12 @@ import org.agmas.noellesroles.role.ModRoles;
 public class NoellesrolesClientAmbientSounds {
 
   public static void register() {
-    // 阿蒙终幕「阿蒙时刻」：使用 A_MENG 音乐，于终幕全程循环播放。
-    AmbienceUtil.registerBackgroundAmbience(
-        new BackgroundAmbience(NRSounds.A_MENG,
-            player -> SREClient.gameComponent != null && org.agmas.noellesroles.client.ClientAmonState.finaleActive,
-            1));
+    // 阿蒙终幕「阿蒙时刻」的音乐改用显式播放/停止（见 ClientAmonState 的
+    // startFinaleSound / stopFinaleSound）。
+    //
+    // 原来这里用 AmbienceUtil 的循环环境音，但 ratatouille 的
+    // BackgroundAmbience.tryStarting 在谓词变 false 时**只返回不停止**，
+    // 音源（3 分 29 秒）会一直播下去，无法满足「阿蒙时刻结束即停」。
     AmbienceUtil.registerBackgroundAmbience(
         new BackgroundAmbience(NRSounds.JESTER_AMBIENT,
             player -> {

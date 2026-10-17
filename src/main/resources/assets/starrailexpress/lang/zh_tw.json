@@ -3089,5 +3089,8 @@
   "sre.map_helper.value.off": "關",
   "death_reason.starrailexpress.cowboy_duel": "決鬥中落敗",
   "gui.sre.opening.identity_confirmed": "登車身份已確認",
-  "message.tip.purchase_failed.duel_active": "決鬥進行中無法購物"
+  "message.tip.purchase_failed.duel_active": "決鬥進行中無法購物",
+  "subtitle.starrailexpress.role.dream.psycho": "夢魘降臨",
+  "subtitle.starrailexpress.role.priest.shenfu": "天堂製造",
+  "subtitle.starrailexpress.role.amon.finale": "阿蒙時刻"
 }

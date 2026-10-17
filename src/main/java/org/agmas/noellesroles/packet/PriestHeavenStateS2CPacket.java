@@ -27,6 +27,13 @@ public record PriestHeavenStateS2CPacket(
     public static final int SOUND_ACCEL = 17;
     public static final int SOUND_FINALE = 18;
     public static final int SOUND_ENDING = 100;
+    /**
+     * 停止本序列正在播放的长音效（{@link #SOUND_ACCEL} 触发的 shenfu 音乐）。
+     *
+     * <p>用于「序列结束 / 游戏停止」时收尾：客户端收到后停掉该音乐，
+     * 否则 3 分半的音源会一直播到自然结束。
+     */
+    public static final int SOUND_STOP = 19;
 
     public static final ResourceLocation PAYLOAD_ID = Noellesroles.id("priest_heaven_state");
     public static final Type<PriestHeavenStateS2CPacket> ID = new Type<>(PAYLOAD_ID);

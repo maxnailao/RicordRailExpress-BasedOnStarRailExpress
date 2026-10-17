@@ -75,6 +75,15 @@ public interface TMMSounds {
     SoundEvent LAOWU4 = registrar.create("cat.laowu4");
     SoundEvent LAOWU5 = registrar.create("cat.laowu5");
     SoundEvent LAOWU6 = registrar.create("cat.laowu6");
+
+    // 职业专属音效
+    /** Dream 开启疯狂模式（巨幕面具狂暴）的专属音效，音源 {@code sounds/role/dream.ogg}。 */
+    SoundEvent ROLE_DREAM_PSYCHO = registrar.create("role.dream.psycho");
+    /** 神父咏诵成功、进入「天堂制造」时间加速阶段的音效，音源 {@code sounds/role/shenfu.ogg}。 */
+    SoundEvent ROLE_PRIEST_SHENFU = registrar.create("role.priest.shenfu");
+    /** 阿蒙时刻（终幕）期间的音效，音源 {@code sounds/role/a_meng.ogg}。 */
+    SoundEvent ROLE_AMON_FINALE = registrar.create("role.amon.finale");
+
     static void initialize() {
         registrar.registerEntries();
     }

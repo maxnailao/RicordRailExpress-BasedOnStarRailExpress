@@ -754,6 +754,12 @@ public class RoleShopHandler {
                     180,
                     ShopEntry.Type.WEAPON));
 
+            // 飞斧 - 165金币：一次性消耗品（投出即消失），可蓄力穿透击杀 2 人，故定价略低于手枪
+            BANDIT_SHOP.add(new ShopEntry(
+                    ModItems.THROWING_AXE.getDefaultInstance(),
+                    165,
+                    ShopEntry.Type.WEAPON));
+
             // 手榴弹 - 600金币
             BANDIT_SHOP.add(new ShopEntry(
                     TMMItems.TIMED_GRENADE.getDefaultInstance(),

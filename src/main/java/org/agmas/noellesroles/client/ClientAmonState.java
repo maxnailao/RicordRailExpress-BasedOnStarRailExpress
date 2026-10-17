@@ -4,9 +4,11 @@ import io.wifi.starrailexpress.client.StatusBarHUD;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult;
+import io.wifi.starrailexpress.index.TMMSounds;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent;
 import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
@@ -58,11 +60,34 @@ public class ClientAmonState {
                 (payload, ctx) -> ctx.client().execute(() -> {
                     finaleActive = payload.active();
                     finaleStartMs = System.currentTimeMillis();
-                    // 终幕结束：仅把进度归零不会移除状态条（HUD 默认保留 500s），需显式移除。
-                    if (!payload.active()) {
+                    if (payload.active()) {
+                        // 「阿蒙时刻」开始：播放专属音源 a_meng.ogg
+                        startFinaleSound(ctx.client());
+                    } else {
+                        // 终幕结束：仅把进度归零不会移除状态条（HUD 默认保留 500s），需显式移除。
                         StatusBarHUD.getInstance().removeStatusBar("AmonFinale");
+                        // 同时停掉终幕音乐 —— 音源长达 3 分半，且终幕只有 80 秒，
+                        // 不停的话会盖过后续所有音效。
+                        stopFinaleSound(ctx.client());
                     }
                 }));
+    }
+
+    /**
+     * 播放「阿蒙时刻」专属音效。
+     *
+     * <p>用 MASTER 声道与本模组其它职业音乐保持一致（MUSIC 声道会被玩家的音乐音量滑块静音）。
+     */
+    private static void startFinaleSound(Minecraft mc) {
+        if (mc.player == null) {
+            return;
+        }
+        mc.player.playNotifySound(TMMSounds.ROLE_AMON_FINALE, SoundSource.MASTER, 1.0F, 1.0F);
+    }
+
+    /** 停止「阿蒙时刻」专属音效（按音效 id + 音源类别匹配）。 */
+    private static void stopFinaleSound(Minecraft mc) {
+        mc.getSoundManager().stop(TMMSounds.ROLE_AMON_FINALE.getLocation(), SoundSource.MASTER);
     }
 
     /** 终幕进度（1→0），供全局状态栏显示倒计时。 */
