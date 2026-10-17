@@ -3361,5 +3361,6 @@
   "sre.map_helper.value.on": "On",
   "sre.map_helper.value.off": "Off",
   "death_reason.starrailexpress.cowboy_duel": "lost a duel",
-  "gui.sre.opening.identity_confirmed": "Boarding identity confirmed"
+  "gui.sre.opening.identity_confirmed": "Boarding identity confirmed",
+  "message.tip.purchase_failed.duel_active": "You cannot shop during a duel"
 }

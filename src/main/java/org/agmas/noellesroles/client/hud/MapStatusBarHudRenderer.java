@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.client.hud;
 
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StaminaRenderer;
@@ -49,13 +50,29 @@ public final class MapStatusBarHudRenderer {
         if (!SREClient.isPlayerAliveAndInSurvival()) {
             return;
         }
+        // ── 状态栏类型：优先用服务端同步值，DON'T 让它被客户端旧缓存覆盖 ──
+        //
+        // 服务端 MapStatusBarRuntime.currentStatusBar() 读的是 AreasWorldComponent 的
+        // 权威值，并通过 MapStatusBarSyncS2CPacket 写进 MapStatusBarClientState。
+        //
+        // ★ 旧代码这里无条件执行了 `type = SREClient.areaComponent.areasSettings.mapStatusBar;`
+        //   覆盖刚才同步来的类型，导致两个问题：
+        //     ① areaComponent 可能为 null（SREClient:517 会置空）→ NPE 风险；
+        //     ② 客户端那份 areasSettings 缓存可能还是空的/NONE，覆盖后 type=NONE
+        //        直接 return —— 表现就是"雪图看不到温度、会渴死的地图看不到饥渴"。
+        //   现在改成：同步值优先；只有在同步值还是 NONE 时才退回读客户端缓存，
+        //   并且**必须判空 + 判非 NONE**，绝不把已有的有效类型覆盖成 NONE。
         MapStatusBarType type = MapStatusBarClientState.type();
-        if (type == MapStatusBarType.NONE) {
-            return;
-        }
-        type = SREClient.areaComponent.areasSettings.mapStatusBar;
-        if (type == MapStatusBarType.NONE) {
-            return;
+        if (type == null || type == MapStatusBarType.NONE) {
+            AreasWorldComponent areas = SREClient.areaComponent;
+            if (areas == null) {
+                return;
+            }
+            MapStatusBarType cached = areas.areasSettings.mapStatusBar;
+            if (cached == null || cached == MapStatusBarType.NONE) {
+                return;
+            }
+            type = cached;
         }
 
         float value = (float) MapStatusBarClientState.value() / MapStatusBarClientState.maxValue();

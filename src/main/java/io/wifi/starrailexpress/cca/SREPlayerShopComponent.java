@@ -131,6 +131,17 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         if (index < 0 || index >= getShopEntries().size())
             return;
         ShopEntry entry = getShopEntries().get(index);
+        // 决斗期间禁止任何商店购买：决斗是纯左轮 1v1，中途买东西会破坏公平
+        // （而且背包在进场时已被快照替换，买了也会在退场还原时被覆盖，纯属白花钱）。
+        if (org.agmas.noellesroles.game.roles.vigilante.cowboy.CowboyDuelManager
+                .isInDuel(this.player.getUUID())) {
+            this.player.displayClientMessage(
+                    Component.translatable("message.tip.purchase_failed_with_reason",
+                            Component.translatable("message.tip.purchase_failed.duel_active"))
+                            .withStyle(ChatFormatting.DARK_RED),
+                    true);
+            return;
+        }
         if (this.player.hasEffect(ModEffects.SAFE_TIME)) {
             // 安全时间不准买
             this.player.displayClientMessage(

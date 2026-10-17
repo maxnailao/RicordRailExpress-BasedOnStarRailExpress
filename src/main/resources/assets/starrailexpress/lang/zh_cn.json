@@ -3311,5 +3311,6 @@
   "sre.map_helper.value.on": "开",
   "sre.map_helper.value.off": "关",
   "death_reason.starrailexpress.cowboy_duel": "决斗中落败",
-  "gui.sre.opening.identity_confirmed": "登车身份已确认"
+  "gui.sre.opening.identity_confirmed": "登车身份已确认",
+  "message.tip.purchase_failed.duel_active": "决斗进行中无法购物"
 }
