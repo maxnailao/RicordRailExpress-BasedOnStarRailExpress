@@ -170,7 +170,43 @@ public class LightningDraftState {
             SRE.LOGGER.info("[RolePool] 自选强制职业 {}（占 {} 个名额，可杀手={} 警长={} 中立={}）→ 剩余狼位={}",
                     role.identifier(), occupied, role.canUseKiller(), role.isVigilanteTeam(),
                     !role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam(), killerCount);
+
+            // ★ 自选的若是「绑定对」的一员，另一半的阵营名额也要一起预留。
+            //
+            //   绑定是双向的（布袋鬼←→诡客、重刑犯←→狱警…），自选其中任意一方，
+            //   另一方都会被补进本局。如果只扣自选那一方的阵营名额，
+            //   另一半的阵营就会**多抽一个普通角色**。
+            //
+            //   实测（13 人局，自选诡客 = 警长阵营）：
+            //     只扣警长 2 个 → 狼位仍是 2 → 自然抽出巫师/恶鬼 → 再补入布袋鬼
+            //     → 杀手阵营 3 人超预算 → 摘人 → 最终「有诡客、没布袋鬼、多一个巫师」。
+            //   把布袋鬼的杀手名额也预留后：狼位 2-2=0，场上只有布袋鬼一个杀手。
+            for (SRERole partner : Harpymodloader.getOccupationRoles(role)) {
+                if (partner == null || partner == role || forcedRoles.contains(partner)) {
+                    continue;
+                }
+                int pOcc = Math.max(1, partner.getOccupiedRoleCount());
+                if (partner.canUseKiller()) {
+                    killerCount -= pOcc;
+                } else if (partner.isVigilanteTeam()) {
+                    vigilanteCount -= pOcc;
+                } else if (!partner.isInnocent()) {
+                    neutralsCount -= pOcc;
+                }
+                SRE.LOGGER.info(
+                        "[RolePool]   绑定对另一半 {} 也预留 {} 个名额（杀手={} 警长={} 中立={}）"
+                                + "→ 剩余 杀手={} 警长={} 中立={}",
+                        partner.identifier(), pOcc, partner.canUseKiller(), partner.isVigilanteTeam(),
+                        !partner.isInnocent() && !partner.canUseKiller() && !partner.isVigilanteTeam(),
+                        killerCount, vigilanteCount, neutralsCount);
+            }
         }
+        // 预留两个名额（一次自选 + 一次绑定对另一半）可能扣成负数，先收敛到 0。
+        killerCount = Math.max(0, killerCount);
+        vigilanteCount = Math.max(0, vigilanteCount);
+        neutralsCount = Math.max(0, neutralsCount);
+        SRE.LOGGER.info("[RolePool] 扣除自选/绑定对后剩余名额：杀手={} 警长={} 中立={}",
+                killerCount, vigilanteCount, neutralsCount);
 
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
                 killerCount, vigilanteCount, neutralsCount,

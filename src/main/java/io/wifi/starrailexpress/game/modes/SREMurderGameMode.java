@@ -805,6 +805,33 @@ public class SREMurderGameMode extends GameMode {
                     } else if (!role.isInnocent()) {
                         neutralsCount -= occupied;
                     }
+
+                    // ★ 自选的若是「绑定对」的一员，另一半的阵营名额也要一起预留。
+                    //   绑定双向（布袋鬼←→诡客、重刑犯←→狱警…），自选任意一方另一方都会补进来；
+                    //   只扣自选方的名额，另一半的阵营就会多抽一个普通角色
+                    //   （实测：自选诡客 → 多刷一个巫师、却缺布袋鬼）。
+                    for (SRERole partner : org.agmas.harpymodloader.Harpymodloader
+                            .getOccupationRoles(role)) {
+                        if (partner == null || partner == role || forcedRoles.contains(partner)) {
+                            continue;
+                        }
+                        int pOcc = Math.max(1, partner.getOccupiedRoleCount());
+                        if (partner.canUseKiller()) {
+                            killerCount -= pOcc;
+                        } else if (partner.isVigilanteTeam()) {
+                            vigilanteCount -= pOcc;
+                        } else if (!partner.isInnocent()) {
+                            neutralsCount -= pOcc;
+                        }
+                        Harpymodloader.LOGGER.info(
+                                "[SelfSelect] 绑定对另一半 {} 也预留 {} 个名额"
+                                        + "（杀手={} 警长={} 中立={}）→ 剩余 {}/{}/{}",
+                                partner.identifier(), pOcc, partner.canUseKiller(),
+                                partner.isVigilanteTeam(),
+                                !partner.isInnocent() && !partner.canUseKiller()
+                                        && !partner.isVigilanteTeam(),
+                                killerCount, vigilanteCount, neutralsCount);
+                    }
                 }
             }
         }

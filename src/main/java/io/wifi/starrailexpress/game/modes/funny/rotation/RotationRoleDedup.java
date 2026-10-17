@@ -119,8 +119,20 @@ public final class RotationRoleDedup {
     /**
      * 补齐绑定配对：名单里出现"成对职业"的任一方时，把另一方也放进来。
      *
-     * <p>做法是找一个当前是平民的玩家承载它，总人数不变；
-     * 找不到空位就记日志放弃（不硬塞，避免又造成越预算）。
+     * <p>承载方式按优先级：
+     * <ol>
+     *   <li>找一个当前是<b>平民</b>的玩家（总人数不变，最干净）；</li>
+     *   <li>没有平民位时，<b>挤掉一个同阵营的普通角色</b>（非自选、非成对）——
+     *       这样"补进绑定职业"与"该阵营人数不变"同时成立，
+     *       和自然刷新的池子口径一致；</li>
+     *   <li>再不行就挤掉其它阵营的普通角色；</li>
+     *   <li>全是受保护角色时才放弃。</li>
+     * </ol>
+     *
+     * <p><b>为什么必须有不依赖平民位的兜底</b>：旧实现只认平民位，
+     * 一旦平民位被换牌阶段吃光就只能放弃，日志是
+     * 「绑定职业 X 需随 Y 一起出现，但场上没有平民空位可承载，跳过」——
+     * 实测表现就是"自选诡客却没刷出布袋鬼，反而只刷了一个巫师"。
      */
     private static int ensurePairs(Map<UUID, SRERole> roles, Set<SRERole> forcedRoles, String tag) {
         Set<net.minecraft.resources.ResourceLocation> present = new LinkedHashSet<>();
@@ -149,28 +161,97 @@ public final class RotationRoleDedup {
                 if (already >= cap) {
                     continue;
                 }
-                // 找一个平民玩家来承载
-                UUID slot = null;
-                for (var x : roles.entrySet()) {
-                    if (x.getValue() == TMMRoles.CIVILIAN) {
-                        slot = x.getKey();
-                        break;
-                    }
-                }
+                UUID slot = pickSlotFor(roles, comp, forcedRoles);
                 if (slot == null) {
                     Harpymodloader.LOGGER.warn(
-                            "[{}] 绑定职业 {} 需随 {} 一起出现，但场上没有平民空位可承载，跳过",
+                            "[{}] 绑定职业 {} 需随 {} 一起出现，但场上没有可承载它的位子，跳过",
                             tag, comp.identifier(), main.identifier());
                     continue;
                 }
-                roles.put(slot, comp);
+                SRERole displaced = roles.put(slot, comp);
                 present.add(comp.identifier());
                 added++;
-                Harpymodloader.LOGGER.info("[{}] 补齐绑定：{} 放成 {}（随 {} 一起出现）",
-                        tag, slot, comp.identifier(), main.identifier());
+                Harpymodloader.LOGGER.info("[{}] 补齐绑定：{} 放成 {}（随 {} 一起出现，顶掉 {}）",
+                        tag, slot, comp.identifier(), main.identifier(),
+                        displaced == null ? "?" : displaced.identifier());
             }
         }
         return added;
+    }
+
+    /**
+     * 给绑定职业挑一个承载位。
+     *
+     * <p>顺序：平民位 → 同阵营普通人 → 其它阵营普通人。
+     * "普通人"= 非自选占位、且不属于任何完整配对。
+     */
+    private static UUID pickSlotFor(Map<UUID, SRERole> roles, SRERole comp, Set<SRERole> forcedRoles) {
+        Set<UUID> locked = protectedHolders(roles, forcedRoles);
+
+        // 1) 平民位
+        for (var x : roles.entrySet()) {
+            if (x.getValue() == TMMRoles.CIVILIAN) {
+                return x.getKey();
+            }
+        }
+        // 2) 同阵营普通人
+        java.util.function.Predicate<SRERole> sameFaction;
+        if (isKiller(comp)) {
+            sameFaction = RotationRoleDedup::isKiller;
+        } else if (isVigilante(comp)) {
+            sameFaction = RotationRoleDedup::isVigilante;
+        } else {
+            sameFaction = RotationRoleDedup::isNeutral;
+        }
+        UUID fallback = null;
+        for (var x : roles.entrySet()) {
+            SRERole r = x.getValue();
+            if (r == null || r == TMMRoles.CIVILIAN || locked.contains(x.getKey())) {
+                continue;
+            }
+            if (sameFaction.test(r)) {
+                return x.getKey();
+            }
+            if (fallback == null) {
+                fallback = x.getKey();
+            }
+        }
+        // 3) 其它阵营普通人
+        return fallback;
+    }
+
+    /**
+     * 不可被"挤位"的玩家集合：自选占位者 + <b>已成对职业的双方</b>。
+     *
+     * <p>成对双方都不能动 —— 挤掉任何一方都会把配对拆散，正是要修的问题。
+     */
+    private static Set<UUID> protectedHolders(Map<UUID, SRERole> roles, Set<SRERole> forcedRoles) {
+        Set<UUID> out = new LinkedHashSet<>();
+        Set<net.minecraft.resources.ResourceLocation> present = new LinkedHashSet<>();
+        for (SRERole r : roles.values()) {
+            if (r != null) {
+                present.add(r.identifier());
+            }
+        }
+        for (var e : roles.entrySet()) {
+            SRERole r = e.getValue();
+            if (r == null) {
+                continue;
+            }
+            // 自选占位
+            if (forcedRoles != null && forcedRoles.stream()
+                    .anyMatch(f -> f != null && f.identifier().equals(r.identifier()))) {
+                out.add(e.getKey());
+                continue;
+            }
+            // 已成对：自己的任意一个伙伴也在场上
+            var partners = Harpymodloader.getOccupationRoles(r);
+            if (partners != null && partners.stream()
+                    .anyMatch(p -> p != null && present.contains(p.identifier()))) {
+                out.add(e.getKey());
+            }
+        }
+        return out;
     }
 
     /**
@@ -195,15 +276,25 @@ public final class RotationRoleDedup {
         Harpymodloader.LOGGER.warn("[{}] {} 阵营 {} 人 > 预算 {}，需退回 {} 个平民",
                 tag, label, holders.size(), budget, over);
 
+        // 受保护的除了自选占位，还包括**已成对职业的双方** ——
+        // 否则上一步 ensurePairs 刚补进来的绑定职业会被这里当成"超编"退回平民，
+        // 表现就是"补了又退"，一样缺绑定职业。
+        Set<UUID> locked = new LinkedHashSet<>(forcedHolders);
+
         int done = 0;
         for (UUID u : holders) {
             if (over <= 0) {
                 break;
             }
-            if (forcedHolders.contains(u)) {
+            if (locked.contains(u)) {
                 continue;
             }
             SRERole old = roles.get(u);
+            if (old != null && isPairedIn(old, roles)) {
+                Harpymodloader.LOGGER.info("[{}]   {} 是成对职业（{}），保留不退回",
+                        tag, u, old.identifier());
+                continue;
+            }
             roles.put(u, TMMRoles.CIVILIAN);
             over--;
             done++;
@@ -211,9 +302,28 @@ public final class RotationRoleDedup {
                     tag, u, old == null ? "?" : old.identifier());
         }
         if (over > 0) {
-            Harpymodloader.LOGGER.warn("[{}]   {} 阵营仍有 {} 人超出（全是自选占位），不再强退",
+            Harpymodloader.LOGGER.warn("[{}]   {} 阵营仍有 {} 人超出（都是自选/成对职业），不再强退",
                     tag, label, over);
         }
         return done;
+    }
+
+    /** {@code role} 是否与名单里的某个角色构成完整配对（任一方互为绑定职业）。 */
+    private static boolean isPairedIn(SRERole role, Map<UUID, SRERole> roles) {
+        var partners = Harpymodloader.getOccupationRoles(role);
+        if (partners == null || partners.isEmpty()) {
+            return false;
+        }
+        for (SRERole r : roles.values()) {
+            if (r == null) {
+                continue;
+            }
+            for (SRERole p : partners) {
+                if (p != null && p.identifier().equals(r.identifier())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
