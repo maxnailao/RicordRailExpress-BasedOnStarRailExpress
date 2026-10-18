@@ -37,6 +37,10 @@ public class PriestDoorCollisionMixin {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.maybeGet(player.level()).orElse(null);
         if (game != null && game.isRole(player, ModRoles.PRIEST)
                 && player.hasEffect(ModEffects.NO_COLLIDE)) {
+            // Keep the collision below the player's feet so the priest can pass walls without falling through floors.
+            if (pos.getY() < player.getY()) {
+                return;
+            }
             cir.setReturnValue(Shapes.empty());
         }
     }
