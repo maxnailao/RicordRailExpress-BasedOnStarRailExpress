@@ -629,6 +629,21 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return gameMode == null ? SREGameModes.MURDER : gameMode;
     }
 
+    /**
+     * 本局模式是否**延迟分配职业**（轮选类：开局时不分配，等玩家选牌结束后才定）。
+     *
+     * <p>这个判断是给「开局那一刻不该做的事」用的，典型例子是自选卡核对：
+     * 轮选模式在 {@code initializeGame} 返回时职业还没定，此时去核对
+     * "玩家有没有拿到自选职业"必然误判 ——
+     * 没选上的会被当成已生效（记录被清掉、之后不退卡），
+     * 选上的会被当成没生效（提前退卡）。核对要等 {@code OnGameTrueStarted}。
+     */
+    public boolean defersRoleAssignment() {
+        GameMode mode = getGameMode();
+        return mode instanceof io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode
+                || mode instanceof io.wifi.starrailexpress.game.modes.funny.SRERoleRotationSingleSelectGameMode;
+    }
+
     public void setGameMode(GameMode gameMode) {
         this.gameMode = gameMode;
         this.sync();

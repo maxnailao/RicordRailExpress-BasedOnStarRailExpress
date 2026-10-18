@@ -80,13 +80,18 @@ public final class ProgressionCommand {
                 return 1;
             }
             case SLOT_FULL -> {
-                // 不生效：广播提示，并且**没有扣卡**（等于返还自选卡）
-                SelfSelectClaimService.broadcastClaimed(player.getServer(), player, role);
+                // 不生效且**没有扣卡**（等于返还自选卡）。
+                //
+                // ★ 只提示本人，不广播：广播会把"谁想选什么职业"告诉全服
+                //   （围观者能据此推断阵营/战术），而他自己只是翻界面点了一下，
+                //   没必要惊动所有人。
+                // ★ 用聊天栏（false）而不是 actionbar（true）：actionbar 一闪而过，
+                //   被挡的人容易漏看，反而以为卡被吃了。
                 player.displayClientMessage(
                         Component.translatable("message.sre.pass.selfselect_claimed_self",
                                 Harpymodloader.getRoleName(role),
                                 Harpymodloader.getRoleCapacity(role)),
-                        true);
+                        false);
                 return 0;
             }
             case PLAYER_COUNT -> {

@@ -95,6 +95,17 @@ public final class SelfSelectPendingClaims {
             if (player == null) {
                 continue;
             }
+            // 旁观者 = 没进本局 ready 名单，肯定拿不到职业 → 直接按"没生效"退卡。
+            //
+            // ★ 不能拿他身上残留的上一局职业去判断：那会把记录误判成"已生效"，
+            //   记录被静默清掉，之后再也不会有任何地方给他退卡
+            //   （玩家体感就是"用了卡没选上，卡也没了"）。
+            if (player.isSpectator()) {
+                it.remove();
+                SelfSelectClaimService.refundAndNotify(player, role, reason);
+                refunded++;
+                continue;
+            }
             // 核对：这个人现在身上是不是这个职业。
             //
             // 已知边界：如果玩家上一局恰好也是这个职业、且本局自选没生效，

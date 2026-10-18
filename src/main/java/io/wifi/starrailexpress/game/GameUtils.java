@@ -650,13 +650,21 @@ public class GameUtils {
         OnTrainAreaHaveReseted.EVENT.invoker().onWorldHaveInited(serverWorld);
         isGameStarted = true;
 
-        // 自选职业卡兜底核对：所有游戏模式到这里角色都已分配完毕。
+        // 自选职业卡兜底核对：普通模式到这里角色已分配完毕。
         // 逐条检查"用了卡的玩家是否真的拿到了那个职业"，没拿到就退卡 + 提示
         //（阵营卡同款红色弹窗）—— 见 SelfSelectPendingClaims 的说明。
-        // 放在这里而不是各模式内部，是为了覆盖全部模式，且以后新增模式也不用改。
-        io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
-                serverWorld.getServer(), net.minecraft.network.chat.Component.translatable(
-                        "message.sre.pass.selfselect_unapplied"));
+        //
+        // ★ 轮选类模式必须跳过这里：它们的职业在**轮选结束**才确定
+        //   （finishRotationPhase → completeRoleSelection → OnGameTrueStarted）。
+        //   此刻玩家的职业还是空的 / 上一局残留的，核对必然误判：
+        //     · 选上的人   → 被当成没生效 → 提前退卡（结果卡和职业都给了）
+        //     · 没选上的人 → 若残留职业恰好相同则被当成生效 → 记录被清 → 之后不退卡
+        //   轮选模式的核对放到 SREEventRegister 的 OnGameTrueStarted 里做。
+        if (!gameComponent.defersRoleAssignment()) {
+            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
+                    serverWorld.getServer(), net.minecraft.network.chat.Component.translatable(
+                            "message.sre.pass.selfselect_unapplied"));
+        }
     }
 
     /**

@@ -153,25 +153,15 @@ public final class SelfSelectClaimService {
     }
 
     /**
-     * 把「名额已满」的事实广播给全服。
+     * 已移除：把「名额已满」广播给全服。
      *
-     * <p>用广播而不是只私聊：被挡的人往往是在别的界面/没盯着聊天框，
-     * 广播一次能顺便让其他人也知道这个职业已经满了，不会重复尝试。
+     * <p>原实现遍历所有玩家 {@code sendSystemMessage}，等于把"某人想用自选卡选某职业"
+     * 告诉全服 —— 围观者能据此推断他想要的阵营/战术，属于不必要的信息泄露。
+     * 现在由调用方（{@code ProgressionCommand} 的 SLOT_FULL 分支）**只提示本人**。
+     *
+     * <p>保留这段说明而不是删干净：避免以后有人看到旧方法名又把它接回去。
      */
-    public static void broadcastClaimed(@Nullable MinecraftServer server, ServerPlayer loser, SRERole role) {
-        if (server == null || role == null) {
-            return;
-        }
-        // 注意用 getString()：getRoleName 返回的是"可翻译组件"，
-        // 直接塞进另一条可翻译文本的 %s 里会变成嵌套翻译，在客户端解析不出来。
-        Component message = Component.translatable("message.sre.pass.selfselect_claimed",
-                loser == null ? "?" : loser.getGameProfile().getName(),
-                Harpymodloader.getRoleName(role).getString(),
-                Harpymodloader.getRoleCapacity(role));
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            p.sendSystemMessage(message);
-        }
-    }
+    // public static void broadcastClaimed(...) —— 已删除，见上
 
     // ========================================================================
     // 统一退还入口

@@ -485,7 +485,7 @@ public final class XiaoNaoBoardService {
      * 再留 2px 余量，避免刚好卡在边界上被自动折行。
      */
     static int lineBudgetPx(ReplayScreenEntry entry) {
-        double scale = ReplayBoardService.textScale(entry);
+        double scale = ReplayBoardService.narrowBoardTextScale(entry);
         return Math.max(24, (int) Math.floor(entry.width() * 16.0D / scale) - 2);
     }
 
@@ -501,7 +501,7 @@ public final class XiaoNaoBoardService {
         display.setViewRange(DISPLAY_VIEW_RANGE);
         // setLineWidth 是"缩放前"的模型空间单位：文字先按它换行，再整体乘 scale，
         // 所以最终世界宽度 = lineWidth × scale。想收在 w 格内就该给 w×16/scale。
-        double scale = ReplayBoardService.textScale(entry);
+        double scale = ReplayBoardService.narrowBoardTextScale(entry);
         display.setLineWidth(Math.max(16, (int) Math.floor(entry.width() * 16.0D / scale)));
         display.setBackgroundColor(0x00000000);
         display.setTransformation(new com.mojang.math.Transformation(

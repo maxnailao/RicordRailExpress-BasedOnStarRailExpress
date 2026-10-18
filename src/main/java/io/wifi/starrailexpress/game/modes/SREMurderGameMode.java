@@ -632,6 +632,16 @@ public class SREMurderGameMode extends GameMode {
             }
         }
 
+        // ── 关键：剔除「已经直接指定给玩家的职业」在池子里的副本 ──
+        //
+        // 自选/强制职业不进池子（由 forcedRolesMap 直接指定给玩家），
+        // 但绑定展开会顺着"另一半的伙伴"把它再补回来：
+        //   自选迪奥（直接给玩家）→ 展开承太郎 → 承太郎的伙伴是迪奥 → 池子里多一个迪奥
+        //   → 最后场上出现**两个迪奥**（实测 bug）。
+        // expandWithCompanionRoles 内部的按名额去重看不到这种重复，因为被自选的那份
+        // 根本不在它的列表里。
+        resultRoleInstances = dropRolesAssignedToPlayers(resultRoleInstances, forcedRoles);
+
         // ── 硬性收敛：池内角色数不得超过 `玩家数 - 强制职业数` ──
         //
         // 这是轮选模式的做法（LightningDraftState 里补位后总量受 rolePool 约束），
@@ -760,6 +770,45 @@ public class SREMurderGameMode extends GameMode {
                 }
                 out.add(companion);
             }
+        }
+        return out;
+    }
+
+    /**
+     * 剔除「已经直接指定给玩家的职业」在角色池里的副本。
+     *
+     * <p>自选 / 强制职业不进池子 —— 它们由 {@code forcedRolesMap} 直接指定给玩家，
+     * 所以池子里再出现一份同职业，就等于场上多了一个同名角色。
+     *
+     * <p>为什么会有副本：绑定是双向的，展开时顺着"另一半的伙伴"又补了回来。
+     * 实测链路：自选迪奥（直接给玩家）→ 补入伙伴承太郎 → 承太郎的伙伴是迪奥
+     * → 池子里多一个迪奥 → 最终场上**两个迪奥**。
+     * {@code expandWithCompanionRoles} 内部虽有按名额去重，但它看不到不在列表里的那份。
+     *
+     * @param roles       角色池（会被复制，不就地修改）
+     * @param assignedRoles 已经被玩家占用的职业
+     */
+    private static List<RoleInstance> dropRolesAssignedToPlayers(List<RoleInstance> roles,
+            List<SRERole> assignedRoles) {
+        if (roles == null || roles.isEmpty() || assignedRoles == null || assignedRoles.isEmpty()) {
+            return roles;
+        }
+        java.util.Set<net.minecraft.resources.ResourceLocation> taken = new java.util.HashSet<>();
+        for (SRERole r : assignedRoles) {
+            if (r != null) {
+                taken.add(r.identifier());
+            }
+        }
+        List<RoleInstance> out = new ArrayList<>(roles.size());
+        for (RoleInstance ri : roles) {
+            SRERole r = ri.role();
+            if (r != null && taken.contains(r.identifier())) {
+                Harpymodloader.LOGGER.warn(
+                        "[RolePool] 池内出现已被自选占用的 {}，丢弃（否则场上会有两个同职业）",
+                        r.identifier());
+                continue;
+            }
+            out.add(ri);
         }
         return out;
     }
@@ -969,7 +1018,45 @@ public class SREMurderGameMode extends GameMode {
             ProgressionDataManager.onRoleAssigned((ServerPlayer) up, TMMRoles.CIVILIAN);
         }
 
-        // ── 终局校验：各阵营实际人数不得超过预算 ──
+        // ── 终局校验①：同一职业的人数不得超过它的名额上限（ROLE_MAX）──
+        //
+        // "使用自选卡也要满足职业刷新规则"：迪奥 / 布袋鬼 这类名额上限为 1 的职业，
+        // 一局里只能有一个。绑定展开、自选占位、自然抽取三条路径都可能导致重复
+        //（实测：自选迪奥 → 场上两个迪奥），这里统一兜底收敛。
+        // 自选占位者与成对职业不动：自选是玩家花卡换来的；成对职业拆开就等于拆配对。
+        {
+            Map<net.minecraft.resources.ResourceLocation, Integer> counts = new HashMap<>();
+            for (SRERole r : roleAssignments.values()) {
+                if (r != null) {
+                    counts.merge(r.identifier(), 1, Integer::sum);
+                }
+            }
+            for (var e : new ArrayList<>(roleAssignments.entrySet())) {
+                SRERole r = e.getValue();
+                if (r == null || r == TMMRoles.CIVILIAN) {
+                    continue;
+                }
+                int cap = Math.max(1, Harpymodloader.getRoleCapacity(r));
+                int count = counts.getOrDefault(r.identifier(), 0);
+                if (count <= cap) {
+                    continue;
+                }
+                if (Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(e.getKey().getUUID())) {
+                    continue; // 自选的保留（玩家花了卡）
+                }
+                // 注意：这里**不做成对保护**。
+                // 名额上限（ROLE_MAX）是权威规则 —— 迪奥上限 1 就只允许 1 个。
+                // 如果因为"承太郎在场"就认为迪奥成对、可以被豁免，那第二个迪奥
+                // 就会躲过收敛，等于这个兜底形同虚设（推演直接暴露过这一点）。
+                // 成对保护只用于校验②的阵营预算（那里多 1 个人不拆配对更重要）。
+                counts.merge(r.identifier(), -1, Integer::sum);
+                roleAssignments.put(e.getKey(), TMMRoles.CIVILIAN);
+                Harpymodloader.LOGGER.warn("[RoleCount] {} 超出名额上限 {}（共 {} 个），降级为平民",
+                        r.identifier(), cap, count);
+            }
+        }
+
+        // ── 终局校验②：各阵营实际人数不得超过预算 ──
         //
         // 这是轮选模式的思路搬到谋杀模式：轮选靠 rolePool 的总量约束住人数，
         // 谋杀模式以前没有任何终局校验，于是可能出现"13 人局 3 个杀手 / 3 个警长"。

@@ -68,6 +68,14 @@ public class SREEventRegister {
             }
         });
         OnGameTrueStarted.EVENT.register(serverLevel -> {
+            // 自选卡核对（轮选类模式的**正确时机**）：轮选结束时职业才真正落定
+            // （finishRotationPhase → completeRoleSelection → 本事件），
+            // 所以在 GameUtils.initializeGame 里做核对会误判 —— 见那里的注释。
+            // 普通模式的记录在那一步就已经核对并清空，这里再调一次是幂等的。
+            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
+                    serverLevel.getServer(), net.minecraft.network.chat.Component.translatable(
+                            "message.sre.pass.selfselect_unapplied"));
+
             if (!defersIntroUntilRolesChosen(serverLevel)) {
                 return;
             }

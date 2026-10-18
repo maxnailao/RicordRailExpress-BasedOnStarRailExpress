@@ -145,10 +145,45 @@ public class LightningDraftState {
         // 强制职业直接作为实例加入池子
         int forceRoleCount = 0;
         List<SRERole> forcedRoles = new ArrayList<>();
-        for (var flip : Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet()) {
+        // 本局实际地图名：用于复查特殊地图职业是否真的能出现
+        String draftMapName = null;
+        {
+            var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(world);
+            if (areas != null) {
+                draftMapName = areas.mapName;
+            }
+        }
+        // ★ 必须先复制再遍历：下面 refundAndNotify 会 releaseSelfForcedRole，
+        //   直接迭代 FORCED_MODDED_ROLE_FLIP 会 ConcurrentModificationException
+        //   （SelfSelectValidator.revalidate 里也有同样的复制，原因一致）。
+        for (var flip : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet())) {
             var role = flip.getValue();
             if (role == null)
                 continue;
+            // ── 占名额之前先复查：这个职业本局真的能出现吗？──
+            //
+            // 自选是在「还不知道下一局地图」时做的，所以可能选了本局根本刷不出来的
+            // 特殊地图职业（实测：非鬼图选布袋鬼）。这种情况下：
+            //   · 卡要退（由这里统一退，或前面的 revalidate 已经退过）；
+            //   · **名额一个都不能占** —— 否则卡退了、职业没出现，
+            //     但狼位已经被扣掉（布袋鬼 occ=2），场上凭空少一个杀手。
+            //   这就是"24 人局正常 4 狼却只刷了 3 狼"的来源。
+            var deny = io.wifi.starrailexpress.progression.SelfSelectGate
+                    .checkForRound(role, allPlayers, draftMapName);
+            if (deny != io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NONE) {
+                ServerPlayer owner = null;
+                for (ServerPlayer p : allPlayers) {
+                    if (p.getUUID().equals(flip.getKey())) {
+                        owner = p;
+                        break;
+                    }
+                }
+                SRE.LOGGER.warn("[RolePool] 自选职业 {} 本局不可用（{}，地图 {}）"
+                        + "→ 退还自选卡，且不占用任何名额", role.identifier(), deny, draftMapName);
+                io.wifi.starrailexpress.progression.SelfSelectClaimService
+                        .refundAndNotify(owner, role, null);
+                continue;
+            }
             rolePool.add(new RoleInstance(UUID.randomUUID(), role));
             forcedRoles.add(role);
             forceRoleCount++;
