@@ -1528,19 +1528,6 @@ public class ModRoles {
                 }
 
                 @Override
-                public void onDeath(net.minecraft.world.entity.player.Player victim, boolean spawnBody,
-                        @org.jetbrains.annotations.Nullable net.minecraft.world.entity.player.Player killer,
-                        net.minecraft.resources.ResourceLocation deathReason) {
-                    super.onDeath(victim, spawnBody, killer, deathReason);
-                    // 死亡后掉落左轮手枪
-                    net.minecraft.world.item.ItemStack revolver = io.wifi.starrailexpress.index.TMMItems.REVOLVER
-                            .getDefaultInstance();
-                    net.minecraft.world.entity.item.ItemEntity itemEntity = new net.minecraft.world.entity.item.ItemEntity(
-                            victim.level(), victim.getX(), victim.getY(), victim.getZ(), revolver);
-                    victim.level().addFreshEntity(itemEntity);
-                }
-
-                @Override
                 public void onInit(net.minecraft.server.MinecraftServer server,
                         net.minecraft.server.level.ServerPlayer player) {
                     // 每局开始时重置弹药重置计时器

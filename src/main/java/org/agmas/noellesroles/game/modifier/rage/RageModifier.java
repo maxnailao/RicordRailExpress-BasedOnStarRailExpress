@@ -7,9 +7,7 @@ import org.agmas.noellesroles.init.ModEffects;
 /**
  * 暴怒修饰符：持续挂上暴怒药水。
  *
- * <p>移植自上游的同名修饰符。上游「附近有人死亡后红屏加速并锁定最近玩家」的濒死反应逻辑
- * （DeathReactionHandler / RAGE_SURGE）在 RKD 尚未存在，因此目前该修饰符
- * 只作为可被心理学家治愈的负面修饰符存在，本身不改变玩法。</p>
+ * <p>死亡反应由 {@code DeathReactionHandler} 监听此标记效果并触发。</p>
  */
 public final class RageModifier {
     private static final int EFFECT_DURATION = 200;

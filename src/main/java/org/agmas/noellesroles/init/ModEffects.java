@@ -560,21 +560,29 @@ public class ModEffects {
 
     /**
      * 胆小鬼修饰符的标记效果（修饰符 {@code noellesroles:coward} 持续挂载）。
-     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     * <p>死亡反应由 {@code DeathReactionHandler} 监听并触发。</p>
      */
     public static final Holder<MobEffect> COWARD = register("coward",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6B8E6B));
 
+    /** 胆小鬼被面前的死亡触发时短暂僵住并发抖。 */
+    public static final Holder<MobEffect> FEAR = register("fear",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4A3C6E));
+
     /**
      * 暴怒修饰符的标记效果（修饰符 {@code noellesroles:rage} 持续挂载）。
-     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     * <p>死亡反应由 {@code DeathReactionHandler} 监听并触发。</p>
      */
     public static final Holder<MobEffect> RAGE = register("rage",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xC41E1E));
 
+    /** 暴怒被附近的死亡触发时进入短时爆发状态。 */
+    public static final Holder<MobEffect> RAGE_SURGE = register("rage_surge",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFF2020));
+
     /**
      * 怯懦修饰符的标记效果（修饰符 {@code noellesroles:cowardice} 持续挂载）。
-     * <p>上游的濒死反应行为未移植，此处仅作为可被心理学家治愈的负面修饰符标记。</p>
+     * <p>死亡反应由 {@code DeathReactionHandler} 监听并触发。</p>
      */
     public static final Holder<MobEffect> COWARDICE = register("cowardice",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A7A4A));

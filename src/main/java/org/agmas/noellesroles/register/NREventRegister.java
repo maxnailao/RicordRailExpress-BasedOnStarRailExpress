@@ -35,5 +35,7 @@ public class NREventRegister {
         org.agmas.noellesroles.game.MirrorReunionEndEgg.register();
         // 注册「入梦」药水效果处理（睡觉时恢复理智并给予迅捷）
         org.agmas.noellesroles.content.effects.DreamEffectHandler.register();
+        // 怯懦、胆小鬼、暴怒的死亡反应（与修饰符标记效果配合）。
+        org.agmas.noellesroles.content.effects.DeathReactionHandler.register();
     }
 }
