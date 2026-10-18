@@ -7,6 +7,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -37,8 +40,14 @@ public class PriestDoorCollisionMixin {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.maybeGet(player.level()).orElse(null);
         if (game != null && game.isRole(player, ModRoles.PRIEST)
                 && player.hasEffect(ModEffects.NO_COLLIDE)) {
+            // 屏障是地图边界，不允许天堂制造穿过。
+            if (state.is(Blocks.BARRIER)) {
+                return;
+            }
             // Keep the collision below the player's feet so the priest can pass walls without falling through floors.
-            if (pos.getY() < player.getY()) {
+            if (pos.getY() < player.getY()
+                    || state.getBlock() instanceof StairBlock
+                    || state.getBlock() instanceof SlabBlock) {
                 return;
             }
             cir.setReturnValue(Shapes.empty());

@@ -41,7 +41,9 @@ import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.level.Level;
 
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
+import org.agmas.noellesroles.game.roles.neutral.priest.PriestHeavenManager;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -122,6 +124,12 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
                 speedModifier *= (1 - (slowEffect.getAmplifier() + 1) * 0.2f);
                 if (speedModifier < 0)
                     speedModifier = 0;
+            }
+
+            // The game replaces the vanilla movement-speed calculation here, so the priest's
+            // acceleration must be applied to this final modifier instead of the attribute.
+            if (SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.PRIEST)) {
+                speedModifier *= PriestHeavenManager.movementSpeedMultiplier(player);
             }
 
             return this.isSprinting() ? 0.1f * speedModifier : 0.07f * speedModifier;

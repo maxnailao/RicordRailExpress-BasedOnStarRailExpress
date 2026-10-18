@@ -2107,6 +2107,10 @@ public class ModEventsRegister {
                     gunCount--;
                 }
             }
+            if (gameWorldComponent.isRole(player, ModRoles.DIANXUE_MASTER)) {
+                // 点穴大师没有可拾取枪械，但死亡时仍应留下警用左轮作为死亡掉落。
+                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+            }
             if (gameWorldComponent.isRole(player, ModRoles.BETTER_VIGILANTE)) {
                 final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(player);
                 betterVigilantePlayerComponent.init();

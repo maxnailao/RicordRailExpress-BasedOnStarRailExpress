@@ -68,7 +68,7 @@
     "roles.photographer.PhotographerFramePlaceMixin",
     "roles.painter.PainterItemPickupMixin",
     "roles.priest.PriestDoorCollisionMixin",
-    "roles.priest.PriestSpeedMixin",
+    "roles.priest.PriestInWallDamageMixin",
     "roles.poisoner.PoisonerNoPoisonMixin",
     "roles.puppeteer.PuppeteerBodyGunPayloadMixin",
     "roles.puppeteer.PuppeteerBodyKnifePayloadMixin",
