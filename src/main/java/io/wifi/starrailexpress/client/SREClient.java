@@ -797,7 +797,8 @@ public class SREClient implements ClientModInitializer {
             // 清理 OpenAL 语音特效资源
             org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin.cleanupAll();
         }));
-        TriggerScreenEdgeEffectPayload.registerReceiver();
+        // 接收逻辑已移到 client 包：通用包类里出现客户端类型会让专用服务端启动崩溃
+        io.wifi.starrailexpress.client.network.ScreenEdgeEffectClient.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
 
