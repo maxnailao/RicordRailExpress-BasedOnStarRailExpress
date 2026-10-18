@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -685,6 +686,28 @@ public class KidnapperPlayerComponent implements RoleComponent, ServerTickingCom
 
     /** 在 NRCombatEvents.registerCombatRoleEvents() 中调用 */
     public static void registerEvents() {
+        // 死亡流程可能在下一次组件 tick 前切换到旁观；先在死亡事件里清掉禁言，
+        // 避免 CHAT_BAN 残留到本局结束或下一局。
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (!(victim instanceof ServerPlayer dead)) {
+                return;
+            }
+            KidnappedCCA hostage = KidnappedCCA.get(dead);
+            if (!hostage.isKidnapped) {
+                return;
+            }
+            UUID kidnapperId = hostage.kidnapper;
+            hostage.release(false);
+            if (kidnapperId != null && dead.level().getPlayerByUUID(kidnapperId) instanceof ServerPlayer kidnapper) {
+                KidnapperPlayerComponent comp = KEY.get(kidnapper);
+                comp.removeFromKidnapped(dead.getUUID());
+                if (dead.getUUID().equals(comp.draggingTarget)) {
+                    comp.draggingTarget = null;
+                }
+                comp.sync();
+            }
+        });
+
         // 审判阶段枪不掉落
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
             if (isJudgmentPhase(player))

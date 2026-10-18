@@ -257,6 +257,9 @@ public final class PelicanManager {
             PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(pelican);
             comp.bellyPlayerIds.clear();
             comp.bellyNames.clear();
+            // 亡命徒时刻是一次完整的强制吐出，不能把吐出前的吞食冷却带到后续阶段。
+            comp.eatCooldownUntil = 0;
+            comp.cooldownTicks = 0;
             comp.sync();
         }
 

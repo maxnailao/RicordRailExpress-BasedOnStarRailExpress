@@ -302,6 +302,11 @@ public class ItemSkinManager {
 
     }
 
+    /** 按皮肤类型检查解锁状态；帽子等没有固定装备物品的皮肤必须使用此入口。 */
+    public static boolean isSkinUnlockedForItemType(Player player, String itemTypeName, String skinName) {
+        return PlayerEconomyManager.isSkinUnlockedForItemType(player, itemTypeName, skinName);
+    }
+
     /**
      * 解锁皮肤给玩家
      *

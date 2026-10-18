@@ -103,8 +103,9 @@ public class LotteryManager {
             // 去除前缀
             String trueName = getTrueName(curQualityList.get(resultIdx));
             boolean isNewUnlock = false;
-            if (itemStack != null && !ItemSkinManager.isSkinUnlocked(player, itemStack, trueName)) {
-                ItemSkinManager.unlockSkin(player, itemStack, trueName);
+            String itemType = getSkinItemType(curQualityList.get(resultIdx));
+            if (itemType != null && !ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName)) {
+                ItemSkinManager.unlockSkinForItemType(player, itemType, trueName);
                 isNewUnlock = true;
                 LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
             }
@@ -115,7 +116,7 @@ public class LotteryManager {
             // 处理重复皮肤：自动折币，同时记录本次结果允许快速出售（出售会回收已拥有的皮肤再折算一次）
             else {
                 ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
-                if (itemStack != null)
+                if (itemType != null)
                     LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
             }
 
@@ -173,7 +174,30 @@ public class LotteryManager {
             else if (rawName.startsWith("grenade/")) {
                 itemStack = TMMItems.GRENADE.getDefaultInstance();
             }
+            else if (rawName.startsWith("bow/")) {
+                itemStack = TMMItems.BOW.getDefaultInstance();
+            }
+            else if (rawName.startsWith("crossbow/")) {
+                itemStack = TMMItems.CROSSBOW.getDefaultInstance();
+            }
             return itemStack;
+        }
+
+        /** 返回奖池配置使用的皮肤类型；帽子没有可作为类型载体的装备物品。 */
+        public static String getSkinItemType(String rawName) {
+            if (rawName == null) {
+                return null;
+            }
+            int slash = rawName.indexOf('/');
+            if (slash <= 0) {
+                return null;
+            }
+            return switch (rawName.substring(0, slash)) {
+                case "knife" -> "knife";
+                case "gun", "revolver" -> "revolver";
+                case "bat", "grenade", "hat", "bow", "crossbow" -> rawName.substring(0, slash);
+                default -> null;
+            };
         }
 
         public int getPoolID() {
@@ -285,9 +309,9 @@ public class LotteryManager {
             }
             if (!matched)
                 continue;
-            ItemStack itemStack = LotteryPool.getSkinItemStack(itemName);
-            if (itemStack != null && ItemSkinManager.isSkinUnlocked(player, itemStack, trueName)) {
-                ItemSkinManager.lockSkin(player, itemStack, trueName);
+            String itemType = LotteryPool.getSkinItemType(itemName);
+            if (itemType != null && ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName)) {
+                io.wifi.starrailexpress.data.PlayerEconomyManager.lockSkinForItemType(player, itemType, trueName);
                 total += getSkinSellValue(quality);
             }
         }
