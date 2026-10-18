@@ -1,9 +1,13 @@
 package org.agmas.noellesroles.game.roles.innocence.wushujia;
 
 import io.wifi.starrailexpress.event.AllowPlayerPunching;
+import io.wifi.starrailexpress.event.EarlyKillPlayer;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +17,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 武术家击打处理器
@@ -36,6 +41,49 @@ public class WushujiaPunchHandler {
      * 连击重置时间窗口（tick），2秒 = 40 tick
      */
     private static final long RESET_WINDOW_TICKS = 40L;
+
+    /**
+     * 仿照大嗓门：武术家击打致死归属记录（受害者UUID → 击打者记录）。
+     * 受害者被击退后若因摔落/掉下列车/焚化炉死亡，追溯击杀者为武术家，触发小脑惩罚。
+     */
+    private static final long PUSH_KILL_CREDIT_MS = 8000L;
+    private static final Map<UUID, PushCredit> PUSH_CREDITS = new ConcurrentHashMap<>();
+
+    static {
+        EarlyKillPlayer.FIND_KILLER_EVENT.register((victim, originalKiller, deathReason) -> {
+            if (!(victim instanceof ServerPlayer serverVictim)) {
+                return null;
+            }
+            if (!isWushujiaAttributableReason(deathReason)) {
+                return null;
+            }
+            PushCredit credit = PUSH_CREDITS.get(serverVictim.getUUID());
+            if (credit == null) {
+                return null;
+            }
+            if (System.currentTimeMillis() - credit.timeMs > PUSH_KILL_CREDIT_MS) {
+                PUSH_CREDITS.remove(serverVictim.getUUID());
+                return null;
+            }
+            return serverVictim.serverLevel().getPlayerByUUID(credit.pusherUuid());
+        });
+    }
+
+    private static void recordPunchCredit(Player victim, Player pusher) {
+        if (victim == null || pusher == null || victim.getUUID().equals(pusher.getUUID())) {
+            return;
+        }
+        PUSH_CREDITS.put(victim.getUUID(), new PushCredit(pusher.getUUID(), System.currentTimeMillis()));
+    }
+
+    private static boolean isWushujiaAttributableReason(ResourceLocation deathReason) {
+        return GameConstants.DeathReasons.FELL_OUT_OF_TRAIN.equals(deathReason)
+                || GameConstants.DeathReasons.FALL_DAMAGE.equals(deathReason)
+                || GameConstants.DeathReasons.INCINERATOR_PUSHED.equals(deathReason);
+    }
+
+    private record PushCredit(UUID pusherUuid, long timeMs) {
+    }
 
     /**
      * 注册武术家的被动击打权限（允许空手攻击其他玩家）
@@ -62,6 +110,10 @@ public class WushujiaPunchHandler {
      * @param victim   受害者
      */
     public static void onFlowHitConfirmed(Player attacker, Player victim) {
+        // 仿照大嗓门：每次确认造成伤害的空手击打都记录归属，
+        // 使被击退致死的受害者（虚空/摔落/焚化炉）把击杀归因到武术家，触发小脑惩罚。
+        recordPunchCredit(victim, attacker);
+
         var comp = WushujiaPlayerComponent.KEY.get(attacker);
         if (!comp.isInFlow()) {
             return;

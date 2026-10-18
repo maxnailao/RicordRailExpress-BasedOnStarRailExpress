@@ -518,5 +518,32 @@
         "stream": false
       }
     ]
+  },
+  "item.knife.xingguang.draw": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/xingguang_draw",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.xingguang.raise": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/xingguang_raise",
+        "stream": false
+      }
+    ]
+  },
+  "item.knife.xingguang.kill": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "starrailexpress:item/knife/xingguang_kill",
+        "stream": false
+      }
+    ]
   }
 }

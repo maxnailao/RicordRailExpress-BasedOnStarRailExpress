@@ -99,6 +99,7 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.original.JianshouzheFormS2CPayload.ID, io.wifi.starrailexpress.network.original.JianshouzheFormS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnxingFormS2CPayload.ID, AnxingFormS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload.ID, io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload.ID, io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TaskCompletePayload.ID, TaskCompletePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnnounceWelcomePayload.ID, AnnounceWelcomePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(AnnounceEndingPayload.ID, AnnounceEndingPayload.CODEC);

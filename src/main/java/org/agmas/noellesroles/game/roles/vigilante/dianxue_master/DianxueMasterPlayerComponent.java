@@ -42,10 +42,9 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
     private static final double MAX_RANGE_SQR = 64.0D * 64.0D;
     private static final int RESTRICT_TICKS = 40;
     private static final float DOT_RADIUS = 0.35F;
-
-    private static final int ACT_OPEN = 0;
-    private static final int ACT_UPDATE = 1;
-    private static final int ACT_CLOSE = 2;
+    // 防抖：一次点击（客户端可能因按下/抬起或冲刺多 tick 双触发）只推进一个穴位，
+    // 两次被接受推进之间的最小间隔（tick），避免出现"点一下同时点亮两个穴位"。
+    private static final long MIN_CLICK_INTERVAL_TICKS = 5L;
 
     private final Player player;
     private final Random random = new Random();
@@ -57,6 +56,12 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
     private final float[] dotAzimuths = new float[POINT_COUNT];
     private int stepRemainingTicks = 0;
     private int stepMaxTicks = STEP_TICKS;
+    /** 上一次被接受的推进所在游戏 tick，用于点击防抖。 */
+    private long lastClickAcceptedGameTime = Long.MIN_VALUE / 2;
+
+    private static final int ACT_OPEN = 0;
+    private static final int ACT_UPDATE = 1;
+    private static final int ACT_CLOSE = 2;
 
     public DianxueMasterPlayerComponent(Player player) {
         this.player = player;
@@ -129,6 +134,7 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         this.activeIndex = 0;
         this.stepRemainingTicks = STEP_TICKS;
         this.stepMaxTicks = STEP_TICKS;
+        this.lastClickAcceptedGameTime = master.level().getGameTime() - MIN_CLICK_INTERVAL_TICKS;
         send(master, ACT_OPEN);
         return true;
     }
@@ -180,6 +186,13 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
             closeAndStop(master);
             return;
         }
+
+        // 防抖：一次点击只允许推进一个穴位，间隔内的重复推进直接忽略
+        long now = master.level().getGameTime();
+        if (now - lastClickAcceptedGameTime < MIN_CLICK_INTERVAL_TICKS) {
+            return;
+        }
+        lastClickAcceptedGameTime = now;
 
         if (activeIndex == POINT_COUNT - 1) {
             // 第五次点穴：强制击杀立即生效，无需等待点穴结束

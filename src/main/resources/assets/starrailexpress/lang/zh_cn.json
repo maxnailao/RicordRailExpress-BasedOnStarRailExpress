@@ -3315,6 +3315,7 @@
   "message.tip.purchase_failed.duel_active": "决斗进行中无法购物",
   "subtitle.starrailexpress.role.dream.psycho": "梦魇降临",
   "subtitle.starrailexpress.role.priest.shenfu": "天堂制造",
+  "subtitle.starrailexpress.role.amon.finale": "阿蒙时刻"
   "subtitle.starrailexpress.role.amon.finale": "阿蒙时刻",
   "message.sre.progression.daily_card_limit_reached": "「%s」今天的阵营卡已用完（剩余 %s 张），明天再来吧。",
   "message.sre.pass.selfselect_daily_limit": "今天的自选职业卡已用完（尝试选择「%s」未扣卡），明天再来吧。",

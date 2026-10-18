@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.LivingEntity;
@@ -46,6 +47,10 @@ public abstract class MunaiyiPoseMixin<T extends LivingEntity> {
     @Unique
     private boolean isMummyRevealed(T entity) {
         if (!(entity instanceof Player player)) {
+            return false;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) {
             return false;
         }
         MunaiyiDesertPlayerComponent comp = MunaiyiDesertPlayerComponent.KEY.maybeGet(player).orElse(null);

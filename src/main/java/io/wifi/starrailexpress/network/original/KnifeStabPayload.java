@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -161,6 +162,22 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             // 暗星特别皮肤：击杀玩家后切换形态（天使⇄恶魔）
             if (io.wifi.starrailexpress.util.AnxingSkinHandler.hasAnxingSkinEquipped(player, knife)) {
                 io.wifi.starrailexpress.util.AnxingSkinHandler.switchForm(player);
+            }
+            // 星光（传承）皮肤：刀死人后在受害者位置长出黑灰粒子手，托出深蓝白粒子球并捏爆
+            // （世界空间特效，sendParticles 全员可见）；同时通知击杀者刀刃环绕追加深蓝黑影。
+            // 判定与其他特别皮肤 Handler 统一：组件命中即 true，否则回落实时装备查询（组件会被冻结）
+            boolean xingguangKill = io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID
+                    .equals(knife.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN))
+                    || io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID
+                    .equals(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player, knife));
+            if (xingguangKill) {
+                ServerLevel fxLevel = player.serverLevel();
+                fxLevel.sendParticles(io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_HAND,
+                        target.getX(), target.getY() + 1.0, target.getZ(), 26, 0.0, 0.0, 0.0, 0.0);
+                fxLevel.sendParticles(io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_ORB,
+                        target.getX(), target.getY() + 1.0, target.getZ(), 14, 0.0, 0.0, 0.0, 0.0);
+                io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
+                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(false));
             }
             // 恶魔之刃特别皮肤：击杀玩家后，仅向击杀者本人发送紫粉色粒子特效
             if (io.wifi.starrailexpress.util.EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, knife)) {

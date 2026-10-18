@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.LivingEntity;
@@ -40,6 +41,10 @@ public abstract class HandCuffsPoseMixin<T extends LivingEntity> {
 
     @Unique
     private boolean isHandCuffed(T entity) {
+        Minecraft mc = Minecraft.getInstance();
+        if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) {
+            return false;
+        }
         return entity instanceof Player player && HandCuffsItem.hasHandCuff(player);
     }
 

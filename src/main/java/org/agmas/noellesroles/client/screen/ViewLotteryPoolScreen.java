@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.client.widget.TextureWidget;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
+import io.wifi.starrailexpress.client.gui.screen.ingame.AccessoryScreen;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -83,12 +84,22 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
             // 设置itemStack
             itemType = LotteryManager.LotteryPool.getSkinItemStack(rawName);
             this.pixelSize = pixelSize;
+            this.qualityIndex = quality;
         }
         @Override
         protected void renderWidget(GuiGraphics guiGraphics, int i, int j, float f) {
             // render BG
             guiGraphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), BG_COLOR.getRGB());
             qualityBar.render(guiGraphics, i, j, f);
+            // 传承品质：品质条时不时爆出红色光
+            if (qualityIndex == LotteryManager.INHERIT_QUALITY_INDEX) {
+                float pulse = LotteryManager.inheritRedPulse();
+                if (pulse > 0.01F) {
+                    int a = (int) (pulse * 230);
+                    guiGraphics.fill(getX(), getY() + ITEM_PIXELS_SIZE * pixelSize,
+                            getX() + getWidth(), getY() + getHeight(), (a << 24) | 0xFF2F2F);
+                }
+            }
             if (itemType != null && !itemType.isEmpty()) {
                 LootScreenUtils.renderPixelScaleSkinItem(item.getX(), item.getY(), pixelSize, guiGraphics, itemType, skinName);
             }
@@ -117,6 +128,7 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
             qualityBar.setY(y + ITEM_PIXELS_SIZE * pixelSize);
         }
         public static final Color BG_COLOR = new Color(0x1FCCCCCC, true);
+        private int qualityIndex = 0;
         private TextureWidget item = null;
         private TextureWidget qualityBar = null;
         private Button button = null;
@@ -155,7 +167,7 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
                  --j, ++curCount,
                 curX += (ITEM_PIXELS_SIZE + ROW_INTERVAL_PIXELS) * pixelSize)
             {
-                if (curCount > 4) {
+                if (curCount >= VIEW_POOL_SCREEN_COL_NUM) {
                     curX = (width - totalPixels) / 2;
                     curY += (ITEM_PIXELS_SIZE + QUALITY_BAR_PIXELS_SIZE + COL_INTERVAL_PIXELS) * pixelSize;
                     curCount = 0;
@@ -168,6 +180,12 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
                         i,
                         itemName,
                         button -> {
+                            // 皮肤条目（type/skinName）：进入与主菜单饰品页一致的角色预览（人物持握/佩戴 + 特写取景）
+                            if (itemName.contains("/")) {
+                                Minecraft minecraft = Minecraft.getInstance();
+                                minecraft.setScreen(new AccessoryScreen(this, itemName));
+                                return;
+                            }
                             ItemStack itemStack = LotteryManager.LotteryPool.getSkinItemStack(itemName);
                             Minecraft minecraft = Minecraft.getInstance();
                             if (itemStack != null) {
@@ -187,19 +205,33 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
         itemCards = new ItemCardGroup();
         itemCards.setItemCards(itemCardsGroup);
         itemCards.setHeight(curY);
+        // 预览背景与抽奖主界面同源：优先使用卡池动态视频背景（run/video/lottery_starry）
+        if (!LootInfoScreen.POOL_VIDEO.hasFrames())
+            LootInfoScreen.POOL_VIDEO.loadFrames();
+        // 静态回退图（pool_bg{poolID}.png，若资源缺失则仍为动态背景兜底）
         viewPoolBg = new TextureWidget(
                 0,0,
                 width, height,
-                VIEW_POOL_BG_WIDTH, VIEW_POOL_BG_HEIGHT,
-                VIEW_POOL_BG_RESOURCE_LOCATION
+                POOL_BG_WIDTH, POOL_BG_HEIGHT,
+                LootInfoScreen.getPoolSketchTexture(POOL_ID)
         );
         // 背景最后添加防止覆盖按钮优先级
         addRenderableWidget(viewPoolBg);
     }
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        viewPoolBg.render(guiGraphics, mouseX, mouseY, delta);
+        if (LootInfoScreen.POOL_VIDEO.hasFrames()) {
+            // 全屏动态背景，与主界面播放同一帧序列
+            LootInfoScreen.POOL_VIDEO.render(guiGraphics, this.width, this.height, delta);
+            // 轻压暗一层，保证物品卡与文字清晰
+            guiGraphics.fill(0, 0, this.width, this.height, 0x59000000);
+        } else {
+            viewPoolBg.render(guiGraphics, mouseX, mouseY, delta);
+        }
         itemCards.render(guiGraphics, mouseX, mouseY, delta);
+        // 顶部居中显示"预览"标题（最后绘制，保证盖在所有元素之上）
+        guiGraphics.drawCenteredString(this.font, Component.literal("预览"),
+                this.width / 2, 4, 0xFFFFFFFF);
     }
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmound, double verticalAmound) {
@@ -207,9 +239,6 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
         itemCards.addY(verticalAmound * 10);
         return true;
     }
-    public static final ResourceLocation VIEW_POOL_BG_RESOURCE_LOCATION = ResourceLocation.fromNamespaceAndPath(
-            "noellesroles","textures/gui/loot/view_pool_bg.png"
-    );
     @Override
     public void onClose() {
         if (parent != null && minecraft != null)
@@ -217,9 +246,10 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
         else
             super.onClose();
     }
-    public static final int VIEW_POOL_BG_WIDTH = 480;
-    public static final int VIEW_POOL_BG_HEIGHT = 270;
-    private static final int VIEW_POOL_SCREEN_COL_NUM = 5;
+    /** 奖池背景图源尺寸（与 LootInfoScreen 卡池立绘 pool_bg{poolID}.png 一致，16:9） */
+    public static final int POOL_BG_WIDTH = 320;
+    public static final int POOL_BG_HEIGHT = 180;
+    private static final int VIEW_POOL_SCREEN_COL_NUM = 10;
     private static final int ROW_INTERVAL_PIXELS = 5;
     private static final int COL_INTERVAL_PIXELS = 2;
     private static final int QUALITY_BAR_PIXELS_SIZE = 1;

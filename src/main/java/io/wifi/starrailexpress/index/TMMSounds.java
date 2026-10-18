@@ -31,6 +31,9 @@ public interface TMMSounds {
     SoundEvent ITEM_KNIFE_ANXING_SWITCH = registrar.create("item.knife.anxing.switch");
     SoundEvent ITEM_KNIFE_EMOZHIDAO_DRAW = registrar.create("item.knife.emozhidao.draw"); // 恶魔之刃·举刀
     SoundEvent ITEM_KNIFE_EMOZHIDAO_KILL = registrar.create("item.knife.emozhidao.kill"); // 恶魔之刃·击杀
+    SoundEvent ITEM_KNIFE_XINGGUANG_DRAW = registrar.create("item.knife.xingguang.draw"); // 星光·切刀
+    SoundEvent ITEM_KNIFE_XINGGUANG_RAISE = registrar.create("item.knife.xingguang.raise"); // 星光·举刀
+    SoundEvent ITEM_KNIFE_XINGGUANG_KILL = registrar.create("item.knife.xingguang.kill"); // 星光·命中(刀人后)
     SoundEvent ITEM_REVOLVER_CLICK = registrar.create("item.revolver.click");
     SoundEvent ITEM_REVOLVER_SHOOT = registrar.create("item.revolver.shoot");
     SoundEvent ITEM_REVOLVER_SHENGXUAN = registrar.create("item.revolver.shengxuan");

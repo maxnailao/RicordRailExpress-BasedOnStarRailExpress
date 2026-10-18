@@ -39,7 +39,16 @@ public record TriggerScreenEdgeEffectPayload(int color, long durationMs, float i
     public static void registerReceiver() {
         ClientPlayNetworking.registerGlobalReceiver(ID, (payload, context) -> {
             context.client().execute(() -> {
-                StaminaRenderer.triggerScreenEdgeEffect(payload.color, payload.durationMs, payload.intensity);
+                int color = payload.color;
+                // 击杀边缘红光是唯一发送 Color.RED 的来源(GameMode.killPlayer)；
+                // 星光刀持刀者把这份红边改成黑灰，与击杀全屏滤镜(0x1B1B1F)一致。
+                if (color == java.awt.Color.RED.getRGB()
+                        && context.client().player != null
+                        && io.wifi.starrailexpress.client.XingguangClientEffects
+                                .hasXingguangEquipped(context.client().player)) {
+                    color = 0x1B1B1F;
+                }
+                StaminaRenderer.triggerScreenEdgeEffect(color, payload.durationMs, payload.intensity);
             });
         });
     }

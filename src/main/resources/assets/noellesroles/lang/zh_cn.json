@@ -5152,6 +5152,9 @@
   "message.noellesroles.liemoren.hunt_arrow_pierced": "猎魔箭穿透了你的护盾！",
   "message.noellesroles.liemoren.hunt_arrow_pierced_self": "猎魔箭穿透了对方的护盾。",
   "passive.noellesroles.phantom_musician.income": "声波共振：50金币/30秒",
+  "screen.noellesroles.loot.lootBtn": "单抽",
+  "screen.noellesroles.loot.multiLootBtn": "十连抽"
+  "passive.noellesroles.phantom_musician.income": "声波共振：50金币/30秒",
   "block.noellesroles.plush_maker": "玩偶制作器",
   "screen.noellesroles.plush_maker.title": "玩偶制作器",
   "screen.noellesroles.plush_maker.hint": "输入玩家名或 UUID",

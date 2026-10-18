@@ -12,7 +12,11 @@ import org.agmas.noellesroles.utils.Pair;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 抽奖管理器
@@ -49,34 +53,83 @@ public class LotteryManager {
          * @return 返回抽奖结果：结果的品质和在该品质内的索引
          */
         public Pair<Integer, Integer> rollOnce(ServerPlayer player) {
+            return rollOnce(player, null);
+        }
+
+        /**
+         * 抽奖一次（带新解锁标志输出）
+         * @param newSkinOut 长度>=1 的布尔数组时，out[0] 回填本次是否新解锁了皮肤（用于客户端快速出售判定）
+         */
+        public Pair<Integer, Integer> rollOnce(ServerPlayer player, boolean[] newSkinOut) {
             RandomSource randomSource = player.getRandom();
             int curNum = randomSource.nextInt(maxGranularity);// 0 ~ maxGranularity -1
             double level = 0.0f;
+            int resultQuality = -1;
+            int resultIdx = -1;
             for (int i = 0; i < qualityListGroupConfigs.size(); ++i) {
                 level += qualityListGroupConfigs.get(i).first;
                 if (curNum < level * maxGranularity) {
-                    List<String> curQualityList = qualityListGroupConfigs.get(i).second;
-                    int resultIdx = randomSource.nextInt(curQualityList.size());
-                    // 设置itemStack
-                    ItemStack itemStack = getSkinItemStack(curQualityList.get(resultIdx));
-
-                    // 去除前缀
-                    String trueName = getTrueName(curQualityList.get(resultIdx));
-                    if (itemStack != null && !ItemSkinManager.isSkinUnlocked(player, itemStack, trueName))
-                        ItemSkinManager.unlockSkin(player, itemStack, trueName);
-                    //coin
-                    else if (trueName.equals("coin")) {
-                        ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i) * COIN_CARD_EXTRA_REWARD));
-                    }
-                    // 处理重复皮肤
-                    else
-                        ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(i)));
-                    int resultQuality = i;
-                    return new Pair<>(resultQuality, resultIdx);
+                    resultQuality = i;
+                    resultIdx = randomSource.nextInt(qualityListGroupConfigs.get(i).second.size());
+                    break;
                 }
             }
-            Noellesroles.LOGGER.warn("[LootSys] 玩家UUID:" + player.getUUID() + "抽奖失败");
-            return new Pair<>(-1, -1);
+            if (resultQuality < 0) {
+                Noellesroles.LOGGER.warn("[LootSys] 玩家UUID:" + player.getUUID() + "抽奖失败");
+                return new Pair<>(-1, -1);
+            }
+
+            // 保底判定：本抽将是第 PITY_THRESHOLD 抽且未自然出传承 -> 强制传承品质
+            LotteryRecordData record = LotteryRecordStorage.getInstance().getPlayerLotteryRecord(player.getUUID());
+            if (resultQuality != INHERIT_QUALITY_INDEX && record.getPityCount() + 1 >= PITY_THRESHOLD) {
+                List<String> inheritList = getInheritItemList();
+                if (inheritList != null && !inheritList.isEmpty()) {
+                    resultQuality = INHERIT_QUALITY_INDEX;
+                    resultIdx = randomSource.nextInt(inheritList.size());
+                }
+            }
+
+            List<String> curQualityList = qualityListGroupConfigs.get(resultQuality).second;
+            // 设置itemStack
+            ItemStack itemStack = getSkinItemStack(curQualityList.get(resultIdx));
+
+            // 去除前缀
+            String trueName = getTrueName(curQualityList.get(resultIdx));
+            boolean isNewUnlock = false;
+            if (itemStack != null && !ItemSkinManager.isSkinUnlocked(player, itemStack, trueName)) {
+                ItemSkinManager.unlockSkin(player, itemStack, trueName);
+                isNewUnlock = true;
+                LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
+            }
+            //coin
+            else if (trueName.equals("coin")) {
+                ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality) * COIN_CARD_EXTRA_REWARD));
+            }
+            // 处理重复皮肤：自动折币，同时记录本次结果允许快速出售（出售会回收已拥有的皮肤再折算一次）
+            else {
+                ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
+                if (itemStack != null)
+                    LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
+            }
+
+            // 更新保底计数：出传承归零，否则 +1，并落盘持久化
+            if (resultQuality == INHERIT_QUALITY_INDEX)
+                record.setPityCount(0);
+            else
+                record.setPityCount(record.getPityCount() + 1);
+            LotteryRecordStorage.getInstance().markPlayerDirty(player.getUUID());
+            LotteryRecordStorage.getInstance().savePlayerData(player.getUUID());
+
+            if (newSkinOut != null && newSkinOut.length > 0)
+                newSkinOut[0] = isNewUnlock;
+            return new Pair<>(resultQuality, resultIdx);
+        }
+
+        /** 本卡池的传承品质条目列表，卡池没有传承组时返回 null */
+        private List<String> getInheritItemList() {
+            if (qualityListGroupConfigs.size() > INHERIT_QUALITY_INDEX)
+                return qualityListGroupConfigs.get(INHERIT_QUALITY_INDEX).second;
+            return null;
         }
 
         /**
@@ -104,7 +157,7 @@ public class LotteryManager {
             if (rawName.startsWith("knife/")) {
                 itemStack = TMMItems.KNIFE.getDefaultInstance();
             }
-            else if (rawName.startsWith("gun/")) {
+            else if (rawName.startsWith("gun/") || rawName.startsWith("revolver/")) {
                 itemStack = TMMItems.REVOLVER.getDefaultInstance();
             }
             else if (rawName.startsWith("bat/")) {
@@ -154,6 +207,86 @@ public class LotteryManager {
 //                .getPlayerLotteryRecord(player.getUUID());
 //        return lotteryRecordData.lotteryChance > 0;
         return ItemSkinManager.getLootChance(player) > 0;
+    }
+
+    /** 购买一抽的价格（硬币） */
+    public static final int LOTTERY_CHANCE_COIN_COST = 500;
+
+    /** 保底：连续这么多抽未出传承品质，下一抽强制传承 */
+    public static final int PITY_THRESHOLD = 80;
+
+    /** 抽奖新解锁皮肤的快速出售有效窗口：10 分钟 */
+    public static final long LOOT_GRANT_SELL_WINDOW_MS = 10 * 60 * 1000L;
+
+    /** 抽奖发放记录：仅窗口内通过抽奖新解锁的皮肤允许快速出售 */
+    public record LootGrant(String trueName, int quality, long timeMs) {}
+
+    private final Map<UUID, List<LootGrant>> recentLootGrants = new ConcurrentHashMap<>();
+
+    /** 记录一次抽奖新解锁的皮肤（服务端权威，用于出售价校验） */
+    public void recordLootGrant(UUID uuid, String trueName, int quality) {
+        long now = net.minecraft.Util.getMillis();
+        List<LootGrant> list = recentLootGrants.computeIfAbsent(uuid, k -> new ArrayList<>());
+        list.removeIf(g -> now - g.timeMs() > LOOT_GRANT_SELL_WINDOW_MS);
+        list.add(new LootGrant(trueName, quality, now));
+    }
+
+    /** 皮肤出售折算价值：与商店快速出售同一价格表（ShopConfig.sellprice，按品质定价） */
+    public static int getSkinSellValue(int quality) {
+        return org.agmas.noellesroles.cs2.ShopConfig.getInstance().getSellPriceConfig()
+                .getSkinPriceByQuality(Math.min(Math.max(quality, 0), 5));
+    }
+
+    /**
+     * 快速出售本次抽奖结果：逐条比对发放记录，命中则回收皮肤（lockSkin）并按品质折算发币
+     * @return 实际售出的总价值
+     */
+    public int sellLootResults(ServerPlayer player, int poolID, List<int[]> results) {
+        if (player == null || results == null || results.isEmpty())
+            return 0;
+        LotteryPool pool = getLotteryPool(poolID);
+        if (pool == null)
+            return 0;
+        List<LootGrant> grants = recentLootGrants.get(player.getUUID());
+        if (grants == null || grants.isEmpty())
+            return 0;
+        long now = net.minecraft.Util.getMillis();
+        grants.removeIf(g -> now - g.timeMs() > LOOT_GRANT_SELL_WINDOW_MS);
+        int total = 0;
+        for (int[] r : results) {
+            if (r == null || r.length < 2)
+                continue;
+            int quality = r[0], ansID = r[1];
+            if (quality < 0 || quality >= pool.getQualityListGroupConfigs().size())
+                continue;
+            List<String> itemList = pool.getQualityListGroupConfigs().get(quality).second;
+            if (ansID < 0 || ansID >= itemList.size())
+                continue;
+            String itemName = itemList.get(ansID);
+            // 金币卡等无皮肤前缀条目不可出售
+            if (!itemName.contains("/"))
+                continue;
+            String trueName = LotteryPool.getTrueName(itemName);
+            boolean matched = false;
+            Iterator<LootGrant> it = grants.iterator();
+            while (it.hasNext()) {
+                if (it.next().trueName().equals(trueName)) {
+                    it.remove();
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched)
+                continue;
+            ItemStack itemStack = LotteryPool.getSkinItemStack(itemName);
+            if (itemStack != null && ItemSkinManager.isSkinUnlocked(player, itemStack, trueName)) {
+                ItemSkinManager.lockSkin(player, itemStack, trueName);
+                total += getSkinSellValue(quality);
+            }
+        }
+        if (total > 0)
+            ItemSkinManager.addCoinNum(player, total);
+        return total;
     }
 
     /** 添加抽奖机会 */
@@ -314,7 +447,28 @@ public class LotteryManager {
             ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/loot/epic_skin.png"),
             ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/loot/legendary_skin.png"),
             ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/loot/unbelievable.png"),
+            ResourceLocation.fromNamespaceAndPath("noellesroles", "textures/gui/loot/inherit_skin.png"),
     };
+    /** 传承品质档位索引（QualityColor.LEGACY 的 ordinal，也是卡池 QualityListGroup 的第 7 组） */
+    public static final int INHERIT_QUALITY_INDEX = 6;
+    /**
+     * 传承品质的"时不时爆出红光"脉冲：返回 0~1 的强度。
+     * 每 2.6 秒一个窗口，峰值时刻与脉宽用伪随机决定，平时为 0，爆发时快速冲高再回落。
+     */
+    public static float inheritRedPulse() {
+        long t = net.minecraft.Util.getMillis();
+        final long cycle = 2600L;
+        long seed = t / cycle;
+        long rnd = (seed * 6364136223846793005L + 1442695040888963407L) >>> 44;
+        float peak = 0.18f + (rnd % 640) / 1000.0f;
+        float halfW = 0.05f + (rnd % 40) / 1000.0f;
+        float phase = (t % cycle) / (float) cycle;
+        float d = Math.abs(phase - peak) / halfW;
+        if (d >= 1.0f)
+            return 0.0f;
+        float s = (float) Math.cos(d * Math.PI * 0.5);
+        return s * s;
+    }
     /** 不同品质重复皮肤对应折算的为单抽硬币数量的比例 */
     public static final float[] skinToCoin = {
             0.1f, 0.125f, 0.25f, 0.5f, 1f, 2f, 3f

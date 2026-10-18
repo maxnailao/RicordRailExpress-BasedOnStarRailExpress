@@ -26,18 +26,19 @@ public record LootMultiResultS2CPacket(int poolID, List<int[]> results) implemen
         for (int[] result : results) {
             buf.writeInt(result[0]);
             buf.writeInt(result[1]);
+            buf.writeInt(result.length > 2 ? result[2] : 0);
         }
     }
 
     public static LootMultiResultS2CPacket read(FriendlyByteBuf buf) {
         int poolID = buf.readInt();
         int count = buf.readInt();
-        if (count < 0 || count > 10) {
+        if (count < 0 || count > 20) {
             count = 0;
         }
         List<int[]> results = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            results.add(new int[]{buf.readInt(), buf.readInt()});
+            results.add(new int[]{buf.readInt(), buf.readInt(), buf.readInt()});
         }
         return new LootMultiResultS2CPacket(poolID, results);
     }

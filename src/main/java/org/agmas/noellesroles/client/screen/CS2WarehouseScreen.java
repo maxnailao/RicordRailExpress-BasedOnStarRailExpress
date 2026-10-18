@@ -70,6 +70,7 @@ public class CS2WarehouseScreen extends Screen {
             0xFFAA55FF, // 3: epic
             0xFFFFAA55, // 4: legendary
             0xFFFF3F3F, // 5: unbelievable
+            0xFF8B7A2E, // 6: legacy 传承（暗金色）
     };
 
     private static final int BG_COLOR = 0xE60C1020;
@@ -935,7 +936,7 @@ public class CS2WarehouseScreen extends Screen {
                 net.minecraft.ChatFormatting.GRAY));
 
         if (hoveredItem.quality > 0) {
-            String[] qualityNames = {"普通", "罕见", "稀有", "史诗", "传说", "神话"};
+            String[] qualityNames = {"普通", "罕见", "稀有", "史诗", "传说", "神话", "传承"};
             int qIdx = Math.min(hoveredItem.quality, qualityNames.length - 1);
             tooltip.add(Component.literal("品质: " + qualityNames[qIdx]));
         }

@@ -12,6 +12,8 @@ public class RedScreenRenderer {
 
     // 恶魔之刃蓄满时的屏幕边缘颜色（粉紫色），可按需微调
     private static final int EMOZHIDAO_EDGE_COLOR = 0xE066FF;
+    // 星光蓄满时的屏幕边缘颜色（黑色）
+    private static final int XINGGUANG_EDGE_COLOR = 0x000000;
 
     // 添加屏幕边缘红色效果相关变量
     public static long screenRedEffectStartTime = 0L; // 屏幕红色效果开始时间（毫秒）
@@ -33,11 +35,17 @@ public class RedScreenRenderer {
 
     public static void renderScreenRedEffect(@NotNull GuiGraphics context, float delta, Player player) {
         if (isScreenRedEffectActive()) {
-            // 恶魔之刃→粉紫色，其余→红色
-            int edgeColor = (player != null
-                    && EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, player.getMainHandItem()))
-                            ? EMOZHIDAO_EDGE_COLOR
-                            : 0xFF0000;
+            // 恶魔之刃→粉紫色，星光→黑色，其余→红色
+            int edgeColor;
+            if (player != null
+                    && EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, player.getMainHandItem())) {
+                edgeColor = EMOZHIDAO_EDGE_COLOR;
+            } else if (player != null
+                    && io.wifi.starrailexpress.client.XingguangClientEffects.hasXingguangEquipped(player)) {
+                edgeColor = XINGGUANG_EDGE_COLOR;
+            } else {
+                edgeColor = 0xFF0000;
+            }
             renderScreenEdgeEffect(context, screenRedEffectStartTime, SCREEN_RED_EFFECT_DURATION_MS, edgeColor,
                     MAX_RED_INTENSITY);
         }

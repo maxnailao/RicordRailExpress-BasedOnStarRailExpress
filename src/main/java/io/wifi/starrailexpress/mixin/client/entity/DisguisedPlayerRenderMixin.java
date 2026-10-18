@@ -49,9 +49,10 @@ public abstract class DisguisedPlayerRenderMixin {
     @Inject(method = "renderRightHand(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/player/AbstractClientPlayer;)V", at = @At("HEAD"), cancellable = true)
     private void sre$renderDisguisedRightHand(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
             AbstractClientPlayer player, CallbackInfo ci) {
-        if (EntityDisguiseRenderer.renderFirstPersonHand(player, true, poseStack, bufferSource, packedLight)) {
-            ci.cancel();
-        }
+        // TODO 诊断：临时禁用右臂取消，验证第一人称手臂消失是否由这里造成
+        // if (EntityDisguiseRenderer.renderFirstPersonHand(player, true, poseStack, bufferSource, packedLight)) {
+        //     ci.cancel();
+        // }
     }
 
     @Inject(method = "renderLeftHand(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/player/AbstractClientPlayer;)V", at = @At("HEAD"), cancellable = true)

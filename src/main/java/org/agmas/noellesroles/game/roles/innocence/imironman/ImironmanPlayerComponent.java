@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.EarlyKillPlayer;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
@@ -29,6 +30,10 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 铁傀儡组件 - 平民阵营
@@ -56,6 +61,10 @@ public class ImironmanPlayerComponent implements RoleComponent, ServerTickingCom
 
     /** 充能恢复计时（tick），仅当充能未满时累计 */
     private int rechargeTicks;
+
+    /** 仿照大嗓门：击飞致死归属记录（受害者UUID → 推动者记录） */
+    private static final long PUSH_KILL_CREDIT_MS = 8000L;
+    private static final Map<UUID, PushCredit> PUSH_CREDITS = new ConcurrentHashMap<>();
 
     public ImironmanPlayerComponent(Player player) {
         this.player = player;
@@ -100,6 +109,27 @@ public class ImironmanPlayerComponent implements RoleComponent, ServerTickingCom
             }
             // 否决本次球棒死亡
             return false;
+        });
+
+        // 仿照大嗓门：铁傀儡击飞致死归属，触发好人不打好人的小脑惩罚。
+        // 击退技能不走 hurt（不产生 Mob 伤害），故用 PUSH_CREDITS 显式追溯推动者，
+        // 使受害者因摔落/掉下列车/焚化炉死亡时 killer 解析为铁傀儡施术者。
+        EarlyKillPlayer.FIND_KILLER_EVENT.register((victim, originalKiller, deathReason) -> {
+            if (!(victim instanceof ServerPlayer serverVictim)) {
+                return null;
+            }
+            if (!isIronPunchAttributableReason(deathReason)) {
+                return null;
+            }
+            PushCredit credit = PUSH_CREDITS.get(serverVictim.getUUID());
+            if (credit == null) {
+                return null;
+            }
+            if (System.currentTimeMillis() - credit.timeMs > PUSH_KILL_CREDIT_MS) {
+                PUSH_CREDITS.remove(serverVictim.getUUID());
+                return null;
+            }
+            return serverVictim.serverLevel().getPlayerByUUID(credit.pusherUuid());
         });
     }
 
@@ -164,6 +194,8 @@ public class ImironmanPlayerComponent implements RoleComponent, ServerTickingCom
         // 这样被击飞后摔到死亡地点（fall_damage / fell_out_of_train）也能算到铁傀儡头上，
         // 从而正确触发好人不打好人的小脑惩罚
         target.setLastHurtByPlayer(serverPlayer);
+        // 仿照大嗓门：额外写入击飞归属，覆盖焚化炉等不走 getLastAttacker 的致死路径
+        recordPunchCredit(target, serverPlayer);
         // 玩家受服务端击退需主动同步速度
         target.connection
                 .send(new ClientboundSetEntityMotionPacket(target.getId(), target.getDeltaMovement()));
@@ -180,6 +212,23 @@ public class ImironmanPlayerComponent implements RoleComponent, ServerTickingCom
                         serverPlayer.getDisplayName()).withStyle(ChatFormatting.RED),
                 true);
         return true;
+    }
+
+    /** 记录击飞归属：若被击飞者随后因环境致死（虚空/摔落/焚化炉）归因到施术者，触发小脑惩罚。 */
+    public static void recordPunchCredit(ServerPlayer target, ServerPlayer pusher) {
+        if (target == null || pusher == null || target.getUUID().equals(pusher.getUUID())) {
+            return;
+        }
+        PUSH_CREDITS.put(target.getUUID(), new PushCredit(pusher.getUUID(), System.currentTimeMillis()));
+    }
+
+    private static boolean isIronPunchAttributableReason(ResourceLocation deathReason) {
+        return GameConstants.DeathReasons.FELL_OUT_OF_TRAIN.equals(deathReason)
+                || GameConstants.DeathReasons.FALL_DAMAGE.equals(deathReason)
+                || GameConstants.DeathReasons.INCINERATOR_PUSHED.equals(deathReason);
+    }
+
+    private record PushCredit(UUID pusherUuid, long timeMs) {
     }
 
     // ==================== Tick 处理 ====================

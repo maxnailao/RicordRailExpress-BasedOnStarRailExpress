@@ -14,7 +14,7 @@ import org.agmas.noellesroles.Noellesroles;
  * 客户端根据结果生成动画
  * </p>
  */
-public record LootResultS2CPacket(int poolID, int quality, int ansID) implements CustomPacketPayload {
+public record LootResultS2CPacket(int poolID, int quality, int ansID, boolean newSkin) implements CustomPacketPayload {
     public static final ResourceLocation LOOT_RESULT_PAYLOAD_ID =
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "loot_result");
     public static final Type<LootResultS2CPacket> ID = new Type<>(LOOT_RESULT_PAYLOAD_ID);
@@ -28,13 +28,15 @@ public record LootResultS2CPacket(int poolID, int quality, int ansID) implements
         buf.writeInt(poolID);
         buf.writeInt(quality);
         buf.writeInt(ansID);
+        buf.writeBoolean(newSkin);
     }
 
     public static LootResultS2CPacket read(FriendlyByteBuf buf) {
         return new LootResultS2CPacket(
                 buf.readInt(),
                 buf.readInt(),
-                buf.readInt()
+                buf.readInt(),
+                buf.readBoolean()
         );
     }
     static {

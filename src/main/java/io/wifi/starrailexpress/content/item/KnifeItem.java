@@ -92,6 +92,10 @@ public class KnifeItem extends SkinableItem {
         if (user.isSpectator()) {
             return;
         }
+        // 蓄力不足也会释放：先按"空放"通知姿态机回持刀，够蓄力时下面会用真实命中结果覆盖
+        if (world.isClientSide && user instanceof Player) {
+            io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(false);
+        }
         if (remainingUseTicks >= this.getUseDuration(stack, user) - 8 || !(user instanceof Player attacker)
                 || !world.isClientSide)
             return;
@@ -108,8 +112,11 @@ public class KnifeItem extends SkinableItem {
             if (SRE.REPLAY_MANAGER != null) {
                 SRE.REPLAY_MANAGER.recordItemUse(user.getUUID(), BuiltInRegistries.ITEM.getKey(this));
             }
+            io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(true);
             ClientPlayNetworking.send(new KnifeStabPayload(target.getId()));
             CrosshairaddonsCompat.onAttack(target);
+        } else {
+            io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(false);
         }
     }
 
@@ -134,6 +141,15 @@ public class KnifeItem extends SkinableItem {
 
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
+        // 星光皮肤：取消原版 SPEAR 蓄力变换。该变换会在第一人称姿态变换之后
+        // 再叠加"投矛"位移+旋转，导致 XingguangPoseManager 的蓄力姿态被顶出屏幕。
+        // 蓄力演出已由 XingguangPoseManager（第一人称）与 XingguangChargeThirdPersonMixin
+        // （第三人称）全权接管。其他皮肤保持原版投矛动画不变。
+        // SKIN_ID 是编译期常量，内联后不产生对客户端类的运行时引用，服务端安全。
+        if (io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID
+                .equals(stack.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN))) {
+            return UseAnim.NONE;
+        }
         return UseAnim.SPEAR;
     }
 

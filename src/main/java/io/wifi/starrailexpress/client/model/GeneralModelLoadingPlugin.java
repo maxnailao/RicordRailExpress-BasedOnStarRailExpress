@@ -10,6 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 import java.util.HashMap;
 
@@ -78,6 +79,12 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
                         return unbakedModel;
                     }
                     return new GeneralModel(itemName, context.topLevelId(),unbakedModel);
+                }
+                // 原版弓没有 SkinableItem 载体，但装备了弓皮肤时也应套用皮肤模型 → 同样包装为 GeneralModel。
+                // 拉弓时由 ItemOverrides.resolve 的 Mixin 旁路原版 pulling 覆盖，交给 GeneralModel.emitItemQuads 选皮肤三档变体；
+                // 未装备弓皮肤的玩家则保持原版拉弓动画。
+                if (item == Items.BOW) {
+                    return new GeneralModel(ItemSkinManager.SkinTypes.BOW, context.topLevelId(), unbakedModel);
                 }
             }
 

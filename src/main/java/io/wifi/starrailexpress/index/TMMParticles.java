@@ -6,6 +6,8 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.client.particle.*;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.SimpleParticleType;
 
 public interface TMMParticles {
@@ -19,6 +21,13 @@ public interface TMMParticles {
     SimpleParticleType BIG_EXPLOSION = (SimpleParticleType) registrar.create("big_explosion", FabricParticleTypes.simple(true));
     SimpleParticleType POISON = (SimpleParticleType) registrar.create("poison", FabricParticleTypes.simple(true));
     SimpleParticleType BLACK_SMOKE = (SimpleParticleType) registrar.create("black_smoke", FabricParticleTypes.simple(true));
+    // 星光击杀特效粒子：不走 ratatouille 队列（实测新类型未被刷入注册表，/particle 报未知类型），
+    // 直接注册到原版粒子注册表，命名空间 trainmurdermystery 与 assets/.../particles/*.json 一致。
+    // 本接口在 SRE.onInitialize 的 initRegistries() 中经 initialize() 触发类初始化，早于注册表冻结，安全。
+    SimpleParticleType XINGGUANG_KILL_HAND = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
+            StarRailExpressID.TMMId("xingguang_kill_hand"), FabricParticleTypes.simple(true));
+    SimpleParticleType XINGGUANG_KILL_ORB = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
+            StarRailExpressID.TMMId("xingguang_kill_orb"), FabricParticleTypes.simple(true));
 
     static void initialize() {
         registrar.registerEntries();
@@ -33,5 +42,7 @@ public interface TMMParticles {
         ParticleFactoryRegistry.getInstance().register(BIG_EXPLOSION, FlashParticle.BigExplosionFactory::new);
         ParticleFactoryRegistry.getInstance().register(POISON, PoisonParticle.Factory::new);
         ParticleFactoryRegistry.getInstance().register(BLACK_SMOKE, BlackSmokeParticle.Factory::new);
+        ParticleFactoryRegistry.getInstance().register(XINGGUANG_KILL_HAND, XingguangKillFxParticle.HandFactory::new);
+        ParticleFactoryRegistry.getInstance().register(XINGGUANG_KILL_ORB, XingguangKillFxParticle.OrbFactory::new);
     }
 }

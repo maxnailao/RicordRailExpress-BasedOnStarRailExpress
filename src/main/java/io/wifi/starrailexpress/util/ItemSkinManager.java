@@ -59,7 +59,8 @@ public class ItemSkinManager {
         RARE(new Color(0xFFAAAAFF).getRGB()),
         EPIC(new Color(0xFFAA55FF).getRGB()),
         LEGENDARY(new Color(0xFFFFAA55).getRGB()),
-        UNBELIEVABLE(new Color(0xFFFF3F3F).getRGB());
+        UNBELIEVABLE(new Color(0xFFFF3F3F).getRGB()),
+        LEGACY(new Color(0xFF8B7A2E).getRGB());
 
         QualityColor(int i) {
             color = i;

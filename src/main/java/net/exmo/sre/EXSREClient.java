@@ -17,7 +17,10 @@ public class EXSREClient {
     public static File CONFIG_PATH = new File(FabricLoader.getInstance().getConfigDir() + "/sre");
     public static final Path BackgroundTexture = Paths.get(CONFIG_PATH + "/background.png");
     public static final Path GAME_VIDEO_DIR = FabricLoader.getInstance().getGameDir().resolve("video");
+    public static final Path MENU_VIDEO_DIR = GAME_VIDEO_DIR.resolve("menu_flow");
+    public static final Path LOTTERY_VIDEO_DIR = GAME_VIDEO_DIR.resolve("lottery_starry");
     private static final String VIDEO_ZIP_RESOURCE = "assets/" + SRE.MOD_ID + "/textures/gui/title/video.zip";
+    private static final String MENU_VIDEO_ZIP_RESOURCE = "assets/" + SRE.MOD_ID + "/textures/gui/menu/menu_video.zip";
 
     public static MobEffectInstance night_vision_cache_ = new MobEffectInstance(MobEffects.NIGHT_VISION,100,0,false,false,false);
     public InputStream getBackgroundImage() {
@@ -43,6 +46,7 @@ public class EXSREClient {
         }
 
         ensureVideoFramesExtracted();
+        ensureMenuVideoFramesExtracted();
 
         // 注册全局战绩 / 回放查询的客户端网络接收器
         net.exmo.sre.record.client.MatchRecordClientNetwork.registerClientReceivers();
@@ -88,5 +92,47 @@ public class EXSREClient {
             SRE.LOGGER.error("[SRE] Failed to extract video frames to {}", GAME_VIDEO_DIR, e);
         }
 
+    }
+
+    /** 首次启动时把内置的菜单视频帧序列（menu_video.zip）解压到 run/video/menu_flow/ */
+    private void ensureMenuVideoFramesExtracted() {
+        try {
+            Files.createDirectories(MENU_VIDEO_DIR);
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(MENU_VIDEO_DIR, "*.{png,jpg,jpeg}")) {
+                if (stream.iterator().hasNext()) {
+                    return;
+                }
+            }
+
+            try (InputStream raw = Thread.currentThread().getContextClassLoader().getResourceAsStream(MENU_VIDEO_ZIP_RESOURCE)) {
+                if (raw == null) {
+                    SRE.LOGGER.warn("[SRE] Missing menu video zip resource: {}", MENU_VIDEO_ZIP_RESOURCE);
+                    return;
+                }
+
+                try (ZipInputStream zip = new ZipInputStream(raw)) {
+                    ZipEntry entry;
+                    while ((entry = zip.getNextEntry()) != null) {
+                        if (entry.isDirectory()) {
+                            zip.closeEntry();
+                            continue;
+                        }
+
+                        Path outPath = MENU_VIDEO_DIR.resolve(entry.getName()).normalize();
+                        if (!outPath.startsWith(MENU_VIDEO_DIR)) {
+                            zip.closeEntry();
+                            continue;
+                        }
+
+                        Files.createDirectories(outPath.getParent());
+                        Files.copy(zip, outPath, StandardCopyOption.REPLACE_EXISTING);
+                        zip.closeEntry();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            SRE.LOGGER.error("[SRE] Failed to extract menu video frames to {}", MENU_VIDEO_DIR, e);
+        }
     }
 }

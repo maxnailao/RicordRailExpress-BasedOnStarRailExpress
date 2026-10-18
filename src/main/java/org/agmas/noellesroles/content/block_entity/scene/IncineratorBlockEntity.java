@@ -8,7 +8,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -54,13 +53,11 @@ public class IncineratorBlockEntity extends BlockEntity {
             serverLevel.sendParticles(ParticleTypes.LAVA, p.getX(), p.getY() + 0.5, p.getZ(), 15, 0.3, 0.5, 0.3, 0.05);
             serverLevel.playSound(null, mouth, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 1.2F, 0.7F);
 
-            // 追溯伤害来源：检测推入焚化炉的凶手
-            Player killer = null;
-            LivingEntity lastHurt = p.getLastHurtByMob();
-            if (lastHurt instanceof Player lastHurtPlayer
-                    && serverLevel.getGameTime() - p.getLastHurtByMobTimestamp() < LAST_HURT_TIMEOUT) {
-                killer = lastHurtPlayer;
-            }
+            // 追溯伤害来源：检测推入焚化炉的凶手。
+            // 铁傀儡等击退技能只调用 setLastHurtByPlayer 记录归属（不走 hurt、不产生 Mob 伤害），
+            // 因此这里用 getLastAttacker 解析（优先 lastHurtByPlayer，其次 lastHurtByMob），
+            // 否则 killer 为 null，好人不打好人的小脑惩罚不会触发。
+            Player killer = p.getLastAttacker() instanceof Player attacker ? attacker : null;
             GameUtils.forceKillPlayer(p, true, killer, GameConstants.DeathReasons.INCINERATOR_PUSHED);
         }
 

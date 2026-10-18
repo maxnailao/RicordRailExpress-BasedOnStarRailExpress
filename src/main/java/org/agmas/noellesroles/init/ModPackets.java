@@ -236,6 +236,8 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(LootMultiResultS2CPacket.ID, LootMultiResultS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(LootPoolsInfoCheckS2CPacket.ID, LootPoolsInfoCheckS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(LootPoolsInfoS2CPacket.ID, LootPoolsInfoS2CPacket.CODEC);
+        // 注册抽奖失败通知包
+        PayloadTypeRegistry.playS2C().register(LootFailNoticeS2CPacket.ID, LootFailNoticeS2CPacket.CODEC);
 
         // 自定义职业同步
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.CustomRoleSyncPayload.TYPE,

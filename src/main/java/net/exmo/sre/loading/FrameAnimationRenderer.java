@@ -37,6 +37,9 @@ public class FrameAnimationRenderer {
 
     private final List<ResourceLocation> frames = new ArrayList<>();
     private final float fps;
+    private final Path frameDir;
+    /** true：进入世界后 loadFrames() 会清空帧（标题背景用）；false：世界中也可播放（菜单背景用） */
+    private final boolean clearWhenInWorld;
     private long startTimeMs = -1;
     private boolean loaded = false;
 
@@ -44,7 +47,18 @@ public class FrameAnimationRenderer {
      * @param fps 播放帧率（例如 24.0F 或 30.0F）
      */
     public FrameAnimationRenderer(float fps) {
+        this(fps, EXSREClient.GAME_VIDEO_DIR, true);
+    }
+
+    /**
+     * @param fps              播放帧率
+     * @param frameDir         帧文件目录（必须位于 {@code run/video/} 之下，与 ConfigTexture 的磁盘映射一致）
+     * @param clearWhenInWorld 进入世界后是否清空帧序列（标题背景传 true；游戏内 GUI 背景传 false）
+     */
+    public FrameAnimationRenderer(float fps, Path frameDir, boolean clearWhenInWorld) {
         this.fps = fps;
+        this.frameDir = frameDir;
+        this.clearWhenInWorld = clearWhenInWorld;
     }
 
     public static void setInWorld(boolean value) {
@@ -54,10 +68,10 @@ public class FrameAnimationRenderer {
     // ─── 加载 ────────────────────────────────────────────────────────
 
     /**
-     * 从资源包扫描帧序列。应在 {@code Screen.init()} 或首次渲染时调用。
+     * 从帧目录扫描帧序列。应在 {@code Screen.init()} 或首次渲染时调用。
      */
     public void loadFrames() {
-        if (inWorld) {
+        if (clearWhenInWorld && inWorld) {
             this.frames.clear();
             this.loaded = false;
             this.startTimeMs = -1;
@@ -66,9 +80,22 @@ public class FrameAnimationRenderer {
 
         frames.clear();
         Minecraft mc = Minecraft.getInstance();
-        Path videoDir = EXSREClient.GAME_VIDEO_DIR;
 
-        try (Stream<Path> stream = Files.list(videoDir)) {
+        if (!Files.isDirectory(frameDir)) {
+            loaded = true;
+            LOGGER.warn("[SRE] Video frame directory missing: {}", frameDir);
+            return;
+        }
+
+        // ConfigTexture 把 "video/..." 路径映射到 run/video/ 磁盘目录，子目录同样有效
+        String prefix = "video/";
+        try {
+            String rel = EXSREClient.GAME_VIDEO_DIR.relativize(frameDir).toString().replace("\\", "/");
+            if (!rel.isEmpty()) prefix = "video/" + rel + "/";
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        try (Stream<Path> stream = Files.list(frameDir)) {
             List<Path> frameFiles = stream
                     .filter(Files::isRegularFile)
                     .filter(path -> {
@@ -80,21 +107,21 @@ public class FrameAnimationRenderer {
 
             for (Path frame : frameFiles) {
                 String fileName = frame.getFileName().toString();
-                ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(SRE.MOD_ID, "video/" + fileName);
+                ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(SRE.MOD_ID, prefix + fileName);
                 mc.getTextureManager().register(loc, new ConfigTexture(loc));
                 frames.add(loc);
             }
         } catch (IOException e) {
-            LOGGER.error("[SRE] Failed to load video frames from {}", videoDir, e);
+            LOGGER.error("[SRE] Failed to load video frames from {}", frameDir, e);
         }
 
         loaded = true;
         startTimeMs = -1;
 
         if (frames.isEmpty()) {
-            LOGGER.warn("[SRE] No video frames found in {}", videoDir);
+            LOGGER.warn("[SRE] No video frames found in {}", frameDir);
         } else {
-            LOGGER.info("[SRE] Loaded {} video frames for title background", frames.size());
+            LOGGER.info("[SRE] Loaded {} video frames from {}", frames.size(), frameDir);
         }
     }
 
@@ -188,6 +215,49 @@ public class FrameAnimationRenderer {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, overallAlpha * blend);
             g.blit(nextFrame, 0, 0, 0, 0,
                     screenWidth, screenHeight, screenWidth, screenHeight);
+        }
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+    }
+
+    /**
+     * 渲染动画帧到指定矩形区域（拉伸铺满），带帧间交叉淡入淡出补帧效果。
+     * 供游戏内 GUI 面板（如 E 键主菜单）作为动态背景使用。
+     */
+    public void render(GuiGraphics g, int x, int y, int width, int height) {
+        render(g, x, y, width, height, 1.0F);
+    }
+
+    /**
+     * 渲染动画帧到指定矩形区域，整体带额外透明度。
+     */
+    public void render(GuiGraphics g, int x, int y, int width, int height, float overallAlpha) {
+        if (!hasFrames() || width <= 0 || height <= 0) return;
+
+        long now = Util.getMillis();
+        if (startTimeMs < 0) startTimeMs = now;
+
+        float elapsedSec = (now - startTimeMs) / 1000.0F;
+        float totalFrames = frames.size();
+
+        float framePos = (elapsedSec * fps) % totalFrames;
+        int frameIndex = (int) framePos;
+        float blend = framePos - frameIndex;
+        int nextIndex = (frameIndex + 1) % frames.size();
+
+        ResourceLocation currentFrame = frames.get(frameIndex);
+        ResourceLocation nextFrame = frames.get(nextIndex);
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, overallAlpha);
+        g.blit(currentFrame, x, y, 0, 0, width, height, width, height);
+
+        if (blend > 0.005F) {
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, overallAlpha * blend);
+            g.blit(nextFrame, x, y, 0, 0, width, height, width, height);
         }
 
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

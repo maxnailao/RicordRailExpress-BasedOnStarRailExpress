@@ -58,6 +58,7 @@ public final class CS2SkinInfo {
         register("knife/knife_lianhuadao", "莲花苦无", "莲纹点缀的苦无，于暗影中悄然绽放");
         register("knife/knife_luosidao", "螺丝刀", "寻常五金工具，却能拧紧命运的螺丝");
         register("knife/knife_gangbi", "钢笔", "文人雅士的随身利器，落笔即封喉");
+        register("knife/knife_xingguang", "星光", "凝聚星空曙光的传承之刃，暗金之躯中沉睡着偶尔苏醒的赤红之光");
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）

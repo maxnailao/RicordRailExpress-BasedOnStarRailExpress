@@ -1,11 +1,14 @@
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
+import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.client.render.entity.HatFeatureRenderer;
 import io.wifi.starrailexpress.client.render.entity.HatSkinRenderer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -54,6 +57,7 @@ public class AccessoryScreen extends Screen {
     // 品质颜色（与仓库一致）
     private static final int[] QUALITY_COLORS = {
             0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F,
+            0xFF8B7A2E,
     };
 
     // 双形态特别皮肤的内部切换形态（暗星/圣宣/坚守者，非独立皮肤），不在饰品中展示
@@ -72,10 +76,18 @@ public class AccessoryScreen extends Screen {
     private static final int SCROLLBAR_W = 6;
 
     // 分类标签（索引 0 = 全部）
-    private static final String[] CATEGORY_LABELS = {"全部", "手雷", "刀", "手枪", "帽子", "球棒"};
+    private static final String[] CATEGORY_LABELS = {"全部", "手雷", "刀", "手枪", "帽子", "球棒", "弓"};
     private int category = 0;
+    // 竖排分类模式：点"↕ 排序"后，分类按拼音自上而下排列，横向空间不足也能容纳全部分类
+    private boolean sortVertical = false;
+    private static final int TABCOL_W = 44;
+    private int baseListX;
+    private static final java.text.Collator CATEGORY_COLLATOR =
+            java.text.Collator.getInstance(java.util.Locale.CHINESE);
 
     private final Screen parent;
+    /** 进入界面时要自动选中并预览的皮肤 ID（type/skinName），可为 null；用于抽奖预览等外部入口 */
+    private final String initialSkinId;
 
     // 面板与预览模块布局
     private int panelX, panelY, panelW, panelH;
@@ -139,48 +151,21 @@ public class AccessoryScreen extends Screen {
     private final List<SkinEntry> skins = new ArrayList<>();
 
     public AccessoryScreen(Screen parent) {
+        this(parent, null);
+    }
+
+    /** parent + 初始聚焦皮肤：打开后自动滚动到该饰品、选中并应用角色预览取景 */
+    public AccessoryScreen(Screen parent, String initialSkinId) {
         super(Component.literal("饰品"));
         this.parent = parent;
+        this.initialSkinId = initialSkinId;
     }
 
     @Override
     protected void init() {
         super.init();
 
-        panelW = Math.min(width - 16, 440);
-        panelH = Math.min(height - 48, 190);
-        panelX = (width - panelW) / 2;
-        panelY = (height - panelH) / 2 + 14;
-
-        int pad = 8;
-        previewH = panelH - pad * 2;
-        previewW = (int) (previewH * 0.62);
-        endPreviewX = panelX + pad;
-        endPreviewY = panelY + pad;
-
-        // 起点 = 主菜单（MenuHubScreen）里预览模块的位置，形成平滑过渡
-        int menuPanelW = Math.min(width - 16, 360);
-        int menuPanelH = Math.min(height - 48, 190);
-        int menuPanelX = (width - menuPanelW) / 2;
-        int menuPanelY = (height - menuPanelH) / 2 + 14;
-        startPreviewX = menuPanelX + pad;
-        startPreviewY = menuPanelY + pad;
-
-        // 网格区：预览模块右边；最右侧留给滑动条
-        barX = panelX + panelW - pad - SCROLLBAR_W;
-        listX = endPreviewX + previewW + 12;
-        listW = barX - 6 - listX;
-        // 顶部分类标签行，网格区在其下方
-        tabRowY = panelY + pad;
-        tabCellH = 12;
-        tabCellW = listW / CATEGORY_LABELS.length;
-        int gridAvailH = previewH - (tabCellH + 3);
-        listY = tabRowY + tabCellH + 3;
-        cellH = 48;
-        visibleRows = Math.max(1, (gridAvailH + CELL_GAP) / (cellH + CELL_GAP));
-        cellW = (listW - CELL_GAP * (COLS - 1)) / COLS;
-        barTop = listY;
-        barHeight = gridAvailH;
+        computeLayout();
 
         rebuildSkins();
 
@@ -195,6 +180,77 @@ public class AccessoryScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("返回"), b ->
                 minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))
                 .pos(panelX + 6, panelY + panelH - 26).size(50, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("↕ 排序"), b -> toggleSort())
+                .pos(panelX + 60, panelY + panelH - 26).size(52, 20).build());
+
+        if (initialSkinId != null) {
+            focusInitialSkin(initialSkinId);
+        }
+    }
+
+    /** 依据是否竖排计算面板/预览/网格/标签布局；切换排序或首开时调用 */
+    private void computeLayout() {
+        panelW = Math.min(width - 16, 440);
+        panelH = Math.min(height - 48, 190);
+        panelX = (width - panelW) / 2;
+        panelY = (height - panelH) / 2 + 14;
+
+        int pad = 8;
+        previewH = panelH - pad * 2;
+        previewW = (int) (previewH * 0.62);
+        endPreviewX = panelX + pad;
+        endPreviewY = panelY + pad;
+
+        int menuPanelW = Math.min(width - 16, 360);
+        int menuPanelH = Math.min(height - 48, 190);
+        int menuPanelX = (width - menuPanelW) / 2;
+        int menuPanelY = (height - menuPanelH) / 2 + 14;
+        startPreviewX = menuPanelX + pad;
+        startPreviewY = menuPanelY + pad;
+
+        barX = panelX + panelW - pad - SCROLLBAR_W;
+        baseListX = endPreviewX + previewW + 12;
+        int totalW = barX - 6 - baseListX;
+
+        int gridAvailH;
+        if (sortVertical) {
+            // 竖排：左侧一列标签，网格整体右移并占满高度（无顶部标签行）
+            tabCellH = 12;
+            tabCellW = TABCOL_W;
+            listX = baseListX + TABCOL_W + 4;
+            listW = totalW - TABCOL_W - 4;
+            listY = panelY + pad;
+            gridAvailH = previewH;
+        } else {
+            // 横排：顶部一行标签，网格在其下方
+            tabRowY = panelY + pad;
+            tabCellH = 12;
+            tabCellW = totalW / CATEGORY_LABELS.length;
+            listX = baseListX;
+            listW = totalW;
+            listY = tabRowY + tabCellH + 3;
+            gridAvailH = previewH - (tabCellH + 3);
+        }
+        cellH = 48;
+        visibleRows = Math.max(1, (gridAvailH + CELL_GAP) / (cellH + CELL_GAP));
+        cellW = (listW - CELL_GAP * (COLS - 1)) / COLS;
+        barTop = listY;
+        barHeight = gridAvailH;
+    }
+
+    /** 切换横排/竖排分类，并重算布局、收敛滚动 */
+    private void toggleSort() {
+        sortVertical = !sortVertical;
+        computeLayout();
+        rowScroll = clampRowScroll(rowScroll);
+    }
+
+    /** 分类标签按中文拼音排序后的索引顺序 */
+    private List<Integer> sortedCategoryOrder() {
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < CATEGORY_LABELS.length; i++) order.add(i);
+        order.sort((a, b) -> CATEGORY_COLLATOR.compare(CATEGORY_LABELS[a], CATEGORY_LABELS[b]));
+        return order;
     }
 
     /** 读取全部饰品目录（含未拥有）并标记拥有状态：已拥有优先、再按品质降序 */
@@ -239,13 +295,14 @@ public class AccessoryScreen extends Screen {
         applyFilter();
     }
 
-    /** 皮肤所属分类索引：1=手雷,2=刀,3=手枪,4=帽子,5=球棒；未知前缀返回 -1（仅在"全部"显示） */
+    /** 皮肤所属分类索引：1=手雷,2=刀,3=手枪,4=帽子,5=球棒,6=弓；未知前缀返回 -1（仅在"全部"显示） */
     private int categoryOf(String skinId) {
         if (skinId.startsWith("grenade/")) return 1;
         if (skinId.startsWith("knife/")) return 2;
         if (skinId.startsWith("gun/") || skinId.startsWith("revolver/")) return 3;
         if (skinId.startsWith("hat/")) return 4;
         if (skinId.startsWith("bat/")) return 5;
+        if (skinId.startsWith("bow/")) return 6;
         return -1;
     }
 
@@ -295,6 +352,8 @@ public class AccessoryScreen extends Screen {
         if (skinId.startsWith("revolver/")) return TMMItems.REVOLVER.getDefaultInstance();
         if (skinId.startsWith("bat/")) return TMMItems.BAT.getDefaultInstance();
         if (skinId.startsWith("grenade/")) return TMMItems.GRENADE.getDefaultInstance();
+        if (skinId.startsWith("bow/")) return TMMItems.BOW.getDefaultInstance();
+        if (skinId.startsWith("crossbow/")) return TMMItems.CROSSBOW.getDefaultInstance();
         if (skinId.startsWith("hat/")) {
             ItemStack icon = CS2SkinInfo.getIconStack(skinId);
             return icon != null ? icon : new ItemStack(Items.LEATHER_HELMET);
@@ -390,8 +449,23 @@ public class AccessoryScreen extends Screen {
         return centerX + VIEW_SIDE * offset;
     }
 
-    /** 顶部一行分类标签 */
+    /** 顶部分类标签：横排一行 或 竖排一列（按拼音排序，点"↕ 排序"切换） */
     private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (sortVertical) {
+            List<Integer> order = sortedCategoryOrder();
+            for (int k = 0; k < order.size(); k++) {
+                int idx = order.get(k);
+                int y = listY + k * (tabCellH + 1);
+                boolean sel = category == idx;
+                boolean hov = mouseX >= baseListX && mouseX < baseListX + TABCOL_W
+                        && mouseY >= y && mouseY < y + tabCellH;
+                graphics.fill(baseListX, y, baseListX + TABCOL_W, y + tabCellH,
+                        sel ? ACCENT : (hov ? ROW_HOVER : ROW_BG));
+                graphics.drawCenteredString(font, CATEGORY_LABELS[idx],
+                        baseListX + TABCOL_W / 2, y + (tabCellH - font.lineHeight) / 2, TEXT_COLOR);
+            }
+            return;
+        }
         for (int i = 0; i < CATEGORY_LABELS.length; i++) {
             int x = listX + i * tabCellW;
             int w = (i == CATEGORY_LABELS.length - 1) ? listW - i * tabCellW : tabCellW - 1;
@@ -442,8 +516,15 @@ public class AccessoryScreen extends Screen {
                     name = name.substring(0, name.length() - 1);
                 }
                 boolean truncated = !name.equals(e.name());
+                boolean equipped = isEquipped(e);
+                // 已装备：名称上移一行，底部留出绿色"已装备"文字
+                int nameY = equipped ? y + cellH - 23 : y + cellH - 14;
                 graphics.drawCenteredString(font, truncated ? name + ".." : name,
-                        x + cellW / 2, y + cellH - 14, qColor);
+                        x + cellW / 2, nameY, qColor);
+                if (equipped) {
+                    graphics.drawCenteredString(font, "已装备",
+                            x + cellW / 2, y + cellH - 12, 0xFF55FF55);
+                }
 
                 // 未拥有：整格压暗变灰，右下角红字"未拥有"
                 if (!e.owned()) {
@@ -493,7 +574,22 @@ public class AccessoryScreen extends Screen {
             return true;
         }
         // 点击分类标签
-        if (mouseY >= tabRowY && mouseY < tabRowY + tabCellH) {
+        if (sortVertical) {
+            if (mouseX >= baseListX && mouseX < baseListX + TABCOL_W && mouseY >= listY) {
+                List<Integer> order = sortedCategoryOrder();
+                for (int k = 0; k < order.size(); k++) {
+                    int y = listY + k * (tabCellH + 1);
+                    if (mouseY >= y && mouseY < y + tabCellH) {
+                        int idx = order.get(k);
+                        if (category != idx) {
+                            category = idx;
+                            applyFilter();
+                        }
+                        return true;
+                    }
+                }
+            }
+        } else if (mouseY >= tabRowY && mouseY < tabRowY + tabCellH) {
             for (int i = 0; i < CATEGORY_LABELS.length; i++) {
                 int x = listX + i * tabCellW;
                 int w = (i == CATEGORY_LABELS.length - 1) ? listW - i * tabCellW : tabCellW - 1;
@@ -506,7 +602,7 @@ public class AccessoryScreen extends Screen {
                 }
             }
         }
-        // 点击饰品格：选中并拿到手上
+        // 点击饰品格：左键临时预览（拿到手上查看），右键真正装备到身上
         for (int r = 0; r < visibleRows; r++) {
             for (int c = 0; c < COLS; c++) {
                 int idx = (rowScroll + r) * COLS + c;
@@ -514,7 +610,17 @@ public class AccessoryScreen extends Screen {
                 int x = listX + c * (cellW + CELL_GAP);
                 int y = listY + r * (cellH + CELL_GAP);
                 if (mouseX >= x && mouseX < x + cellW && mouseY >= y && mouseY < y + cellH) {
-                    selectSkin(idx);
+                    SkinEntry entry = skins.get(idx);
+                    if (button == 1) {
+                        // 右键：已拥有的皮肤真正装备（持久化），同时预览
+                        if (entry.owned()) {
+                            equipSkin(entry);
+                        }
+                        selectSkin(idx);
+                    } else if (button == 0) {
+                        // 左键：仅临时预览，不涉及持久化
+                        selectSkin(idx);
+                    }
                     return true;
                 }
             }
@@ -532,6 +638,26 @@ public class AccessoryScreen extends Screen {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** 真正装备某个皮肤：本地客户端组件立即生效并发送网络包到服务端持久化（与皮肤管理界面同款模式） */
+    private void equipSkin(SkinEntry entry) {
+        if (minecraft.player == null) return;
+        String[] parts = entry.skinId().split("/");
+        if (parts.length < 2) return;
+        String itemType = parts[0];
+        String skinName = parts[1];
+        SREPlayerSkinsComponent.KEY.get(minecraft.player).setEquippedSkinForItemType(itemType, skinName);
+        ClientPlayNetworking.send(new UpdateSkinSelectedPayload(itemType, skinName));
+    }
+
+    /** 判断某饰品是否为玩家当前已装备的皮肤（按物品类型读取装备记录比对皮肤名） */
+    private boolean isEquipped(SkinEntry e) {
+        if (minecraft.player == null) return false;
+        String[] parts = e.skinId().split("/");
+        if (parts.length < 2) return false;
+        String equipped = SREPlayerSkinsComponent.KEY.get(minecraft.player).getEquippedSkin(parts[0]);
+        return equipped != null && equipped.equalsIgnoreCase(parts[1]);
     }
 
     /** 选中某个饰品：帽子→戴在头上预览，其他→临时替换主手物品让人物拿着查看，并按类型平滑切换取景
@@ -636,5 +762,18 @@ public class AccessoryScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    /** 定位到指定皮肤：切到"全部"分类，滚动到其所在行并选中预览 */
+    private void focusInitialSkin(String skinId) {
+        category = 0;
+        applyFilter();
+        for (int i = 0; i < skins.size(); i++) {
+            if (skins.get(i).skinId().equals(skinId)) {
+                rowScroll = clampRowScroll(i / COLS - visibleRows / 2);
+                selectSkin(i);
+                return;
+            }
+        }
     }
 }

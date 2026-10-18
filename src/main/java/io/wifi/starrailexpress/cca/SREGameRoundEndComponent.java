@@ -60,6 +60,15 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
         }
         this.winStatus = winStatus;
         this.sync();
+        // 星光传承：对局判定胜负的瞬间，向所有在场玩家广播清除刀刃深蓝黑影。
+        // 不能靠客户端读 WinStatus 做边沿检测：全代码库无人把 winStatus 重置回 NONE，
+        // 且本组件随存档持久化，第二局起客户端永远看到"已结束"，清零永不触发。
+        if (winStatus != GameUtils.WinStatus.NONE) {
+            for (ServerPlayer player : players) {
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(true));
+            }
+        }
     }
 
     public Component getCustomWinners() {

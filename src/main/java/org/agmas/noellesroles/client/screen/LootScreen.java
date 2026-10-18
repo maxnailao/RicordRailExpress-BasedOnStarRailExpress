@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -19,6 +20,8 @@ import org.agmas.noellesroles.client.widget.TextureWidget;
 import org.agmas.noellesroles.client.widget.TimerWidget;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
+import org.agmas.noellesroles.packet.Loot.LootSellC2SPacket;
+import org.agmas.noellesroles.cs2.CS2SkinInfo;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -78,6 +81,8 @@ public class LootScreen extends AbstractPixelScreen {
     private int slowDownTime = 0;
     /** 抽卡结束后的继续操作是否已触发 */
     private boolean continueTriggered = false;
+    /** 本次结果是否为新解锁皮肤（仅新解锁允许快速出售） */
+    private final boolean newSkin;
 
     /** 品质对应的发光颜色 (ARGB) */
     private static final int[] QUALITY_GLOW_COLORS = {
@@ -87,6 +92,7 @@ public class LootScreen extends AbstractPixelScreen {
             0x70AA00FF, // 3: epic - 紫色光
             0x80FFAA00, // 4: legendary - 金色光
             0x90FF3333, // 5: unbelievable - 红色光
+            0x90A8842F, // 6: legacy - 暗金光
     };
 
     /** 品质对应的发光颜色 (更亮的内层) */
@@ -97,6 +103,7 @@ public class LootScreen extends AbstractPixelScreen {
             0x60CC44FF, // 3: epic
             0x70FFCC00, // 4: legendary
             0x80FF6666, // 5: unbelievable
+            0x85D8B86A, // 6: legacy - 亮暗金
     };
 
     private static int getGlowColor(int quality) {
@@ -151,9 +158,23 @@ public class LootScreen extends AbstractPixelScreen {
                 int innerGlowColor = getInnerGlowColor(quality);
                 guiGraphics.fill(getX() - innerGlowSize, getY() - innerGlowSize,
                         getX() + getWidth() + innerGlowSize, getY() + getHeight() + innerGlowSize, innerGlowColor);
+                // 传承品质：在暗金底光上时不时爆出红色光
+                if (quality == LotteryManager.INHERIT_QUALITY_INDEX) {
+                    float pulse = LotteryManager.inheritRedPulse();
+                    if (pulse > 0.01F) {
+                        int redA = (int) (pulse * 150);
+                        int gs = glowSize + 3;
+                        guiGraphics.fill(getX() - gs, getY() - gs,
+                                getX() + getWidth() + gs, getY() + getHeight() + gs, (redA << 24) | 0xFF2F2F);
+                    }
+                }
             }
             if(skinBG != null)
-                skinBG.render(guiGraphics, i, j, f);
+            {
+                // 原品质背景贴图缺失会显示紫黑缺省方块，改画纯黑底
+                guiGraphics.fill(skinBG.getX(), skinBG.getY(),
+                        skinBG.getX() + skinBG.getWidth(), skinBG.getY() + skinBG.getHeight(), 0xFF000000);
+            }
 
             if (itemType != null && !itemType.isEmpty()) {
                 LootScreenUtils.renderPixelScaleSkinItem(skin.getX(), skin.getY(), pixelSize, guiGraphics, itemType, skinName);
@@ -225,12 +246,16 @@ public class LootScreen extends AbstractPixelScreen {
     }
 
     public LootScreen(int poolId, int quality, int ansID) {
-        this(poolId, quality, ansID, null);
+        this(poolId, quality, ansID, false, null);
     }
     public LootScreen(int poolId, int quality, int ansID, Screen parentScreen) {
+        this(poolId, quality, ansID, false, parentScreen);
+    }
+    public LootScreen(int poolId, int quality, int ansID, boolean newSkin, Screen parentScreen) {
         super(Component.empty());
         this.poolId = poolId;
         this.trueQualityAndId = new Pair<>(quality, ansID);
+        this.newSkin = newSkin;
         this.parentScreen = parentScreen;
     }
     @Override
@@ -476,12 +501,12 @@ public class LootScreen extends AbstractPixelScreen {
             // TODO : 需要用id查询目标文本并翻译
             String itemName = LotteryManager.getInstance().getLotteryPool(poolId)
                     .getQualityListGroupConfigs().get(trueQualityAndId.first).second.get(trueQualityAndId.second);
-            String trueName = LotteryManager.LotteryPool.getTrueName(itemName);
+            String trueName = skinDisplayName(itemName);
             guiGraphics.drawString(this.font, Component.literal(trueName),
                     centerX - font.width(Component.literal(trueName)) / 2,
                     height / 2 + (int)(endCard.getHeight() * (deltaScale + 1f)) / 2 + cardInterval * pixelSize,
                     0xFFFFFFFF);
-                renderContinueAction(guiGraphics, mouseX, mouseY);
+                renderLootActions(guiGraphics, mouseX, mouseY);
         }
         timerWidgets.forEach(timerWidget -> timerWidget.onRenderUpdate(delta));
 
@@ -499,48 +524,82 @@ public class LootScreen extends AbstractPixelScreen {
         }
     }
 
-    private void renderContinueAction(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component continueLabel = Component.literal("继续");
-        int x = width - ACTION_MARGIN - font.width(continueLabel);
-        int y = height - ACTION_MARGIN - font.lineHeight;
-        boolean hovered = isInTextRect(mouseX, mouseY, x, y, font.width(continueLabel), font.lineHeight);
-        int color = hovered ? ACTION_HOVER_COLOR : ACTION_IDLE_COLOR;
-        guiGraphics.drawString(font, continueLabel, x, y, color, false);
-        if (hovered)
-            guiGraphics.fill(x, y + font.lineHeight + 1, x + font.width(continueLabel), y + font.lineHeight + 2, ACTION_HOVER_COLOR);
+    /** 结果弹窗操作区：返回 / 快速出售（当前抽出的皮肤） */
+    private void renderLootActions(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        boolean sellable = currentResultSellable();
+        int sellValue = LotteryManager.getSkinSellValue(trueQualityAndId.first);
+        Component backLabel = Component.literal("返回");
+        Component sellLabel = Component.literal(sellable ? "快速出售（可出售" + sellValue + "货币）" : "该物品不可出售");
+        int gap = 16;
+        int backW = font.width(backLabel) + 16, sellW = font.width(sellLabel) + 16;
+        int h = font.lineHeight + 10;
+        int totalW = backW + sellW + gap;
+        int baseX = centerX - totalW / 2;
+        int baseY = resultActionY();
+        boolean backHovered = isInTextRect(mouseX, mouseY, baseX, baseY, backW, h);
+        boolean sellHovered = sellable && isInTextRect(mouseX, mouseY, baseX + backW + gap, baseY, sellW, h);
+        drawActionButton(guiGraphics, baseX, baseY, backW, h, backLabel, true, backHovered);
+        drawActionButton(guiGraphics, baseX + backW + gap, baseY, sellW, h, sellLabel, sellable, sellHovered);
+    }
+
+    private void drawActionButton(GuiGraphics guiGraphics, int x, int y, int w, int h,
+                                  Component label, boolean enabled, boolean hovered) {
+        int bg = !enabled ? 0x66304052 : hovered ? 0xFFE3C48C : 0xFF243547;
+        int border = !enabled ? 0x668D734A : 0xFFF7E7BE;
+        int textColor = !enabled ? 0x88F0E8D7 : hovered ? 0xFF1D2734 : 0xFFF0E8D7;
+        guiGraphics.fill(x, y, x + w, y + h, bg);
+        guiGraphics.fill(x, y, x + w, y + 1, border);
+        guiGraphics.fill(x, y + h - 1, x + w, y + h, border);
+        guiGraphics.fill(x, y, x + 1, y + h, border);
+        guiGraphics.fill(x + w - 1, y, x + w, y + h, border);
+        guiGraphics.drawString(font, label, x + (w - font.width(label)) / 2, y + (h - font.lineHeight) / 2 + 1,
+                textColor, false);
+    }
+
+    /** 结果名称下方操作按钮的 y 坐标 */
+    private int resultActionY() {
+        Card endCard = cards.get(endCardIdx);
+        return height / 2 + (int) (endCard.getHeight() * (deltaScale + 1f)) / 2 + cardInterval * pixelSize
+                + font.lineHeight + 14;
+    }
+
+    /** 当前结果是否可快速出售：只要抽出的是皮肤条目即可（金币卡不可卖） */
+    private boolean currentResultSellable() {
+        if (trueQualityAndId.first < 0)
+            return false;
+        String itemName = LotteryManager.getInstance().getLotteryPool(poolId)
+                .getQualityListGroupConfigs().get(trueQualityAndId.first).second.get(trueQualityAndId.second);
+        return itemName.contains("/");
+    }
+
+    private void sellCurrentResult() {
+        ClientPlayNetworking.send(new LootSellC2SPacket(poolId,
+                List.of(new int[]{trueQualityAndId.first, trueQualityAndId.second})));
+        onClose();
     }
 
     private boolean isInTextRect(double mouseX, double mouseY, int x, int y, int width, int height) {
         return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 
-    private void continueAfterSingleLoot() {
-        if (continueTriggered)
-            return;
-        continueTriggered = true;
-
-        String itemName = LotteryManager.getInstance().getLotteryPool(poolId)
-                .getQualityListGroupConfigs().get(trueQualityAndId.first).second.get(trueQualityAndId.second);
-        ItemStack itemStack = LotteryManager.LotteryPool.getSkinItemStack(itemName);
-
-        if (itemStack != null) {
-            Minecraft minecraft = Minecraft.getInstance();
-            String trueName = itemName.substring(itemName.indexOf('/') + 1);
-            itemStack.set(SREDataComponentTypes.SKIN, trueName);
-            minecraft.setScreen(new DisplayItemScreen(itemStack, parentScreen));
-            return;
-        }
-        onClose();
-    }
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && !isLooting) {
-            Component continueLabel = Component.literal("继续");
-            int x = width - ACTION_MARGIN - font.width(continueLabel);
-            int y = height - ACTION_MARGIN - font.lineHeight;
-            if (isInTextRect(mouseX, mouseY, x, y, font.width(continueLabel), font.lineHeight)) {
-                continueAfterSingleLoot();
+            boolean sellable = currentResultSellable();
+            Component backLabel = Component.literal("返回");
+            Component sellLabel = Component.literal(sellable ? "快速出售（可出售"
+                    + LotteryManager.getSkinSellValue(trueQualityAndId.first) + "货币）" : "该物品不可出售");
+            int gap = 16;
+            int backW = font.width(backLabel) + 16, sellW = font.width(sellLabel) + 16;
+            int h = font.lineHeight + 10;
+            int baseX = centerX - (backW + sellW + gap) / 2;
+            int baseY = resultActionY();
+            if (isInTextRect(mouseX, mouseY, baseX, baseY, backW, h)) {
+                onClose();
+                return true;
+            }
+            if (sellable && isInTextRect(mouseX, mouseY, baseX + backW + gap, baseY, sellW, h)) {
+                sellCurrentResult();
                 return true;
             }
         }
@@ -549,8 +608,16 @@ public class LootScreen extends AbstractPixelScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_SPACE && !isLooting) {
-            continueAfterSingleLoot();
+        if (keyCode == GLFW.GLFW_KEY_SPACE) {
+            if (isLooting)
+                skipToResult();
+            else
+                onClose();
+            return true;
+        }
+        // 动画中按 ESC 不再直接退出，改为跳过并显示获得皮肤
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && isLooting) {
+            skipToResult();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -558,6 +625,7 @@ public class LootScreen extends AbstractPixelScreen {
     @Override
     public void onClose() {
         if (parentScreen != null && minecraft != null) {
+            ClientPlayNetworking.send(new org.agmas.noellesroles.packet.Loot.LootDataRefreshC2SPacket());
             minecraft.setScreen(parentScreen);
             return;
         }
@@ -818,4 +886,38 @@ public class LootScreen extends AbstractPixelScreen {
 //                .setUv1(0, 0).setUv2(240, 240)
 //                .setNormal(normal, 1, 0, 0);
 //    }
+
+    /** 取皮肤注释名（如 revolver/revolver_g7 -> 注册中文名），未注册回退格式化英文 */
+    private static String skinDisplayName(String itemName) {
+        if (itemName == null || itemName.isEmpty())
+            return "unknown";
+        if (!itemName.contains("/"))
+            return itemName;
+        String[] parts = itemName.split("/");
+        String skinId = parts.length >= 2 ? parts[0] + "/" + parts[1] : itemName;
+        return CS2SkinInfo.getName(skinId);
+    }
+
+    /** 跳过滚动动画：立即定格到结果卡片并显示获得内容与操作按钮 */
+    private void skipToResult() {
+        if (!isLooting)
+            return;
+        isLooting = false;
+        animations.clear();
+        timerWidgets.clear();
+        Card endCard = cards.get(endCardIdx);
+        cards.forEach(card -> {
+            if (card != endCard)
+                card.visible = false;
+        });
+        endCard.visible = true;
+        endCard.setPosition(centerX - endCard.getWidth() / 2, endCard.getY());
+        if (trueQualityAndId.first > 3)
+            Minecraft.getInstance().getSoundManager().play(
+                    SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.8F, 1.05F));
+        else
+            Minecraft.getInstance().getSoundManager().play(
+                    SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.0F, 1.0F));
+    }
+
 }

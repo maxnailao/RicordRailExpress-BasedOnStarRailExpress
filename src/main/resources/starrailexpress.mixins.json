@@ -34,6 +34,7 @@
     "item.FoodItemMixin",
     "item.ItemPickupProgressionMixin",
     "item.ItemStackMixin",
+    "item.ShenfaBowMixin",
     "item.UseItemProgressionMixin",
     "network.NetworkStatisticsMixin",
     "network.ServerListFixMixin",
@@ -53,6 +54,7 @@
     "defaultRequire": 1
   },
   "client": [
+    "client.ShenfaBowOverrideMixin",
     "client.effects.InvisiblePlayer",
     "client.emote.PlayerModelEmoteMixin",
     "client.kidnap.KidnappedBoundPoseMixin",
@@ -80,6 +82,9 @@
     "client.items.ClientPlayerEntityMixin",
     "client.items.HeldItemFeatureRendererMixin",
     "client.items.HeldItemRendererMixin",
+    "client.items.XingguangArmPoseMixin",
+    "client.items.XingguangItemSpinMixin",
+    "client.items.XingguangChargeThirdPersonMixin",
     "client.restrictions.ChatHudMixin",
     "client.restrictions.CreativeInventoryScreenMixin",
     "client.restrictions.DebugHudMixin",

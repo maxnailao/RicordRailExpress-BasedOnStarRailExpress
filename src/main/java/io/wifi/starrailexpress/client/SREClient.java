@@ -271,6 +271,7 @@ public class SREClient implements ClientModInitializer {
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // Register particle factories
         TMMParticles.registerFactories();
+        ShenfaBowChargeEffect.register();
         // 自定义Plush Renderer
         BuiltinItemRendererRegistry.INSTANCE.register(
                 SREFumoBlocks.CUSTOM_PLAYER_PLUSH.asItem(),
@@ -854,6 +855,22 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 io.wifi.starrailexpress.network.original.EmozhidaoKillFxS2CPayload.ID,
                 (payload, context) -> context.client().execute(EmozhidaoClientEffects::spawnKillFx));
+        // 星光击杀通知接收器：击杀累加深蓝黑影；对局结束广播清零
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    if (payload.clear()) {
+                        XingguangClientEffects.clearDarkBlueOrbs();
+                    } else {
+                        XingguangClientEffects.onBladeKill();
+                    }
+                }));
+        // 星光击杀通知接收器：刀刃环绕追加深蓝黑影
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload.ID,
+                (payload, context) -> context.client().execute(XingguangClientEffects::onBladeKill));
+        // 星光（传承）第一人称刀刃黑色粒子环绕特效
+        XingguangClientEffects.register();
 
         ClientPlayNetworking.registerGlobalReceiver(SniperScopeStateS2CPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
@@ -1214,6 +1231,9 @@ public class SREClient implements ClientModInitializer {
                 StreamingSpectatorClient.renderHud(guiGraphics);
                 // 恶魔之刃击杀全屏粉红滤镜
                 io.wifi.starrailexpress.client.EmozhidaoClientEffects.renderKillTint(guiGraphics);
+                // 星光击杀全屏黑灰滤镜
+                io.wifi.starrailexpress.client.XingguangClientEffects.renderKillTint(guiGraphics);
+
 
                 // Subtitle 字幕报幕
                 net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics,

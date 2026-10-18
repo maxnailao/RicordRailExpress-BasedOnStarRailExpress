@@ -4293,6 +4293,9 @@
   "message.noellesroles.liemoren.hunt_arrow_pierced_self": "獵魔箭穿透了對方的護盾。",
   "passive.noellesroles.phantom_musician.income": "聲波共振：50金幣/30秒",
   "announcement.star.role.musician_phantom": "幻音師",
+  "screen.noellesroles.loot.lootBtn": "單抽",
+  "screen.noellesroles.loot.multiLootBtn": "十連抽"
+  "announcement.star.role.musician_phantom": "幻音師",
   "block.noellesroles.plush_maker": "玩偶製作器",
   "screen.noellesroles.plush_maker.title": "玩偶製作器",
   "screen.noellesroles.plush_maker.hint": "輸入玩家名或 UUID",

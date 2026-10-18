@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.model;
 
+import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SRECosmetics;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -40,6 +41,11 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         this.defaultUnbakedModel = defaultUnbakedModel;
         this.defaultModelLocation = defaulLocation;
         this.itemType = itemType;
+    }
+
+    /** 供 ItemOverrides Mixin 判定该包装模型是否为弓/弩类型 */
+    public String getItemType() {
+        return itemType;
     }
 
     @Override
@@ -172,7 +178,9 @@ public class GeneralModel implements UnbakedModel, BakedModel {
             Player player = Minecraft.getInstance().player;
             if (player != null && player.isUsingItem()) {
                 ItemStack use = player.getUseItem();
-                if (use.is(TMMItems.BOW) || use.is(TMMItems.CROSSBOW)) {
+                if (use.is(TMMItems.BOW) || use.is(TMMItems.CROSSBOW)
+                        || use.is(net.minecraft.world.item.Items.BOW)
+                        || use.is(net.minecraft.world.item.Items.CROSSBOW)) {
                     var pullMap = bakeModels.get(skin.getName());
                     if (pullMap != null) {
                         int ticks = player.getTicksUsingItem();
@@ -249,13 +257,75 @@ public class GeneralModel implements UnbakedModel, BakedModel {
     }
 
     @Override
-    public ItemTransforms getTransforms() {
-        return getDefaultModel().getTransforms();
+    public ItemOverrides getOverrides() {
+        return getDefaultModel().getOverrides();
     }
 
     @Override
-    public ItemOverrides getOverrides() {
-        return getDefaultModel().getOverrides();
+    public ItemTransforms getTransforms() {
+        ItemTransforms skinTransforms = getSkinHandTransforms();
+        return skinTransforms != null ? skinTransforms : getDefaultModel().getTransforms();
+    }
+
+    /**
+     * 1.21.1 渲染管线只读取根模型的 getTransforms()，皮肤模型 JSON 里的 display 段会被忽略，
+     * 导致 3D 皮肤（如星光刀）手持姿势永远是默认模型的。这里把 IN_HAND 变体的手持变换合并进来。
+     * 关键判据：只有真正的 3D 皮肤模型(带 elements、isGui3d=true)才套用此修正；
+     * 2D 平铺皮肤(item/generated，isGui3d=false，含 2D 刀皮/手枪皮等)一律返回 null，
+     * 改用物品自身默认模型变换——否则会把给平铺贴图用的 display 角度套到 3D 几何上，
+     * 使武器绕 Y 轴侧对镜头、被压成竖直薄片(手枪/2D 刀皮显示错乱的根因)。
+     */
+    private @Nullable ItemTransforms getSkinHandTransforms() {
+        Player player = Minecraft.getInstance().player;
+        if (player == null) {
+            return null;
+        }
+        ItemStack main = player.getMainHandItem();
+        String skinName;
+        if (main.getItem() instanceof SkinableItem skinable && itemType.equals(skinable.getItemSkinType())) {
+            // 主手正持握同类型武器：仅取该 stack 的显式皮肤(大厅/新 stack 无组件时回退默认模型)。
+            skinName = main.get(SREDataComponentTypes.SKIN);
+        } else {
+            // 主手未持该类武器：背包 GUI/GROUND 图标按"已装备皮肤"解析，修复"拿/不拿"跳变。
+            skinName = io.wifi.starrailexpress.data.PlayerEconomyManager
+                    .getEquippedSkinForItemType(player, itemType);
+        }
+        if (skinName == null || "default".equals(skinName)) {
+            return null;
+        }
+        var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
+        if (skin == null) {
+            return null;
+        }
+        var variantMap = bakeModels.get(skin.getName());
+        if (variantMap == null) {
+            return null;
+        }
+        BakedModel handModel = variantMap.get(GeneralModelLoadingPlugin.Variant.IN_HAND);
+        if (handModel == null) {
+            return null;
+        }
+        // 仅 3D 皮肤(如星光刀)套用此变换；2D 平铺皮肤(item/generated)返回 null，用默认模型变换。
+        if (!handModel.isGui3d()) {
+            return null;
+        }
+        ItemTransforms ht = handModel.getTransforms();
+        if (ht == ItemTransforms.NO_TRANSFORMS) {
+            return null;
+        }
+        BakedModel defaultVariant = variantMap.get(GeneralModelLoadingPlugin.Variant.DEFAULT);
+        ItemTransforms guiSrc = defaultVariant != null ? defaultVariant.getTransforms()
+                : ItemTransforms.NO_TRANSFORMS;
+        ItemTransforms dm = getDefaultModel().getTransforms();
+        return new ItemTransforms(
+                ht.getTransform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND),
+                ht.getTransform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND),
+                ht.getTransform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND),
+                ht.getTransform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND),
+                dm.getTransform(ItemDisplayContext.HEAD),
+                guiSrc.getTransform(ItemDisplayContext.GUI),
+                guiSrc.getTransform(ItemDisplayContext.GROUND),
+                dm.getTransform(ItemDisplayContext.FIXED));
     }
 
     private BakedModel getDefaultModel() {

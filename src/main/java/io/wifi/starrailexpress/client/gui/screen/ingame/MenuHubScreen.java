@@ -2,17 +2,25 @@ package io.wifi.starrailexpress.client.gui.screen.ingame;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.cca.ParticipationComponent;
 import org.agmas.noellesroles.client.screen.CS2WarehouseScreen;
 import io.wifi.starrailexpress.content.mail.MailboxScreen;
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.SREClientConfig;
+import net.exmo.sre.EXSREClient;
+import net.exmo.sre.loading.FrameAnimationRenderer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import org.agmas.noellesroles.client.screen.LootInfoScreen;
+import org.agmas.noellesroles.packet.Loot.LootPoolsInfoCheckC2SPacket;
+import org.agmas.noellesroles.utils.lottery.LotteryManager;
 
 import java.util.List;
 import java.time.LocalTime;
@@ -28,9 +36,15 @@ import java.time.format.DateTimeFormatter;
  */
 public class MenuHubScreen extends Screen {
 
-    // 面板主体背景图（黄色区域，拉伸铺满）
+    // 面板主体背景图（黄色区域，拉伸铺满；无视频帧时的回退图）
     private static final ResourceLocation BG_TEXTURE =
             SRE.id("textures/gui/menu_background.png");
+
+    // 视频动态背景：由 tools/mp4_to_menu_frames.ps1 从 MP4 抽帧生成到 run/video/menu_flow/
+    // MENU_VIDEO_FPS 必须与导出脚本的 -Fps 参数保持一致
+    private static final float MENU_VIDEO_FPS = 12.0F;
+    private static final FrameAnimationRenderer MENU_VIDEO =
+            new FrameAnimationRenderer(MENU_VIDEO_FPS, EXSREClient.MENU_VIDEO_DIR, false);
 
     // 与 CS2WarehouseScreen 同源的配色
     private static final int BG_COLOR = 0xE60C1020;
@@ -56,6 +70,14 @@ public class MenuHubScreen extends Screen {
     private static final int WHITE_TEXT = 0xFFFFFFFF;
     private static final int DISABLE_BG = 0xFF556070;
 
+    // 标题栏高度 + 右上角“参与/不参与游戏”切换按钮
+    private static final int HEADER_H = 24;
+    private static final int PARTICIPATION_BTN_W = 60;
+    private static final int PARTICIPATION_BTN_H = 16;
+    // 按钮文字颜色按“点击后的结果”着色：可加入=绿，将退出=红
+    private static final int PARTICIPATION_JOIN_TEXT = 0xFF15803D;
+    private static final int PARTICIPATION_LEAVE_TEXT = 0xFFB42318;
+
     private static final int TOTAL_PAGES = 2;
     private int page = 1;
 
@@ -63,6 +85,9 @@ public class MenuHubScreen extends Screen {
     private int panelX, panelY, panelW, panelH;
     private int previewX, previewY, previewW, previewH;
     private int nextX, nextY, nextSize = 22;
+
+    // 标题栏右上角的参与状态切换按钮
+    private SquareButton participationButton;
 
     public MenuHubScreen() {
         super(Component.literal("菜单栏"));
@@ -73,6 +98,9 @@ public class MenuHubScreen extends Screen {
         super.init();
         computeLayout();
         rebuildButtons();
+        if (!MENU_VIDEO.hasFrames()) {
+            MENU_VIDEO.loadFrames();
+        }
     }
 
     private void computeLayout() {
@@ -86,6 +114,51 @@ public class MenuHubScreen extends Screen {
         previewY = panelY + pad;
         previewH = panelH - pad * 2;
         previewW = (int) (previewH * 0.62);
+    }
+
+    /** 参与切换按钮贴在标题栏右上角。 */
+    private int participationX() {
+        return panelX + panelW - PARTICIPATION_BTN_W - 4;
+    }
+
+    private int participationY() {
+        return panelY - HEADER_H + (HEADER_H - PARTICIPATION_BTN_H) / 2;
+    }
+
+    /** 当前玩家是否参与下一局游戏（默认参与）。 */
+    private boolean isParticipating() {
+        if (minecraft == null || minecraft.player == null) {
+            return true;
+        }
+        return ParticipationComponent.KEY.get(minecraft.player.level()).isParticipating(minecraft.player);
+    }
+
+    /** 按钮文案 = 点击后的动作：参与中显示“不参与游戏”，未参与显示“参与游戏”。 */
+    private String participationLabel() {
+        return Component
+                .translatable(isParticipating()
+                        ? "screen.limited_inventory.button.participate.leave"
+                        : "screen.limited_inventory.button.participate.join")
+                .getString();
+    }
+
+    /** 服务端组件同步后刷新按钮文案与颜色。 */
+    private void refreshParticipationState() {
+        if (participationButton == null) {
+            return;
+        }
+        boolean participating = isParticipating();
+        participationButton.setMessage(Component
+                .translatable(participating
+                        ? "screen.limited_inventory.button.participate.leave"
+                        : "screen.limited_inventory.button.participate.join"));
+        participationButton.setTextColor(participating ? PARTICIPATION_LEAVE_TEXT : PARTICIPATION_JOIN_TEXT);
+        participationButton.setTooltip(Tooltip.create(Component
+                .translatable(participating
+                        ? "lobby.sre.participation.joined"
+                        : "lobby.sre.participation.left")
+                .append(Component.literal("\n"))
+                .append(Component.translatable("screen.limited_inventory.button.participate.hover_text"))));
     }
 
     private void rebuildButtons() {
@@ -103,7 +176,7 @@ public class MenuHubScreen extends Screen {
 
         boolean op = minecraft.player != null && minecraft.player.hasPermissions(2);
 
-        String[] labels = {"饰品", "商城", "职业卡", "仓库", "开箱", "邮箱"};
+        String[] labels = {"饰品", "商城", "职业卡", "仓库", "抽奖", "邮箱"};
         int[] texts = {SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT};
         int[] bgs = {SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG};
         boolean[] enabled = {true, true, true, true, true, true};
@@ -140,6 +213,26 @@ public class MenuHubScreen extends Screen {
             page = page >= TOTAL_PAGES ? 1 : page + 1;
             rebuildButtons();
         }, NEXT_BG, NEXT_BG_HOVER, NEXT_BG_DOWN, TEXT_COLOR));
+
+        // 标题栏右上角：切换参与/不参与游戏（与 LimitedInventoryScreen 同一命令入口）
+        participationButton = new SquareButton(participationX(), participationY(),
+                PARTICIPATION_BTN_W, PARTICIPATION_BTN_H, participationLabel(), b -> {
+                    if (minecraft != null && minecraft.player != null) {
+                        minecraft.player.connection.sendCommand("tmm:participate");
+                    }
+                    // 乐观刷新，随后 tick() 依据服务端同步的组件状态校正
+                    refreshParticipationState();
+                },
+                SQUARE_BG, SQUARE_BG_HOVER, SQUARE_BG_DOWN, SQUARE_TEXT);
+        addRenderableWidget(participationButton);
+        refreshParticipationState();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        // 参与状态由服务端 AutoSyncedComponent 同步，轮询刷新按钮显示
+        refreshParticipationState();
     }
 
     private void onGridClick(int idx) {
@@ -166,9 +259,17 @@ public class MenuHubScreen extends Screen {
             case 1 -> minecraft.setScreen(new ShopScreen(this));
             case 2 -> minecraft.setScreen(new RoleCardScreen(this));
             case 3 -> minecraft.setScreen(new CS2WarehouseScreen());
+            case 4 -> openLottery();
             case 5 -> minecraft.setScreen(new MailboxScreen());
             default -> tellDeveloping();
         }
+    }
+
+    /** 打开抽奖系统（卡池界面）：与局内便捷菜单同款接入，卡池未同步时先向服务端请求 */
+    private void openLottery() {
+        if (LotteryManager.getInstance().getLotteryPools().isEmpty())
+            ClientPlayNetworking.send(new LootPoolsInfoCheckC2SPacket());
+        minecraft.setScreen(new LootInfoScreen(0, 0, 0, this));
     }
 
     private void noPerm() {
@@ -188,17 +289,24 @@ public class MenuHubScreen extends Screen {
         // 全屏背景 + 菜单面板（沿用原本菜单风格）
         graphics.fill(0, 0, width, height, BG_COLOR);
 
-        int headerH = 24;
+        int headerH = HEADER_H;
         // 顶部标题栏（114514.png 红色区域）改为白色
         graphics.fill(panelX, panelY - headerH, panelX + panelW, panelY, 0xFFFFFFFF);
-        // 左上角：主菜单；右上角：当前现实时间（白底改用深色字，保证可见）
+        // 左上角：主菜单；右上角：参与切换按钮，现实时间放在按钮左侧
         graphics.drawString(font, "主菜单", panelX + 4, panelY - headerH + 8, SQUARE_TEXT);
         String timeStr = LocalTime.now().format(TIME_FMT);
-        graphics.drawString(font, timeStr, panelX + panelW - 4 - font.width(timeStr), panelY - headerH + 8, SQUARE_TEXT);
+        int timeX = participationX() - 6 - font.width(timeStr);
+        if (timeX > panelX + 12 + font.width("主菜单")) {
+            graphics.drawString(font, timeStr, timeX, panelY - headerH + 8, SQUARE_TEXT);
+        }
 
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_COLOR);
-        // 面板主体（黄色区域）背景改用图片铺满
-        graphics.blit(BG_TEXTURE, panelX, panelY, panelW, panelH, 0.0F, 0.0F, 1, 1, 1, 1);
+        // 面板主体（黄色区域）背景：优先播放视频帧序列，无帧时回退到静态图片
+        if (MENU_VIDEO.hasFrames()) {
+            MENU_VIDEO.render(graphics, panelX, panelY, panelW, panelH);
+        } else {
+            graphics.blit(BG_TEXTURE, panelX, panelY, panelW, panelH, 0.0F, 0.0F, 1, 1, 1, 1);
+        }
         graphics.renderOutline(panelX, panelY, panelW, panelH, BORDER_COLOR);
 
         // 左侧：蓝白渐变的人物预览背景
@@ -249,7 +357,8 @@ public class MenuHubScreen extends Screen {
 
     /** 白色/黑色方块按钮：纯色底 + 描边 + 居中文字 */
     private class SquareButton extends Button {
-        private final int bg, hover, down, textColor;
+        private final int bg, hover, down;
+        private int textColor;
         private boolean pressed;
 
         SquareButton(int x, int y, int w, int h, String label, OnPress action) {
@@ -263,6 +372,10 @@ public class MenuHubScreen extends Screen {
             this.hover = hover;
             this.down = down;
             this.textColor = textColor;
+        }
+
+        void setTextColor(int color) {
+            this.textColor = color;
         }
 
         @Override

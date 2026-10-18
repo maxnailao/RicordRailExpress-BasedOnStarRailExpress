@@ -104,5 +104,11 @@ public class RicePacketTypeRegister {
         PayloadTypeRegistry.playC2S().register(LootMultiRequestC2SPacket.ID, LootMultiRequestC2SPacket.CODEC);
         // 注册抽卡相关数据更新请求包
         PayloadTypeRegistry.playC2S().register(LootDataRefreshC2SPacket.ID, LootDataRefreshC2SPacket.CODEC);
+        // 注册购买抽数请求包
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.Loot.LootBuyChanceC2SPacket.ID,
+                org.agmas.noellesroles.packet.Loot.LootBuyChanceC2SPacket.CODEC);
+        // 注册抽奖结果快速出售请求包
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.Loot.LootSellC2SPacket.ID,
+                org.agmas.noellesroles.packet.Loot.LootSellC2SPacket.CODEC);
     }
 }

@@ -931,56 +931,121 @@ public class RiceReceiverRegister {
             ServerPlayer player = context.player();
             if (player == null)
                 return;
-            if (LotteryManager.getInstance().getLotteryPool(payload.poolID()) != null
-                    && LotteryManager.getInstance().canRoll(player)) {
-                Pair<Integer, Integer> rollID = LotteryManager.getInstance().getLotteryPool(payload.poolID())
-                        .rollOnce(player);
-                if (rollID.first != -1) {
-                    ServerPlayNetworking.send(player,
-                            new LootResultS2CPacket(payload.poolID(), rollID.first, rollID.second));
-                    // 抽一次减一次抽奖机会
-                    LotteryManager.getInstance().addOrDegreeLotteryChance(player, -1);
-                }
-            } else {
-                // 抽奖次数 = 0 或 卡池是否存在 限制
+            LotteryManager.LotteryPool pool = LotteryManager.getInstance().getLotteryPool(payload.poolID());
+            if (pool == null) {
                 player.sendSystemMessage(Component.translatable("message.noellesroles.loot.limit", payload.poolID()));
+                return;
+            }
+            // 抽数不足：通知客户端在抽奖页弹出提示
+            if (!LotteryManager.getInstance().canRoll(player)) {
+                ServerPlayNetworking.send(player, new LootFailNoticeS2CPacket(payload.poolID(), 0));
+                return;
+            }
+            boolean[] newSkin = new boolean[1];
+            Pair<Integer, Integer> rollID = pool.rollOnce(player, newSkin);
+            if (rollID.first != -1) {
+                ServerPlayNetworking.send(player,
+                        new LootResultS2CPacket(payload.poolID(), rollID.first, rollID.second, newSkin[0]));
+                // 抽一次减一次抽奖机会
+                LotteryManager.getInstance().addOrDegreeLotteryChance(player, -1);
+                // 抽奖后立即同步硬币/抽数/保底，回到抽奖主页时实时刷新
+                ServerPlayNetworking.send(player, new LootDataRefreshS2CPacket(
+                        ItemSkinManager.getCoinNum(player), ItemSkinManager.getLootChance(player),
+                        org.agmas.noellesroles.utils.lottery.LotteryRecordStorage.getInstance()
+                                .getPlayerLotteryRecord(player.getUUID()).getPityCount()));
             }
         });
 
-        // 处理五连抽请求包
+        // 处理十连抽请求包
         ServerPlayNetworking.registerGlobalReceiver(LOOT_MULTI_REQUIRE_PACKET, (payload, context) -> {
             ServerPlayer player = context.player();
             if (player == null)
                 return;
             int count = payload.count();
-            if (count < 1 || count > 5)
+            if (count < 1 || count > 10)
                 return;
             LotteryManager.LotteryPool pool = LotteryManager.getInstance().getLotteryPool(payload.poolID());
             if (pool == null) {
                 player.sendSystemMessage(Component.translatable("message.noellesroles.loot.limit", payload.poolID()));
                 return;
             }
+            // 十连要求抽数充足：不足则整单拒绝并通知客户端弹出提示
+            if (ItemSkinManager.getLootChance(player) < count) {
+                ServerPlayNetworking.send(player, new LootFailNoticeS2CPacket(payload.poolID(), 0));
+                return;
+            }
             java.util.List<int[]> results = new java.util.ArrayList<>();
             for (int i = 0; i < count; ++i) {
                 if (!LotteryManager.getInstance().canRoll(player))
                     break;
-                Pair<Integer, Integer> rollID = pool.rollOnce(player);
+                boolean[] newSkin = new boolean[1];
+                Pair<Integer, Integer> rollID = pool.rollOnce(player, newSkin);
                 if (rollID.first != -1) {
-                    results.add(new int[]{rollID.first, rollID.second});
+                    results.add(new int[]{rollID.first, rollID.second, newSkin[0] ? 1 : 0});
                     LotteryManager.getInstance().addOrDegreeLotteryChance(player, -1);
                 }
             }
             if (!results.isEmpty()) {
                 ServerPlayNetworking.send(player, new LootMultiResultS2CPacket(payload.poolID(), results));
+                // 十连后同步剩余抽数、累计折币收益与保底进度
+                ServerPlayNetworking.send(player, new LootDataRefreshS2CPacket(
+                        ItemSkinManager.getCoinNum(player), ItemSkinManager.getLootChance(player),
+                        org.agmas.noellesroles.utils.lottery.LotteryRecordStorage.getInstance()
+                                .getPlayerLotteryRecord(player.getUUID()).getPityCount()));
             } else {
-                player.sendSystemMessage(Component.translatable("message.noellesroles.loot.limit", payload.poolID()));
+                ServerPlayNetworking.send(player, new LootFailNoticeS2CPacket(payload.poolID(), 0));
             }
         });
 
+        // 处理购买抽数请求包：500 硬币/抽，服务端校验扣款
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.Loot.LootBuyChanceC2SPacket.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    if (player == null)
+                        return;
+                    int count = payload.count();
+                    if (count < 1 || count > 10)
+                        return;
+                    int cost = LotteryManager.LOTTERY_CHANCE_COIN_COST * count;
+                    int coin = ItemSkinManager.getCoinNum(player);
+                    if (coin < cost) {
+                        player.sendSystemMessage(Component.literal("硬币不足：购买 " + count + " 抽需要 " + cost
+                                + " 硬币，当前仅有 " + coin + " 硬币"));
+                        return;
+                    }
+                    ItemSkinManager.addCoinNum(player, -cost);
+                    LotteryManager.getInstance().addOrDegreeLotteryChance(player, count);
+                    ServerPlayNetworking.send(player, new LootDataRefreshS2CPacket(
+                            ItemSkinManager.getCoinNum(player), ItemSkinManager.getLootChance(player),
+                            org.agmas.noellesroles.utils.lottery.LotteryRecordStorage.getInstance()
+                                    .getPlayerLotteryRecord(player.getUUID()).getPityCount()));
+                });
+
+        // 处理抽奖结果快速出售请求包：仅允许出售抽奖后窗口期内新解锁的皮肤，价格以服务端重算为准
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.Loot.LootSellC2SPacket.ID,
+                (payload, context) -> {
+                    ServerPlayer player = context.player();
+                    if (player == null)
+                        return;
+                    int total = LotteryManager.getInstance()
+                            .sellLootResults(player, payload.poolID(), payload.results());
+                    if (total > 0)
+                        player.sendSystemMessage(Component.literal("快速出售成功，获得 " + total + " 硬币！"));
+                    else
+                        player.sendSystemMessage(Component.literal("本次抽奖没有可出售的皮肤"));
+                    ServerPlayNetworking.send(player, new LootDataRefreshS2CPacket(
+                            ItemSkinManager.getCoinNum(player), ItemSkinManager.getLootChance(player),
+                            org.agmas.noellesroles.utils.lottery.LotteryRecordStorage.getInstance()
+                                    .getPlayerLotteryRecord(player.getUUID()).getPityCount()));
+                });
+
         // 处理更新抽卡数据请求包
         ServerPlayNetworking.registerGlobalReceiver(LOOT_DATA_REFRESH_CLIENT_PACKET, (payload, context) -> {
-            ServerPlayNetworking.send(context.player(), new LootDataRefreshS2CPacket(
-                    ItemSkinManager.getCoinNum(context.player()), ItemSkinManager.getLootChance(context.player()))
+            ServerPlayer p = context.player();
+            ServerPlayNetworking.send(p, new LootDataRefreshS2CPacket(
+                    ItemSkinManager.getCoinNum(p), ItemSkinManager.getLootChance(p),
+                    org.agmas.noellesroles.utils.lottery.LotteryRecordStorage.getInstance()
+                            .getPlayerLotteryRecord(p.getUUID()).getPityCount())
             );
         });
     }

@@ -16,6 +16,9 @@ public class DianxueMasterClientState {
     /** 点穴小点的可命中容错半径（判定范围）。 */
     public static final double DOT_TOLERANCE = 0.45;
     public static final int POINT_COUNT = 5;
+    /** 客户端点击发送冷却（毫秒），一次物理点击的重复回调只发一个包。 */
+    private static final long CLICK_COOLDOWN_MS = 150L;
+    private static long lastClickSentTimeMs = 0L;
 
     public static boolean active = false;
     public static UUID targetId = null;
@@ -91,7 +94,11 @@ public class DianxueMasterClientState {
 
             // 仅命中"当前活动"穴位才推进；判定范围已放大
             if (hitPoint.distanceToSqr(dot) <= DOT_TOLERANCE * DOT_TOLERANCE) {
-                ClientPlayNetworking.send(new DianxueMasterClickC2SPacket(idx));
+                long nowMs = System.currentTimeMillis();
+                if (nowMs - lastClickSentTimeMs >= CLICK_COOLDOWN_MS) {
+                    lastClickSentTimeMs = nowMs;
+                    ClientPlayNetworking.send(new DianxueMasterClickC2SPacket(idx));
+                }
             }
             // 点穴期间的近拳击用于瞄准小点，取消普通近战伤害
             return InteractionResult.SUCCESS;

@@ -58,6 +58,7 @@ public class LotteryRecordData{
                 tag.getUUID("Player UUID"),
                 new ArrayList<>()
         );
+        data.pityCount = tag.getInt("Pity Count");
         // Load History
         ListTag historyTag = tag.getList("Lottery History", Tag.TAG_COMPOUND);
         for(int i = 0; i < historyTag.size(); ++i)
@@ -72,6 +73,7 @@ public class LotteryRecordData{
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Player UUID", uuid);
         tag.putInt("Lottery Chance", lotteryChance);
+        tag.putInt("Pity Count", pityCount);
         // 添加历史记录
         ListTag historyTag = new ListTag();
         for(LotteryItemData item : lotteryItems)
@@ -85,4 +87,13 @@ public class LotteryRecordData{
     protected ArrayList<LotteryItemData> lotteryItems = new ArrayList<>();// 历史记录
     protected UUID uuid;
     protected int lotteryChance = 0;
+    /** 保底计数：距离上次出传承品质的累计抽数 */
+    protected int pityCount = 0;
+
+    public int getPityCount() {
+        return pityCount;
+    }
+    public void setPityCount(int pityCount) {
+        this.pityCount = Math.max(0, pityCount);
+    }
 }

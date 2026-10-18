@@ -1019,7 +1019,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                         screen.setLotteryChance(screen.getLotteryChance() - 1);
                     }
                     client.setScreen(
-                            new LootScreen(payload.poolID(), payload.quality(), payload.ansID(), client.screen));
+                            new LootScreen(payload.poolID(), payload.quality(), payload.ansID(),
+                                    payload.newSkin(), client.screen));
                 }
             });
         });
@@ -1036,6 +1037,18 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             });
         });
+        // 注册抽奖失败通知包处理：抽数不足时在抽奖页弹出提示
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.Loot.LootFailNoticeS2CPacket.ID,
+                (payload, context) -> {
+                    final var client = context.client();
+                    client.execute(() -> {
+                        String msg = payload.reasonCode() == 0 ? "未达成抽数条件" : "抽奖失败";
+                        if (client.screen instanceof LootInfoScreen screen)
+                            screen.showLootPopup(msg);
+                        else if (client.player != null)
+                            client.player.displayClientMessage(Component.literal(msg), true);
+                    });
+                });
         // 检查卡池信息是否缺失，如果不缺失则打开卡池界面，否则请求
         ClientPlayNetworking.registerGlobalReceiver(LootPoolsInfoCheckS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
@@ -1074,10 +1087,12 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(LootDataRefreshS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
             client.execute(() -> {
+                LootClientDataCache.update(payload.coinNumber(), payload.lootChance(), payload.pityCount());
                 Minecraft minecraft = Minecraft.getInstance();
                 if (minecraft.screen instanceof LootInfoScreen screen) {
                     screen.setCoinNumber(payload.coinNumber());
                     screen.setLotteryChance(payload.lootChance());
+                    screen.setPityCount(payload.pityCount());
                 }
             });
         });

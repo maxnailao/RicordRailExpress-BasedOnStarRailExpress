@@ -60,6 +60,14 @@ public interface TMMEntities {
                     .fireImmune()
     );
 
+    // 神罚弓之箭：外观同原版箭，带白色粒子拖尾
+    EntityType<ShenfaArrowEntity> SHENFA_ARROW = registrar.create("shenfa_arrow",
+            EntityType.Builder.of(ShenfaArrowEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(8)
+                    .updateInterval(20)
+    );
+
     static void initialize() {
         registrar.registerEntries();
 
