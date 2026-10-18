@@ -211,6 +211,8 @@ public class SilencedPistolItem extends SkinableItem implements HeldLikeRevolver
 
     @Override
     public String getItemSkinType() {
-        return "revolver";
+        // 消音手枪不参与左轮皮肤同步：使用独立皮肤类型，
+        // 未注册自定义皮肤时回退默认模型（持握姿态由 HeldLikeRevolver 接口控制，不受影响）
+        return "silenced_pistol";
     }
 }

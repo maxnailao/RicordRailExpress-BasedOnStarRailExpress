@@ -114,6 +114,8 @@ public class PirateFlintlockItem extends SkinableItem {
 
     @Override
     public String getItemSkinType() {
-        return "revolver";
+        // 海盗燧发枪不参与左轮皮肤同步：返回独立皮肤类型（未注册任何皮肤），
+        // 避免装备的左轮皮肤覆盖其自身模型
+        return "pirate_flintlock";
     }
 }

@@ -100,6 +100,8 @@ public class WolfKnifeItem extends KnifeItem {
 
     @Override
     public String getItemSkinType() {
-        return "knife";
+        // 狼刀不参与刀皮肤同步：返回独立皮肤类型（未注册任何皮肤），
+        // 避免装备的刀皮肤覆盖狼刀自身模型
+        return "wolf_knife";
     }
 }
