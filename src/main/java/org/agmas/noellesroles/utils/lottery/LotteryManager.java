@@ -62,31 +62,38 @@ public class LotteryManager {
          */
         public Pair<Integer, Integer> rollOnce(ServerPlayer player, boolean[] newSkinOut) {
             RandomSource randomSource = player.getRandom();
-            int curNum = randomSource.nextInt(maxGranularity);// 0 ~ maxGranularity -1
-            double level = 0.0f;
+            LotteryRecordData record = LotteryRecordStorage.getInstance()
+                    .getPlayerLotteryRecord(player.getUUID());
+
             int resultQuality = -1;
             int resultIdx = -1;
-            for (int i = 0; i < qualityListGroupConfigs.size(); ++i) {
-                level += qualityListGroupConfigs.get(i).first;
-                if (curNum < level * maxGranularity) {
-                    resultQuality = i;
-                    resultIdx = randomSource.nextInt(qualityListGroupConfigs.get(i).second.size());
-                    break;
+
+            // 保底优先：第 80 抽直接锁定传承，不参与摇号，任何自然结果都无法顶掉保底
+            if (record.getPityCount() + 1 >= PITY_THRESHOLD) {
+                List<String> inheritList = getInheritItemList();
+                if (inheritList != null && !inheritList.isEmpty()) {
+                    resultQuality = INHERIT_QUALITY_INDEX;
+                    resultIdx = randomSource.nextInt(inheritList.size());
+                } else {
+                    Noellesroles.LOGGER.error("[LootSys] 卡池 {} 没有传承品质条目，保底无法生效", poolID);
+                }
+            }
+            // 未触发保底才正常摇号
+            if (resultQuality < 0) {
+                int curNum = randomSource.nextInt(maxGranularity);// 0 ~ maxGranularity -1
+                double level = 0.0f;
+                for (int i = 0; i < qualityListGroupConfigs.size(); ++i) {
+                    level += qualityListGroupConfigs.get(i).first;
+                    if (curNum < level * maxGranularity) {
+                        resultQuality = i;
+                        resultIdx = randomSource.nextInt(qualityListGroupConfigs.get(i).second.size());
+                        break;
+                    }
                 }
             }
             if (resultQuality < 0) {
                 Noellesroles.LOGGER.warn("[LootSys] 玩家UUID:" + player.getUUID() + "抽奖失败");
                 return new Pair<>(-1, -1);
-            }
-
-            // 保底判定：本抽将是第 PITY_THRESHOLD 抽且未自然出传承 -> 强制传承品质
-            LotteryRecordData record = LotteryRecordStorage.getInstance().getPlayerLotteryRecord(player.getUUID());
-            if (resultQuality != INHERIT_QUALITY_INDEX && record.getPityCount() + 1 >= PITY_THRESHOLD) {
-                List<String> inheritList = getInheritItemList();
-                if (inheritList != null && !inheritList.isEmpty()) {
-                    resultQuality = INHERIT_QUALITY_INDEX;
-                    resultIdx = randomSource.nextInt(inheritList.size());
-                }
             }
 
             List<String> curQualityList = qualityListGroupConfigs.get(resultQuality).second;

@@ -163,8 +163,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (io.wifi.starrailexpress.util.AnxingSkinHandler.hasAnxingSkinEquipped(player, knife)) {
                 io.wifi.starrailexpress.util.AnxingSkinHandler.switchForm(player);
             }
-            // 星光（传承）皮肤：刀死人后在受害者位置长出黑灰粒子手，托出深蓝白粒子球并捏爆
-            // （世界空间特效，sendParticles 全员可见）；同时通知击杀者刀刃环绕追加深蓝黑影。
+            // 星光（传承）皮肤：刀死人后在受害者位置长出黑灰粒子手，托出深蓝白粒子球并捏爆。
+            // 仅击杀者本人可见：用 sendParticles(..., ServerPlayer) 只把粒子发给 player（击杀者），
+            // 不再全员广播；"持星光"条件已由 xingguangKill（主手刀皮肤判定）保证。
             // 判定与其他特别皮肤 Handler 统一：组件命中即 true，否则回落实时装备查询（组件会被冻结）
             boolean xingguangKill = io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID
                     .equals(knife.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN))
@@ -172,9 +173,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                     .equals(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player, knife));
             if (xingguangKill) {
                 ServerLevel fxLevel = player.serverLevel();
-                fxLevel.sendParticles(io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_HAND,
+                fxLevel.sendParticles(player, io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_HAND, true,
                         target.getX(), target.getY() + 1.0, target.getZ(), 26, 0.0, 0.0, 0.0, 0.0);
-                fxLevel.sendParticles(io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_ORB,
+                fxLevel.sendParticles(player, io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_ORB, true,
                         target.getX(), target.getY() + 1.0, target.getZ(), 14, 0.0, 0.0, 0.0, 0.0);
                 io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
                         new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(false));

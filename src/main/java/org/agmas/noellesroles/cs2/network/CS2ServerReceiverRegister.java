@@ -48,25 +48,61 @@ public class CS2ServerReceiverRegister {
 
     // ── 开箱 ──
 
+    /** 开箱失败时按请求类型回包：单开回单结果包，批量回聚合包，确保客户端释放开箱锁 */
+    private static void sendOpenFailure(ServerPlayer player, int rawCount) {
+        if (rawCount > 1) {
+            ServerPlayNetworking.send(player, new OpenBoxBatchResultS2CPayload(
+                    false, List.of(), List.of(), List.of()));
+        } else {
+            ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
+                    false, 0, "", false, 0, List.of(), List.of()));
+        }
+    }
+
     private static void registerOpenBox() {
         ServerPlayNetworking.registerGlobalReceiver(OpenBoxC2SPayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 // 防止同一玩家并发开箱
                 if (openingBoxPlayers.contains(player.getUUID())) {
-                    ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
-                            false, 0, "", false, 0, List.of(), List.of()));
+                    sendOpenFailure(player, payload.count());
                     return;
                 }
                 openingBoxPlayers.add(player.getUUID());
+                int count = Math.max(1, Math.min(100, payload.count()));
                 try {
                     String boxId = payload.boxId();
                     CS2BoxManager boxManager = CS2BoxManager.getInstance();
+
+                    // ── 批量分支：循环单开逻辑，材料耗尽即停，聚合返回 ──
+                    if (count > 1) {
+                        List<Integer> qualities = new ArrayList<>();
+                        List<String> skinIds = new ArrayList<>();
+                        List<Boolean> dups = new ArrayList<>();
+                        for (int i = 0; i < count; i++) {
+                            CS2BoxManager.BoxRollResult r = boxManager.openBox(boxId, player);
+                            if (r == null) break;
+                            qualities.add(r.quality);
+                            skinIds.add(r.skinId);
+                            dups.add(r.isDuplicate);
+                        }
+                        if (qualities.isEmpty()) {
+                            ServerPlayNetworking.send(player, new OpenBoxBatchResultS2CPayload(
+                                    false, List.of(), List.of(), List.of()));
+                            return;
+                        }
+                        ServerPlayNetworking.send(player,
+                                new OpenBoxBatchResultS2CPayload(true, qualities, skinIds, dups));
+                        Noellesroles.LOGGER.info("[CS2Box] {} batch-opened {} boxes of '{}' (got {})",
+                                player.getName().getString(), count, boxId, qualities.size());
+                        return;
+                    }
+
+                    // ── 单开分支：保持原横向滚动动画流程 ──
                     CS2BoxManager.BoxRollResult result = boxManager.openBox(boxId, player);
 
                     if (result == null) {
-                        ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
-                                false, 0, "", false, 0, List.of(), List.of()));
+                        sendOpenFailure(player, 1);
                         return;
                     }
 
@@ -93,8 +129,7 @@ public class CS2ServerReceiverRegister {
                     // 异常兜底：通知客户端开箱失败，避免客户端 isBoxOpening 锁死
                     Noellesroles.LOGGER.error("[CS2Box] Unexpected error opening box for {}",
                             player.getName().getString(), e);
-                    ServerPlayNetworking.send(player, new OpenBoxResultS2CPayload(
-                            false, 0, "", false, 0, List.of(), List.of()));
+                    sendOpenFailure(player, count);
                 } finally {
                     openingBoxPlayers.remove(player.getUUID());
                 }

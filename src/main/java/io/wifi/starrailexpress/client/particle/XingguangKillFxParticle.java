@@ -23,7 +23,7 @@ public final class XingguangKillFxParticle {
 
     /** 全局尺度：粒子手 ≈ 人物体积的 3 倍（约 5~6 格高）。
      *  手、球、所有结构偏移与粒子方块尺寸均乘 S，改这一个数即可整体缩放。 */
-    private static final float S = 11F;
+    private static final float S = 2.75F;
 
     private XingguangKillFxParticle() {}
 
@@ -87,10 +87,10 @@ public final class XingguangKillFxParticle {
                 double gy = ORB_Y + 0.01 * S;
                 double gz = ORB_Z + (this.idx % 3 - 1) * 0.012 * S;
                 px = Mth.lerp(closeT, px, gx);
-                py = Mth.lerp(closeT, py - (1f - riseT) * 6.0f, gy);
+                py = Mth.lerp(closeT, py - (1f - riseT) * 1.5f, gy);
                 pz = Mth.lerp(closeT, pz, gz);
             } else {
-                py -= (1f - riseT) * 6.0f; // 长出：固定自地下 6 格升起（不随 S 放大）
+                py -= (1f - riseT) * 1.5f; // 长出：升起距离随整体再次缩小同步减半
             }
             this.setPos(ax + px, ay + py, az + pz);
             if (this.age >= 26) {

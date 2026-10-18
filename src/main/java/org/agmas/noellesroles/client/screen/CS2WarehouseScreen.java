@@ -46,11 +46,6 @@ public class CS2WarehouseScreen extends Screen {
     /** 客户端开箱锁，防止重复发送请求 */
     public static boolean isBoxOpening = false;
 
-    /** 本次开箱数量（1~100），由 +/- 按钮调节 */
-    private int openCount = 1;
-    /** 开箱按钮引用，用于动态更新显示的数量 */
-    private Button openButton;
-
     /** 待预览的箱子 ID（双击时设置，收到服务端响应后清除） */
     private static String pendingPreviewBoxId = null;
 
@@ -176,8 +171,12 @@ public class CS2WarehouseScreen extends Screen {
                         return;
                     }
                 }
-                isBoxOpening = true;
-                ClientPlayNetworking.send(new OpenBoxC2SPayload(selectedItem.id, 1));
+                // 弹出连抽数量选择窗口：-10/-1/输入框/+1/+10，确认后按数量发送请求
+                minecraft.setScreen(new CS2OpenCountScreen(
+                        selectedItem.id, selectedItem.displayName, this));
+            } else {
+                var p = Minecraft.getInstance().player;
+                if (p != null) p.displayClientMessage(Component.literal("§e请先选中一个箱子"), true);
             }
         }).pos(width / 2 - 30, btnY).size(60, 20).build());
 
@@ -406,6 +405,11 @@ public class CS2WarehouseScreen extends Screen {
             }
             return Integer.compare(b.quality, a.quality);
         });
+    }
+
+    /** 供弹窗关闭返回时刷新仓库展示（箱子/钥匙数量变化等） */
+    public void refreshData() {
+        refreshItems();
     }
 
     private static String cardName(FactionCardType type) {

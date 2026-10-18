@@ -92,11 +92,9 @@ public class CS2BoxPreviewScreen extends Screen {
         }).pos(width / 2 - 70, btnY).size(60, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("开箱"), b -> {
-            // 关闭预览回到仓库，执行开箱
-            if (parent instanceof CS2WarehouseScreen) {
-                minecraft.setScreen(parent);
-                // 仓库界面会通过选中的箱子进行开箱
-            }
+            // 弹出连抽数量选择窗口，确认后按所选数量开箱（返回目标为仓库界面）
+            Screen back = (parent instanceof CS2WarehouseScreen) ? parent : new CS2WarehouseScreen();
+            minecraft.setScreen(new CS2OpenCountScreen(config.getBoxId(), config.getBoxName(), back));
         }).pos(width / 2 + 10, btnY).size(60, 20).build());
     }
 
