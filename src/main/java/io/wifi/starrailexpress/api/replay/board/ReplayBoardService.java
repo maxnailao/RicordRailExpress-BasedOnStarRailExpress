@@ -277,8 +277,14 @@ public final class ReplayBoardService {
     public static void positionLine(Display.TextDisplay display, ReplayBoardSavedData.ReplayScreenEntry entry, double row,
             int visibleRows) {
         BlockPos origin = entry.origin();
+        int rows = Math.max(1, visibleRows);
+        double spacing = rowSpacingFor(entry, rows);
         double x = origin.getX() + 0.5D;
-        double y = origin.getY() + entry.height() - ROW_TOP_MARGIN - row * rowSpacing(entry);
+        // 行块整体垂直居中：行数少时行距自动摊开、上下留白对称，不会全挤在顶部。
+        // 行数多时 spacing 退回「最小舒适行距」，块高仍收在屏幕高度内。
+        double blockHeight = spacing * (rows - 1);
+        double firstRowY = origin.getY() + entry.height() / 2.0D + blockHeight / 2.0D;
+        double y = firstRowY - row * spacing;
         double z = origin.getZ() + 0.5D;
         if (entry.direction().getAxis() == Direction.Axis.Z) {
             x += (entry.width() - 1) / 2.0D;
@@ -291,14 +297,32 @@ public final class ReplayBoardService {
     }
 
     /**
-     * 单行文字在屏幕局部坐标里的高度（约 9px 字形 / 16px 贴图）。
-     * <p>这个值已经是 {@code lineWidth} 那种"缩放后本地坐标"的单位。
+     * 单行文字在「模型空间」里的高度（未乘 Transformation 缩放）。
+     *
+     * <p>推导：原版 {@code TextDisplayRenderer} 渲染文字用的是 {@code poseStack.scale(0.025F, -0.025F, 0.025F)}，
+     * 字号一行高 9px，因此一行在模型空间里高 {@code 9 × 0.025 = 0.225}；
+     * 再乘以屏幕的 Transformation 缩放（{@code textScale}）才是世界高度。
+     *
+     * <p><b>历史坑</b>：这里原来是 {@code 0.14}，比真实行高（0.225）小了近 40%，
+     * 导致算出来的行距**小于字高本身** —— 行与行必然重叠，中文字形糊成一片。
      */
-    private static final double LINE_TEXT_HEIGHT_LOCAL = 0.14D;
+    private static final double LINE_TEXT_HEIGHT_LOCAL = 0.225D;
     /** 排行榜每行最小间距（本地坐标），太小会糊成一团 */
     private static final double MIN_ROW_SPACING_LOCAL = 0.10D;
+    /**
+     * 行距系数：行距 = 单行字高 × 该系数。
+     *
+     * <p><b>必须明显大于 1</b>。原来的行距直接用 {@code 字高 × 1.0}，
+     * 也就是「行距 == 字高」→ 行与行的间隙为 0，中文字形上下贴在一起，
+     * 看起来就是「字混在一块」。
+     */
+    private static final double ROW_GAP_FACTOR = 1.8D;
+    /** 行距上限：行数很少时不要把行拉到离谱的间距（同时保证块高不溢出屏幕） */
+    private static final double MAX_ROW_SPACING_LOCAL = 0.85D;
     /** 顶部留白（避免第一行糊在屏幕顶边） */
     private static final double ROW_TOP_MARGIN = 0.55D;
+    /** 底部留白，与顶部对称，用于计算可铺开的行块高度 */
+    private static final double ROW_BOTTOM_MARGIN = 0.35D;
 
     /**
      * 一份内容按"实际行距"最多能排几行。
@@ -312,14 +336,34 @@ public final class ReplayBoardService {
     }
 
     /**
-     * 排行榜一行占多高。
+     * 排行榜一行的「最小舒适行距」。
      *
      * <p>文字在世界里只有 {@code 0.14 × scale} 格高（scale 是模型的缩放），
      * 所以行距也必须乘上 scale —— 早期忘了乘，导致 3×4 的小屏算出"能放 28 行"，
-     * 实际会挤成一片。这里再加一个最小值兜底，避免小屏糊在一起。
+     * 实际会挤成一片。
+     *
+     * <p>再乘 {@link #ROW_GAP_FACTOR} 留出上下间隙：只乘 1.0 时行距恰等于字高，
+     * 行与行会贴在一起（中文尤其明显）。
      */
     public static double rowSpacing(ReplayBoardSavedData.ReplayScreenEntry entry) {
-        return Math.max(MIN_ROW_SPACING_LOCAL, LINE_TEXT_HEIGHT_LOCAL * textScale(entry));
+        return Math.max(MIN_ROW_SPACING_LOCAL, LINE_TEXT_HEIGHT_LOCAL * textScale(entry) * ROW_GAP_FACTOR);
+    }
+
+    /**
+     * 实际排版用的行距：行数少时把行摊开铺满屏幕高度，行数多时退回
+     * {@link #rowSpacing} 的最小舒适行距。
+     *
+     * <p>这样 5×7 这种「屏幕很大、内容只有十来行」的情况，字会均匀铺满整块屏，
+     * 而不是全挤在顶部、下面留一大片空白。
+     */
+    public static double rowSpacingFor(ReplayBoardSavedData.ReplayScreenEntry entry, int rows) {
+        double min = rowSpacing(entry);
+        if (rows <= 1) {
+            return min;
+        }
+        double usable = Math.max(0.1D, entry.height() - ROW_TOP_MARGIN - ROW_BOTTOM_MARGIN);
+        double spread = usable / rows;
+        return Math.max(min, Math.min(MAX_ROW_SPACING_LOCAL, spread));
     }
 
     public static double lineSpacing(ReplayBoardSavedData.ReplayScreenEntry entry, int visibleRows) {

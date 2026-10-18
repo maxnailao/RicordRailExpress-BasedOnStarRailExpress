@@ -566,6 +566,13 @@ public class NoellesrolesClient implements ClientModInitializer {
                             .setScreen(new org.agmas.noellesroles.client.screen.PriestChantScreen()));
                 });
 
+        // 玩偶制作器：服务端通知开启「输入玩家 ID 产出玩偶」界面
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.PlushMakerOpenS2CPacket.ID, (payload, context) -> {
+                    context.client().execute(() -> context.client()
+                            .setScreen(new org.agmas.noellesroles.client.screen.PlushMakerScreen()));
+                });
+
         // 点穴大师：收到穴位同步后更新世界内身体穴位状态（不再打开全屏界面）
         ClientPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.packet.DianxueMasterSyncS2CPacket.ID, (payload, context) -> {

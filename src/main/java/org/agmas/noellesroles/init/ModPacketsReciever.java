@@ -940,6 +940,14 @@ public class ModPacketsReciever {
             org.agmas.noellesroles.game.roles.neutral.priest.PriestRole.submitLyric(
                 context.player(), payload.text())));
 
+    // 玩偶制作器：客户端提交「玩家名或 UUID」，服务端解析档案并产出该玩家的玩偶
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.PlushMakerCraftC2SPacket.ID,
+        (payload, context) ->
+          context.server().execute(() ->
+            org.agmas.noellesroles.content.block.PlushMakerBlock.craftFor(
+                context.player(), payload.playerId())));
+
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BroadcasterC2SPacket.ID,
         (payload, context) -> {
           SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY

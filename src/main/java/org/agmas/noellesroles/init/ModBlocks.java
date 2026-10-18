@@ -112,6 +112,16 @@ public interface ModBlocks {
     Block CHEF_DRINK_TRAY = registerBlockOnly("chef_drink_tray", new ChefTrayBlock.Drink(chefTrayProperties()));
 
     /**
+     * 玩偶制作器：右键打开界面，输入玩家名 / UUID 就产出该玩家的玩偶。
+     *
+     * <p>贴图与模型暂用原版工作台（见 blockstates/plush_maker.json）。所有玩家可用、不消耗材料。</p>
+     */
+    Block PLUSH_MAKER = registerBlock("plush_maker",
+            new org.agmas.noellesroles.content.block.PlushMakerBlock(BlockBehaviour.Properties.of()
+                    .strength(2.0F)
+                    .sound(SoundType.WOOD)));
+
+    /**
      * 厨师盘子的方块实体：承载「盘里装着什么」，由 {@code ChefPlateRenderer} 渲染。
      *
      * <p>必须是一个独立类型：{@code BlockEntity} 构造函数会校验 {@code type.isValid(state)}，

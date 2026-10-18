@@ -4739,5 +4739,12 @@
   "message.noellesroles.liemoren.hunt_arrow_pierced": "The hunt arrow pierced your shield!",
   "message.noellesroles.liemoren.hunt_arrow_pierced_self": "The hunt arrow pierced the target's shield.",
   "passive.noellesroles.phantom_musician.income": "Sonic Resonance: 50 coins / 30s",
-  "announcement.star.role.musician_phantom": "Phantom Musician"
+  "announcement.star.role.musician_phantom": "Phantom Musician",
+  "block.noellesroles.plush_maker": "Plush Maker",
+  "screen.noellesroles.plush_maker.title": "Plush Maker",
+  "screen.noellesroles.plush_maker.hint": "Player name or UUID",
+  "screen.noellesroles.plush_maker.tip": "Press Enter or click Craft",
+  "screen.noellesroles.plush_maker.craft": "Craft",
+  "message.noellesroles.plush_maker.crafted": "Crafted a plush of %s",
+  "message.noellesroles.plush_maker.invalid": "Invalid player id: %s"
 }

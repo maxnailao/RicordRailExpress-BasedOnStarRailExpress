@@ -5151,5 +5151,12 @@
   "message.noellesroles.niuzai_juedouba.cigar_cooldown": "雪茄还需 %s 秒才能再抽。",
   "message.noellesroles.liemoren.hunt_arrow_pierced": "猎魔箭穿透了你的护盾！",
   "message.noellesroles.liemoren.hunt_arrow_pierced_self": "猎魔箭穿透了对方的护盾。",
-  "passive.noellesroles.phantom_musician.income": "声波共振：50金币/30秒"
+  "passive.noellesroles.phantom_musician.income": "声波共振：50金币/30秒",
+  "block.noellesroles.plush_maker": "玩偶制作器",
+  "screen.noellesroles.plush_maker.title": "玩偶制作器",
+  "screen.noellesroles.plush_maker.hint": "输入玩家名或 UUID",
+  "screen.noellesroles.plush_maker.tip": "输入后按回车或点「制作」",
+  "screen.noellesroles.plush_maker.craft": "制作",
+  "message.noellesroles.plush_maker.crafted": "已制作 %s 的玩偶",
+  "message.noellesroles.plush_maker.invalid": "无效的玩家 ID：%s"
 }
