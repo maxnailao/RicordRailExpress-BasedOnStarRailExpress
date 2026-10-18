@@ -42,6 +42,8 @@ public final class SelfSelectClaimService {
         NOT_SELECTABLE,
         /** 本人没有自选卡 */
         NO_CARD,
+        /** 本人今天用自选卡的次数已达每日上限：未扣卡，需告知 */
+        DAILY_LIMIT,
         /** 重复选择同一职业：不扣卡，也不用广播 */
         SAME_ROLE
     }
@@ -133,6 +135,11 @@ public final class SelfSelectClaimService {
         // 名额是否已满：以 ROLE_MAX 为准（默认 1，配成 2/3 的就允许那么多人）
         if (Harpymodloader.isRoleOverflow(role, id)) {
             return Result.SLOT_FULL;
+        }
+        // 每日用量上限：用完就拦（不扣卡）。放在扣卡前判断，
+        // 否则会被 consumeSelfSelectCard 静默拒绝并误报成"没有卡"。
+        if (BackpackManager.isDailySelfSelectLimitReached(player)) {
+            return Result.DAILY_LIMIT;
         }
         // 改选其它职业：先释放自己此前的占用，避免一人占多个职业
         if (current != null) {

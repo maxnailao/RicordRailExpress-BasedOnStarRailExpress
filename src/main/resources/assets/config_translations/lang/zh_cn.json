@@ -388,7 +388,7 @@
   "text.autoconfig.starrailexpress.category.friendly_teammate_kill": "队友同伴误伤检测",
   "=== 角色刷新概率设置 ===": "",
   "text.autoconfig.noellesroles.category.roleChance": "角色刷新概率",
-  "text.autoconfig.noellesroles.option.chanceOfCorruptCop":"黑警刷新概率（%）",
+  "text.autoconfig.noellesroles.option.chanceOfCorruptCop": "黑警刷新概率（%）",
   "text.autoconfig.noellesroles.option.chanceOfBuilder": "建筑师刷新概率（%）",
   "text.autoconfig.noellesroles.option.minPlayerForBuilder": "建筑师最小玩家数",
   "text.autoconfig.noellesroles.option.minPlayerForTouhouRoles": "东方角色最小玩家数",
@@ -498,5 +498,8 @@
   "text.autoconfig.stupid_express.option.modifiersSection.loversSection.loversKnowImmediately": "恋人能够知道彼此",
   "text.autoconfig.stupid_express.option.modifiersSection.loversSection.canLoverHaveMultipleLovers": "允许恋人词条重复绑定",
   "text.autoconfig.noellesroles.option.silencerMax": "静语者最大数量",
-  "text.autoconfig.noellesroles.option.chanceOfSilencer": "静语者生成概率（%）"
+  "text.autoconfig.noellesroles.option.chanceOfSilencer": "静语者生成概率（%）",
+  "text.autoconfig.starrailexpress.option.enableDailyCardLimit": "启用每人每天卡片使用上限",
+  "text.autoconfig.starrailexpress.option.dailyFactionCardLimit": "每人每天的阵营卡上限（每种）",
+  "text.autoconfig.starrailexpress.option.dailySelfSelectCardLimit": "每人每天的自选职业卡上限"
 }

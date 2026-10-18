@@ -3315,5 +3315,18 @@
   "message.tip.purchase_failed.duel_active": "决斗进行中无法购物",
   "subtitle.starrailexpress.role.dream.psycho": "梦魇降临",
   "subtitle.starrailexpress.role.priest.shenfu": "天堂制造",
-  "subtitle.starrailexpress.role.amon.finale": "阿蒙时刻"
+  "subtitle.starrailexpress.role.amon.finale": "阿蒙时刻",
+  "message.sre.progression.daily_card_limit_reached": "「%s」今天的阵营卡已用完（剩余 %s 张），明天再来吧。",
+  "message.sre.pass.selfselect_daily_limit": "今天的自选职业卡已用完（尝试选择「%s」未扣卡），明天再来吧。",
+  "screen.game_manage.section.daily_cards": "每日卡片上限",
+  "screen.game_manage.btn.daily_limit_on": "每日上限：开启",
+  "screen.game_manage.btn.daily_limit_off": "每日上限：关闭（不限次数）",
+  "screen.game_manage.btn.faction_limit_1": "阵营卡/天：1 张",
+  "screen.game_manage.btn.faction_limit_2": "阵营卡/天：2 张",
+  "screen.game_manage.btn.faction_limit_3": "阵营卡/天：3 张",
+  "screen.game_manage.btn.faction_limit_5": "阵营卡/天：5 张",
+  "screen.game_manage.btn.selfselect_limit_1": "自选卡/天：1 张",
+  "screen.game_manage.btn.selfselect_limit_2": "自选卡/天：2 张",
+  "screen.game_manage.btn.selfselect_limit_3": "自选卡/天：3 张",
+  "screen.game_manage.btn.selfselect_limit_5": "自选卡/天：5 张"
 }

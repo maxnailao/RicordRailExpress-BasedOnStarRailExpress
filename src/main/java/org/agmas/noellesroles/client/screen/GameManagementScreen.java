@@ -237,6 +237,30 @@ public class GameManagementScreen extends Screen {
         // ── 分类：地图配置 ──────────────────────────────────────────
         Category maps = new Category("screen.game_manage.category.maps", 0xFFAA44CC);
 
+        // 每日卡片上限：改的是 SREConfig 里的三个字段，走通用配置命令即时生效并落盘。
+        // 命令格式见 ConfigCommand：tmm:config config <配置名> <字段名> set <值>
+        maps.section("screen.game_manage.section.daily_cards", 0xFFDDAA33)
+                .add(Entry.button("screen.game_manage.btn.daily_limit_on",
+                        "tmm:config config starrailexpress enableDailyCardLimit set true", 0xFF44BB66))
+                .add(Entry.button("screen.game_manage.btn.daily_limit_off",
+                        "tmm:config config starrailexpress enableDailyCardLimit set false", 0xFF884444))
+                .add(Entry.button("screen.game_manage.btn.faction_limit_1",
+                        "tmm:config config starrailexpress dailyFactionCardLimit set 1", 0xFFDDAA33))
+                .add(Entry.button("screen.game_manage.btn.faction_limit_2",
+                        "tmm:config config starrailexpress dailyFactionCardLimit set 2", 0xFFDDAA33))
+                .add(Entry.button("screen.game_manage.btn.faction_limit_3",
+                        "tmm:config config starrailexpress dailyFactionCardLimit set 3", 0xFFDDAA33))
+                .add(Entry.button("screen.game_manage.btn.faction_limit_5",
+                        "tmm:config config starrailexpress dailyFactionCardLimit set 5", 0xFFDDAA33))
+                .add(Entry.button("screen.game_manage.btn.selfselect_limit_1",
+                        "tmm:config config starrailexpress dailySelfSelectCardLimit set 1", 0xFF55AADD))
+                .add(Entry.button("screen.game_manage.btn.selfselect_limit_2",
+                        "tmm:config config starrailexpress dailySelfSelectCardLimit set 2", 0xFF55AADD))
+                .add(Entry.button("screen.game_manage.btn.selfselect_limit_3",
+                        "tmm:config config starrailexpress dailySelfSelectCardLimit set 3", 0xFF55AADD))
+                .add(Entry.button("screen.game_manage.btn.selfselect_limit_5",
+                        "tmm:config config starrailexpress dailySelfSelectCardLimit set 5", 0xFF55AADD));
+
         maps.section("screen.game_manage.section.switchmap", 0xFFAA44CC)
                 .add(Entry.button("screen.game_manage.btn.switchmap_info",
                         "tmm:switchmap", 0xFF8844CC))

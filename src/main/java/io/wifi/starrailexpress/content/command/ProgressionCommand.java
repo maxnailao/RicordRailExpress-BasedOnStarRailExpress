@@ -129,6 +129,14 @@ public final class ProgressionCommand {
                 player.displayClientMessage(Component.translatable("message.sre.pass.selfselect_failed"), true);
                 return 0;
             }
+            case DAILY_LIMIT -> {
+                // 今天的自选卡额度用完了：卡没扣，额度不会恢复（到明天重置）
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_daily_limit",
+                                Harpymodloader.getRoleName(role)),
+                        false);
+                return 0;
+            }
             default -> {
                 return 0;
             }

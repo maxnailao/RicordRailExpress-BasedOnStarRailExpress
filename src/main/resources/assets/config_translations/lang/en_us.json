@@ -402,5 +402,8 @@
   "text.autoconfig.stupid_express.option.modifiersSection.loversSection.loversKnowImmediately": "Lovers know each other immediately",
   "text.autoconfig.stupid_express.option.modifiersSection.loversSection.canLoverHaveMultipleLovers": "Allow Lover modifier to be chained",
   "text.autoconfig.noellesroles.option.silencerMax": "Maximum Silencers",
-  "text.autoconfig.noellesroles.option.chanceOfSilencer": "Silencer spawn chance (%)"
+  "text.autoconfig.noellesroles.option.chanceOfSilencer": "Silencer spawn chance (%)",
+  "text.autoconfig.starrailexpress.option.enableDailyCardLimit": "Enable per-player daily card limits",
+  "text.autoconfig.starrailexpress.option.dailyFactionCardLimit": "Daily faction card limit per type",
+  "text.autoconfig.starrailexpress.option.dailySelfSelectCardLimit": "Daily self-select card limit"
 }

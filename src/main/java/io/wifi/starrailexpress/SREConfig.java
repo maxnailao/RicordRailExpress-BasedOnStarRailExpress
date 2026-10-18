@@ -398,6 +398,31 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     @Tooltip
     public int factionCardTypeCooldownMinutes = 45;
+
+    // ── 每人每天卡片使用上限 ──────────────────────────────────────────
+    // 与上面的"同种间隔"是两套独立限制：间隔管"多快能再用一次"，
+    // 每日上限管"一天总共能用几张"。两套都满足才能用。
+    // 可在游戏管理界面动态调整，也可用
+    // tmm:config config starrailexpress <字段名> set <值>
+
+    /** 是否启用「每人每天卡片使用上限」。关闭后只看上面的同种间隔。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public boolean enableDailyCardLimit = true;
+
+    /** 每人每天可用的阵营卡张数上限（每种阵营卡各自独立计数）。默认 2。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public int dailyFactionCardLimit = 2;
+
+    /** 每人每天可用的自选职业卡张数上限。默认 2。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public int dailySelfSelectCardLimit = 2;
+
     // 皮肤设置
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinEnabled = true;

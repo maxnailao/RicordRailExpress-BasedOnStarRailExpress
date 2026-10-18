@@ -3365,5 +3365,18 @@
   "message.tip.purchase_failed.duel_active": "You cannot shop during a duel",
   "subtitle.starrailexpress.role.dream.psycho": "Nightmare descends",
   "subtitle.starrailexpress.role.priest.shenfu": "Heaven's Door",
-  "subtitle.starrailexpress.role.amon.finale": "Amon's Hour"
+  "subtitle.starrailexpress.role.amon.finale": "Amon's Hour",
+  "message.sre.progression.daily_card_limit_reached": "You have used up today's %s faction cards (%s left). Come back tomorrow.",
+  "message.sre.pass.selfselect_daily_limit": "You have used up today's self-select cards (tried %s; no card consumed). Come back tomorrow.",
+  "screen.game_manage.section.daily_cards": "Daily Card Limits",
+  "screen.game_manage.btn.daily_limit_on": "Daily limit: ON",
+  "screen.game_manage.btn.daily_limit_off": "Daily limit: OFF (unlimited)",
+  "screen.game_manage.btn.faction_limit_1": "Faction cards/day: 1",
+  "screen.game_manage.btn.faction_limit_2": "Faction cards/day: 2",
+  "screen.game_manage.btn.faction_limit_3": "Faction cards/day: 3",
+  "screen.game_manage.btn.faction_limit_5": "Faction cards/day: 5",
+  "screen.game_manage.btn.selfselect_limit_1": "Self-select cards/day: 1",
+  "screen.game_manage.btn.selfselect_limit_2": "Self-select cards/day: 2",
+  "screen.game_manage.btn.selfselect_limit_3": "Self-select cards/day: 3",
+  "screen.game_manage.btn.selfselect_limit_5": "Self-select cards/day: 5"
 }

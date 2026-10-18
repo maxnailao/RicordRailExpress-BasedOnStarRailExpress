@@ -17,6 +17,17 @@ public final class BackpackState {
     public int selfSelectCards = 0;
     /** 各阵营卡最近一次成功激活的墙钟时间（epoch ms）。用于同种类使用间隔。 */
     public Map<FactionCardType, Long> cardLastUsedAt = new EnumMap<>(FactionCardType.class);
+    /**
+     * 每日用量所属日期（本地时区 {@code yyyy-MM-dd}）。
+     *
+     * <p>与下面两个「今日已用」计数配套：读到旧日期就把计数清零，实现跨天自动重置。
+     * 用本地日期而不是 UTC —— 玩家体感的"每天"是本地今天。
+     */
+    public String dailyUsageDay = "";
+    /** 当天各阵营卡已用张数（每种独立计数）。 */
+    public Map<FactionCardType, Integer> dailyCardUses = new EnumMap<>(FactionCardType.class);
+    /** 当天已用自选职业卡张数。 */
+    public int dailySelfSelectUses = 0;
     public long version;
 
     public static BackpackState createDefault() {
@@ -42,6 +53,20 @@ public final class BackpackState {
         cards.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
         selfSelectCards = Math.max(0, selfSelectCards);
         cardLastUsedAt = normalizeLastUsedAt(cardLastUsedAt);
+        // 每日用量：补全键并钳制负值（跨天重置不在这里做，见 DailyCardUsage）
+        if (dailyCardUses == null) {
+            dailyCardUses = new EnumMap<>(FactionCardType.class);
+        }
+        for (FactionCardType type : FactionCardType.values()) {
+            if (type != FactionCardType.NONE) {
+                dailyCardUses.putIfAbsent(type, 0);
+            }
+        }
+        dailyCardUses.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
+        dailySelfSelectUses = Math.max(0, dailySelfSelectUses);
+        if (dailyUsageDay == null) {
+            dailyUsageDay = "";
+        }
         return this;
     }
 
@@ -72,6 +97,9 @@ public final class BackpackState {
         this.selfSelectCards = other.selfSelectCards;
         this.version = other.version;
         this.cardLastUsedAt = other.cardLastUsedAt;
+        this.dailyUsageDay = other.dailyUsageDay;
+        this.dailyCardUses = other.dailyCardUses;
+        this.dailySelfSelectUses = other.dailySelfSelectUses;
         normalized();
     }
 

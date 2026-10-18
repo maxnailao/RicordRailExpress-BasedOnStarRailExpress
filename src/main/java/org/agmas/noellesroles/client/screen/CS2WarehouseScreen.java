@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.content.musicbox.MusicBox;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxRegistry;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -462,11 +463,111 @@ public class CS2WarehouseScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         guiGraphics.fill(0, 0, width, height, BG_COLOR);
         renderSidebar(guiGraphics, mouseX, mouseY);
+        renderDailyCardUsage(guiGraphics);
         renderGrid(guiGraphics, mouseX, mouseY, delta);
         renderScrollbar(guiGraphics, mouseX, mouseY);
         renderHeader(guiGraphics);
         renderTooltip(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, delta);
+    }
+
+    /**
+     * 左侧「今日卡片使用次数」面板。
+     *
+     * <p>数据来源：
+     * <ul>
+     *   <li>已用次数 —— 服务端把整个 {@code BackpackState} 以 JSON 同步下来
+     *       （{@code PlayerDataPartSyncPayload} 的 {@code backpack} 分区），
+     *       客户端从 {@link ClientPlayerDataCache} 解出来；</li>
+     *   <li>上限 —— {@link SREConfig} 上带 {@code @ConfigSync} 的字段，
+     *       服务端改完会同步给客户端。</li>
+     * </ul>
+     *
+     * <p>每帧重算（纯内存读取，开销可忽略），所以用掉一张卡后立刻就能看到数字变化，
+     * 不必关掉界面再开。
+     *
+     * <p>画在分类侧栏列表下方的空白处（"仓库左边"）；窗口太矮时不下移，
+     * 直接贴到列表末尾，避免压到底部按钮。
+     */
+    private void renderDailyCardUsage(GuiGraphics guiGraphics) {
+        var mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+        var backpack = ClientPlayerDataCache.backpack(mc.player.getUUID());
+        SREConfig cfg = SREConfig.HANDLER.instance();
+        boolean limitOn = cfg != null && cfg.enableDailyCardLimit;
+        int factionLimit = cfg == null ? 2 : cfg.dailyFactionCardLimit;
+        int selfLimit = cfg == null ? 2 : cfg.dailySelfSelectCardLimit;
+
+        // 跨天：客户端也做一次同样的判断，避免服务端还没推新数据时显示昨天的数字
+        String today = java.time.LocalDate.now().toString();
+        boolean sameDay = today.equals(backpack.dailyUsageDay);
+
+        int usedCivilian = sameDay ? backpack.dailyCardUses.getOrDefault(FactionCardType.CIVILIAN, 0) : 0;
+        int usedKiller = sameDay ? backpack.dailyCardUses.getOrDefault(FactionCardType.KILLER, 0) : 0;
+        int usedNeutral = sameDay ? backpack.dailyCardUses.getOrDefault(FactionCardType.NEUTRAL, 0) : 0;
+        int usedNeutralKiller = sameDay
+                ? backpack.dailyCardUses.getOrDefault(FactionCardType.NEUTRAL_FOR_KILLER, 0) : 0;
+        int usedSelf = sameDay ? backpack.dailySelfSelectUses : 0;
+
+        java.util.function.IntUnaryOperator clamp = used -> Math.max(0, used);
+
+        // 四个阵营卡 + 自选卡，按"能塞几塞几"排版：
+        // 宽屏一行放得下 4 个就一行（和需求一致），窄屏自动折成 2+2。
+        boolean showFactionLimit = limitOn && factionLimit > 0;
+        String[][] factionItems = {
+                { "平民", String.valueOf(clamp.applyAsInt(usedCivilian)) },
+                { "杀手", String.valueOf(clamp.applyAsInt(usedKiller)) },
+                { "中立", String.valueOf(clamp.applyAsInt(usedNeutral)) },
+                { "杀手中立", String.valueOf(clamp.applyAsInt(usedNeutralKiller)) },
+        };
+        java.util.List<String> factionTexts = new java.util.ArrayList<>();
+        for (String[] item : factionItems) {
+            factionTexts.add(showFactionLimit
+                    ? String.format("%s:%s/%d", item[0], item[1], factionLimit)
+                    : String.format("%s:%s", item[0], item[1]));
+        }
+        int maxW = Math.max(40, sidebarWidth - 12);
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        for (String text : factionTexts) {
+            String candidate = cur.length() == 0 ? text : cur + "  " + text;
+            if (cur.length() > 0 && font.width(candidate) > maxW) {
+                lines.add(cur.toString());
+                cur = new StringBuilder(text);
+            } else {
+                cur = new StringBuilder(candidate);
+            }
+        }
+        if (cur.length() > 0) {
+            lines.add(cur.toString());
+        }
+        lines.add(showFactionLimit && selfLimit > 0
+                ? String.format("自选卡:%d/%d", clamp.applyAsInt(usedSelf), selfLimit)
+                : String.format("自选卡:%d", clamp.applyAsInt(usedSelf)));
+
+        // 侧栏分类列表最后一行之下作为起点
+        int rows = Math.max(1, CATEGORY_ORDER.length);
+        int y = SIDEBAR_TOP + rows * SIDEBAR_ROW_H + 10;
+        int x = 8;
+        int lineH = font.lineHeight + 3;
+
+        // 标题 + N 行
+        int blockH = lineH * (lines.size() + 1) + 4;
+        int maxY = height - 34 - blockH; // 别压到底部按钮
+        if (y > maxY) {
+            y = Math.max(SIDEBAR_TOP, maxY);
+        }
+        guiGraphics.fill(4, y - 3, sidebarWidth - 4, y + blockH, 0x40000000);
+        guiGraphics.drawString(font, "今日职业卡使用次数：", x, y, TEXT_COLOR, false);
+        y += lineH;
+        for (int i = 0; i < lines.size(); i++) {
+            boolean selfSelectLine = i == lines.size() - 1;
+            guiGraphics.drawString(font, lines.get(i), x, y,
+                    selfSelectLine ? ACCENT : TEXT_DIM, false);
+            y += lineH;
+        }
     }
 
     // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。

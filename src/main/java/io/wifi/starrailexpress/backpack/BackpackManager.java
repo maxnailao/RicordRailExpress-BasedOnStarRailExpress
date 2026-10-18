@@ -114,7 +114,12 @@ public final class BackpackManager {
         if (entry.state.selfSelectCards < 1) {
             return false;
         }
+        // 每日上限：用完就不再扣卡（调用方会转成"今日已用完"的提示）
+        if (DailyCardUsage.selfSelectLimitReached(entry.state)) {
+            return false;
+        }
         entry.state.selfSelectCards -= 1;
+        DailyCardUsage.recordSelfSelect(entry.state);
         markDirty(player, entry);
         return true;
     }
@@ -124,6 +129,8 @@ public final class BackpackManager {
      *
      * <p>用于"选了但最终没生效"的场景（人数不够 / 地图不对 / 被抢先），
      * 与 {@link #consumeSelfSelectCard} 互为逆操作。
+     *
+     * <p>同时撤销当天的用量：玩家不该为"系统判定无效"消耗每日额度。
      */
     public static void refundSelfSelectCard(ServerPlayer player) {
         if (player == null) {
@@ -131,6 +138,7 @@ public final class BackpackManager {
         }
         Entry entry = getEntry(player.getUUID());
         entry.state.selfSelectCards += 1;
+        DailyCardUsage.undoSelfSelect(entry.state);
         markDirty(player, entry);
     }
 
@@ -146,6 +154,42 @@ public final class BackpackManager {
                 .claim(player, role) == io.wifi.starrailexpress.progression.SelfSelectClaimService.Result.OK;
     }
 
+    /**
+     * 今天还能用几张自选卡（受 {@code SREConfig.dailySelfSelectCardLimit} 限制）。
+     *
+     * <p>给界面/命令提示用；真正拦截在 {@link #consumeSelfSelectCard}。
+     */
+    public static int dailySelfSelectRemaining(ServerPlayer player) {
+        if (player == null) {
+            return 0;
+        }
+        return DailyCardUsage.remainingSelfSelect(getEntry(player.getUUID()).state);
+    }
+
+    /** 今天自选卡额度是否已用完。 */
+    public static boolean isDailySelfSelectLimitReached(ServerPlayer player) {
+        if (player == null) {
+            return false;
+        }
+        return DailyCardUsage.selfSelectLimitReached(getEntry(player.getUUID()).state);
+    }
+
+    /** 今天该种阵营卡还能用几张。 */
+    public static int dailyFactionRemaining(ServerPlayer player, FactionCardType type) {
+        if (player == null) {
+            return 0;
+        }
+        return DailyCardUsage.remainingFaction(getEntry(player.getUUID()).state, type);
+    }
+
+    /** 今天该种阵营卡额度是否已用完。 */
+    public static boolean isDailyFactionLimitReached(ServerPlayer player, FactionCardType type) {
+        if (player == null) {
+            return false;
+        }
+        return DailyCardUsage.factionLimitReached(getEntry(player.getUUID()).state, type);
+    }
+
     /** 逐字复刻 {@code ProgressionDataManager.activateFactionCard}：卡库写改为背包。 */
     public static boolean activateCard(ServerPlayer player, FactionCardType type) {
         Entry entry = getEntry(player.getUUID());
@@ -154,9 +198,20 @@ public final class BackpackManager {
                 || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
             return false;
         }
+        // 每日上限（每种阵营卡独立计数）：用完就拦，并告诉他今天还剩几张
+        if (DailyCardUsage.factionLimitReached(entry.state, type)) {
+            player.displayClientMessage(
+                    Component.translatable("message.sre.progression.daily_card_limit_reached",
+                            Component.translatable(type.displayName),
+                            DailyCardUsage.remainingFaction(entry.state, type))
+                            .withStyle(net.minecraft.ChatFormatting.RED),
+                    false);
+            return false;
+        }
         PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(),
                 new ForceTeamInfo(type.getTypeId(), ForceTeamType.CARD));
         entry.state.cards.put(type, current - 1);
+        DailyCardUsage.recordFaction(entry.state, type);
         markDirty(player, entry);
         Component message = Component.translatable("message.sre.progression.faction_card_activated",
                 Component.translatable(type.displayName));
