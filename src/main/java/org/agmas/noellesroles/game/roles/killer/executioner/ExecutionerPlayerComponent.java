@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent.AlivePlayerRoleTeamInfo
 import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -323,7 +324,15 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
                 ExecutionerPlayerComponent executionerPlayerComponent = ExecutionerPlayerComponent.KEY.get(player);
                 if (executionerPlayerComponent.target != null
                         && executionerPlayerComponent.target.equals(target.getUUID())) {
-                    return TrueFalseResult.TRUE;
+                    int disappearChance = Math.max(0,
+                            Math.min(100, NoellesRolesConfig.HANDLER.instance().executionerGunDisappearChance));
+                    if (disappearChance > 0
+                            && player.getRandom().nextInt(100) < disappearChance
+                            && player.getMainHandItem().is(TMMItemTags.GUNS)) {
+                        // The rare failure consumes the gun; it must never be converted into a dropped revolver.
+                        player.getMainHandItem().shrink(1);
+                    }
+                    return TrueFalseResult.FALSE;
                 }
             }
             if (gameWorldComponent.isRole(target, ModRoles.VOODOO)

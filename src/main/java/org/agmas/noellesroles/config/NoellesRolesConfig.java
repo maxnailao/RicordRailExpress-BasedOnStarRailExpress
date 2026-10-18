@@ -343,6 +343,13 @@ public class NoellesRolesConfig implements ConfigData {
     public boolean executionerCanSelectTarget = false;
 
     /**
+     * Executioner - chance for the gun to disappear after killing the assigned target (%).
+     * A value of 5 means the gun is consumed on roughly one in twenty target kills.
+     */
+    @ConfigSync(shouldSync = true)
+    public int executionerGunDisappearChance = 5;
+
+    /**
      * Morphling - Morph duration in seconds
      */
 
