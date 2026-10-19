@@ -5,6 +5,8 @@ import org.agmas.noellesroles.init.ModEffects;
 
 /** 胆小鬼触发后的坐下和发抖状态。 */
 public final class FearEffects {
+    public static final int DURATION_TICKS = 80;
+
     private FearEffects() {
     }
 
