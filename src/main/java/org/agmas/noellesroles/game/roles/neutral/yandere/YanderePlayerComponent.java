@@ -18,6 +18,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -59,6 +63,12 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
     public static final float SAN_GAIN_KILL_TARGET = 0.10f;
     /** 击杀其他玩家损失的 SAN 值（0.15 = 15点） */
     public static final float SAN_LOSE_KILL_OTHER = 0.15f;
+    /** 持续盯着爱慕对象时每秒恢复的 SAN 值（0.01 = 1点） */
+    public static final float SAN_GAIN_GAZE = 0.01f;
+    /** 盯着爱慕对象的最大距离（格） */
+    public static final double GAZE_DISTANCE = 48.0;
+    /** 盯人视野半角（度） */
+    public static final double GAZE_ANGLE = 65.0;
 
     private final Player player;
 
@@ -70,6 +80,8 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
     private final Set<UUID> targets = new HashSet<>();
     /** 各玩家持续靠近爱慕对象的累计 tick */
     private final Map<UUID, Integer> nearCrushTicks = new HashMap<>();
+    /** 盯人恢复 SAN 的计时器 */
+    private int gazeTickCounter = 0;
 
     /** 疯魔结束后是否死亡（爱慕对象被他人杀死时置位） */
     public boolean deathAfterPsycho = false;
@@ -102,6 +114,7 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
         this.crushLost = false;
         this.targets.clear();
         this.nearCrushTicks.clear();
+        this.gazeTickCounter = 0;
         this.deathAfterPsycho = false;
         this.shieldAfterPsycho = false;
         sync();
@@ -137,8 +150,11 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
         if (gameWorld == null || !gameWorld.isRunning()) return;
         if (!GameUtils.isPlayerAliveAndSurvival(serverPlayer)) return;
 
-        // 确保当前玩家是病娇角色（CCA 会为所有玩家创建组件实例）
-        if (!gameWorld.isRole(serverPlayer, ModRoles.YANDERE)) return;
+        // 确保角色切换后不会遗留病娇专属任务。
+        if (!gameWorld.isRole(serverPlayer, ModRoles.YANDERE)) {
+            removeYandereTask(serverPlayer);
+            return;
+        }
 
         boolean changed = false;
 
@@ -150,17 +166,35 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
             changed |= assignCrush(serverPlayer, serverLevel);
         }
 
-        // 2. 确保始终持有唯一任务：观察爱慕对象
+        // 2. 病娇只保留观察任务，避免从其他职业转入时继续显示旧任务。
         SREPlayerTaskComponent taskComp = SREPlayerTaskComponent.KEY.get(serverPlayer);
+        boolean taskChanged = taskComp.tasks.keySet().removeIf(task -> task != SREPlayerTaskComponent.Task.YANDERE_OBSERVE);
+        taskComp.parallelTaskTypes.removeIf(task -> task != SREPlayerTaskComponent.Task.YANDERE_OBSERVE);
         if (!taskComp.tasks.containsKey(SREPlayerTaskComponent.Task.YANDERE_OBSERVE)) {
             taskComp.tasks.put(SREPlayerTaskComponent.Task.YANDERE_OBSERVE,
                     new SREPlayerTaskComponent.YandereObserveTask());
+            taskChanged = true;
+        }
+        if (taskChanged) {
+            taskComp.currentTaskAge = 0;
+            taskComp.parallelTaskGenerated = false;
             taskComp.sync();
         }
 
         if (crushUuid != null) {
             Player crush = serverLevel.getPlayerByUUID(crushUuid);
             boolean crushAlive = crush != null && GameUtils.isPlayerAliveAndSurvival(crush);
+
+            // 盯着爱慕对象会逐渐恢复 SAN，每秒结算一次。
+            if (crushAlive && isLookingAtCrush(serverPlayer, crush)) {
+                if (++gazeTickCounter >= 20) {
+                    gazeTickCounter = 0;
+                    SREPlayerMoodComponent.KEY.get(serverPlayer).addMood(SAN_GAIN_GAZE);
+                    changed = true;
+                }
+            } else {
+                gazeTickCounter = 0;
+            }
 
             // 3. 检测其他玩家持续靠近爱慕对象
             if (crushAlive) {
@@ -209,6 +243,42 @@ public class YanderePlayerComponent implements RoleComponent, ServerTickingCompo
         if (changed || serverPlayer.tickCount % 20 == 0) {
             sync();
         }
+    }
+
+    private void removeYandereTask(ServerPlayer serverPlayer) {
+        SREPlayerTaskComponent taskComp = SREPlayerTaskComponent.KEY.get(serverPlayer);
+        boolean removed = taskComp.tasks.remove(SREPlayerTaskComponent.Task.YANDERE_OBSERVE) != null;
+        removed |= taskComp.parallelTaskTypes.remove(SREPlayerTaskComponent.Task.YANDERE_OBSERVE);
+        taskComp.timesGotten.remove(SREPlayerTaskComponent.Task.YANDERE_OBSERVE);
+        if (!removed) return;
+        if (taskComp.tasks.isEmpty()) {
+            taskComp.currentTaskAge = 0;
+            taskComp.parallelTaskGenerated = false;
+            taskComp.moodWhenTaskAssigned = 1f;
+        }
+        taskComp.nextTaskTimer = 1;
+        taskComp.sync();
+    }
+
+    private boolean isLookingAtCrush(ServerPlayer yandere, Player crush) {
+        Vec3 eyePosition = yandere.getEyePosition();
+        Vec3 targetPosition = crush.getEyePosition();
+        double distance = eyePosition.distanceTo(targetPosition);
+        if (distance > GAZE_DISTANCE) return false;
+
+        Vec3 toTarget = targetPosition.subtract(eyePosition).normalize();
+        if (yandere.getViewVector(1.0f).dot(toTarget) < Math.cos(Math.toRadians(GAZE_ANGLE))) {
+            return false;
+        }
+
+        BlockHitResult hit = yandere.level().clip(new ClipContext(
+                eyePosition,
+                targetPosition,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                yandere));
+        return hit.getType() == HitResult.Type.MISS
+                || hit.getLocation().distanceTo(targetPosition) < 1.0;
     }
 
     /**
