@@ -1345,13 +1345,14 @@ public class ModPacketsReciever {
           if (player.isSpectator())
             return;
           SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-          if (!gameWorldComponent.isSkillAvailable) {
+          if (!gameWorldComponent.isRole(player, ModRoles.PELICAN))
+            return;
+          // 亡命徒时刻结束后只在鹈鹕仍处于技能封禁效果时拦截，不能让全局状态永久阻断吞人。
+          if (!gameWorldComponent.isSkillAvailable && player.hasEffect(ModEffects.SKILL_BANED)) {
             player.displayClientMessage(
                 Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
             return;
           }
-          if (!gameWorldComponent.isRole(player, ModRoles.PELICAN))
-            return;
           org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent comp = org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent.KEY
               .get(player);
           // 蹲下释放，否则对鼠标准星目标吞噬

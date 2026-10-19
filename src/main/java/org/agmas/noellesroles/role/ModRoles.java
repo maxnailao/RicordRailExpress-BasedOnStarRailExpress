@@ -4104,7 +4104,8 @@ public class ModRoles {
             .setCanSeeCoin(true)    // 可见金币
             .setCanSeeTime(true)    // 可见时间
             .setCanUseInstinct(true)      // 拥有本能（仅透视爱慕对象与目标）
-            .setCanPickUpRevolver(true)   // 可购买/使用左轮手枪
+            .setCanPickUpRevolver(false)  // 病娇不能拾取地上的枪械
+            .setCanAutoAddMoney(true)     // 每个被动收入周期获得5金币
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(10)
             .setDefaultEnableChance(10000);

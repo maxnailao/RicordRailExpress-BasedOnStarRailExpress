@@ -350,6 +350,11 @@ public class RoleInitialItems {
         banditItems.add(() -> TMMItems.CROWBAR.getDefaultInstance());
         INITIAL_ITEMS_MAP.put(ModRoles.BANDIT, banditItems);
 
+        // 病娇初始物品：刀
+        List<Supplier<ItemStack>> yandereItems = new ArrayList<>();
+        yandereItems.add(TMMItems.KNIFE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.YANDERE, yandereItems);
+
         // 雇佣兵初始物品
         List<Supplier<ItemStack>> mercenaryItems = new ArrayList<>();
         mercenaryItems.add(() -> TMMItems.REVOLVER.getDefaultInstance());
