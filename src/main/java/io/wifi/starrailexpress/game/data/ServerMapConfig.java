@@ -18,8 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ServerMapConfig {
     private static final Gson gson = new Gson();
@@ -71,6 +71,7 @@ public class ServerMapConfig {
         final int playerCount = pCount;
         a.removeIf(
                 mapEntry -> !mapEntry.canSelect
+                        || mapEntry.weight <= 0
                         || (!mapEntry.isSupportedGameMode(gameMode))
                         || (playerCount >= 0
                                 &&
@@ -80,8 +81,26 @@ public class ServerMapConfig {
             cache_maps = a;
             return a;
         }
-        Collections.shuffle(a);
-        List<MapEntry> mapEntries = a.subList(0, Math.min(count, a.size()));
+
+        List<MapEntry> mapEntries = new ArrayList<>(Math.min(count, a.size()));
+        int targetCount = Math.min(count, a.size());
+        while (mapEntries.size() < targetCount && !a.isEmpty()) {
+            long totalWeight = 0;
+            for (MapEntry mapEntry : a) {
+                totalWeight += mapEntry.weight;
+            }
+
+            long selected = ThreadLocalRandom.current().nextLong(totalWeight);
+            int selectedIndex = 0;
+            for (; selectedIndex < a.size(); selectedIndex++) {
+                selected -= a.get(selectedIndex).weight;
+                if (selected < 0) {
+                    break;
+                }
+            }
+
+            mapEntries.add(a.remove(selectedIndex));
+        }
         cache_maps = mapEntries;
         return mapEntries;
     }

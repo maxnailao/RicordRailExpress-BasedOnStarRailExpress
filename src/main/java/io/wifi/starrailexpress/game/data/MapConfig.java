@@ -37,6 +37,12 @@ public class MapConfig {
         @SerializedName("canSelect")
         public boolean canSelect = true;
 
+        /**
+         * 地图进入投票候选池的相对权重。缺省为 1，0 或负数表示不参与随机抽取。
+         */
+        @SerializedName("weight")
+        public int weight = 1;
+
         @SerializedName("description")
         public String description;
 
