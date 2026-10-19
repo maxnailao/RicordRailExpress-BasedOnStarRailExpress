@@ -1,24 +1,374 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.fake_steve;
 
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.tags.FluidTags;
 
-/** 为怯懦逃离选择可站立位置，并避免把玩家送进墙体。 */
-public final class FakeSteveNavigator {
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+
+/** Bounded, player-sized A* used by possessed bodies. */
+final class FakeSteveNavigator {
+    private static final int MAX_VISITED = 1024;
+    private static final Direction[] HORIZONTAL = {
+            Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST
+    };
+
     private FakeSteveNavigator() {
     }
 
-    public static boolean safeStand(ServerLevel level, ServerPlayer player, BlockPos pos) {
-        if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
-                || !level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()) {
+    static ArrayDeque<BlockPos> find(ServerLevel level, ServerPlayer mover, BlockPos goal) {
+        return find(level, mover, goal, false);
+    }
+
+    static ArrayDeque<BlockPos> find(ServerLevel level, ServerPlayer mover, BlockPos goal,
+                                     boolean explicitTarget) {
+        BlockPos start = mover.blockPosition();
+        Set<BlockPos> occupied = occupiedByPlayers(level, mover);
+        PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingDouble(Node::score));
+        Map<BlockPos, BlockPos> cameFrom = new HashMap<>();
+        Map<BlockPos, Integer> cost = new HashMap<>();
+        Set<BlockPos> closed = new HashSet<>();
+        BlockPos normalizedStart = normalize(level, start);
+        BlockPos normalizedGoal = normalize(level, goal);
+        if (FakeStevePathPolicy.shouldPreferDirectRoute(explicitTarget,
+                hasDirectWalkCorridor(level, normalizedStart, normalizedGoal, occupied))) {
+            ArrayDeque<BlockPos> direct = new ArrayDeque<>();
+            direct.add(normalizedGoal.immutable());
+            return direct;
+        }
+        boolean jumpsAllowed = SREGameWorldComponent.KEY.get(level).isJumpAvailable();
+        int visitBudget = explicitTarget ? MAX_VISITED * 2 : MAX_VISITED;
+        BlockPos best = normalizedStart;
+        int bestDistance = distance(normalizedStart, goal);
+        cost.put(normalizedStart, 0);
+        open.add(new Node(normalizedStart, bestDistance));
+
+        while (!open.isEmpty() && closed.size() < visitBudget) {
+            BlockPos current = open.remove().pos();
+            if (!closed.add(current)) {
+                continue;
+            }
+            int currentDistance = distance(current, goal);
+            if (currentDistance < bestDistance) {
+                best = current;
+                bestDistance = currentDistance;
+            }
+            if (currentDistance <= 1) {
+                best = current;
+                break;
+            }
+            for (BlockPos next : neighbours(level, current, occupied, jumpsAllowed)) {
+                if (closed.contains(next)) {
+                    continue;
+                }
+                int tentative = cost.get(current) + 1 + Math.abs(next.getY() - current.getY())
+                        + FakeStevePathPolicy.edgePenalty(dropBeside(level, next))
+                        + FakeStevePathPolicy.swimPenalty(openWater(level, next));
+                if (tentative >= cost.getOrDefault(next, Integer.MAX_VALUE)) {
+                    continue;
+                }
+                cameFrom.put(next, current);
+                cost.put(next, tentative);
+                open.add(new Node(next, tentative + distance(next, goal)));
+            }
+        }
+
+        ArrayDeque<BlockPos> path = new ArrayDeque<>();
+        BlockPos cursor = best;
+        while (!cursor.equals(normalizedStart) && cameFrom.containsKey(cursor)) {
+            path.addFirst(cursor);
+            cursor = cameFrom.get(cursor);
+        }
+        return path;
+    }
+
+    static boolean reaches(ArrayDeque<BlockPos> path, BlockPos goal) {
+        BlockPos last = path.peekLast();
+        return last != null && distance(last, goal) <= 1;
+    }
+
+    /**
+     * True when the column can carry a body. A carpet or trapdoor is not support
+     * on its own, so an unbacked one can never be mistaken for a floor.
+     */
+    static boolean isStepBlock(BlockState state) {
+        return state.getBlock() instanceof StairBlock
+                || state.getBlock() instanceof SlabBlock;
+    }
+
+    static boolean safeStand(ServerLevel level, BlockPos pos) {
+        for (int dy : new int[] { 0, 1, -1 }) {
+            if (standable(level, pos.offset(0, dy, 0))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Guard against walking into empty space. Only a real drop (no floor within
+     * three blocks below the next tile) is refused; a one-block step down is
+     * normal walking and must never freeze the body.
+     */
+    static boolean stepSafe(ServerLevel level, Vec3 from, Vec3 horizontal) {
+        Vec3 ahead = from.add(horizontal);
+        BlockPos feet = BlockPos.containing(ahead);
+        if (!level.getBlockState(feet).getFluidState().isEmpty()) {
+            return true;
+        }
+        if (!level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()) {
+            return true;
+        }
+        for (int dy = 0; dy <= 3; dy++) {
+            BlockPos below = feet.below(dy);
+            if (!level.getBlockState(below).getCollisionShape(level, below).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 正前方是否有实体障碍（墙、关着的门、别人放的方块、栅栏）。
+     *
+     * <p>
+     * 用途只有一个：轨迹巡逻时让身体别顶着方块空转（把前进力度放轻）。它<b>不是</b>路径可行性
+     * 判断——{@link FakeSteveAi#driveTrail} 走的路线是玩家生前亲自走出来的，视为始终可走。
+     *
+     * <p>
+     * 注意 {@link #stepSafe} 是「防坠落」判定而不是「防撞墙」判定：前方是实心方块时它反而返回
+     * true（踩上去不会掉下去），所以撞墙必须靠这一层单独判断。
+     *
+     * <p>
+     * 台阶、半砖、可以打开的门都不算墙——原版能直接走上去或推开门。
+     */
+    static boolean wallAhead(ServerLevel level, Vec3 from, Vec3 horizontal) {
+        BlockPos ahead = BlockPos.containing(from.add(horizontal));
+        BlockState state = level.getBlockState(ahead);
+        VoxelShape shape = state.getCollisionShape(level, ahead);
+        if (shape.isEmpty()) {
             return false;
         }
-        if (level.getBlockState(pos.below()).getCollisionShape(level, pos.below()).isEmpty()) {
+        if (isStepBlock(state)
+                || state.getBlock() instanceof SlabBlock
+                || FakeSteveDoorAccess.isOpenablePassage(state)) {
             return false;
         }
-        return level.noCollision(player, player.getBoundingBox().move(
-                pos.getX() + 0.5D - player.getX(), pos.getY() - player.getY(),
-                pos.getZ() + 0.5D - player.getZ()));
+        // 低于 0.6 格的矮碰撞体原版可以直接踩上去，不算墙。
+        return shape.max(Direction.Axis.Y) >= 0.6D;
+    }
+
+    /** Nodes hugging an open drop are discouraged so routes keep to the deck. */
+    private static boolean dropBeside(ServerLevel level, BlockPos pos) {
+        for (Direction direction : HORIZONTAL) {
+            BlockPos side = pos.relative(direction);
+            if (!level.getBlockState(side).getFluidState().is(FluidTags.WATER)
+                    && !hasFloor(level, side) && !hasFloor(level, side.below())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasFloor(ServerLevel level, BlockPos pos) {
+        return !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static List<BlockPos> neighbours(ServerLevel level, BlockPos current,
+                                             Set<BlockPos> occupied, boolean jumpsAllowed) {
+        List<BlockPos> result = new ArrayList<>(12);
+        boolean swimming = level.getBlockState(current).getFluidState().is(FluidTags.WATER)
+                || level.getBlockState(current.above()).getFluidState().is(FluidTags.WATER);
+        for (Direction direction : HORIZONTAL) {
+            addStandableNeighbour(level, current, current.relative(direction), occupied,
+                    jumpsAllowed, swimming, result);
+        }
+        // Both cardinals clear means the diagonal is not cutting a wall.
+        Direction[] diagonals = {
+                Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
+        };
+        for (int i = 0; i < 4; i++) {
+            Direction first = diagonals[i];
+            Direction second = diagonals[(i + 1) % 4];
+            BlockPos sideA = current.relative(first);
+            BlockPos sideB = current.relative(second);
+            if (!standable(level, sideA) || !standable(level, sideB)) {
+                continue;
+            }
+            addStandableNeighbour(level, current, current.relative(first).relative(second),
+                    occupied, jumpsAllowed, swimming, result);
+        }
+        if (swimming) {
+            for (int dy : new int[] { 1, -1 }) {
+                BlockPos vertical = current.offset(0, dy, 0);
+                if (!occupied.contains(vertical) && standable(level, vertical)) {
+                    result.add(vertical.immutable());
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean isWaterAt(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).getFluidState().is(FluidTags.WATER);
+    }
+
+    private static boolean openWater(ServerLevel level, BlockPos pos) {
+        return (isWaterAt(level, pos) || isWaterAt(level, pos.above()))
+                && level.getBlockState(pos.below()).getCollisionShape(level, pos.below()).isEmpty();
+    }
+
+    private static void addStandableNeighbour(ServerLevel level, BlockPos current,
+            BlockPos horizontal, Set<BlockPos> occupied, boolean jumpsAllowed,
+            boolean swimming, List<BlockPos> result) {
+        for (int dy : new int[] { 0, 1, -1 }) {
+            BlockPos candidate = horizontal.offset(0, dy, 0);
+            if (dy > 0 && !jumpsAllowed && !swimming) {
+                boolean destinationIsStep = isStepBlock(level.getBlockState(candidate));
+                double rise = standingSurfaceY(level, candidate) - standingSurfaceY(level, current);
+                if (!FakeStevePathPolicy.canAscendWithoutJump(rise, destinationIsStep)) {
+                    continue;
+                }
+            }
+            if (!occupied.contains(candidate) && standable(level, candidate)) {
+                result.add(candidate.immutable());
+                return;
+            }
+        }
+    }
+
+    /** World-space support height for deciding whether an upward node needs jump input. */
+    private static double standingSurfaceY(ServerLevel level, BlockPos feet) {
+        BlockState feetState = level.getBlockState(feet);
+        var feetShape = feetState.getCollisionShape(level, feet);
+        if (!feetShape.isEmpty()) {
+            double height = feetShape.max(Direction.Axis.Y);
+            if (FakeStevePathPolicy.feetCanOccupy(false, height, isStepBlock(feetState),
+                    feetState.getBlock() instanceof SlabBlock, false)) {
+                return feet.getY() + height;
+            }
+        }
+        BlockPos below = feet.below();
+        var belowShape = level.getBlockState(below).getCollisionShape(level, below);
+        return belowShape.isEmpty() ? feet.getY() : below.getY() + belowShape.max(Direction.Axis.Y);
+    }
+
+    private static Set<BlockPos> occupiedByPlayers(ServerLevel level, ServerPlayer mover) {
+        Set<BlockPos> occupied = new HashSet<>();
+        for (ServerPlayer player : level.players()) {
+            if (player == mover || !player.isAlive() || player.isSpectator()) {
+                continue;
+            }
+            occupied.add(player.blockPosition().immutable());
+        }
+        return occupied;
+    }
+
+    private static BlockPos normalize(ServerLevel level, BlockPos pos) {
+        for (int dy : new int[] { 0, 1, -1 }) {
+            BlockPos candidate = pos.offset(0, dy, 0);
+            if (standable(level, candidate)) {
+                return candidate.immutable();
+            }
+        }
+        return pos.immutable();
+    }
+
+    /**
+     * 身体双脚正好站在 {@code feet} 这一格是否可行。
+     *
+     * <p>包内可见：{@link FakeSteveTrailRecorder} 用它把玩家的实时位置投影成"真正能站的路点"。
+     */
+    static boolean standable(ServerLevel level, BlockPos feet) {
+        BlockState feetState = level.getBlockState(feet);
+        BlockState headState = level.getBlockState(feet.above());
+        var feetShape = feetState.getCollisionShape(level, feet);
+        boolean feetShapeEmpty = feetShape.isEmpty();
+        double feetCollisionHeight = feetShapeEmpty ? 0.0D : feetShape.max(Direction.Axis.Y);
+        boolean feetFree = FakeStevePathPolicy.feetCanOccupy(
+                        feetShapeEmpty, feetCollisionHeight, isStepBlock(feetState),
+                        feetState.getBlock() instanceof SlabBlock,
+                        FakeSteveDoorAccess.isOpenablePassage(feetState));
+        boolean headFree = FakeStevePathPolicy.headCanOccupy(
+                headState.getCollisionShape(level, feet.above()).isEmpty(),
+                isStepBlock(headState), headState.getBlock() instanceof SlabBlock,
+                FakeSteveDoorAccess.isOpenablePassage(headState));
+        boolean swimming = feetState.getFluidState().is(FluidTags.WATER)
+                || headState.getFluidState().is(FluidTags.WATER);
+        boolean groundBelow = !level.getBlockState(feet.below())
+                .getCollisionShape(level, feet.below()).isEmpty();
+        // A slab or stair is a floor by itself; a carpet never is.
+        boolean selfSupporting = !feetShapeEmpty && feetCollisionHeight >= 0.4D;
+        return feetFree && headFree && (swimming || groundBelow || selfSupporting);
+    }
+
+    private static boolean hasDirectWalkCorridor(ServerLevel level, BlockPos start,
+                                                  BlockPos goal, Set<BlockPos> occupied) {
+        if (start.getY() != goal.getY()) {
+            return false;
+        }
+        double dx = goal.getX() - start.getX();
+        double dz = goal.getZ() - start.getZ();
+        double length = Math.sqrt(dx * dx + dz * dz);
+        if (length < 1.0D) {
+            return true;
+        }
+        double perpendicularX = -dz / length;
+        double perpendicularZ = dx / length;
+        int samples = Math.max(1, (int) Math.ceil(length * 2.0D));
+        for (int sample = 1; sample <= samples; sample++) {
+            double progress = (double) sample / samples;
+            double centerX = start.getX() + 0.5D + dx * progress;
+            double centerZ = start.getZ() + 0.5D + dz * progress;
+            for (double side : new double[] { -0.28D, 0.0D, 0.28D }) {
+                BlockPos position = BlockPos.containing(
+                        centerX + perpendicularX * side, start.getY(),
+                        centerZ + perpendicularZ * side);
+                if (!standable(level, position)
+                        || occupied.contains(position) && distance(position, goal) > 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static int distance(BlockPos a, BlockPos b) {
+        return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY())
+                + Math.abs(a.getZ() - b.getZ());
+    }
+
+    private record Node(BlockPos pos, double score) {
     }
 }

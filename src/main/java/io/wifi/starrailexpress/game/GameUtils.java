@@ -16,6 +16,7 @@ import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnGameInitialized;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
+import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.event.ShouldDropOnDeath;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMBlocks;
@@ -29,6 +30,7 @@ import io.wifi.starrailexpress.stats.PlayerStats;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.exmo.sre.subtitle.SubtitleS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
@@ -1353,6 +1355,13 @@ public class GameUtils {
                     if (isLoversWin && roundEnd.CustomWinnerPlayers != null
                             && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
                         isWinner = true;
+                    }
+                    var playerWinOverride = AllowPlayerWin.EVENT.invoker().allowPlayerWin(
+                            world, player, playerRole, winStatus, roundEnd, gameComponent);
+                    if (playerWinOverride == TrueFalseResult.TRUE) {
+                        isWinner = true;
+                    } else if (playerWinOverride == TrueFalseResult.FALSE) {
+                        isWinner = false;
                     }
                     if (playerRole instanceof CustomWinnerRole cwr) {
                         isWinner = cwr.didPlayerWin(player, isWinner, winStatus);

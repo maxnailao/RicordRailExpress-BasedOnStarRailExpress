@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.game.GameUtils;
@@ -15,19 +30,24 @@ import org.agmas.noellesroles.init.ModEffects;
 
 import java.util.UUID;
 
-/** 胆小鬼害怕抖动、暴怒红屏与客户端锁定视角。 */
+/**
+ * 害怕抖动、暴怒红屏与锁视角、第三人称锁定。
+ */
 @Environment(EnvType.CLIENT)
 public final class DeathReactionClientHandle {
     private static UUID rageLockId;
 
-    private DeathReactionClientHandle() {}
+    private DeathReactionClientHandle() {
+    }
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(DeathReactionClientHandle::tick);
         CommonHudRenderCallback.EVENT.register((graphics, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
             LocalPlayer player = client.player;
-            if (player == null || !player.hasEffect(ModEffects.RAGE_SURGE)) return;
+            if (player == null || !player.hasEffect(ModEffects.RAGE_SURGE)) {
+                return;
+            }
             float pulse = 0.42f + 0.22f * Mth.sin(player.tickCount * 0.35f);
             int alpha = Mth.clamp((int) (pulse * 255.0f), 40, 200);
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xC01010);
@@ -51,7 +71,9 @@ public final class DeathReactionClientHandle {
             return;
         }
         Player target = resolveRageTarget(client, player);
-        if (target == null) return;
+        if (target == null) {
+            return;
+        }
         rageLockId = target.getUUID();
         lookAt(player, target.getEyePosition());
     }
@@ -60,12 +82,16 @@ public final class DeathReactionClientHandle {
         if (rageLockId != null) {
             Player locked = client.level.getPlayerByUUID(rageLockId);
             if (locked != null && GameUtils.isPlayerAliveAndSurvival(locked)
-                    && !locked.getUUID().equals(observer.getUUID())) return locked;
+                    && !locked.getUUID().equals(observer.getUUID())) {
+                return locked;
+            }
         }
         Player best = null;
         double bestDistance = Double.MAX_VALUE;
         for (Player other : client.level.players()) {
-            if (other.getUUID().equals(observer.getUUID()) || !GameUtils.isPlayerAliveAndSurvival(other)) continue;
+            if (other.getUUID().equals(observer.getUUID()) || !GameUtils.isPlayerAliveAndSurvival(other)) {
+                continue;
+            }
             double distance = observer.distanceToSqr(other);
             if (distance < bestDistance) {
                 bestDistance = distance;

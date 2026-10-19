@@ -133,6 +133,18 @@ public class NRModifiers {
             .setDefaultMax(2)
             .setDefaultEnableChance(4000);
 
+    /** Runtime marker used by the Fake Steve event for possessed bodies. */
+    public static SREModifier FAKE_STEVE_REPLACED = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("fake_steve_replaced"),
+            0x303030,
+            null,
+            null,
+            false,
+            false))
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultEnableChance(0)
+            .setDefaultMax(0);
+
     /**
      * 神的使命：仅钟表匠，30% 刷新；场上只剩一名平民时钟表匠转变为神父（神父不自然刷新）。
      *

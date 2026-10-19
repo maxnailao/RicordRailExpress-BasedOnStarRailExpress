@@ -94,7 +94,8 @@
     "roles.jinghuazhe.MilkBucketNoLeftoverMixin",
     "roles.kalabiqiumiao.EntityPaperBoxMixin",
     "time_stop.PlayerMixin",
-    "time_stop.ServerPacketBlocker"
+    "time_stop.ServerPacketBlocker",
+    "fake_steve.FakeSteveServerInputMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -204,7 +205,8 @@
     "client.FishingBobberRendererMixin",
     "game.PelicanAliveCheckMixin",
     "client.roles.mengyan.MengyanScreenMixin",
-    "client.roles.philanthropist.PhilanthropistScreenMixin"
+    "client.roles.philanthropist.PhilanthropistScreenMixin",
+    "client.fake_steve.FakeSteveClientInputMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

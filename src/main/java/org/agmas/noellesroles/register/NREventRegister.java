@@ -37,5 +37,7 @@ public class NREventRegister {
         org.agmas.noellesroles.content.effects.DreamEffectHandler.register();
         // 怯懦、胆小鬼、暴怒的死亡反应（与修饰符标记效果配合）。
         org.agmas.noellesroles.content.effects.DeathReactionHandler.register();
+        // Fake Steve event and replacement AI.
+        org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.register();
     }
 }

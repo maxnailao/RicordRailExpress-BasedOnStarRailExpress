@@ -4753,5 +4753,20 @@
   "screen.noellesroles.plush_maker.tip": "Press Enter or click Craft",
   "screen.noellesroles.plush_maker.craft": "Craft",
   "message.noellesroles.plush_maker.crafted": "Crafted a plush of %s",
-  "message.noellesroles.plush_maker.invalid": "Invalid player id: %s"
+  "message.noellesroles.plush_maker.invalid": "Invalid player id: %s",
+  "announcement.star.role.fake_steve": "Fake Steve",
+  "announcement.star.goals.fake_steve": "Replace the humans on the train.",
+  "announcement.star.modifier.noellesroles.fake_steve_replaced": "Fake Steve",
+  "announcement.star.win.fake_steve": "Fake Steve wins!",
+  "game.win.star.fake_steve": "The Fake Steves have replaced this place; there are no humans left on this train.",
+  "death_reason.noellesroles.fake_steve_backstab": "Fake Steve Backstab",
+  "message.noellesroles.fake_steve.victim.replaced": "You have been replaced by a Fake Steve.",
+  "message.noellesroles.fake_steve.event.title": "A Fake Steve Appears",
+  "message.noellesroles.fake_steve.event.subtitle": "It has already blended onto this train...",
+  "message.noellesroles.fake_steve.event.broadcast": "Warning: a Fake Steve event has appeared. Watch for faceless Steves.",
+  "message.noellesroles.fake_steve.hunt.title": "The Fake Steves are Hunting",
+  "message.noellesroles.fake_steve.hunt.subtitle": "Get back to your room. Survive, or become one of them.",
+  "message.noellesroles.fake_steve.hunt.broadcast": "Fake Steves are now the majority. All Fake Steves enter permanent frenzy; the hunt begins.",
+  "message.noellesroles.fake_steve.hunt.recall": "The train resets. Everyone is sent back to their own rooms.",
+  "replay.event.fake_steve.replaced": "[Fake Steve] %s was replaced by a Fake Steve"
 }

@@ -162,6 +162,20 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         return false;
     }
 
+    /** Returns whether this player currently has an active psycho state. */
+    public boolean inPsycho() {
+        return this.psychoTicks > 0;
+    }
+
+    /** Compatibility overload used by event controllers that also pass a sync flag. */
+    public boolean startPsycho_time(int time, int armour, boolean sync) {
+        boolean started = startPsycho_time(time, armour);
+        if (started && sync) {
+            sync();
+        }
+        return started;
+    }
+
     public boolean startPsycho(double multtiplier, int armour) {
         return startPsycho_time((int) ((double) GameConstants.getPsychoTimer() * multtiplier), armour);
     }

@@ -20,6 +20,10 @@ import java.util.List;
 
 @Config(name = "noellesroles")
 public class NoellesRolesConfig implements ConfigData {
+    /** Fake Steve event enable chance in ten-thousandths. */
+    @ConfigEntry.Category(value = "detail")
+    public int fakeSteveEnableChance = 1;
+
     public static class SpawnInfo {
         /**
          * 最小启用玩家数。-1禁用

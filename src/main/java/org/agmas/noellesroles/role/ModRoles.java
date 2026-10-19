@@ -405,6 +405,8 @@ public class ModRoles {
     public static final ResourceLocation DUAL_GUNNER_ID = Noellesroles.id("shuangqianghuigeichudaan_shuangqiangke");
     public static final ResourceLocation CONVICT_ID = Noellesroles.id("convict");
     public static final ResourceLocation JAILER_ID = Noellesroles.id("jailer");
+    /** Fake Steve event role; players retain their original role after replacement. */
+    public static final ResourceLocation FAKE_STEVE_ID = Noellesroles.id("fake_steve");
     // 预备魔女（特殊中立）/ 魔女（预备魔女转化后的杀手形态）
     public static final ResourceLocation PRE_WITCH_ID = Noellesroles.id("pre_witch");
     public static final ResourceLocation WITCH_ACCOMPLICE_ID = Noellesroles.id("witch_accomplice");
@@ -2970,6 +2972,18 @@ public class ModRoles {
             // 本局上限统一由 InitModRolesMax.applySpecialMapRoles 按 prisonRolesMaps 决定
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.PRISON)
             .setDefaultMax(1);
+
+    /** Event-only role metadata for the complete Fake Steve system. */
+    public static final SRERole FAKE_STEVE = TMMRoles.registerRole(new EggRole(
+            FAKE_STEVE_ID, new Color(48, 48, 48).getRGB(), false, false,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setNeutrals(true)
+            .setNeutralForKiller(false)
+            .setCanPickUpRevolver(false)
+            .setCanBeRandomedByOtherRoles(false)
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultMax(0)
+            .setEventNeutral(true);
 
     /**
      * 预备魔女（pre_witch）—— 特殊中立阵营，仅在魔女监牢地图刷新。

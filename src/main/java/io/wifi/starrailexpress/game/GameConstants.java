@@ -242,6 +242,7 @@ public class GameConstants {
         public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
         public static ResourceLocation HOT_POTATO = SRE.id("hot_potato");
         public static ResourceLocation CAT_KILLER = SRE.wifiId("cat_killer");
+        public static ResourceLocation FAKE_AI_BACKSTAB = Noellesroles.id("fake_ai_backstab");
 
         public static ResourceLocation VOODOO = Noellesroles.id("voodoo");
         public static ResourceLocation SHOT_INNOCENT = Noellesroles.id("shot_innocent");

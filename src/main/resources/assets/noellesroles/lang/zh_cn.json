@@ -5165,5 +5165,20 @@
   "screen.noellesroles.plush_maker.tip": "输入后按回车或点「制作」",
   "screen.noellesroles.plush_maker.craft": "制作",
   "message.noellesroles.plush_maker.crafted": "已制作 %s 的玩偶",
-  "message.noellesroles.plush_maker.invalid": "无效的玩家 ID：%s"
+  "message.noellesroles.plush_maker.invalid": "无效的玩家 ID：%s",
+  "announcement.star.role.fake_steve": "Fake Steve",
+  "announcement.star.goals.fake_steve": "取代列车上的人类。",
+  "announcement.star.modifier.noellesroles.fake_steve_replaced": "伪人",
+  "announcement.star.win.fake_steve": "伪人胜利！",
+  "game.win.star.fake_steve": "伪人取代了这里，这辆车上已经没有人类了。",
+  "death_reason.noellesroles.fake_steve_backstab": "伪人背刺",
+  "message.noellesroles.fake_steve.victim.replaced": "你已被伪人取代。",
+  "message.noellesroles.fake_steve.event.title": "伪人出现",
+  "message.noellesroles.fake_steve.event.subtitle": "它已经混入了这辆列车……",
+  "message.noellesroles.fake_steve.event.broadcast": "警告：Fake Steve事件已经出现。留意没有脸的Steve。",
+  "message.noellesroles.fake_steve.hunt.title": "伪人正在狩猎",
+  "message.noellesroles.fake_steve.hunt.subtitle": "回到你的房间。活下去，或成为它们的一员。",
+  "message.noellesroles.fake_steve.hunt.broadcast": "伪人数量已占据多数。所有伪人已进入永久疯魔，狩猎开始。",
+  "message.noellesroles.fake_steve.hunt.recall": "列车再次归零。所有人已被送回自己的房间。",
+  "replay.event.fake_steve.replaced": "§8[伪人]§r %s 被伪人替代了"
 }
