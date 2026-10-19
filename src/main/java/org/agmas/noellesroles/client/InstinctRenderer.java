@@ -187,7 +187,6 @@ public class InstinctRenderer {
         });
         TouhouInstincts.registerEvents();
         // 病娇：本能仅可透视爱慕对象（粉色）与目标（红色），其余玩家一律不透视
-        // 高亮不依赖本能开关，目标在病娇视角下始终发光
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
                 return -1;
@@ -195,6 +194,8 @@ public class InstinctRenderer {
                 return -1;
             var self = Minecraft.getInstance().player;
             if (!SREClient.gameComponent.isRole(self, ModRoles.YANDERE))
+                return -1;
+            if (!hasInstinct)
                 return -1;
             // 病娇死亡/旁观后透传给默认逻辑（旁观者可查看角色颜色）
             if (!GameUtils.isPlayerAliveAndSurvival(self))

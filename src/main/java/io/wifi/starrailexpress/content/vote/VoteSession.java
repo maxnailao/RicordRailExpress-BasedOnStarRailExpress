@@ -35,7 +35,7 @@ public class VoteSession {
         }
 
         public void add(int count) {
-            this.count++;
+            this.count += count;
         }
     }
 

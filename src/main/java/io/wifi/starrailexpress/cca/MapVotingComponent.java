@@ -230,7 +230,7 @@ public class MapVotingComponent implements AutoSyncedComponent, CommonTickingCom
         // 记录新投票
         playerVotes.put(playerId, mapId);
         votes.put(mapId, votes.getOrDefault(mapId, 0) + 1);
-        // this.shouldSync = true;
+        this.shouldSync = true;
 
         return true;
     }

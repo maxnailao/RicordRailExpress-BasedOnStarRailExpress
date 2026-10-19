@@ -47,6 +47,10 @@ public class SubtitleHUD {
     // 将 TOP 模式字幕放在 y=55 处，避免与 broadcast 消息重叠
     private static final int TOP_MODE_Y = 56;
     private static final int BOTTOM_MODE_MARGIN = 74;
+    /** 字幕以 960px GUI 宽度为基准，随界面分辨率放大但避免极端窗口失控。 */
+    private static final float FONT_SCALE_REFERENCE_WIDTH = 960.0f;
+    private static final float MIN_FONT_SCALE = 0.75f;
+    private static final float MAX_FONT_SCALE = 2.0f;
 
     // ---- 队列 ----
     private final Deque<SubtitleEntry> queue = new ArrayDeque<>();
@@ -125,8 +129,10 @@ public class SubtitleHUD {
         boolean isSmallFont  = isTopMode || isBottomMode;
 
         // TOP / BOTTOM 模式更像轻量提示；CENTER 保留报幕感。
-        float mainScale = isSmallFont ? 1.15f : 2.0f;
-        float subScale  = isSmallFont ? 0.82f : 1.0f;
+        float resolutionScale = Mth.clamp(screenWidth / FONT_SCALE_REFERENCE_WIDTH,
+                MIN_FONT_SCALE, MAX_FONT_SCALE);
+        float mainScale = (isSmallFont ? 1.15f : 2.0f) * resolutionScale;
+        float subScale  = (isSmallFont ? 0.82f : 1.0f) * resolutionScale;
 
         float age = tick + Mth.clamp(partialTicks, 0.0f, 1.0f);
         float alpha = computeAlpha(age);

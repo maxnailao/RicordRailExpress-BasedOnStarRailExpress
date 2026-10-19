@@ -3764,6 +3764,7 @@
   "screen.noellesroles.reasoner.exit": "退出頁面",
   "screen.noellesroles.reasoner.solved": "已解",
   "hud.noellesroles.reasoner.progress": "推理進度 %s/%s",
+  "hud.noellesroles.reasoner.compass": "羅盤將在 %s 秒後獲得",
   "message.noellesroles.reasoner.compass_given": "羅盤在你的掌心顯現。",
   "message.noellesroles.reasoner.cooldown": "羅盤仍在校準：%s秒",
   "message.noellesroles.reasoner.correct": "推理正確。進度：%s/%s",

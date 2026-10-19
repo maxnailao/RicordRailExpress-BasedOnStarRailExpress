@@ -31,12 +31,15 @@ import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LightLayer;
@@ -355,7 +358,23 @@ public class RoleNameRenderer {
     }
 
     private static Component getName(Player target) {
-        return MorphApiClient.getDisplayedName(target);
+        if (!(target instanceof net.minecraft.client.player.AbstractClientPlayer clientTarget)) {
+            return target.getDisplayName();
+        }
+        UUID owner = MorphApiClient.resolveDisplayedOwnerUuid(clientTarget);
+        if (owner == null || owner.equals(target.getUUID())) {
+            return target.getDisplayName();
+        }
+        Minecraft client = Minecraft.getInstance();
+        PlayerInfo info = io.wifi.starrailexpress.client.util.ClientSkinCache.getCachedPlayerInfo(owner);
+        if (info == null && client.getConnection() != null) {
+            info = client.getConnection().getPlayerInfo(owner);
+        }
+        if (info != null && info.getProfile() != null) {
+            return PlayerTeam.formatNameForTeam(info.getTeam(),
+                    Component.literal(info.getProfile().getName()));
+        }
+        return target.getDisplayName();
     }
 
     public enum TrainRole {
