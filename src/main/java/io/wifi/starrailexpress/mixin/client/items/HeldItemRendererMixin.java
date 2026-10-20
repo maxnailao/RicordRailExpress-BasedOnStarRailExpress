@@ -68,7 +68,7 @@ public class HeldItemRendererMixin {
             InteractionHand hand, float swingProgress, ItemStack stack, float equippedProgress,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight, Operation<Void> original) {
         boolean override = !SRE.isLobby && hand == InteractionHand.MAIN_HAND
-                && player == this.minecraft.player && XingguangPoseManager.knifeActive();
+                && player == this.minecraft.player && XingguangPoseManager.isXingguangKnife(stack);
         if (!override) {
             original.call(player, partialTicks, pitch, hand, swingProgress, stack, equippedProgress,
                     poseStack, buffer, packedLight);

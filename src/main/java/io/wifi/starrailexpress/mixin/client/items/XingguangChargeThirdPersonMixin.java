@@ -1,8 +1,6 @@
 package io.wifi.starrailexpress.mixin.client.items;
 
-import io.wifi.starrailexpress.client.XingguangClientEffects;
-import io.wifi.starrailexpress.content.item.KnifeItem;
-import io.wifi.starrailexpress.util.ItemSkinManager;
+import io.wifi.starrailexpress.client.XingguangPoseManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -51,9 +49,7 @@ public abstract class XingguangChargeThirdPersonMixin extends HumanoidModel<Livi
         if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) return;
         ItemStack main = player.getMainHandItem();
         boolean charging = player.isUsingItem()
-                && main.getItem() instanceof KnifeItem
-                && XingguangClientEffects.SKIN_ID.equals(ItemSkinManager.getEquippedSkin(player, main))
-                && XingguangClientEffects.hasXingguangEquipped(player);
+                && XingguangPoseManager.isXingguangKnife(player, main);
         if (!charging && this.xingguang$blend < 0.01f) {
             this.xingguang$blend = 0f;
             this.xingguang$lastT = 0L;

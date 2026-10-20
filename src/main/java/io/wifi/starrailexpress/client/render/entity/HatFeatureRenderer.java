@@ -10,8 +10,16 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import com.mojang.blaze3d.vertex.PoseStack;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.client.ClientSkincrawlerState;
+import org.agmas.noellesroles.client.NoellesrolesClient;
+import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
  * 帽子皮肤渲染层
@@ -46,12 +54,13 @@ public class HatFeatureRenderer extends RenderLayer<AbstractClientPlayer, Player
         if (player.isInvisible()) {
             return;
         }
+        Player hatOwner = resolveHatOwner(player);
         String hat;
         if (previewHatOverride != null && player == Minecraft.getInstance().player) {
             // 饰品预览：强制覆盖本地玩家头顶帽子（空串=不戴帽，去除玩偶自带帽）
             hat = previewHatOverride;
         } else {
-            hat = PlayerHatSync.getHat(player);
+            hat = PlayerHatSync.getHat(hatOwner);
             if (PlayerHatSync.DEFAULT.equals(hat) && player == Minecraft.getInstance().player) {
                 // 回退：实体数据未到位时，本地玩家改读 CCA 组件（仅自身客户端有数据）
                 hat = SREPlayerSkinsComponent.KEY.get(player)
@@ -73,6 +82,29 @@ public class HatFeatureRenderer extends RenderLayer<AbstractClientPlayer, Player
         this.getParentModel().getHead().translateAndRotate(poseStack);
         HatSkinRenderer.renderOnHead(hat, poseStack, bufferSource, light);
         poseStack.popPose();
+    }
+
+    /** Resolve the player whose skin is currently shown by the target's appearance modifiers. */
+    private static Player resolveHatOwner(AbstractClientPlayer player) {
+        UUID ownerId = null;
+        var worldModifiers = WorldModifierComponent.KEY.get(player.level());
+        if (worldModifiers != null && worldModifiers.isModifier(player, SEModifiers.JEB_)) {
+            ownerId = NoellesrolesClient.JEB_SHUFFLED_PLAYER_ENTRIES_CACHE.get(player.getUUID());
+        }
+        if (ownerId == null) {
+            ownerId = ClientSkincrawlerState.stolenSkinFor(player.getUUID());
+        }
+        if (ownerId == null) {
+            MorphlingPlayerComponent morphling = MorphlingPlayerComponent.KEY.get(player);
+            if (morphling != null && morphling.getMorphTicks() > 0) {
+                ownerId = morphling.disguise;
+            }
+        }
+        if (ownerId == null || ownerId.equals(player.getUUID())) {
+            return player;
+        }
+        Player owner = player.level().getPlayerByUUID(ownerId);
+        return owner == null ? player : owner;
     }
 
     @Nullable

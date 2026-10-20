@@ -24,11 +24,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * 天堂制造期间神父无视方块碰撞，可穿过门和墙体。
  */
-@Mixin(BlockBehaviour.class)
+// BlockStateBase is the common dispatch point for collision shapes. Injecting
+// BlockBehaviour alone misses custom blocks that override getCollisionShape.
+@Mixin(BlockBehaviour.BlockStateBase.class)
 public class PriestDoorCollisionMixin {
 
-    @Inject(method = "getCollisionShape", at = @At("HEAD"), cancellable = true)
-    private void noellesroles$priestPassDoors(BlockState state, BlockGetter world, BlockPos pos,
+    @Inject(method = "getCollisionShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;", at = @At("HEAD"), cancellable = true)
+    private void noellesroles$priestPassDoors(BlockGetter world, BlockPos pos,
             CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
         if (!(context instanceof EntityCollisionContext entityContext)) {
             return;
@@ -40,6 +42,7 @@ public class PriestDoorCollisionMixin {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.maybeGet(player.level()).orElse(null);
         if (game != null && game.isRole(player, ModRoles.PRIEST)
                 && player.hasEffect(ModEffects.NO_COLLIDE)) {
+            BlockState state = (BlockState) (Object) this;
             // 屏障是地图边界，不允许天堂制造穿过。
             if (state.is(Blocks.BARRIER)) {
                 return;

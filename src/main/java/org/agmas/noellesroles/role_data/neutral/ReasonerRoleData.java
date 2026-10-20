@@ -1,10 +1,26 @@
-package org.agmas.noellesroles.game.roles.neutral.reasoner;
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
+package org.agmas.noellesroles.role_data.neutral;
+
+import io.wifi.starrailexpress.api.data.RoleData;
+import io.wifi.starrailexpress.api.data.RoleDataContext;
+import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.cca.SREGameTimeComponent;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -25,25 +41,19 @@ import org.agmas.noellesroles.packet.ReasonerOpenScreenS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
-
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 
-public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComponent {
-    public static final ComponentKey<ReasonerPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            Noellesroles.id("reasoner"), ReasonerPlayerComponent.class);
+public class ReasonerRoleData extends SimpleRoleData {
+
 
     public static final int GIVE_COMPASS_TICKS = 2 * 60 * 20;
     public static final int KILLER_QUESTION_TICKS = 3 * 60 * 20;
 
-    private final Player player;
 
     private boolean compassGiven;
-    private boolean killerQuestionPushed;
+    private long compassStartWorldTick = -1;
     private int activeTicks;
     private UUID roleQuestionTarget;
     private UUID bodyQuestionTarget;
@@ -53,20 +63,18 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     private boolean solvedDeathReason;
     private boolean solvedTask;
     private boolean solvedKillerCount;
+    /** 「杀手数量」问题是否已解锁（解锁即锁定，直至游戏结束不再消失） */
+    private boolean killerQuestionUnlocked;
 
-    public ReasonerPlayerComponent(Player player) {
-        this.player = player;
+    public ReasonerRoleData(RoleDataContext context) {
+        super(context);
     }
 
-    @Override
-    public Player getPlayer() {
-        return player;
-    }
 
     @Override
     public void init() {
         compassGiven = false;
-        killerQuestionPushed = false;
+        compassStartWorldTick = -1;
         activeTicks = 0;
         roleQuestionTarget = null;
         bodyQuestionTarget = null;
@@ -76,6 +84,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         solvedDeathReason = false;
         solvedTask = false;
         solvedKillerCount = false;
+        killerQuestionUnlocked = false;
         sync();
     }
 
@@ -84,9 +93,6 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         init();
     }
 
-    public void sync() {
-        KEY.sync(player);
-    }
 
     @Override
     public void serverTick() {
@@ -101,16 +107,26 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         activeTicks++;
         boolean changed = false;
 
-        if (!compassGiven && getElapsedTicks() >= GIVE_COMPASS_TICKS && player instanceof ServerPlayer serverPlayer) {
-            giveCompass(serverPlayer);
-            compassGiven = true;
+        // 开局基准：无论罗盘是否已发放都记录（稳定的计时基准，不受击杀加时影响）
+        if (compassStartWorldTick < 0) {
+            compassStartWorldTick = ((ServerLevel) player.level()).getGameTime();
             changed = true;
         }
 
-        // 游戏经过 3 分钟后，主动推送杀手数量问题显现
-        if (!killerQuestionPushed && !solvedKillerCount && getElapsedTicks() >= KILLER_QUESTION_TICKS && player instanceof ServerPlayer serverPlayer) {
-            killerQuestionPushed = true;
-            ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer));
+        if (!compassGiven) {
+            if (player.level().getGameTime() - compassStartWorldTick >= GIVE_COMPASS_TICKS
+                    && player instanceof ServerPlayer serverPlayer) {
+                giveCompass(serverPlayer);
+                compassGiven = true;
+                changed = true;
+            }
+        }
+
+        // 「杀手数量」问题：使用 level.getGameTime() 与稳定基准计时；
+        // 一旦达到解锁时间即永久解锁，直至游戏结束都不会再消失
+        if (!killerQuestionUnlocked
+                && player.level().getGameTime() - compassStartWorldTick >= KILLER_QUESTION_TICKS) {
+            killerQuestionUnlocked = true;
             changed = true;
         }
 
@@ -138,7 +154,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
                 bodyTargetName,
                 taskTargetName,
                 deathAvailable,
-                getElapsedTicks() >= KILLER_QUESTION_TICKS,
+                killerQuestionUnlocked,
                 solvedAliveCount,
                 hideRole,
                 solvedDeathReason,
@@ -185,10 +201,10 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
             serverPlayer.displayClientMessage(Component.translatable(
                     "message.noellesroles.reasoner.correct", solvedCount(), 5).withStyle(ChatFormatting.GREEN), true);
             checkWin(serverPlayer.serverLevel());
-            // 回放记录：推理家成功推出一条线索
+            // 回放记录：成功推理出线索
             SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.event.reasoner.deduce_clue",
-                            GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true)));
+                Component.translatable("replay.event.reasoner.deduce_clue",
+                    GameReplayUtils.getReplayPlayerDisplayText(serverPlayer, true)));
         } else {
             serverPlayer.displayClientMessage(Component.translatable(
                     "message.noellesroles.reasoner.incorrect").withStyle(ChatFormatting.RED), true);
@@ -215,27 +231,21 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         return false;
     }
 
-    private int getElapsedTicks() {
-        if (player.level() instanceof ServerLevel) {
-            SREGameTimeComponent time = SREGameTimeComponent.KEY.get(player.level());
-            int reset = time.getResetTime();
-            int current = time.getTime();
-            if (reset > 0 && current >= 0 && reset >= current) {
-                return reset - current;
-            }
-        }
-        return activeTicks;
-    }
-
     private void refreshQuestionTargets(ServerLevel level) {
+        UUID self = player.getUUID();
         List<ServerPlayer> alive = alivePlayers(level);
-        if (roleQuestionTarget == null || alive.stream().noneMatch(p -> p.getUUID().equals(roleQuestionTarget))) {
-            roleQuestionTarget = pickRandomUuid(alive);
+        // 角色问题候选：排除推理师本人
+        List<ServerPlayer> roleCandidates = alive.stream()
+                .filter(p -> !p.getUUID().equals(self))
+                .toList();
+        if (roleQuestionTarget == null || roleCandidates.stream().noneMatch(p -> p.getUUID().equals(roleQuestionTarget))) {
+            roleQuestionTarget = pickRandomUuid(roleCandidates);
         }
 
-        // 死因问题：仅选取已死亡但仍在线玩家的尸体
+        // 死因问题：仅选取已死亡但仍在线玩家、且非推理师本人的尸体
         List<PlayerBodyEntity> bodies = getBodyTargets(level).stream()
                 .filter(b -> b.getPlayerUuid() != null
+                        && !b.getPlayerUuid().equals(self)
                         && level.getServer().getPlayerList().getPlayer(b.getPlayerUuid()) != null
                         && !GameUtils.isPlayerAliveAndSurvival(level.getServer().getPlayerList().getPlayer(b.getPlayerUuid())))
                 .toList();
@@ -244,6 +254,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         List<ServerPlayer> taskTargets = alive.stream()
+                .filter(p -> !p.getUUID().equals(self))
                 .filter(this::isInnocentNonNeutral)
                 .filter(p -> !SREPlayerTaskComponent.KEY.get(p).tasks.isEmpty())
                 .toList();
@@ -254,7 +265,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         // 二次校验：目标离线时持续尝试重新选择，直到找到有效目标或池子耗尽
         while (roleQuestionTarget != null
                 && level.getServer().getPlayerList().getPlayer(roleQuestionTarget) == null) {
-            UUID next = pickRandomUuid(alive);
+            UUID next = pickRandomUuid(roleCandidates);
             if (next == null || next.equals(roleQuestionTarget)) {
                 roleQuestionTarget = null;
                 break;
@@ -322,7 +333,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     private boolean checkKillerCountAnswer(ServerLevel level, String answer) {
-        if (solvedKillerCount || getElapsedTicks() < KILLER_QUESTION_TICKS) {
+        if (solvedKillerCount || !killerQuestionUnlocked) {
             return false;
         }
         Integer guessed = parseNonNegativeInt(answer);
@@ -331,11 +342,11 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
 
     private int aliveKillerCount(ServerLevel level) {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
-        List<UUID> killerTeam = game.getAllKillerTeamPlayers();
         int count = 0;
         for (ServerPlayer p : alivePlayers(level)) {
             SRERole role = game.getRole(p);
-            if (role != null && (role.canUseKiller() || killerTeam.contains(p.getUUID()))) {
+            // 仅统计真杀手；杀手方中立（isNeutralForKiller）不算杀手的数量
+            if (role != null && role.isKiller()) {
                 count++;
             }
         }
@@ -432,6 +443,64 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         return solvedCount();
     }
 
+    /**
+     * 罗盘立即完成一条未回答的随机问题（领袖追随者效果）。
+     */
+    public void forceCompleteRandomQuestion() {
+        java.util.List<Integer> unsolved = new java.util.ArrayList<>();
+        for (int q = 1; q <= 5; q++) {
+            if (!isSolved(q)) {
+                unsolved.add(q);
+            }
+        }
+        if (unsolved.isEmpty()) {
+            return;
+        }
+        int question = unsolved.get(player.getRandom().nextInt(unsolved.size()));
+        markSolved(question);
+        if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    Component.translatable("message.noellesroles.reasoner.correct", solvedCount(), 5)
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
+        }
+        sync();
+        if (player instanceof ServerPlayer sp2) {
+            checkWin(sp2.serverLevel());
+        }
+    }
+
+    /**
+     * 领袖追随者效果：立即获得罗盘（视作已拥有，之后不再重复发放，HUD 同步显示已拥有），
+     * 并立即解决一个罗盘中的随机问题。
+     */
+    public void forceGiveCompassAndSolveOne() {
+        compassGiven = true;
+        if (player instanceof ServerPlayer sp) {
+            giveCompass(sp);
+        }
+        sync();
+        forceCompleteRandomQuestion();
+    }
+
+    /** 是否已发放罗盘。 */
+    public boolean isCompassGiven() {
+        return compassGiven;
+    }
+
+    /**
+     * 拿取罗盘的剩余倒计时（tick）。
+     * 基于 serverLevel.getGameTime() 与开局基准计算，不受击杀加时影响；
+     * 若已发放或尚未开始则返回 0。
+     */
+    public int getCompassRemainingTicks() {
+        if (compassGiven || compassStartWorldTick < 0) {
+            return 0;
+        }
+        long elapsed = player.level().getGameTime() - compassStartWorldTick;
+        return (int) Math.max(0, GIVE_COMPASS_TICKS - elapsed);
+    }
+
     private int solvedCount() {
         int count = 0;
         if (solvedAliveCount) count++;
@@ -461,38 +530,28 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("compassGiven", compassGiven);
+        tag.putLong("compassStartWorldTick", compassStartWorldTick);
         tag.putInt("activeTicks", activeTicks);
         tag.putBoolean("solvedAliveCount", solvedAliveCount);
         tag.putBoolean("solvedRole", solvedRole);
         tag.putBoolean("solvedDeathReason", solvedDeathReason);
         tag.putBoolean("solvedTask", solvedTask);
         tag.putBoolean("solvedKillerCount", solvedKillerCount);
+        tag.putBoolean("killerQuestionUnlocked", killerQuestionUnlocked);
     }
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         compassGiven = tag.getBoolean("compassGiven");
+        compassStartWorldTick = tag.getLong("compassStartWorldTick");
         activeTicks = tag.getInt("activeTicks");
         solvedAliveCount = tag.getBoolean("solvedAliveCount");
         solvedRole = tag.getBoolean("solvedRole");
         solvedDeathReason = tag.getBoolean("solvedDeathReason");
         solvedTask = tag.getBoolean("solvedTask");
         solvedKillerCount = tag.getBoolean("solvedKillerCount");
+        killerQuestionUnlocked = tag.getBoolean("killerQuestionUnlocked");
     }
 
-    @Override
-    public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        writeToSyncNbt(tag, registryLookup);
-        if (roleQuestionTarget != null) tag.putUUID("roleQuestionTarget", roleQuestionTarget);
-        if (bodyQuestionTarget != null) tag.putUUID("bodyQuestionTarget", bodyQuestionTarget);
-        if (taskQuestionTarget != null) tag.putUUID("taskQuestionTarget", taskQuestionTarget);
-    }
 
-    @Override
-    public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        readFromSyncNbt(tag, registryLookup);
-        roleQuestionTarget = tag.hasUUID("roleQuestionTarget") ? tag.getUUID("roleQuestionTarget") : null;
-        bodyQuestionTarget = tag.hasUUID("bodyQuestionTarget") ? tag.getUUID("bodyQuestionTarget") : null;
-        taskQuestionTarget = tag.hasUUID("taskQuestionTarget") ? tag.getUUID("taskQuestionTarget") : null;
-    }
 }

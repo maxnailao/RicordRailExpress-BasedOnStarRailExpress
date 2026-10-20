@@ -95,11 +95,11 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerCompone
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent;
+import org.agmas.noellesroles.role_data.neutral.ReasonerRoleData;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
@@ -3068,7 +3068,7 @@ public class ModRoles {
             false,
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
-            true)).setComponentKey(ReasonerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+            true)).setRoleData(ReasonerRoleData::new).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(6500);
 
@@ -4104,7 +4104,8 @@ public class ModRoles {
             .setCanSeeCoin(true)    // 可见金币
             .setCanSeeTime(true)    // 可见时间
             .setCanUseInstinct(true)      // 拥有本能（仅透视爱慕对象与目标）
-            .setCanPickUpRevolver(true)   // 可购买/使用左轮手枪
+            .setCanPickUpRevolver(false)  // 病娇不能拾取地上的枪械
+            .setCanAutoAddMoney(true)     // 每个被动收入周期获得5金币
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(10)
             .setDefaultEnableChance(10000);

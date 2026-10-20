@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -54,16 +55,22 @@ public class PlayerPrefixMixin {
             return;
         }
 
-        // 组装：名片 + 称号 + 名字
-        // 有称号时**不能**再用原版 getDisplayName() 当底 —— 那个已经含队伍 prefix，
-        // 会变成 "[VIP] [VIP] Steve"。所以改用纯名字。
+        // 组装：名片 + 队伍格式化后的称号/名字。
+        // 聊天消息使用这个组件作为 ChatType.Bound.name；直接手动拼接纯文本名字
+        // 会绕过 PlayerTeam 的标准格式化路径，导致称号颜色在聊天栏丢失。
         MutableComponent out = Component.empty();
         if (nametag != null) {
             out.append(nametag);
         }
         if (title != null) {
-            out.append(title);
-            out.append(Component.literal(mainPlayer.getName().getString()));
+            PlayerTeam team = mainPlayer.getTeam();
+            if (team != null) {
+                out.append(PlayerTeam.formatNameForTeam(team, mainPlayer.getName()));
+            } else {
+                // 记分板尚未同步时保留称号文本，避免名字暂时消失。
+                out.append(title);
+                out.append(mainPlayer.getName());
+            }
         } else {
             Component base = cir.getReturnValue();
             if (base == null) {

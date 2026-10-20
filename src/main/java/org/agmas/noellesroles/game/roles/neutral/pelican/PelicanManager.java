@@ -232,9 +232,19 @@ public final class PelicanManager {
      */
     public static void releaseAllForPelican(UUID pelicanId, MinecraftServer server, String replayKey) {
         Deque<UUID> belly = stashedByPelican.get(pelicanId);
-        if (belly == null || belly.isEmpty())
-            return;
         ServerPlayer pelican = server.getPlayerList().getPlayer(pelicanId);
+        // 清理强制吐出场景遗留的冷却，即使肚内队列已经被会议流程清空。
+        if (belly == null || belly.isEmpty()) {
+            if (pelican != null) {
+                PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(pelican);
+                comp.bellyPlayerIds.removeIf(id -> !isStashed(id));
+                comp.bellyNames.clear();
+                comp.eatCooldownUntil = 0;
+                comp.cooldownTicks = 0;
+                comp.sync();
+            }
+            return;
+        }
         for (UUID targetId : new ArrayList<>(belly)) {
             ServerPlayer target = server.getPlayerList().getPlayer(targetId);
             if (target != null) {

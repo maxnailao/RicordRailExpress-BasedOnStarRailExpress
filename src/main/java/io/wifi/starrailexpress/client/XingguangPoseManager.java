@@ -439,10 +439,17 @@ public final class XingguangPoseManager {
     // 只查"装备了星光皮肤"会把持刀变换泄漏到手里的任何其他物品（手枪显示错乱的根因）。
     public static boolean isXingguangKnife(ItemStack stack) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || !(stack.getItem() instanceof KnifeItem)) {
+        return client.player != null && isXingguangKnife(client.player, stack);
+    }
+
+    /**
+     * 严格按指定玩家和物品栈判断星光刀，避免渲染过渡或第三人称姿态把动作套到其他刀皮肤。
+     */
+    public static boolean isXingguangKnife(Player player, ItemStack stack) {
+        if (player == null || !(stack.getItem() instanceof KnifeItem)) {
             return false;
         }
-        return XingguangClientEffects.SKIN_ID.equals(ItemSkinManager.getEquippedSkin(client.player, stack));
+        return XingguangClientEffects.SKIN_ID.equals(ItemSkinManager.getEquippedSkin(player, stack));
     }
 
     public static boolean knifeActive() {
