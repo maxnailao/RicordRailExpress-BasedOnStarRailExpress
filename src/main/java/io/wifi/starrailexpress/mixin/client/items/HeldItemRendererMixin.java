@@ -7,6 +7,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.XingguangHandRenderer;
 import io.wifi.starrailexpress.client.XingguangPoseManager;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeRevolver;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -31,6 +32,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemInHandRenderer.class)
 public class HeldItemRendererMixin {
+
+    private int xg$probeCounter = 0;
 
     @Shadow
     private ItemStack mainHandItem;
@@ -67,6 +70,13 @@ public class HeldItemRendererMixin {
     private void xingguang$armKnifePose(AbstractClientPlayer player, float partialTicks, float pitch,
             InteractionHand hand, float swingProgress, ItemStack stack, float equippedProgress,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight, Operation<Void> original) {
+        if (hand == InteractionHand.MAIN_HAND && player == this.minecraft.player
+                && (++this.xg$probeCounter % 40 == 0)) {
+            SRE.LOGGER.info("[XGHand] armWithItem path='{}' isXG={} skin='{}'",
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath(),
+                    XingguangPoseManager.isXingguangKnife(stack),
+                    io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player, stack));
+        }
         boolean override = !SRE.isLobby && hand == InteractionHand.MAIN_HAND
                 && player == this.minecraft.player && XingguangPoseManager.isXingguangKnife(stack);
         if (!override) {

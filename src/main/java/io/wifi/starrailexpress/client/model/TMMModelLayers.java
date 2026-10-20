@@ -39,6 +39,7 @@ public interface TMMModelLayers {
                 () -> LayerDefinition.create(PlayerModel.createMesh(CubeDeformation.NONE, true), 64, 64));
         EntityModelLayerRegistry.registerModelLayer(WHEEL, WheelBlockEntityRenderer::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(PLAYER_SKELETON, PlayerSkeletonEntityModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(XingguangHandModel.LAYER, XingguangHandModel::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(CrashPlaneEntityModel.LAYER_LOCATION,
                 CrashPlaneEntityModel::createBodyLayer);
     }
