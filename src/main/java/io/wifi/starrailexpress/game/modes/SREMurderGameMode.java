@@ -665,6 +665,24 @@ public class SREMurderGameMode extends GameMode {
                 }
             }
         }
+        // 自然刷新出来的绑定职业同样要保护：只看 selfSelectCompanions 会漏掉
+        // 「初学者 → 初学者」这种自我绑定。展开后的第二个初学者就在列表末尾，
+        // 尾部裁剪会正好把它剪掉，场上又只剩 1 个初学者。
+        for (RoleInstance ri : resultRoleInstances) {
+            SRERole r = ri.role();
+            if (r == null) {
+                continue;
+            }
+            ArrayList<SRERole> companions = Harpymodloader.getOccupationRoles(r);
+            if (companions == null) {
+                continue;
+            }
+            for (SRERole c : companions) {
+                if (c != null) {
+                    companionIds.add(c.identifier());
+                }
+            }
+        }
         int maxPoolSize = Math.max(0, playerSize - forcedRoleSize);
         if (resultRoleInstances.size() > maxPoolSize) {
             int overflow = resultRoleInstances.size() - maxPoolSize;
@@ -785,6 +803,10 @@ public class SREMurderGameMode extends GameMode {
      * → 池子里多一个迪奥 → 最终场上**两个迪奥**。
      * {@code expandWithCompanionRoles} 内部虽有按名额去重，但它看不到不在列表里的那份。
      *
+     * <p>但不是所有副本都要丢：初学者是「一次抽取生成一对」的职业，本局上限是 2。
+     * 玩家自选 1 个初学者后，池里还应该留下 1 个作为同伴；否则自选的那位会在 5 秒后
+     * 因为「场上只有一位初学者」变成失忆患者。这里按「上限 - 已占用数」保留差额。
+     *
      * @param roles       角色池（会被复制，不就地修改）
      * @param assignedRoles 已经被玩家占用的职业
      */
@@ -793,20 +815,33 @@ public class SREMurderGameMode extends GameMode {
         if (roles == null || roles.isEmpty() || assignedRoles == null || assignedRoles.isEmpty()) {
             return roles;
         }
-        java.util.Set<net.minecraft.resources.ResourceLocation> taken = new java.util.HashSet<>();
+        // 被玩家直接占用的职业允许在池里保留的实例数 = 本局人数上限 - 已被占用的数量。
+        // 普通职业上限 1，池里的副本全部丢弃（原行为）；
+        // 初学者这种「一次抽取生成一对」的职业上限为 2，自选 1 个后还要保留 1 个池内实例作为同伴。
+        Map<ResourceLocation, Integer> assignedCounts = new HashMap<>();
         for (SRERole r : assignedRoles) {
             if (r != null) {
-                taken.add(r.identifier());
+                assignedCounts.merge(r.identifier(), 1, Integer::sum);
             }
         }
+        Map<ResourceLocation, Integer> keptCounts = new HashMap<>();
         List<RoleInstance> out = new ArrayList<>(roles.size());
         for (RoleInstance ri : roles) {
             SRERole r = ri.role();
-            if (r != null && taken.contains(r.identifier())) {
-                Harpymodloader.LOGGER.warn(
-                        "[RolePool] 池内出现已被自选占用的 {}，丢弃（否则场上会有两个同职业）",
-                        r.identifier());
-                continue;
+            int assigned = r == null ? 0 : assignedCounts.getOrDefault(r.identifier(), 0);
+            if (assigned > 0) {
+                int capacity = Math.max(1, Harpymodloader.getRoleCapacity(r));
+                int alreadyKept = keptCounts.getOrDefault(r.identifier(), 0);
+                if (assigned + alreadyKept >= capacity) {
+                    Harpymodloader.LOGGER.warn(
+                            "[RolePool] 池内出现已被自选占用的 {}，丢弃（占用 {}/{}，否则场上会有多余同职业）",
+                            r.identifier(), assigned + alreadyKept, capacity);
+                    continue;
+                }
+                keptCounts.merge(r.identifier(), 1, Integer::sum);
+                Harpymodloader.LOGGER.info(
+                        "[RolePool] {} 的上限是 {}，自选占用 {} 个，保留池内同伴（{}/{}）",
+                        r.identifier(), capacity, assigned, assigned + alreadyKept + 1, capacity);
             }
             out.add(ri);
         }

@@ -123,13 +123,32 @@ public class Harpymodloader implements ModInitializer {
     }
 
     /**
-     * 该职业本局的人数上限，与 RoleAssignmentPool 构池口径保持一致：
-     * ROLE_MAX（未配置时默认 1），并保证至少 1（首位玩家总能占用一个名额）。
+     * 该职业本局最终名单里的人数上限。
+     *
+     * <p>普通职业就是 ROLE_MAX（未配置时默认 1），并保证至少 1（首位玩家总能占用一个名额）。
+     * 但「自己绑定自己」的职业（初学者 → 初学者）是一次抽取生成一对：
+     * 角色池里只占 1 个抽取名额，展开后名单里却必须有 2 个实例，
+     * 否则会被绑定展开末尾的按名额去重当成重复实例丢掉，场上只剩 1 个初学者。
      */
     public static int getRoleCapacity(SRERole role) {
         if (role == null)
             return 1;
-        return Math.max(1, ROLE_MAX.getOrDefault(role.identifier(), 1));
+        int capacity = Math.max(1, ROLE_MAX.getOrDefault(role.identifier(), 1));
+        if (isSelfPaired(role)) {
+            capacity = Math.max(2, capacity);
+        }
+        return capacity;
+    }
+
+    /** 该职业的关联职业里是否包含它自己（即「一次抽取生成一对」的自我绑定）。 */
+    public static boolean isSelfPaired(SRERole role) {
+        if (role == null || role.occupationRoles == null)
+            return false;
+        for (SRERole companion : role.occupationRoles) {
+            if (companion != null && companion.identifier().equals(role.identifier()))
+                return true;
+        }
+        return false;
     }
 
     /** 统计该职业当前被「其它玩家」占用的名额数（排除 self）。 */
