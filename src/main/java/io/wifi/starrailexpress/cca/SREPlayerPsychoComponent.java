@@ -33,6 +33,14 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     public int psychoTicks = -1;
     public int armour = 1;
     public int type = -1;
+    /**
+     * 「只借皮肤」的疯狂模式：只用于客户端的狂暴皮肤 / 疯狂 HUD 表现，
+     * 不占用全局疯狂计数、不给护盾、不会强制切换手持物，
+     * 结束时也不清球棒、不触发职业的 onPsychoOver 回调。
+     * <p>典型来源：幻术师·幻影陷阱的「扣除 25% 理智」惩罚。
+     * <p>这类状态必须由调用方自己把 armour 归零，否则默认的 1 层就是白送的护盾。
+     */
+    public boolean cosmeticPsycho = false;
     private SREGameWorldComponent gameWorldComponent = null;
 
     public SREPlayerPsychoComponent(Player player) {
@@ -84,6 +92,9 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
             }
             this.psychoTicks--;
         }
+        // 只借皮肤：不强制把手持物切回球棒/疯魔武器
+        if (this.cosmeticPsycho)
+            return;
         Item psychoItem = TMMItems.BAT;
         SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(player);
         if (role != null) {
@@ -180,13 +191,19 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     public int stopPsycho() {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         int result = gameWorldComponent.getPsychosActive();
-        if (result >= 1) {
+        boolean cosmetic = this.cosmeticPsycho;
+        this.cosmeticPsycho = false;
+        // 只借皮肤的状态从未占用过全局疯狂计数，自然也不该把它减回去
+        if (!cosmetic && result >= 1) {
             gameWorldComponent.setPsychosActive(result - 1);
         }
         this.psychoTicks = -1;
-        if (this.player instanceof ServerPlayer serverPlayer) {
+        if (!cosmetic && this.player instanceof ServerPlayer serverPlayer) {
             ServerPlayNetworking.send(serverPlayer, new RemoveStatusBarPayload("Psycho"));
         }
+        // 只借皮肤：不碰背包里的球棒，也不触发职业的疯魔结束回调
+        if (cosmetic)
+            return result;
 
         Item psychoItem = TMMItems.BAT;
         SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(player);
@@ -309,6 +326,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         tag.putInt("psychoTicks", this.psychoTicks);
         tag.putInt("armour", this.armour);
         tag.putInt("type", this.type);
+        tag.putBoolean("cosmeticPsycho", this.cosmeticPsycho);
     }
 
     @Override
@@ -316,5 +334,6 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         this.psychoTicks = tag.contains("psychoTicks") ? tag.getInt("psychoTicks") : 0;
         this.armour = tag.contains("armour") ? tag.getInt("armour") : 1;
         this.type = tag.contains("type") ? tag.getInt("type") : -1;
+        this.cosmeticPsycho = tag.getBoolean("cosmeticPsycho");
     }
 }
