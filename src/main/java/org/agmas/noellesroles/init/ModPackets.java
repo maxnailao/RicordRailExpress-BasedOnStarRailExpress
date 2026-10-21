@@ -418,5 +418,18 @@ public class ModPackets {
                 org.agmas.noellesroles.packet.PlushMakerOpenS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.PlushMakerCraftC2SPacket.ID,
                 org.agmas.noellesroles.packet.PlushMakerCraftC2SPacket.CODEC);
+
+        // Fake Steve / 怯懦：接管玩家身体时的客户端输入租约（S2C）、幻影显隐（S2C）与观测回报（C2S）。
+        // 这三个 payload 之前没有注册，客户端注册接收器时会直接抛异常，导致「接管移动」整条链路失效；
+        // 怯懦修饰符因此只剩下加速，无法真正沿路径跑走。
+        PayloadTypeRegistry.playS2C().register(FakeSteveControlS2CPacket.ID,
+                FakeSteveControlS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(FakeSteveApparitionS2CPacket.ID,
+                FakeSteveApparitionS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(FakeSteveApparitionObservationC2SPacket.ID,
+                FakeSteveApparitionObservationC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(FakeSteveApparitionObservationC2SPacket.ID,
+                (payload, context) -> org.agmas.noellesroles.game.fake_steve.FakeSteveApparitions
+                        .onObservation(context.player(), payload.apparitionId(), payload.stage()));
     }
 }
