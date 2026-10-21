@@ -96,10 +96,15 @@ public class RoleAssignmentManager {
 
         for (var role : oldRoles) {
             ArrayList<SRERole> companions = getCompanionRoles(role.role());
+            // 自我绑定（初学者 → 初学者）是一次抽取生成一对：
+            // 第 2 个名额由 setOccupiedRoleCount(2) 预留，不需要再挤掉名单里的其他角色。
+            // 若这里仍然走 tryRemoveARole，会因为它自己已经在 companedRoles 里而必然失败，
+            // 每局刷出初学者都会刷一条无意义的 "Unable to remove a role" 错误日志。
+            boolean selfPaired = Harpymodloader.isSelfPaired(role.role());
             for (var companion : companions) {
                 if (companion != null) {
                     companedRoles.add(role.role());
-                    {
+                    if (!selfPaired) {
                         if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 0)) {
                             if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 1)) {
                                 if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 2)) {

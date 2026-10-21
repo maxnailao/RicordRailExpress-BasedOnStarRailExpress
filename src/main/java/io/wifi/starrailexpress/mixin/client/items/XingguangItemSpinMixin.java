@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.mixin.client.items;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.XingguangHandRenderer;
 import io.wifi.starrailexpress.client.XingguangPoseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -52,5 +53,20 @@ public class XingguangItemSpinMixin {
         poseStack.translate(GRIP_X, GRIP_Y, 0.0F);
         poseStack.mulPose(Axis.ZP.rotationDegrees(a));
         poseStack.translate(-GRIP_X, -GRIP_Y, 0.0F);
+    }
+
+    @Inject(method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;"
+            + "Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;"
+            + "Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("TAIL"))
+    private void xingguang$drawHand(LivingEntity entity, ItemStack stack, ItemDisplayContext displayContext,
+            boolean leftHanded, PoseStack poseStack, MultiBufferSource buffer, int light, CallbackInfo ci) {
+        if (SRE.isLobby || leftHanded || !displayContext.firstPerson()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || entity != mc.player || !XingguangPoseManager.isXingguangKnife(stack)) {
+            return;
+        }
+        XingguangHandRenderer.renderInItemSpace(poseStack, buffer, light, mc.player);
     }
 }

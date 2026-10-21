@@ -83,6 +83,7 @@
     "client.items.HeldItemFeatureRendererMixin",
     "client.items.HeldItemRendererMixin",
     "client.items.XingguangArmPoseMixin",
+    "client.items.XingguangHandRenderMixin",
     "client.items.XingguangItemSpinMixin",
     "client.items.XingguangChargeThirdPersonMixin",
     "client.restrictions.ChatHudMixin",

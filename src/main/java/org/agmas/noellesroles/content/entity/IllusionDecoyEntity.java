@@ -545,12 +545,23 @@ public class IllusionDecoyEntity extends PathfinderMob {
                 p.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 160, 0));
                 p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 0));
 
-                // 扣除25%理智值
+                // 扣除25%理智值：只借疯狂模式的皮肤/表现，绝不能给护盾。
+                // 旧实现直接 setPsychoTicks(current + penalty)，而 SREPlayerPsychoComponent.armour
+                // 默认就是 1 —— 一个从没疯魔过的玩家被闪一下就会白拿一层疯魔护盾
+                //（GameMode.killPlayer 里真的会拿它挡掉一次死亡），这就是那个“临时的盾”。
                 var psychoComp = io.wifi.starrailexpress.cca.SREPlayerPsychoComponent.KEY.maybeGet(p).orElse(null);
                 if (psychoComp != null) {
                     int penalty = io.wifi.starrailexpress.game.GameConstants.getPsychoTimer() / 4;
-                    int current = Math.max(0, psychoComp.psychoTicks);
-                    psychoComp.setPsychoTicks(current + penalty);
+                    if (psychoComp.psychoTicks > 0) {
+                        // 本来就处于疯狂模式：只延长剩余时间，保留他原本应有的护盾层数
+                        psychoComp.setPsychoTicks(psychoComp.psychoTicks + penalty);
+                    } else {
+                        // 纯外观：不占全局疯狂计数、不清球棒、不强制切换手持物
+                        psychoComp.cosmeticPsycho = true;
+                        psychoComp.setPsychoTicks(penalty);
+                        // 关键：显式归零护盾层数
+                        psychoComp.setArmour(0);
+                    }
                 }
             }
         }

@@ -70,7 +70,16 @@ public class SERoles {
             false,
             SRERole.MoodType.REAL,
             TMMRoles.CIVILIAN.getMaxSprintTime(),
-            true)).setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(8000).setDefaultEnableNeededPlayerCount(12);
+            true))
+            .setCanBeRandomedByOtherRoles(false)
+            // 池内上限保持 1：抽到一次就会通过自我绑定展开成一对。
+            // 不要改成 2，否则会抽出两对再被去重逻辑收敛，反而浪费中立槽位。
+            .setDefaultMax(1)
+            .setDefaultEnableChance(8000)
+            .setDefaultEnableNeededPlayerCount(12)
+            // 初学者一次生成一对（自己绑定自己）：抽取时只占 1 个池内名额，
+            // 但最终名单要占 2 个中立位，否则会挤掉另一个中立职业。
+            .setOccupiedRoleCount(2);
 
     public static List<ShopEntry> INITIATE_SHOP = Util.make(new ArrayList<>(), entries -> {
         entries.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
