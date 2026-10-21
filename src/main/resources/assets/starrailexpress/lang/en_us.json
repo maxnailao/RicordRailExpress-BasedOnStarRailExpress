@@ -427,6 +427,7 @@
   "command.sre.switchmap.load": "Loading map: %s",
   "gui.sre.hud.vote_reminder": "Press %s to open map vote interface",
   "key.starrailexpress.open_voting_screen": "Open Vote Interface",
+  "key.starrailexpress.inspect": "Inspect Weapon",
   "category.starrailexpress.general": "Train Murder Mystery - General",
   "gui.mapselector.title": "Select Map",
   "gui.mapselector.select": "Select",

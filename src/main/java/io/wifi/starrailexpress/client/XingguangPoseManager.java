@@ -244,6 +244,124 @@ public final class XingguangPoseManager {
     private static final float HALF_LIFE_STAB   = 0.013f; // ≈0.1s 刺出到位
     private static final float HALF_LIFE_RETURN = 0.026f; // ≈0.2s 收势回持刀
 
+    // ============ 检视（Inspect，传承品质专属，H 键触发，仅本地第一人称） ============
+    // 优先级：举刀(charging)/左键攻击(slash)/命中刺出(stab) 均可打断检视；检视可打断切刀(draw)。
+    // 通道分工：
+    //  · 手臂通道：前臂抬降/前后送/横移，rz 恒取小角度基准(6°)，规避"大角度转手臂甩飞"陷阱。
+    //  · 物品自转通道(slashSpin)：手腕以握把为轴的平面内翻腕，"只转刀不翻臂"，拳头(物品空间)同转→握持点不漂。
+    //  · 物品俯仰/偏转通道(itemTiltX/Y)：观察刀身厚度(正面→侧刃)与刀尖指向镜头的三维透视翻转，同样只转刀。
+    // 刀尖绝对屏幕角 A：0=朝上，正=逆时针；自转量按 A−手臂当前实际角 实时补偿，
+    // 手臂从常规横持(rz=-90)收敛到位的快慢不影响刀的观感角度；起始 A=-90＝从当前持刀平滑起刀。
+    private static int inspectPhase = 0; // 0=无 1=检视中
+    private static long inspectStartNanos = 0L;
+    private static int inspectSlot = -1; // 开始检视时的快捷栏槽位：切手即打断
+    private static final long INSPECT_TOTAL_MS = 9_500_000_000L; // 星光检视全程 9.5s（剧本人称秒，含首尾各一次翻腕）
+    private static final float INSPECT_SPEED = 1.73f;            // 播放倍速：关键帧表按剧本时间定义，真实时间×倍速推进（9.5s÷1.73≈5.5s）
+    private static final float INSPECT_ARM_HL = 0.09f;           // 检视期间手臂通道收敛半衰期(前送/回位更柔)
+
+    /** 仅检视使用：刀(连同物品空间拳头)绕屏幕水平/垂直轴的角度(度)，只转刀不翻臂 */
+    private static float itemTiltX = 0f;
+    private static float itemTiltY = 0f;
+    public static float itemTiltX() { return itemTiltX; }
+    public static float itemTiltY() { return itemTiltY; }
+
+    // 时间轴(纳秒)：0–0.5 翻腕起刀入位 / 0.5–0.8 斜握静止 / 0.8–3.2 内翻竖直再倒向横置 / 3.2–9.0 厚度观察+透视回转 / 9.0–9.5 翻腕收刀
+    // 注意：0.5s 起所有绝对角 A 带 +360° 累积偏移，防止首圈翻腕被下一帧反向"追回"
+    private static final long[] INSP_T = {
+            0L, 500_000_000L, 800_000_000L, 1_600_000_000L, 2_400_000_000L, 3_200_000_000L,
+            4_400_000_000L, 5_200_000_000L, 5_800_000_000L, 6_800_000_000L, 7_400_000_000L,
+            8_200_000_000L, 9_000_000_000L, 9_500_000_000L,
+    };
+    // 物品通道关键帧：Pose(rx=tiltX 俯仰, ry=tiltY 偏转, rz=刀尖绝对角A, tx/ty/tz=物品额外偏移)
+    private static final Pose[] INSP_SPIN = {
+            new Pose(0f,  0f, -90f, 0f, 0f, 0f), // 0.00 翻腕起点＝常规横持，防跳变
+            new Pose(0f,  0f, 394f, 0f, 0f, 0f), // 0.50 开场翻腕：逆时针一整圈+抬升至斜握34°位(34+360)，easeInOut 减速入位
+            new Pose(0f,  0f, 394f, 0f, 0f, 0f), // 0.80 镜头静止，仅呼吸微动
+            new Pose(0f,  0f, 364f, 0f, 0f, 0f), // 1.60 手腕内翻：斜线→接近竖直，平稳不加速
+            new Pose(0f,  0f, 362f, 0f, 0f, 0f), // 2.40 竖直居中展示，护手/握把正对镜头
+            new Pose(0f,  0f, 455f, 0f, 0f, 0f), // 3.20 外旋四分之一圈：倒向左侧→横置(竖着看→横着看)
+            new Pose(58f, 0f, 457f, 0f, 0f, 0f), // 4.40 慢速展示：正面宽面渐转向侧面，刃/背/握把掠过镜头
+            new Pose(82f, 25f, 460f, 0f, 0f, 0f),// 5.20 几乎侧刃朝人＝黑银细线；刀身开始向右侧移出
+            new Pose(55f, 76f, 448f, 0f, 0f, 0f),// 5.80 刀尖短暂几乎指向镜头(投影缩短、不穿准星)＝纯三维透视
+            new Pose(22f,  4f, 320f, 0f, 0f, 0f),// 6.80 沿握把轴回转重新展开：刀尖斜指右上(-40+360)
+            new Pose(0f,   0f, 282f, 0f, 0f, 0f),// 7.40 末段快速(但仍属检视)扫向画面右侧(-78+360)
+            new Pose(0f,   0f, 400f, 0f, 0f, 0f),// 8.20 从画面右下方重新进入，举回斜握(轻微过冲 40+360)
+            new Pose(0f,   0f, 394f, 0f, 0f, 0f),// 9.00 回弹落位＝开场姿态，收尾翻腕起点
+            new Pose(0f,   0f, -90f, 0f, 0f, 0f),// 9.50 收尾翻腕：顺时针一整圈回常规横持；此帧手臂 rz 同为-90 → 自转补偿≈0，无缝交回
+    };
+    // 手臂通道关键帧：Pose(rx, ry, rz, tx 正=右, ty 正=上, tz 正=朝玩家(推近))
+    // 基准 rz 中段恒取 6°；9.0s 起过渡到 32°、-90°，与收尾翻腕合力实现零跳变交刀
+    private static final Pose[] INSP_ARM = {
+            new Pose(0f,  0f,   6f, -0.02f, 0.24f, 0.00f), // 0.00 拳头位于画面底部偏右
+            new Pose(0f,  0f,   6f, -0.02f, 0.24f, 0.00f), // 0.50 翻腕入位(手臂仅小幅抬起,圈数由物品通道承担)
+            new Pose(0f,  0f,   6f, -0.02f, 0.24f, 0.00f), // 0.80 静止段(呼吸单独叠加)
+            new Pose(-4f, 0f,   6f, -0.02f, 0.28f, 0.00f), // 1.60 前臂稍微上抬
+            new Pose(-6f, 0f,   6f,  0.00f, 0.26f, 0.06f), // 2.40 轻微向前推刀(离玩家更近)
+            new Pose(-4f, 0f,   6f,  0.10f, 0.20f, 0.00f), // 3.20 拳头随横置转到右下方
+            new Pose(-2f, 0f,   6f,  0.12f, 0.18f, 0.04f), // 4.40 前臂稍微收近
+            new Pose( 0f, 0f,   6f,  0.10f, 0.16f, 0.08f), // 5.20 向镜头推进：手部/护手前景放大
+            new Pose( 0f, 0f,   6f,  0.06f, 0.20f, 0.06f), // 5.80
+            new Pose(-4f, 0f,   6f,  0.02f, 0.24f, 0.07f), // 6.80 手臂前送＝"把武器递到眼前"
+            new Pose( 0f, 0f,   6f, -0.02f, 0.26f, 0.00f), // 7.40 回收
+            new Pose( 0f, 0f,  32f, -0.02f, 0.28f, 0.00f), // 8.20 举回斜握，手臂基准开始向持刀靠拢
+            new Pose( 0f, 0f,  32f, -0.02f, 0.24f, 0.00f), // 9.00 落位＝收尾翻腕起点(此处自转补偿≈2°)
+            new Pose( 0f, 0f, -90f, -0.02f, 0.30f, 0.00f), // 9.50 与 KNIFE_WALK 完全一致 → 交回零跳变
+    };
+    private static final Pose inspectSpinScratch = new Pose(0, 0, 0, 0, 0, 0);
+    private static final Pose inspectArmScratch = new Pose(0, 0, 0, 0, 0, 0);
+
+    /** 由 InputHandler 的 H 键调用：启动/重置检视（重复按从头重播）。仅本地第一人称手持星光刀时生效 */
+    public static void startInspect() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || !knifeActive()) {
+            return;
+        }
+        if (client.options == null || !client.options.getCameraType().isFirstPerson()) {
+            return; // 仅第一人称，第三人称不动
+        }
+        inspectPhase = 1;
+        inspectStartNanos = System.nanoTime();
+        inspectSlot = client.player.getInventory().selected;
+        drawPhase = 0; // 检视打断切刀
+    }
+
+    /** 查询：本地玩家正处于检视窗口（第三人称 Mixin 不据此驱动任何动作，保持他人视角静止） */
+    public static boolean isInspecting() {
+        return inspectPhase != 0;
+    }
+
+    /**
+     * 由 InputHandler 每 tick 调用：检视进行中若切换了快捷栏槽位，或主手物品已不是星光刀
+     * （切到别的物品/丢弃/死亡清空等），立即打断检视。
+     * 必须放在 tick 侧：切走后 advance() 不再被渲染调用，inspectPhase 会僵留。
+     */
+    public static void validateInspectAgainstHand(Player player) {
+        if (inspectPhase == 0 || player == null) {
+            return;
+        }
+        if (player.getInventory().selected != inspectSlot
+                || !isXingguangKnife(player, player.getMainHandItem())) {
+            inspectPhase = 0;
+            inspectSlot = -1;
+        }
+    }
+
+    /** 通用关键帧轨迹：段内 smoothstep 缓动＝平稳起停、无突跳；越界取端点 */
+    private static Pose evalTrack(long[] ts, Pose[] kfs, long e, Pose out) {
+        int i = 0;
+        while (i < ts.length - 1 && e >= ts[i + 1]) {
+            i++;
+        }
+        if (i >= kfs.length - 1) {
+            return kfs[kfs.length - 1];
+        }
+        long span = ts[i + 1] - ts[i];
+        float u = span > 0 ? (float) (e - ts[i]) / (float) span : 1f;
+        u = easeInOut(u);
+        lerpPose(kfs[i], kfs[i + 1], u, out);
+        return out;
+    }
+
     /** 第三人称 Mixin 同步用：本地玩家正处于刺出前送窗口 */
     public static boolean isStabOut() {
         return stabPhase == 2;
@@ -273,6 +391,7 @@ public final class XingguangPoseManager {
         stabPhase = hit ? 2 : 3;
         stabFromCharge = true; // 蓄力释放走"从后倾引手向前划出"的大刺出
         phaseStartNanos = System.nanoTime();
+        inspectPhase = 0; // 命中/释放打断检视
     }
 
     /** 按真实经过时间推进插值。每渲染帧被 apply* 调用；同帧内多次调用 dt≈0，近似无操作 */
@@ -308,26 +427,35 @@ public final class XingguangPoseManager {
         boolean swingingNow = swing > 0.02f;
         boolean charging = active && player.isUsingItem()
                 && player.getUsedItemHand() == InteractionHand.MAIN_HAND;
-        // 普攻(左键)：往前轻刺一下。拔刀/蓄力/已在刺出时不重复触发
-        if (swingingNow && !wasSwinging && active && drawPhase == 0 && !charging && stabPhase == 0) {
+        // 普攻(左键)：往前轻刺一下。蓄力/已在刺出时不重复触发。
+        // 左键攻击优先级高于切刀与检视 → 起手即打断二者。
+        if (swingingNow && !wasSwinging && active && !charging && stabPhase == 0) {
             stabPhase = 2;
             stabFromCharge = false;
             phaseStartNanos = now;
+            drawPhase = 0;    // 打断切刀
+            inspectPhase = 0; // 打断检视
         }
         wasSwinging = swingingNow;
 
         // 每帧先清物品自转，只有进入挥刀分支才置位（离开挥刀即自动停转）
         slashSpinActive = false;
         slashSpin = 0f;
+        itemTiltX = 0f; itemTiltY = 0f; // 物品俯仰/偏转仅检视使用
         slashOffX = 0f; slashOffY = 0f; slashOffZ = 0f;
 
-        // 相位优先级：蓄力举刀 > 切刀 > 左键劈砍 > 刺出/收势 > 常规持刀
+        // 相位优先级（检视接入后）：蓄力举刀 > 左键劈砍 > 刺出/收势 > 检视 > 切刀 > 常规持刀
+        // 语义：举刀/左键攻击/命中刺出均可打断检视；检视可打断切刀。
+        if (!active) {
+            inspectPhase = 0; // 离开第一人称 / 未持星光刀：立即结束检视
+        }
         float halfLife = HALF_LIFE;
         if (!charging) {
             chargePhase = 0; // 松开右键即复位，下次蓄力重新转一圈
         }
         if (charging) {
-            // 蓄力优先级最高：转一圈→转移到右手→微微后倾，压过拔刀/劈砍/刺出等一切动作
+            // 蓄力优先级最高：转一圈→转移到右手→微微后倾，压过拔刀/劈砍/刺出/检视等一切动作
+            inspectPhase = 0; // 举刀打断检视
             if (chargePhase == 0) {
                 chargePhase = 1;
                 chargeStartNanos = now;
@@ -347,29 +475,8 @@ public final class XingguangPoseManager {
                 targetKnife = CHARGE_TILT; // 右手微微后倾，保持到出刀
                 halfLife = HALF_LIFE_CHARGE;
             }
-        } else if (drawPhase != 0) {
-            slashPhase = 0; // 拔刀期间忽略劈砍
-            long e = now - drawStartNanos;
-            if (drawPhase == 1) {
-                // 阶段1：翻腕。手臂停在"朝上"基准(DRAW_HOLD)，大角度旋转交给 renderItem 只转刀
-                targetKnife = DRAW_HOLD;
-                Pose kf = evalSlash(e); // 复用挥刀关键帧时间轴
-                slashSpin = kf.rz - DRAW_HOLD.rz;
-                slashOffX = kf.tx; slashOffY = kf.ty; slashOffZ = kf.tz;
-                slashSpinActive = true;
-                if (e >= DRAW_FLIP_MS) {
-                    drawPhase = 2;
-                    drawStartNanos = now; // 进入整体左移
-                }
-            } else {
-                // 阶段2：翻腕走完后，整把刀(含手臂)平移到屏幕左边；刀回到持刀朝向
-                targetKnife = DRAW_MOVE_LEFT;
-                halfLife = HALF_LIFE_DRAW_MOVE;
-                if (now - drawStartNanos >= DRAW_MOVE_MS) {
-                    drawPhase = 0; // 结束 → 交回常规持刀，环绕黑雾接管
-                }
-            }
         } else if (slashPhase != 0) {
+            inspectPhase = 0; // 左键劈砍打断检视
             long e = now - slashStartNanos;
             // 手臂+物品基础都停在持刀姿态(不随挥刀翻)；大角度旋转交给 renderItem 只转刀
             targetKnife = holdKnife;
@@ -393,6 +500,7 @@ public final class XingguangPoseManager {
                 slashPhase = 0; // 交回常规持刀
             }
         } else if (stabPhase == 2) {
+            inspectPhase = 0; // 刺出/命中打断检视
             // 刺出：普攻把刀身转成朝前(CHARGE_READY)轻刺、蓄力释放从后倾引手(CHARGE_TILT)向前划出，均沿 -z(正前方)推进
             Pose stabTarget = (stabFromCharge ? CHARGE_TILT : CHARGE_READY).copy();
             stabTarget.tz -= stabFromCharge ? 0.55f : 0.50f;
@@ -403,11 +511,51 @@ public final class XingguangPoseManager {
                 phaseStartNanos = now;
             }
         } else if (stabPhase == 3) {
+            inspectPhase = 0;
             targetKnife = holdKnife; // 收势期间即使玩家在重新蓄力也先回持刀
             halfLife = HALF_LIFE_RETURN;
             targetLArm = holdLArm;
             if (now - phaseStartNanos >= 200_000_000L) { // 0.2s 后回常规
                 stabPhase = 0;
+            }
+        } else if (active && inspectPhase != 0) {
+            // 检视：手臂通道走"前臂"编排，手腕翻刀与厚度透视交给物品通道(只转刀)
+            long real = now - inspectStartNanos;
+            long e = (long) (real * INSPECT_SPEED); // 剧本时间轴等比加速，关键帧表无需改动
+            Pose arm = evalTrack(INSP_T, INSP_ARM, e, inspectArmScratch);
+            arm.ty += 0.005f * (float) Math.sin(real * 1.963_495_4e-9); // 呼吸用真实时间，不随倍速变喘
+            targetKnife = arm;
+            halfLife = INSPECT_ARM_HL;
+            Pose spin = evalTrack(INSP_T, INSP_SPIN, e, inspectSpinScratch);
+            slashSpin = spin.rz - knifeShown.rz; // 绝对屏幕角锁定：抵消手臂到位滞后
+            itemTiltX = spin.rx;
+            itemTiltY = spin.ry;
+            slashOffX = spin.tx; slashOffY = spin.ty; slashOffZ = spin.tz;
+            slashSpinActive = true;
+            if (real >= (long) (INSPECT_TOTAL_MS / INSPECT_SPEED)) {
+                inspectPhase = 0; // 4.5s 真实时长播完 → 平滑交回常规持刀
+            }
+        } else if (drawPhase != 0) {
+            // 切刀（优先级已降至检视之下：可被举刀/左键/命中/检视打断）
+            long e = now - drawStartNanos;
+            if (drawPhase == 1) {
+                // 阶段1：翻腕。手臂停在"朝上"基准(DRAW_HOLD)，大角度旋转交给 renderItem 只转刀
+                targetKnife = DRAW_HOLD;
+                Pose kf = evalSlash(e); // 复用挥刀关键帧时间轴
+                slashSpin = kf.rz - DRAW_HOLD.rz;
+                slashOffX = kf.tx; slashOffY = kf.ty; slashOffZ = kf.tz;
+                slashSpinActive = true;
+                if (e >= DRAW_FLIP_MS) {
+                    drawPhase = 2;
+                    drawStartNanos = now; // 进入整体左移
+                }
+            } else {
+                // 阶段2：翻腕走完后，整把刀(含手臂)平移到屏幕左边；刀回到持刀朝向
+                targetKnife = DRAW_MOVE_LEFT;
+                halfLife = HALF_LIFE_DRAW_MOVE;
+                if (now - drawStartNanos >= DRAW_MOVE_MS) {
+                    drawPhase = 0; // 结束 → 交回常规持刀，环绕黑雾接管
+                }
             }
         }
 
@@ -418,8 +566,8 @@ public final class XingguangPoseManager {
         knifeBase.snapNear(targetKnife, 0.5f, 0.005f);
         leftArmBase.snapNear(targetLArm, 0.5f, 0.005f);
 
-        // 挥刀淡出：劈砍/切刀期间不再淡出（姿态已由我们自己接管），其余情况保留淡出
-        float keep = (slashPhase != 0 || drawPhase != 0) ? 1f : (swing > 0.01f ? 1f - swing : 1f);
+        // 挥刀淡出：劈砍/切刀/检视期间不再淡出（姿态由我们接管），其余情况保留淡出
+        float keep = (slashPhase != 0 || drawPhase != 0 || inspectPhase != 0) ? 1f : (swing > 0.01f ? 1f - swing : 1f);
         copyScaled(knifeBase, knifeShown, keep);
         copyScaled(leftArmBase, leftArmShown, keep);
     }

@@ -226,6 +226,30 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         return SRECosmetics.getSkin(stack);
     }
 
+    /**
+     * 双形态皮肤基名 → 当前形态变体名。
+     * 圣宣/暗星只注册了基名 + "_1"/"_2" 形态，模型文件仅存在于形态变体上；
+     * 任何按皮肤名查 bakeModels 的路径都必须先做这层重映射，
+     * 否则会查到基名的"缺失模型"（抽奖/仓库装备的就是基名 ID）。
+     * 与 emitItemQuads 中的形态选择逻辑保持一致。
+     */
+    private String resolveDualFormSkinName(String skinName) {
+        Player player = Minecraft.getInstance().player;
+        if (player == null || skinName == null) {
+            return skinName;
+        }
+        if (ShengxuanSkinHandler.SKIN_ID.equals(skinName)) {
+            return skinName + ShengxuanSkinHandler.getCurrentFormSuffix(player);
+        }
+        if (io.wifi.starrailexpress.util.AnxingSkinHandler.SKIN_ID.equals(skinName)) {
+            return skinName + io.wifi.starrailexpress.util.AnxingSkinHandler.getCurrentFormSuffix(player);
+        }
+        if (io.wifi.starrailexpress.util.JianshouzheSkinHandler.SKIN_ID.equals(skinName)) {
+            return skinName + io.wifi.starrailexpress.util.JianshouzheSkinHandler.getCurrentFormSuffix(player);
+        }
+        return skinName;
+    }
+
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction face, RandomSource random) {
         return getDefaultModel().getQuads(state, face, random);
@@ -293,6 +317,8 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         if (skinName == null || "default".equals(skinName)) {
             return null;
         }
+        // 双形态基名先重映射到当前形态模型，避免命中缺失模型导致手持变换错乱（圣宣显示 bug 根因）
+        skinName = resolveDualFormSkinName(skinName);
         var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
         if (skin == null) {
             return null;

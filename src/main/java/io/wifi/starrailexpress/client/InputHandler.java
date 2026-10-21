@@ -9,6 +9,8 @@ import io.wifi.starrailexpress.client.gui.screen.MapVoteScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
+import io.wifi.starrailexpress.content.item.KnifeItem;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.GameModeVoteScreen;
 import io.wifi.starrailexpress.content.vote.client.VoteScreen;
@@ -25,6 +27,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -55,6 +58,11 @@ public class InputHandler {
             "key.starrailexpress.sniper_reload",
             GLFW.GLFW_KEY_R,
             "category.starrailexpress.keybinds"));
+    // 检视键（Inspect）：默认 H，仅传承品质刀响应
+    public static KeyMapping inspectKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.starrailexpress.inspect",
+            GLFW.GLFW_KEY_H,
+            "category.starrailexpress.keybinds"));
 
     public static void initialize() {
 
@@ -83,7 +91,7 @@ public class InputHandler {
         return lookedTable != null && lookedTable.linkedRoomId() == FourthRoomClientState.snapshot().viewer().roomId();
     }
 
-    private static void onClientTick(Minecraft client) {
+    public static void onClientTick(Minecraft client) {
         if (client == null)
             return;
         if (client.level == null)
@@ -120,6 +128,16 @@ public class InputHandler {
         if (client.player != null && client.player.getMainHandItem().is(ModItems.DESERT_EAGLE)) {
             if (sniperReloadKeybind.consumeClick()) {
                 DesertEagleItem.tryReloadFromClient(client.player);
+            }
+        }
+
+        // 检视中的切手校验：换槽位/换物品即打断（advance 只在渲染星光刀时运行，必须在 tick 侧兜底）
+        XingguangPoseManager.validateInspectAgainstHand(client.player);
+
+        if (inspectKeybind.consumeClick()) {
+            if (client.player != null && client.screen == null
+                    && isLegacyQualityKnife(client.player, client.player.getMainHandItem())) {
+                XingguangPoseManager.startInspect();
             }
         }
 
@@ -194,5 +212,23 @@ public class InputHandler {
                 client.player.displayClientMessage(Component.literal("请先看向自己房间的牌桌"), true);
             }
         }
+    }
+
+    /** 主手是否为传承品质（LEGACY）的刀：检视仅对传承品质开放，非传承按 H 无任何反应 */
+    private static boolean isLegacyQualityKnife(Player player, ItemStack stack) {
+        if (player == null || !(stack.getItem() instanceof KnifeItem)) {
+            return false;
+        }
+        String skinId = ItemSkinManager.getEquippedSkin(player, stack);
+        if (skinId == null) {
+            return false;
+        }
+        int color = ItemSkinManager.getColorFromName(ItemSkinManager.SkinTypes.KNIFE, skinId);
+        int qualityIndex = ItemSkinManager.qualityFromColor(color);
+        ItemSkinManager.QualityColor[] values = ItemSkinManager.QualityColor.values();
+        if (qualityIndex < 0 || qualityIndex >= values.length) {
+            return false;
+        }
+        return values[qualityIndex] == ItemSkinManager.QualityColor.LEGACY;
     }
 }

@@ -44,6 +44,7 @@
     "epic_skinsprice": 150,
     "legendary_skinsprice": 500,
     "unbelievable_skinsprice": 2000,
+    "legacy_skinsprice": 20000,
     "box_price": {
       "weapon_case_1": 20,
       "hat_box": 20,

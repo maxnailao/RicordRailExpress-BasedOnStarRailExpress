@@ -46,11 +46,13 @@ public class XingguangItemSpinMixin {
             return;
         }
         float a = XingguangPoseManager.itemSpinAngle();
-        // 先按关键帧平移把刀整体挪近角色模型，再绕握把自转
+        // 先按关键帧平移把刀整体挪近角色模型，再绕握把做"俯仰→偏转→自转"三连(检视用俯仰/偏转，挥刀只用自转)
         poseStack.translate(XingguangPoseManager.itemSpinOffX(),
                 XingguangPoseManager.itemSpinOffY(),
                 XingguangPoseManager.itemSpinOffZ());
         poseStack.translate(GRIP_X, GRIP_Y, 0.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(XingguangPoseManager.itemTiltX()));
+        poseStack.mulPose(Axis.YP.rotationDegrees(XingguangPoseManager.itemTiltY()));
         poseStack.mulPose(Axis.ZP.rotationDegrees(a));
         poseStack.translate(-GRIP_X, -GRIP_Y, 0.0F);
     }

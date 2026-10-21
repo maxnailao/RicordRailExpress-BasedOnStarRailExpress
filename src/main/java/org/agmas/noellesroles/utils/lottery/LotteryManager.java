@@ -107,6 +107,10 @@ public class LotteryManager {
             if (itemType != null && !ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName)) {
                 ItemSkinManager.unlockSkinForItemType(player, itemType, trueName);
                 isNewUnlock = true;
+                // 抽奖新解锁的皮肤必须同步写入仓库组件（与开箱路径一致），
+                // 否则 CS2WarehouseScreen 因只遍历 CS2InventoryComponent.getSkins() 而看不到该皮肤
+                io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player)
+                        .addSkin(itemType + "/" + trueName, 1);
                 LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
             }
             //coin
@@ -264,8 +268,9 @@ public class LotteryManager {
 
     /** 皮肤出售折算价值：与商店快速出售同一价格表（ShopConfig.sellprice，按品质定价） */
     public static int getSkinSellValue(int quality) {
+        int maxQuality = ItemSkinManager.QualityColor.values().length - 1; // 含传承(6)，勿再硬编码 5
         return org.agmas.noellesroles.cs2.ShopConfig.getInstance().getSellPriceConfig()
-                .getSkinPriceByQuality(Math.min(Math.max(quality, 0), 5));
+                .getSkinPriceByQuality(Math.min(Math.max(quality, 0), maxQuality));
     }
 
     /**

@@ -47,7 +47,7 @@ public final class XingguangHandRenderer {
     // ===== renderItem 物品空间（原点≈刀身/拳头，屏幕可见）的落点与缩放旋钮 =====
     // 实测轴向（此空间被旋转过）：ITEM_X=垂直(-上/+下)、ITEM_Y=水平(左右)、ITEM_Z=深度(+后/-前)
     // 1 单位 ≈ 整屏大小，微调必须用 0.05~0.3 量级的小数
-    private static float ITEM_X = -0.05F; // 垂直轴：高度已合适，保持
+    private static float ITEM_X = -0.00F; // 垂直轴：高度已合适，保持
     private static float ITEM_Y = -0.21F; // 水平轴：左右已合适，保持
     private static float ITEM_Z = 0.1F;   // 深度轴：再往里一点（0.3 → 0.4）
     private static float ITEM_SCALE = 0.6F;

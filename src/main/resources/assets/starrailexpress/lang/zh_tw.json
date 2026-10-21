@@ -409,6 +409,7 @@
   "command.sre.switchmap.load": "加載地圖: %s",
   "gui.sre.hud.vote_reminder": "按 %s 鍵打開地圖投票介面",
   "key.starrailexpress.open_voting_screen": "打開投票介面",
+  "key.starrailexpress.inspect": "檢視武器",
   "category.starrailexpress.general": "列車謀殺案 - 通用",
   "gui.mapselector.title": "選擇地圖",
   "gui.mapselector.select": "選擇",
