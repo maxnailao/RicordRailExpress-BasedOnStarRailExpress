@@ -38,6 +38,8 @@ public final class MapUiGraphics {
 
     /** 地图缩略图：{@code textures/gui/maps/<id>.png}，缺图时画占位符。 */
     private static final String THUMBNAIL_PATH = "textures/gui/maps/%s.png";
+    /** 地图投票整屏背景：{@code textures/gui/maps/background/<id>.png}。 */
+    private static final String BACKGROUND_PATH = "textures/gui/maps/background/%s.png";
     /** PNG IHDR 宽高缓存；资源包重载后尺寸几乎不变，错了最多裁切偏差。 */
     private static final Map<ResourceLocation, int[]> TEXTURE_SIZE = new HashMap<>();
 
@@ -171,6 +173,29 @@ public final class MapUiGraphics {
 
     public static ResourceLocation thumbnailTexture(String mapId) {
         return mapTexture(THUMBNAIL_PATH, mapId);
+    }
+
+    public static ResourceLocation backgroundTexture(String mapId) {
+        ResourceLocation background = mapTexture(BACKGROUND_PATH, mapId);
+        return background != null ? background : thumbnailTexture(mapId);
+    }
+
+    /** 读取地图背景原始 PNG，供一次性栅格化使用；每帧调用会重新读盘，不要这样用。 */
+    public static byte[] readTextureBytes(ResourceLocation texture) {
+        if (texture == null) {
+            return null;
+        }
+        try {
+            Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(texture);
+            if (resource.isEmpty()) {
+                return null;
+            }
+            try (InputStream stream = resource.get().open()) {
+                return stream.readAllBytes();
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /**

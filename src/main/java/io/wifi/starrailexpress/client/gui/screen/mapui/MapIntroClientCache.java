@@ -136,4 +136,17 @@ public final class MapIntroClientCache {
         }
         return List.copyOf(out);
     }
+
+    /** 当前投票候选池里权重最高的地图；没有候选信息时使用全部已登记地图。 */
+    @Nullable
+    public static MapDisplayInfo highestWeightMap() {
+        MapDisplayInfo best = null;
+        for (MapDisplayInfo info : candidates()) {
+            if (info.hasVoteConfig() && info.voteWeight() > 0
+                    && (best == null || info.voteWeight() > best.voteWeight())) {
+                best = info;
+            }
+        }
+        return best;
+    }
 }

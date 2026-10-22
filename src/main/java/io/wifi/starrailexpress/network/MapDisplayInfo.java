@@ -37,6 +37,8 @@ public record MapDisplayInfo(
         List<String> features,
         /** 是否在 train_vote_maps.json 里登记过 */
         boolean hasVoteConfig,
+        /** 投票候选池里的相对权重；没有投票配置时为 0 */
+        int voteWeight,
         int minCount,
         int maxCount,
         boolean canSelect,
@@ -136,6 +138,7 @@ public record MapDisplayInfo(
         buf.writeInt(color);
         writeStrings(buf, features);
         buf.writeBoolean(hasVoteConfig);
+        buf.writeInt(voteWeight);
         buf.writeInt(minCount);
         buf.writeInt(maxCount);
         buf.writeBoolean(canSelect);
@@ -177,6 +180,7 @@ public record MapDisplayInfo(
                 buf.readInt(),
                 readStrings(buf),
                 buf.readBoolean(),
+                buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readBoolean(),
@@ -258,11 +262,11 @@ public record MapDisplayInfo(
 
     /** 便于 {@code MapIntroData} 更新单个字段（轮抽开关就地更新） */
     public MapDisplayInfo withCanSelect(boolean newCanSelect) {
-        return new MapDisplayInfo(id, displayName, description, color, features, hasVoteConfig, minCount,
-                maxCount, newCanSelect, gameModes, roomCount, disabledTasks, disabledRoles, enableSceneTask,
-                minigameQuestEnabled, meetingEnabled, meetingVoteEnabled, bellMeetingEnabled, mapStatusBar, canJump,
-                canSimpleSwim, canUnderWater, allowInDeepWater, canSwim, enableOxygenDrowning, snowEnabled,
-                sandEnabled, planeCrashEventEnabled, fogEnabled, fogEnd, weather, gravityModifier, time,
-                daylightCycle, weatherCycle, mobEffects, initialItems);
+        return new MapDisplayInfo(id, displayName, description, color, features, hasVoteConfig, voteWeight,
+                minCount, maxCount, newCanSelect, gameModes, roomCount, disabledTasks, disabledRoles,
+                enableSceneTask, minigameQuestEnabled, meetingEnabled, meetingVoteEnabled, bellMeetingEnabled,
+                mapStatusBar, canJump, canSimpleSwim, canUnderWater, allowInDeepWater, canSwim,
+                enableOxygenDrowning, snowEnabled, sandEnabled, planeCrashEventEnabled, fogEnabled, fogEnd,
+                weather, gravityModifier, time, daylightCycle, weatherCycle, mobEffects, initialItems);
     }
 }

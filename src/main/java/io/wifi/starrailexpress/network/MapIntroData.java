@@ -159,6 +159,7 @@ public final class MapIntroData {
                 hasVoteConfig ? voteEntry.getColor() : 0,
                 featureNames(settings, root, id, config),
                 hasVoteConfig,
+                hasVoteConfig ? Math.max(0, voteEntry.weight) : 0,
                 hasVoteConfig ? voteEntry.minCount : -1,
                 hasVoteConfig ? voteEntry.maxCount : -1,
                 hasVoteConfig && voteEntry.canSelect,
