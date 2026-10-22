@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -60,7 +61,7 @@ public class LootMultiScreen extends AbstractPixelScreen {
     private static final float REVEAL_INTERVAL = 0.5f;
     private static final float REVEAL_DURATION = 0.52f;
     private static final float FLASH_DURATION = 0.26f;
-    private static final int BACKGROUND_COLOR = 0xE6080B14;
+    private static final int BACKGROUND_COLOR = LobbyUiTheme.BACKGROUND;
     private static final int BACKGROUND_BAND_COLOR = 0x181A2740;
     private static final int TITLE_COLOR = 0xFFE8D6A8;
     private static final int TITLE_SUB_COLOR = 0xAAE4EEF8;

@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -403,7 +404,7 @@ public class LootScreen extends AbstractPixelScreen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta)
     {
         // 绘制暗色神秘背景增加惊喜感
-        guiGraphics.fill(0, 0, width, height, 0xDD0A0A1A);
+        guiGraphics.fill(0, 0, width, height, LobbyUiTheme.BACKGROUND);
         super.render(guiGraphics, mouseX, mouseY, delta);
         animations.forEach(animation -> animation.renderUpdate(delta));
         animations.removeIf(AbstractAnimation::isFinished);

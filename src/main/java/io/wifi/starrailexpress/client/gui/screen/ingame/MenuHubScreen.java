@@ -476,7 +476,7 @@ public final class MenuHubScreen extends Screen {
     }
 
     private static String showcaseMapId() {
-        var map = MapIntroClientCache.highestWeightMap();
+        var map = MapIntroClientCache.highestWeightConfiguredMap();
         return map == null ? null : map.id();
     }
 

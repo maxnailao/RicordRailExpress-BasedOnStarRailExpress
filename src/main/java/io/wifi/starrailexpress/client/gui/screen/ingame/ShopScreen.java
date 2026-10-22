@@ -5,10 +5,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
@@ -56,25 +54,21 @@ import java.time.format.DateTimeFormatter;
  */
 public class ShopScreen extends Screen {
 
-    // 面板主体背景图（与主菜单同款）
-    private static final ResourceLocation BG_TEXTURE =
-            SRE.id("textures/gui/menu_background.png");
-
-    private static final int BG_COLOR = 0xE60C1020;
-    private static final int PANEL_COLOR = 0xC0161B30;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final int TEXT_DIM = 0xFFAAAAAA;
-    private static final int GOLD = 0xFFFFD700;
-    private static final int ACCENT = 0xFF4488FF;
+    private static final int BG_COLOR = LobbyUiTheme.BACKGROUND;
+    private static final int PANEL_COLOR = LobbyUiTheme.PANEL;
+    private static final int TEXT_COLOR = LobbyUiTheme.TEXT;
+    private static final int TEXT_DIM = LobbyUiTheme.TEXT_DIM;
+    private static final int GOLD = LobbyUiTheme.ACCENT_BRIGHT;
+    private static final int ACCENT = LobbyUiTheme.ACCENT;
 
     // 白色标题栏/描边 + 深色标题文字（与主菜单统一）
-    private static final int BORDER_COLOR = 0xFFFFFFFF;
-    private static final int HEADER_TEXT = 0xFF1A1F2E;
-    private static final int TAB_ACTIVE = 0xFF4488FF;
-    private static final int TAB_IDLE = 0x30FFFFFF;
-    private static final int TAB_HOVER = 0x50FFFFFF;
-    private static final int CELL_BG = 0x30FFFFFF;
-    private static final int CELL_HOVER = 0x50FFFFFF;
+    private static final int BORDER_COLOR = LobbyUiTheme.BORDER;
+    private static final int HEADER_TEXT = LobbyUiTheme.TEXT;
+    private static final int TAB_ACTIVE = LobbyUiTheme.ACCENT;
+    private static final int TAB_IDLE = LobbyUiTheme.CARD;
+    private static final int TAB_HOVER = LobbyUiTheme.CARD_HOVER;
+    private static final int CELL_BG = LobbyUiTheme.CARD;
+    private static final int CELL_HOVER = LobbyUiTheme.CARD_HOVER;
     private static final int CELL_DISABLE = 0x30888888;
     private static final int OUTLINE = 0xFFB8C4DC;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -259,20 +253,16 @@ public class ShopScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, BG_COLOR);
+        LobbySubscreenRenderer.background(graphics, width, height);
         if (priceInputBox != null) priceInputBox.setVisible(false);
 
         int headerH = 24;
-        // 顶部白色标题栏：左上角"商店"，右上角当前现实时间
-        graphics.fill(panelX, panelY - headerH, panelX + panelW, panelY, BORDER_COLOR);
-        graphics.drawString(font, "商店", panelX + 4, panelY - headerH + 8, HEADER_TEXT);
+        LobbySubscreenRenderer.panel(graphics, panelX, panelY - headerH, panelW, panelH + headerH);
+        LobbySubscreenRenderer.header(graphics, font, panelX, panelY - headerH, panelW, "商城", null);
         String timeStr = LocalTime.now().format(TIME_FMT);
-        graphics.drawString(font, timeStr, panelX + panelW - 4 - font.width(timeStr), panelY - headerH + 8, HEADER_TEXT);
+        graphics.drawString(font, timeStr, panelX + panelW - font.width(timeStr) - 12, panelY - headerH + 10, TEXT_DIM);
 
-        // 面板主体（背景图铺满）+ 白色描边
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_COLOR);
-        graphics.blit(BG_TEXTURE, panelX, panelY, panelW, panelH, 0.0F, 0.0F, 1, 1, 1, 1);
-        graphics.renderOutline(panelX, panelY, panelW, panelH, BORDER_COLOR);
+        graphics.fill(panelX + 1, panelY + 30, panelX + panelW - 1, panelY + panelH - 1, 0x66131D1D);
 
         renderTabBar(graphics, mouseX, mouseY);
 
@@ -280,12 +270,12 @@ public class ShopScreen extends Screen {
         int contentY = panelY + tabH + 4;
         int contentW = panelW - 16;
 
-        // 标题栏正中间显示货币与神话碎片（白底用深色字保证可读）
+        // 顶栏下方显示货币与神话碎片
         if (minecraft.player != null) {
             int coins = PlayerEconomyManager.getCoinNum(minecraft.player);
             int shards = CS2InventoryComponent.KEY.get(minecraft.player).getMythicShards();
             String info = "货币: " + coins + "　|　神话碎片: " + shards;
-            graphics.drawCenteredString(font, info, panelX + panelW / 2, panelY - headerH + 8, HEADER_TEXT);
+            graphics.drawCenteredString(font, info, panelX + panelW / 2, panelY + 7, TEXT_DIM);
         }
 
         switch (tab) {
@@ -328,8 +318,7 @@ public class ShopScreen extends Screen {
         for (int i = 0; i < CATEGORY_LABELS.length; i++) {
             boolean selected = i == category;
             boolean hovered = mouseX >= cx && mouseX < cx + catW && mouseY >= y - 20 && mouseY < y - 20 + 18;
-            int bg = selected ? ACCENT : (hovered ? CELL_HOVER : CELL_BG);
-            graphics.fill(cx, y - 20, cx + catW, y - 20 + 18, bg);
+            LobbySubscreenRenderer.card(graphics, cx, y - 20, catW, 18, selected, hovered);
             graphics.drawCenteredString(font, CATEGORY_LABELS[i], cx + catW / 2, y - 20 + (18 - font.lineHeight) / 2, TEXT_COLOR);
             cx += catW + catGap;
         }
@@ -359,8 +348,7 @@ public class ShopScreen extends Screen {
             if (iy + cellH > panelY + panelH - 30) break;
 
             boolean hovered = mouseX >= ix && mouseX < ix + cellW && mouseY >= iy && mouseY < iy + cellH;
-            graphics.fill(ix, iy, ix + cellW, iy + cellH, hovered ? CELL_HOVER : CELL_BG);
-            graphics.renderOutline(ix, iy, cellW, cellH, OUTLINE);
+            LobbySubscreenRenderer.card(graphics, ix, iy, cellW, cellH, false, hovered);
 
             String label = truncate(it.name, cellW - 8);
             graphics.drawString(font, label, ix + 4, iy + 4, TEXT_COLOR, false);

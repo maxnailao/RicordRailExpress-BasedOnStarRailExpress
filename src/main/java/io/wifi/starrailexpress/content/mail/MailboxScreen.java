@@ -9,6 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbySubscreenRenderer;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,23 +35,23 @@ public class MailboxScreen extends Screen {
     private static final int ROW_STRIDE = ROW_H + ROW_GAP;
 
     // ── 颜色（半透明） ───────────────────────────────────────────────────────
-    private static final int BG_LEFT        = 0xCC080E1C;
-    private static final int BG_RIGHT       = 0xCC0B1220;
-    private static final int HDR_LEFT       = 0xEE060B16;
-    private static final int HDR_RIGHT      = 0xEE08101E;
-    private static final int FTR_BG         = 0xBB060912;
-    private static final int DIVIDER_COLOR  = 0x55FFFFFF;
-    private static final int ROW_UNREAD     = 0xBB0D2B58;
-    private static final int ROW_READ       = 0x881A2038;
-    private static final int ROW_CLAIMED    = 0x880C1828;
-    private static final int ROW_SEL        = 0xCC163468;
-    private static final int ACCENT_GOLD    = 0xFFFFAA00;
+    private static final int BG_LEFT        = 0xCC0E1718;
+    private static final int BG_RIGHT       = 0xCC141F20;
+    private static final int HDR_LEFT       = 0xEE0A1112;
+    private static final int HDR_RIGHT      = 0xEE121B1C;
+    private static final int FTR_BG         = 0xBB0A1112;
+    private static final int DIVIDER_COLOR  = 0x557A8771;
+    private static final int ROW_UNREAD     = 0xBB243B36;
+    private static final int ROW_READ       = 0x88303D38;
+    private static final int ROW_CLAIMED    = 0x88212C2A;
+    private static final int ROW_SEL        = 0xCC4B6E64;
+    private static final int ACCENT_GOLD    = LobbyUiTheme.ACCENT;
     private static final int ACCENT_GREEN   = 0xFF00DD88;
     private static final int ACCENT_RED     = 0xFFCC4444;
-    private static final int ACCENT_BLUE    = 0xFF5599EE;
-    private static final int TEXT_WHITE     = 0xFFFFFFFF;
-    private static final int TEXT_GRAY      = 0xFFAAAAAA;
-    private static final int TEXT_DIM       = 0xFF556688;
+    private static final int ACCENT_BLUE    = LobbyUiTheme.ACCENT_BRIGHT;
+    private static final int TEXT_WHITE     = LobbyUiTheme.TEXT;
+    private static final int TEXT_GRAY      = LobbyUiTheme.TEXT_DIM;
+    private static final int TEXT_DIM       = LobbyUiTheme.TEXT_FAINT;
 
     // ── 日期格式 ────────────────────────────────────────────────────────────
     private static final SimpleDateFormat DATE_LONG  = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -255,13 +257,13 @@ public class MailboxScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mx, int my, float f) {
-        super.renderBackground(g, mx, my, f);
         float ease = easeOutCubic((float) openTick / OPEN_TICKS);
 
         int lx = lx(), rx = rx();
 
-        // 全局加深遮罩
-        g.fill(0, 0, this.width, this.height, 0x88000000);
+        // 邮箱采用与大厅子页面一致的纯 UI 背景，不再透出世界/原版模糊层。
+        LobbySubscreenRenderer.background(g, this.width, this.height);
+        LobbySubscreenRenderer.panel(g, lx, panelY, panelW, panelH);
 
         // 左列表区背景
         g.fill(lx, panelY, rx, panelY + panelH, withAlpha(BG_LEFT, ease));
@@ -271,6 +273,7 @@ public class MailboxScreen extends Screen {
         // 标题栏（左/右）
         g.fill(lx, panelY, rx, panelY + HDR_H, withAlpha(HDR_LEFT, ease));
         g.fill(rx, panelY, lx + panelW, panelY + HDR_H, withAlpha(HDR_RIGHT, ease));
+        g.fill(lx, panelY + HDR_H - 2, lx + panelW, panelY + HDR_H, withAlpha(ACCENT_GOLD, ease));
 
         // 底部操作栏背景
         int fy = panelY + panelH - FOOTER_H;

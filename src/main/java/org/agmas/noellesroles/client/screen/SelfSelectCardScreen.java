@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,13 +35,15 @@ public class SelfSelectCardScreen extends Screen {
     private static final int GRID_TOP = 70;
 
     // ===== 配色 =====
-    private static final int BG_NORMAL = 0x30161B30;
-    private static final int BG_HOVER = 0x504488FF;
-    private static final int BG_DISABLED = 0x40000000;
-    private static final int TEXT_NORMAL = 0xFFFFFFFF;
-    private static final int TEXT_DISABLED = 0xFF9A9A9A;
+    private static final int BG_NORMAL = LobbyUiTheme.CARD;
+    private static final int BG_HOVER = LobbyUiTheme.CARD_HOVER;
+    private static final int BG_DISABLED = 0x40303432;
+    private static final int TEXT_NORMAL = LobbyUiTheme.TEXT;
+    private static final int TEXT_DISABLED = LobbyUiTheme.TEXT_FAINT;
     /** 已被他人选走的角标颜色 */
-    private static final int TEXT_CLAIMED = 0xFFFFAA55;
+    private static final int TEXT_CLAIMED = 0xFFE5B86B;
+
+    private final Screen parent;
 
     private int selectedFaction = -1;
     /** 当前阵营的**全部**可选职业（不受搜索影响） */
@@ -58,7 +61,12 @@ public class SelfSelectCardScreen extends Screen {
     private boolean searchFocused = false;
 
     public SelfSelectCardScreen() {
+        this(null);
+    }
+
+    public SelfSelectCardScreen(Screen parent) {
         super(Component.literal("自选职业卡"));
+        this.parent = parent;
     }
 
     /** 搜索框矩形：宽度取 2 列卡片宽，水平居中 */
@@ -76,8 +84,8 @@ public class SelfSelectCardScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0xE60C1020);
-        g.drawCenteredString(font, "自选职业卡", width / 2, 8, 0xFFFFFFFF);
+        g.fill(0, 0, width, height, LobbyUiTheme.BACKGROUND);
+        g.drawCenteredString(font, "自选职业卡", width / 2, 8, LobbyUiTheme.TEXT);
         if (selectedFaction < 0) {
             renderFactionSelection(g, mouseX, mouseY);
         } else {
@@ -92,25 +100,25 @@ public class SelfSelectCardScreen extends Screen {
     }
 
     private void renderFactionSelection(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawCenteredString(font, "选择阵营", width / 2, 40, 0xFFCCCCCC);
+        g.drawCenteredString(font, "选择阵营", width / 2, 40, LobbyUiTheme.TEXT_DIM);
         for (int i = 0; i < FACTION_TYPES.length; i++) {
             int y = 70 + i * 32;
             int x = width / 2 - 110;
             boolean hovered = inside(mouseX, mouseY, x, y, 220, 26);
-            g.fill(x, y, x + 220, y + 26, hovered ? 0x504488FF : 0x30161B30);
-            g.drawCenteredString(font, FACTION_NAMES[i], width / 2, y + 9, 0xFFFFFFFF);
+            g.fill(x, y, x + 220, y + 26, hovered ? LobbyUiTheme.CARD_HOVER : LobbyUiTheme.CARD);
+            g.drawCenteredString(font, FACTION_NAMES[i], width / 2, y + 9, LobbyUiTheme.TEXT);
         }
     }
 
     private void renderRoleSelection(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawCenteredString(font, "选择职业", width / 2, 40, 0xFFCCCCCC);
+        g.drawCenteredString(font, "选择职业", width / 2, 40, LobbyUiTheme.TEXT_DIM);
 
         // ── 搜索框（职业太多时用来快速定位）──
         renderSearchBox(g, mouseX, mouseY);
 
         if (selectableRoles.isEmpty()) {
             String msg = allFactionRoles.isEmpty() ? "该阵营没有可选职业" : "没有匹配「" + searchText + "」的职业";
-            g.drawCenteredString(font, msg, width / 2, 90, 0xFF999999);
+            g.drawCenteredString(font, msg, width / 2, 90, LobbyUiTheme.TEXT_DIM);
         }
 
         int cols = gridCols();
@@ -169,12 +177,13 @@ public class SelfSelectCardScreen extends Screen {
         // 返回按钮
         int by = height - 30;
         boolean backHovered = inside(mouseX, mouseY, width / 2 - 100, by, 200, 20);
-        g.fill(width / 2 - 100, by, width / 2 + 100, by + 20, backHovered ? 0x50FFFFFF : 0x30FFFFFF);
-        g.drawCenteredString(font, "返回", width / 2, by + 6, 0xFFFFFFFF);
+        g.fill(width / 2 - 100, by, width / 2 + 100, by + 20,
+                backHovered ? LobbyUiTheme.CARD_HOVER : LobbyUiTheme.CARD);
+        g.drawCenteredString(font, "返回", width / 2, by + 6, LobbyUiTheme.TEXT);
 
         // 右侧滚轮提示
         String hint = "滚轮滚动";
-        g.drawString(font, hint, width - font.width(hint) - 10, by + 6, 0xFFAAAAAA, false);
+        g.drawString(font, hint, width - font.width(hint) - 10, by + 6, LobbyUiTheme.TEXT_DIM, false);
     }
 
     /** 搜索框：点击聚焦后可直接输入，支持中文名 / 职业 id / 拼音 */
@@ -182,12 +191,12 @@ public class SelfSelectCardScreen extends Screen {
         int sx = searchX();
         int sw = searchW();
         boolean hovered = isInSearchBox(mouseX, mouseY);
-        int border = searchFocused ? 0xFF4488FF : (hovered ? 0xFF888888 : 0xFF555555);
-        g.fill(sx, SEARCH_TOP, sx + sw, SEARCH_TOP + SEARCH_H, 0xC0101420);
+        int border = searchFocused ? LobbyUiTheme.ACCENT : (hovered ? LobbyUiTheme.TEXT_DIM : LobbyUiTheme.TEXT_FAINT);
+        g.fill(sx, SEARCH_TOP, sx + sw, SEARCH_TOP + SEARCH_H, LobbyUiTheme.PANEL_SOLID);
         g.renderOutline(sx, SEARCH_TOP, sw, SEARCH_H, border);
 
         String shown = searchText.isEmpty() ? "搜索职业…" : searchText;
-        int color = searchText.isEmpty() ? 0xFF777777 : 0xFFFFFFFF;
+        int color = searchText.isEmpty() ? LobbyUiTheme.TEXT_FAINT : LobbyUiTheme.TEXT;
         g.drawString(font, shown, sx + 5, SEARCH_TOP + (SEARCH_H - 8) / 2, color, false);
 
         // 聚焦时画一个闪烁光标
@@ -478,6 +487,11 @@ public class SelfSelectCardScreen extends Screen {
             return;
         }
         minecraft.player.connection.sendCommand(command.startsWith("/") ? command.substring(1) : command);
+    }
+
+    @Override
+    public void onClose() {
+        minecraft.setScreen(parent);
     }
 
     @Override

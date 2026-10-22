@@ -22,15 +22,15 @@ import java.time.format.DateTimeFormatter;
 public class RoleCardScreen extends Screen {
 
     // 与主菜单同源的配色
-    private static final int BG_COLOR = 0xE60C1020;
-    private static final int PANEL_COLOR = 0xC0161B30;
-    private static final int ACCENT = 0xFF4488FF;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final int TEXT_DIM = 0xFF99A2B4;
+    private static final int BG_COLOR = LobbyUiTheme.BACKGROUND;
+    private static final int PANEL_COLOR = LobbyUiTheme.PANEL;
+    private static final int ACCENT = LobbyUiTheme.ACCENT;
+    private static final int TEXT_COLOR = LobbyUiTheme.TEXT;
+    private static final int TEXT_DIM = LobbyUiTheme.TEXT_DIM;
 
     // 白色标题栏/描边 + 深色标题文字（与主菜单统一）
-    private static final int BORDER_COLOR = 0xFFFFFFFF;
-    private static final int HEADER_TEXT = 0xFF1A1F2E;
+    private static final int BORDER_COLOR = LobbyUiTheme.BORDER;
+    private static final int HEADER_TEXT = LobbyUiTheme.TEXT;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private static final int TILE = 40;
@@ -119,7 +119,7 @@ public class RoleCardScreen extends Screen {
             if (countOf(kind) <= 0) {
                 actionBar("§c未拥有自选职业卡");
             } else {
-                actionBar("§e自选职业卡需在选择职业时使用");
+                minecraft.setScreen(new org.agmas.noellesroles.client.screen.SelfSelectCardScreen(this));
             }
             return;
         }
@@ -142,18 +142,14 @@ public class RoleCardScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, BG_COLOR);
+        LobbySubscreenRenderer.background(graphics, width, height);
 
         int headerH = 24;
-        // 顶部标题栏改为白色（与主菜单统一）
-        graphics.fill(panelX, panelY - headerH, panelX + panelW, panelY, BORDER_COLOR);
-        // 左上角标题、右上角实时时间（白底深色字）
-        graphics.drawString(font, "职业卡", panelX + 4, panelY - headerH + 8, HEADER_TEXT);
+        LobbySubscreenRenderer.panel(graphics, panelX, panelY - headerH, panelW, panelH + headerH);
+        LobbySubscreenRenderer.header(graphics, font, panelX, panelY - headerH, panelW, "职业卡档案", null);
         String timeStr = LocalTime.now().format(TIME_FMT);
-        graphics.drawString(font, timeStr, panelX + panelW - 4 - font.width(timeStr), panelY - headerH + 8, HEADER_TEXT);
-
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_COLOR);
-        graphics.renderOutline(panelX, panelY, panelW, panelH, BORDER_COLOR);
+        graphics.drawString(font, timeStr, panelX + panelW - font.width(timeStr) - 12, panelY - headerH + 10, TEXT_DIM);
+        LobbySubscreenRenderer.section(graphics, font, panelX + 12, tileRowY - 20, panelW - 24, "可用通行证");
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
@@ -181,6 +177,8 @@ public class RoleCardScreen extends Screen {
             // 数量下面一行：卡名
             graphics.drawCenteredString(font, kind.name(), cx, rowY + 11, TEXT_DIM);
         }
+        LobbySubscreenRenderer.footer(graphics, font, panelX + 8, panelY + panelH - 34, panelW - 16,
+                "点击卡片使用；自选卡会打开职业选择页");
     }
 
     // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。

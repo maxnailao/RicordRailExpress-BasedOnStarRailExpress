@@ -41,17 +41,17 @@ import java.time.format.DateTimeFormatter;
 public class AccessoryScreen extends Screen {
 
     // 与主菜单同源的配色
-    private static final int BG_COLOR = 0xE60C1020;
-    private static final int PANEL_COLOR = 0xC0161B30;
-    private static final int ACCENT = 0xFF4488FF;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final int TEXT_DIM = 0xFF99A2B4;
-    private static final int ROW_BG = 0x30FFFFFF;
-    private static final int ROW_HOVER = 0x50FFFFFF;
+    private static final int BG_COLOR = LobbyUiTheme.BACKGROUND;
+    private static final int PANEL_COLOR = LobbyUiTheme.PANEL;
+    private static final int ACCENT = LobbyUiTheme.ACCENT;
+    private static final int TEXT_COLOR = LobbyUiTheme.TEXT;
+    private static final int TEXT_DIM = LobbyUiTheme.TEXT_DIM;
+    private static final int ROW_BG = LobbyUiTheme.CARD;
+    private static final int ROW_HOVER = LobbyUiTheme.CARD_HOVER;
 
     // 白色标题栏/描边 + 深色标题文字（与主菜单统一）
-    private static final int BORDER_COLOR = 0xFFFFFFFF;
-    private static final int HEADER_TEXT = 0xFF1A1F2E;
+    private static final int BORDER_COLOR = LobbyUiTheme.BORDER;
+    private static final int HEADER_TEXT = LobbyUiTheme.TEXT;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     // 品质颜色（与仓库一致）
@@ -385,22 +385,20 @@ public class AccessoryScreen extends Screen {
         int px = Mth.lerpInt(slideT, startPreviewX, endPreviewX);
         int py = Mth.lerpInt(slideT, startPreviewY, endPreviewY);
 
-        graphics.fill(0, 0, width, height, BG_COLOR);
+        LobbySubscreenRenderer.background(graphics, width, height);
 
         int headerH = 24;
-        // 顶部标题栏改为白色（与主菜单统一）
-        graphics.fill(panelX, panelY - headerH, panelX + panelW, panelY, BORDER_COLOR);
-        // 左上角标题、右上角实时时间（白底深色字）
-        graphics.drawString(font, "饰品", panelX + 4, panelY - headerH + 8, HEADER_TEXT);
+        LobbySubscreenRenderer.panel(graphics, panelX, panelY - headerH, panelW, panelH + headerH);
+        LobbySubscreenRenderer.header(graphics, font, panelX, panelY - headerH, panelW, "饰品工坊", null);
         String timeStr = LocalTime.now().format(TIME_FMT);
-        graphics.drawString(font, timeStr, panelX + panelW - 4 - font.width(timeStr), panelY - headerH + 8, HEADER_TEXT);
+        graphics.drawString(font, timeStr, panelX + panelW - font.width(timeStr) - 12, panelY - headerH + 10, TEXT_DIM);
 
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_COLOR);
-        graphics.renderOutline(panelX, panelY, panelW, panelH, BORDER_COLOR);
+        LobbySubscreenRenderer.section(graphics, font, panelX + 8, panelY + 36, previewW, "装备预览");
+        LobbySubscreenRenderer.section(graphics, font, listX, panelY + 36, listW, "饰品目录");
 
-        // 预览模块背景（蓝白渐变）随滑动动画移动
-        graphics.fillGradient(px, py, px + previewW, py + previewH, 0xFFE6F0FF, 0xFF4488FF);
-        graphics.renderOutline(px, py, previewW, previewH, 0xFF556178);
+        // 预览区使用无贴图深色卡片，避免旧的蓝白场景感压过角色模型。
+        LobbySubscreenRenderer.card(graphics, px, py, previewW, previewH, true, false);
+        graphics.fill(px + 3, py + 3, px + previewW - 3, py + 4, 0xAA8B6914);
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
@@ -459,8 +457,7 @@ public class AccessoryScreen extends Screen {
                 boolean sel = category == idx;
                 boolean hov = mouseX >= baseListX && mouseX < baseListX + TABCOL_W
                         && mouseY >= y && mouseY < y + tabCellH;
-                graphics.fill(baseListX, y, baseListX + TABCOL_W, y + tabCellH,
-                        sel ? ACCENT : (hov ? ROW_HOVER : ROW_BG));
+                LobbySubscreenRenderer.card(graphics, baseListX, y, TABCOL_W, tabCellH, sel, hov);
                 graphics.drawCenteredString(font, CATEGORY_LABELS[idx],
                         baseListX + TABCOL_W / 2, y + (tabCellH - font.lineHeight) / 2, TEXT_COLOR);
             }
@@ -471,7 +468,7 @@ public class AccessoryScreen extends Screen {
             int w = (i == CATEGORY_LABELS.length - 1) ? listW - i * tabCellW : tabCellW - 1;
             boolean sel = category == i;
             boolean hov = mouseX >= x && mouseX < x + w && mouseY >= tabRowY && mouseY < tabRowY + tabCellH;
-            graphics.fill(x, tabRowY, x + w, tabRowY + tabCellH, sel ? ACCENT : (hov ? ROW_HOVER : ROW_BG));
+            LobbySubscreenRenderer.card(graphics, x, tabRowY, w, tabCellH, sel, hov);
             graphics.drawCenteredString(font, CATEGORY_LABELS[i],
                     x + w / 2, tabRowY + (tabCellH - font.lineHeight) / 2, TEXT_COLOR);
         }
@@ -495,10 +492,9 @@ public class AccessoryScreen extends Screen {
 
                 boolean hovered = mouseX >= x && mouseX < x + cellW
                         && mouseY >= y && mouseY < y + cellH;
-                graphics.fill(x, y, x + cellW, y + cellH, hovered ? ROW_HOVER : ROW_BG);
+                LobbySubscreenRenderer.card(graphics, x, y, cellW, cellH, idx == selectedIndex, hovered);
                 graphics.fill(x, y, x + 2, y + cellH, qColor);
-                graphics.renderOutline(x, y, cellW, cellH,
-                        idx == selectedIndex ? ACCENT : (qColor | 0x40000000));
+                graphics.fill(x + 2, y, x + 3, y + cellH, qColor);
 
                 // 物品图标（顶部居中）
                 ItemStack icon = skinIcon(e.skinId());
