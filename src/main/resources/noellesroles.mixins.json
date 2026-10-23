@@ -206,7 +206,13 @@
     "game.PelicanAliveCheckMixin",
     "client.roles.mengyan.MengyanScreenMixin",
     "client.roles.philanthropist.PhilanthropistScreenMixin",
-    "client.fake_steve.FakeSteveClientInputMixin"
+    "client.fake_steve.FakeSteveClientInputMixin",
+    "client.general.RoadRollerBlockEntityMixin",
+    "client.general.RoadRollerBlockMixin",
+    "client.general.RoadRollerPlayerModelMixin",
+    "compat.sodium.RoadRollerSodiumMixin",
+    "network.RoadRollerMovementMixin",
+    "time_stop.RoadRollerPhysicsMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

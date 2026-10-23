@@ -5180,5 +5180,14 @@
   "message.noellesroles.fake_steve.hunt.subtitle": "回到你的房间。活下去，或成为它们的一员。",
   "message.noellesroles.fake_steve.hunt.broadcast": "伪人数量已占据多数。所有伪人已进入永久疯魔，狩猎开始。",
   "message.noellesroles.fake_steve.hunt.recall": "列车再次归零。所有人已被送回自己的房间。",
-  "replay.event.fake_steve.replaced": "§8[伪人]§r %s 被伪人替代了"
+  "replay.event.fake_steve.replaced": "§8[伪人]§r %s 被伪人替代了",
+  "item.noellesroles.road_roller": "压路机",
+  "item.noellesroles.road_roller.tooltip": "DIO专属：仅在自己发动的时停中右键，跃起并压着压路机贯穿楼层！",
+  "item.noellesroles.road_roller.cooldown": "200金币 · 购买冷却90秒 · 使用冷却150秒 · 成功使用消耗1个",
+  "message.noellesroles.road_roller.only_dio": "只有DIO才能使用压路机。",
+  "message.noellesroles.road_roller.own_time_stop": "只能在你自己发动的时停中使用压路机！",
+  "message.noellesroles.road_roller.buy_cooldown": "压路机购买冷却还剩 %s 秒。",
+  "message.noellesroles.road_roller.use_cooldown": "压路机使用冷却还剩 %s 秒。",
+  "message.noellesroles.road_roller.not_ready": "剩余时停时间不足，或你正在乘坐/吸食，无法释放压路机。",
+  "message.noellesroles.road_roller.no_floor": "当前位置没有安全的下砸空间或地图底层地板。物品未消耗。"
 }

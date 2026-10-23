@@ -3329,5 +3329,9 @@
   "screen.game_manage.btn.selfselect_limit_1": "自选卡/天：1 张",
   "screen.game_manage.btn.selfselect_limit_2": "自选卡/天：2 张",
   "screen.game_manage.btn.selfselect_limit_3": "自选卡/天：3 张",
-  "screen.game_manage.btn.selfselect_limit_5": "自选卡/天：5 张"
+  "screen.game_manage.btn.selfselect_limit_5": "自选卡/天：5 张",
+  "tooltip.starrailexpress.item.shift_more": "按住 [%s] 显示更多信息",
+  "tooltip.starrailexpress.item.shop_header": "出现在以下职业商店：",
+  "tooltip.starrailexpress.item.start_header": "以下职业开局获得：",
+  "tooltip.starrailexpress.item.shop_more": "  …以及其他 %s 个职业"
 }

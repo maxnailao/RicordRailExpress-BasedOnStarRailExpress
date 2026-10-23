@@ -165,6 +165,8 @@ public class ModItems {
     public static final Item PATROLLER_REVOLVER = register(
             new PatrollerRevolverItem((new Item.Properties()).stacksTo(1)), "patroller_revolver",
             WEAPONS_GROUP);
+    public static final Item ROAD_ROLLER = register(
+            new RoadRollerItem(new Item.Properties().stacksTo(1)), "road_roller", ROLE_ITEMS_GROUP);
     public static final Item SHERIFF_REVOLVER = register(
             new SheriffRevolverItem((new Item.Properties()).stacksTo(1)), "sheriff_revolver",
             WEAPONS_GROUP);

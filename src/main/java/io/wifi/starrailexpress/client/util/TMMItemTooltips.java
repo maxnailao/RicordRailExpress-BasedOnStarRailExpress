@@ -7,6 +7,9 @@ import io.wifi.starrailexpress.index.DevItems;
 import io.wifi.starrailexpress.index.SREBlocks;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import io.wifi.starrailexpress.api.SRERole;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -16,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TMMItemTooltips {
     public static final int COOLDOWN_COLOR = 0xC90000;
@@ -59,7 +63,36 @@ public class TMMItemTooltips {
             addTooltipForItem(SREBlocks.TRAIN_LIGHT.asItem(), itemStack, tooltipList);
             addTooltipForItem(SREBlocks.REMOTE_REDSTONE.asItem(), itemStack, tooltipList);
             addTooltipForItem(DevItems.BINDING_TOOL, itemStack, tooltipList);
+            addShopRoleTooltip(itemStack, tooltipList);
         });
+    }
+
+    private static void addShopRoleTooltip(@NotNull ItemStack stack, List<Component> tooltip) {
+        if (stack.isEmpty()) return;
+        List<SRERole> shop = ShopItemTooltipIndex.rolesFor(stack.getItem());
+        List<SRERole> start = ShopItemTooltipIndex.startingRolesFor(stack.getItem());
+        if (shop.isEmpty() && start.isEmpty()) return;
+        if (!Screen.hasShiftDown()) {
+            tooltip.add(Component.translatable("tooltip.starrailexpress.item.shift_more",
+                    Component.literal("Shift").withStyle(ChatFormatting.YELLOW))
+                    .withStyle(Style.EMPTY.withColor(REGULAR_TOOLTIP_COLOR)));
+            return;
+        }
+        appendRoleSection(tooltip, "tooltip.starrailexpress.item.start_header", start);
+        appendRoleSection(tooltip, "tooltip.starrailexpress.item.shop_header", shop);
+    }
+
+    private static void appendRoleSection(List<Component> tooltip, String key, List<SRERole> roles) {
+        if (roles.isEmpty()) return;
+        tooltip.add(Component.translatable(key).withStyle(Style.EMPTY.withColor(LETTER_COLOR)));
+        int shown = Math.min(roles.size(), 10);
+        for (int i = 0; i < shown; i++) {
+            tooltip.add(Component.literal("  ").append(RoleUtils.getRoleNameWithColor(roles.get(i).identifier())));
+        }
+        if (roles.size() > shown) {
+            tooltip.add(Component.translatable("tooltip.starrailexpress.item.shop_more", roles.size() - shown)
+                    .withStyle(Style.EMPTY.withColor(REGULAR_TOOLTIP_COLOR)));
+        }
     }
 
     /**

@@ -3379,5 +3379,9 @@
   "screen.game_manage.btn.selfselect_limit_1": "Self-select cards/day: 1",
   "screen.game_manage.btn.selfselect_limit_2": "Self-select cards/day: 2",
   "screen.game_manage.btn.selfselect_limit_3": "Self-select cards/day: 3",
-  "screen.game_manage.btn.selfselect_limit_5": "Self-select cards/day: 5"
+  "screen.game_manage.btn.selfselect_limit_5": "Self-select cards/day: 5",
+  "tooltip.starrailexpress.item.shift_more": "Hold [%s] for more information",
+  "tooltip.starrailexpress.item.shop_header": "Sold in these role shops:",
+  "tooltip.starrailexpress.item.start_header": "Granted at start to:",
+  "tooltip.starrailexpress.item.shop_more": "  ...and %s more roles"
 }

@@ -198,6 +198,7 @@ public class Noellesroles implements ModInitializer {
 
         // 注册网络包类型
         ModPackets.registerPackets();
+        org.agmas.noellesroles.game.dio.RoadRollerAttack.register();
 
         // 注册网络处理器
         ModPacketsReciever.registerPackets();
