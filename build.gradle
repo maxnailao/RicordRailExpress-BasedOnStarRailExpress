@@ -79,6 +79,11 @@ repositories {
 }
 
 dependencies {
+    // NightConfig is required by the bundled client mods (Modern UI, Exposure,
+    // HandheldMoon and CoroUtil) during Fabric entrypoint initialization.
+    include(implementation("com.electronwill.night-config:core:3.8.1"))
+    include(implementation("com.electronwill.night-config:toml:3.8.1"))
+
     // Endfield-style lobby renderer.  The renderer is isolated to MenuHubScreen;
     // match inventory screens continue to use the vanilla GUI pipeline.
     implementation include("io.github.humbleui:skija-shared:0.143.18")
