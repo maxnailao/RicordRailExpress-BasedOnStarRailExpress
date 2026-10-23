@@ -345,7 +345,15 @@ public final class FakeSteveDirector {
     private static void tick(ServerLevel level) {
         Session session = session(level);
         if (session == null) {
-            return;
+            // 旧存档或事件初始化顺序异常时，替代标记可能先于本局会话存在。
+            // 发现这种状态就恢复一个活动会话，让 AI 接管已有的伪人身体。
+            if (!canGenerate(level) || level.players().stream().noneMatch(FakeSteveDirector::isReplaced)) {
+                return;
+            }
+            session = new Session(level.getPlayers(GameUtils::isPlayerAliveAndSurvival).size());
+            session.active = true;
+            session.activationSource = ActivationSource.COMMAND_REPLACE;
+            SESSIONS.put(level.dimension().location(), session);
         }
         boolean generating = canGenerate(level);
         if (!generating) {
@@ -355,6 +363,16 @@ public final class FakeSteveDirector {
         if (!session.active
                 || SREGameWorldComponent.KEY.get(level).getGameStatus() != SREGameWorldComponent.GameStatus.ACTIVE) {
             return;
+        }
+
+        // 为已有替代标记补建缺失的 AI 状态，避免客户端输入已被拦截但服务端没有代理。
+        for (ServerPlayer player : level.players()) {
+            if (isReplaced(player) && GameUtils.isPlayerAliveAndSurvival(player)
+                    && !session.agents.containsKey(player.getUUID())) {
+                FakeSteveAgentState state = new FakeSteveAgentState(player.getUUID(), ReplacementCause.COMMAND);
+                FakeSteveTrailRecorder.capture(player, state);
+                session.agents.put(player.getUUID(), state);
+            }
         }
 
         if (generating) {
