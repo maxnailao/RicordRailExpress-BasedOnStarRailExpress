@@ -54,6 +54,7 @@
     "defaultRequire": 1
   },
   "client": [
+    "client.model.BlockElementRotationUnlockMixin",
     "client.ShenfaBowOverrideMixin",
     "client.effects.InvisiblePlayer",
     "client.emote.PlayerModelEmoteMixin",

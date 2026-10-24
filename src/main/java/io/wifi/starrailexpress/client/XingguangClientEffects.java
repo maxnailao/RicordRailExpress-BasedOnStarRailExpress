@@ -65,6 +65,9 @@ public final class XingguangClientEffects {
 
     private static boolean prevHolding = false;
     private static boolean prevUsing = false;
+    private static boolean prevHoldingClaw = false;
+    private static boolean prevClawCharging = false;
+    private static boolean prevClawAttack = false;
     // 黑雾时序（纯 tick 驱动，独立于渲染帧推进的拔刀窗口，确保抵达爆开后环绕必定回归）
     // stage：0=常驻环绕 1=一团飞行中 2=抵达爆开中（1、2 期间都不出现环绕）
     private static int mistStage = 0;
@@ -100,6 +103,47 @@ public final class XingguangClientEffects {
         darkBlueOrbCount = 0;
     }
 
+    // ============ 猩红之爪击杀后全屏暗红滤镜（仅击杀者客户端，随 claw 通知触发）============
+    // 击杀瞬间立刻全屏满浓度、线性淡出（动作反馈不做淡入）；颜色/时长/浓度可调
+    private static final int CLAW_TINT_COLOR_RGB = 0x7A0F1A;
+    private static final long CLAW_TINT_DURATION_MS = 2400L;
+    private static final float CLAW_TINT_MAX_ALPHA = 0.42f;
+    private static long clawTintStartMs = 0L;
+
+    /** 击杀者客户端收到爪子击杀通知后调用：触发全屏暗红滤镜 */
+    public static void onClawKill() {
+        clawTintStartMs = System.currentTimeMillis();
+    }
+
+    /** 渲染爪子击杀后的全屏暗红滤镜：由 SREClient 的 HudRenderCallback 每帧调用 */
+    public static void renderClawKillTint(GuiGraphics g) {
+        if (clawTintStartMs == 0L) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.options.hideGui) {
+            return;
+        }
+        long elapsed = System.currentTimeMillis() - clawTintStartMs;
+        if (elapsed >= CLAW_TINT_DURATION_MS) {
+            clawTintStartMs = 0L;
+            return;
+        }
+        float t = (float) elapsed / CLAW_TINT_DURATION_MS; // 0..1
+        float alpha = (1f - t) * CLAW_TINT_MAX_ALPHA;      // 无淡入、直接全屏后淡出
+        if (alpha <= 0.003f) {
+            return;
+        }
+        int a = (int) (alpha * 255f);
+        int color = (a << 24) | (CLAW_TINT_COLOR_RGB & 0xFFFFFF);
+        int w = mc.getWindow().getGuiScaledWidth();
+        int h = mc.getWindow().getGuiScaledHeight();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        g.fill(0, 0, w, h, color);
+        RenderSystem.disableBlend();
+    }
+
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null || client.player == null || client.options == null) {
@@ -116,6 +160,38 @@ public final class XingguangClientEffects {
                 client.player.playSound(TMMSounds.ITEM_KNIFE_XINGGUANG_DRAW, 1.0f, 1.0f);
             }
             prevHolding = holding;
+            // 刚切到猩红之爪：播放第一人称切刀(field-flip)。放在第一人称 return 之前，保证状态跟踪不断。
+            boolean holdingClaw = client.options.getCameraType().isFirstPerson()
+                    && XingguangPoseManager.isXinghongClaw(client.player.getMainHandItem());
+            if (holdingClaw && !prevHoldingClaw) {
+                ClawFlipManager.start();
+            }
+            prevHoldingClaw = holdingClaw;
+            ClawFlipManager.validateAgainstHand();
+            // 爪子蓄力窗口(右键按住 use)：优先级最高，打断切刀/空挥/检视
+            boolean clawCharging = holdingClaw && client.player.isUsingItem();
+            if (clawCharging && !prevClawCharging) {
+                ClawFlipManager.notifyChargeStarted();
+            } else if (!clawCharging && prevClawCharging) {
+                ClawFlipManager.notifyChargeEnded();
+            }
+            prevClawCharging = clawCharging;
+            // 持爪+左键 → 空挥前划一刀：仅"新按下"边沿触发。
+            // 之前用 isDown() 每 tick 轮询，按住左键时每个 tick 都重起空挥，
+            // 会把刚按 H 启动的检视瞬间掐死（表现为"检视没了"）。
+            boolean clawAttack = holdingClaw && client.options.keyAttack.isDown();
+            if (clawAttack && !prevClawAttack) {
+                ClawFlipManager.tryStartSwing();
+            }
+            prevClawAttack = clawAttack;
+            // 猩红之爪·转刀特效：蓄力转刀/补转/收刀转/奔跑切换转刀期间，
+            // 沿环刃边缘甩出猩红刀气，顺旋转切向飞散成环状拖尾（纯本地，仅自己可见）
+            if (holdingClaw && ClawFlipManager.spinFxActive()) {
+                float phase = ClawFlipManager.spinFxPhaseDeg();
+                for (int i = 0; i < CLAW_QI_PER_TICK; i++) {
+                    spawnClawSpinQi(phase + i * (360f / CLAW_QI_PER_TICK));
+                }
+            }
             // 仅第一人称：手部粒子本来也只在自己视角渲染，这里再省一层空转
             if (!client.options.getCameraType().isFirstPerson()) {
                 return;
@@ -328,5 +404,30 @@ public final class XingguangClientEffects {
             return true;
         }
         return SKIN_ID.equals(ItemSkinManager.getEquippedSkin(player, main));
+    }
+
+    // ============ 猩红之爪·转刀刀气 ============
+    // 环刃环口朝镜头＝环面平行屏幕，粒子在物品空间 x-y 平面按相位角布点；
+    // 出生半径必须大于模型半宽，否则被刀身几何深度测试遮挡（同星光教训）。
+    private static final float CLAW_RING_R = 0.24f;      // 环刃外缘半径（手部空间）
+    private static final int CLAW_QI_PER_TICK = 4;       // 每 tick 刀气粒数
+    private static final Random CLAW_QI_RANDOM = new Random();
+
+    private static void spawnClawSpinQi(float deg) {
+        double rad = Math.toRadians(deg + (CLAW_QI_RANDOM.nextFloat() - 0.5f) * 30.0);
+        float cos = (float) Math.cos(rad);
+        float sin = (float) Math.sin(rad);
+        float r = CLAW_RING_R + (CLAW_QI_RANDOM.nextFloat() - 0.5f) * 0.05f;
+        Color base = new Color(225, 32, 74, 215);   // 猩红
+        Color fade = new Color(150, 10, 40, 0);
+        HandParticle p = new HandParticle()
+                .setTexture(QI_TEXTURE)
+                .setPos(cos * r, sin * r, (CLAW_QI_RANDOM.nextFloat() - 0.5f) * 0.06f)
+                .setMaxAge(7)
+                .setSize(0.08f + CLAW_QI_RANDOM.nextFloat() * 0.06f)
+                .setVelocity(-sin * 0.05f, cos * 0.05f, 0f) // 顺旋转切向甩出
+                .setLight(15, 15)
+                .setColor(base, fade);
+        SREClient.handParticleManager.spawn(p);
     }
 }

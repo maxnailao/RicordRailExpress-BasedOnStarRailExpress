@@ -104,24 +104,30 @@ public class LotteryManager {
             String trueName = getTrueName(curQualityList.get(resultIdx));
             boolean isNewUnlock = false;
             String itemType = getSkinItemType(curQualityList.get(resultIdx));
-            if (itemType != null && !ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName)) {
-                ItemSkinManager.unlockSkinForItemType(player, itemType, trueName);
-                isNewUnlock = true;
-                // 抽奖新解锁的皮肤必须同步写入仓库组件（与开箱路径一致），
-                // 否则 CS2WarehouseScreen 因只遍历 CS2InventoryComponent.getSkins() 而看不到该皮肤
-                io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player)
-                        .addSkin(itemType + "/" + trueName, 1);
+            if (itemType != null) {
+                io.wifi.starrailexpress.cca.CS2InventoryComponent inv =
+                        io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player);
+                String skinId = itemType + "/" + trueName;
+                boolean alreadyUnlocked = ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName);
+                if (!alreadyUnlocked) {
+                    ItemSkinManager.unlockSkinForItemType(player, itemType, trueName);
+                    isNewUnlock = true;
+                }
+                // 仓库为发放的唯一权威：只要抽到皮肤就确保写入 CS2InventoryComponent。
+                // 兼容"旧版本已解锁但从未入仓库"的幽灵皮肤（如星光），
+                // 否则再次抽中会落入重复分支只折币，CS2WarehouseScreen 永远看不到该皮肤。
+                if (!inv.hasSkin(skinId)) {
+                    inv.addSkin(skinId, 1);
+                }
                 LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
+                // 真正重复（此前已解锁）才自动折币
+                if (alreadyUnlocked) {
+                    ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
+                }
             }
             //coin
             else if (trueName.equals("coin")) {
                 ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality) * COIN_CARD_EXTRA_REWARD));
-            }
-            // 处理重复皮肤：自动折币，同时记录本次结果允许快速出售（出售会回收已拥有的皮肤再折算一次）
-            else {
-                ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
-                if (itemType != null)
-                    LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
             }
 
             // 更新保底计数：出传承归零，否则 +1，并落盘持久化

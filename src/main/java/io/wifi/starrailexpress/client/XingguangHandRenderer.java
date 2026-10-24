@@ -53,6 +53,13 @@ public final class XingguangHandRenderer {
     private static float ITEM_SCALE = 0.6F;
     private static boolean itemLoggedOnce = false;
 
+    // ===== 猩红之爪 物品空间落点旋钮（实测轴语义：X=水平 正=右/负=左，Y=垂直 正=上/负=下，与星光互换）=====
+    private static float CLAW_X = -0.15F;  // 水平：负=左
+    private static float CLAW_Y = 0.05F;    // 垂直：正=上
+    private static float CLAW_Z = 0.0F;
+    private static float CLAW_SCALE = 0.75F;
+    private static boolean clawLoggedOnce = false;
+
     private static XingguangHandModel model;
     private static float curlShown = 0.5F;
     private static long lastNanos = 0L;
@@ -133,26 +140,65 @@ public final class XingguangHandRenderer {
             itemLoggedOnce = true;
             io.wifi.starrailexpress.SRE.LOGGER.info("[XGHand] renderInItemSpace called");
         }
+        ensureModel();
+        applyCurl(player);
+        drawAt(poseStack, buffer, light, player, ITEM_X, ITEM_Y, ITEM_Z, ITEM_SCALE);
+    }
+
+    /** 猩红之爪专用：同一套手部网格，独立的物品空间落点。切刀窗口内手指由动画通道驱动。 */
+    public static void renderClawInItemSpace(PoseStack poseStack, MultiBufferSource buffer, int light,
+            AbstractClientPlayer player) {
+        if (!ENABLED) {
+            return;
+        }
+        if (!clawLoggedOnce) {
+            clawLoggedOnce = true;
+            io.wifi.starrailexpress.SRE.LOGGER.info("[XGHand] renderClawInItemSpace called");
+        }
+        ensureModel();
+        float flipCurl = ClawFlipManager.curl();
+        if (flipCurl >= 0.0F) {
+            applyCurlCustom(player, flipCurl, ClawFlipManager.thumbSpread());
+        } else {
+            applyCurl(player);
+        }
+        drawAt(poseStack, buffer, light, player, CLAW_X, CLAW_Y, CLAW_Z, CLAW_SCALE);
+    }
+
+    private static void ensureModel() {
         if (model == null) {
             model = new XingguangHandModel(
                     Minecraft.getInstance().getEntityModels().bakeLayer(XingguangHandModel.LAYER));
         }
+    }
+
+    private static void applyCurl(AbstractClientPlayer player) {
         float curl = updateCurl(player);
         model.fingers.xRot = -0.15F - curl * 1.15F;
         model.thumb.xRot = -0.10F - curl * 0.70F;
         float side = player.getMainArm() == HumanoidArm.LEFT ? -1.0F : 1.0F;
         model.thumb.zRot = side * (0.10F + curl * 0.35F);
+    }
 
+    /** 切刀动画专用：curl 直接给值(0摊开~1攥拳)，spread 控制拇指张开（翻刀段短暂开掌）。 */
+    private static void applyCurlCustom(AbstractClientPlayer player, float curl, float spread) {
+        model.fingers.xRot = -0.15F - curl * 1.15F;
+        model.thumb.xRot = -0.10F - (1.0F - spread) * curl * 0.70F;
+        float side = player.getMainArm() == HumanoidArm.LEFT ? -1.0F : 1.0F;
+        model.thumb.zRot = side * (0.10F + curl * 0.35F + spread * 0.45F);
+    }
+
+    private static void drawAt(PoseStack poseStack, MultiBufferSource buffer, int light,
+            AbstractClientPlayer player, float x, float y, float z, float scale) {
         ResourceLocation skin = player.getSkin().texture();
-        // 最高显示优先级：先把刀等已提交的物品几何冲刷掉，再单独提交手并立即冲刷，
-        // 保证手是本帧最后绘制者，配合 NO_DEPTH 永远盖在刀之上（即使往里嵌进刀柄也可见）。
+        // 最高显示优先级：先冲掉刀等已提交几何，再提交手并立即冲刷，手永远是本帧最后绘制者。
         if (buffer instanceof MultiBufferSource.BufferSource flushItem) {
             flushItem.endBatch();
         }
         VertexConsumer consumer = buffer.getBuffer(handLayer(skin));
         poseStack.pushPose();
-        poseStack.translate(ITEM_X, ITEM_Y, ITEM_Z);
-        float s = ITEM_SCALE * (DEBUG_FIXED ? 2.0F : 1.0F);
+        poseStack.translate(x, y, z);
+        float s = scale * (DEBUG_FIXED ? 2.0F : 1.0F);
         poseStack.scale(s, s, s);
         model.hand.render(poseStack, consumer, light, OverlayTexture.NO_OVERLAY, 0xFFFFFFFF);
         poseStack.popPose();

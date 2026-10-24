@@ -126,7 +126,6 @@ dependencies {
     modImplementation files("libs/1_wathe-extra-items-1.21.1-1.0.7.jar")
     // Other libs
     modImplementation files("libs/sre-lib-${project.sre_lib_version}.jar")
-    modRuntimeOnly files("libs/HandheldMoon-fabric-1.21.1-1.0.0.jar")
     modRuntimeOnly files("libs/modernfix-fabric-5.25.1+mc1.21.1.jar")
     modImplementation files("libs/fabric-carpet-1.21-1.4.147+v240613.jar")
     modRuntimeOnly files("libs/midnightlib-fabric-1.9.2+1.21.1.jar")

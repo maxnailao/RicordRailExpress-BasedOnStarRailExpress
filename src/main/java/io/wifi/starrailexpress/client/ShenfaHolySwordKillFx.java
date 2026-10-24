@@ -52,8 +52,10 @@ public final class ShenfaHolySwordKillFx {
     private ShenfaHolySwordKillFx() {}
 
     public static void register() {
-        CustomParticleHandlers.register(FX_ID, (level, origin, durationTicks, params) ->
-                STRIKES.add(new Strike(origin.x, origin.y, origin.z)));
+        CustomParticleHandlers.register(FX_ID, (level, origin, durationTicks, params) -> {
+            System.out.println("[ShenfaFx] handler play at " + origin);
+            STRIKES.add(new Strike(origin.x, origin.y, origin.z));
+        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ClientLevel level = client.level;
             if (level == null) {

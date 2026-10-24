@@ -69,6 +69,7 @@ public final class SRESkinRegistry {
         registerSkin(SkinTypes.KNIFE, "knife_emozhidao_1", QualityColor.UNBELIEVABLE); // 恶魔之刃
         registerSkin(SkinTypes.KNIFE, "knife_emozhidao_2", QualityColor.UNBELIEVABLE); // 恶魔之刃·举刀形态（内部皮肤，不单独售卖）
         registerSkin(SkinTypes.KNIFE, "knife_xingguang", QualityColor.LEGACY); // 星光（传承，星空曙光卡池专属大奖）
+        registerSkin(SkinTypes.KNIFE, "knife_xinghongzhizhua", QualityColor.LEGACY); // 猩红之爪（传承）
 
         // ═══════════════════════════════════════════════════════════════════
         // REVOLVER（左轮）皮肤 — 仅保留有贴图+模型资源的皮肤

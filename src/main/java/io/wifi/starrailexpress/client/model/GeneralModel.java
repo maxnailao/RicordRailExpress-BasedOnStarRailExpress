@@ -105,7 +105,13 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         // 从玩家的CCA组件获取皮肤，而不是仅依赖TMMCosmetics
         String skinName = stack.get(SREDataComponentTypes.SKIN);
         if (skinName == null) {
-            skinName = getSkinFromPlayerComponent(stack);
+            // equipped 兜底仅限本地玩家自己手持的 stack：
+            // 渲染他人/地面/容器的无组件 stack 时若回退本地玩家 equipped 皮肤，
+            // 会导致"我装备爪子 → 全世界所有普通刀都变 3D 爪"的错误扩散。
+            Player viewer = Minecraft.getInstance().player;
+            if (viewer != null && (stack == viewer.getMainHandItem() || stack == viewer.getOffhandItem())) {
+                skinName = getSkinFromPlayerComponent(stack);
+            }
         }
         var skin = ItemSkinManager.Skin.fromString(itemType, skinName);
 
@@ -307,10 +313,13 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         ItemStack main = player.getMainHandItem();
         String skinName;
         if (main.getItem() instanceof SkinableItem skinable && itemType.equals(skinable.getItemSkinType())) {
-            // 主手正持握同类型武器：仅取该 stack 的显式皮肤(大厅/新 stack 无组件时回退默认模型)。
+            // 主手正持握同类型武器：取该 stack 的显式组件（手持 stack 已由服务端打上装备皮肤）
             skinName = main.get(SREDataComponentTypes.SKIN);
         } else {
-            // 主手未持该类武器：背包 GUI/GROUND 图标按"已装备皮肤"解析，修复"拿/不拿"跳变。
+            // 主手未持该类武器：与星光完全同款——GUI/GROUND 变换按"已装备皮肤"解析，
+            // 保证 3D 皮肤刀在"拿/不拿"切换时变换不跳变、3D 层不被隐藏。
+            // 其他 2D 刀不会被误 3D 化，是因为几何体由 emitItemQuads 按各 stack 自身组件解析
+            //（背包里 2D 刀 stack 有自身组件或无组件→默认 2D 几何），本方法只决定 GUI 变换。
             skinName = io.wifi.starrailexpress.data.PlayerEconomyManager
                     .getEquippedSkinForItemType(player, itemType);
         }

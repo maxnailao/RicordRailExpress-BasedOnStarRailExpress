@@ -600,6 +600,17 @@ public final class XingguangPoseManager {
         return XingguangClientEffects.SKIN_ID.equals(ItemSkinManager.getEquippedSkin(player, stack));
     }
 
+    /** 猩红之爪（传承）皮肤判定：与星光同款守卫范式，只认主手物品实际皮肤。 */
+    public static final String XINGHONG_CLAW_SKIN_ID = "knife_xinghongzhizhua";
+
+    public static boolean isXinghongClaw(ItemStack stack) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || !(stack.getItem() instanceof KnifeItem)) {
+            return false;
+        }
+        return XINGHONG_CLAW_SKIN_ID.equals(ItemSkinManager.getEquippedSkin(client.player, stack));
+    }
+
     public static boolean knifeActive() {
         Minecraft client = Minecraft.getInstance();
         return client.player != null && isXingguangKnife(client.player.getMainHandItem());

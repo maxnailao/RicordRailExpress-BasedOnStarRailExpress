@@ -137,7 +137,16 @@ public class InputHandler {
         if (inspectKeybind.consumeClick()) {
             if (client.player != null && client.screen == null
                     && isLegacyQualityKnife(client.player, client.player.getMainHandItem())) {
-                XingguangPoseManager.startInspect();
+                if (XingguangPoseManager.isXinghongClaw(client.player.getMainHandItem())) {
+                    // 爪子检视：再按一次 H 退出；动画接入前窗口标志已可打断切刀/被空挥与蓄力打断
+                    if (ClawFlipManager.isInspecting()) {
+                        ClawFlipManager.notifyInspectEnded();
+                    } else {
+                        ClawFlipManager.notifyInspectStarted();
+                    }
+                } else {
+                    XingguangPoseManager.startInspect();
+                }
             }
         }
 

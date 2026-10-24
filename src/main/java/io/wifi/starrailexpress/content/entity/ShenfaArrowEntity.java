@@ -40,6 +40,7 @@ public class ShenfaArrowEntity extends Arrow {
         if (entityHitResult.getEntity() instanceof ServerPlayer victim
                 && (!victim.isAlive() || victim.getHealth() <= 0.0F)) {
             if (getOwner() instanceof ServerPlayer killer) {
+                System.out.println("[Shenfa] kill fx sent to " + killer.getName().getString());
                 PacketTracker.sendToClient(killer, new CustomParticleS2CPayload(List.of(
                         CustomParticleS2CPayload.Entry.at(SRE.id("shenfa_holy_sword"),
                                 victim.getX(), victim.getY() + 1.0D, victim.getZ(), 0))));
