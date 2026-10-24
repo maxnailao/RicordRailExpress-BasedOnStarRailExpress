@@ -4769,5 +4769,14 @@
   "message.noellesroles.fake_steve.hunt.subtitle": "Get back to your room. Survive, or become one of them.",
   "message.noellesroles.fake_steve.hunt.broadcast": "Fake Steves are now the majority. All Fake Steves enter permanent frenzy; the hunt begins.",
   "message.noellesroles.fake_steve.hunt.recall": "The train resets. Everyone is sent back to their own rooms.",
-  "replay.event.fake_steve.replaced": "[Fake Steve] %s was replaced by a Fake Steve"
+  "replay.event.fake_steve.replaced": "[Fake Steve] %s was replaced by a Fake Steve",
+  "item.noellesroles.road_roller": "Road Roller",
+  "item.noellesroles.road_roller.tooltip": "DIO only: right-click during your own time stop to rise and smash through the floors!",
+  "item.noellesroles.road_roller.cooldown": "200 coins · Purchase cooldown: 90s · Use cooldown: 150s · Consumed on success",
+  "message.noellesroles.road_roller.only_dio": "Only DIO can use the Road Roller.",
+  "message.noellesroles.road_roller.own_time_stop": "The Road Roller requires your own active time stop!",
+  "message.noellesroles.road_roller.buy_cooldown": "Road Roller purchase cooldown: %s seconds remaining.",
+  "message.noellesroles.road_roller.use_cooldown": "Road Roller use cooldown: %s seconds remaining.",
+  "message.noellesroles.road_roller.not_ready": "Too little time stop remains, or you are riding/feeding.",
+  "message.noellesroles.road_roller.no_floor": "No safe descent space or bottom map floor here. Item not consumed."
 }

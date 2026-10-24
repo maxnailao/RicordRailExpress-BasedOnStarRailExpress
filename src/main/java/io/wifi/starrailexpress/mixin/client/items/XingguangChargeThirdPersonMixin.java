@@ -48,8 +48,11 @@ public abstract class XingguangChargeThirdPersonMixin extends HumanoidModel<Livi
         Minecraft mc = Minecraft.getInstance();
         if (entity == mc.player && mc.options.getCameraType().isFirstPerson()) return;
         ItemStack main = player.getMainHandItem();
-        boolean charging = player.isUsingItem()
-                && XingguangPoseManager.isXingguangKnife(player, main);
+        // 猩红之爪：原版 SPEAR 举刀被禁用（保第一人称蓄力转刀），第三人称举刀同样由本 Mixin 补，
+        // 采用"举到头顶"式（手臂上举过头，仿原版三叉戟），与星光的平举前伸区分
+        boolean xgCharge = player.isUsingItem() && XingguangPoseManager.isXingguangKnife(player, main);
+        boolean clawCharge = player.isUsingItem() && XingguangPoseManager.isXinghongClaw(main);
+        boolean charging = xgCharge || clawCharge;
         if (!charging && this.xingguang$blend < 0.01f) {
             this.xingguang$blend = 0f;
             this.xingguang$lastT = 0L;
@@ -63,10 +66,12 @@ public abstract class XingguangChargeThirdPersonMixin extends HumanoidModel<Livi
         this.xingguang$blend += ((charging ? 1f : 0f) - this.xingguang$blend) * f;
         if (charging && this.xingguang$blend < 0.6f) this.xingguang$blend += 0.02f;
         if (this.xingguang$blend <= 0.01f) return;
-        this.rightArm.xRot = Mth.lerp(this.xingguang$blend, this.rightArm.xRot, -1.45f);
+        float targetX = clawCharge ? -2.6f : -1.45f;
+        float targetZ = clawCharge ? 0.25f : 0.15f;
+        this.rightArm.xRot = Mth.lerp(this.xingguang$blend, this.rightArm.xRot, targetX);
         this.rightArm.yRot = Mth.lerp(this.xingguang$blend, this.rightArm.yRot, 0f);
-        this.rightArm.zRot = Mth.lerp(this.xingguang$blend, this.rightArm.zRot, 0.15f);
-        if (charging && this.rightArm.xRot > -1.35f) this.rightArm.xRot -= 0.04f;
+        this.rightArm.zRot = Mth.lerp(this.xingguang$blend, this.rightArm.zRot, targetZ);
+        if (charging && this.rightArm.xRot > targetX + 0.1f) this.rightArm.xRot -= 0.04f;
         PlayerModel<?> self = (PlayerModel<?>) (Object) this;
         self.rightSleeve.copyFrom(this.rightArm);
     }

@@ -4316,5 +4316,14 @@
   "message.noellesroles.fake_steve.hunt.subtitle": "回到你的房間。活下去，或成為它們的一員。",
   "message.noellesroles.fake_steve.hunt.broadcast": "偽人數量已佔多數。所有偽人進入永久瘋魔，狩獵開始。",
   "message.noellesroles.fake_steve.hunt.recall": "列車再次歸零。所有人被送回自己的房間。",
-  "replay.event.fake_steve.replaced": "[偽人] %s 被偽人取代了"
+  "replay.event.fake_steve.replaced": "[偽人] %s 被偽人取代了",
+  "item.noellesroles.road_roller": "壓路機",
+  "item.noellesroles.road_roller.tooltip": "DIO專屬：僅在自己發動的時停中右鍵，躍起並壓著壓路機貫穿樓層！",
+  "item.noellesroles.road_roller.cooldown": "200金幣 · 購買冷卻90秒 · 使用冷卻150秒 · 成功使用消耗1個",
+  "message.noellesroles.road_roller.only_dio": "只有DIO才能使用壓路機。",
+  "message.noellesroles.road_roller.own_time_stop": "只能在你自己發動的時停中使用壓路機！",
+  "message.noellesroles.road_roller.buy_cooldown": "壓路機購買冷卻還剩 %s 秒。",
+  "message.noellesroles.road_roller.use_cooldown": "壓路機使用冷卻還剩 %s 秒。",
+  "message.noellesroles.road_roller.not_ready": "剩餘時停時間不足，或你正在乘坐/吸食，無法釋放壓路機。",
+  "message.noellesroles.road_roller.no_floor": "目前位置沒有安全的下砸空間或地圖底層地板。物品未消耗。"
 }

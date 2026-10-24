@@ -73,6 +73,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class RoleShopHandler {
+    /** Incremented whenever role shops are rebuilt so client tooltip indexes can refresh. */
+    public static long shopVersion = 0;
     private static final String OLDMAN_EASTER_EGG_TAG = "sre_oldman_easter_egg";
     private static final String OLDMAN_EASTER_EGG_USED_TAG = "sre_oldman_easter_egg_used";
     public static final String OLDMAN_EASTER_EGG_PIG_NO_STEP_TAG = "sre_oldman_easter_egg_pig_no_step";
@@ -2790,6 +2792,7 @@ public class RoleShopHandler {
         // DIO 商店
         {
             List<ShopEntry> entries = new ArrayList<>();
+            entries.add(org.agmas.noellesroles.game.dio.RoadRollerAttack.shopEntry());
             entries.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 120,
                     ShopEntry.Type.TOOL));
             entries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 95,
@@ -4050,6 +4053,7 @@ public class RoleShopHandler {
                     dreamConfig.dreamBoatPrice, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.DREAM_ID, DREAM_SHOP);
         }
+        shopVersion++;
     }
 
     private static net.minecraft.world.item.ItemStack createFireworkRocket(int flightDuration) {

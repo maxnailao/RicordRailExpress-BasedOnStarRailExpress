@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.mixin.client.items;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.ClawFlipManager;
 import io.wifi.starrailexpress.client.XingguangHandRenderer;
 import io.wifi.starrailexpress.client.XingguangPoseManager;
 import net.minecraft.client.Minecraft;
@@ -42,15 +43,26 @@ public class XingguangItemSpinMixin {
         if (mc.player == null || entity != mc.player) {
             return;
         }
-        if (!XingguangPoseManager.isXingguangKnife(stack) || !XingguangPoseManager.itemSpinActive()) {
+        if (!XingguangPoseManager.isXingguangKnife(stack)) {
+            // 猩红之爪：切刀窗口的侧刃俯仰与绕环翻腕，只转刀+手，手臂由相机层管；
+            // 奔跑持刀偏移作为底层姿态先施加，动画窗口在其上叠加
+            if (XingguangPoseManager.isXinghongClaw(stack)) {
+                ClawFlipManager.applySprintItem(poseStack);
+                ClawFlipManager.applyItem(poseStack);
+            }
+            return;
+        }
+        if (!XingguangPoseManager.itemSpinActive()) {
             return;
         }
         float a = XingguangPoseManager.itemSpinAngle();
-        // 先按关键帧平移把刀整体挪近角色模型，再绕握把自转
+        // 先按关键帧平移把刀整体挪近角色模型，再绕握把做"俯仰→偏转→自转"三连(检视用俯仰/偏转，挥刀只用自转)
         poseStack.translate(XingguangPoseManager.itemSpinOffX(),
                 XingguangPoseManager.itemSpinOffY(),
                 XingguangPoseManager.itemSpinOffZ());
         poseStack.translate(GRIP_X, GRIP_Y, 0.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(XingguangPoseManager.itemTiltX()));
+        poseStack.mulPose(Axis.YP.rotationDegrees(XingguangPoseManager.itemTiltY()));
         poseStack.mulPose(Axis.ZP.rotationDegrees(a));
         poseStack.translate(-GRIP_X, -GRIP_Y, 0.0F);
     }
@@ -64,9 +76,13 @@ public class XingguangItemSpinMixin {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || entity != mc.player || !XingguangPoseManager.isXingguangKnife(stack)) {
+        if (mc.player == null || entity != mc.player) {
             return;
         }
-        XingguangHandRenderer.renderInItemSpace(poseStack, buffer, light, mc.player);
+        if (XingguangPoseManager.isXingguangKnife(stack)) {
+            XingguangHandRenderer.renderInItemSpace(poseStack, buffer, light, mc.player);
+        } else if (XingguangPoseManager.isXinghongClaw(stack)) {
+            XingguangHandRenderer.renderClawInItemSpace(poseStack, buffer, light, mc.player);
+        }
     }
 }

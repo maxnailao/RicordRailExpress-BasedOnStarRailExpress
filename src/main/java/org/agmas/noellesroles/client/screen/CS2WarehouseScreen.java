@@ -20,6 +20,8 @@ import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbySubscreenRenderer;
+import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
 import net.minecraft.world.item.Items;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.noellesroles.cs2.CS2BoxConfig;
@@ -68,13 +70,13 @@ public class CS2WarehouseScreen extends Screen {
             0xFF8B7A2E, // 6: legacy 传承（暗金色）
     };
 
-    private static final int BG_COLOR = 0xE60C1020;
-    private static final int SIDEBAR_COLOR = 0xC0161B30;
-    private static final int CARD_BG_COLOR = 0x30FFFFFF;
-    private static final int CARD_HOVER_COLOR = 0x50FFFFFF;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final int TEXT_DIM = 0xFF999999;
-    private static final int ACCENT = 0xFF4488FF;
+    private static final int BG_COLOR = LobbyUiTheme.BACKGROUND;
+    private static final int SIDEBAR_COLOR = LobbyUiTheme.PANEL;
+    private static final int CARD_BG_COLOR = LobbyUiTheme.CARD;
+    private static final int CARD_HOVER_COLOR = LobbyUiTheme.CARD_HOVER;
+    private static final int TEXT_COLOR = LobbyUiTheme.TEXT;
+    private static final int TEXT_DIM = LobbyUiTheme.TEXT_DIM;
+    private static final int ACCENT = LobbyUiTheme.ACCENT;
 
     private enum Category { ALL, BOXES, KNIFE, REVOLVER, BAT, GRENADE, HAT, MUSIC, CARDS, TITLE }
     private Category selectedCategory = Category.ALL;
@@ -466,12 +468,17 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        guiGraphics.fill(0, 0, width, height, BG_COLOR);
+        LobbySubscreenRenderer.background(guiGraphics, width, height);
+        LobbySubscreenRenderer.panel(guiGraphics, 4, 4, width - 8, height - 8);
+        LobbySubscreenRenderer.header(guiGraphics, font, 4, 4, width - 8, "仓库档案", null);
+        guiGraphics.drawString(font, "收藏 / 装备 / 开箱", 16, 32, LobbyUiTheme.TEXT_FAINT, false);
         renderSidebar(guiGraphics, mouseX, mouseY);
         renderDailyCardUsage(guiGraphics);
         renderGrid(guiGraphics, mouseX, mouseY, delta);
         renderScrollbar(guiGraphics, mouseX, mouseY);
         renderHeader(guiGraphics);
+        LobbySubscreenRenderer.footer(guiGraphics, font, 8, height - 38, width - 16,
+                "左侧选择分类 · 点击物品查看操作");
         renderTooltip(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, delta);
     }
@@ -780,9 +787,8 @@ public class CS2WarehouseScreen extends Screen {
 
             if (hovered) hoveredItem = item;
 
-            // 卡片背景
-            int bg = hovered ? CARD_HOVER_COLOR : CARD_BG_COLOR;
-            guiGraphics.fill(x, y, x + cardSize, y + cardSize, bg);
+            // 统一大厅卡片外壳，保留品质色条和仓库原有图标/交互。
+            LobbySubscreenRenderer.card(guiGraphics, x, y, cardSize, cardSize, isSelected, hovered);
 
             // 品质边框
             if (item.quality > 0) {
@@ -794,9 +800,7 @@ public class CS2WarehouseScreen extends Screen {
             }
 
             // 选中高亮
-            if (isSelected) {
-                guiGraphics.fill(x - 2, y - 2, x + cardSize + 2, y + cardSize + 2, 0x80FFFFFF);
-            }
+            if (isSelected) guiGraphics.fill(x, y, x + cardSize, y + 2, LobbyUiTheme.ACCENT_BRIGHT);
 
             renderItemIcon(guiGraphics, item, x, y);
 

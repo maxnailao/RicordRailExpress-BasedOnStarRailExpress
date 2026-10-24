@@ -1,0 +1,8 @@
+{
+  "efc.days_played": "DAYS PLAYED",
+  "efc.paused": "WORLD PAUSED",
+  "efc.running": "CONNECTED · WORLD IS RUNNING",
+  "efc.local": "LOCAL WORLD",
+  "efc.multiplayer": "MULTIPLAYER",
+  "efc.hint": "ESC  Resume    ·    TAB  Navigate"
+}

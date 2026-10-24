@@ -37,6 +37,11 @@ public class ItemSkinManager {
         }
 
         public static Skin fromString(String itemType, String name) {
+            // name 为 null 表示 stack 无皮肤组件（如护甲架/他人手持的普通武器），
+            // 返回 null 让调用方回退默认模型，避免 toLowerCase 空指针崩溃
+            if (name == null) {
+                return null;
+            }
             if (!skinMap.containsKey(itemType)) {
                 return null;
             }
@@ -74,6 +79,9 @@ public class ItemSkinManager {
     }
 
     public static Skin getSkinFromName(String itemType, String name) {
+        if (name == null) {
+            return null;
+        }
         if (!skinMap.containsKey(itemType)) {
             return null;
         }

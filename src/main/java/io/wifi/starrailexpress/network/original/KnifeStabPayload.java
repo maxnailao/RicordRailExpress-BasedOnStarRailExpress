@@ -178,7 +178,22 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 fxLevel.sendParticles(player, io.wifi.starrailexpress.index.TMMParticles.XINGGUANG_KILL_ORB, true,
                         target.getX(), target.getY() + 1.0, target.getZ(), 14, 0.0, 0.0, 0.0, 0.0);
                 io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
-                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(false));
+                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(false, false));
+            }
+            // 猩红之爪（传承）皮肤：击杀后仅向击杀者发送通知，触发全屏暗红滤镜
+            boolean clawKill = io.wifi.starrailexpress.client.XingguangPoseManager.XINGHONG_CLAW_SKIN_ID
+                    .equals(knife.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN))
+                    || io.wifi.starrailexpress.client.XingguangPoseManager.XINGHONG_CLAW_SKIN_ID
+                    .equals(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player, knife));
+            if (clawKill) {
+                io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
+                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(false, true));
+                // 暗红巨拳砸向尸体：仅击杀者客户端播放（CustomParticleS2CPayload 已在 SREPayloadRegister 注册，无需新增）
+                io.wifi.starrailexpress.network.PacketTracker.sendToClient(player,
+                        new io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload(java.util.List.of(
+                                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.Entry.at(
+                                        io.wifi.starrailexpress.SRE.id("claw_giant_fist"),
+                                        target.getX(), target.getY() + 1.0D, target.getZ(), 0))));
             }
             // 恶魔之刃特别皮肤：击杀玩家后，仅向击杀者本人发送紫粉色粒子特效
             if (io.wifi.starrailexpress.util.EmozhidaoSkinHandler.hasEmozhidaoSkinEquipped(player, knife)) {

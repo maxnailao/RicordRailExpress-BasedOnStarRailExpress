@@ -92,17 +92,29 @@ public class KnifeItem extends SkinableItem {
         if (user.isSpectator()) {
             return;
         }
+        // 猩红之爪蓄力演出：命中→快速播放"出击"剧本；未命中/蓄力不足→补转一圈回持刀位。
+        // 仅客户端，且 clawSkin 判定含 isClientSide，服务端零引用客户端类。
+        boolean clawSkin = world.isClientSide
+                && io.wifi.starrailexpress.client.XingguangPoseManager.XINGHONG_CLAW_SKIN_ID
+                        .equals(stack.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN));
         // 蓄力不足也会释放：先按"空放"通知姿态机回持刀，够蓄力时下面会用真实命中结果覆盖
         if (world.isClientSide && user instanceof Player) {
             io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(false);
         }
         if (remainingUseTicks >= this.getUseDuration(stack, user) - 8 || !(user instanceof Player attacker)
-                || !world.isClientSide)
+                || !world.isClientSide) {
+            if (clawSkin) {
+                io.wifi.starrailexpress.client.ClawFlipManager.notifyChargeReleased(false);
+            }
             return;
+        }
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(world);
         final var role = game.getRole(attacker);
         if (role != null) {
             if (!role.onUseKnife(attacker)) {
+                if (clawSkin) {
+                    io.wifi.starrailexpress.client.ClawFlipManager.notifyChargeReleased(false);
+                }
                 return;
             }
         }
@@ -113,10 +125,18 @@ public class KnifeItem extends SkinableItem {
                 SRE.REPLAY_MANAGER.recordItemUse(user.getUUID(), BuiltInRegistries.ITEM.getKey(this));
             }
             io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(true);
+            if (clawSkin) {
+                io.wifi.starrailexpress.client.ClawFlipManager.notifyChargeReleased(true);
+            } else {
+                io.wifi.starrailexpress.client.ClawFlipManager.notifyChargeReleased(false);
+            }
             ClientPlayNetworking.send(new KnifeStabPayload(target.getId()));
             CrosshairaddonsCompat.onAttack(target);
         } else {
             io.wifi.starrailexpress.client.XingguangPoseManager.onKnifeReleased(false);
+            if (clawSkin) {
+                io.wifi.starrailexpress.client.ClawFlipManager.notifyChargeReleased(false);
+            }
         }
     }
 
@@ -146,8 +166,14 @@ public class KnifeItem extends SkinableItem {
         // 蓄力演出已由 XingguangPoseManager（第一人称）与 XingguangChargeThirdPersonMixin
         // （第三人称）全权接管。其他皮肤保持原版投矛动画不变。
         // SKIN_ID 是编译期常量，内联后不产生对客户端类的运行时引用，服务端安全。
-        if (io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID
-                .equals(stack.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN))) {
+        String skin = stack.get(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN);
+        if (io.wifi.starrailexpress.client.XingguangClientEffects.SKIN_ID.equals(skin)) {
+            return UseAnim.NONE;
+        }
+        // 猩红之爪：同理取消原版 SPEAR 举刀变换——否则蓄力(isUsingItem)期间
+        // 刀会被顶到原版举刀位，蓄力转刀/奔跑持刀姿态全部错位。
+        // 爪子蓄力演出由 ClawFlipManager 转刀通道全权接管。
+        if (io.wifi.starrailexpress.client.XingguangPoseManager.XINGHONG_CLAW_SKIN_ID.equals(skin)) {
             return UseAnim.NONE;
         }
         return UseAnim.SPEAR;

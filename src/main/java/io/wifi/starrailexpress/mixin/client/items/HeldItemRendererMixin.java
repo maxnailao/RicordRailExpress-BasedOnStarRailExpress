@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.ClawFlipManager;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.XingguangHandRenderer;
 import io.wifi.starrailexpress.client.XingguangPoseManager;
@@ -79,15 +80,30 @@ public class HeldItemRendererMixin {
         }
         boolean override = !SRE.isLobby && hand == InteractionHand.MAIN_HAND
                 && player == this.minecraft.player && XingguangPoseManager.isXingguangKnife(stack);
-        if (!override) {
+        // 猩红之爪：切刀窗口接管手臂链（常驻持握仍走原版，不影响已定稿姿态）；
+        // 奔跑持刀通道叠加生效，且"退出奔跑回落期"也要保持接管，防止姿态突跳
+        boolean clawFlip = !SRE.isLobby && hand == InteractionHand.MAIN_HAND
+                && player == this.minecraft.player
+                && XingguangPoseManager.isXinghongClaw(stack)
+                && (ClawFlipManager.camActive() || ClawFlipManager.sprintHoldActive());
+        if (!override && !clawFlip) {
             original.call(player, partialTicks, pitch, hand, swingProgress, stack, equippedProgress,
                     poseStack, buffer, packedLight);
             return;
         }
         // 星光皮肤独占：先施加我们自己的劈砍/持刀姿态，再以 swingProgress=0 调用原版，
         // 彻底掐掉原版"挥东西"动画，避免两套动作重合。其他物品/视角原样保留原版挥动。
-        XingguangPoseManager.applyKnife(poseStack);
-        original.call(player, partialTicks, pitch, hand, 0.0F, stack, equippedProgress,
+        if (override) {
+            XingguangPoseManager.applyKnife(poseStack);
+        }
+        if (clawFlip) {
+            ClawFlipManager.applySprintCam(poseStack);
+            ClawFlipManager.applyCam(poseStack);
+        }
+        // 星光分支与爪子动画窗口照旧掐零摆臂；仅"爪子+奔跑持刀无窗口"保留原版跑步摆臂
+        float swingArg = (clawFlip && !override && !ClawFlipManager.camActive())
+                ? swingProgress : 0.0F;
+        original.call(player, partialTicks, pitch, hand, swingArg, stack, equippedProgress,
                 poseStack, buffer, packedLight);
     }
 

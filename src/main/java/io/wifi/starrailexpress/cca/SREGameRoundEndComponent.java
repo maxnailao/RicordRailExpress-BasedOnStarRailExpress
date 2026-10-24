@@ -66,7 +66,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
         if (winStatus != GameUtils.WinStatus.NONE) {
             for (ServerPlayer player : players) {
                 net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(true));
+                        new io.wifi.starrailexpress.network.original.XingguangKillFxS2CPayload(true, false));
             }
         }
     }

@@ -36,6 +36,8 @@ public class ShopConfig {
         public int epicSkinPrice = 150;
         public int legendarySkinPrice = 500;
         public int unbelievableSkinPrice = 2000;
+        /** 传承(LEGACY, 品质索引 6)皮肤出售价：最高档，扩展 7 档品质时必须补上，否则落入 default 被贱卖成普通价 */
+        public int legacySkinPrice = 20000;
         /** 箱子出售价格 {boxId: price} */
         public Map<String, Integer> boxPrices = new HashMap<>();
         /** 音乐盒出售价格（统一价格，因为音乐盒没有品质） */
@@ -52,6 +54,7 @@ public class ShopConfig {
                 case 3 -> epicSkinPrice;
                 case 4 -> legendarySkinPrice;
                 case 5 -> unbelievableSkinPrice;
+                case 6 -> legacySkinPrice;
                 default -> commonSkinPrice;
             };
         }
@@ -129,6 +132,8 @@ public class ShopConfig {
                     sellPriceConfig.legendarySkinPrice = sellObj.get("legendary_skinsprice").getAsInt();
                 if (sellObj.has("unbelievable_skinsprice"))
                     sellPriceConfig.unbelievableSkinPrice = sellObj.get("unbelievable_skinsprice").getAsInt();
+                if (sellObj.has("legacy_skinsprice"))
+                    sellPriceConfig.legacySkinPrice = sellObj.get("legacy_skinsprice").getAsInt();
                 if (sellObj.has("box_price")) {
                     JsonObject boxPrices = sellObj.getAsJsonObject("box_price");
                     for (String boxId : boxPrices.keySet()) {
@@ -180,6 +185,8 @@ public class ShopConfig {
                     sellPriceConfig.legendarySkinPrice = sellObj.get("legendary_skinsprice").getAsInt();
                 if (sellObj.has("unbelievable_skinsprice"))
                     sellPriceConfig.unbelievableSkinPrice = sellObj.get("unbelievable_skinsprice").getAsInt();
+                if (sellObj.has("legacy_skinsprice"))
+                    sellPriceConfig.legacySkinPrice = sellObj.get("legacy_skinsprice").getAsInt();
                 if (sellObj.has("box_price")) {
                     JsonObject boxPrices = sellObj.getAsJsonObject("box_price");
                     for (String boxId : boxPrices.keySet()) {
@@ -255,6 +262,7 @@ public class ShopConfig {
             sellprice.addProperty("epic_skinsprice", 150);
             sellprice.addProperty("legendary_skinsprice", 500);
             sellprice.addProperty("unbelievable_skinsprice", 2000);
+            sellprice.addProperty("legacy_skinsprice", 20000);
             JsonObject boxPrice = new JsonObject();
             boxPrice.addProperty("weapon_case_1", 20);
             boxPrice.addProperty("hat_box", 20);

@@ -226,6 +226,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     public void onInitializeClient() {
         DeathReactionClientHandle.register();
         FakeSteveClient.register();
+        org.agmas.noellesroles.client.RoadRollerClient.register();
         NoellesrolesClientAmbientSounds.register();
         // Dream（Dream）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
         org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler.register();

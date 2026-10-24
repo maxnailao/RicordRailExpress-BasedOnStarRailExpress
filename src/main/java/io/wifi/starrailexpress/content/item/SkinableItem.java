@@ -72,10 +72,25 @@ public abstract class SkinableItem extends Item {
 
     @Override
     public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int i, boolean bl) {
-        if (entity instanceof Player player) {
-            if (itemStack.get(SREDataComponentTypes.SKIN) == null) {
-                itemStack.set(SREDataComponentTypes.SKIN, ItemSkinManager.getEquippedSkin(player, itemStack));
+        if (!(entity instanceof Player player) || level.isClientSide()) {
+            return;
+        }
+        // 装备皮肤仅 personalize "正拿在手上"的 stack（主手/副手）：
+        // 若对所有无组件 stack 写组件，背包里每把普通刀都会被打上爪子等 3D 皮肤，
+        // 在物品栏渲染成被压扁的 3D 模型（"所有刀被 3D 化"的根因）。
+        boolean held = itemStack == player.getMainHandItem() || itemStack == player.getOffhandItem();
+        if (itemStack.get(SREDataComponentTypes.SKIN) == null) {
+            if (held) {
+                String skin = ItemSkinManager.getEquippedSkin(player, itemStack);
+                if (skin != null) {
+                    itemStack.set(SREDataComponentTypes.SKIN, skin);
+                }
             }
+        } else if (!held && "default".equals(ItemSkinManager.getEquippedSkin(player, itemStack))) {
+            // 历史污染清洗：旧版 inventoryTick 给所有 stack 打过组件。
+            // 仅当玩家当前未装备该类型皮肤时清除——与"普通刀应保持 2D 默认"的诉求一致；
+            // 若仍装备着皮肤，手持 stack 会重新打上组件，表现不受影响。
+            itemStack.remove(SREDataComponentTypes.SKIN);
         }
     }
 

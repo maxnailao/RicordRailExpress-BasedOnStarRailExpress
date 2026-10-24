@@ -79,6 +79,17 @@ repositories {
 }
 
 dependencies {
+    // NightConfig is required by the bundled client mods (Modern UI, Exposure,
+    // HandheldMoon and CoroUtil) during Fabric entrypoint initialization.
+    include(implementation("com.electronwill.night-config:core:3.8.1"))
+    include(implementation("com.electronwill.night-config:toml:3.8.1"))
+
+    // Endfield-style lobby renderer.  The renderer is isolated to MenuHubScreen;
+    // match inventory screens continue to use the vanilla GUI pipeline.
+    implementation include("io.github.humbleui:skija-shared:0.143.18")
+    implementation include("io.github.humbleui:types:0.2.0")
+    runtimeOnly include("io.github.humbleui:skija-windows-x64:0.143.18")
+
     // 这个没用到：
     // include(implementation("com.mysql:mysql-connector-j:8.4.0"))
     include(implementation("com.zaxxer:HikariCP:5.1.0"))
@@ -87,6 +98,7 @@ dependencies {
     include(implementation('com.github.promeg:tinypinyin:2.0.3'))
     // TinyPinyin核心包，约80KB
     // To change the versions see the gradle.properties file
+    compileOnly("org.jspecify:jspecify:1.0.0")
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -94,10 +106,8 @@ dependencies {
 //    modImplementation files("libs/CustomSkinLoader_Fabric-14.28.jar")
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modRuntimeOnly files("libs/architectury-13.0.8-fabric.jar")
-    modCompileOnly("dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:4.8.7+1.21.1")
     modCompileOnly files("libs/PresenceFootsteps-1.11.1+1.21.jar")
     modRuntimeOnly files("libs/WalksyLib-0.9.96+1.21.jar")
-    modRuntimeOnly("dev.lambdaurora.lambdynamiclights:lambdynamiclights-runtime:4.8.7+1.21.1")
     // Wathe Items
     // modImplementation "maven.modrinth:ratatouille:1.4.3-1.21.1"
     modImplementation files("libs/ratatouille-1.4.3-1.21.1.jar")
@@ -116,7 +126,6 @@ dependencies {
     modImplementation files("libs/1_wathe-extra-items-1.21.1-1.0.7.jar")
     // Other libs
     modImplementation files("libs/sre-lib-${project.sre_lib_version}.jar")
-    modRuntimeOnly files("libs/HandheldMoon-fabric-1.21.1-1.0.0.jar")
     modRuntimeOnly files("libs/modernfix-fabric-5.25.1+mc1.21.1.jar")
     modImplementation files("libs/fabric-carpet-1.21-1.4.147+v240613.jar")
     modRuntimeOnly files("libs/midnightlib-fabric-1.9.2+1.21.1.jar")

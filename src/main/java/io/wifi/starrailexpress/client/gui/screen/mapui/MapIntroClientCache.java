@@ -136,4 +136,33 @@ public final class MapIntroClientCache {
         }
         return List.copyOf(out);
     }
+
+    /** 当前投票候选池里权重最高的地图；没有候选信息时使用全部已登记地图。 */
+    @Nullable
+    public static MapDisplayInfo highestWeightMap() {
+        MapDisplayInfo best = null;
+        for (MapDisplayInfo info : candidates()) {
+            if (info.hasVoteConfig() && info.voteWeight() > 0
+                    && (best == null || info.voteWeight() > best.voteWeight())) {
+                best = info;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 大厅中央展示用的地图：只看完整的投票配置，不看本轮随机候选或投票结果。
+     * 投票候选列表会在开局过程中变化，不能拿它驱动大厅装饰背景。
+     */
+    @Nullable
+    public static MapDisplayInfo highestWeightConfiguredMap() {
+        MapDisplayInfo best = null;
+        for (MapDisplayInfo info : MAPS.values()) {
+            if (info.hasVoteConfig() && info.voteWeight() > 0
+                    && (best == null || info.voteWeight() > best.voteWeight())) {
+                best = info;
+            }
+        }
+        return best;
+    }
 }

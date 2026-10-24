@@ -409,6 +409,7 @@
   "command.sre.switchmap.load": "加載地圖: %s",
   "gui.sre.hud.vote_reminder": "按 %s 鍵打開地圖投票介面",
   "key.starrailexpress.open_voting_screen": "打開投票介面",
+  "key.starrailexpress.inspect": "檢視武器",
   "category.starrailexpress.general": "列車謀殺案 - 通用",
   "gui.mapselector.title": "選擇地圖",
   "gui.mapselector.select": "選擇",
@@ -3105,5 +3106,9 @@
   "screen.game_manage.btn.selfselect_limit_1": "自選卡/天：1 張",
   "screen.game_manage.btn.selfselect_limit_2": "自選卡/天：2 張",
   "screen.game_manage.btn.selfselect_limit_3": "自選卡/天：3 張",
-  "screen.game_manage.btn.selfselect_limit_5": "自選卡/天：5 張"
+  "screen.game_manage.btn.selfselect_limit_5": "自選卡/天：5 張",
+  "tooltip.starrailexpress.item.shift_more": "按住 [%s] 顯示更多資訊",
+  "tooltip.starrailexpress.item.shop_header": "出現在以下職業商店：",
+  "tooltip.starrailexpress.item.start_header": "以下職業開局獲得：",
+  "tooltip.starrailexpress.item.shop_more": "  …以及其他 %s 個職業"
 }

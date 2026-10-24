@@ -1,407 +1,487 @@
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.cca.ParticipationComponent;
-import org.agmas.noellesroles.client.screen.CS2WarehouseScreen;
-import io.wifi.starrailexpress.content.mail.MailboxScreen;
-import org.agmas.noellesroles.client.screen.GameManagementScreen;
-import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
-import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.SREClientConfig;
-import net.exmo.sre.EXSREClient;
-import net.exmo.sre.loading.FrameAnimationRenderer;
+import io.wifi.starrailexpress.cca.ParticipationComponent;
+import io.wifi.starrailexpress.client.gui.endfield.EndfieldMenuRenderer;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.MenuTimeline;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.SpringValue;
+import io.wifi.starrailexpress.client.gui.endfield.menu.input.PointerGesture;
+import io.wifi.starrailexpress.client.gui.endfield.menu.input.ScrollMotion;
+import io.wifi.starrailexpress.client.gui.endfield.menu.layout.Box;
+import io.wifi.starrailexpress.client.gui.endfield.menu.layout.DiscGeometry;
+import io.wifi.starrailexpress.client.gui.endfield.menu.layout.MenuLayout;
+import io.wifi.starrailexpress.client.gui.endfield.menu.layout.MenuScene;
+import io.wifi.starrailexpress.client.gui.endfield.menu.layout.SceneProjection;
+import io.wifi.starrailexpress.client.gui.endfield.menu.model.MenuAction;
+import io.wifi.starrailexpress.client.gui.endfield.menu.model.MenuEntry;
+import io.wifi.starrailexpress.client.gui.endfield.menu.model.PlayerCard;
+import io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache;
+import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
+import io.wifi.starrailexpress.client.stats.ClientPlayerStatsCache;
+import io.wifi.starrailexpress.content.mail.MailboxScreen;
+import io.wifi.starrailexpress.network.MapIntroRequestPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.stats.Stats;
+import org.lwjgl.glfw.GLFW;
+import org.agmas.noellesroles.client.screen.CS2WarehouseScreen;
+import org.agmas.noellesroles.client.screen.GameManagementScreen;
 import org.agmas.noellesroles.client.screen.LootInfoScreen;
 import org.agmas.noellesroles.packet.Loot.LootPoolsInfoCheckC2SPacket;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
- * 生存模式 E 键菜单（菜单栏）。
- * <p>
- * 左侧为人物皮肤预览（黑灰渐变背景，移动鼠标可旋转查看），
- * 中部 3x2 白色方块为功能按钮，右侧黑色方块为下一页按钮，顶部为标题栏。
- * 面板配色与 CS2 仓库/商店（原本菜单）保持一致。
- * </p>
+ * Full EndfieldCraft-style lobby menu.  This screen is intentionally separate
+ * from LimitedInventoryScreen: the latter remains the match-only inventory.
  */
-public class MenuHubScreen extends Screen {
-
-    // 面板主体背景图（黄色区域，拉伸铺满；无视频帧时的回退图）
-    private static final ResourceLocation BG_TEXTURE =
-            SRE.id("textures/gui/menu_background.png");
-
-    // 视频动态背景：由 tools/mp4_to_menu_frames.ps1 从 MP4 抽帧生成到 run/video/menu_flow/
-    // MENU_VIDEO_FPS 必须与导出脚本的 -Fps 参数保持一致
-    private static final float MENU_VIDEO_FPS = 12.0F;
-    private static final FrameAnimationRenderer MENU_VIDEO =
-            new FrameAnimationRenderer(MENU_VIDEO_FPS, EXSREClient.MENU_VIDEO_DIR, false);
-
-    // 与 CS2WarehouseScreen 同源的配色
-    private static final int BG_COLOR = 0xE60C1020;
-    private static final int PANEL_COLOR = 0xC0161B30;
-    private static final int ACCENT = 0xFF4488FF;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-
-    // 白色边框（替代原来的蓝色 ACCENT 描边）
-    private static final int BORDER_COLOR = 0xFFFFFFFF;
-    // 右上角现实时间格式（时:分:秒）
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-    private static final int SQUARE_BG = 0xF2FFFFFF;
-    private static final int SQUARE_BG_HOVER = 0xFFE6F0FF;
-    private static final int SQUARE_BG_DOWN = 0xFFBBD4FF;
-    private static final int SQUARE_TEXT = 0xFF1A1F2E;
-    private static final int NEXT_BG = 0xFF0A0A0A;
-    private static final int NEXT_BG_HOVER = 0xFF1E2533;
-    private static final int NEXT_BG_DOWN = 0xFF3A4A66;
-
-    // 第二页按权限区分：管理项红字；普通玩家不可打开项用灰底白字（禁用态仍可读）
-    private static final int RED_TEXT = 0xFFCC2222;
-    private static final int WHITE_TEXT = 0xFFFFFFFF;
-    private static final int DISABLE_BG = 0xFF556070;
-
-    // 标题栏高度 + 右上角“参与/不参与游戏”切换按钮
-    private static final int HEADER_H = 24;
-    private static final int PARTICIPATION_BTN_W = 60;
-    private static final int PARTICIPATION_BTN_H = 16;
-    // 按钮文字颜色按“点击后的结果”着色：可加入=绿，将退出=红
-    private static final int PARTICIPATION_JOIN_TEXT = 0xFF15803D;
-    private static final int PARTICIPATION_LEAVE_TEXT = 0xFFB42318;
-
-    private static final int TOTAL_PAGES = 2;
-    private int page = 1;
-
-    // 布局（init 时计算，render/按钮共用）
-    private int panelX, panelY, panelW, panelH;
-    private int previewX, previewY, previewW, previewH;
-    private int nextX, nextY, nextSize = 22;
-
-    // 标题栏右上角的参与状态切换按钮
-    private SquareButton participationButton;
+public final class MenuHubScreen extends Screen {
+    private static final String CLOSE = "close";
+    private static final String RESUME = "resume";
+    private final PointerGesture pointer = new PointerGesture();
+    private final ScrollMotion scroll = new ScrollMotion();
+    private final SpringValue yaw = new SpringValue();
+    private final SpringValue pitch = new SpringValue();
+    private final Map<String, SpringValue> hovers = new LinkedHashMap<>();
+    private final Map<String, SpringValue> presses = new LinkedHashMap<>();
+    private final Map<String, Runnable> actions = new LinkedHashMap<>();
+    private List<MenuEntry> entries = List.of();
+    private List<MenuScene.Button> buttons = List.of();
+    private MenuLayout layout;
+    private SceneProjection projection;
+    private MenuTimeline timeline;
+    private EndfieldMenuRenderer renderer;
+    private PlayerCard playerCard;
+    private long lastFrame;
+    private boolean draggingScroll;
+    private boolean reducedMotion;
+    private float pointerX;
+    private float pointerY;
+    private long lastSnapshot;
+    private String participationState;
+    private String focusedId;
+    private String showcaseMapId;
 
     public MenuHubScreen() {
-        super(Component.literal("菜单栏"));
+        super(Component.literal("Ricord Rail Express"));
     }
 
     @Override
     protected void init() {
         super.init();
-        computeLayout();
-        rebuildButtons();
-        if (!MENU_VIDEO.hasFrames()) {
-            MENU_VIDEO.loadFrames();
+        reducedMotion = minecraft.options.screenEffectScale().get() == 0;
+        entries = buildEntries();
+        var window = minecraft.getWindow();
+        layout = MenuLayout.create(width, height, window.getWidth(), window.getHeight(), entries);
+        projection = new SceneProjection(layout, 0, 0);
+        scroll.setLimit(layout.maxScroll());
+        pointer.cancel();
+        focusedId = null;
+        draggingScroll = false;
+        playerCard = capturePlayer(minecraft);
+        participationState = participationLabel();
+        requestShowcaseMap();
+        showcaseMapId = showcaseMapId();
+        try {
+            renderer = EndfieldMenuRenderer.acquire(minecraft);
+            MenuTimeline.Frame preparationFrame = new MenuTimeline.Frame(900, -1);
+            buttons = MenuScene.buttons(layout, preparationFrame, 0);
+            renderer.prepare(layout, playerCard, buttons, showcaseMapId);
+        } catch (RuntimeException | LinkageError failure) {
+            EndfieldMenuRenderer.releaseShared();
+            renderer = null;
+            buttons = List.of();
         }
+        long now = System.nanoTime();
+        timeline = new MenuTimeline(now, reducedMotion);
+        lastFrame = now;
+        lastSnapshot = now;
+        buttons = MenuScene.buttons(layout, timeline.sample(now), 0);
     }
 
-    private void computeLayout() {
-        panelW = Math.min(width - 16, 360);
-        panelH = Math.min(height - 48, 190);
-        panelX = (width - panelW) / 2;
-        panelY = (height - panelH) / 2 + 14;
-
-        int pad = 8;
-        previewX = panelX + pad;
-        previewY = panelY + pad;
-        previewH = panelH - pad * 2;
-        previewW = (int) (previewH * 0.62);
+    private List<MenuEntry> buildEntries() {
+        actions.clear();
+        List<MenuEntry> result = new ArrayList<>();
+        add(result, RESUME, "返回游戏", MenuAction.RESUME, true, this::onClose);
+        add(result, "accessories", "饰品", MenuAction.ADVANCEMENTS, true,
+                () -> minecraft.setScreen(new AccessoryScreen(this)));
+        add(result, "shop", "商城", MenuAction.STATISTICS, true,
+                () -> minecraft.setScreen(new ShopScreen(this)));
+        add(result, "role_cards", "职业卡", MenuAction.OPTIONS, true,
+                () -> minecraft.setScreen(new RoleCardScreen(this)));
+        add(result, "warehouse", "仓库", MenuAction.WORLD_OPTIONS, true,
+                () -> minecraft.setScreen(new CS2WarehouseScreen()));
+        add(result, "lottery", "抽奖", MenuAction.FRIENDS, true, this::openLottery);
+        add(result, "mail", "邮箱", MenuAction.FEEDBACK, true,
+                () -> minecraft.setScreen(new MailboxScreen()));
+        add(result, "client_options", "客户端选项", MenuAction.OPTIONS, true,
+                () -> minecraft.setScreen(SREClientConfig.HANDLER.generateGui().generateScreen(this)));
+        boolean operator = minecraft.player != null && minecraft.player.hasPermissions(2);
+        add(result, "game_management", "游戏管理", MenuAction.BUGS, operator,
+                operator ? () -> minecraft.setScreen(new GameManagementScreen(this)) : this::tellPermission);
+        add(result, "role_rotation", "职业轮换管理", MenuAction.REPORTING, operator,
+                operator ? () -> minecraft.setScreen(new RoleRosterEditScreen()) : this::tellPermission);
+        add(result, "participation", participationLabel(), MenuAction.OTHER, true,
+                () -> toggleParticipation());
+        add(result, "disconnect", "离开大厅", MenuAction.DISCONNECT, true, this::onClose);
+        return List.copyOf(result);
     }
 
-    /** 参与切换按钮贴在标题栏右上角。 */
-    private int participationX() {
-        return panelX + panelW - PARTICIPATION_BTN_W - 4;
-    }
-
-    private int participationY() {
-        return panelY - HEADER_H + (HEADER_H - PARTICIPATION_BTN_H) / 2;
-    }
-
-    /** 当前玩家是否参与下一局游戏（默认参与）。 */
-    private boolean isParticipating() {
-        if (minecraft == null || minecraft.player == null) {
-            return true;
-        }
-        return ParticipationComponent.KEY.get(minecraft.player.level()).isParticipating(minecraft.player);
-    }
-
-    /** 按钮文案 = 点击后的动作：参与中显示“不参与游戏”，未参与显示“参与游戏”。 */
     private String participationLabel() {
-        return Component
-                .translatable(isParticipating()
-                        ? "screen.limited_inventory.button.participate.leave"
-                        : "screen.limited_inventory.button.participate.join")
-                .getString();
+        boolean participating = minecraft.player == null
+                || ParticipationComponent.KEY.get(minecraft.player.level()).isParticipating(minecraft.player);
+        return participating ? "退出本局" : "参加本局";
     }
 
-    /** 服务端组件同步后刷新按钮文案与颜色。 */
-    private void refreshParticipationState() {
-        if (participationButton == null) {
-            return;
+    private void toggleParticipation() {
+        if (minecraft.player != null) {
+            minecraft.player.connection.sendCommand("tmm:participate");
         }
-        boolean participating = isParticipating();
-        participationButton.setMessage(Component
-                .translatable(participating
-                        ? "screen.limited_inventory.button.participate.leave"
-                        : "screen.limited_inventory.button.participate.join"));
-        participationButton.setTextColor(participating ? PARTICIPATION_LEAVE_TEXT : PARTICIPATION_JOIN_TEXT);
-        participationButton.setTooltip(Tooltip.create(Component
-                .translatable(participating
-                        ? "lobby.sre.participation.joined"
-                        : "lobby.sre.participation.left")
-                .append(Component.literal("\n"))
-                .append(Component.translatable("screen.limited_inventory.button.participate.hover_text"))));
     }
 
-    private void rebuildButtons() {
-        clearWidgets();
-
-        int gap = 10;
-        int gridStartX = previewX + previewW + 12;
-        int gridMaxX = panelX + panelW - nextSize - 14;
-        int cell = Math.min((gridMaxX - gridStartX - gap * 2) / 3, (previewH - gap) / 2);
-        cell = Math.max(cell, 20);
-        int gridW = cell * 3 + gap * 2;
-        int gridH = cell * 2 + gap;
-        int gx = gridStartX + (gridMaxX - gridStartX - gridW) / 2;
-        int gy = panelY + (panelH - gridH) / 2;
-
-        boolean op = minecraft.player != null && minecraft.player.hasPermissions(2);
-
-        String[] labels = {"饰品", "商城", "职业卡", "仓库", "抽奖", "邮箱"};
-        int[] texts = {SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT, SQUARE_TEXT};
-        int[] bgs = {SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG, SQUARE_BG};
-        boolean[] enabled = {true, true, true, true, true, true};
-
-        if (page == 2) {
-            labels = new String[]{"", "", "", "", "", ""};
-            if (op) {
-                // 管理：游戏管理 / 职业轮换管理 均红字、可打开
-                labels[2] = "游戏管理";     texts[2] = RED_TEXT;
-                labels[5] = "职业轮换管理"; texts[5] = RED_TEXT;
-            } else {
-                // 普通：右上=列车客户端选项（可打开）；右下=职业轮换管理（白字、不可打开）
-                labels[2] = "列车客户端选项"; texts[2] = SQUARE_TEXT;
-                labels[5] = "职业轮换管理";   texts[5] = WHITE_TEXT; bgs[5] = DISABLE_BG; enabled[5] = false;
-            }
-        }
-
-        for (int i = 0; i < 6; i++) {
-            int col = i % 3;
-            int row = i / 3;
-            final int idx = i;
-            SquareButton sb = new SquareButton(
-                    gx + col * (cell + gap), gy + row * (cell + gap), cell, cell,
-                    labels[i], b -> onGridClick(idx),
-                    bgs[i], SQUARE_BG_HOVER, SQUARE_BG_DOWN, texts[i]);
-            sb.active = enabled[i];
-            addRenderableWidget(sb);
-        }
-
-        // 黑色下一页按钮：目前仅切换页码，第二页内容为空壳
-        nextX = panelX + panelW - nextSize - 6;
-        nextY = gy + gridH / 2 - nextSize / 2;
-        addRenderableWidget(new SquareButton(nextX, nextY, nextSize, nextSize, "▶", b -> {
-            page = page >= TOTAL_PAGES ? 1 : page + 1;
-            rebuildButtons();
-        }, NEXT_BG, NEXT_BG_HOVER, NEXT_BG_DOWN, TEXT_COLOR));
-
-        // 标题栏右上角：切换参与/不参与游戏（与 LimitedInventoryScreen 同一命令入口）
-        participationButton = new SquareButton(participationX(), participationY(),
-                PARTICIPATION_BTN_W, PARTICIPATION_BTN_H, participationLabel(), b -> {
-                    if (minecraft != null && minecraft.player != null) {
-                        minecraft.player.connection.sendCommand("tmm:participate");
-                    }
-                    // 乐观刷新，随后 tick() 依据服务端同步的组件状态校正
-                    refreshParticipationState();
-                },
-                SQUARE_BG, SQUARE_BG_HOVER, SQUARE_BG_DOWN, SQUARE_TEXT);
-        addRenderableWidget(participationButton);
-        refreshParticipationState();
+    private void add(List<MenuEntry> result, String id, String label, MenuAction action,
+                     boolean enabled, Runnable callback) {
+        result.add(new MenuEntry(id, label, action, enabled));
+        actions.put(id, callback);
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        // 参与状态由服务端 AutoSyncedComponent 同步，轮询刷新按钮显示
-        refreshParticipationState();
-    }
-
-    private void onGridClick(int idx) {
-        if (page == 2) {
-            boolean op = minecraft.player != null && minecraft.player.hasPermissions(2);
-            switch (idx) {
-                case 2 -> { // 右上：管理=游戏管理；普通=列车客户端选项
-                    if (op) minecraft.setScreen(new GameManagementScreen(this));
-                    else minecraft.setScreen(SREClientConfig.HANDLER.generateGui().generateScreen(this));
-                }
-                case 5 -> { // 右下：仅管理可打开职业轮换管理；普通该格已禁用，不会触发
-                    if (op) minecraft.setScreen(new RoleRosterEditScreen());
-                }
-                default -> tellDeveloping();
-            }
-            return;
-        }
-        if (page != 1) {
-            tellDeveloping();
-            return;
-        }
-        switch (idx) {
-            case 0 -> minecraft.setScreen(new AccessoryScreen(this));
-            case 1 -> minecraft.setScreen(new ShopScreen(this));
-            case 2 -> minecraft.setScreen(new RoleCardScreen(this));
-            case 3 -> minecraft.setScreen(new CS2WarehouseScreen());
-            case 4 -> openLottery();
-            case 5 -> minecraft.setScreen(new MailboxScreen());
-            default -> tellDeveloping();
-        }
-    }
-
-    /** 打开抽奖系统（卡池界面）：与局内便捷菜单同款接入，卡池未同步时先向服务端请求 */
-    private void openLottery() {
-        if (LotteryManager.getInstance().getLotteryPools().isEmpty())
-            ClientPlayNetworking.send(new LootPoolsInfoCheckC2SPacket());
-        minecraft.setScreen(new LootInfoScreen(0, 0, 0, this));
-    }
-
-    private void noPerm() {
-        if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(Component.literal("§c需要管理权限才能打开该功能"), true);
-        }
-    }
-
-    private void tellDeveloping() {
-        if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(Component.literal("§e该功能开发中"), true);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (timeline != null) {
+            int alpha = Math.round(205 * timeline.sample(System.nanoTime()).backdrop());
+            graphics.fill(0, 0, width, height, alpha << 24 | 0x0b1415);
         }
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // 全屏背景 + 菜单面板（沿用原本菜单风格）
-        graphics.fill(0, 0, width, height, BG_COLOR);
-
-        int headerH = HEADER_H;
-        // 顶部标题栏（114514.png 红色区域）改为白色
-        graphics.fill(panelX, panelY - headerH, panelX + panelW, panelY, 0xFFFFFFFF);
-        // 左上角：主菜单；右上角：参与切换按钮，现实时间放在按钮左侧
-        graphics.drawString(font, "主菜单", panelX + 4, panelY - headerH + 8, SQUARE_TEXT);
-        String timeStr = LocalTime.now().format(TIME_FMT);
-        int timeX = participationX() - 6 - font.width(timeStr);
-        if (timeX > panelX + 12 + font.width("主菜单")) {
-            graphics.drawString(font, timeStr, timeX, panelY - headerH + 8, SQUARE_TEXT);
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        long now = System.nanoTime();
+        float dt = Math.clamp((now - lastFrame) / 1_000_000_000f, 0, 0.05f);
+        lastFrame = now;
+        pointerX = mouseX;
+        pointerY = mouseY;
+        scroll.update(dt, draggingScroll && pointer.down());
+        if (!pointer.down()) {
+            yaw.update(reducedMotion || layout.compact() ? 0 : -(mouseX / (float) Math.max(width, 1) * 2 - 1) * 4, dt, 12);
+            pitch.update(reducedMotion || layout.compact() ? 0 : (mouseY / (float) Math.max(height, 1) * 2 - 1) * 2.5f, dt, 12);
         }
-
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_COLOR);
-        // 面板主体（黄色区域）背景：优先播放视频帧序列，无帧时回退到静态图片
-        if (MENU_VIDEO.hasFrames()) {
-            MENU_VIDEO.render(graphics, panelX, panelY, panelW, panelH);
+        projection = new SceneProjection(layout, yaw.value(), pitch.value());
+        MenuTimeline.Frame frame = timeline.sample(now);
+        buttons = MenuScene.buttons(layout, frame, scroll.position());
+        String hovered = hit(mouseX, mouseY);
+        Map<String, EndfieldMenuRenderer.Feedback> feedback = new LinkedHashMap<>();
+        for (MenuEntry entry : entries) {
+            float over = hovers.computeIfAbsent(entry.id(), ignored -> new SpringValue())
+                    .update(entry.id().equals(hovered) && entry.enabled() ? 1 : 0, dt, 22);
+            float press = presses.computeIfAbsent(entry.id(), ignored -> new SpringValue())
+                    .update(pointer.pressed(entry.id()) ? 1 : 0, dt, 35);
+            feedback.put(entry.id(), new EndfieldMenuRenderer.Feedback(over, press,
+                    entry.id().equals(focusedId)));
+        }
+        if (renderer != null) {
+            renderer.render(graphics, layout, frame, playerCard, buttons, feedback, scroll.position(), yaw.value(), pitch.value());
         } else {
-            graphics.blit(BG_TEXTURE, panelX, panelY, panelW, panelH, 0.0F, 0.0F, 1, 1, 1, 1);
+            renderFallback(graphics, frame, hovered);
         }
-        graphics.renderOutline(panelX, panelY, panelW, panelH, BORDER_COLOR);
-
-        // 左侧：蓝白渐变的人物预览背景
-        graphics.fillGradient(previewX, previewY, previewX + previewW, previewY + previewH,
-                0xFFE6F0FF, 0xFF4488FF);
-        graphics.renderOutline(previewX, previewY, previewW, previewH, 0xFF556178);
-
-        super.render(graphics, mouseX, mouseY, partialTick);
-
-        // 打开者自己的皮肤，跟随鼠标旋转查看
-        if (minecraft.player != null) {
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 300F);
-            int modelScale = Math.max(previewH / 5, 20);
-            InventoryScreen.renderEntityInInventoryFollowsMouse(
-                    graphics, previewX, previewY, previewX + previewW, previewY + previewH,
-                    modelScale, 0.0625F, mouseX, mouseY, minecraft.player);
-            graphics.pose().popPose();
-        }
-
-        // 页码：位于下一页按钮上方
-        graphics.drawCenteredString(font, page + "/" + TOTAL_PAGES,
-                nextX + nextSize / 2, nextY - 13, TEXT_COLOR);
     }
 
-    // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    private void renderFallback(GuiGraphics graphics, MenuTimeline.Frame frame, String hovered) {
+        graphics.fill(0, 0, width, height, Math.round(205 * frame.backdrop()) << 24 | 0x0b1415);
+        graphics.drawCenteredString(font, Component.literal("Ricord Rail Express"), width / 2, height / 2 - 10, 0xfff1ed48);
+        graphics.drawCenteredString(font, Component.literal("Endfield menu renderer unavailable"), width / 2, height / 2 + 10, 0xffb4b4a4);
+    }
+
+    private String hit(double x, double y) {
+        if (timeline == null || timeline.closing()) {
+            return null;
+        }
+        float localX = layout.localX(x);
+        float localY = layout.localY(y);
+        if (timeline.sample(System.nanoTime()).controlsAlpha() > 0.8f && layout.close().contains(localX, localY)) {
+            return CLOSE;
+        }
+        for (MenuScene.Button button : buttons.reversed()) {
+            if (button.alpha() < 0.8f) {
+                continue;
+            }
+            if (button.slot().scrollable() && !layout.scrollArea().contains(localX, localY)) {
+                continue;
+            }
+            Box area = button.slot().style() == MenuLayout.Style.RESUME_ARC
+                    ? button.box() : new Box(button.box().x(), button.box().y(),
+                    Math.max(1, button.box().width() - 8), Math.max(1, button.box().height() - 10));
+            boolean inside = button.slot().style() == MenuLayout.Style.RESUME_ARC
+                    ? projection.containsResume(button.plane(), x, y)
+                    : projection.contains(area, button.plane(), x, y);
+            if (inside) {
+                return button.slot().entry().id();
+            }
+        }
+        return null;
     }
 
     @Override
-    public boolean isPauseScreen() {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button != 0 || timeline.closing()) {
+            return false;
+        }
+        String id = hit(mouseX, mouseY);
+        if (id != null) {
+            MenuEntry entry = entries.stream().filter(value -> value.id().equals(id)).findFirst().orElse(null);
+            if (entry != null && !entry.enabled()) {
+                return true;
+            }
+        }
+        pointer.begin(id, mouseX, mouseY);
+        if (id != null) {
+            focusedId = id;
+        }
+        draggingScroll = layout.maxScroll() > 0 && layout.scrollArea().contains(layout.localX(mouseX), layout.localY(mouseY));
+        if (draggingScroll) {
+            scroll.stop();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button != 0 || !pointer.down()) {
+            return false;
+        }
+        if (draggingScroll) {
+            scroll.drag((float) dragY / Math.max(layout.scale(), 0.01f), 1 / 60f);
+        }
+        pointer.move(mouseX, mouseY, 6);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button != 0 || !pointer.down()) {
+            return false;
+        }
+        String id = pointer.release(hit(mouseX, mouseY));
+        draggingScroll = false;
+        if (id != null) {
+            activate(id);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (layout.maxScroll() > 0 && layout.scrollArea().contains(layout.localX(mouseX), layout.localY(mouseY))) {
+            scroll.wheel(scrollY);
+            return true;
+        }
         return false;
     }
 
-    // 主菜单是普通 Screen，原版 E 键关闭只对容器界面生效；这里显式支持 E 键关闭。
+    private void activate(String id) {
+        if (CLOSE.equals(id) || RESUME.equals(id)) {
+            onClose();
+            return;
+        }
+        MenuEntry entry = entries.stream().filter(value -> value.id().equals(id)).findFirst().orElse(null);
+        if (entry == null || !entry.enabled()) {
+            return;
+        }
+        if ("participation".equals(id)) {
+            playClick();
+            toggleParticipation();
+            return;
+        }
+        timeline.close(System.nanoTime());
+        playClick();
+        // Keep the action until the original scene has completed its close animation.
+        pendingAction = actions.get(id);
+    }
+
+    private void playClick() {
+        minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0f));
+    }
+
+    private Runnable pendingAction;
+
+    @Override
+    public void tick() {
+        super.tick();
+        long now = System.nanoTime();
+        if (timeline != null && !timeline.closing() && now - lastSnapshot >= 500_000_000L) {
+            lastSnapshot = now;
+            String currentParticipation = participationLabel();
+            if (!currentParticipation.equals(participationState)) {
+                participationState = currentParticipation;
+                entries = buildEntries();
+                layout = MenuLayout.create(width, height, minecraft.getWindow().getWidth(),
+                        minecraft.getWindow().getHeight(), entries);
+                scroll.setLimit(layout.maxScroll());
+                if (renderer != null) {
+                    renderer.invalidateButton("participation");
+                }
+            }
+            PlayerCard current = capturePlayer(minecraft);
+            if (!sameSnapshot(playerCard, current)) {
+                playerCard = current;
+                if (renderer != null) {
+                    renderer.invalidatePlayerLayers();
+                }
+            }
+            String currentMapId = showcaseMapId();
+            if (!java.util.Objects.equals(showcaseMapId, currentMapId)) {
+                showcaseMapId = currentMapId;
+                if (renderer != null) {
+                    renderer.setShowcaseMap(currentMapId);
+                }
+            }
+        }
+        if (timeline != null && timeline.finished(now)) {
+            Runnable action = pendingAction;
+            pendingAction = null;
+            if (action != null) {
+                action.run();
+            }
+        }
+    }
+
+    private static boolean sameSnapshot(PlayerCard first, PlayerCard second) {
+        return first != null && second != null
+                && first.name().equals(second.name())
+                && first.daysPlayed() == second.daysPlayed()
+                && Float.compare(first.dayProgress(), second.dayProgress()) == 0
+                && first.world().equals(second.world())
+                && first.status().equals(second.status())
+                && first.mode().equals(second.mode())
+                && first.connection().equals(second.connection())
+                && first.heading().equals(second.heading())
+                && first.daysPlayedLabel().equals(second.daysPlayedLabel())
+                && first.hint().equals(second.hint());
+    }
+
+    @Override
+    public void onClose() {
+        if (timeline == null || timeline.closing()) {
+            minecraft.setScreen(null);
+        } else {
+            timeline.close(System.nanoTime());
+            pendingAction = () -> minecraft.setScreen(null);
+        }
+    }
+
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.minecraft != null && this.minecraft.options != null
-                && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
-            // 消费掉本次按键点击，避免下一 tick 的 handleKeybinds 再次打开主菜单。
-            this.minecraft.options.keyInventory.consumeClick();
-            this.minecraft.setScreen(null);
+        if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            onClose();
+            return true;
+        }
+        if (timeline == null || timeline.closing()) {
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_TAB || keyCode == GLFW.GLFW_KEY_DOWN || keyCode == GLFW.GLFW_KEY_RIGHT) {
+            focusNext(false);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_LEFT) {
+            focusNext(true);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER
+                || keyCode == GLFW.GLFW_KEY_SPACE) {
+            if (focusedId != null) {
+                activate(focusedId);
+            }
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    /** 白色/黑色方块按钮：纯色底 + 描边 + 居中文字 */
-    private class SquareButton extends Button {
-        private final int bg, hover, down;
-        private int textColor;
-        private boolean pressed;
-
-        SquareButton(int x, int y, int w, int h, String label, OnPress action) {
-            this(x, y, w, h, label, action, SQUARE_BG, SQUARE_BG_HOVER, SQUARE_BG_DOWN, SQUARE_TEXT);
+    private void focusNext(boolean backwards) {
+        List<MenuEntry> focusable = entries.stream().filter(MenuEntry::enabled).toList();
+        if (focusable.isEmpty()) {
+            return;
         }
-
-        SquareButton(int x, int y, int w, int h, String label, OnPress action,
-                int bg, int hover, int down, int textColor) {
-            super(x, y, w, h, Component.literal(label), action, DEFAULT_NARRATION);
-            this.bg = bg;
-            this.hover = hover;
-            this.down = down;
-            this.textColor = textColor;
-        }
-
-        void setTextColor(int color) {
-            this.textColor = color;
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            this.pressed = true;
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-
-        @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            this.pressed = false;
-            return super.mouseReleased(mouseX, mouseY, button);
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            int color = !active ? (bg & 0x80FFFFFF)
-                    : (isHoveredOrFocused() ? (pressed ? down : hover) : bg);
-            graphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), color);
-            graphics.renderOutline(getX(), getY(), getWidth(), getHeight(), 0xFFB8C4DC);
-            String msg = getMessage().getString();
-            if (!msg.isEmpty()) {
-                graphics.drawCenteredString(font, msg,
-                        getX() + getWidth() / 2,
-                        getY() + (getHeight() - font.lineHeight) / 2, textColor);
+        int index = -1;
+        for (int i = 0; i < focusable.size(); i++) {
+            if (focusable.get(i).id().equals(focusedId)) {
+                index = i;
+                break;
             }
         }
+        int next = (index + (backwards ? -1 : 1) + focusable.size()) % focusable.size();
+        focusedId = focusable.get(next).id();
+        MenuEntry entry = focusable.get(next);
+        layout.slots().stream().filter(slot -> slot.entry().id().equals(entry.id()) && slot.scrollable())
+                .findFirst().ifPresent(slot -> scroll.reveal(slot.box().y(), slot.box().bottom(),
+                        layout.scrollArea().y(), layout.scrollArea().height()));
+    }
+
+    @Override
+    public void removed() {
+        pointer.cancel();
+        renderer = null;
+        super.removed();
+    }
+
+    private void openLottery() {
+        if (LotteryManager.getInstance().getLotteryPools().isEmpty()) {
+            ClientPlayNetworking.send(new LootPoolsInfoCheckC2SPacket());
+        }
+        minecraft.setScreen(new LootInfoScreen(0, 0, 0, this));
+    }
+
+    private void tellPermission() {
+        if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(Component.literal("需要管理权限才能打开该功能"), true);
+        }
+    }
+
+    private static PlayerCard capturePlayer(Minecraft client) {
+        var player = client.player;
+        var server = client.getSingleplayerServer();
+        String world = server != null ? server.getWorldData().getLevelName()
+                : client.getCurrentServer() != null ? client.getCurrentServer().name : I18n.get("efc.multiplayer");
+        PlayerInfo info = player.connection.getPlayerInfo(player.getUUID());
+        String connection = client.isLocalServer() ? I18n.get("efc.local")
+                : info != null ? info.getLatency() + " ms" : I18n.get("efc.multiplayer");
+        boolean paused = server != null && !server.isPublished();
+        long cachedPlayTicks = ClientPlayerStatsCache.getOrEmpty(player.getUUID()).getTotalPlayTime();
+        long vanillaPlayTicks = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+        long totalPlayTicks = Math.max(cachedPlayTicks, vanillaPlayTicks);
+        long daysPlayed = totalPlayTicks / 24_000L;
+        float dayProgress = (totalPlayTicks % 24_000L) / 24_000f;
+        return new PlayerCard(player.getName().getString(), daysPlayed, dayProgress,
+                world, I18n.get(paused ? "efc.paused" : "efc.running"),
+                String.format(java.util.Locale.ROOT, "X %d  /  Y %d  /  Z %d", player.getBlockX(), player.getBlockY(), player.getBlockZ()),
+                client.gameMode == null ? "SURVIVAL" : client.gameMode.getPlayerMode().getShortDisplayName().getString(),
+                connection, I18n.get("menu.game"), I18n.get("efc.days_played"), I18n.get("efc.hint"));
+    }
+
+    private void requestShowcaseMap() {
+        if (MapIntroClientCache.isEmpty() && !MapIntroClientCache.isRefreshPending()
+                && minecraft.getConnection() != null) {
+            MapIntroClientCache.beginRefresh(false);
+            ClientPlayNetworking.send(new MapIntroRequestPayload(false));
+        }
+    }
+
+    private static String showcaseMapId() {
+        var map = MapIntroClientCache.highestWeightConfiguredMap();
+        return map == null ? null : map.id();
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 }

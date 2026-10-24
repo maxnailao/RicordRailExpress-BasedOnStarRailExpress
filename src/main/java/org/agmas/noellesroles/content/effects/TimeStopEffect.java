@@ -40,6 +40,7 @@ public class TimeStopEffect extends MobEffect {
     public static int freezeTime = 0;
     public static int freezeStatedTime = 0;
     public static int freezeMaxTime = 0;
+    public static UUID timeStopOwner;
 //
 //    public static boolean hasCooldown(Player player){
 //        return player.getCooldowns().isOnCooldown(Items.BIRCH_LOG);
@@ -106,6 +107,7 @@ public class TimeStopEffect extends MobEffect {
     }
 
     public static void triggerStart(ServerPlayer serverPlayer, int time, Component displaySkillTitle) {
+        timeStopOwner = serverPlayer.getUUID();
         canMovePlayers.clear();
         canMovePlayers.add(serverPlayer.getUUID());
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverPlayer.level());
