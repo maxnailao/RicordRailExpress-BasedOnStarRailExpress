@@ -49,9 +49,10 @@ public class CS2ShopScreen extends Screen {
             0xFFAA55FF, // 3: epic
             0xFFFFAA55, // 4: legendary
             0xFFFF3F3F, // 5: unbelievable
+            0xFF8B7A2E, // 6: legacy 传承
     };
-    private static final String[] QUALITY_NAMES = {"\u666e\u901a", "\u7f55\u89c1", "\u7a00\u6709", "\u53f2\u8bd7", "\u4f20\u8bf4", "\u795e\u8bdd"};
-    private static final int[] QUALITY_TEXT_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F};
+    private static final String[] QUALITY_NAMES = {"\u666e\u901a", "\u7f55\u89c1", "\u7a00\u6709", "\u53f2\u8bd7", "\u4f20\u8bf4", "\u795e\u8bdd", "\u4f20\u627f"};
+    private static final int[] QUALITY_TEXT_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F, 0xFF8B7A2E};
 
     private enum Tab { BUY, SELL, MARKET, DAILY, MYTH }
     private Tab selectedTab = Tab.BUY;

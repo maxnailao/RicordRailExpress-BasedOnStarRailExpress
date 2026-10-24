@@ -37,7 +37,7 @@ public class ShopConfig {
         public int legendarySkinPrice = 500;
         public int unbelievableSkinPrice = 2000;
         /** 传承(LEGACY, 品质索引 6)皮肤出售价：最高档，扩展 7 档品质时必须补上，否则落入 default 被贱卖成普通价 */
-        public int legacySkinPrice = 20000;
+        public int legacySkinPrice = 10000;
         /** 箱子出售价格 {boxId: price} */
         public Map<String, Integer> boxPrices = new HashMap<>();
         /** 音乐盒出售价格（统一价格，因为音乐盒没有品质） */
@@ -262,7 +262,7 @@ public class ShopConfig {
             sellprice.addProperty("epic_skinsprice", 150);
             sellprice.addProperty("legendary_skinsprice", 500);
             sellprice.addProperty("unbelievable_skinsprice", 2000);
-            sellprice.addProperty("legacy_skinsprice", 20000);
+            sellprice.addProperty("legacy_skinsprice", 10000);
             JsonObject boxPrice = new JsonObject();
             boxPrice.addProperty("weapon_case_1", 20);
             boxPrice.addProperty("hat_box", 20);

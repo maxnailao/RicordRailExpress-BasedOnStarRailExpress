@@ -120,8 +120,8 @@ public class ShopScreen extends Screen {
     private int myPendingCoins = 0;
     private int myPendingShards = 0;
     private String listingCurrency = "coin"; // "coin" | "shard"
-    private static final int[] QUALITY_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F};
-    private static final String[] QUALITY_NAMES = {"普通", "罕见", "稀有", "史诗", "传说", "神话"};
+    private static final int[] QUALITY_COLORS = {0xFFEEEEEE, 0xFF33FF55, 0xFFAAAAFF, 0xFFAA55FF, 0xFFFFAA55, 0xFFFF3F3F, 0xFF8B7A2E};
+    private static final String[] QUALITY_NAMES = {"普通", "罕见", "稀有", "史诗", "传说", "神话", "传承"};
     private EditBox priceInputBox;
     private String selListType = "", selListId = "", selListName = "";
     private int pBoxX, pBoxY;
