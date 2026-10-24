@@ -5145,6 +5145,7 @@
   "message.noellesroles.niuzai_juedouba.duel_no_coin": "金币不足，发起决斗需要 %s 金币。",
   "message.noellesroles.niuzai_juedouba.duel_cooldown": "决斗冷却中，还需 %s 秒。",
   "message.noellesroles.niuzai_juedouba.duel_domain_busy": "对方或你已在某个领域中，无法发起决斗。",
+  "message.noellesroles.niuzai_juedouba.duel_frenzied": "对方或你正处于疯狂模式，无法发起决斗。",
   "message.noellesroles.niuzai_juedouba.duel_start_cowboy": "你向 %s 发起了决斗！5 秒后开战。",
   "message.noellesroles.niuzai_juedouba.duel_start_target": "%s 向你发起了决斗！5 秒后开战。",
   "message.noellesroles.niuzai_juedouba.duel_fight": "决斗开始！",

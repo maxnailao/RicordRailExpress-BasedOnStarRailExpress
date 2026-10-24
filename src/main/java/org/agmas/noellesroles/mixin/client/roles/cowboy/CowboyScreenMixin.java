@@ -106,6 +106,10 @@ public abstract class CowboyScreenMixin extends LimitedHandledScreen<InventoryMe
      * 再用距离过滤掉范围外的人 —— 否则头像会照常显示，但点下去必然被服务端拒绝。
      *
      * <p>距离口径与 {@link CowboyDuelManager#RANGE} 一致（用平方距离比较，省一次开方）。
+     *
+     * <p>同时剔除处于疯狂模式 / 职业疯魔的玩家（{@link CowboyDuelManager#isFrenzied}）。
+     * 客户端只能可靠读到 psycho 状态（潜行者、刽子手等特殊疯魔、黑白熊都写在这上面），
+     * 寻血猎犬这类只同步给本人的疯魔会漏过这里，由服务端 {@code start} 兜底拒绝。
      */
     @Unique
     private List<PlayerInfo> getEligibleTargets() {
@@ -120,7 +124,8 @@ public abstract class CowboyScreenMixin extends LimitedHandledScreen<InventoryMe
                 .filter(info -> {
                     net.minecraft.world.entity.player.Player target = client.level
                             .getPlayerByUUID(info.getProfile().getId());
-                    return target != null && target.distanceToSqr(player) <= rangeSqr;
+                    return target != null && target.distanceToSqr(player) <= rangeSqr
+                            && !CowboyDuelManager.isFrenzied(target);
                 })
                 .collect(Collectors.toList());
     }

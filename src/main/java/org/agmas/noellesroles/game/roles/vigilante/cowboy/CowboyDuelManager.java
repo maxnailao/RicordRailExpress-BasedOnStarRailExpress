@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.vigilante.cowboy;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -26,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 
@@ -535,6 +537,44 @@ public final class CowboyDuelManager {
     public static boolean isDuelOpponent(ServerPlayer cowboy, ServerPlayer target) {
         Duel duel = BY_PARTICIPANT.get(cowboy.getUUID());
         return duel != null && duel.targetId.equals(target.getUUID());
+    }
+
+    /**
+     * 该玩家此刻是否处于「疯狂模式 / 职业疯魔」，因而不能被拉进决斗领域。
+     *
+     * <p>决斗会把背包整体换成一把左轮、并清空全部药水效果；而疯狂模式与各种职业疯魔
+     * 都依赖自己的专属武器（球棒 / 巡警手枪 / 猎刀 / 掠夺之弩 …）、护盾、独立计时与
+     * 「结束回调」来收尾。把人拉进来会：
+     * <ul>
+     *   <li>把疯魔专属武器从背包里抹掉，退出时快照还原又与疯魔组件的「结束返还」叠加，
+     *       导致武器复制 / 丢失；</li>
+     *   <li>让疯魔的独立计时继续走，而人已经被传送走、效果被清空，状态彻底错乱；</li>
+     *   <li>疯魔护盾会吃掉「败者处决」，决斗出现打不死人的平局。</li>
+     * </ul>
+     * 所以直接在 {@link #start} 与客户端候选列表里一并排除。
+     *
+     * <p>覆盖范围：
+     * <ul>
+     *   <li>通用疯狂模式与所有基于 psycho 系统的特殊疯魔（刽子手·射击狂热、
+     *       幽灵·幻影、潜行者·猎影狂奔、掠夺者、静语者、黑白熊等）；</li>
+     *   <li>不写入 psycho 计时的独立疯魔 —— 目前是寻血猎犬的「狂野猎人」；</li>
+     *   <li><b>不</b>包括 {@code cosmeticPsycho}（幻术师幻影陷阱只借皮肤的惩罚）：
+     *       它没有护盾、不锁武器，不影响决斗，没必要一起封掉。</li>
+     * </ul>
+     *
+     * <p>客户端只能可靠读到 psycho 状态（其余疯魔组件只同步给本人），
+     * 所以服务端 {@link #start} 里必须再判一次。
+     */
+    public static boolean isFrenzied(Player player) {
+        if (player == null) {
+            return false;
+        }
+        SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.maybeGet(player).orElse(null);
+        if (psycho != null && psycho.inPsycho() && !psycho.cosmeticPsycho) {
+            return true;
+        }
+        var bloodhound = ModComponents.BLOODHOUND.maybeGet(player).orElse(null);
+        return bloodhound != null && bloodhound.inFrenzy;
     }
 
     /**
@@ -1107,6 +1147,15 @@ public final class CowboyDuelManager {
             return false;
         }
         if (isInDuel(cowboy.getUUID()) || isInDuel(target.getUUID())) {
+            return false;
+        }
+        // 疯狂模式 / 职业疯魔：双方都不能被拉进决斗（见 isFrenzied 的说明）。
+        // 客户端候选列表已按同一口径过滤，这里再判一次挡住绕过客户端 / 点击到送达之间开启疯魔的竞态。
+        if (isFrenzied(cowboy) || isFrenzied(target)) {
+            cowboy.displayClientMessage(
+                    Component.translatable("message.noellesroles.niuzai_juedouba.duel_frenzied")
+                            .withStyle(ChatFormatting.RED),
+                    true);
             return false;
         }
 

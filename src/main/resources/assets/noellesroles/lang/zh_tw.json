@@ -4279,6 +4279,7 @@
   "message.noellesroles.niuzai_juedouba.duel_no_coin": "金幣不足，發起決鬥需要 %s 金幣。",
   "message.noellesroles.niuzai_juedouba.duel_cooldown": "決鬥冷卻中，還需 %s 秒。",
   "message.noellesroles.niuzai_juedouba.duel_domain_busy": "對方或你已在某個領域中，無法發起決鬥。",
+  "message.noellesroles.niuzai_juedouba.duel_frenzied": "對方或你正處於瘋狂模式，無法發起決鬥。",
   "message.noellesroles.niuzai_juedouba.duel_start_cowboy": "你向 %s 發起了決鬥！5 秒後開戰。",
   "message.noellesroles.niuzai_juedouba.duel_start_target": "%s 向你發起了決鬥！5 秒後開戰。",
   "message.noellesroles.niuzai_juedouba.duel_fight": "決鬥開始！",
