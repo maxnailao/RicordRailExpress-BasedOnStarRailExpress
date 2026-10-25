@@ -4732,6 +4732,7 @@
   "message.noellesroles.niuzai_juedouba.duel_no_coin": "Not enough coins. A duel costs %s coins.",
   "message.noellesroles.niuzai_juedouba.duel_cooldown": "Duel on cooldown: %s seconds left.",
   "message.noellesroles.niuzai_juedouba.duel_domain_busy": "You or the target are already inside a domain.",
+  "message.noellesroles.niuzai_juedouba.duel_frenzied": "You or the target are in psycho mode - a duel cannot be started.",
   "message.noellesroles.niuzai_juedouba.duel_start_cowboy": "You challenged %s to a duel! Fight starts in 5 seconds.",
   "message.noellesroles.niuzai_juedouba.duel_start_target": "%s challenged you to a duel! Fight starts in 5 seconds.",
   "message.noellesroles.niuzai_juedouba.duel_fight": "Fight!",
