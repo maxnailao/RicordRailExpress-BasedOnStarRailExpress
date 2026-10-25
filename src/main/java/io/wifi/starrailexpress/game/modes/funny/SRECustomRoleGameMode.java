@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.game.modes.funny;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -135,6 +136,33 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             }
         }
 
+        // ── 阵营卡保底 ──
+        // 中立名额有人数门槛（getNeutralCount 在玩家数 ≤ neutralMinPlayerCount 时返回 0），
+        // 且中立池抽出来的可能是亲杀手（type 3）而非普通中立（type 2），
+        // 导致持卡玩家的阵营槽位为 0、卡被退回。
+        // 这里模仿强制位逻辑：凡是本局参与的持卡（CARD）玩家，其阵营在池中没有槽位时，
+        // 直接从职业注册表补一个该阵营的角色进备选池，保证阵营卡必然可用。
+        for (var entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
+            var t = entry.getValue();
+            if (t.type() != ForceTeamType.CARD)
+                continue;
+            boolean participating = unassignedPlayers.stream()
+                    .anyMatch(p -> p.getUUID().equals(entry.getKey()));
+            if (!participating)
+                continue;
+            int roleType = t.roleType();
+            if (roleTypesCount.getOrDefault(roleType, 0) > 0)
+                continue;
+            SRERole spareRole = findSpareRoleByFactionType(roleType, crgmwc.getRoles());
+            if (spareRole != null) {
+                crgmwc.getRoles().add(spareRole);
+                roleTypesCount.merge(roleType, 1, Integer::sum);
+                Harpymodloader.LOGGER.info(
+                        "[FactionCard] 自选模式阵营 {} 无自然刷新槽位，为持卡玩家补入 {}",
+                        roleType, spareRole.identifier());
+            }
+        }
+
         // 保底
         for (var p : players) {
             if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(p.getUUID()))
@@ -223,6 +251,24 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         }
 
         crgmwc.sync();
+    }
+
+    /**
+     * 从职业注册表中找一个属于指定阵营、且本局尚未入选的角色作为补位。
+     * 过滤条件与 SREMurderGameMode 建池一致：排除原版角色 / 其它模式专用角色 / 平民。
+     */
+    private static SRERole findSpareRoleByFactionType(int roleType, ArrayList<SRERole> currentRoles) {
+        for (SRERole role : TMMRoles.ROLES.values()) {
+            if (role == null || Harpymodloader.VANNILA_ROLES.contains(role))
+                continue;
+            if (role == TMMRoles.CIVILIAN || role.isOtherModeRole())
+                continue;
+            if (currentRoles.contains(role))
+                continue;
+            if (PlayerRoleWeightManager.getRoleType(role) == roleType)
+                return role;
+        }
+        return null;
     }
 
     @Override

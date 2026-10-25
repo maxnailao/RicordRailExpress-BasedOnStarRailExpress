@@ -3323,6 +3323,7 @@
   "subtitle.starrailexpress.role.amon.finale": "阿蒙时刻",
   "message.sre.progression.daily_card_limit_reached": "「%s」今天的阵营卡已用完（剩余 %s 张），明天再来吧。",
   "message.sre.pass.selfselect_daily_limit": "今天的自选职业卡已用完（尝试选择「%s」未扣卡），明天再来吧。",
+  "message.sre.pass.selfselect_opposing": "场上有与「%s」互斥的角色，无法选择该职业",
   "screen.game_manage.section.daily_cards": "每日卡片上限",
   "screen.game_manage.btn.daily_limit_on": "每日上限：开启",
   "screen.game_manage.btn.daily_limit_off": "每日上限：关闭（不限次数）",

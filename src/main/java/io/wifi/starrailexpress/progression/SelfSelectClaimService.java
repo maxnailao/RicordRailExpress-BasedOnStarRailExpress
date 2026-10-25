@@ -45,7 +45,9 @@ public final class SelfSelectClaimService {
         /** 本人今天用自选卡的次数已达每日上限：未扣卡，需告知 */
         DAILY_LIMIT,
         /** 重复选择同一职业：不扣卡，也不用广播 */
-        SAME_ROLE
+        SAME_ROLE,
+        /** 场上已有玩家自选了与目标职业互斥的角色：未扣卡，需告知 */
+        OPPOSING_ROLE
     }
 
     private SelfSelectClaimService() {
@@ -131,6 +133,24 @@ public final class SelfSelectClaimService {
                 case WRONG_MAP -> Result.WRONG_MAP;
                 default -> Result.NOT_SELECTABLE;
             };
+        }
+        // 互斥职业判定：已有其他玩家自选了与目标职业互斥的角色时拦下（不扣卡）。
+        // 自然生成阶段的互斥由 removeOpposingJobs 保证角色池不会同时出现互斥对，
+        // 但两个玩家各用自选卡占用互斥职业不经过那条路径，在这里补齐。
+        // ★ 必须放在 SLOT_FULL 之前：互斥职业本身占着名额，
+        //   先查名额只会报「名额已满」，报不出「互斥」。
+        for (var claimed : Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet()) {
+            if (claimed.getKey().equals(id)) {
+                continue; // 自己不阻断自己（改选时旧占用马上会释放）
+            }
+            SRERole other = claimed.getValue();
+            if (other == null || other == role) {
+                continue;
+            }
+            // 与 removeOpposingJobs 语义一致：任一方向声明了互斥即视为互斥
+            if (role.opposingRoles.contains(other) || other.opposingRoles.contains(role)) {
+                return Result.OPPOSING_ROLE;
+            }
         }
         // 名额是否已满：以 ROLE_MAX 为准（默认 1，配成 2/3 的就允许那么多人）
         if (Harpymodloader.isRoleOverflow(role, id)) {

@@ -3373,6 +3373,7 @@
   "subtitle.starrailexpress.role.amon.finale": "Amon's Hour",
   "message.sre.progression.daily_card_limit_reached": "You have used up today's %s faction cards (%s left). Come back tomorrow.",
   "message.sre.pass.selfselect_daily_limit": "You have used up today's self-select cards (tried %s; no card consumed). Come back tomorrow.",
+  "message.sre.pass.selfselect_opposing": "A role that is mutually exclusive with \"%s\" has already been selected, so you cannot choose this class.",
   "screen.game_manage.section.daily_cards": "Daily Card Limits",
   "screen.game_manage.btn.daily_limit_on": "Daily limit: ON",
   "screen.game_manage.btn.daily_limit_off": "Daily limit: OFF (unlimited)",

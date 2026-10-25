@@ -137,6 +137,15 @@ public final class ProgressionCommand {
                         false);
                 return 0;
             }
+            case OPPOSING_ROLE -> {
+                // 场上有人已自选了互斥角色：不扣卡，聊天框提示
+                // （和 SLOT_FULL 一样用聊天栏而不是 actionbar，避免一闪而过）
+                player.displayClientMessage(
+                        Component.translatable("message.sre.pass.selfselect_opposing",
+                                Harpymodloader.getRoleName(role)),
+                        false);
+                return 0;
+            }
             default -> {
                 return 0;
             }
