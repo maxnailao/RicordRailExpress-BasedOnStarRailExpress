@@ -118,6 +118,9 @@ import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKille
 import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent.playerBodyEntities;
 
 public class NoellesrolesClient implements ClientModInitializer {
+    /** 鹈鹕肚内炸弹剩余秒数（-1=无）与同步时间戳，供 HUD 屏幕中央渲染 */
+    public static volatile int PELICAN_BOMB_COUNTDOWN = -1;
+    public static volatile long PELICAN_BOMB_COUNTDOWN_AT = 0L;
     public static boolean hasInitStatusBar = false;
     public static int insanityTime = 0;
 
@@ -1040,6 +1043,13 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             });
         });
+        // 鹈鹕肚内炸弹倒计时：服务端每秒刷新，客户端按时间戳自衰减显示（丢包也能自行消失）
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.packet.PelicanBombCountdownS2CPacket.ID,
+                (payload, context) -> {
+                    PELICAN_BOMB_COUNTDOWN = payload.secondsLeft();
+                    PELICAN_BOMB_COUNTDOWN_AT = System.currentTimeMillis();
+                });
         // 注册抽奖失败通知包处理：抽数不足时在抽奖页弹出提示
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.Loot.LootFailNoticeS2CPacket.ID,
                 (payload, context) -> {

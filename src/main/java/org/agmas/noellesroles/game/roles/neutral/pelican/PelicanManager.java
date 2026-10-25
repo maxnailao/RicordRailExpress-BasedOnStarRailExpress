@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.GameConstants;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
@@ -16,6 +17,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
@@ -24,6 +28,9 @@ import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerCom
 import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.content.item.BombItem;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.voice.NoellesrolesVoiceChatPlugin;
 
 import java.util.*;
@@ -199,6 +206,12 @@ public final class PelicanManager {
             target.setInvisible(false);
             target.connection.send(new ClientboundSetCameraPacket(target));
             NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
+
+            // 被吐出的玩家若带着炸弹，肚内倒计时展示到此失效：全场清除显示
+            // （炸弹本身继续倒计时，之后按普通炸弹流程炸他本人）
+            if (MCItemsUtils.getFirstMatchedItem(target, s -> s.is(ModItems.BOMB)) != null) {
+                BombItem.broadcastPelicanBombCountdown(target.serverLevel(), -1);
+            }
             return;
         }
 
@@ -215,6 +228,12 @@ public final class PelicanManager {
         }
 
         NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
+
+        // 被吐出的玩家若带着炸弹，肚内倒计时展示到此失效：全场清除显示
+        // （炸弹本身继续倒计时，之后按普通炸弹流程炸他本人）
+        if (MCItemsUtils.getFirstMatchedItem(target, s -> s.is(ModItems.BOMB)) != null) {
+            BombItem.broadcastPelicanBombCountdown(target.serverLevel(), -1);
+        }
     }
 
     private static void releasePlayerFromTick(ServerPlayer target) {
@@ -447,5 +466,54 @@ public final class PelicanManager {
         for (UUID pelicanId : List.copyOf(stashedByPelican.keySet())) {
             releaseAllForPelican(pelicanId, world.getServer(), "replay.pelican.spit_desperado");
         }
+    }
+
+    /**
+     * 爆腹引爆（肚内炸弹倒计时归零时由 BombItem 调用，holder=带炸弹的肚内玩家）：
+     * 先杀肚内全员（含 holder）并 markStashedDead 防复活，最后杀鹈鹕——
+     * 顺序不能反，否则杀鹈鹕触发 onPelicanDeath 会把还没处理的人吐出去复活。
+     * killer=null：不计炸弹客击杀、不走 BombItem.explode 的炸弹客+90收入。
+     */
+    public static void detonateInsidePelican(ServerPlayer holder) {
+        UUID holderId = holder.getUUID();
+        UUID pelicanId = pelicanByStashed.get(holderId);
+        ServerPlayer pelican = pelicanId == null ? null
+                : holder.serverLevel().getServer().getPlayerList().getPlayer(pelicanId);
+        if (pelican == null) {
+            // 鹈鹕已不在场（极端情况）：只炸死持弹者本人
+            GameUtils.forceKillPlayer(holder, true, null, GameConstants.DeathReasons.PELICAN_BOMB_DEATH);
+            return;
+        }
+        ServerLevel level = pelican.serverLevel();
+        level.playSound(null, pelican.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
+                SoundSource.PLAYERS, 2.0f, 1.0f);
+        level.sendParticles(ParticleTypes.EXPLOSION, pelican.getX(), pelican.getY(), pelican.getZ(),
+                3, 0.5, 0.5, 0.5, 0.0D);
+
+        Deque<UUID> belly = stashedByPelican.get(pelicanId);
+        if (belly != null) {
+            for (UUID id : new ArrayList<>(belly)) {
+                ServerPlayer stashed = level.getServer().getPlayerList().getPlayer(id);
+                belly.remove(id);
+                if (stashed != null) {
+                    MCItemsUtils.clearItem(stashed, ModItems.BOMB);
+                    if (GameUtils.isPlayerAliveAndSurvival(stashed) || stashed.gameMode.getGameModeForPlayer()
+                            == GameType.SPECTATOR) {
+                        if (!stashedDead.contains(id)) {
+                            GameUtils.forceKillPlayer(stashed, true, null,
+                                    GameConstants.DeathReasons.PELICAN_BOMB_DEATH);
+                        }
+                    }
+                    markStashedDead(id);
+                }
+            }
+        }
+        MCItemsUtils.clearItem(pelican, ModItems.BOMB);
+        GameUtils.forceKillPlayer(pelican, true, null, GameConstants.DeathReasons.PELICAN_BOMB_DEATH);
+        stashedByPelican.remove(pelicanId);
+
+        SRE.REPLAY_MANAGER.recordCustomEvent(Component.translatable("replay.pelican.bomb_detonate",
+                GameReplayUtils.getReplayPlayerDisplayText(pelican, true),
+                GameReplayUtils.getReplayPlayerDisplayText(holder, true)));
     }
 }

@@ -244,8 +244,11 @@ public class LootInfoScreen extends AbstractPixelScreen {
         private float curBgProcess = 0f;
     }
 
+    /** 记录最近一次停留的卡池 id，抽奖结果页关闭后重新进入抽奖页时恢复到该卡池，避免每次都跳回第一个奖池 */
+    private static int lastLootPoolId = -1;
+
     public LootInfoScreen() {
-        this(0,0,0, null);
+        this(lastLootPoolId >= 0 ? lastLootPoolId : 0, 0, 0, null);
     }
     public LootInfoScreen(int initPoolId, Screen parent) {
         this(initPoolId, 0, 0, parent);
@@ -283,6 +286,12 @@ public class LootInfoScreen extends AbstractPixelScreen {
         int leftX = layoutMetrics.leftX;
         int topY = layoutMetrics.topY;
         this.curPool = LotteryManager.getInstance().getLotteryPool(initPoolId);
+        if (this.curPool == null && !lotteryPools.isEmpty()) {
+            this.curPool = lotteryPools.get(0);
+            this.initPoolId = this.curPool.getPoolID();
+        }
+        if (this.curPool != null)
+            lastLootPoolId = this.curPool.getPoolID();
         boolean isInit = tryToInitPool();
         if (isInit) {
             // 立绘动画
@@ -754,6 +763,7 @@ public class LootInfoScreen extends AbstractPixelScreen {
             }
         }
         initPoolId = poolD;
+        lastLootPoolId = poolD;
         poolSketch.setTEXTURE(getPoolSketchTexture(nextPool.getPoolID()));
         // 添加位移和透明度动画
         poolSketch.setY(layoutMetrics.sketchY + layoutMetrics.sketchEdge / 2);

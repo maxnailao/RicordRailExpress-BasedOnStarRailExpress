@@ -25,6 +25,7 @@ import net.minecraft.world.entity.Entity;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
@@ -70,6 +71,12 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
             if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
+            // 被点穴/被封印(USED_BANED=禁止使用物品)的玩家禁止刀人：
+            // 点穴锁键会导致客户端"自动松手"并发出刺击包，若不在服务端拦截，
+            // 举刀途中被点穴的坏人依然能击杀目标。
+            if (player.hasEffect(ModEffects.USED_BANED)) {
                 return;
             }
             Entity targetEntity = player.serverLevel().getEntity(payload.target());

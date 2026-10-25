@@ -106,6 +106,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         io.wifi.starrailexpress.roster.RoleRosterManager.registerEvents();
         SREPayloadRegister.registerPayloadTypes();
         SREReceiverRegister.registerGlobalReceivers();
+        io.wifi.starrailexpress.content.command.AdminManageCommand.registerReceivers();
         SREEventRegister.registerPlayerCopyEvent();
         initScheduler();
         initCCAAuto();
@@ -115,6 +116,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
         // CS2 开箱系统初始化
         initCS2System();
+
+        // 公告系统初始化
+        io.wifi.starrailexpress.announcement.AnnouncementManager.getInstance()
+                .init(java.nio.file.Paths.get("config"));
 
     }
 

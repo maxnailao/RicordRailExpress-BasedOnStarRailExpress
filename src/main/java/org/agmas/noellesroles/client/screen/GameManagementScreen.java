@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 public class GameManagementScreen extends Screen {
 
@@ -38,15 +39,25 @@ public class GameManagementScreen extends Screen {
          */
         public final String command;
         /**
+         * 点击打开的界面工厂（入参为父界面）；普通命令按钮为 null
+         */
+        public final Function<Screen, Screen> screenOpener;
+        /**
          * 主题色
          */
         public final int color;
 
         private Entry(EntryType type, Component text, String command, int color) {
+            this(type, text, command, color, null);
+        }
+
+        private Entry(EntryType type, Component text, String command, int color,
+                Function<Screen, Screen> screenOpener) {
             this.type = type;
             this.text = text;
             this.command = command;
             this.color = color;
+            this.screenOpener = screenOpener;
         }
 
         // ── 工厂方法 ───────────────────────────────────────────────
@@ -98,6 +109,13 @@ public class GameManagementScreen extends Screen {
          */
         public static Entry button(Component text, String command, int color) {
             return new Entry(EntryType.BUTTON, text, command, color);
+        }
+
+        /**
+         * 按钮（点击打开界面，不发命令）。factory 入参为当前游戏管理界面，便于返回。
+         */
+        public static Entry openScreen(String key, int color, Function<Screen, Screen> factory) {
+            return new Entry(EntryType.BUTTON, Component.translatable(key), null, color, factory);
         }
 
         /**
@@ -304,6 +322,25 @@ public class GameManagementScreen extends Screen {
                         "manageRolesUI", 0xFF26f5fC));
 
         categories.add(misc);
+
+        // ── 分类：管理员后台（发放货币/称号/角色卡，打开交互界面而非发送命令）──
+        Category admin = new Category("screen.game_manage.category.admin", 0xFFCC8833);
+        admin.section("screen.game_manage.section.admin_panel", 0xFFCC8833)
+                .add(Entry.openScreen("screen.game_manage.btn.admin_panel", 0xFFCC8833,
+                        parent -> {
+                            var mc = net.minecraft.client.Minecraft.getInstance();
+                            if (mc.player == null || !mc.player.hasPermissions(2)) {
+                                if (mc.player != null) {
+                                    mc.player.displayClientMessage(
+                                            Component.literal("需要管理权限才能进入管理员后台")
+                                                    .withStyle(ChatFormatting.RED), false);
+                                }
+                                return parent;
+                            }
+                            return new AdminBackendScreen(parent);
+                        }));
+        categories.add(admin);
+
         return categories;
     }
 
@@ -645,7 +682,10 @@ public class GameManagementScreen extends Screen {
                 g.drawCenteredString(font, entry.text,
                         x + w / 2, y + (h - font.lineHeight) / 2, textCol);
                 if (hovered) {
-                    var tooltipText = Component
+                    var tooltipText = entry.screenOpener != null
+                            ? Component.translatable("screen.game_manage.btn.open_screen")
+                                    .withStyle(ChatFormatting.YELLOW)
+                            : Component
                             .translatable("screen.game_manage.click_to_send",
                                     Component.literal("/" + entry.command)
                                             .withStyle(ChatFormatting.WHITE))
@@ -738,7 +778,11 @@ public class GameManagementScreen extends Screen {
                     int eh = getEntryH(entry);
                     if (entry.type == EntryType.BUTTON
                             && isInRect((int) mx, (int) my, contentX, curY, contentW, eh)) {
-                        executeCommand(entry.command);
+                        if (entry.screenOpener != null) {
+                            this.minecraft.setScreen(entry.screenOpener.apply(this));
+                        } else {
+                            executeCommand(entry.command);
+                        }
                         this.minecraft.getSoundManager()
                                 .play(SimpleSoundInstance.forUI(
                                         SoundEvents.UI_BUTTON_CLICK, 1f));

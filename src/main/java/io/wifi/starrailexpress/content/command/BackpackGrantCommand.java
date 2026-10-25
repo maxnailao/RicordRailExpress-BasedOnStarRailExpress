@@ -49,6 +49,24 @@ public final class BackpackGrantCommand {
                                                 .executes(context -> grant(
                                                         EntityArgument.getPlayers(context, "target"),
                                                         StringArgumentType.getString(context, "type"),
+                                                        IntegerArgumentType.getInteger(context, "count")))))))
+                .then(Commands.literal("take")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("type", StringArgumentType.word())
+                                .suggests(CARD_TYPE_SUGGESTIONS)
+                                .executes(context -> take(
+                                        List.of(context.getSource().getPlayerOrException()),
+                                        StringArgumentType.getString(context, "type"),
+                                        1))
+                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 99))
+                                        .executes(context -> take(
+                                                List.of(context.getSource().getPlayerOrException()),
+                                                StringArgumentType.getString(context, "type"),
+                                                IntegerArgumentType.getInteger(context, "count")))
+                                        .then(Commands.argument("target", EntityArgument.players())
+                                                .executes(context -> take(
+                                                        EntityArgument.getPlayers(context, "target"),
+                                                        StringArgumentType.getString(context, "type"),
                                                         IntegerArgumentType.getInteger(context, "count"))))))));
     }
 
@@ -68,6 +86,33 @@ public final class BackpackGrantCommand {
             BackpackManager.addCard(target, type, count);
             target.sendSystemMessage(Component.literal(
                     "§a获得 " + count + " 张 " + Component.translatable(type.displayName).getString() + " 卡"));
+        }
+        return targets.size();
+    }
+
+    /** 收回职业卡：阵营卡按持有量扣除（不足则失败提示）；自选卡扣减对应数量（不低于 0）。 */
+    private static int take(Collection<ServerPlayer> targets, String rawType, int count) {
+        if ("selfselect".equalsIgnoreCase(rawType)) {
+            for (ServerPlayer target : targets) {
+                int current = BackpackManager.getSelfSelectCount(target);
+                int removed = Math.min(current, count);
+                BackpackManager.addSelfSelectCard(target, -removed);
+                target.sendSystemMessage(Component.literal(removed > 0
+                        ? "§c被收回 " + removed + " 张 自选职业卡"
+                        : "§c收回失败：你没有自选职业卡"));
+            }
+            return targets.size();
+        }
+        FactionCardType type = FactionCardType.fromString(rawType);
+        if (type == FactionCardType.NONE) {
+            return 0;
+        }
+        for (ServerPlayer target : targets) {
+            boolean ok = BackpackManager.removeCard(target, type, count);
+            String name = Component.translatable(type.displayName).getString();
+            target.sendSystemMessage(Component.literal(ok
+                    ? "§c被收回 " + count + " 张 " + name + " 卡"
+                    : "§c收回失败：你的 " + name + " 卡不足 " + count + " 张"));
         }
         return targets.size();
     }

@@ -113,17 +113,19 @@ public class LotteryManager {
                     ItemSkinManager.unlockSkinForItemType(player, itemType, trueName);
                     isNewUnlock = true;
                 }
-                // 仓库为发放的唯一权威：只要抽到皮肤就确保写入 CS2InventoryComponent。
-                // 兼容"旧版本已解锁但从未入仓库"的幽灵皮肤（如星光），
-                // 否则再次抽中会落入重复分支只折币，CS2WarehouseScreen 永远看不到该皮肤。
-                if (!inv.hasSkin(skinId)) {
+                // 传承品质皮肤：始终发放实体（允许重复获取），不折币；
+                // 非传承品质：仓库缺失时补入（兼容幽灵皮肤），已解锁则折币。
+                if (resultQuality == INHERIT_QUALITY_INDEX) {
                     inv.addSkin(skinId, 1);
+                } else {
+                    if (!inv.hasSkin(skinId)) {
+                        inv.addSkin(skinId, 1);
+                    }
+                    if (alreadyUnlocked) {
+                        ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
+                    }
                 }
                 LotteryManager.getInstance().recordLootGrant(player.getUUID(), trueName, resultQuality);
-                // 真正重复（此前已解锁）才自动折币
-                if (alreadyUnlocked) {
-                    ItemSkinManager.addCoinNum(player, (int) (baseLootConsumeCoin * getSkinToCoinPercentage(resultQuality)));
-                }
             }
             //coin
             else if (trueName.equals("coin")) {
@@ -280,6 +282,26 @@ public class LotteryManager {
     }
 
     /**
+     * 解析皮肤真实品质：优先按注册颜色判定（与商店 CS2BoxManager#findSkinQuality、
+     * registerShopSell 结算口径一致），解析失败时回退到卡池品质索引。
+     * <p>
+     * 修复：快速出售此前直接用卡池档位索引计价，而商店按皮肤真实颜色品质计价，
+     * 两者不一致会导致售价错误 / 按钮显示价格与实际到账不符。
+     * 客户端与服务端均调用此方法，保证显示与结算口径统一。
+     */
+    public static int resolveTrueQuality(String itemType, String skinName, int poolQualityIndex) {
+        if (itemType != null && skinName != null) {
+            ItemSkinManager.Skin skin = ItemSkinManager.getSkinFromName(itemType, skinName);
+            if (skin != null) {
+                int q = ItemSkinManager.qualityFromColor(skin.getColor());
+                if (q >= 0)
+                    return q;
+            }
+        }
+        return poolQualityIndex;
+    }
+
+    /**
      * 快速出售本次抽奖结果：逐条比对发放记录，命中则回收皮肤（lockSkin）并按品质折算发币
      * @return 实际售出的总价值
      */
@@ -323,7 +345,8 @@ public class LotteryManager {
             String itemType = LotteryPool.getSkinItemType(itemName);
             if (itemType != null && ItemSkinManager.isSkinUnlockedForItemType(player, itemType, trueName)) {
                 io.wifi.starrailexpress.data.PlayerEconomyManager.lockSkinForItemType(player, itemType, trueName);
-                total += getSkinSellValue(quality);
+                // 按皮肤真实品质计价，与商店出售价一致
+                total += getSkinSellValue(resolveTrueQuality(itemType, trueName, quality));
             }
         }
         if (total > 0)

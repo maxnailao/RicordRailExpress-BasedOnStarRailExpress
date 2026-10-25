@@ -636,15 +636,18 @@ public class AccessoryScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    /** 真正装备某个皮肤：本地客户端组件立即生效并发送网络包到服务端持久化（与皮肤管理界面同款模式） */
+    /** 真正装备 / 卸下某个皮肤（与仓库同款切换逻辑）：已装备则卸下，否则装备。
+     *  本地组件立即生效以刷新"已装备"标签，服务端通过 EquipSkinC2SPayload 权威切换并同步。 */
     private void equipSkin(SkinEntry entry) {
         if (minecraft.player == null) return;
         String[] parts = entry.skinId().split("/");
         if (parts.length < 2) return;
         String itemType = parts[0];
         String skinName = parts[1];
-        SREPlayerSkinsComponent.KEY.get(minecraft.player).setEquippedSkinForItemType(itemType, skinName);
-        ClientPlayNetworking.send(new UpdateSkinSelectedPayload(itemType, skinName));
+        boolean equipped = isEquipped(entry);
+        SREPlayerSkinsComponent.KEY.get(minecraft.player)
+                .setEquippedSkinForItemType(itemType, equipped ? "default" : skinName);
+        ClientPlayNetworking.send(new org.agmas.noellesroles.cs2.network.EquipSkinC2SPayload(itemType, skinName));
     }
 
     /** 判断某饰品是否为玩家当前已装备的皮肤（按物品类型读取装备记录比对皮肤名） */

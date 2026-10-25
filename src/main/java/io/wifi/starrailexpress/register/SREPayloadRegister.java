@@ -87,6 +87,8 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(UpdateSkinSelectedPayload.ID, UpdateSkinSelectedPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(UpdateNameTagSelectedPayload.ID, UpdateNameTagSelectedPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(RemoveStatusBarPayload.ID, RemoveStatusBarPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(AdminInspectRequestC2SPayload.ID, AdminInspectRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(AdminInspectS2CPayload.ID, AdminInspectS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TriggerStatusBarPayload.ID, TriggerStatusBarPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(BreakArmorPayload.ID, BreakArmorPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ShootMuzzleS2CPayload.ID, ShootMuzzleS2CPayload.CODEC);
@@ -412,5 +414,16 @@ public class SREPayloadRegister {
                 net.exmo.sre.meeting.network.MeetingSkipC2SPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.ID,
                 net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.CODEC);
+
+        // 公告系统网络包
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.announcement.network.AnnouncementRequestC2SPayload.ID,
+                io.wifi.starrailexpress.announcement.network.AnnouncementRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.announcement.network.AnnouncementSyncS2CPayload.ID,
+                io.wifi.starrailexpress.announcement.network.AnnouncementSyncS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.announcement.network.AnnouncementNewS2CPayload.ID,
+                io.wifi.starrailexpress.announcement.network.AnnouncementNewS2CPayload.CODEC);
     }
 }

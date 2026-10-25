@@ -112,6 +112,12 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         target.connection.send(new ClientboundSetEntityMotionPacket(target.getId(), target.getDeltaMovement()));
 
         applyRestrictions(target);
+        // 立即解除"举刀蓄力"等服务端使用状态：客户端锁键后目标会松手，
+        // 若留着蓄力状态，松手瞬间会触发落刀包导致被点穴者照样刀死人。
+        // 服务端 releaseUsing 对刀是空操作，击杀结算只可能来自 KnifeStabPayload，已在服务端入口拦截。
+        if (target.isUsingItem()) {
+            target.releaseUsingItem();
+        }
         target.setLastHurtByMob(master);
         target.setLastHurtByPlayer(master);
         target.displayClientMessage(Component.translatable("message.noellesroles.dianxue_master.victim")

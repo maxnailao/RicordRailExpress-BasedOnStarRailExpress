@@ -38,7 +38,10 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.packet.PelicanBombCountdownS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 
@@ -107,23 +110,40 @@ public class BombItem extends Item {
             tag.putInt(TIMER_KEY, timer);
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
 
+            // 肚内炸弹：持有者被鹈鹕吞了，倒计时继续走，每秒把剩余秒数广播给全场（屏幕中央显示）
+            if (PelicanManager.isStashed(player) && timer % 20 == 0) {
+                broadcastPelicanBombCountdown((ServerLevel) level, Math.max(0, timer / 20));
+            }
+
             // Play ticking sound every second (silent for first 5 seconds)
             if (timer % 20 == 0 && (MAX_TIMER - timer) > 100) {
                 player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.PLAYERS, 1.0f,
                         1.0f + (MAX_TIMER - timer) / 200f);
             }
 
-            // Show timer in action bar
-            // player.displayClientMessage(Component.literal("Bomb: " + (timer / 20) + "s"),
-            // true);
-
             if (slotId >= 0 && slotId < 9) {
                 return;
             }
             findAVoidPlaceToPut(stack, level, player, slotId, isSelected);
         } else {
+            // 倒计时归零：持有者在鹈鹕肚里 → 爆腹（鹈鹕+肚内全员死，炸弹客不得收益）；
+            // 否则走原来的普通爆炸。原版 explode() 对旁观者(肚内人)会直接 return 静默消失，必须特判。
+            if (PelicanManager.isStashed(player)) {
+                MCItemsUtils.clearItem(player, ModItems.BOMB);
+                broadcastPelicanBombCountdown(player.serverLevel(), -1);
+                PelicanManager.detonateInsidePelican(player);
+                return;
+            }
             // Explode
             explode(player, stack, tag);
+        }
+    }
+
+    /** 全场广播肚内炸弹倒计时；secondsLeft < 0 为清除显示（幂等，可在任何结束路径调用） */
+    public static void broadcastPelicanBombCountdown(ServerLevel level, int secondsLeft) {
+        PelicanBombCountdownS2CPacket payload = new PelicanBombCountdownS2CPacket(secondsLeft);
+        for (ServerPlayer sp : level.players()) {
+            ServerPlayNetworking.send(sp, payload);
         }
     }
 
@@ -162,6 +182,8 @@ public class BombItem extends Item {
 
     private static void explode(ServerPlayer player, ItemStack stack, CompoundTag customTag) {
         stack.shrink(1);
+        // 普通爆炸同样清除全场倒计时显示（防止状态残留）
+        broadcastPelicanBombCountdown(player.serverLevel(), -1);
         if (player.isSpectator())
             return;
         player.level().playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS,

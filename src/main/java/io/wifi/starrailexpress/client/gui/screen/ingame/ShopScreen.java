@@ -275,7 +275,7 @@ public class ShopScreen extends Screen {
             int coins = PlayerEconomyManager.getCoinNum(minecraft.player);
             int shards = CS2InventoryComponent.KEY.get(minecraft.player).getMythicShards();
             String info = "货币: " + coins + "　|　神话碎片: " + shards;
-            graphics.drawCenteredString(font, info, panelX + panelW / 2, panelY + 7, TEXT_DIM);
+            graphics.drawCenteredString(font, info, panelX + panelW / 2, panelY - headerH + 10, TEXT_DIM);
         }
 
         switch (tab) {

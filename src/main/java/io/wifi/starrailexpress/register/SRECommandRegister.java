@@ -77,6 +77,7 @@ public class SRECommandRegister {
             io.wifi.starrailexpress.content.command.XiaoNaoBoardCommand.register(dispatcher);
             BackpackCommand.register(dispatcher);
             BackpackGrantCommand.register(dispatcher);
+            AdminManageCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.RoleRosterCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.PlushCommand.register(dispatcher);
             PlayerInventoryCommand.register(dispatcher);
@@ -101,6 +102,8 @@ public class SRECommandRegister {
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);
             net.exmo.sre.camera.AdvancedCameraCommand.register(dispatcher);
+            // 公告发布管理
+            io.wifi.starrailexpress.announcement.AnnouncementCommand.register(dispatcher);
             // io.wifi.starrailexpress.contents.command.UnlockAllRolesCommand.register(dispatcher);
         }));
     }

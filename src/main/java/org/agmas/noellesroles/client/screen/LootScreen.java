@@ -528,7 +528,7 @@ public class LootScreen extends AbstractPixelScreen {
     /** 结果弹窗操作区：返回 / 快速出售（当前抽出的皮肤） */
     private void renderLootActions(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         boolean sellable = currentResultSellable();
-        int sellValue = LotteryManager.getSkinSellValue(trueQualityAndId.first);
+        int sellValue = currentSellValue();
         Component backLabel = Component.literal("返回");
         Component sellLabel = Component.literal(sellable ? "快速出售（可出售" + sellValue + "货币）" : "该物品不可出售");
         int gap = 16;
@@ -573,6 +573,21 @@ public class LootScreen extends AbstractPixelScreen {
         return itemName.contains("/");
     }
 
+    /** 当前结果的可出售价值：按皮肤真实品质计价，与服务端快速出售口径一致 */
+    private int currentSellValue() {
+        int quality = trueQualityAndId.first;
+        LotteryManager.LotteryPool pool = LotteryManager.getInstance().getLotteryPool(poolId);
+        if (pool == null || quality < 0 || quality >= pool.getQualityListGroupConfigs().size())
+            return LotteryManager.getSkinSellValue(quality);
+        List<String> list = pool.getQualityListGroupConfigs().get(quality).second;
+        if (trueQualityAndId.second < 0 || trueQualityAndId.second >= list.size())
+            return LotteryManager.getSkinSellValue(quality);
+        String itemName = list.get(trueQualityAndId.second);
+        String itemType = LotteryManager.LotteryPool.getSkinItemType(itemName);
+        String trueName = LotteryManager.LotteryPool.getTrueName(itemName);
+        return LotteryManager.getSkinSellValue(LotteryManager.resolveTrueQuality(itemType, trueName, quality));
+    }
+
     private void sellCurrentResult() {
         ClientPlayNetworking.send(new LootSellC2SPacket(poolId,
                 List.of(new int[]{trueQualityAndId.first, trueQualityAndId.second})));
@@ -589,7 +604,7 @@ public class LootScreen extends AbstractPixelScreen {
             boolean sellable = currentResultSellable();
             Component backLabel = Component.literal("返回");
             Component sellLabel = Component.literal(sellable ? "快速出售（可出售"
-                    + LotteryManager.getSkinSellValue(trueQualityAndId.first) + "货币）" : "该物品不可出售");
+                    + currentSellValue() + "货币）" : "该物品不可出售");
             int gap = 16;
             int backW = font.width(backLabel) + 16, sellW = font.width(sellLabel) + 16;
             int h = font.lineHeight + 10;

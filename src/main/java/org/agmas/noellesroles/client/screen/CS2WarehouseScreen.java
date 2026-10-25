@@ -155,7 +155,7 @@ public class CS2WarehouseScreen extends Screen {
         // 底部按钮
         int btnY = height - 30;
         addRenderableWidget(Button.builder(Component.literal("商店"), b -> {
-            minecraft.setScreen(new CS2ShopScreen());
+            minecraft.setScreen(new io.wifi.starrailexpress.client.gui.screen.ingame.ShopScreen(this));
         }).pos(width / 2 - 100, btnY).size(60, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("开箱"), b -> {

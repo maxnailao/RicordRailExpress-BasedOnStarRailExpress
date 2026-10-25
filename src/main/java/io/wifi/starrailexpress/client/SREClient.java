@@ -552,6 +552,12 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
 
+        // 管理员后台：目标玩家数据快照接收
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.AdminInspectS2CPayload.ID,
+                (payload, context) -> context.client().execute(() ->
+                        io.wifi.starrailexpress.client.data.AdminInspectCache.apply(payload)));
+
         ClientPlayNetworking.registerGlobalReceiver(IsLobbyConfigPayload.ID, (payload, context) -> {
             SREClient.isInLobby = payload.isLobby();
             SRE.isLobby = payload.isLobby();
@@ -1210,6 +1216,8 @@ public class SREClient implements ClientModInitializer {
 
         // 表情系统：B 键打开表情罗盘、S2C 接收器、移动打断检测
         io.wifi.starrailexpress.client.emote.EmoteClientHandler.register();
+        // 公告系统：S2C 接收器 + 屏幕顶部新公告横幅
+        io.wifi.starrailexpress.announcement.client.AnnouncementClient.register();
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();
@@ -1236,7 +1244,18 @@ public class SREClient implements ClientModInitializer {
                 io.wifi.starrailexpress.client.XingguangClientEffects.renderKillTint(guiGraphics);
                 // 猩红之爪击杀全屏暗红滤镜
                 io.wifi.starrailexpress.client.XingguangClientEffects.renderClawKillTint(guiGraphics);
-
+                // 鹈鹕肚内炸弹倒计时（全场可见，屏幕中央，客户端按时间戳自衰减）
+                int pbcRaw = org.agmas.noellesroles.client.NoellesrolesClient.PELICAN_BOMB_COUNTDOWN;
+                if (pbcRaw >= 0) {
+                    int pbcShown = (int) Math.ceil(pbcRaw
+                            - (System.currentTimeMillis() - org.agmas.noellesroles.client.NoellesrolesClient.PELICAN_BOMB_COUNTDOWN_AT) / 1000.0);
+                    if (pbcShown > 0) {
+                        net.minecraft.client.Minecraft pbcMc = net.minecraft.client.Minecraft.getInstance();
+                        guiGraphics.drawCenteredString(pbcMc.font, net.minecraft.network.chat.Component
+                                        .translatable("hud.noellesroles.pelican_bomb_countdown", pbcShown),
+                                pbcMc.getWindow().getGuiScaledWidth() / 2, 16, 0xFFFFFF);
+                    }
+                }
 
                 // Subtitle 字幕报幕
                 net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics,

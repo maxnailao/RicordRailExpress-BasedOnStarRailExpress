@@ -230,6 +230,9 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(PelicanReleaseC2SPacket.ID, PelicanReleaseC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(PelicanStateS2CPacket.ID, PelicanStateS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(PelicanProgressS2CPacket.ID, PelicanProgressS2CPacket.CODEC);
+        // 鹈鹕肚内炸弹倒计时全场广播（S2C）
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PelicanBombCountdownS2CPacket.ID,
+                org.agmas.noellesroles.packet.PelicanBombCountdownS2CPacket.CODEC);
 
         // 注册抽奖网络包
         PayloadTypeRegistry.playS2C().register(LootResultS2CPacket.ID, LootResultS2CPacket.CODEC);

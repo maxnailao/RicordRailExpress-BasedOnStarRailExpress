@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.utils.Pair;
+import org.agmas.noellesroles.utils.lottery.LotteryManager;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -196,20 +197,25 @@ public class CS2BoxManager {
             String skinName = parts[1];
             // 直接使用物品类型字符串查询，避免 getSkinItemStack 对 revolver/ 等前缀
             // 返回 null 导致空指针异常（曾造成开箱后箱子钥匙被吞且无物品发放）
+            boolean inheritQuality = (trueQuality == LotteryManager.INHERIT_QUALITY_INDEX);
             if (io.wifi.starrailexpress.data.PlayerEconomyManager
                     .isSkinUnlockedForItemType(player, itemType, skinName)) {
-                isDuplicate = true;
+                if (!inheritQuality) {
+                    isDuplicate = true;
+                }
+                inv.addSkin(skinId, 1);
             } else {
                 ItemSkinManager.unlockSkinForItemType(player, itemType, skinName);
-                // 只有未拥有的皮肤才加入仓库，重复皮肤只返还货币、不再入包
                 inv.addSkin(skinId, 1);
             }
         }
 
-        // 皮肤重复时统一返还 100 货币（帽子/刀/枪/棒球棍/手雷均适用）
+        // 皮肤重复时按该皮肤自身品质的出售价返还货币（帽子/刀/枪/棒球棍/手雷均适用）
         if (isDuplicate && parts.length >= 2 && !"musicbox".equals(parts[0])) {
-            PlayerEconomyManager.addCoinNum(player, 100);
-            player.displayClientMessage(Component.literal("§e已拥有该皮肤，返还 100 货币"), true);
+            int refundQuality = findSkinQuality(skinId);
+            int refund = ShopConfig.getInstance().getSellPriceConfig().getSkinPriceByQuality(refundQuality);
+            PlayerEconomyManager.addCoinNum(player, refund);
+            player.displayClientMessage(Component.literal("§e已拥有该皮肤，返还 " + refund + " 货币"), true);
         }
 
         Noellesroles.LOGGER.info("[CS2Box] Player {} opened box '{}', got: quality={}, skin={}, duplicate={}",

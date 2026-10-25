@@ -477,7 +477,7 @@ public class LootMultiScreen extends AbstractPixelScreen {
     /** 全部揭示后的操作区：返回 / 快速出售（本次新解锁皮肤总价值） */
     private void renderFinalActions(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         List<int[]> sellable = sellableResults();
-        int totalValue = sellable.stream().mapToInt(r -> LotteryManager.getSkinSellValue(r[0])).sum();
+        int totalValue = sellable.stream().mapToInt(this::sellValueFor).sum();
         Component backLabel = Component.literal("返回");
         Component sellLabel = Component.literal(sellable.isEmpty() ? "无可出售物品"
                 : "快速出售（可出售" + totalValue + "货币）");
@@ -517,6 +517,18 @@ public class LootMultiScreen extends AbstractPixelScreen {
         return sellable;
     }
 
+    /** 单条结果的可出售价值：按皮肤真实品质计价，与服务端快速出售口径一致 */
+    private int sellValueFor(int[] r) {
+        int quality = r[0];
+        String itemName = ResultCard.resolveItemName(poolId, r[0], r[1]);
+        if (itemName != null && itemName.contains("/")) {
+            String itemType = LotteryManager.LotteryPool.getSkinItemType(itemName);
+            String trueName = LotteryManager.LotteryPool.getTrueName(itemName);
+            quality = LotteryManager.resolveTrueQuality(itemType, trueName, quality);
+        }
+        return LotteryManager.getSkinSellValue(quality);
+    }
+
     private void sellAllResults() {
         List<int[]> sellable = sellableResults();
         if (sellable.isEmpty())
@@ -540,7 +552,7 @@ public class LootMultiScreen extends AbstractPixelScreen {
             Component backLabel = Component.literal("返回");
             Component sellLabel = Component.literal(sellable.isEmpty() ? "无可出售物品"
                     : "快速出售（可出售"
-                    + sellable.stream().mapToInt(r -> LotteryManager.getSkinSellValue(r[0])).sum() + "货币）");
+                    + sellable.stream().mapToInt(this::sellValueFor).sum() + "货币）");
             int gap = 16;
             int backW = font.width(backLabel) + 16, sellW = font.width(sellLabel) + 16;
             int h = font.lineHeight + 10;

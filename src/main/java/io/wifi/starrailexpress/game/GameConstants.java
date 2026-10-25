@@ -292,14 +292,8 @@ public class GameConstants {
         public static ResourceLocation VOTED_OUT = Noellesroles.id("voted_out");
         /** 鹈鹕肚内吞噬死亡（会议开始时肚内玩家强制死亡） */
         public static ResourceLocation PELICAN_EATEN = Noellesroles.id("pelican_eaten");
-
-        public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
-        public static ResourceLocation FAILED_INITIATION = StupidExpress.id("failed_initiation");
-        public static ResourceLocation ALLERGIST = StupidExpress.id("allergist");
-        public static ResourceLocation FAILED_IGNITE = StupidExpress.id("failed_ignite");
-        public static ResourceLocation IGNITED = StupidExpress.id("ignited");
-        public static ResourceLocation LOOSE_END = StupidExpress.id("loose_end");
-        public static ResourceLocation SPLIT_PERSONALITY = StupidExpress.id("split_personality");
+        /** 鹈鹕吞下带炸弹的玩家：炸弹在肚内 instant 引爆，鹈鹕与肚内全员死亡（爆体而亡） */
+        public static ResourceLocation PELICAN_BOMB_DEATH = Noellesroles.id("pelican_bomb_death");
 
         private static ResourceLocation itemId(Item item) {
             return BuiltInRegistries.ITEM.getKey(item);
