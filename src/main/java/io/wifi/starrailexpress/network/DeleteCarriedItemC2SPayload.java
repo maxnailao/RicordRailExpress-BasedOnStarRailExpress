@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.network;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.util.TrashCanProtection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,9 @@ import net.minecraft.world.item.ItemStack;
  * <p>玩家在物品栏界面把物品拖到右侧垃圾槽并确认删除时发送。服务端以
  * {@code containerMenu.getCarried()} 为准（而不是客户端传物品 id），
  * 这样客户端无法任意指定要删什么，也不会出现两边不一致。
+ *
+ * <p>哪些物品受保护（武器 / 炸弹客的炸弹 / 食物饮料）由
+ * {@link TrashCanProtection} 统一判定 —— 地图里的垃圾桶方块也走同一套规则。
  */
 public record DeleteCarriedItemC2SPayload() implements CustomPacketPayload {
 
@@ -36,41 +40,16 @@ public record DeleteCarriedItemC2SPayload() implements CustomPacketPayload {
      * <p>服务端仍会独立再查一次 —— 客户端判断只是体验优化，不能作为安全边界。
      */
     public static boolean isProtectedItem(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && isProtected(stack);
+        return TrashCanProtection.isProtected(stack);
     }
 
     /**
-     * 不允许被垃圾桶销毁的物品。
+     * 受保护时返回给玩家看的提示文案；可删除时返回 {@code null}。
      *
-     * <p>都是**局内战斗物品**：误删会直接毁掉一局游戏（警察丢了巡警手枪、
-     * 牛仔丢了德林加就没法完成复仇、杀手丢了刀就只能挨打），所以垃圾桶一律拒绝。
-     *
-     * <p>注意几处容易漏的：
-     * <ul>
-     * <li>双枪是左右两件独立物品，都要挡；</li>
-     * <li>手雷有三种（普通 / 粘性 / 定时），都算手雷；</li>
-     * <li>短管霰弹枪在 {@code ModItems}，其余多数在 {@code TMMItems}。</li>
-     * </ul>
+     * <p>客户端与服务端都调这一个方法，保证两边口径一致。
      */
-    private static boolean isProtected(ItemStack stack) {
-        // 手枪类
-        return stack.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.DERRINGER)
-                || stack.is(org.agmas.noellesroles.init.ModItems.PATROLLER_REVOLVER)
-                || stack.is(org.agmas.noellesroles.init.ModItems.BANDIT_REVOLVER)
-                || stack.is(org.agmas.noellesroles.init.ModItems.SHERIFF_REVOLVER)
-                || stack.is(org.agmas.noellesroles.init.ModItems.FAKE_REVOLVER)
-                || stack.is(org.agmas.noellesroles.init.ModItems.DUAL_PISTOL_LEFT)
-                || stack.is(org.agmas.noellesroles.init.ModItems.DUAL_PISTOL_RIGHT)
-                // 近战与投掷物
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.KNIFE)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.BAT)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.GRENADE)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.STICKY_GRENADE)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.TIMED_GRENADE)
-                // 长枪
-                || stack.is(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN)
-                || stack.is(io.wifi.starrailexpress.index.TMMItems.SNIPER_RIFLE);
+    public static Component protectedReason(ItemStack stack) {
+        return TrashCanProtection.protectedReason(stack);
     }
 
     /** 服务端处理：清掉光标上拿着的那叠物品。 */
@@ -86,10 +65,9 @@ public record DeleteCarriedItemC2SPayload() implements CustomPacketPayload {
         if (carried.isEmpty()) {
             return;
         }
-        if (isProtected(carried)) {
-            player.displayClientMessage(Component
-                    .literal("§c这件武器不能扔进垃圾桶")
-                    .withStyle(ChatFormatting.RED), true);
+        Component deny = protectedReason(carried);
+        if (deny != null) {
+            player.displayClientMessage(deny.copy().withStyle(ChatFormatting.RED), true);
             return;
         }
         // 关键：先清空 carried，再广播，客户端光标上的物品会立刻消失

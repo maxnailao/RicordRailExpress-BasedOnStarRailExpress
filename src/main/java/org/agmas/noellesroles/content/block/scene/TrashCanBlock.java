@@ -56,6 +56,15 @@ public class TrashCanBlock extends BaseEntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.getBlockEntity(pos) instanceof TrashCanBlockEntity trashCan) {
+            // 硬保护优先于作者配置的白/黑名单：
+            // 武器 / 炸弹客的炸弹 / 食物饮料 一律不能销毁（与物品栏垃圾桶同一套判定）。
+            var deny = io.wifi.starrailexpress.util.TrashCanProtection.protectedReason(stack);
+            if (deny != null) {
+                if (!level.isClientSide && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                    sp.displayClientMessage(deny, true);
+                }
+                return ItemInteractionResult.FAIL;
+            }
             ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (trashCan.canDestroy(itemId)) {
                 if (!level.isClientSide) {
