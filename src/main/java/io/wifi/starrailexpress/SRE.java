@@ -146,6 +146,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         // 注册人质组件（绑匪）：纳入对局开始/结束的统一 clear()，
         // 避免 isKidnapped 跨局残留导致玩家一直被禁言/禁锢
         TMMRoles.addRoleComponents(org.agmas.noellesroles.component.ModComponents.KIDNAPPED);
+        // 教父组件必须进统一清理名单：familyMembers / loadedBullets / recruitCooldownUntil
+        // 原先跨局残留，导致新一局招募 1 人进度直接显示上一局的累计值（如 4/4）
+        TMMRoles.addRoleComponents(org.agmas.noellesroles.game.roles.neutral.mafia.GodfatherComponent.KEY);
     }
 
     private void initConfig() {
