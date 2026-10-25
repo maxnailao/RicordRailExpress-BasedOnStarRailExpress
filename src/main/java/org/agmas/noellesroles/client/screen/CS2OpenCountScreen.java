@@ -147,7 +147,6 @@ public class CS2OpenCountScreen extends Screen {
         }
     }
 
-    /** 发送开箱请求：count==1 走单开滚动动画，count>1 走批量聚合网格 */
     private void confirmOpen() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || maxCount < 1) return;
@@ -229,6 +228,11 @@ public class CS2OpenCountScreen extends Screen {
         g.drawCenteredString(font, "数量", centerX, py + 100, TEXT_DIM);
 
         super.render(g, mouseX, mouseY, delta);
+    }
+
+    // 阻断原版 super.render() 的背景模糊采样链；压暗由 render() 里的 fill 负责
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
     }
 
     /** 过长文本截断（弹窗内居中显示用） */

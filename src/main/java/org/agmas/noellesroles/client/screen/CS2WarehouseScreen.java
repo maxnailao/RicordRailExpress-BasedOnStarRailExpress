@@ -479,6 +479,14 @@ public class CS2WarehouseScreen extends Screen {
         renderHeader(guiGraphics);
         LobbySubscreenRenderer.footer(guiGraphics, font, 8, height - 38, width - 16,
                 "左侧选择分类 · 点击物品查看操作");
+        // 开箱保底进度：置于底部“开箱”按钮正上方（网格截止线已上移避让，不与 footer/按钮重叠）
+        var pityPlayer = Minecraft.getInstance().player;
+        if (pityPlayer != null) {
+            CS2InventoryComponent pityInv = CS2InventoryComponent.KEY.get(pityPlayer);
+            guiGraphics.drawCenteredString(font,
+                    "开箱保底: " + pityInv.getBoxPityCounter() + "/" + CS2InventoryComponent.PITY_THRESHOLD,
+                    width / 2, height - 50, 0xFFAA88FF);
+        }
         renderTooltip(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, delta);
     }
@@ -597,10 +605,7 @@ public class CS2WarehouseScreen extends Screen {
                     io.wifi.starrailexpress.cca.CS2InventoryComponent.KEY.get(player);
             guiGraphics.drawString(font, "神话碎片: " + inv.getMythicShards(),
                     width - 120, 20, 0xFFCC66FF, false);
-            guiGraphics.drawString(font,
-                    "保底进度: " + inv.getBoxPityCounter() + "/"
-                            + io.wifi.starrailexpress.cca.CS2InventoryComponent.PITY_THRESHOLD,
-                    width - 120, 32, 0xFFAA88FF, false);
+
         }
     }
 
@@ -779,7 +784,7 @@ public class CS2WarehouseScreen extends Screen {
             int x = gridStartX + col * (cardSize + cardGap);
             int y = gridStartY + row * (cardSize + cardGap);
 
-            if (y + cardSize > height - 40) continue;
+            if (y + cardSize > height - 56) continue;
 
             WarehouseItem item = items.get(i);
             boolean hovered = mouseX >= x && mouseX < x + cardSize && mouseY >= y && mouseY < y + cardSize;
@@ -1234,7 +1239,7 @@ public class CS2WarehouseScreen extends Screen {
     private static final int SCROLLBAR_MARGIN = 4;
     /** 一屏可见的行数（与 renderGrid 的裁剪条件一致：y + cardSize 不得越过 height-40） */
     private int visibleRows() {
-        int usable = (height - 40) - gridStartY;
+        int usable = (height - 56) - gridStartY;
         return Math.max(1, usable / (cardSize + cardGap));
     }
 
@@ -1257,7 +1262,7 @@ public class CS2WarehouseScreen extends Screen {
     }
 
     private int scrollbarHeight() {
-        return Math.max(20, (height - 40) - gridStartY);
+        return Math.max(20, (height - 56) - gridStartY);
     }
 
     /** 滑块高度按"可见比例"算，最少 16px（拖得动） */
