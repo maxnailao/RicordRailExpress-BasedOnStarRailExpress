@@ -150,6 +150,15 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             client.setScreen(new CustomRoleScreen());
             return true;
         };
+        // 列车假人工具：此前漏了接线，openScreenCallback 一直为 null，
+        // 导致右键走 pass 分支、界面永远打不开
+        io.wifi.starrailexpress.traindummy.TrainDummyToolItem.openScreenCallback = (p) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null)
+                return false;
+            client.setScreen(new io.wifi.starrailexpress.client.gui.screen.TrainDummyScreen());
+            return true;
+        };
     }
 
     /**

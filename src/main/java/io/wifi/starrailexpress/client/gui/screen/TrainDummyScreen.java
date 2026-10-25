@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.traindummy.TrainDummyEntity;
 import io.wifi.starrailexpress.traindummy.TrainDummySettings;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -167,6 +168,7 @@ public class TrainDummyScreen extends Screen {
     }
 
     private void layoutForm() {
+        int usedScroll = scroll;
         int x = panelX() + 12;
         int inputX = panelX() + PANEL_W - 132;
         int y = panelY() + 28 - scroll;
@@ -228,6 +230,12 @@ public class TrainDummyScreen extends Screen {
         contentHeight = y + scroll - (panelY() + 28);
         int maxScroll = Math.max(0, contentHeight - (PANEL_H - 72));
         scroll = Mth.clamp(scroll, 0, maxScroll);
+        // 滚动值刚被修正（滑过了顶/底边界）：上面的控件是按"越界偏移"摆的，
+        // 而标签是按修正后的 scroll 画的，两边会错开。用正确值重摆一次。
+        if (scroll != usedScroll) {
+            layoutForm();
+            return;
+        }
         place(children().get(20), panelX() + 16, panelY() + PANEL_H - 28);
         place(children().get(21), panelX() + PANEL_W - 156, panelY() + PANEL_H - 28);
         clipInputs(bottom);
@@ -235,9 +243,23 @@ public class TrainDummyScreen extends Screen {
 
     private void clipInputs(int bottom) {
         int top = panelY() + 24;
+        var cancel = children().get(20);
+        var spawn = children().get(21);
         for (var child : children()) {
-            if (child instanceof EditBox box) {
-                box.setEditable(box.getY() >= top && box.getY() <= bottom);
+            if (!(child instanceof AbstractWidget widget) || !widget.visible) {
+                continue;
+            }
+            if (child == cancel || child == spawn) {
+                continue; // 底部取消/生成按钮固定在面板上，不参与滚动裁剪
+            }
+            // 与 drawFormLabels 的标签裁剪边界一致：整行滑出内容区就隐藏，
+            // 避免控件溢出面板、盖住标题栏或底部按钮
+            boolean out = widget.getY() < top || widget.getY() > bottom;
+            if (out) {
+                widget.visible = false;
+            }
+            if (widget instanceof EditBox box) {
+                box.setEditable(!out);
             }
         }
     }
