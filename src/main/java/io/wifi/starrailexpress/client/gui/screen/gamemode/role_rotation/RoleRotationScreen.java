@@ -401,6 +401,7 @@ public class RoleRotationScreen extends Screen {
         boolean hasSelected = RoleRotationCache.getSelectedRoles().containsKey(myUuid);
         boolean isMyTurn = RoleRotationCache.isMyTurn();
         boolean canChoose = isMyTurn && !hasSelected && RoleRotationCache.isSelecting();
+        boolean concealCandidateDetails = RoleRotationCache.isHideSelections() && !hasSelected;
 
         // 自己不在本轮且未选择 → 等待画面
         if (!isMyTurn && !hasSelected) {
@@ -427,16 +428,17 @@ public class RoleRotationScreen extends Screen {
                 hoveredCardIndex = i;
                 hoveredDetailIndex = i;
             }
-            drawRoleCard(g, x, cardY, cardW, CARD_H, i, myCandidates, hover, canChoose);
+            drawRoleCard(g, x, cardY, cardW, CARD_H, i, myCandidates, hover, canChoose,
+                    concealCandidateDetails);
         }
 
         // 悬停预览详情
         String selectedPath = null;
-        drawDetail(g, selectedPath, myCandidates);
+        drawDetail(g, selectedPath, myCandidates, concealCandidateDetails);
     }
 
     private void drawRoleCard(GuiGraphics g, int x, int y, int w, int h, int index, List<String> candidates,
-            boolean hover, boolean enabled) {
+            boolean hover, boolean enabled, boolean concealCandidateDetails) {
         int border = hover ? GOLD : 0xFF5A4530;
         int top = hover ? 0xFF2B2112 : 0xFF1A1008;
         int bottom = hover ? 0xFF112536 : 0xFF0B1722;
@@ -454,16 +456,24 @@ public class RoleRotationScreen extends Screen {
         }
         SRERole role = getRoleByPath(candidates.get(index));
         if (role == null) {
-            drawCenteredWrapped(g, Component.literal(candidates.get(index)), x + 8, y + 32, w - 16, 0xFFFFFFFF);
+            Component fallback = concealCandidateDetails ? Component.literal("?")
+                    : Component.literal(candidates.get(index));
+            drawCenteredWrapped(g, fallback, x + 8, y + 32, w - 16,
+                    concealCandidateDetails ? MUTED : 0xFFFFFFFF);
             return;
         }
-        int roleColor = getRoleDisplayColor(role);
-        g.fill(x + 8, y + 14, x + w - 8, y + 34, (roleColor & 0x00FFFFFF) | 0x66000000);
-        g.drawCenteredString(font, trim(RoleUtils.getRoleName(role).getString(), w - 16), x + w / 2, y + 20,
-                0xFFFFFFFF);
         Component faction = getRoleFactionText(role);
-        g.drawCenteredString(font, trim(faction.getString(), w - 16), x + w / 2, y + 48,
-                faction.getStyle().getColor() != null ? faction.getStyle().getColor().getValue() : TEXT);
+        int factionColor = faction.getStyle().getColor() != null ? faction.getStyle().getColor().getValue() : TEXT;
+        if (concealCandidateDetails) {
+            g.fill(x + 8, y + 24, x + w - 8, y + 52, (factionColor & 0x00FFFFFF) | 0x66000000);
+            g.drawCenteredString(font, trim(faction.getString(), w - 16), x + w / 2, y + 34, factionColor);
+        } else {
+            int roleColor = getRoleDisplayColor(role);
+            g.fill(x + 8, y + 14, x + w - 8, y + 34, (roleColor & 0x00FFFFFF) | 0x66000000);
+            g.drawCenteredString(font, trim(RoleUtils.getRoleName(role).getString(), w - 16), x + w / 2, y + 20,
+                    0xFFFFFFFF);
+            g.drawCenteredString(font, trim(faction.getString(), w - 16), x + w / 2, y + 48, factionColor);
+        }
         Component hint = Component.translatable("gui.sre.role_rotation.click_to_select");
         g.drawCenteredString(font, trim(hint.getString(), w - 16), x + w / 2, y + h - 18,
                 enabled ? GREEN : MUTED);
@@ -483,6 +493,11 @@ public class RoleRotationScreen extends Screen {
     }
 
     private void drawDetail(GuiGraphics g, String selectedPath, List<String> candidates) {
+        drawDetail(g, selectedPath, candidates, false);
+    }
+
+    private void drawDetail(GuiGraphics g, String selectedPath, List<String> candidates,
+            boolean concealCandidateDetails) {
         g.fillGradient(detailX, detailY, detailX + detailW, detailY + detailH, 0xAA1A1008, 0xAA0B1722);
         g.renderOutline(detailX, detailY, detailW, detailH, 0xFF5A4530);
 
@@ -499,6 +514,13 @@ public class RoleRotationScreen extends Screen {
                     : Component.translatable("gui.sre.role_rotation.waiting");
             g.drawCenteredString(font, text, detailX + detailW / 2, detailY + detailH / 2 - 4,
                     hoveredDetailIndex == 3 ? GOLD : MUTED);
+            return;
+        }
+
+        if (concealCandidateDetails) {
+            Component faction = getRoleFactionText(role);
+            int factionColor = faction.getStyle().getColor() != null ? faction.getStyle().getColor().getValue() : TEXT;
+            g.drawCenteredString(font, faction, detailX + detailW / 2, detailY + detailH / 2 - 4, factionColor);
             return;
         }
 
