@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
+import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.client.gui.GuiGraphics;
@@ -33,9 +35,9 @@ public class RoleCardScreen extends Screen {
     private static final int HEADER_TEXT = LobbyUiTheme.TEXT;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static final int TILE = 40;
-    private static final int TILE_GAP = 10;
     private static final int MINI = 28;
+    private int tile = 40;     // 卡面边长：随面板宽度放大
+    private int tileGap = 10;  // 卡面间距
 
     // 布局（init 时计算，render/按钮共用）
     private int panelX, panelY, panelW, panelH;
@@ -59,6 +61,7 @@ public class RoleCardScreen extends Screen {
     };
 
     private final Screen parent;
+    private final PageTransition transition = new PageTransition();
 
     public RoleCardScreen(Screen parent) {
         super(Component.literal("职业卡"));
@@ -68,26 +71,37 @@ public class RoleCardScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        panelW = Math.min(width - 16, 360);
-        panelH = Math.min(height - 48, 190);
+        panelW = width - 16;
+        panelH = height - 48;
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2 + 14;
 
-        int rowW = KINDS.length * TILE + (KINDS.length - 1) * TILE_GAP;
+        tile = Math.max(40, Math.min(110, panelW / (KINDS.length * 3)));
+        tileGap = Math.max(10, tile / 4);
+
+        int rowW = KINDS.length * tile + (KINDS.length - 1) * tileGap;
         tileRowX = panelX + (panelW - rowW) / 2;
         // 整体居中：内容块 = 卡面 + 间距 + 两行文字（状态行 + 卡名行），在面板内垂直居中
-        int blockH = TILE + 8 + 11 + font.lineHeight;
+        int blockH = tile + 8 + 11 + font.lineHeight;
         tileRowY = panelY + (panelH - blockH) / 2;
 
         for (int i = 0; i < KINDS.length; i++) {
             final int index = i;
-            addRenderableWidget(new CardTileButton(tileRowX + i * (TILE + TILE_GAP), tileRowY, KINDS[i], index,
+            addRenderableWidget(new CardTileButton(tileRowX + i * (tile + tileGap), tileRowY, KINDS[i], index,
                     b -> useCard(index)));
         }
 
-        addRenderableWidget(Button.builder(Component.literal("返回"), b ->
-                minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))
+        addRenderableWidget(Button.builder(Component.literal("返回"), b -> transition.startReturn(
+                () -> minecraft.execute(() -> minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))))
                 .pos(panelX + 6, panelY + panelH - 26).size(50, 20).build());
+
+        if (!isReducedMotion()) {
+            transition.beginCrtOnce(minecraft);
+        }
+    }
+
+    private boolean isReducedMotion() {
+        return minecraft.options.screenEffectScale().get() == 0 && !SREClientConfig.menuAnimationsEnabled();
     }
 
     /** 读取当前玩家该卡面的拥有数量（与仓库"职业卡"分类同源） */
@@ -154,11 +168,11 @@ public class RoleCardScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
 
         // 严格对齐在每张卡面正下方：上一行"已拥有N张/已使用/未拥有"，下一行卡名
-        int rowY = tileRowY + TILE + 8;
+        int rowY = tileRowY + tile + 8;
         for (int i = 0; i < KINDS.length; i++) {
             CardKind kind = KINDS[i];
             // 列中心 = 对应顶部卡面的水平中心
-            int cx = tileRowX + i * (TILE + TILE_GAP) + TILE / 2;
+            int cx = tileRowX + i * (tile + tileGap) + tile / 2;
 
             int count = countOf(kind);
             String status;
@@ -179,6 +193,7 @@ public class RoleCardScreen extends Screen {
         }
         LobbySubscreenRenderer.footer(graphics, font, panelX + 8, panelY + panelH - 34, panelW - 16,
                 "点击卡片使用；自选卡会打开职业选择页");
+        transition.render(graphics, width, height);
     }
 
     // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
@@ -212,7 +227,7 @@ public class RoleCardScreen extends Screen {
         private final int index;
 
         CardTileButton(int x, int y, CardKind kind, int index, OnPress action) {
-            super(x, y, TILE, TILE, Component.literal(kind.glyph()), action, DEFAULT_NARRATION);
+            super(x, y, tile, tile, Component.literal(kind.glyph()), action, DEFAULT_NARRATION);
             this.kind = kind;
             this.index = index;
         }
@@ -227,7 +242,7 @@ public class RoleCardScreen extends Screen {
             if (used) {
                 // 已使用：字上移，下方显示"取消"
                 graphics.drawCenteredString(font, kind.glyph(), cx, getY() + 7, kind.textColor());
-                graphics.drawCenteredString(font, "取消", cx, getY() + TILE - 13, STATUS_USED_COLOR);
+                graphics.drawCenteredString(font, "取消", cx, getY() + getHeight() - 13, STATUS_USED_COLOR);
             } else {
                 graphics.drawCenteredString(font, kind.glyph(), cx,
                         getY() + (getHeight() - font.lineHeight) / 2, kind.textColor());

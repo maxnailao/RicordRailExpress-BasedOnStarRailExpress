@@ -21,7 +21,7 @@ public final class DiscGeometry {
     }
 
     public static Plane plane(Frame frame, float depth) {
-        return new Plane(depth, frame.discScale(), frame.discTilt(), 0, 0, false);
+        return new Plane(depth, frame.discScale(), frame.discTilt(), frame.exitRoll(), 0, false);
     }
 
     public static Box resumeBounds() {

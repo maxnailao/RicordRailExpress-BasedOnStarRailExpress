@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
+import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.cca.CS2InventoryComponent;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -8,6 +9,7 @@ import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.client.render.entity.HatFeatureRenderer;
 import io.wifi.starrailexpress.client.render.entity.HatSkinRenderer;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -71,8 +73,8 @@ public class AccessoryScreen extends Screen {
     private static final Set<String> EXCLUDED_PREVIEW_HATS = Set.of(
             "hat/hat_aqiong", "hat/hat_liyu", "hat/hat_liangjie", "hat/hat_haozi");
 
-    private static final int COLS = 3;
     private static final int CELL_GAP = 6;
+    private int cols = 3; // 列数随面板宽度自适应（computeLayout 计算）
     private static final int SCROLLBAR_W = 6;
 
     // 分类标签（索引 0 = 全部）
@@ -149,6 +151,7 @@ public class AccessoryScreen extends Screen {
 
     private final List<SkinEntry> allSkins = new ArrayList<>();
     private final List<SkinEntry> skins = new ArrayList<>();
+    private final PageTransition transition = new PageTransition();
 
     public AccessoryScreen(Screen parent) {
         this(parent, null);
@@ -177,8 +180,8 @@ public class AccessoryScreen extends Screen {
         virtMouseY = endPreviewY + previewH / 2;
         viewTargetX = leftYawVirtX();
 
-        addRenderableWidget(Button.builder(Component.literal("返回"), b ->
-                minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))
+        addRenderableWidget(Button.builder(Component.literal("返回"), b -> transition.startReturn(
+                () -> minecraft.execute(() -> minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))))
                 .pos(panelX + 6, panelY + panelH - 26).size(50, 20).build());
         addRenderableWidget(Button.builder(Component.literal("↕ 排序"), b -> toggleSort())
                 .pos(panelX + 60, panelY + panelH - 26).size(52, 20).build());
@@ -186,12 +189,15 @@ public class AccessoryScreen extends Screen {
         if (initialSkinId != null) {
             focusInitialSkin(initialSkinId);
         }
+        if (minecraft.options.screenEffectScale().get() > 0 || SREClientConfig.menuAnimationsEnabled()) {
+            transition.beginCrt();
+        }
     }
 
     /** 依据是否竖排计算面板/预览/网格/标签布局；切换排序或首开时调用 */
     private void computeLayout() {
-        panelW = Math.min(width - 16, 440);
-        panelH = Math.min(height - 48, 190);
+        panelW = width - 16;
+        panelH = height - 44;
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2 + 14;
 
@@ -231,9 +237,10 @@ public class AccessoryScreen extends Screen {
             listY = tabRowY + tabCellH + 3;
             gridAvailH = previewH - (tabCellH + 3);
         }
-        cellH = 48;
+        cols = Mth.clamp(listW / 150, 3, 6);
+        cellW = (listW - CELL_GAP * (cols - 1)) / cols;
+        cellH = Mth.clamp(cellW * 3 / 10, 48, 60);
         visibleRows = Math.max(1, (gridAvailH + CELL_GAP) / (cellH + CELL_GAP));
-        cellW = (listW - CELL_GAP * (COLS - 1)) / COLS;
         barTop = listY;
         barHeight = gridAvailH;
     }
@@ -324,7 +331,7 @@ public class AccessoryScreen extends Screen {
     }
 
     private int totalRows() {
-        return (skins.size() + COLS - 1) / COLS;
+        return (skins.size() + cols - 1) / cols;
     }
 
     private int maxRowScroll() {
@@ -428,6 +435,7 @@ public class AccessoryScreen extends Screen {
         renderTabs(graphics, mouseX, mouseY);
         renderGrid(graphics, mouseX, mouseY);
         renderScrollbar(graphics, mouseX, mouseY);
+        transition.render(graphics, width, height);
     }
 
     // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
@@ -482,8 +490,8 @@ public class AccessoryScreen extends Screen {
         }
         for (int r = 0; r < visibleRows; r++) {
             int row = rowScroll + r;
-            for (int c = 0; c < COLS; c++) {
-                int idx = row * COLS + c;
+            for (int c = 0; c < cols; c++) {
+                int idx = row * cols + c;
                 if (idx >= skins.size()) break;
                 SkinEntry e = skins.get(idx);
                 int x = listX + c * (cellW + CELL_GAP);
@@ -565,6 +573,9 @@ public class AccessoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (transition.crtActive() || transition.returning()) {
+            return true;
+        }
         if (overThumb(mouseX, mouseY)) {
             draggingScrollbar = true;
             return true;
@@ -600,8 +611,8 @@ public class AccessoryScreen extends Screen {
         }
         // 点击饰品格：左键临时预览（拿到手上查看），右键真正装备到身上
         for (int r = 0; r < visibleRows; r++) {
-            for (int c = 0; c < COLS; c++) {
-                int idx = (rowScroll + r) * COLS + c;
+            for (int c = 0; c < cols; c++) {
+                int idx = (rowScroll + r) * cols + c;
                 if (idx >= skins.size()) break;
                 int x = listX + c * (cellW + CELL_GAP);
                 int y = listY + r * (cellH + CELL_GAP);
@@ -769,7 +780,7 @@ public class AccessoryScreen extends Screen {
         applyFilter();
         for (int i = 0; i < skins.size(); i++) {
             if (skins.get(i).skinId().equals(skinId)) {
-                rowScroll = clampRowScroll(i / COLS - visibleRows / 2);
+                rowScroll = clampRowScroll(i / cols - visibleRows / 2);
                 selectSkin(i);
                 return;
             }

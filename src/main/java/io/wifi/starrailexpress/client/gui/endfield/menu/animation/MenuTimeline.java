@@ -1,10 +1,13 @@
 package io.wifi.starrailexpress.client.gui.endfield.menu.animation;
 
 public final class MenuTimeline {
-    public static final float SPEED = 1.2f;
+    public static final float SPEED = 1.0f;
+    public static final float CLOSE_TOTAL_MS = 720f;
+    public static final float DETAIL_TOTAL_MS = 960f;
     private final long openedAt;
     private final boolean reducedMotion;
     private long closedAt = -1;
+    private boolean toDetail;
 
     public MenuTimeline(long now, boolean reducedMotion) {
         openedAt = now;
@@ -12,8 +15,18 @@ public final class MenuTimeline {
     }
 
     public void close(long now) {
+        close(now, false);
+    }
+
+    /** 进入子页面：圆环铺满视口 + 黑场，960ms 后切换页面。 */
+    public void transitionToDetail(long now) {
+        close(now, true);
+    }
+
+    private void close(long now, boolean detail) {
         if (!closing()) {
             closedAt = now;
+            toDetail = detail;
         }
     }
 
@@ -21,66 +34,145 @@ public final class MenuTimeline {
         return closedAt >= 0;
     }
 
+    public boolean isToDetail() {
+        return toDetail;
+    }
+
     public boolean finished(long now) {
-        return closing() && (reducedMotion || elapsed(now, closedAt) >= 500);
+        return closing() && (reducedMotion
+                || elapsed(now, closedAt) >= (toDetail ? DETAIL_TOTAL_MS : CLOSE_TOTAL_MS));
     }
 
     public Frame sample(long now) {
-        float opening = reducedMotion ? 900 : elapsed(closing() ? closedAt : now, openedAt);
-        float exit = !closing() ? -1 : reducedMotion ? 500 : elapsed(now, closedAt);
-        return new Frame(opening, exit);
+        float opening = reducedMotion ? 9999 : elapsed(closing() ? closedAt : now, openedAt);
+        float exit = !closing() ? -1 : reducedMotion ? 9999 : elapsed(now, closedAt);
+        return new Frame(opening, exit, toDetail);
     }
 
     private static float elapsed(long now, long origin) {
         return (float) ((now - origin) / 1_000_000d * SPEED);
     }
 
-    public record Frame(float opening, float exit) {
+    public record Frame(float opening, float exit, boolean toDetail) {
+        private static final int LEFT_START = 105;
+        private static final int RIGHT_START = 120;
+        private static final int STAGGER = 55;
+        private static final int CARD_RISE = 380;
+        /** 对角线倍率：RIM 层宽 1040，1040×2.4=2496 > 1920×1080 对角线 2203，可铺满四角。 */
+        public static final float COVER_SCALE = 2.4f;
+
         public float backdrop() {
-            return exit < 0 ? 1 : 1 - range(exit, 380, 500);
+            if (exit < 0) return easeOut(range(opening, 0, 430));
+            return toDetail ? 1 : 1 - easeInOut(range(exit, 0, CLOSE_TOTAL_MS));
+        }
+
+        public float blur() {
+            if (exit < 0) return easeInOut(range(opening, 0, 430));
+            return toDetail ? 1 : 1 - easeInOut(range(exit, 0, CLOSE_TOTAL_MS));
         }
 
         public float discScale() {
-            float scale = 0.02f + 0.98f * easeOut(range(opening, 58, 558));
-            return exit < 0 ? scale : scale * (1 - 0.98f * easeInOut(range(exit, 150, 340)));
+            if (exit < 0) {
+                return 0.78f + 0.22f * easeOut(range(opening, 0, 760));
+            }
+            if (toDetail) {
+                float charge = easeOut(range(exit, 0, 140));
+                float fill = easeIn(range(exit, 140, 860));
+                return 1 + 0.06f * charge + (COVER_SCALE - 1f) * fill;
+            }
+            float grow = easeOut(range(exit, 0, 140));
+            float shrink = easeIn(range(exit, 140, 520));
+            return 1 + 0.06f * grow - 0.45f * shrink;
         }
 
         public float discTilt() {
-            return exit < 0 ? 40 * (1 - easeInOut(range(opening, 234, 382)))
-                    : 51.5f * easeInOut(range(exit, 150, 340));
+            if (exit < 0) {
+                return 40 * (1 - easeInOut(range(opening, 0, 760)));
+            }
+            return toDetail ? 0 : 52 * easeInOut(range(exit, 140, 520));
         }
 
         public float discAlpha() {
-            return range(opening, 58, 115) * (exit < 0 ? 1 : 1 - range(exit, 290, 350));
+            if (exit < 0) return easeOut(range(opening, 0, 140));
+            return toDetail ? 1 : 1 - easeIn(range(exit, 300, 560));
+        }
+
+        public float discSharpness() {
+            if (exit < 0) return easeInOut(range(opening, 120, 760));
+            return toDetail ? 1 : 1 - easeInOut(range(exit, 140, 520));
         }
 
         public float contentAlpha() {
-            return range(opening, 355, 510) * (exit < 0 ? 1 : 1 - range(exit, 175, 285));
+            if (exit < 0) return easeInOut(range(opening, 200, 700));
+            return toDetail ? 1 : 1 - range(exit, 140, 420);
+        }
+
+        /** 转场黑场：860ms 前压满，杜绝四角外露；普通关闭不启用。 */
+        public float blackout() {
+            return exit >= 0 && toDetail ? easeInOut(range(exit, 620, 860)) : 0;
         }
 
         public float cardAlpha(int order) {
-            float start = switch (order) { case 0 -> 340; case 1 -> 355; case 2 -> 457; default -> 505; };
-            return easeOut(range(opening, start, start + 150))
-                    * (exit < 0 ? 1 : 1 - range(exit, 50, 150 + Math.min(order, 2) * 50));
+            if (exit >= 0 && toDetail) return 1 - easeOut(range(exit, 0, 260));
+            float start = LEFT_START + order * STAGGER;
+            return easeOut(range(opening, start, start + CARD_RISE))
+                    * (exit < 0 ? 1 : 1 - easeIn(range(exit, 40 + order * 30, 240 + order * 30)));
         }
 
         public float cardSlide(int order) {
-            return exit < 0 ? (1 - easeOut(range(opening, 340 + order * 45, 890))) * 36
-                    : -80 * easeOut(range(exit, 50, 220));
+            if (exit >= 0 && toDetail) return 0;
+            float start = LEFT_START + order * STAGGER;
+            return exit < 0 ? (1 - easeOut(range(opening, start, start + CARD_RISE))) * 300
+                    : easeIn(range(exit, 40 + order * 30, 260 + order * 30)) * 320;
         }
 
         public float tileAlpha(int order) {
-            return range(opening, 370 + Math.min(order, 8) * 25, 470 + Math.min(order, 8) * 25)
-                    * (exit < 0 ? 1 : 1 - range(exit, Math.max(35, 140 - order * 18), 250 - Math.min(order, 8) * 15));
+            if (exit >= 0 && toDetail) return 1 - easeOut(range(exit, 0, 260));
+            int capped = Math.min(order, 8);
+            float start = RIGHT_START + capped * STAGGER;
+            return easeOut(range(opening, start, start + CARD_RISE))
+                    * (exit < 0 ? 1 : 1 - easeIn(range(exit, 55 + capped * 30, 255 + capped * 30)));
+        }
+
+        public float tileSlide(int order) {
+            if (exit >= 0 && toDetail) return 0;
+            int capped = Math.min(order, 8);
+            float start = RIGHT_START + capped * STAGGER;
+            return exit < 0 ? -(1 - easeOut(range(opening, start, start + CARD_RISE))) * 260
+                    : -easeIn(range(exit, 55 + capped * 30, 275 + capped * 30)) * 300;
         }
 
         public float badgeAlpha() {
-            float alpha = opening < 625 ? range(opening, 565, 605) : opening < 670 ? 0 : range(opening, 670, 710);
-            return alpha * (exit < 0 ? 1 : 1 - range(exit, 75, 150));
+            return controlsAlpha();
         }
 
         public float controlsAlpha() {
-            return range(opening, 450, 620) * (exit < 0 ? 1 : 1 - range(exit, 60, 160));
+            if (exit < 0) return easeOut(range(opening, 180, 540));
+            if (toDetail) return 1 - easeOut(range(exit, 0, 260));
+            return 1 - easeIn(range(exit, 0, 300));
+        }
+
+        public float exitDrift() {
+            if (exit < 0 || toDetail) return 0;
+            return 170 * easeIn(range(exit, 0, 320));
+        }
+
+        /** 完全关闭：整体向右侧回卷（120–720ms 滑出一个屏宽）。 */
+        public float exitRoll() {
+            if (exit < 0 || toDetail) return 0;
+            return 1920 * easeIn(range(exit, 120, CLOSE_TOTAL_MS));
+        }
+
+        public float resumeAlpha() {
+            if (exit < 0) return range(opening, 235, 430);
+            if (toDetail) return 1 - easeOut(range(exit, 0, 260));
+            return 1 - easeIn(range(exit, 0, 300));
+        }
+
+        public float resumeSlide() {
+            if (exit < 0) return (1 - easeOut(range(opening, 235, 825))) * 150;
+            if (toDetail) return 0;
+            return easeIn(range(exit, 0, 320)) * 220;
         }
     }
 
@@ -90,6 +182,10 @@ public final class MenuTimeline {
 
     public static float easeOut(float value) {
         return 1 - (float) Math.pow(1 - value, 3);
+    }
+
+    public static float easeIn(float value) {
+        return value * value * value;
     }
 
     public static float easeInOut(float value) {

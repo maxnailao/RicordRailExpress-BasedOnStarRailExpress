@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.client.gui.screen.roster;
 import com.google.gson.Gson;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.client.data.ClientRoleRosterCache;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import io.wifi.starrailexpress.network.RoleRosterUpdatePayload;
 import io.wifi.starrailexpress.roster.RoleRosterState;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -78,12 +79,15 @@ public class RoleRosterEditScreen extends net.minecraft.client.gui.screens.Scree
     private boolean draggingScrollbar;
     private double scrollbarDragOffset;
 
+    private final PageTransition transition = new PageTransition();
+
     public RoleRosterEditScreen() {
         super(Component.translatable("gui.sre.role_roster.edit.title"));
     }
 
     @Override
     protected void init() {
+        transition.beginCrtOnce(minecraft);
         super.init();
         this.working = ClientRoleRosterCache.snapshot();
 
@@ -293,6 +297,11 @@ public class RoleRosterEditScreen extends net.minecraft.client.gui.screens.Scree
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+        renderWithTransition(g, mouseX, mouseY, delta);
+        transition.render(g, width, height);
+    }
+
+    private void renderWithTransition(GuiGraphics g, int mouseX, int mouseY, float delta) {
         super.render(g, mouseX, mouseY, delta);
 
         RoleRosterStyle.renderBackdrop(g, this.width, this.height);

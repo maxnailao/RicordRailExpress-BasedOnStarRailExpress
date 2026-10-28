@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import net.exmo.sre.EXSREClient;
 import net.exmo.sre.loading.FrameAnimationRenderer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -268,9 +269,12 @@ public class LootInfoScreen extends AbstractPixelScreen {
         ClientPlayNetworking.send(new LootDataRefreshC2SPacket());
     }
 
+    private final PageTransition transition = new PageTransition();
+
     @Override
     protected void init() {
         super.init();
+        transition.beginCrtOnce(minecraft);
         // 重置成员状态
         initialized = false;
         poolButtons = new ArrayList<>();
@@ -434,6 +438,11 @@ public class LootInfoScreen extends AbstractPixelScreen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        renderWithTransition(guiGraphics, mouseX, mouseY, delta);
+        transition.render(guiGraphics, width, height);
+    }
+
+    private void renderWithTransition(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         if (!initialized) {
             if (animationTimeLineManager.isFinished()) {
                 initialized = true;

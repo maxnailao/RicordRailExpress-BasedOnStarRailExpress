@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.client.gui.screen.ingame;
 import io.wifi.starrailexpress.announcement.AnnouncementEntry;
 import io.wifi.starrailexpress.announcement.client.AnnouncementClientCache;
 import io.wifi.starrailexpress.announcement.network.AnnouncementRequestC2SPayload;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -43,6 +44,7 @@ public class AnnouncementScreen extends Screen {
     private int listScroll = 0;
     private int selectedIndex = 0;
     private final List<AnnouncementEntry> displayList = new ArrayList<>();
+    private final PageTransition transition = new PageTransition();
 
     public AnnouncementScreen(Screen parent) {
         super(Component.literal("公告"));
@@ -52,14 +54,17 @@ public class AnnouncementScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        panelW = Math.min(460, width - 20);
-        panelH = Math.min(250, height - 40);
+        // 全屏布局：白标题栏、卡片、字体配色全部沿用，仅放开面板尺寸上限
+        panelW = width - 16;
+        panelH = height - 44;
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2 + 12;
 
         addRenderableWidget(Button.builder(Component.literal("返回"), b ->
-                minecraft.setScreen(parent))
+                transition.startReturn(() -> minecraft.execute(() -> minecraft.setScreen(parent))))
                 .pos(panelX + 6, panelY + panelH - 24).size(48, 18).build());
+
+        transition.beginCrtOnce(minecraft);
 
         // 打开即请求最新公告列表
         ClientPlayNetworking.send(new AnnouncementRequestC2SPayload());
@@ -73,6 +78,11 @@ public class AnnouncementScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+        renderContent(g, mouseX, mouseY, delta);
+        transition.render(g, width, height);
+    }
+
+    private void renderContent(GuiGraphics g, int mouseX, int mouseY, float delta) {
         LobbySubscreenRenderer.background(g, width, height);
         int headerH = 24;
         LobbySubscreenRenderer.panel(g, panelX, panelY - headerH, panelW, panelH + headerH);

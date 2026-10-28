@@ -7,6 +7,8 @@
   "sodium.options.vignette.tooltip": "(低配机建议关闭) 开启后，当玩家处于较暗区域时将应用晕影效果，使画面整体变暗，从而营造出更深沉、更具戏剧性的视觉氛围。",
   "=== MENU ===": "",
   "screen.starrailexpress.settings.backpausing": "返回原版暂停菜单",
+  "text.autoconfig.starrailexpress-client.option.menuAnimationsEnabled": "E键菜单动画",
+  "text.autoconfig.starrailexpress-client.option.menuAnimationsEnabled.@Tooltip": "独立于原版“屏幕效果缩放”的菜单进入/关闭动画开关",
   "screen.starrailexpress.settings": "列车模组设置",
   "screen.starrailexpress.settings.unable": "你无法修改设置：当前正处于游戏中且你没有权限修改.",
   "screen.starrailexpress.settings.client": "客户端设置",

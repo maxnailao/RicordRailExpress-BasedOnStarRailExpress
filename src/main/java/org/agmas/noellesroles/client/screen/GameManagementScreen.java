@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.api.SREGameModes;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import io.wifi.starrailexpress.content.command.MapVoteCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -416,8 +417,11 @@ public class GameManagementScreen extends Screen {
     // 初始化
     // ══════════════════════════════════════════════════════════════════
 
+    private final PageTransition transition = new PageTransition();
+
     @Override
     protected void init() {
+        transition.beginCrtOnce(minecraft);
         super.init();
         computeLayout();
         refreshEntries();
@@ -477,6 +481,11 @@ public class GameManagementScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        renderWithTransition(g, mouseX, mouseY, partialTick);
+        transition.render(g, width, height);
+    }
+
+    private void renderWithTransition(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 

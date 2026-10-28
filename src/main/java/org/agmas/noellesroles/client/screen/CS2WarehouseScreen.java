@@ -22,6 +22,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LobbySubscreenRenderer;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
+import io.wifi.starrailexpress.client.gui.screen.ingame.MenuHubScreen;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import net.minecraft.world.item.Items;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.noellesroles.cs2.CS2BoxConfig;
@@ -136,10 +138,11 @@ public class CS2WarehouseScreen extends Screen {
     public CS2WarehouseScreen() {
         super(Component.literal("CS2 仓库"));
     }
-
+    private final PageTransition transition = new PageTransition();
     @Override
     protected void init() {
         super.init();
+        transition.beginCrtOnce(minecraft);
         isBoxOpening = false; // 安全重置：仓库界面重新打开时始终解锁
         sidebarWidth = width / 6;
         gridStartX = sidebarWidth + 16;
@@ -182,9 +185,9 @@ public class CS2WarehouseScreen extends Screen {
             }
         }).pos(width / 2 - 30, btnY).size(60, 20).build());
 
-        addRenderableWidget(Button.builder(Component.literal("关闭"), b -> {
-            minecraft.setScreen(null);
-        }).pos(width / 2 + 40, btnY).size(60, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("返回"), b -> transition.startReturn(
+                        () -> minecraft.execute(() -> minecraft.setScreen(new MenuHubScreen()))))
+                .pos(width / 2 + 40, btnY).size(60, 20).build());
 
         // 右下角：销毁选中物品（用于清理幽灵物品），选中物品后才出现
         destroyButton = Button.builder(Component.literal("销毁"), b -> askDestroy(selectedItem))
@@ -468,6 +471,11 @@ public class CS2WarehouseScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        renderWithTransition(guiGraphics, mouseX, mouseY, delta);
+        transition.render(guiGraphics, width, height);
+    }
+
+    private void renderWithTransition(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         LobbySubscreenRenderer.background(guiGraphics, width, height);
         LobbySubscreenRenderer.panel(guiGraphics, 4, 4, width - 8, height - 8);
         LobbySubscreenRenderer.header(guiGraphics, font, 4, 4, width - 8, "仓库档案", null);

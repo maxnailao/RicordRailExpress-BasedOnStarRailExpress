@@ -239,20 +239,24 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
         for (MenuScene.Button button : buttons) {
             drawFog(graphics, layout, projection, button);
         }
+        float drift = frame.exitDrift();
+        float roll = frame.exitRoll();
+        Plane infoPlane = new Plane(34, 1, 0, -drift * 0.8f + roll, drift * 0.5f);
+        Plane worldPlane = new Plane(72, 1, 0, drift * 0.9f + roll, -drift * 0.7f);
         if (!layout.compact()) {
-            draw(graphics, layer("reticle", 1040, 1040, disc::reticle), projection,
+            drawDisc(graphics, layer("reticle", 1040, 1040, disc::reticle), projection,
                     DiscGeometry.RIM, DiscGeometry.plane(frame, 0),
-                    frame.discAlpha() * (1 - frame.contentAlpha()), 12);
-            draw(graphics, layer("base", 1040, 1040, disc::base), projection,
+                    frame.discAlpha() * (1 - frame.contentAlpha()), 12, frame);
+            drawDisc(graphics, layer("base", 1040, 1040, disc::base), projection,
                     DiscGeometry.RIM, DiscGeometry.plane(frame, DiscGeometry.BASE_DEPTH),
-                    frame.contentAlpha() * frame.discAlpha(), 12);
+                    frame.contentAlpha() * frame.discAlpha(), 12, frame);
             drawWall(graphics, projection, frame, false, 180);
-            draw(graphics, layer("well", 920, 920, disc::well), projection,
+            drawDisc(graphics, layer("well", 920, 920, disc::well), projection,
                     DiscGeometry.WELL, DiscGeometry.plane(frame, DiscGeometry.FLOOR_DEPTH),
-                    frame.contentAlpha() * frame.discAlpha(), 12);
-            draw(graphics, layer("map", 920, 920, this::paintShowcaseMap), projection,
+                    frame.contentAlpha() * frame.discAlpha(), 12, frame);
+            drawDisc(graphics, layer("map", 920, 920, this::paintShowcaseMap), projection,
                     DiscGeometry.WELL, DiscGeometry.plane(frame, DiscGeometry.FLOOR_DEPTH),
-                    frame.contentAlpha() * frame.discAlpha(), 12);
+                    frame.contentAlpha() * frame.discAlpha(), 12, frame);
             for (MenuScene.Button button : buttons) {
                 if (button.slot().style() == Style.RESUME_ARC) {
                     drawButton(graphics, layout, projection, button, feedback);
@@ -261,13 +265,13 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
             drawWall(graphics, projection, frame, false, 0);
             drawWall(graphics, projection, frame, true, 180);
             drawWall(graphics, projection, frame, true, 0);
-            draw(graphics, layer("amber", 1040, 1040, disc::amber), projection,
-                    DiscGeometry.RIM, DiscGeometry.plane(frame, -60), frame.discAlpha(), 12);
-            draw(graphics, layer("rim", 1040, 1040, disc::rim), projection,
-                    DiscGeometry.RIM, DiscGeometry.plane(frame, DiscGeometry.TOP_DEPTH), frame.discAlpha(), 12);
+            drawDisc(graphics, layer("amber", 1040, 1040, disc::amber), projection,
+                    DiscGeometry.RIM, DiscGeometry.plane(frame, -60), frame.discAlpha(), 12, frame);
+            drawDisc(graphics, layer("rim", 1040, 1040, disc::rim), projection,
+                    DiscGeometry.RIM, DiscGeometry.plane(frame, DiscGeometry.TOP_DEPTH), frame.discAlpha(), 12, frame);
             draw(graphics, layer("world", 390, 150,
                             canvas -> playerPainter.world(canvas, player)), projection,
-                    new Box(1405, 70, 390, 150), Plane.at(72), frame.controlsAlpha(), 4);
+                    new Box(1405, 70, 390, 150), worldPlane, frame.controlsAlpha(), 4);
             drawFlat(graphics, layer("footer", 1820, 32,
                             canvas -> playerPainter.footer(canvas, player, 1820)), layout,
                     new Box(50, 1043, 1820, 32), frame.badgeAlpha(), 1);
@@ -286,12 +290,12 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
                 } else {
                     playerPainter.profile(canvas, player, profile.width(), profile.height());
                 }
-            }), projection, profile, Plane.at(34), frame.badgeAlpha(), 4);
-            drawSkin(graphics, projection, frame, layout, profile);
+            }), projection, profile, infoPlane, frame.badgeAlpha(), 4);
+            drawSkin(graphics, projection, frame, layout, profile, infoPlane);
             if (!layout.compact()) {
                 draw(graphics, layer("readout", 342, 50,
                                 canvas -> playerPainter.readout(canvas, player)), projection,
-                        layout.daysPlayed(), Plane.at(34), frame.badgeAlpha(), 4);
+                        layout.daysPlayed(), infoPlane, frame.badgeAlpha(), 4);
             }
         }
         drawFlat(graphics, layer("close", 64, 64, panels::close), layout,
@@ -349,17 +353,40 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
     }
 
     private void drawSkin(GuiGraphics graphics, SceneProjection projection, Frame frame,
-                          MenuLayout layout, Box profile) {
+                          MenuLayout layout, Box profile, Plane infoPlane) {
         if (client.player == null || frame.badgeAlpha() <= 0.001f) {
             return;
         }
         ResourceLocation id = client.player.getSkin().texture();
         Box face = layout.compact() ? new Box(profile.x() + 3, profile.y() + 3, 60, 60)
                 : new Box(profile.x() + 20, profile.y() + 20, 70, 70);
-        drawTextureRegion(graphics, id, projection, face, Plane.at(34), frame.badgeAlpha(),
+        drawTextureRegion(graphics, id, projection, face, infoPlane, frame.badgeAlpha(),
                 8 / 64f, 8 / 64f, 16 / 64f, 16 / 64f, 3);
-        drawTextureRegion(graphics, id, projection, face, Plane.at(34), frame.badgeAlpha(),
+        drawTextureRegion(graphics, id, projection, face, infoPlane, frame.badgeAlpha(),
                 40 / 64f, 8 / 64f, 48 / 64f, 16 / 64f, 3);
+    }
+
+    /** 圆环图层：discSharpness 不足时以多份轻微放大/偏移的幽灵层叠加，模拟失焦模糊。 */
+    private void drawDisc(GuiGraphics graphics, Layer layer, SceneProjection projection, Box box,
+                          Plane plane, float alpha, int subdivisions, Frame frame) {
+        if (layer == null || alpha <= 0.001f) {
+            return;
+        }
+        float sharp = frame.discSharpness();
+        if (sharp >= 0.999f) {
+            draw(graphics, layer, projection, box, plane, alpha, subdivisions);
+            return;
+        }
+        float soft = (1 - sharp) * 0.3f;
+        draw(graphics, layer, projection, box, ghost(plane, 1.03f, 7, 5), alpha * soft, subdivisions);
+        draw(graphics, layer, projection, box, ghost(plane, 0.97f, -7, -5), alpha * soft, subdivisions);
+        draw(graphics, layer, projection, box, ghost(plane, 1.0f, 0, 7), alpha * soft, subdivisions);
+        draw(graphics, layer, projection, box, plane, alpha * (0.35f + 0.65f * sharp), subdivisions);
+    }
+
+    private static Plane ghost(Plane plane, float scaleBoost, float offsetX, float offsetY) {
+        return new Plane(plane.depth(), plane.scale() * scaleBoost, plane.tilt(),
+                plane.offsetX() + offsetX, plane.offsetY() + offsetY, plane.compensateDepth());
     }
 
     private void drawButton(GuiGraphics graphics, MenuLayout layout, SceneProjection projection,

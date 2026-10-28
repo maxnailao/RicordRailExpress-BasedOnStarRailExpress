@@ -72,6 +72,8 @@ public class SREMurderGameMode extends GameMode {
 
         // 将玩家从队伍中移除
         removePlayersFromTeam(serverWorld.getServer().createCommandSourceStack(), "harpymodloader_game");
+        // 删除游戏队伍会把玩家一并挤出称号队伍（一人只能在一个队），结算后补回称号显示
+        io.wifi.starrailexpress.content.title.TitleManager.reapplyAll(serverWorld.getServer());
         super.finalizeGame(serverWorld, gameWorldComponent);
     }
 

@@ -105,6 +105,10 @@ public class SREClientConfig implements ConfigData {
     public boolean newspaperOpenAnimation = true; // 报纸界面打开时的自下而上入场动画
 
     @Category("style")
+    @ConfigEntry.Gui.Tooltip
+    public boolean menuAnimationsEnabled = true; // E键菜单进入/关闭动画（独立于原版"屏幕效果缩放"）
+
+    @Category("style")
     public boolean showItemCooldownOverlayNum = false; // 物品栏物品上显示冷却数字
     @Category("style")
     public boolean showHotbarCooldown = true; // 快捷栏上方显示冷却时间
@@ -147,6 +151,12 @@ public class SREClientConfig implements ConfigData {
 
     public boolean isUltraPerfMode() {
         return ultraPerfMode;
+    }
+
+    /** 供 HUD/菜单等处直接判断菜单动画是否启用。 */
+    public static boolean menuAnimationsEnabled() {
+        SREClientConfig config = instance();
+        return config == null || config.menuAnimationsEnabled;
     }
 
     /**

@@ -140,6 +140,26 @@ public final class TitleManager {
         }
     }
 
+    /**
+     * 对所有在线玩家重新应用一次称号。
+     *
+     * <p>用于对局结算：游戏会把玩家拉进 harpymodloader_game 队伍（一人只能在一个队），
+     * 结算删队后玩家会脱离称号队伍，需要显式补回来。
+     */
+    public static void reapplyAll(MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
+        try {
+            TitleSavedData data = TitleSavedData.get(server);
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                apply(server, p, data);
+            }
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[Title] 批量重新应用称号失败", e);
+        }
+    }
+
     /** 供命令/界面把称号文本渲染成带颜色的组件 */
     @Nullable
     public static Component describe(TitleSavedData data, @Nullable String titleId) {

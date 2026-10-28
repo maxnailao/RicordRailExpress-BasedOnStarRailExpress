@@ -78,7 +78,7 @@ public final class MenuHubScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        reducedMotion = minecraft.options.screenEffectScale().get() == 0;
+        reducedMotion = minecraft.options.screenEffectScale().get() == 0 && !SREClientConfig.menuAnimationsEnabled();
         entries = buildEntries();
         var window = minecraft.getWindow();
         layout = MenuLayout.create(width, height, window.getWidth(), window.getHeight(), entries);
@@ -93,7 +93,7 @@ public final class MenuHubScreen extends Screen {
         showcaseMapId = showcaseMapId();
         try {
             renderer = EndfieldMenuRenderer.acquire(minecraft);
-            MenuTimeline.Frame preparationFrame = new MenuTimeline.Frame(900, -1);
+            MenuTimeline.Frame preparationFrame = new MenuTimeline.Frame(9999, -1, false);
             buttons = MenuScene.buttons(layout, preparationFrame, 0);
             renderer.prepare(layout, playerCard, buttons, showcaseMapId);
         } catch (RuntimeException | LinkageError failure) {
@@ -166,8 +166,12 @@ public final class MenuHubScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        long entryNow = System.nanoTime();
+        if (timeline != null && !reducedMotion) {
+            applyBackgroundBlur(timeline.sample(entryNow).blur());
+        }
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        long now = System.nanoTime();
+        long now = entryNow;
         float dt = Math.clamp((now - lastFrame) / 1_000_000_000f, 0, 0.05f);
         lastFrame = now;
         pointerX = mouseX;
@@ -194,6 +198,18 @@ public final class MenuHubScreen extends Screen {
             renderer.render(graphics, layout, frame, playerCard, buttons, feedback, scroll.position(), yaw.value(), pitch.value());
         } else {
             renderFallback(graphics, frame, hovered);
+        }
+        int blackout = Math.round(255f * frame.blackout());
+        if (blackout > 0) {
+            graphics.fill(0, 0, width, height, blackout << 24);
+        }
+    }
+
+    /** 按时间轴进度将背景模糊 0–3 遍，模拟清晰到 14px 模糊的渐变（关闭时逆向解除）。 */
+    private void applyBackgroundBlur(float progress) {
+        int passes = Math.max(1, Math.round(progress * 3f));
+        for (int i = 0; i < passes; i++) {
+            renderBlurredBackground(1.0f);
         }
     }
 
@@ -303,7 +319,7 @@ public final class MenuHubScreen extends Screen {
             toggleParticipation();
             return;
         }
-        timeline.close(System.nanoTime());
+        timeline.transitionToDetail(System.nanoTime());
         playClick();
         // Keep the action until the original scene has completed its close animation.
         pendingAction = actions.get(id);

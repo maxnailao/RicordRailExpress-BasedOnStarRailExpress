@@ -11,6 +11,8 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LobbyUiTheme;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LobbySubscreenRenderer;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
+import io.wifi.starrailexpress.client.gui.screen.ingame.MenuHubScreen;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -96,8 +98,9 @@ public class MailboxScreen extends Screen {
     // =========================================================================
 
     private void computeLayout() {
-        panelW = Math.min(PANEL_W, this.width  - 20);
-        panelH = Math.min(PANEL_H, this.height - 20);
+        // 全屏布局：保留边距与既有配色/标题栏风格，行数和正文宽度由面板尺寸自动推导
+        panelW = this.width - 16;
+        panelH = this.height - 20;
         panelX = (this.width  - panelW) / 2;
         panelY = (this.height - panelH) / 2;
         listAreaH  = panelH - HDR_H - FOOTER_H;
@@ -118,6 +121,8 @@ public class MailboxScreen extends Screen {
     // 初始化
     // =========================================================================
 
+    private final PageTransition transition = new PageTransition();
+
     @Override
     protected void init() {
         clearWidgets();
@@ -125,6 +130,7 @@ public class MailboxScreen extends Screen {
         refreshMails();
         clampSelectionAndPage();
         initButtons();
+        transition.beginCrtOnce(minecraft);
     }
 
     private void refreshMails() {
@@ -159,6 +165,13 @@ public class MailboxScreen extends Screen {
         int fy   = panelY + panelH - FOOTER_H;
         int btnH = 20;
         int btnY = fy + (FOOTER_H - btnH) / 2;
+
+        // 右上角：✕ 关闭邮箱并返回菜单（带 380ms 淡出）
+        addRenderableWidget(ModernButton.builder(Component.literal("\u2715"), btn -> transition.startReturn(
+                        () -> minecraft.execute(() -> minecraft.setScreen(new MenuHubScreen()))))
+                        .accentBar(ModernButton.AccentSide.TOP)
+                        .bounds(this.width - 30, 6, 24, 18)
+                        .accentColor(ACCENT_RED).build());
 
         // ── 左侧底部：[‹] [Claim All] [Del Read] [›] ──────────────────
         int bw1 = 18, bw2 = 68, sp = 3;
@@ -294,6 +307,11 @@ public class MailboxScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float delta) {
+        renderContent(g, mx, my, delta);
+        transition.render(g, width, height);
+    }
+
+    private void renderContent(GuiGraphics g, int mx, int my, float delta) {
         // 更新悬浮动画（需要在 super.render 之前，因为 super 先渲染背景和按钮）
         updateHoverAnims(mx, my);
 

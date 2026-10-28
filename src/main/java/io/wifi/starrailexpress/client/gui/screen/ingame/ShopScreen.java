@@ -14,6 +14,8 @@ import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
+import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
+import io.wifi.starrailexpress.SREClientConfig;
 import org.agmas.noellesroles.client.data.CS2ClientBoxCache;
 import org.agmas.noellesroles.client.screen.CS2ShopScreen;
 import org.agmas.noellesroles.cs2.CS2BlackMarketManager;
@@ -202,6 +204,7 @@ public class ShopScreen extends Screen {
     }
 
     private final Screen parent;
+    private final PageTransition transition = new PageTransition();
     private int panelX, panelY, panelW, panelH;
     private int tabH = 22;
 
@@ -213,9 +216,9 @@ public class ShopScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        // 页面做大：明显大于主菜单面板
-        panelW = Math.min(width - 12, 520);
-        panelH = Math.min(height - 16, 300);
+        // 全屏布局：保留 8px 边距与原有标题栏风格，格子宽度由面板推导自动适配
+        panelW = width - 16;
+        panelH = height - 44;
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2 + 12;
 
@@ -228,8 +231,8 @@ public class ShopScreen extends Screen {
         priceInputBox.setVisible(false);
         addRenderableWidget(priceInputBox);
 
-        addRenderableWidget(Button.builder(Component.literal("返回"), b ->
-                minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))
+        addRenderableWidget(Button.builder(Component.literal("返回"), b -> transition.startReturn(
+                        () -> minecraft.execute(() -> minecraft.setScreen(parent != null ? parent : new MenuHubScreen()))))
                 .pos(panelX + 6, panelY + panelH - 24).size(48, 18).build());
 
         // 打开即请求黑市数据
@@ -239,6 +242,9 @@ public class ShopScreen extends Screen {
         // 请求每日商店数据
         ClientPlayNetworking.send(new DailyShopSyncRequestC2SPayload());
         refreshDailyData();
+        if (minecraft.options.screenEffectScale().get() > 0 || SREClientConfig.menuAnimationsEnabled()) {
+            transition.beginCrt();
+        }
     }
 
     /** 服务端推送黑市数据后回调刷新 */
@@ -286,6 +292,7 @@ public class ShopScreen extends Screen {
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
+        transition.render(graphics, width, height);
     }
 
     // 自绘界面已铺满整屏底色；屏蔽原版 renderBackground，避免背景模糊与泥土遮罩盖在上面发糊。
