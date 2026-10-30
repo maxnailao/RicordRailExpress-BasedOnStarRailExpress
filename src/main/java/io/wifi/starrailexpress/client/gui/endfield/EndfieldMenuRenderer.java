@@ -106,14 +106,18 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
 
     public static EndfieldMenuRenderer acquire(Minecraft client) {
         registerLifecycle();
+        if (invalidateRequested) {
+            // Fonts and SVGs also belong to the old resource set, not just baked textures.
+            releaseShared();
+        }
         if (sharedRenderer == null || sharedRenderer.closed) {
             sharedRenderer = new EndfieldMenuRenderer(client);
         }
-        if (invalidateRequested) {
-            sharedRenderer.invalidate();
-            invalidateRequested = false;
-        }
         return sharedRenderer;
+    }
+
+    public boolean needsReload() {
+        return closed || invalidateRequested;
     }
 
     public static void releaseShared() {
@@ -124,7 +128,7 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
         invalidateRequested = false;
     }
 
-    private static void registerLifecycle() {
+    public static void registerLifecycle() {
         if (lifecycleRegistered) {
             return;
         }
@@ -224,10 +228,6 @@ public final class EndfieldMenuRenderer implements AutoCloseable {
     public void render(GuiGraphics graphics, MenuLayout layout, Frame frame, PlayerCard player,
                        List<MenuScene.Button> buttons, Map<String, Feedback> feedback,
                        float scroll, float yaw, float pitch) {
-        if (invalidateRequested) {
-            invalidate();
-            invalidateRequested = false;
-        }
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);

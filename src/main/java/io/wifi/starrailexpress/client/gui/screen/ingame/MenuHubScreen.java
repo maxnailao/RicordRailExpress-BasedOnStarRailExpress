@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.client.gui.endfield.EndfieldMenuRenderer;
@@ -70,6 +71,8 @@ public final class MenuHubScreen extends Screen {
     private String participationState;
     private String focusedId;
     private String showcaseMapId;
+    private long nextRendererAttempt;
+    private boolean rendererFailureLogged;
 
     public MenuHubScreen() {
         super(Component.literal("Ricord Rail Express"));
@@ -91,21 +94,32 @@ public final class MenuHubScreen extends Screen {
         participationState = participationLabel();
         requestShowcaseMap();
         showcaseMapId = showcaseMapId();
-        try {
-            renderer = EndfieldMenuRenderer.acquire(minecraft);
-            MenuTimeline.Frame preparationFrame = new MenuTimeline.Frame(9999, -1, false);
-            buttons = MenuScene.buttons(layout, preparationFrame, 0);
-            renderer.prepare(layout, playerCard, buttons, showcaseMapId);
-        } catch (RuntimeException | LinkageError failure) {
-            EndfieldMenuRenderer.releaseShared();
-            renderer = null;
-            buttons = List.of();
-        }
+        prepareRenderer();
         long now = System.nanoTime();
         timeline = new MenuTimeline(now, reducedMotion);
         lastFrame = now;
         lastSnapshot = now;
         buttons = MenuScene.buttons(layout, timeline.sample(now), 0);
+    }
+
+    private void prepareRenderer() {
+        try {
+            renderer = EndfieldMenuRenderer.acquire(minecraft);
+            MenuTimeline.Frame preparationFrame = new MenuTimeline.Frame(9999, -1, false);
+            renderer.prepare(layout, playerCard, MenuScene.buttons(layout, preparationFrame, 0), showcaseMapId);
+            if (rendererFailureLogged) {
+                SRE.LOGGER.info("Endfield menu renderer recovered");
+            }
+            rendererFailureLogged = false;
+        } catch (RuntimeException | LinkageError failure) {
+            EndfieldMenuRenderer.releaseShared();
+            renderer = null;
+            if (!rendererFailureLogged) {
+                SRE.LOGGER.error("Unable to prepare Endfield menu renderer; retrying when resources are available", failure);
+                rendererFailureLogged = true;
+            }
+            nextRendererAttempt = System.nanoTime() + 2_000_000_000L;
+        }
     }
 
     private List<MenuEntry> buildEntries() {
@@ -166,6 +180,9 @@ public final class MenuHubScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (renderer != null && renderer.needsReload()) {
+            prepareRenderer();
+        }
         long entryNow = System.nanoTime();
         if (timeline != null && !reducedMotion) {
             applyBackgroundBlur(timeline.sample(entryNow).blur());
@@ -336,6 +353,9 @@ public final class MenuHubScreen extends Screen {
     public void tick() {
         super.tick();
         long now = System.nanoTime();
+        if (renderer == null && timeline != null && !timeline.closing() && now >= nextRendererAttempt) {
+            prepareRenderer();
+        }
         if (timeline != null && !timeline.closing() && now - lastSnapshot >= 500_000_000L) {
             lastSnapshot = now;
             String currentParticipation = participationLabel();
