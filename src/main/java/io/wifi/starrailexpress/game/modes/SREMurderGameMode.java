@@ -11,7 +11,6 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.impl.util.log.Log;
 import net.fabricmc.loader.impl.util.log.LogCategory;
@@ -41,7 +40,6 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.*;
@@ -591,6 +589,7 @@ public class SREMurderGameMode extends GameMode {
                     forcedRolesMap.values());
             if (group.isEmpty()) {
                 forcedRolesMap.remove(player.getUUID());
+                io.wifi.starrailexpress.progression.SelfSelectClaimService.refundAndNotify(player, role, null);
                 Harpymodloader.LOGGER.warn("[SelfSelect] Linked group for {} conflicts with reserved roles",
                         role.identifier());
             } else {
@@ -752,13 +751,6 @@ public class SREMurderGameMode extends GameMode {
                                 "Couldn't force player [{}]'s role to {} because there are no roles available for him.",
                                 playerUid,
                                 roleType);
-                        FactionCardType cardType = FactionCardType.fromInt(roleType);
-                        if (cardType != FactionCardType.NONE && forceTeamInfo.type() == ForceTeamType.CARD) {
-                            ProgressionDataManager.addFactionCard((ServerPlayer) selectedPlayer, cardType, 1);
-                            BroadcastCommand.BroadcastMessage(selectedPlayer,
-                                    Component.translatable("message.sre.pass.faction.assign_failed")
-                                            .withStyle(ChatFormatting.RED));
-                        }
                     }
                 }
             }

@@ -43,12 +43,7 @@ public class SREEventRegister {
 
         OnGameEnd.EVENT.register((serverLevel, __cca) -> {
             RefugeeComponent.KEY.get(serverLevel).clear();
-            // 自选卡兜底（第二道）：对局结束时账上还剩的，都说明这局没生效 → 退卡 + 提示。
-            // 正常情况在 GameUtils.initializeGame 收尾时就已经核对完并清空了，
-            // 这里只兜"玩家中途离线/换模式"这类边角。
-            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
-                    serverLevel.getServer(), net.minecraft.network.chat.Component.translatable(
-                            "message.sre.pass.selfselect_unapplied"));
+            io.wifi.starrailexpress.progression.PendingRoleCards.cancelRound(serverLevel);
         });
 
         // 游戏开始：通知客户端（驱动 OnGameStartedClient 事件），并向本局玩家播放默认开场镜头
@@ -68,13 +63,7 @@ public class SREEventRegister {
             }
         });
         OnGameTrueStarted.EVENT.register(serverLevel -> {
-            // 自选卡核对（轮选类模式的**正确时机**）：轮选结束时职业才真正落定
-            // （finishRotationPhase → completeRoleSelection → 本事件），
-            // 所以在 GameUtils.initializeGame 里做核对会误判 —— 见那里的注释。
-            // 普通模式的记录在那一步就已经核对并清空，这里再调一次是幂等的。
-            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
-                    serverLevel.getServer(), net.minecraft.network.chat.Component.translatable(
-                            "message.sre.pass.selfselect_unapplied"));
+            io.wifi.starrailexpress.progression.PendingRoleCards.verifyPending(serverLevel);
 
             if (!defersIntroUntilRolesChosen(serverLevel)) {
                 return;

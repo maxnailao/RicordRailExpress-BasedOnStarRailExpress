@@ -18,7 +18,7 @@ import java.time.LocalDate;
  *
  * <h2>计数口径</h2>
  * <ul>
- *   <li>阵营卡：**每种类型各自计数**（杀手卡 2 张、警长卡 2 张互不影响）；</li>
+ *   <li>阵营卡：**每种类型各自计数**（杀手卡、平民卡互不影响）；</li>
  *   <li>自选卡：只有一种，统一计数；</li>
  *   <li>只统计**成功用掉**的卡。自选卡占了位又因地图/人数无效退款时，
  *       {@link #undoSelfSelect} 会把这一天的一次用掉撤销 —— 玩家不该为
@@ -104,6 +104,11 @@ public final class DailyCardUsage {
             state.dailyCardUses = new java.util.EnumMap<>(FactionCardType.class);
         }
         state.dailyCardUses.merge(type, 1, Integer::sum);
+    }
+
+    public static void undoFaction(BackpackState state, FactionCardType type) {
+        rolloverIfNeeded(state);
+        state.dailyCardUses.computeIfPresent(type, (key, count) -> Math.max(0, count - 1));
     }
 
     // ==================== 自选卡 ====================

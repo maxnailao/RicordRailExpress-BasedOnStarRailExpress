@@ -20,8 +20,6 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -596,9 +594,7 @@ public class LightningDraftState {
                 if (sp != null) {
                     if (info.type() == ForceTeamType.CARD) {
 
-                        FactionCardType cardType = FactionCardType.fromRoleType(type);
-                        if (cardType != FactionCardType.NONE) {
-                            ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        if (io.wifi.starrailexpress.progression.PendingRoleCards.refundFaction(sp)) {
                             sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
                                     .withStyle(ChatFormatting.RED), true);
                         }
@@ -767,9 +763,7 @@ public class LightningDraftState {
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null) {
                     if (t.type() == ForceTeamType.CARD) {
-                        FactionCardType cardType = FactionCardType.fromRoleType(type);
-                        if (cardType != FactionCardType.NONE) {
-                            ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        if (io.wifi.starrailexpress.progression.PendingRoleCards.refundFaction(sp)) {
                             sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
                                     .withStyle(ChatFormatting.RED), false);
                         }

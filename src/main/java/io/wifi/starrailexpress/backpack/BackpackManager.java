@@ -133,12 +133,27 @@ public final class BackpackManager {
      * <p>同时撤销当天的用量：玩家不该为"系统判定无效"消耗每日额度。
      */
     public static void refundSelfSelectCard(ServerPlayer player) {
+        refundSelfSelectCard(player, DailyCardUsage.today());
+    }
+
+    public static void refundSelfSelectCard(ServerPlayer player, String usageDay) {
         if (player == null) {
             return;
         }
         Entry entry = getEntry(player.getUUID());
         entry.state.selfSelectCards += 1;
-        DailyCardUsage.undoSelfSelect(entry.state);
+        if (DailyCardUsage.today().equals(usageDay)) {
+            DailyCardUsage.undoSelfSelect(entry.state);
+        }
+        markDirty(player, entry);
+    }
+
+    public static void refundFactionCard(ServerPlayer player, FactionCardType type, String usageDay) {
+        Entry entry = getEntry(player.getUUID());
+        entry.state.cards.merge(type, 1, Integer::sum);
+        if (DailyCardUsage.today().equals(usageDay)) {
+            DailyCardUsage.undoFaction(entry.state, type);
+        }
         markDirty(player, entry);
     }
 
@@ -195,7 +210,8 @@ public final class BackpackManager {
         Entry entry = getEntry(player.getUUID());
         int current = entry.state.cards.getOrDefault(type, 0);
         if (type == FactionCardType.NONE || current < 1
-                || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
+                || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())
+                || io.wifi.starrailexpress.progression.PendingRoleCards.hasFaction(player.getUUID())) {
             return false;
         }
         // 每日上限（每种阵营卡独立计数）：用完就拦，并告诉他今天还剩几张
@@ -212,6 +228,7 @@ public final class BackpackManager {
                 new ForceTeamInfo(type.getTypeId(), ForceTeamType.CARD));
         entry.state.cards.put(type, current - 1);
         DailyCardUsage.recordFaction(entry.state, type);
+        io.wifi.starrailexpress.progression.PendingRoleCards.recordFaction(player, type);
         markDirty(player, entry);
         Component message = Component.translatable("message.sre.progression.faction_card_activated",
                 Component.translatable(type.displayName));
@@ -359,6 +376,7 @@ public final class BackpackManager {
     }
 
     private static void onDisconnect(ServerPlayer player) {
+        io.wifi.starrailexpress.progression.PendingRoleCards.refundAll(player);
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
             if (entry.dirty) {
@@ -406,6 +424,7 @@ public final class BackpackManager {
 
     private static void flushAllBlocking(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            io.wifi.starrailexpress.progression.PendingRoleCards.refundAll(player);
             flushBlocking(player.getUUID());
         }
     }

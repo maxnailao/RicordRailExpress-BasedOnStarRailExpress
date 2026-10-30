@@ -19,9 +19,7 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -35,7 +33,6 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.role.avaricious.AvariciousGoldHandler;
@@ -207,13 +204,6 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                                 "Couldn't force player [{}]'s role to {} because there are no roles available for him.",
                                 playerUid,
                                 roleType);
-                        FactionCardType cardType = FactionCardType.fromInt(roleType);
-                        if (cardType != FactionCardType.NONE && t.type() == ForceTeamType.CARD) {
-                            ProgressionDataManager.addFactionCard(selectedPlayer, cardType, 1);
-                            BroadcastCommand.BroadcastMessage(selectedPlayer,
-                                    Component.translatable("message.sre.pass.faction.assign_failed")
-                                            .withStyle(ChatFormatting.RED));
-                        }
                     }
 
                 }

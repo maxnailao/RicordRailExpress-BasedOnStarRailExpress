@@ -3,7 +3,6 @@ package io.wifi.starrailexpress.progression;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.backpack.BackpackManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +18,8 @@ import java.util.UUID;
  * <li><b>先到先得</b>：占位顺序就是使用自选卡的顺序，先用的玩家优先。</li>
  * <li><b>名额以 {@code ROLE_MAX} 为准</b>：某职业上限是 N，就先来的 N 位占满，
  * 第 N+1 位起占位失败。上限默认 1（即"只有一位"），但配成 2/3 就允许那么多人。</li>
- * <li><b>不生效就退还</b>：占位失败时**不扣卡**，并给全体广播提示。</li>
+ * <li><b>不生效就退还</b>：占位失败不扣卡，只提示本人；分配失败退还已扣的卡。</li>
+ * <li>改选复用尚未生效的卡片及每日次数。</li>
  * </ol>
  *
  * <p>调用方（{@code sre:pass selfselect} 命令、{@code BackpackManager.useSelfSelectCard}）
@@ -32,7 +32,7 @@ public final class SelfSelectClaimService {
     public enum Result {
         /** 占位成功（或改选成功），已扣卡 */
         OK,
-        /** 该职业本局名额已满（ROLE_MAX）：未扣卡，需广播告知 */
+        /** 该职业本局名额已满（ROLE_MAX）：未扣卡 */
         SLOT_FULL,
         /** 人数不满足该职业的刷新门槛：未扣卡，需告知 */
         PLAYER_COUNT,
@@ -118,7 +118,10 @@ public final class SelfSelectClaimService {
             return Result.NO_CARD;
         }
         UUID id = player.getUUID();
-        SRERole current = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(id);
+        SRERole current = PendingRoleCards.selfSelectedRole(id);
+        if (current == null) {
+            current = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(id);
+        }
         // 重复选同一职业：什么也不做，也不用广播打扰全服
         if (current == role) {
             return Result.SAME_ROLE;
@@ -158,14 +161,15 @@ public final class SelfSelectClaimService {
         }
         // 每日用量上限：用完就拦（不扣卡）。放在扣卡前判断，
         // 否则会被 consumeSelfSelectCard 静默拒绝并误报成"没有卡"。
-        if (BackpackManager.isDailySelfSelectLimitReached(player)) {
+        boolean replacing = PendingRoleCards.isPending(id, current);
+        if (!replacing && BackpackManager.isDailySelfSelectLimitReached(player)) {
             return Result.DAILY_LIMIT;
         }
         // 改选其它职业：先释放自己此前的占用，避免一人占多个职业
         if (current != null) {
             Harpymodloader.releaseSelfForcedRole(current, id);
         }
-        if (!BackpackManager.consumeSelfSelectCard(player)) {
+        if (!replacing && !BackpackManager.consumeSelfSelectCard(player)) {
             // 没卡就回滚刚释放的占用，别把玩家原先的选择弄丢
             if (current != null) {
                 Harpymodloader.addToForcedRoles(current, player);
@@ -173,22 +177,9 @@ public final class SelfSelectClaimService {
             return Result.NO_CARD;
         }
         Harpymodloader.addToForcedRoles(role, player);
-        // 记一笔账：角色分配完成后会核对"是否真拿到这个职业"，没拿到就自动退卡。
-        // 这是「选了没生效一定退卡」的兜底，见 SelfSelectPendingClaims。
-        SelfSelectPendingClaims.record(player, role);
+        PendingRoleCards.record(player, role);
         return Result.OK;
     }
-
-    /**
-     * 已移除：把「名额已满」广播给全服。
-     *
-     * <p>原实现遍历所有玩家 {@code sendSystemMessage}，等于把"某人想用自选卡选某职业"
-     * 告诉全服 —— 围观者能据此推断他想要的阵营/战术，属于不必要的信息泄露。
-     * 现在由调用方（{@code ProgressionCommand} 的 SLOT_FULL 分支）**只提示本人**。
-     *
-     * <p>保留这段说明而不是删干净：避免以后有人看到旧方法名又把它接回去。
-     */
-    // public static void broadcastClaimed(...) —— 已删除，见上
 
     // ========================================================================
     // 统一退还入口
@@ -226,9 +217,9 @@ public final class SelfSelectClaimService {
             }
         }
         // 2) 退还卡
-        BackpackManager.refundSelfSelectCard(player);
-        // 划掉记账：已经退了，避免收尾核对时再退一次
-        SelfSelectPendingClaims.unrecord(player.getUUID());
+        if (!PendingRoleCards.refundSelfSelect(player, role)) {
+            return false;
+        }
         // 3) 提示（阵营卡同款通道 + 同款红色）
         Component msg = reason != null ? reason
                 : Component.translatable("message.sre.pass.selfselect_refunded",

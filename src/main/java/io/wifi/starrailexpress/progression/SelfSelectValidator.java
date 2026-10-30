@@ -61,18 +61,14 @@ public final class SelfSelectValidator {
             // 注意：**即使玩家不在本局名单里也要退还**（他可能中途离线/被移出 ready），
             // 所以这里用 server 的玩家列表再兜一次，避免"卡被吃了但没人退"。
             ServerPlayer target = player != null ? player : findOnline(serverLevel, uuid);
-            SelfSelectClaimService.refundAndNotify(target, role,
+            boolean refunded = SelfSelectClaimService.refundAndNotify(target, role,
                     refundMessage(role, deny, currentMap, players.size()));
-            // 已经先行退款，把记账划掉，避免 GameUtils 收尾时再退一次
-            SelfSelectPendingClaims.unrecord(uuid);
             if (target == null) {
-                org.agmas.noellesroles.Noellesroles.LOGGER.warn(
-                        "[SelfSelect] 撤销 {} 的自选职业 {}，但玩家不在线，卡片未能实际退还（下次上线后背包仍缺 1 张）",
-                        uuid, role.identifier());
+                Harpymodloader.releaseSelfForcedRole(role, uuid);
             }
             org.agmas.noellesroles.Noellesroles.LOGGER.info(
-                    "[SelfSelect] 撤销 {} 的自选职业 {}（原因 {}，地图 {}，人数 {}），已退还自选卡并提示",
-                    uuid, role.identifier(), deny, currentMap, players.size());
+                    "[SelfSelect] 撤销 {} 的自选职业 {}（原因 {}，地图 {}，人数 {}），退款={}",
+                    uuid, role.identifier(), deny, currentMap, players.size(), refunded);
         }
         return revoked;
     }

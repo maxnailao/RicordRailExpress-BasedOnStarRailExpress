@@ -568,6 +568,7 @@ public class GameUtils {
     }
 
     public static void stopGame(ServerLevel world) {
+        io.wifi.starrailexpress.progression.PendingRoleCards.cancelRound(world);
         world.players().forEach(serverPlayer -> {
             serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 80, 0, false, false, false));
             serverPlayer.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 80, 0, false, false, false));
@@ -627,6 +628,7 @@ public class GameUtils {
         }
         serverCacheKillState.clear();
 
+        io.wifi.starrailexpress.progression.PendingRoleCards.beginRound(serverWorld, readyPlayerList);
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
         gameComponent.getGameMode().beforeInitializeGame(serverWorld, gameComponent, readyPlayerList);
@@ -652,20 +654,9 @@ public class GameUtils {
         OnTrainAreaHaveReseted.EVENT.invoker().onWorldHaveInited(serverWorld);
         isGameStarted = true;
 
-        // 自选职业卡兜底核对：普通模式到这里角色已分配完毕。
-        // 逐条检查"用了卡的玩家是否真的拿到了那个职业"，没拿到就退卡 + 提示
-        //（阵营卡同款红色弹窗）—— 见 SelfSelectPendingClaims 的说明。
-        //
-        // ★ 轮选类模式必须跳过这里：它们的职业在**轮选结束**才确定
-        //   （finishRotationPhase → completeRoleSelection → OnGameTrueStarted）。
-        //   此刻玩家的职业还是空的 / 上一局残留的，核对必然误判：
-        //     · 选上的人   → 被当成没生效 → 提前退卡（结果卡和职业都给了）
-        //     · 没选上的人 → 若残留职业恰好相同则被当成生效 → 记录被清 → 之后不退卡
-        //   轮选模式的核对放到 SREEventRegister 的 OnGameTrueStarted 里做。
+        // Deferred modes settle after selection, via OnGameTrueStarted.
         if (!gameComponent.defersRoleAssignment()) {
-            io.wifi.starrailexpress.progression.SelfSelectPendingClaims.verifyPending(
-                    serverWorld.getServer(), net.minecraft.network.chat.Component.translatable(
-                            "message.sre.pass.selfselect_unapplied"));
+            io.wifi.starrailexpress.progression.PendingRoleCards.verifyPending(serverWorld);
         }
     }
 

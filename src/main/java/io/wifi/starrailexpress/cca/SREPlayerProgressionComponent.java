@@ -16,8 +16,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
-import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -268,22 +266,9 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
     }
 
     public boolean activateFactionCard(FactionCardType type) {
-        int current = factionCards.getOrDefault(type, 0);
-        if (current >= 1) {
-            if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(this.player.getUUID())) {
-                return false;
-            }
-            PlayerRoleWeightManager.ForcePlayerTeam.put(this.player.getUUID(),
-                    new ForceTeamInfo(type.getTypeId(), ForceTeamType.CARD));
-            this.factionCards.put(type, current - 1);
-            Component message = Component.translatable("message.sre.progression.faction_card_activated",
-                    Component.translatable(type.displayName));
-            this.player.sendSystemMessage(message);
-            this.player.displayClientMessage(message, true);
-        } else {
-            return false;
-        }
-        return true;
+        return player instanceof ServerPlayer serverPlayer
+                && io.wifi.starrailexpress.backpack.BackpackManager.activateCard(serverPlayer,
+                        io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.fromRoleType(type.type));
     }
 
     public void onRoundQuestFinished(String questName) {
