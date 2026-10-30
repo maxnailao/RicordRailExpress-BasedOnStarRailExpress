@@ -569,92 +569,34 @@ public class SREMurderGameMode extends GameMode {
         return resultRoleInstances;
     }
 
-    private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
+    public static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
         Map<Player, SRERole> roleAssignments = new HashMap<>();
         for (Player player : players) {
             roleAssignments.put(player, null);
         }
 
         // 第一步：处理强制分配的角色
-        Map<UUID, SRERole> forcedRolesMap = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
-        forcedRolesMap.entrySet().removeIf(entry -> entry.getValue() == null
-                || players.stream().noneMatch(player -> player.getUUID().equals(entry.getKey())));
-        List<SRERole> reservedRoles = new ArrayList<>();
-        for (ServerPlayer player : players) {
-            SRERole role = forcedRolesMap.get(player.getUUID());
-            if (role == null) {
-                continue;
-            }
-            List<SRERole> group = RoleAssignmentManager.getCompatibleCompanionGroup(role, reservedRoles,
-                    forcedRolesMap.values());
-            if (group.isEmpty()) {
-                forcedRolesMap.remove(player.getUUID());
-                io.wifi.starrailexpress.progression.SelfSelectClaimService.refundAndNotify(player, role, null);
-                Harpymodloader.LOGGER.warn("[SelfSelect] Linked group for {} conflicts with reserved roles",
-                        role.identifier());
-            } else {
-                reservedRoles.addAll(group);
-            }
-        }
+        Map<UUID, SRERole> forcedRolesMap = io.wifi.starrailexpress.progression.SelfSelectValidator
+                .selectForRound(serverWorld, players);
+        List<SRERole> reservedRoles = RoleAssignmentManager.getRequiredRoles(forcedRolesMap.values());
         List<SRERole> forcedRoles = new ArrayList<>();
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
-        Set<ResourceLocation> reservedCompanions = new HashSet<>();
-
-        // 处理强制分配的角色，减少对应角色类型的数量需求
-        //
-        // ★ 按 occupiedRoleCount 扣，不是按个数扣 1。
-        //   语义就是"占用几个角色槽位"：布袋鬼 / 诡客 / 迪奥 都是 setOccupiedRoleCount(2)，
-        //   一个人吃满 2 个名额。
-        //   13 人局预算 killer=2 / vigilante=2 / neutral=2：
-        //     自选布袋鬼（occ=2）→ killer 2-2=0 → **场上只有布袋鬼一个狼**（期望值）
-        //     只扣 1 的话 → killer 剩 1 → 还会再刷一个狼，变成"布袋鬼 + 另一个狼"
-        //   角色总数依然守恒：平民 = 13 - (0+2+2) - 1 = 8，合计 1+4+8 = 13。
-        for (Map.Entry<UUID, SRERole> entry : forcedRolesMap.entrySet()) {
+        for (var entry : forcedRolesMap.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
-            if (player != null) {
-                SRERole role = entry.getValue();
-                if (role != null) {
-                    forcedRoles.add(role);
-                    roleAssignments.put(player, role);
-
-                    // 占用的槽位数（默认 1；布袋鬼这类是 2）
-                    int occupied = Math.max(1, role.getOccupiedRoleCount());
-
-                    // 根据角色类型减少对应的数量需求
-                    if (role.canUseKiller()) {
-                        killerCount -= occupied;
-                    } else if (role.isVigilanteTeam()) {
-                        vigilanteCount -= occupied;
-                    } else if (!role.isInnocent()) {
-                        neutralsCount -= occupied;
-                    }
-
-                    // 只为实际选中的绑定分支预留名额，已自选和共享的同伴不重复扣除。
-                    for (SRERole partner : RoleAssignmentManager.getCompatibleCompanionGroup(role, reservedRoles)) {
-                        if (partner == role || forcedRolesMap.containsValue(partner)
-                                || !reservedCompanions.add(partner.identifier())) {
-                            continue;
-                        }
-                        int pOcc = Math.max(1, partner.getOccupiedRoleCount());
-                        if (partner.canUseKiller()) {
-                            killerCount -= pOcc;
-                        } else if (partner.isVigilanteTeam()) {
-                            vigilanteCount -= pOcc;
-                        } else if (!partner.isInnocent()) {
-                            neutralsCount -= pOcc;
-                        }
-                        Harpymodloader.LOGGER.info(
-                                "[SelfSelect] 绑定对另一半 {} 也预留 {} 个名额"
-                                        + "（杀手={} 警长={} 中立={}）→ 剩余 {}/{}/{}",
-                                partner.identifier(), pOcc, partner.canUseKiller(),
-                                partner.isVigilanteTeam(),
-                                !partner.isInnocent() && !partner.canUseKiller()
-                                        && !partner.isVigilanteTeam(),
-                                killerCount, vigilanteCount, neutralsCount);
-                    }
-                }
+            forcedRoles.add(entry.getValue());
+            roleAssignments.put(player, entry.getValue());
+        }
+        // Required roles include shared companions once and both heads of self-bound roles.
+        for (SRERole role : reservedRoles) {
+            int occupied = Math.max(1, role.getOccupiedRoleCount());
+            if (role.canUseKiller()) {
+                killerCount -= occupied;
+            } else if (role.isVigilanteTeam()) {
+                vigilanteCount -= occupied;
+            } else if (!role.isInnocent()) {
+                neutralsCount -= occupied;
             }
         }
 
@@ -832,12 +774,14 @@ public class SREMurderGameMode extends GameMode {
             int budgetNeutral = RoleCountManager.getNeutralCount(n);
 
             int overK = (int) roleAssignments.values().stream()
-                    .filter(r -> r != null && r.canUseKiller()).count() - budgetKiller;
+                    .filter(r -> r != null && r.canUseKiller())
+                    .mapToInt(r -> Math.max(1, r.getOccupiedRoleCount())).sum() - budgetKiller;
             int overV = (int) roleAssignments.values().stream()
-                    .filter(r -> r != null && r.isVigilanteTeam()).count() - budgetVigilante;
+                    .filter(r -> r != null && r.isVigilanteTeam())
+                    .mapToInt(r -> Math.max(1, r.getOccupiedRoleCount())).sum() - budgetVigilante;
             int overN = (int) roleAssignments.values().stream()
                     .filter(r -> r != null && !r.isInnocent() && !r.canUseKiller() && !r.isVigilanteTeam())
-                    .count() - budgetNeutral;
+                    .mapToInt(r -> Math.max(1, r.getOccupiedRoleCount())).sum() - budgetNeutral;
 
             if (overK > 0 || overV > 0 || overN > 0) {
                 Harpymodloader.LOGGER.warn(
@@ -879,11 +823,11 @@ public class SREMurderGameMode extends GameMode {
                     boolean vigil = r.isVigilanteTeam();
                     boolean neutral = !r.isInnocent() && !killer && !vigil;
                     if (killer && overK > 0) {
-                        overK--;
+                        overK -= Math.max(1, r.getOccupiedRoleCount());
                     } else if (vigil && overV > 0) {
-                        overV--;
+                        overV -= Math.max(1, r.getOccupiedRoleCount());
                     } else if (neutral && overN > 0) {
-                        overN--;
+                        overN -= Math.max(1, r.getOccupiedRoleCount());
                     } else {
                         continue;
                     }

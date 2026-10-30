@@ -36,6 +36,7 @@ public class LightningDraftState {
     public final int totalPlayers;
     // 锁定本轮已展示给玩家的具体角色实例（按UUID），防止随机选择时抢走
     private final Set<UUID> lockedInstanceIds = new HashSet<>();
+    private final Map<UUID, RoleInstance> forcedInstances = new HashMap<>();
 
     // ===== 职业池与结果 =====
     public final Set<SRERole> canReplaceRole = new LinkedHashSet<>(); // 可替换职业类型集合（去重）
@@ -59,7 +60,6 @@ public class LightningDraftState {
     // ===== 卡片追踪 =====
     private final Map<Integer, Integer> cardUsedCount = new HashMap<>();
     private final Map<Integer, Integer> cardMaxPerType = new HashMap<>();
-    private final Set<UUID> cardReturnedPlayers = new HashSet<>();
 
     public LightningDraftState(List<ServerPlayer> players) {
         this.allPlayers = new ArrayList<>(players);
@@ -88,7 +88,7 @@ public class LightningDraftState {
             if (oldCandidates != null) {
                 oldCandidates.forEach(ri -> lockedInstanceIds.remove(ri.uuid()));
             }
-            RoleInstance randomInstance = selectRandomRole(world);
+            RoleInstance randomInstance = selectRandomRole(world, uuid);
             selectedRoles.put(uuid, randomInstance.role());
             rolePool.remove(randomInstance);
             remainingPlayerCount--;
@@ -140,58 +140,15 @@ public class LightningDraftState {
                         (enableCivilianInPool || role != TMMRoles.CIVILIAN));
         civilianPool.ignoreeRoleOccupiedCount = true;
 
-        // 强制职业直接作为实例加入池子
-        int forceRoleCount = 0;
-        List<SRERole> forcedRoles = new ArrayList<>();
-        // 本局实际地图名：用于复查特殊地图职业是否真的能出现
-        String draftMapName = null;
-        {
-            var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(world);
-            if (areas != null) {
-                draftMapName = areas.mapName;
-            }
+        forcedInstances.clear();
+        var forced = io.wifi.starrailexpress.progression.SelfSelectValidator.selectForRound(world, allPlayers);
+        List<SRERole> forcedRoles = new ArrayList<>(forced.values());
+        for (var entry : forced.entrySet()) {
+            RoleInstance instance = new RoleInstance(UUID.randomUUID(), entry.getValue());
+            forcedInstances.put(entry.getKey(), instance);
+            rolePool.add(instance);
         }
-        // ★ 必须先复制再遍历：下面 refundAndNotify 会 releaseSelfForcedRole，
-        //   直接迭代 FORCED_MODDED_ROLE_FLIP 会 ConcurrentModificationException
-        //   （SelfSelectValidator.revalidate 里也有同样的复制，原因一致）。
-        for (var flip : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet())) {
-            var role = flip.getValue();
-            if (role == null)
-                continue;
-            // ── 占名额之前先复查：这个职业本局真的能出现吗？──
-            //
-            // 自选是在「还不知道下一局地图」时做的，所以可能选了本局根本刷不出来的
-            // 特殊地图职业（实测：非鬼图选布袋鬼）。这种情况下：
-            //   · 卡要退（由这里统一退，或前面的 revalidate 已经退过）；
-            //   · **名额一个都不能占** —— 否则卡退了、职业没出现，
-            //     但狼位已经被扣掉（布袋鬼 occ=2），场上凭空少一个杀手。
-            //   这就是"24 人局正常 4 狼却只刷了 3 狼"的来源。
-            var deny = io.wifi.starrailexpress.progression.SelfSelectGate
-                    .checkForRound(role, allPlayers, draftMapName);
-            if (deny != io.wifi.starrailexpress.progression.SelfSelectGate.Deny.NONE) {
-                ServerPlayer owner = null;
-                for (ServerPlayer p : allPlayers) {
-                    if (p.getUUID().equals(flip.getKey())) {
-                        owner = p;
-                        break;
-                    }
-                }
-                SRE.LOGGER.warn("[RolePool] 自选职业 {} 本局不可用（{}，地图 {}）"
-                        + "→ 退还自选卡，且不占用任何名额", role.identifier(), deny, draftMapName);
-                io.wifi.starrailexpress.progression.SelfSelectClaimService
-                        .refundAndNotify(owner, role, null);
-                continue;
-            }
-            rolePool.add(new RoleInstance(UUID.randomUUID(), role));
-            forcedRoles.add(role);
-            forceRoleCount++;
-            // 按「实际阵营」扣减名额，并且要按 occupiedRoleCount 扣。
-            // 之前这里是 `switch (role.getRoleType())`，有两个问题：
-            //   ① 只扣 1，忽略了 occupiedRoleCount —— 迪奥压 2 个杀手位
-            //      （ModRoles.DIO 设了 setOccupiedRoleCount(2)），配 3 狼的局会变成额外 3 个狼位；
-            //   ② type 1 被当成"不占名额"，但 type 1 是乘客（isInnocent），
-            //      乘客本该压平民数，口径和 getAllRoles 不一致。
-            // 现在统一成 getAllRoles / SREMurderGameMode 用的判断。
+        for (SRERole role : org.agmas.harpymodloader.modded_murder.RoleAssignmentManager.getRequiredRoles(forcedRoles)) {
             int occupied = Math.max(1, role.getOccupiedRoleCount());
             if (role.canUseKiller()) {
                 killerCount -= occupied;
@@ -200,160 +157,44 @@ public class LightningDraftState {
             } else if (!role.isInnocent()) {
                 neutralsCount -= occupied;
             }
-            SRE.LOGGER.info("[RolePool] 自选强制职业 {}（占 {} 个名额，可杀手={} 警长={} 中立={}）→ 剩余狼位={}",
-                    role.identifier(), occupied, role.canUseKiller(), role.isVigilanteTeam(),
-                    !role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam(), killerCount);
+        }
+        rolePool.addAll(SREMurderGameMode.getAllRoles(
+                Math.max(0, killerCount), Math.max(0, vigilanteCount), Math.max(0, neutralsCount),
+                totalPlayers, forcedRoles.size(), killerPool, neutralsPool, vigilantePool, civilianPool,
+                true, forcedRoles));
 
-            // ★ 自选的若是「绑定对」的一员，另一半的阵营名额也要一起预留。
-            //
-            //   绑定是双向的（布袋鬼←→诡客、重刑犯←→狱警…），自选其中任意一方，
-            //   另一方都会被补进本局。如果只扣自选那一方的阵营名额，
-            //   另一半的阵营就会**多抽一个普通角色**。
-            //
-            //   实测（13 人局，自选诡客 = 警长阵营）：
-            //     只扣警长 2 个 → 狼位仍是 2 → 自然抽出巫师/恶鬼 → 再补入布袋鬼
-            //     → 杀手阵营 3 人超预算 → 摘人 → 最终「有诡客、没布袋鬼、多一个巫师」。
-            //   把布袋鬼的杀手名额也预留后：狼位 2-2=0，场上只有布袋鬼一个杀手。
-            for (SRERole partner : Harpymodloader.getOccupationRoles(role)) {
-                if (partner == null || partner == role || forcedRoles.contains(partner)) {
-                    continue;
-                }
-                int pOcc = Math.max(1, partner.getOccupiedRoleCount());
-                if (partner.canUseKiller()) {
-                    killerCount -= pOcc;
-                } else if (partner.isVigilanteTeam()) {
-                    vigilanteCount -= pOcc;
-                } else if (!partner.isInnocent()) {
-                    neutralsCount -= pOcc;
-                }
-                SRE.LOGGER.info(
-                        "[RolePool]   绑定对另一半 {} 也预留 {} 个名额（杀手={} 警长={} 中立={}）"
-                                + "→ 剩余 杀手={} 警长={} 中立={}",
-                        partner.identifier(), pOcc, partner.canUseKiller(), partner.isVigilanteTeam(),
-                        !partner.isInnocent() && !partner.canUseKiller() && !partner.isVigilanteTeam(),
-                        killerCount, vigilanteCount, neutralsCount);
+        List<SRERole> replaceable = civilianPool.selectRoles(PLAYER_SELECT_COUNT - 1,
+                role -> role.canBeRandomed() && !isSpecialInnocent(role)
+                        && rolePool.stream().noneMatch(instance ->
+                                org.agmas.harpymodloader.modded_murder.RoleAssignmentManager.areOpposing(role, instance.role())));
+        for (int i = 0; i < PLAYER_SELECT_COUNT - 1; i++) {
+            SRERole role = i < replaceable.size() ? replaceable.get(i) : TMMRoles.CIVILIAN;
+            canReplaceRole.add(role);
+            rolePool.add(new RoleInstance(UUID.randomUUID(), role));
+        }
+
+        Set<net.minecraft.resources.ResourceLocation> protect = new HashSet<>();
+        forcedRoles.forEach(role -> protect.add(role.identifier()));
+        for (RoleInstance instance : rolePool) {
+            SRERole role = instance.role();
+            if (org.agmas.harpymodloader.modded_murder.RoleAssignmentManager.hasCompanionRole(role)) {
+                org.agmas.harpymodloader.modded_murder.RoleAssignmentManager
+                        .getCompatibleCompanionGroup(role, rolePool.stream().map(RoleInstance::role).toList())
+                        .forEach(member -> protect.add(member.identifier()));
             }
         }
-        // 预留两个名额（一次自选 + 一次绑定对另一半）可能扣成负数，先收敛到 0。
-        killerCount = Math.max(0, killerCount);
-        vigilanteCount = Math.max(0, vigilanteCount);
-        neutralsCount = Math.max(0, neutralsCount);
-        SRE.LOGGER.info("[RolePool] 扣除自选/绑定对后剩余名额：杀手={} 警长={} 中立={}",
-                killerCount, vigilanteCount, neutralsCount);
-
-        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
-                killerCount, vigilanteCount, neutralsCount,
-                totalPlayers, forceRoleCount,
-                killerPool, neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
-
-        for (RoleInstance inst : baseRoles) {
-            if (inst.role() != null) {
-                rolePool.add(inst); // 保留原有UUID
-            }
-        }
-
-        // 生成可替换职业列表
-        List<SRERole> replaceableTypes = new ArrayList<>(civilianPool.selectRoles(PLAYER_SELECT_COUNT - 1,
-                role -> role.canBeRandomed()
-                        && role.opposingRoles.isEmpty() && !isSpecialInnocent(role)));
-        int size = replaceableTypes.size();
-        for (int i = 0; i < PLAYER_SELECT_COUNT - 1 - size; i++) {
-            replaceableTypes.add(TMMRoles.CIVILIAN);
-        }
-
-        // 自选主职业带出来的「绑定职业」（迪奥→承太郎、毒师→医生、悍匪→钳工…）
-        // 必须替换掉一个「可替换位」才能进池 —— 普通模式在 SREMurderGameMode.mergeCompanionRoles
-        // 里做这件事（它是替换平民位），轮选模式以前完全没有这一步，于是选迪奥时承太郎根本不出现。
-        //
-        // ★ 必须在 replaceableTypes 组好之后、且**替换 replaceableTypes 里的元素**：
-        //   轮选模式的"平民位"是这里抽出来的可替换职业（实测是「时空旅者」「殡仪员」这类），
-        //   并不一定是 TMMRoles.CIVILIAN —— 只认 CIVILIAN 会一个都换不到（踩过这个坑）。
-        mergeCompanionRoles(replaceableTypes);
-
-        for (SRERole r : replaceableTypes) {
-            canReplaceRole.add(r); // 记录可替换的类型
-            rolePool.add(new RoleInstance(UUID.randomUUID(), r)); // 为每个类型创建一个实例
-        }
-
-        SRE.LOGGER.info("Replaceable role size {}", replaceableTypes.size());
-        for (var r : replaceableTypes) {
-            SRE.LOGGER.info("Replaceable Role {}", r.getName().getString());
-        }
-
-        // ── 各阵营预算 ──
-        final int budgetK = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
-        final int budgetV = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
-        final int budgetN = Math.max(0, RoleCountManager.getNeutralCount(totalPlayers));
-
-        // ── 诊断：池内各阵营数量 ──
-        {
-            long cntK = rolePool.stream().filter(ri -> ri.role() != null && ri.role().canUseKiller()).count();
-            long cntV = rolePool.stream().filter(ri -> ri.role() != null && ri.role().isVigilanteTeam()).count();
-            long cntN = rolePool.stream().filter(ri -> ri.role() != null && !ri.role().isInnocent()
-                    && !ri.role().canUseKiller() && !ri.role().isVigilanteTeam()).count();
-            SRE.LOGGER.info(
-                    "[RolePool] 池内 {} 个角色：预算(杀手={} 警长={} 中立={}) 池内(杀手={} 警长={} 中立={})",
-                    rolePool.size(), budgetK, budgetV, budgetN, cntK, cntV, cntN);
-            if (cntV > budgetV || cntK > budgetK || cntN > budgetN) {
-                SRE.LOGGER.warn("[RolePool] 池内阵营超出预算，逐个列出：");
-                for (var ri : rolePool) {
-                    var rr = ri.role();
-                    if (rr == null) {
-                        continue;
-                    }
-                    if (rr.canUseKiller() || rr.isVigilanteTeam() || !rr.isInnocent()) {
-                        SRE.LOGGER.warn("[RolePool]   {}（杀手={} 警长={} 中立={} 占位={}）",
-                                rr.identifier(), rr.canUseKiller(), rr.isVigilanteTeam(),
-                                !rr.isInnocent() && !rr.canUseKiller() && !rr.isVigilanteTeam(),
-                                rr.getOccupiedRoleCount());
-                    }
-                }
-            }
-        }
-
-        // ── 阵营预算硬收敛（对齐谋杀模式的终局校验）──
-        //
-        // 轮选模式以前**没有**任何阵营校验，而它的池子是「baseRoles + 强制职业 + 绑定职业
-        // + 可替换位」拼起来的，各阵营是独立取的，就可能多出一个人。
-        // 实测：13 人局自选布袋鬼 → 池内警长 3 个（点穴大师 + 警卫 + 诡客），预算只有 2。
-        //
-        // 做法：超出预算的**非绑定、非自选**角色从池子里摘掉。
-        // 绑定职业（诡客/承太郎/钳工/医生…）和自选主职业一律保留 —— 它们是硬依赖。
-        {
-            java.util.Set<net.minecraft.resources.ResourceLocation> protect = new java.util.HashSet<>();
-            for (SRERole c : collectCompanionRoles()) {
-                protect.add(c.identifier());
-            }
-            for (SRERole f : Harpymodloader.FORCED_MODDED_ROLE_FLIP.values()) {
-                if (f != null) {
-                    protect.add(f.identifier());
-                }
-            }
-            trimFaction(protect, r -> r.canUseKiller(), budgetK, "杀手");
-            trimFaction(protect, r -> r.isVigilanteTeam(), budgetV, "警长");
-            trimFaction(protect, r -> !r.isInnocent() && !r.canUseKiller() && !r.isVigilanteTeam(),
-                    budgetN, "中立");
+        trimFaction(protect, SRERole::canUseKiller, Math.max(1, RoleCountManager.getKillerCount(totalPlayers)), "杀手");
+        trimFaction(protect, SRERole::isVigilanteTeam, Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers)), "警长");
+        trimFaction(protect, role -> !role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam(),
+                Math.max(0, RoleCountManager.getNeutralCount(totalPlayers)), "中立");
+        while (rolePool.size() < totalPlayers) {
+            rolePool.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
         }
 
         initializeCardTracking();
     }
 
-    /**
-     * 把某个阵营在池子里的数量压回预算。
-     *
-     * <p><b>{@code occupiedRoleCount} 的口径</b>：表示"这个角色占几个名额"，
-     * 而不是"占几个玩家位"。{@code occupiedRoleCount=2} 的职业自己仍只占 1 个玩家位，
-     * 但吃掉 2 个名额。
-     *
-     * <p>所以阵营的"人数上限"应该是
-     * {@code 预算 - Σ(保护角色的额外占用)}，而不是简单地 {@code 预算}。
-     * 否则只要保护角色（绑定职业 / 自选主职业）吃掉额外名额，就会把普通角色多摘掉。
-     *
-     * <p><b>保护角色一律不摘</b>（这是修回的关键）：绑定职业是主职业的硬依赖 ——
-     * 摘掉 {@code JAILER(狱警)} 就会让 {@code CONVICT(重刑犯)} 变成"没有狱警的重刑犯"，
-     * 实测表现为"监狱图刷了狱警但没有重刑犯 / 反过来"。
-     * 宁可某阵营超出预算 1 个人，也不能拆散成对角色。
-     */
+    // Linked groups keep their heads; their extra occupied slots reduce the remaining budget.
     private void trimFaction(java.util.Set<net.minecraft.resources.ResourceLocation> protect,
             java.util.function.Predicate<SRERole> belongs, int budget, String label) {
         // 统计"人头数"与"保护角色吃掉的额外名额"
@@ -372,8 +213,8 @@ public class LightningDraftState {
                 protectedExtra += Math.max(0, r.getOccupiedRoleCount() - 1);
             }
         }
-        // 能给"普通角色"的名额 = 预算 - 额外占用；至少给保护角色留人头
-        int allowNormalHeads = Math.max(0, budget - protectedExtra);
+        // Ordinary slots exclude protected heads and their extra occupied slots.
+        int allowNormalHeads = Math.max(0, budget - protectedHeads - protectedExtra);
         int over = (heads - protectedHeads) - allowNormalHeads;
         if (over <= 0) {
             return;
@@ -397,122 +238,10 @@ public class LightningDraftState {
         }
     }
 
-    /** 收集本局所有绑定职业（自选主职业带出来的） */
-    private java.util.Set<SRERole> collectCompanionRoles() {
-        java.util.Set<SRERole> out = new java.util.LinkedHashSet<>();
-        for (SRERole main : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.values())) {
-            if (main == null) {
-                continue;
-            }
-            var occ = Harpymodloader.getOccupationRoles(main);
-            if (occ == null) {
-                continue;
-            }
-            for (SRERole c : occ) {
-                if (c != null) {
-                    out.add(c);
-                }
-            }
-        }
-        return out;
-    }
-
-    /**
-     * 把「自选主职业」带出来的绑定职业放进轮选池。
-     *
-     * <p>背景：有人用自选卡选了迪奥（{@code ModRoles.DIO}），而迪奥的绑定职业是承太郎
-     * （{@code ModRoles.JOJO}，见 {@code Harpymodloader.getOccupationRoles}）。
-     * 普通模式由 {@code SREMurderGameMode.mergeCompanionRoles} 负责补位，轮选模式原先漏了这一步，
-     * 结果就是"选了迪奥但承太郎不会出现"。
-     *
-     * <p><b>做法</b>：把绑定职业**替换掉一个「可替换位」**（也就是
-     * {@code replaceableTypes} 里的一个元素），这样总角色数不变、不会挤掉别人。
-     *
-     * <p><b>为什么不能只认 {@code TMMRoles.CIVILIAN}</b>：轮选模式的"平民位"是
-     * {@code civilianPool.selectRoles(...)} 抽出来的可替换职业，实测可能是「时空旅者」「殡仪员」
-     * 这类职业，并不等于 {@code CIVILIAN}。只匹配 CIVILIAN 会一个都换不到，
-     * 于是每次都在这里静默失败（日志：{@code 没有平民空位可替换}）。
-     *
-     * @param replaceableTypes 可替换位（会被就地修改：其中一个被换成绑定职业）
-     */
-    private void mergeCompanionRoles(List<SRERole> replaceableTypes) {
-        // 收集本局自选主职业带出的绑定职业，按名额上限去重
-        // 注意：上限要拿「统计值」去比，不能在遍历中拿正在累加的集合去比 ——
-        // 否则第一个主职业会一口气塞进 cap 个，后面的主职业就永远补不进来。
-        Map<SRERole, Integer> capOf = new LinkedHashMap<>();
-        LinkedHashSet<SRERole> companions = new LinkedHashSet<>();
-        // 复制一份再遍历：下面 refundSelfSelectForCompanion 可能会 releaseSelfForcedRole，
-        // 而 FORCED_MODDED_ROLE_FLIP 是普通 HashMap —— 直接遍历会在改结构时抛
-        // ConcurrentModificationException。
-        for (SRERole main : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.values())) {
-            if (main == null) {
-                continue;
-            }
-            var occ = Harpymodloader.getOccupationRoles(main);
-            if (occ == null || occ.isEmpty()) {
-                continue;
-            }
-            for (SRERole companion : occ) {
-                if (companion == null) {
-                    continue;
-                }
-                int cap = Math.max(1, Harpymodloader.getRoleCapacity(companion));
-                capOf.putIfAbsent(companion, cap);
-                // 名额用尽 → 这个绑定职业不再补（"角色上限依然生效"）
-                if (capOf.get(companion) <= 0) {
-                    continue;
-                }
-                capOf.put(companion, capOf.get(companion) - 1);
-                companions.add(companion);
-            }
-        }
-        if (companions.isEmpty()) {
-            return;
-        }
-
-        for (SRERole companion : companions) {
-            final var cid = companion.identifier();
-            // 已经在**池子里**（baseRoles / 强制职业）或在**可替换位**里就不重复补。
-            //
-            // ★ 只查 replaceableTypes 是不够的：rolePool 里已经有 baseRoles 自然抽到的职业。
-            //   如果绑定职业恰好也被自然抽到，只查 replaceableTypes 就会再加一份 →
-            //   该阵营多出一个人（实测：自选布袋鬼时，诡客既被自然抽到、又被补入，
-            //   于是警长阵营变成 3 个）。
-            boolean inPool = rolePool.stream().anyMatch(ri -> ri.role() != null
-                    && ri.role().identifier().equals(cid));
-            boolean inReplaceable = replaceableTypes.stream().anyMatch(r -> r != null
-                    && r.identifier().equals(cid));
-            if (inPool || inReplaceable) {
-                Harpymodloader.LOGGER.info(
-                        "[SelfSelect] 绑定职业 {} 已在{}里，不再重复补",
-                        cid, inPool ? "角色池" : "可替换位");
-                continue;
-            }
-            // 从后往前挑一个可替换位来顶掉；没有可替换位说明排满了，撤销这次自选并退还卡
-            int idx = -1;
-            for (int i = replaceableTypes.size() - 1; i >= 0; i--) {
-                if (replaceableTypes.get(i) != null) {
-                    idx = i;
-                    break;
-                }
-            }
-            if (idx < 0) {
-                // 补不进去 → 这张自选卡"选了但没生效"，按规则撤销占位并退还
-                refundSelfSelectForCompanion(cid);
-                Harpymodloader.LOGGER.warn(
-                        "[SelfSelect] 轮选模式没有空位可替换，绑定职业 {} 无法生成（已撤销自选并退还卡）", cid);
-                continue;
-            }
-            SRERole displaced = replaceableTypes.set(idx, companion);
-            Harpymodloader.LOGGER.info("[SelfSelect] 轮选模式因自选主职业而补入绑定职业 {}（替换掉 {}）",
-                    cid, displaced == null ? "?" : displaced.identifier());
-        }
-    }
-
     /**
      * 把自选卡退还给指定玩家，并提示原因。
      *
-     * <p>用于「自选卡选了但这一局没生效」的各种情况：强制职业本轮没抽到、
+     * <p>用于「自选卡选了但这一局没生效」的各种情况：强制职业未找到已预留的、
      * 绑定职业挤不进池子等。统一走这里，避免有的路径退、有的路径不退。
      */
     private void refundSelfSelect(UUID playerId, SRERole role) {
@@ -526,37 +255,9 @@ public class LightningDraftState {
                 server.getPlayerList().getPlayer(playerId), role, null);
     }
 
-    /**
-     * 绑定职业补不进去时，把「因它而用掉的那张自选卡」退还给对应的玩家。
-     *
-     * <p>只退给"主职业的绑定职业正好是它"的那些玩家，避免误退给别人。
-     * 组合技既然凑不齐，就不该只生效一半 —— 所以一并撤销自选占位
-     * （由 {@code refundAndNotify} 内部完成）。
-     */
-    private void refundSelfSelectForCompanion(net.minecraft.resources.ResourceLocation companionId) {
-        MinecraftServer server = SRE.SERVER;
-        if (server == null) {
-            return;
-        }
-        for (var entry : new ArrayList<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet())) {
-            SRERole main = entry.getValue();
-            if (main == null) {
-                continue;
-            }
-            var occ = Harpymodloader.getOccupationRoles(main);
-            if (occ == null || occ.stream().noneMatch(c -> c != null && c.identifier().equals(companionId))) {
-                continue;
-            }
-            Harpymodloader.LOGGER.info("[SelfSelect] 绑定职业 {} 无法生成，已撤销 {} 的自选主职业 {}",
-                    companionId, entry.getKey(), main.identifier());
-            refundSelfSelect(entry.getKey(), main);
-        }
-    }
-
     private void initializeCardTracking() {
         cardUsedCount.clear();
         cardMaxPerType.clear();
-        cardReturnedPlayers.clear();
         int limit = Math.max(1, totalPlayers / 10);
         cardMaxPerType.put(4, limit);
         cardMaxPerType.put(2, limit);
@@ -589,7 +290,6 @@ public class LightningDraftState {
                 ForceTeamInfo info = PlayerRoleWeightManager.ForcePlayerTeam.remove(uid);
                 if (info == null)
                     continue;
-                cardReturnedPlayers.add(uid);
                 ServerPlayer sp = allPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst().orElse(null);
                 if (sp != null) {
                     if (info.type() == ForceTeamType.CARD) {
@@ -619,7 +319,7 @@ public class LightningDraftState {
     }
 
     private boolean roleMatchesFaction(SRERole role, int type) {
-        return role != null && normalizeCardType(role.getRoleType()) == type;
+        return role != null && PlayerRoleWeightManager.getRoleType(role) == type;
     }
 
     private static int normalizeCardType(int rawType) {
@@ -710,9 +410,11 @@ public class LightningDraftState {
         }
 
         int need = Math.min(rolePool.size(), playersInThisRound * PLAYER_SELECT_COUNT);
-        List<RoleInstance> drawn = new ArrayList<>(rolePool);
+        List<RoleInstance> drawn = rolePool.stream()
+                .filter(instance -> !forcedInstances.containsValue(instance))
+                .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(drawn, random);
-        drawn = new ArrayList<>(drawn.subList(0, need));
+        drawn = new ArrayList<>(drawn.subList(0, Math.min(need, drawn.size())));
 
         List<RoleInstance> remainingDrawn = new ArrayList<>(drawn); // 可分配池
         Map<UUID, List<RoleInstance>> candidateMap = new LinkedHashMap<>();
@@ -724,8 +426,8 @@ public class LightningDraftState {
         for (UUID playerId : roundPlayers) {
             SRERole forcedRole = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(playerId);
             if (forcedRole != null) {
-                Optional<RoleInstance> match = remainingDrawn.stream()
-                        .filter(ri -> ri.role() == forcedRole).findFirst();
+                Optional<RoleInstance> match = Optional.ofNullable(forcedInstances.get(playerId))
+                        .filter(rolePool::contains);
                 if (match.isPresent()) {
                     RoleInstance ri = match.get();
                     candidateMap.get(playerId).add(ri);
@@ -747,11 +449,13 @@ public class LightningDraftState {
             Integer forcedType = t.roleType();
             if (forcedType == null || forcedType < 1 || forcedType > 5)
                 continue;
-            int type = normalizeCardType(forcedType);
-            if (candidateMap.get(playerId).size() >= PLAYER_SELECT_COUNT)
+            int type = forcedType;
+            if (!candidateMap.get(playerId).isEmpty())
                 continue;
 
-            Optional<RoleInstance> match = remainingDrawn.stream()
+            Optional<RoleInstance> match = rolePool.stream()
+                    .filter(ri -> !forcedInstances.containsValue(ri))
+                    .filter(ri -> candidateMap.values().stream().noneMatch(list -> list.contains(ri)))
                     .filter(ri -> roleMatchesFaction(ri.role(), type)).findFirst();
             if (match.isPresent()) {
                 RoleInstance ri = match.get();
@@ -777,17 +481,21 @@ public class LightningDraftState {
 
         // 3. 剩余实例依次分配给玩家，每人最多 PLAYER_SELECT_COUNT 个；
         //    硬性强制阵营（职业卡/命令）的玩家只补发本阵营职业，确保卡牌真正生效
-        Iterator<RoleInstance> iter = remainingDrawn.iterator();
         for (UUID playerId : roundPlayers) {
+            Iterator<RoleInstance> iter = remainingDrawn.iterator();
             List<RoleInstance> candidates = candidateMap.get(playerId);
             ForceTeamInfo force = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
             int hardForcedType = -1;
             if (force != null && force.type() != ForceTeamType.ROLE_WEIGHTS
                     && force.roleType() >= 1 && force.roleType() <= 5) {
-                hardForcedType = normalizeCardType(force.roleType());
+                hardForcedType = force.roleType();
             }
             while (candidates.size() < PLAYER_SELECT_COUNT && iter.hasNext()) {
                 RoleInstance next = iter.next();
+                if (candidateMap.values().stream().anyMatch(list -> list.contains(next))) {
+                    iter.remove();
+                    continue;
+                }
                 if (hardForcedType >= 0 && !roleMatchesFaction(next.role(), hardForcedType)) {
                     // 非本阵营职业不提供给硬性强制玩家，使其只能选本阵营
                     continue;
@@ -829,13 +537,14 @@ public class LightningDraftState {
             chosen = candidates.get(choiceIndex);
         }
         if (chosen == null || choiceIndex == PLAYER_SELECT_COUNT) { // 随机
-            chosen = selectRandomRole(world);
+            chosen = selectRandomRole(world, playerUuid);
             randomChoosers.add(playerUuid);
         }
 
         if (chosen == null)
             return false;
 
+        forcedInstances.remove(playerUuid);
         selectedRoles.put(playerUuid, chosen.role());
         rolePool.remove(chosen);
         remainingPlayerCount--;
@@ -886,9 +595,21 @@ public class LightningDraftState {
         confirmCountdown = 6 * 20;
     }
 
-    private RoleInstance selectRandomRole(ServerLevel world) {
+    private RoleInstance selectRandomRole(ServerLevel world, UUID playerId) {
+        RoleInstance forced = forcedInstances.remove(playerId);
+        if (forced != null && rolePool.contains(forced)) {
+            return forced;
+        }
+        ForceTeamInfo force = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
+        List<RoleInstance> factionRoles = rolePool.stream()
+                .filter(ri -> !lockedInstanceIds.contains(ri.uuid()) && !forcedInstances.containsValue(ri))
+                .filter(ri -> force != null && roleMatchesFaction(ri.role(), force.roleType()))
+                .toList();
+        if (!factionRoles.isEmpty()) {
+            return factionRoles.get(random.nextInt(factionRoles.size()));
+        }
         List<RoleInstance> available = rolePool.stream()
-                .filter(ri -> !lockedInstanceIds.contains(ri.uuid()))
+                .filter(ri -> !lockedInstanceIds.contains(ri.uuid()) && !forcedInstances.containsValue(ri))
                 .collect(Collectors.toList());
         if (available.isEmpty()) {
             // 极端情况：从整个池子随机，若池子为空则生成一个平民实例
@@ -910,7 +631,7 @@ public class LightningDraftState {
                 oldCandidates.forEach(ri -> lockedInstanceIds.remove(ri.uuid()));
             }
             ServerPlayer player = world.getServer().getPlayerList().getPlayer(uuid);
-            RoleInstance randomInstance = selectRandomRole(world);
+            RoleInstance randomInstance = selectRandomRole(world, uuid);
             selectedRoles.put(uuid, randomInstance.role());
             rolePool.remove(randomInstance);
             remainingPlayerCount--;
@@ -928,6 +649,11 @@ public class LightningDraftState {
     public void adjustRoles(ServerLevel serverWorld) {
         var canReplacePlayers = new ArrayList<UUID>();
         for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
+            UUID owner = entrySet.getKey();
+            if (Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(owner) == entrySet.getValue()
+                    || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(owner)) {
+                continue;
+            }
             if (canReplaceRole.contains(entrySet.getValue()) || entrySet.getValue().equals(TMMRoles.CIVILIAN)) {
                 canReplacePlayers.addFirst(entrySet.getKey());
             }

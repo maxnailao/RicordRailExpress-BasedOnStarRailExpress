@@ -5,16 +5,13 @@ import java.util.stream.Collectors;
 
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
-import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -52,9 +49,7 @@ public class SingleSelectDraftState {
     // ===== 最后阶段阈值 =====
     private int finalPhaseThreshold = 6;
 
-    // ===== 卡片追踪 =====
-    private final Map<Integer, Integer> cardUsedCount = new HashMap<>();
-    private final Map<Integer, Integer> cardMaxPerType = new HashMap<>();
+    private final Map<UUID, SRERole> forcedRoles = new LinkedHashMap<>();
 
     // ===== 特殊平民职业 =====
     private static final Set<SRERole> SPECIAL_CIVILIAN_ROLES = Set.of(
@@ -78,74 +73,16 @@ public class SingleSelectDraftState {
             finalPhaseThreshold = (int) Math.floor(totalPlayers / 2.0 + totalPlayers / 7.0);
         }
 
-        int killerCount = RoleCountManager.getKillerCount(totalPlayers);
-        int vigilanteCount = RoleCountManager.getVigilanteCount(totalPlayers);
-        int neutralsCount = RoleCountManager.getNeutralCount(totalPlayers);
-        killerCount = Math.max(1, killerCount);
-        vigilanteCount = Math.max(0, vigilanteCount);
-        neutralsCount = Math.max(0, neutralsCount);
-
-        HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
-        boolean enableCivilianInPool = config.enableCivilianInPool;
-
-        RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        role.canUseKiller() &&
-                        !role.isInnocent() &&
-                        !RoleUtils.compareRole(role, ModRoles.PUPPETEER) &&
-                        role != TMMRoles.CIVILIAN);
-        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        role.isVigilanteTeam() &&
-                        !role.isOtherModeRole());
-        RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        ((!role.canUseKiller() && !role.isInnocent()) || role.isNeutrals()) &&
-                        role != TMMRoles.CIVILIAN);
-        RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isOtherModeRole() &&
-                        !role.isVigilanteTeam() &&
-                        !role.canUseKiller() &&
-                        !role.isNeutrals() &&
-                        role.isInnocent() &&
-                        (enableCivilianInPool || role != TMMRoles.CIVILIAN));
-        if (enableCivilianInPool) {
-            Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
-        }
-
-        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(killerCount, vigilanteCount, neutralsCount,
-                totalPlayers + 5, 0, killerPool, neutralsPool, vigilantePool, civilianPool, true);
-
-        for (RoleInstance inst : baseRoles) {
-            if (inst.role() != null) {
-                rolePool.add(inst.role());
-            }
-        }
-
-        initializeCardTracking();
-    }
-
-    // ---------- 卡片追踪 ----------
-    private void initializeCardTracking() {
-        cardUsedCount.clear();
-        cardMaxPerType.clear();
-
-        int limit = Math.max(1, totalPlayers / 7);
-        cardMaxPerType.put(4, limit);
-        cardMaxPerType.put(2, limit);
-        cardMaxPerType.put(1, limit);
-
-        Map<Integer, List<UUID>> byType = new HashMap<>();
-        for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
-            int type = entry.getKey();
-            List<UUID> uuids = entry.getValue();
-            int max = cardMaxPerType.getOrDefault(type, 0);
-            cardUsedCount.put(type, Math.min(uuids.size(), max));
-            for (int i = max; i < uuids.size(); i++) {
-                PlayerRoleWeightManager.ForcePlayerTeam.remove(uuids.get(i));
+        List<ServerPlayer> players = world.players().stream()
+                .filter(player -> playerOrder.containsKey(player.getUUID())).toList();
+        LightningDraftState sharedPool = new LightningDraftState(players);
+        sharedPool.initializeRolePool(world);
+        sharedPool.rolePool.forEach(instance -> rolePool.add(instance.role()));
+        forcedRoles.clear();
+        for (ServerPlayer player : players) {
+            SRERole forced = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(player.getUUID());
+            if (forced != null) {
+                forcedRoles.put(player.getUUID(), forced);
             }
         }
     }
@@ -153,6 +90,7 @@ public class SingleSelectDraftState {
     // ---------- 玩家顺序 ----------
     public void assignRotationOrder() {
         List<UUID> sortedPlayers = new ArrayList<>(playerOrder.keySet());
+        playerOrder.clear();
         int n = sortedPlayers.size();
         Random random = new Random();
 
@@ -163,7 +101,13 @@ public class SingleSelectDraftState {
         List<UUID> noCardUsers = new ArrayList<>();
 
         for (UUID uuid : sortedPlayers) {
-            int card = -1;
+            var force = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
+            int card = force == null ? -1 : switch (force.roleType()) {
+                case 4 -> 0;
+                case 2, 3 -> 1;
+                case 1, 5 -> 2;
+                default -> -1;
+            };
             switch (card) {
                 case 0: killerCardUsers.add(uuid); break;
                 case 1: neutralCardUsers.add(uuid); break;
@@ -294,49 +238,22 @@ public class SingleSelectDraftState {
         int remainingPlayers = totalPlayers - selectedRoles.size();
         boolean isFinalPhase = remainingPlayers <= finalPhaseThreshold;
 
-        ArrayList<SRERole> poolCopy = new ArrayList<>(rolePool);
-        Random random = new Random();
-
-        int cardType = -1;
-        boolean cardPriorityHandled = false;
-
-        // 卡片用户优先处理
-        if (cardType == 0 || cardType == 1) {
-            ArrayList<SRERole> priorityRoles = new ArrayList<>();
-            ArrayList<SRERole> otherRoles = new ArrayList<>();
-
-            for (SRERole role : poolCopy) {
-                int type = PlayerRoleWeightManager.getRoleType(role);
-                if (cardType == 0 && type == 4) {
-                    priorityRoles.add(role);
-                } else if (cardType == 1 && (type == 2 || type == 3)) {
-                    if (type == 2) priorityRoles.add(role);
-                    else otherRoles.add(role);
-                } else {
-                    otherRoles.add(role);
-                }
-            }
-
-            if (!priorityRoles.isEmpty() && priorityRoles.size() + otherRoles.size() >= 3) {
-                Collections.shuffle(priorityRoles, random);
-                int priorityCount = Math.min(2, priorityRoles.size());
-                for (int i = 0; i < priorityCount; i++) {
-                    currentCandidates.add(priorityRoles.get(i));
-                    poolCopy.remove(priorityRoles.get(i));
-                }
-                Collections.shuffle(poolCopy, random);
-                for (int i = 0; currentCandidates.size() < 3 && i < poolCopy.size(); i++) {
-                    currentCandidates.add(poolCopy.get(i));
-                }
-                cardPriorityHandled = true;
-            } else if (!otherRoles.isEmpty() && otherRoles.size() >= 3) {
-                Collections.shuffle(otherRoles, random);
-                for (int i = 0; i < 3; i++) {
-                    currentCandidates.add(otherRoles.get(i));
-                }
-                cardPriorityHandled = true;
+        SRERole forced = forcedRoles.get(playerUuid);
+        if (forced != null && rolePool.contains(forced)) {
+            currentCandidates.add(forced);
+            return;
+        }
+        ArrayList<SRERole> poolCopy = availableRoles(playerUuid);
+        var force = PlayerRoleWeightManager.ForcePlayerTeam.get(playerUuid);
+        if (force != null && force.type() != org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType.ROLE_WEIGHTS) {
+            List<SRERole> faction = poolCopy.stream()
+                    .filter(role -> PlayerRoleWeightManager.getRoleType(role) == force.roleType()).toList();
+            if (!faction.isEmpty()) {
+                poolCopy.retainAll(faction);
             }
         }
+        Random random = new Random();
+        boolean cardPriorityHandled = false;
 
         if (!cardPriorityHandled) {
             if (isFinalPhase) {
@@ -381,12 +298,13 @@ public class SingleSelectDraftState {
         if (choiceIndex >= 0 && choiceIndex < currentCandidates.size()) {
             selectedRole = currentCandidates.get(choiceIndex);
         } else if (choiceIndex == 3) {
-            selectedRole = selectRandomRole();
+            selectedRole = selectRandomRole(playerUuid);
             randomChoosers.add(playerUuid);
         }
 
         if (selectedRole == null) return false;
 
+        forcedRoles.remove(playerUuid);
         selectedRoles.put(playerUuid, selectedRole);
         rolePool.remove(selectedRole);
 
@@ -406,29 +324,31 @@ public class SingleSelectDraftState {
         return true;
     }
 
-    private SRERole selectRandomRole() {
-        if (rolePool.isEmpty()) return TMMRoles.CIVILIAN;
-
-        int remainingPlayers = totalPlayers - selectedRoles.size();
-        boolean isFinalPhase = remainingPlayers <= finalPhaseThreshold;
-        Random random = new Random();
-
-        if (isFinalPhase) {
-            ArrayList<SRERole> priorityPool = new ArrayList<>();
-            for (SRERole role : rolePool) {
-                int type = PlayerRoleWeightManager.getRoleType(role);
-                if (type == 4 || type == 5 || type == 2 || type == 3) {
-                    priorityPool.add(role);
-                } else if (isSpecialCivilianRole(role)) {
-                    priorityPool.add(role);
-                }
+    private ArrayList<SRERole> availableRoles(UUID playerId) {
+        ArrayList<SRERole> available = new ArrayList<>(rolePool);
+        forcedRoles.forEach((owner, role) -> {
+            if (!owner.equals(playerId)) {
+                available.remove(role);
             }
-            if (!priorityPool.isEmpty()) {
-                return priorityPool.get(random.nextInt(priorityPool.size()));
+        });
+        return available;
+    }
+
+    private SRERole selectRandomRole(UUID playerId) {
+        SRERole forced = forcedRoles.get(playerId);
+        if (forced != null && rolePool.contains(forced)) {
+            return forced;
+        }
+        ArrayList<SRERole> available = availableRoles(playerId);
+        var force = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
+        if (force != null) {
+            List<SRERole> faction = available.stream()
+                    .filter(role -> PlayerRoleWeightManager.getRoleType(role) == force.roleType()).toList();
+            if (!faction.isEmpty()) {
+                available.retainAll(faction);
             }
         }
-
-        return rolePool.get(random.nextInt(rolePool.size()));
+        return available.isEmpty() ? TMMRoles.CIVILIAN : available.get(new Random().nextInt(available.size()));
     }
 
     // ---------- 超时处理 ----------
@@ -443,7 +363,8 @@ public class SingleSelectDraftState {
         UUID currentPlayerUuid = findPlayerByRotationIndex(currentRotationIndex);
         if (currentPlayerUuid == null) return;
 
-        SRERole randomRole = selectRandomRole();
+        SRERole randomRole = selectRandomRole(currentPlayerUuid);
+        forcedRoles.remove(currentPlayerUuid);
         if (randomRole == null) randomRole = TMMRoles.CIVILIAN;
 
         selectedRoles.put(currentPlayerUuid, randomRole);
@@ -480,7 +401,8 @@ public class SingleSelectDraftState {
         if (offlineUnselected.isEmpty()) return false;
 
         for (UUID uuid : offlineUnselected) {
-            SRERole randomRole = selectRandomRole();
+            SRERole randomRole = selectRandomRole(uuid);
+            forcedRoles.remove(uuid);
             selectedRoles.put(uuid, randomRole);
             rolePool.remove(randomRole);
             randomChoosers.add(uuid);
@@ -534,7 +456,10 @@ public class SingleSelectDraftState {
         for (ServerPlayer player : serverWorld.players()) {
             UUID uuid = player.getUUID();
             SRERole role = selectedRoles.get(uuid);
-            if (role != null && role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam()
+            if (!PlayerRoleWeightManager.ForcePlayerTeam.containsKey(uuid)
+                    && !forcedRoles.containsKey(uuid)
+                    && Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(uuid) != role
+                    && role != null && role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam()
                     && !role.isNeutrals() && !isSpecialCivilianRole(role)) {
                 civilianPlayers.add(player);
             }

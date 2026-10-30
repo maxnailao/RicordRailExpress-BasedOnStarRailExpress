@@ -165,35 +165,29 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
 
-    private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
+    public static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
         Map<Player, SRERole> roleAssignments = new HashMap<>();
         for (Player player : players) {
             roleAssignments.put(player, null);
         }
 
         // 第一步：处理强制分配的角色
-        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+        Map<UUID, SRERole> forcedRoles = io.wifi.starrailexpress.progression.SelfSelectValidator.selectForRound(serverWorld, players);
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = 0;
 
-        // 处理强制分配的角色，减少对应角色类型的数量需求
-        for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
-            Player player = serverWorld.getPlayerByUUID(entry.getKey());
-            if (player != null) {
-                SRERole role = entry.getValue();
-                if (role != null) {
-                    roleAssignments.put(player, role);
-
-                    // 根据角色类型减少对应的数量需求
-                    if (role.canUseKiller()) {
-                        killerCount--;
-                    } else if (role.isVigilanteTeam()) {
-                        vigilanteCount--;
-                    } else if (!role.isInnocent()) {
-                        neutralsCount--;
-                    }
-                }
+        for (var entry : forcedRoles.entrySet()) {
+            roleAssignments.put(serverWorld.getPlayerByUUID(entry.getKey()), entry.getValue());
+        }
+        List<SRERole> requiredRoles = org.agmas.harpymodloader.modded_murder.RoleAssignmentManager
+                .getRequiredRoles(forcedRoles.values());
+        for (SRERole role : requiredRoles) {
+            int occupied = Math.max(1, role.getOccupiedRoleCount());
+            if (role.canUseKiller()) {
+                killerCount -= occupied;
+            } else if (role.isVigilanteTeam()) {
+                vigilanteCount -= occupied;
             }
         }
 
@@ -202,7 +196,7 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
 
         RoleAssignmentPool killerPool = RoleAssignmentPool.createUnlimited("Killer",
-                role -> role.identifier() == SpecialGameModeRoles.SEEKER.identifier());
+                role -> role.identifier().equals(SpecialGameModeRoles.SEEKER.identifier()));
         RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
                         role.isVigilanteTeam() && !role.isOtherModeRole());
@@ -224,9 +218,18 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
                         role.isInnocent() &&
                         role != TMMRoles.CIVILIAN);
 
-        List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                forcedRoles.size(), killerPool,
-                neutralsPool, vigilantePool, civilianPool, false);
+        // 寻找者是模式固定人数，不受普通职业的单职业刷新上限限制。
+        int seekerCount = Math.min(killerCount, players.size() - requiredRoles.size());
+        List<SRERole> reservedRoles = new ArrayList<>(forcedRoles.values());
+        for (int i = 0; i < seekerCount; i++) {
+            reservedRoles.add(SpecialGameModeRoles.SEEKER);
+        }
+        List<RoleInstance> expandedRoles = new ArrayList<>(getAllRoles(0, vigilanteCount, neutralsCount,
+                players.size(), reservedRoles.size(), killerPool,
+                neutralsPool, vigilantePool, civilianPool, true, reservedRoles));
+        for (int i = 0; i < seekerCount; i++) {
+            expandedRoles.add(new RoleInstance(UUID.randomUUID(), SpecialGameModeRoles.SEEKER));
+        }
 
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色

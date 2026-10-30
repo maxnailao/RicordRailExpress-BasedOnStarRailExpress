@@ -9,7 +9,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
+import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 
 /**
  * 自选职业卡的「开始前复查」。
@@ -27,6 +30,28 @@ import java.util.UUID;
 public final class SelfSelectValidator {
 
     private SelfSelectValidator() {
+    }
+
+    public static Map<UUID, SRERole> selectForRound(ServerLevel level, List<ServerPlayer> players) {
+        Map<UUID, SRERole> accepted = new LinkedHashMap<>();
+        String map = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(level).mapName;
+        for (ServerPlayer player : players) {
+            SRERole role = Harpymodloader.FORCED_MODDED_ROLE_FLIP.get(player.getUUID());
+            if (role == null) {
+                continue;
+            }
+            List<SRERole> proposed = new ArrayList<>(accepted.values());
+            proposed.add(role);
+            List<SRERole> required = RoleAssignmentManager.getRequiredRoles(proposed);
+            if (SelfSelectGate.checkForRound(role, players, map) != SelfSelectGate.Deny.NONE
+                    || required.isEmpty() || required.size() > players.size()
+                    || proposed.stream().filter(r -> r == role).count() > Harpymodloader.getRoleCapacity(role)) {
+                SelfSelectClaimService.refundAndNotify(player, role, null);
+                continue;
+            }
+            accepted.put(player.getUUID(), role);
+        }
+        return accepted;
     }
 
     /**

@@ -181,58 +181,43 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
     @Override
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
-        // 处理强制角色
-        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
-        List<ServerPlayer> playersWithoutForcedRoles = new ArrayList<>();
-        // 每有一组狼人产生一个超级亡命徒：8人局对应 7 狼 1 亡命徒
-        int superLooseEndCount = getSuperLooseEndCount(players);
-        for (ServerPlayer player : players) {
-            if (!forcedRoles.containsKey(player.getUUID())) {
-                playersWithoutForcedRoles.add(player);
-            }
+        if (players.isEmpty()) {
+            return;
         }
-        for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
-            ServerPlayer forcePlayer = null;
-            for (ServerPlayer player : players) {
-                if (player.getUUID() == entry.getKey())
-                    forcePlayer = player;
-            }
-            if (forcePlayer != null) {
-                SRERole role = entry.getValue();
-                if (role != null) {
-                    if (role == SpecialGameModeRoles.SUPER_LOOSE_END)
-                        --superLooseEndCount;
-                    gameWorldComponent.addRole(forcePlayer, role);
-                } else
-                    playersWithoutForcedRoles.add(forcePlayer);
-            }
+        var forced = io.wifi.starrailexpress.progression.SelfSelectValidator
+                .selectForRound(players.getFirst().serverLevel(), players);
+        List<SRERole> required = org.agmas.harpymodloader.modded_murder.RoleAssignmentManager
+                .getRequiredRoles(forced.values());
+        int remaining = players.size() - required.size();
+        int looseEnds = Math.min(remaining, Math.max(0, getSuperLooseEndCount(players)
+                - (int) required.stream().filter(r -> r == SpecialGameModeRoles.SUPER_LOOSE_END).count()));
+        List<SRERole> reserved = new ArrayList<>(forced.values());
+        List<io.wifi.starrailexpress.game.utils.RoleInstance> seeds = new ArrayList<>();
+        for (int i = 0; i < looseEnds; i++) {
+            reserved.add(SpecialGameModeRoles.SUPER_LOOSE_END);
         }
-        if (superLooseEndCount < 0)
-            superLooseEndCount = 0;
-        else if (superLooseEndCount > playersWithoutForcedRoles.size()) {
-            superLooseEndCount = playersWithoutForcedRoles.size();
+        for (SRERole role : createEvilWarRolePool().selectRoles(remaining - looseEnds)) {
+            if (role == ModRoles.MANIPULATOR
+                    && players.size() / (SREConfig.instance().evilWarKillGroupNumber + 1) < 2) {
+                role = TMMRoles.KILLER;
+            }
+            seeds.add(new io.wifi.starrailexpress.game.utils.RoleInstance(UUID.randomUUID(), role));
         }
-
-        // 生成杀手池
-        RoleAssignmentPool killerPool = createEvilWarRolePool();
-        List<SRERole> assignedKillers = killerPool.selectRoles(playersWithoutForcedRoles.size() - superLooseEndCount);
-        // 打乱需要分配的玩家列表
-        Collections.shuffle(playersWithoutForcedRoles);
-        // 前 superLooseEndeCount 个是亡命徒，剩下的为普通杀手，优先分配亡命徒，然后再分配杀手
-        for (int i = 0,
-                curKillerIdx = 0; i < playersWithoutForcedRoles.size(); ++i, curKillerIdx %= assignedKillers.size()) {
-            if (i < superLooseEndCount) {
-                gameWorldComponent.addRole(playersWithoutForcedRoles.get(i), SpecialGameModeRoles.SUPER_LOOSE_END);
-            } else if (curKillerIdx < assignedKillers.size()) {
-                SRERole role = assignedKillers.get(curKillerIdx++);
-                // 操纵师只会在有2个亡命徒以上时出现
-                if (role == ModRoles.MANIPULATOR &&
-                        (players.size() / (SREConfig.instance().evilWarKillGroupNumber + 1) < 2)) {
-                    role = TMMRoles.KILLER;
-                }
-                gameWorldComponent.addRole(playersWithoutForcedRoles.get(i), role);
-            } else
-                gameWorldComponent.addRole(playersWithoutForcedRoles.get(i), TMMRoles.KILLER);
+        var roles = org.agmas.harpymodloader.modded_murder.RoleAssignmentManager
+                .expandWithCompanionRoles(seeds, reserved, players.size());
+        for (int i = 0; i < looseEnds; i++) {
+            roles.addFirst(new io.wifi.starrailexpress.game.utils.RoleInstance(UUID.randomUUID(),
+                    SpecialGameModeRoles.SUPER_LOOSE_END));
+        }
+        List<ServerPlayer> unassigned = new ArrayList<>(players);
+        Collections.shuffle(unassigned);
+        int index = 0;
+        for (ServerPlayer player : unassigned) {
+            SRERole role = forced.get(player.getUUID());
+            if (role == null) {
+                role = index < roles.size() ? roles.get(index++).role() : TMMRoles.KILLER;
+            }
+            gameWorldComponent.addRole(player, role);
         }
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
     }

@@ -164,7 +164,8 @@ public class CustomRoleGameModeWorldComponent implements AutoSyncedComponent {
     public void playerSelectedRole(ServerPlayer player, ResourceLocation roleId) {
         var crgmtpcca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
         SRERole role = RoleUtils.getRole(roleId);
-        if (crgmtpcca.getTeam() == PlayerRoleWeightManager.getRoleType(role)
+        if (role != null && !crgmtpcca.selected()
+                && crgmtpcca.getTeam() == PlayerRoleWeightManager.getRoleType(role)
                 && this.available_roles.contains(role)) {
             player.displayClientMessage(Component
                     .translatable("gui.noellesroles.gambler.selected", RoleUtils.getRoleOrModifierNameWithColor(role))
@@ -205,6 +206,9 @@ public class CustomRoleGameModeWorldComponent implements AutoSyncedComponent {
 
     public void autoSelect(ServerPlayer player) {
         var crgmtpcca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
+        if (crgmtpcca.selected()) {
+            return;
+        }
         ArrayList<ResourceLocation> roles = crgmtpcca.getAvailableRoles();
         if (roles.isEmpty()) {
             changeRoleButNoEvents(player, TMMRoles.CIVILIAN);

@@ -8,7 +8,9 @@ import org.agmas.harpymodloader.Harpymodloader;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
+import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 
 /**
  * 自选职业卡的「占位」规则，唯一权威实现。
@@ -137,23 +139,15 @@ public final class SelfSelectClaimService {
                 default -> Result.NOT_SELECTABLE;
             };
         }
-        // 互斥职业判定：已有其他玩家自选了与目标职业互斥的角色时拦下（不扣卡）。
-        // 自然生成阶段的互斥由 removeOpposingJobs 保证角色池不会同时出现互斥对，
-        // 但两个玩家各用自选卡占用互斥职业不经过那条路径，在这里补齐。
-        // ★ 必须放在 SLOT_FULL 之前：互斥职业本身占着名额，
-        //   先查名额只会报「名额已满」，报不出「互斥」。
+        List<SRERole> proposed = new ArrayList<>();
         for (var claimed : Harpymodloader.FORCED_MODDED_ROLE_FLIP.entrySet()) {
-            if (claimed.getKey().equals(id)) {
-                continue; // 自己不阻断自己（改选时旧占用马上会释放）
+            if (!claimed.getKey().equals(id) && claimed.getValue() != null) {
+                proposed.add(claimed.getValue());
             }
-            SRERole other = claimed.getValue();
-            if (other == null || other == role) {
-                continue;
-            }
-            // 与 removeOpposingJobs 语义一致：任一方向声明了互斥即视为互斥
-            if (role.opposingRoles.contains(other) || other.opposingRoles.contains(role)) {
-                return Result.OPPOSING_ROLE;
-            }
+        }
+        proposed.add(role);
+        if (RoleAssignmentManager.getRequiredRoles(proposed).isEmpty()) {
+            return Result.OPPOSING_ROLE;
         }
         // 名额是否已满：以 ROLE_MAX 为准（默认 1，配成 2/3 的就允许那么多人）
         if (Harpymodloader.isRoleOverflow(role, id)) {

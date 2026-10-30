@@ -32,7 +32,7 @@ public class RoleAssignmentManager {
         return Harpymodloader.hasOccupationRole(role);
     }
 
-    private static boolean areOpposing(SRERole first, SRERole second) {
+    public static boolean areOpposing(SRERole first, SRERole second) {
         return first.opposingRoles.stream().anyMatch(role -> role.identifier().equals(second.identifier()))
                 || second.opposingRoles.stream().anyMatch(role -> role.identifier().equals(first.identifier()));
     }
@@ -88,6 +88,34 @@ public class RoleAssignmentManager {
         return new ArrayList<>(group.values());
     }
 
+    /** Includes roots, shared companions and the second instance required by self-pairs. */
+    public static List<SRERole> getRequiredRoles(Collection<SRERole> roots) {
+        Map<SRERole, Integer> counts = new LinkedHashMap<>();
+        for (SRERole root : roots) {
+            counts.merge(root, 1, Integer::sum);
+        }
+        List<SRERole> reserved = new ArrayList<>(roots);
+        for (SRERole root : roots) {
+            List<SRERole> group = getCompatibleCompanionGroup(root, reserved, roots);
+            if (group.isEmpty()) {
+                return List.of();
+            }
+            for (SRERole member : group) {
+                counts.merge(member, Harpymodloader.isSelfPaired(member) ? 2 : 1, Math::max);
+                if (!reserved.contains(member)) {
+                    reserved.add(member);
+                }
+            }
+        }
+        List<SRERole> required = new ArrayList<>();
+        counts.forEach((role, count) -> {
+            for (int i = 0; i < count; i++) {
+                required.add(role);
+            }
+        });
+        return required;
+    }
+
     /** 展开完整绑定组合，已有的同伴不重复补入。 */
     public static List<RoleInstance> expandWithCompanionRoles(
             List<RoleInstance> roles) {
@@ -113,18 +141,23 @@ public class RoleAssignmentManager {
                 continue;
             }
             List<RoleInstance> instances = available.computeIfAbsent(role.identifier(), key -> new ArrayList<>());
-            if (role == TMMRoles.CIVILIAN || instances.size() < Harpymodloader.getRoleCapacity(role)) {
+            if (assignedIds.contains(instance.uuid()) || role == TMMRoles.CIVILIAN
+                    || instances.size() < Harpymodloader.getRoleCapacity(role)) {
                 instances.add(instance);
             }
         }
 
         List<RoleInstance> selected = new ArrayList<>();
         Map<ResourceLocation, Integer> selectedCounts = new HashMap<>();
-        for (RoleInstance seed : seeds) {
-            if (assignedIds.contains(seed.uuid())) {
-                selected.add(seed);
-                selectedCounts.merge(seed.role().identifier(), 1, Integer::sum);
-            }
+        List<SRERole> requiredAssigned = getRequiredRoles(assignedRoles);
+        if ((!assignedRoles.isEmpty() && requiredAssigned.isEmpty()) || requiredAssigned.size() > maxRoleCount) {
+            throw new IllegalArgumentException("Forced roles must reserve a compatible, complete group before expansion");
+        }
+        for (SRERole role : requiredAssigned) {
+            int index = selectedCounts.getOrDefault(role.identifier(), 0);
+            List<RoleInstance> existing = available.getOrDefault(role.identifier(), List.of());
+            selected.add(index < existing.size() ? existing.get(index) : new RoleInstance(UUID.randomUUID(), role));
+            selectedCounts.merge(role.identifier(), 1, Integer::sum);
         }
         // 先接纳完整组合，再填普通职业；互斥或名额不足时整组放弃，避免拆散绑定。
         for (RoleInstance seed : seeds) {
