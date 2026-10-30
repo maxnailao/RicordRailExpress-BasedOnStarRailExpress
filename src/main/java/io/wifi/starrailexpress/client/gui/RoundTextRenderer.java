@@ -785,6 +785,7 @@ public class RoundTextRenderer {
                     welcomeExitTicks--;
                 }
             }
+            if (io.wifi.starrailexpress.settlement.client.SettlementClient.isActive()) return;
             // 结束界面音效
             if (endTime > 0) {
                 if (endTime == END_DURATION - (GameConstants.FADE_TIME * 2)) {
@@ -835,6 +836,11 @@ public class RoundTextRenderer {
     }
 
     /** 启动结束界面 (重置欢迎时间并设置结束倒计时)。 */
+    public static void resumeAfterSettlement() {
+        startEnd();
+        endTime = END_DURATION - GameConstants.FADE_TIME * 2 - 1;
+    }
+
     public static void startEnd() {
         welcomeTime = 0;
         welcomeExitTicks = 0;

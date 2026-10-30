@@ -21,6 +21,10 @@ public class SREPayloadRegister {
 
     public static void registerPayloadTypes() {
         SceneAssetNetwork.registerPayloadTypes();
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.settlement.SettlementPayload.ID,
+                io.wifi.starrailexpress.settlement.SettlementPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.settlement.SettlementRequest.ID,
+                io.wifi.starrailexpress.settlement.SettlementRequest.CODEC);
         // 表情系统 / Emote system
         PayloadTypeRegistry.playC2S().register(
                 io.wifi.starrailexpress.emote.EmotePlayC2SPayload.ID,

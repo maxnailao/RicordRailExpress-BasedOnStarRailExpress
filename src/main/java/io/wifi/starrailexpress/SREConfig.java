@@ -72,6 +72,12 @@ public class SREConfig implements ConfigData {
     // 时长（tick）。实际结局还会再多 1.5 秒。
     public int mirrorReunionEndEggTime = 5 * 20;
 
+    // The stage rebuilds a 33 x 31 x 15 area around this floor center.
+    public boolean enableSettlementStage = true;
+    public int settlementStageX = -100000;
+    public int settlementStageY = 0;
+    public int settlementStageZ = 0;
+
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")

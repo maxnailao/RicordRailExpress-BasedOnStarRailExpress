@@ -34,7 +34,16 @@ public class HeliumBuzzClientReceiver {
      * Register the client-side audio processing event.
      */
     public static void register(EventRegistration r) {
+        r.registerEvent(ClientReceiveSoundEvent.EntitySound.class, HeliumBuzzClientReceiver::muteSettlement);
+        r.registerEvent(ClientReceiveSoundEvent.LocationalSound.class, HeliumBuzzClientReceiver::muteSettlement);
+        r.registerEvent(ClientReceiveSoundEvent.StaticSound.class, HeliumBuzzClientReceiver::muteSettlement);
         r.registerEvent(ClientReceiveSoundEvent.EntitySound.class, HeliumBuzzClientReceiver::onReceiveEntity);
+    }
+
+    private static void muteSettlement(ClientReceiveSoundEvent event) {
+        if (io.wifi.starrailexpress.settlement.client.SettlementClient.isActive()) {
+            event.cancel();
+        }
     }
 
     private static void onReceiveEntity(ClientReceiveSoundEvent.EntitySound event) {

@@ -249,6 +249,7 @@ public class SREClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        io.wifi.starrailexpress.settlement.client.SettlementClient.register();
         SceneAssetClient.initialize();
         SceneAssetNetwork.registerClientReceivers();
         ClientScheduler.init();

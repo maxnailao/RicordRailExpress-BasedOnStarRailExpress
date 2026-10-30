@@ -436,6 +436,11 @@ public class GameUtils {
         if (SREGameWorldComponent.KEY.get(world).isRunning()) {
             return;
         }
+        if (io.wifi.starrailexpress.settlement.SettlementManager.hasViewers()
+                && (forcedReadyPlayers == null || forcedReadyPlayers.isEmpty())) {
+            setForcedReadyPlayers(getStartingPlayers(world).stream().map(ServerPlayer::getUUID).toList());
+        }
+        io.wifi.starrailexpress.settlement.SettlementManager.stopAll(world.getServer());
         isStartingGame = true;
         // 狼人杀模式：加载地图配置但跳过区域重置
         // 玩家收集使用默认流程：准备区域内且参与游戏的玩家入局，其余玩家旁观
@@ -598,6 +603,7 @@ public class GameUtils {
     }
 
     public static void initializeGame(ServerLevel serverWorld) {
+        io.wifi.starrailexpress.settlement.SettlementManager.stopAll(serverWorld.getServer());
         OnGameInitialized.EVENT.invoker().onGameInitialized(serverWorld);
         isGameStarted = false;
         var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
@@ -1090,7 +1096,9 @@ public class GameUtils {
         ParticipationComponent participation = ParticipationComponent.KEY.get(serverWorld);
         return serverWorld.getServer().getPlayerList().getPlayers().stream()
                 .filter(participation::isParticipating)
-                .filter(serverPlayerEntity -> areas.getReadyArea().contains(serverPlayerEntity.position())).toList();
+                .filter(player -> participation.isSettlementViewer(player.getUUID())
+                        || (player.serverLevel() == serverWorld && areas.getReadyArea().contains(player.position())))
+                .toList();
     }
 
     public static ArrayList<Predicate<Entry<Player, String>>> CustomWinnersPredicates = new ArrayList<>();
@@ -1132,8 +1140,16 @@ public class GameUtils {
         isGameStarted = false;
 
         gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
+        io.wifi.starrailexpress.settlement.SettlementSnapshot settlement = null;
+        try {
+            settlement = io.wifi.starrailexpress.settlement.SettlementManager.capture(world, roundEnd, gameComponent);
+        } catch (RuntimeException exception) {
+            SRE.LOGGER.error("Unable to capture settlement stage", exception);
+        }
         // --- 音乐盒：播放胜利方击杀最多玩家的凯旋音乐 ---
-        playVictoryMusicBox(world, roundEnd, gameComponent);
+        if (settlement == null) {
+            playVictoryMusicBox(world, roundEnd, gameComponent);
+        }
         // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
         // roundEnd.sync();
         // Show replay to all players
@@ -1202,20 +1218,159 @@ public class GameUtils {
         worldModifierComponent.modifiers.clear();
         worldModifierComponent.sync();
         serverCacheKillState.clear();
+        io.wifi.starrailexpress.settlement.SettlementManager.begin(world, settlement);
+    }
+
+    public static boolean isPlayerWinning(ServerLevel world, ServerPlayer player,
+            SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent, boolean onlyOneWinner) {
+        SRERole playerRole = gameComponent.getRole(player);
+        if (playerRole == null || playerRole == TMMRoles.DISCOVERY_CIVILIAN) {
+            return false;
+        }
+        WinStatus winStatus = roundEnd.getWinStatus();
+        boolean isLoversWin = winStatus == WinStatus.LOVERS;
+        boolean isWinner = false;
+        if (onlyOneWinner) {
+            if (player.getUUID().equals(gameComponent.getLooseEndWinner())) {
+                isWinner = true;
+            } else {
+                isWinner = false;
+            }
+        } else {
+            switch (winStatus) {
+                case CUSTOM:
+                case CUSTOM_COMPONENT:
+                    String roleIdentifier = playerRole.identifier().getPath();
+                    if (roundEnd.CustomWinnerID != null && roundEnd.CustomWinnerID.equals(roleIdentifier)) {
+                        isWinner = true;
+                    }
+                    // 保留原有的 CustomWinnersPredicates 作为备用
+                    else if (CustomWinnersPredicates.stream().anyMatch((pred) -> {
+                        return pred.test(Map.entry(player, roundEnd.CustomWinnerID));
+                    })) {
+                        isWinner = true;
+                    }
+                    break;
+                case GAMBLER:
+                    if (playerRole.identifier().getPath().equals("gambler")) {
+                        isWinner = true;
+                    }
+                    break;
+                case KILLERS:
+                    if (SREGameWorldComponent.isKillerTeamRoleStatic(playerRole) && !playerRole.isInnocent()) {
+                        // String roleidentifier = playerRole.identifier().getPath();
+                        // 魔术师不算胜利
+                        isWinner = true;
+                    }
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
+                    }
+                    // 坠木跟随胜利：存活即跟随
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
+                        if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                            isWinner = true;
+                        }
+                    }
+                    // 皮革嘎的跟随胜利：坠木已死即跟随
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
+                        var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (pigeComp != null && pigeComp.isZhuimuDead()) {
+                            isWinner = true;
+                        }
+                    }
+                    break;
+                case LOOSE_END:
+                    if (winStatus == WinStatus.LOOSE_END) {
+                        if (SRE.GAME.identifier.equals(SREGameModes.LOOSE_ENDS.identifier)) {
+                            if (player.getUUID().equals(gameComponent.getLooseEndWinner())) {
+                                isWinner = true;
+                            }
+                        } else {
+                            if (ModRoles.isLooseEndVariant(playerRole)) {
+                                isWinner = true;
+                            }
+                        }
+                    }
+                    break;
+                case NIAN_SHOU:
+                    if (playerRole.identifier().getPath().equals("nianshou")) {
+                        isWinner = true;
+                    }
+                    break;
+                case LOVERS:
+                    if (roundEnd.CustomWinnerPlayers != null
+                            && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
+                        isWinner = true;
+                    }
+                    break;
+                case TIME:
+                case PASSENGERS:
+                    // 排除游客职业
+                    if (playerRole.isInnocent())
+                        isWinner = true;
+                    else {
+                        String roleidentifier = playerRole.identifier().getPath();
+                        if ("amnesiac".equals(roleidentifier) || "initiate".equals(roleidentifier)) {
+                            isWinner = true;
+                        }
+                        // 魔术师不需要判断，因为他是innocent
+                    }
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
+                    }
+                    // 坠木跟随胜利：存活即跟随
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
+                        if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                            isWinner = true;
+                        }
+                    }
+                    // 皮革嘎的跟随胜利：坠木已死即跟随
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
+                        var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (pigeComp != null && pigeComp.isZhuimuDead()) {
+                            isWinner = true;
+                        }
+                    }
+                    break;
+                case RECORDER:
+                    if (playerRole.identifier().getPath().equals("recorder")) {
+                        isWinner = true;
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+            // 修复4: 恋人获胜时单独统计恋人胜利
+            if (isLoversWin && roundEnd.CustomWinnerPlayers != null
+                    && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
+                isWinner = true;
+            }
+            var playerWinOverride = AllowPlayerWin.EVENT.invoker().allowPlayerWin(
+                    world, player, playerRole, winStatus, roundEnd, gameComponent);
+            if (playerWinOverride == TrueFalseResult.TRUE) {
+                isWinner = true;
+            } else if (playerWinOverride == TrueFalseResult.FALSE) {
+                isWinner = false;
+            }
+            if (playerRole instanceof CustomWinnerRole cwr) {
+                isWinner = cwr.didPlayerWin(player, isWinner, winStatus);
+            }
+        }
+
+        return isWinner;
     }
 
     public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd,
             SREGameWorldComponent gameComponent, boolean onlyOneWinner) {
-        // --- 新增统计数据更新逻辑 (胜利/失败) ---
-        GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
-        // SREWorldBlackoutComponent.KEY.get(world).reset();
-        // 修复4: 检查是否为恋人胜利
-        boolean isLoversWin = winStatus == WinStatus.LOVERS;
+        boolean isLoversWin = roundEnd.getWinStatus() == WinStatus.LOVERS;
         {
-            UUID looseEndWinner = null;
-            if (onlyOneWinner) {
-                looseEndWinner = gameComponent.getLooseEndWinner();
-            }
             for (ServerPlayer player : world.players()) {
                 PlayerStats stats = PlayerStatsManager.get(player);
                 SRERole playerRole = gameComponent.getRole(player);
@@ -1224,140 +1379,7 @@ public class GameUtils {
                 if (playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier())) {
                     continue;
                 }
-                boolean isWinner = false;
-                if (onlyOneWinner) {
-                    if (looseEndWinner == player.getUUID()) {
-                        isWinner = true;
-                    } else {
-                        isWinner = false;
-                    }
-                } else {
-                    switch (winStatus) {
-                        case CUSTOM:
-                        case CUSTOM_COMPONENT:
-                            String roleIdentifier = playerRole.identifier().getPath();
-                            if (roundEnd.CustomWinnerID != null && roundEnd.CustomWinnerID.equals(roleIdentifier)) {
-                                isWinner = true;
-                            }
-                            // 保留原有的 CustomWinnersPredicates 作为备用
-                            else if (CustomWinnersPredicates.stream().anyMatch((pred) -> {
-                                return pred.test(Map.entry(player, roundEnd.CustomWinnerID));
-                            })) {
-                                isWinner = true;
-                            }
-                            break;
-                        case GAMBLER:
-                            if (playerRole.identifier().getPath().equals("gambler")) {
-                                isWinner = true;
-                            }
-                            break;
-                        case KILLERS:
-                            if (SREGameWorldComponent.isKillerTeamRoleStatic(playerRole) && !playerRole.isInnocent()) {
-                                // String roleidentifier = playerRole.identifier().getPath();
-                                // 魔术师不算胜利
-                                isWinner = true;
-                            }
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
-                                var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
-                                if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
-                                    isWinner = true;
-                                }
-                            }
-                            // 坠木跟随胜利：存活即跟随
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
-                                if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                                    isWinner = true;
-                                }
-                            }
-                            // 皮革嘎的跟随胜利：坠木已死即跟随
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
-                                var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
-                                if (pigeComp != null && pigeComp.isZhuimuDead()) {
-                                    isWinner = true;
-                                }
-                            }
-                            break;
-                        case LOOSE_END:
-                            if (winStatus == WinStatus.LOOSE_END) {
-                                if (SRE.GAME.identifier.equals(SREGameModes.LOOSE_ENDS.identifier)) {
-                                    if (player.getUUID().equals(gameComponent.getLooseEndWinner())) {
-                                        isWinner = true;
-                                    }
-                                } else {
-                                    if (ModRoles.isLooseEndVariant(playerRole)) {
-                                        isWinner = true;
-                                    }
-                                }
-                            }
-                            break;
-                        case NIAN_SHOU:
-                            if (playerRole.identifier().getPath().equals("nianshou")) {
-                                isWinner = true;
-                            }
-                            break;
-                        case LOVERS:
-                            if (roundEnd.CustomWinnerPlayers != null
-                                    && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
-                                isWinner = true;
-                            }
-                            break;
-                        case TIME:
-                        case PASSENGERS:
-                            // 排除游客职业
-                            if (playerRole.isInnocent())
-                                isWinner = true;
-                            else {
-                                String roleidentifier = playerRole.identifier().getPath();
-                                if ("amnesiac".equals(roleidentifier) || "initiate".equals(roleidentifier)) {
-                                    isWinner = true;
-                                }
-                                // 魔术师不需要判断，因为他是innocent
-                            }
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
-                                var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
-                                if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
-                                    isWinner = true;
-                                }
-                            }
-                            // 坠木跟随胜利：存活即跟随
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.ZHUIMU_ID)) {
-                                if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                                    isWinner = true;
-                                }
-                            }
-                            // 皮革嘎的跟随胜利：坠木已死即跟随
-                            if (!isWinner && playerRole.identifier().equals(ModRoles.PIGE_ID)) {
-                                var pigeComp = org.agmas.noellesroles.game.roles.neutral.pigegade.PigegadePlayerComponent.KEY.maybeGet(player).orElse(null);
-                                if (pigeComp != null && pigeComp.isZhuimuDead()) {
-                                    isWinner = true;
-                                }
-                            }
-                            break;
-                        case RECORDER:
-                            if (playerRole.identifier().getPath().equals("recorder")) {
-                                isWinner = true;
-                            }
-                            break;
-                        default:
-                            break;
-
-                    }
-                    // 修复4: 恋人获胜时单独统计恋人胜利
-                    if (isLoversWin && roundEnd.CustomWinnerPlayers != null
-                            && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
-                        isWinner = true;
-                    }
-                    var playerWinOverride = AllowPlayerWin.EVENT.invoker().allowPlayerWin(
-                            world, player, playerRole, winStatus, roundEnd, gameComponent);
-                    if (playerWinOverride == TrueFalseResult.TRUE) {
-                        isWinner = true;
-                    } else if (playerWinOverride == TrueFalseResult.FALSE) {
-                        isWinner = false;
-                    }
-                    if (playerRole instanceof CustomWinnerRole cwr) {
-                        isWinner = cwr.didPlayerWin(player, isWinner, winStatus);
-                    }
-                }
+                boolean isWinner = isPlayerWinning(world, player, roundEnd, gameComponent, onlyOneWinner);
 
                 if (isWinner) {
                     roundEnd.setPlayerWin(player.getUUID(), isWinner);
@@ -1790,10 +1812,12 @@ public class GameUtils {
         List<? extends Player> players = world.players();
         AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
         ParticipationComponent participation = ParticipationComponent.KEY.get(world);
-        return Math.toIntExact(players.stream()
-                .filter(participation::isParticipating)
+        Set<UUID> ready = new HashSet<>(participation.getSettlementViewers());
+        players.stream().filter(participation::isParticipating)
                 .filter(p -> areas.getReadyArea().contains(p.position()))
-                .count());
+                .forEach(p -> ready.add(p.getUUID()));
+        ready.removeIf(id -> !participation.isParticipating(id));
+        return ready.size();
     }
 
     public static int getParticipatingPlayerCount(Level world) {

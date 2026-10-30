@@ -29,6 +29,7 @@ public class SREReceiverRegister {
 
     public static void registerGlobalReceivers() {
         SceneAssetNetwork.registerServerReceivers();
+        io.wifi.starrailexpress.settlement.SettlementManager.register();
 
         // 表情系统服务端接收器与 tick 检测
         io.wifi.starrailexpress.emote.EmoteServerManager.register();
