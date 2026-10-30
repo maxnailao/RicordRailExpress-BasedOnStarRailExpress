@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  *
  * <p>不新增网络包：所有操作组装为已有服务端命令，权限由服务端校验（均要求权限 2）：
  * <ul>
- * <li>货币：{@code tmm:money add|set <数量> <目标>}（MoneyCommand）</li>
+ * <li>货币：{@code giveCoin <目标> add|set <数量>}（GiveCoinCommand，操作 CS2 仓库/每日商店货币）</li>
  * <li>称号：{@code sre:title grant <玩家> #RRGGBB <pre|suf> <文本>}（TitleCommand）</li>
  * <li>卡牌：{@code sre:backpack grant <类型> <数量> <目标>}（BackpackGrantCommand）</li>
  * </ul>
@@ -199,22 +199,22 @@ public class AdminBackendScreen extends Screen {
         y += 32;
 
         // ── 发放/扣除货币 ──
-        labels.add(new StaticLabel(cx, y, Component.literal("发放货币").withStyle(ChatFormatting.BOLD), GOLD));
+        labels.add(new StaticLabel(cx, y, Component.literal("发放仓库货币（giveCoin）").withStyle(ChatFormatting.BOLD), GOLD));
         moneyBox = makeBox(cx, y + 12, 90, keepMoney, "数量", 8, s -> s.matches("\\d{0,8}"));
         buttons.add(new UiButton(cx + 96, y + 12, 80, 16,
                 () -> Component.literal("发放货币"),
-                () -> performAction("tmm:money add " + parseInt(moneyBox.getValue(), 100, 0, 10_000_000)
-                        + " " + targetArg(), "已发放", true),
+                () -> performAction("giveCoin " + targetArg() + " add "
+                        + parseInt(moneyBox.getValue(), 100, 0, 10_000_000), "已发放", true),
                 this::moneyValid, GREEN));
         buttons.add(new UiButton(cx + 182, y + 12, 80, 16,
                 () -> Component.literal("设定货币"),
-                () -> performAction("tmm:money set " + parseInt(moneyBox.getValue(), 100, 0, 10_000_000)
-                        + " " + targetArg(), "已设定", true),
+                () -> performAction("giveCoin " + targetArg() + " set "
+                        + parseInt(moneyBox.getValue(), 100, 0, 10_000_000), "已设定", true),
                 this::moneyValid, RED));
         buttons.add(new UiButton(cx + 268, y + 12, 80, 16,
                 () -> Component.literal("扣除货币"),
-                () -> performAction("tmm:money add -" + parseInt(moneyBox.getValue(), 100, 0, 10_000_000)
-                        + " " + targetArg(), "已扣除", true),
+                () -> performAction("giveCoin " + targetArg() + " add -"
+                        + parseInt(moneyBox.getValue(), 100, 0, 10_000_000), "已扣除", true),
                 this::moneyValid, GOLD));
         y += 34;
 
@@ -309,6 +309,10 @@ public class AdminBackendScreen extends Screen {
                 () -> Component.literal("发布公告"),
                 this::publishAnnouncement,
                 this::announceValid, GREEN));
+        buttons.add(new UiButton(cx + 308, y + 12, 96, 16,
+                () -> Component.literal("活动配置"),
+                () -> this.minecraft.setScreen(new EventConfigScreen(this)),
+                () -> true, BLUE));
         y += 30;
         announceContentBox = makeBox(cx, y, cw, keepAnnContent, "公告内容（Enter 换行；发布后所有在线玩家屏幕顶部提示标题）", 256, null);
         y += 22;

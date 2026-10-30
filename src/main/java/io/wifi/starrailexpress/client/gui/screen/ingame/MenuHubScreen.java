@@ -132,6 +132,8 @@ public final class MenuHubScreen extends Screen {
                 () -> minecraft.setScreen(new ShopScreen(this)));
         add(result, "announcements", "公告", MenuAction.FEEDBACK, true,
                 () -> minecraft.setScreen(new AnnouncementScreen(this)));
+        add(result, "events", "活动", MenuAction.LINKS, true,
+                () -> minecraft.setScreen(new EventScreen()));
         add(result, "role_cards", "职业卡", MenuAction.OPTIONS, true,
                 () -> minecraft.setScreen(new RoleCardScreen(this)));
         add(result, "warehouse", "仓库", MenuAction.WORLD_OPTIONS, true,

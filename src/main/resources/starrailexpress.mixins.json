@@ -94,6 +94,7 @@
     "client.items.ClientPlayerEntityMixin",
     "client.items.HeldItemFeatureRendererMixin",
     "client.items.HeldItemRendererMixin",
+    "client.items.ItemRendererRenderStackMixin",
     "client.items.XingguangArmPoseMixin",
     "client.items.XingguangHandRenderMixin",
     "client.items.XingguangItemSpinMixin",

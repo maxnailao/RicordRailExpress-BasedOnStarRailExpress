@@ -121,6 +121,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         io.wifi.starrailexpress.announcement.AnnouncementManager.getInstance()
                 .init(java.nio.file.Paths.get("config"));
 
+        // 活动系统初始化
+        io.wifi.starrailexpress.event.EventManager.getInstance()
+                .init(java.nio.file.Paths.get("config"));
+
     }
 
     private void initCCAAuto() {

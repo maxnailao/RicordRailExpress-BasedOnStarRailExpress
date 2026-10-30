@@ -122,6 +122,7 @@ public class SREReceiverRegister {
 
         // 公告系统 C2S 接收器（列表请求）
         io.wifi.starrailexpress.announcement.AnnouncementServerNetwork.register();
+        io.wifi.starrailexpress.event.EventServerNetwork.register();
 
         // 称号系统 C2S 接收器（装备 / 卸下）
         io.wifi.starrailexpress.content.title.TitleNetwork.registerReceivers();

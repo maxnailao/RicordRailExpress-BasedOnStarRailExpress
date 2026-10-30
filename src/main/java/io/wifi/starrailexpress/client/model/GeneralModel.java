@@ -37,6 +37,21 @@ public class GeneralModel implements UnbakedModel, BakedModel {
     private BakedModel defaultBakedModel = null;
     private String itemType;
 
+    /**
+     * 渲染管线当前正在渲染的 stack（由 ItemRendererRenderStackMixin 在 ItemRenderer.render 前后写入/清除）。
+     * getTransforms() 没有 stack 入参，靠它实现"谁的武器用谁自己皮肤的变换"，
+     * 消除"本地玩家皮肤的 third_person 被套到所有人身上"的跨玩家污染。
+     */
+    private static final ThreadLocal<ItemStack> CURRENT_RENDER_STACK = new ThreadLocal<>();
+
+    public static void setCurrentRenderStack(@Nullable ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            CURRENT_RENDER_STACK.remove();
+        } else {
+            CURRENT_RENDER_STACK.set(stack);
+        }
+    }
+
     public GeneralModel(String itemType, ModelResourceLocation defaulLocation, UnbakedModel defaultUnbakedModel) {
         this.defaultUnbakedModel = defaultUnbakedModel;
         this.defaultModelLocation = defaulLocation;
@@ -300,28 +315,27 @@ public class GeneralModel implements UnbakedModel, BakedModel {
     /**
      * 1.21.1 渲染管线只读取根模型的 getTransforms()，皮肤模型 JSON 里的 display 段会被忽略，
      * 导致 3D 皮肤（如星光刀）手持姿势永远是默认模型的。这里把 IN_HAND 变体的手持变换合并进来。
-     * 关键判据：只有真正的 3D 皮肤模型(带 elements、isGui3d=true)才套用此修正；
-     * 2D 平铺皮肤(item/generated，isGui3d=false，含 2D 刀皮/手枪皮等)一律返回 null，
-     * 改用物品自身默认模型变换——否则会把给平铺贴图用的 display 角度套到 3D 几何上，
-     * 使武器绕 Y 轴侧对镜头、被压成竖直薄片(手枪/2D 刀皮显示错乱的根因)。
+     *
+     * 关键：变换必须来自"当前正在被渲染的那个 stack 自身的皮肤"（由 ItemRendererRenderStackMixin
+     * 写入 CURRENT_RENDER_STACK），而不是本地玩家——否则本地玩家皮肤的 third_person 会套到所有人身上，
+     * 使他人手上的 3D 武器被转到侧对镜头、压成“2D 贴图”状（跨玩家污染）。
+     * 只有真正的 3D 皮肤模型(isGui3d=true)才套用皮肤变换；2D 平铺皮肤返回 null 用物品默认变换。
      */
     private @Nullable ItemTransforms getSkinHandTransforms() {
-        Player player = Minecraft.getInstance().player;
-        if (player == null) {
+        ItemStack stack = CURRENT_RENDER_STACK.get();
+        if (stack == null || stack.isEmpty()) {
             return null;
         }
-        ItemStack main = player.getMainHandItem();
-        String skinName;
-        if (main.getItem() instanceof SkinableItem skinable && itemType.equals(skinable.getItemSkinType())) {
-            // 主手正持握同类型武器：取该 stack 的显式组件（手持 stack 已由服务端打上装备皮肤）
-            skinName = main.get(SREDataComponentTypes.SKIN);
-        } else {
-            // 主手未持该类武器：与星光完全同款——GUI/GROUND 变换按"已装备皮肤"解析，
-            // 保证 3D 皮肤刀在"拿/不拿"切换时变换不跳变、3D 层不被隐藏。
-            // 其他 2D 刀不会被误 3D 化，是因为几何体由 emitItemQuads 按各 stack 自身组件解析
-            //（背包里 2D 刀 stack 有自身组件或无组件→默认 2D 几何），本方法只决定 GUI 变换。
-            skinName = io.wifi.starrailexpress.data.PlayerEconomyManager
-                    .getEquippedSkinForItemType(player, itemType);
+        if (!(stack.getItem() instanceof SkinableItem skinable) || !itemType.equals(skinable.getItemSkinType())) {
+            return null;
+        }
+        // 皮肤名严格来自该 stack 自身组件；equipped 兜底仅限本地玩家自己手持（与 emitItemQuads 几何规则一致）
+        String skinName = stack.get(SREDataComponentTypes.SKIN);
+        if (skinName == null) {
+            Player viewer = Minecraft.getInstance().player;
+            if (viewer != null && (stack == viewer.getMainHandItem() || stack == viewer.getOffhandItem())) {
+                skinName = getSkinFromPlayerComponent(stack);
+            }
         }
         if (skinName == null || "default".equals(skinName)) {
             return null;
@@ -352,6 +366,8 @@ public class GeneralModel implements UnbakedModel, BakedModel {
         ItemTransforms guiSrc = defaultVariant != null ? defaultVariant.getTransforms()
                 : ItemTransforms.NO_TRANSFORMS;
         ItemTransforms dm = getDefaultModel().getTransforms();
+        // skinName 现已锁定为“当前 stack 自己的皮肤”，几何与变换同源：
+        // 第三人称可安全采用该皮肤自身的 third_person——他人用它自己皮肤的变换，本地用自己皮肤的变换，互不污染。
         return new ItemTransforms(
                 ht.getTransform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND),
                 ht.getTransform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND),

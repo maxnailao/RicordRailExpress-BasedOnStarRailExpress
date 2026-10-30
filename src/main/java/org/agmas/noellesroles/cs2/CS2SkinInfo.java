@@ -232,6 +232,13 @@ public final class CS2SkinInfo {
         registerHat("liyu", "liyu");
     }
 
+    /** 全部已注册皮肤 id（"type/name"），供活动配置选择器循环使用 */
+    public static java.util.List<String> allSkinIds() {
+        java.util.List<String> ids = new java.util.ArrayList<>(NAMES.keySet());
+        java.util.Collections.sort(ids);
+        return ids;
+    }
+
     /** 批量注册玩偶帽皮肤的中文名与介绍（skinId 格式：hat/hat_{base}） */
     private static void registerHat(String base, String displayName) {
         register("hat/hat_" + base, displayName + " 玩偶帽", "把" + displayName + "玩偶戴在头上");

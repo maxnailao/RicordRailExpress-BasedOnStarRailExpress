@@ -1220,6 +1220,7 @@ public class SREClient implements ClientModInitializer {
         io.wifi.starrailexpress.client.emote.EmoteClientHandler.register();
         // 公告系统：S2C 接收器 + 屏幕顶部新公告横幅
         io.wifi.starrailexpress.announcement.client.AnnouncementClient.register();
+        io.wifi.starrailexpress.event.client.EventClient.register();
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();

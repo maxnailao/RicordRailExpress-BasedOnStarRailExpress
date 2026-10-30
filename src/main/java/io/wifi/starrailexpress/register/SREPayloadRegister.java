@@ -429,5 +429,34 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.announcement.network.AnnouncementNewS2CPayload.ID,
                 io.wifi.starrailexpress.announcement.network.AnnouncementNewS2CPayload.CODEC);
+
+        // 活动系统网络包
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventRequestC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventImageRequestC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventImageRequestC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventAdminAddC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventAdminAddC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventAdminRemoveC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventAdminRemoveC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.event.network.EventSyncS2CPayload.ID,
+                io.wifi.starrailexpress.event.network.EventSyncS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.event.network.EventImageS2CPayload.ID,
+                io.wifi.starrailexpress.event.network.EventImageS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventAdminFeatureC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventAdminFeatureC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.event.network.EventProgressS2CPayload.ID,
+                io.wifi.starrailexpress.event.network.EventProgressS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.event.network.EventClaimC2SPayload.ID,
+                io.wifi.starrailexpress.event.network.EventClaimC2SPayload.CODEC);
     }
 }
