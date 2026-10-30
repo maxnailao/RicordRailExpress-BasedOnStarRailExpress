@@ -555,14 +555,14 @@ public class SREMurderGameMode extends GameMode {
         for (SRERole role : allRoles) {
             roleInstantList.add(new RoleInstance(UUID.randomUUID(), role));
         }
-        // 不展开，仅在父级展开
-        List<RoleInstance> newRoleInstantList = RoleAssignmentManager.removeOpposingJobs(roleInstantList, killerPool,
-                neutralsPool,
-                vigilantePool, civilianPool, false, maxDepth);
-        List<RoleInstance> resultRoleInstances = newRoleInstantList;
+        List<RoleInstance> resultRoleInstances;
         if (haveOccupationRoles) {
-            resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstantList,
+            // 互斥与绑定在同一次选择中判定，预先删除单个职业会拆散绑定组合。
+            resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(roleInstantList,
                     forcedRoles == null ? List.of() : forcedRoles, playerSize);
+        } else {
+            resultRoleInstances = RoleAssignmentManager.removeOpposingJobs(roleInstantList, killerPool,
+                    neutralsPool, vigilantePool, civilianPool, false, maxDepth);
         }
 
         int needCivilian = (playerSize - forcedRoleSize) - resultRoleInstances.size();
@@ -581,10 +581,27 @@ public class SREMurderGameMode extends GameMode {
         Map<UUID, SRERole> forcedRolesMap = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
         forcedRolesMap.entrySet().removeIf(entry -> entry.getValue() == null
                 || players.stream().noneMatch(player -> player.getUUID().equals(entry.getKey())));
+        List<SRERole> reservedRoles = new ArrayList<>();
+        for (ServerPlayer player : players) {
+            SRERole role = forcedRolesMap.get(player.getUUID());
+            if (role == null) {
+                continue;
+            }
+            List<SRERole> group = RoleAssignmentManager.getCompatibleCompanionGroup(role, reservedRoles,
+                    forcedRolesMap.values());
+            if (group.isEmpty()) {
+                forcedRolesMap.remove(player.getUUID());
+                Harpymodloader.LOGGER.warn("[SelfSelect] Linked group for {} conflicts with reserved roles",
+                        role.identifier());
+            } else {
+                reservedRoles.addAll(group);
+            }
+        }
         List<SRERole> forcedRoles = new ArrayList<>();
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
+        Set<ResourceLocation> reservedCompanions = new HashSet<>();
 
         // 处理强制分配的角色，减少对应角色类型的数量需求
         //
@@ -615,13 +632,10 @@ public class SREMurderGameMode extends GameMode {
                         neutralsCount -= occupied;
                     }
 
-                    // ★ 自选的若是「绑定对」的一员，另一半的阵营名额也要一起预留。
-                    //   绑定双向（布袋鬼←→诡客、重刑犯←→狱警…），自选任意一方另一方都会补进来；
-                    //   只扣自选方的名额，另一半的阵营就会多抽一个普通角色
-                    //   （实测：自选诡客 → 多刷一个巫师、却缺布袋鬼）。
-                    for (SRERole partner : org.agmas.harpymodloader.Harpymodloader
-                            .getOccupationRoles(role)) {
-                        if (partner == null || partner == role || forcedRoles.contains(partner)) {
+                    // 只为实际选中的绑定分支预留名额，已自选和共享的同伴不重复扣除。
+                    for (SRERole partner : RoleAssignmentManager.getCompatibleCompanionGroup(role, reservedRoles)) {
+                        if (partner == role || forcedRolesMap.containsValue(partner)
+                                || !reservedCompanions.add(partner.identifier())) {
                             continue;
                         }
                         int pOcc = Math.max(1, partner.getOccupiedRoleCount());
@@ -798,7 +812,7 @@ public class SREMurderGameMode extends GameMode {
                 if (count <= cap) {
                     continue;
                 }
-                if (Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(e.getKey().getUUID())) {
+                if (forcedRolesMap.containsKey(e.getKey().getUUID())) {
                     continue; // 自选的保留（玩家花了卡）
                 }
                 // 注意：这里**不做成对保护**。
@@ -858,7 +872,7 @@ public class SREMurderGameMode extends GameMode {
                     if (r == null || r == TMMRoles.CIVILIAN) {
                         continue;
                     }
-                    if (Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(e.getKey().getUUID())) {
+                    if (forcedRolesMap.containsKey(e.getKey().getUUID())) {
                         continue; // 自选的保留
                     }
                     // 绑定职业也保留：它是主职业的硬依赖（布袋鬼→诡客、悍匪→钳工、

@@ -32,6 +32,62 @@ public class RoleAssignmentManager {
         return Harpymodloader.hasOccupationRole(role);
     }
 
+    private static boolean areOpposing(SRERole first, SRERole second) {
+        return first.opposingRoles.stream().anyMatch(role -> role.identifier().equals(second.identifier()))
+                || second.opposingRoles.stream().anyMatch(role -> role.identifier().equals(first.identifier()));
+    }
+
+    /** 共享配角指向互斥的多个主职业时，它们是备选分支；其它绑定仍须完整保留。 */
+    public static List<SRERole> getCompatibleCompanionGroup(SRERole root, Collection<SRERole> reservedRoles) {
+        return getCompatibleCompanionGroup(root, reservedRoles, reservedRoles);
+    }
+
+    public static List<SRERole> getCompatibleCompanionGroup(SRERole root, Collection<SRERole> reservedRoles,
+            Collection<SRERole> preferredRoles) {
+        if (reservedRoles.stream().anyMatch(role -> areOpposing(root, role))) {
+            return List.of();
+        }
+        Map<ResourceLocation, SRERole> group = new LinkedHashMap<>();
+        group.put(root.identifier(), root);
+        List<SRERole> pending = new ArrayList<>();
+        pending.add(root);
+        for (int i = 0; i < pending.size(); i++) {
+            List<SRERole> companions = new ArrayList<>(getCompanionRoles(pending.get(i)));
+            companions.removeIf(Objects::isNull);
+            // 已自选或已进入组合的分支优先，避免医生反向绑定改变已确定的主职业。
+            companions.sort(Comparator.comparingInt(role -> group.containsKey(role.identifier())
+                    || preferredRoles.stream().anyMatch(preferred -> preferred.identifier().equals(role.identifier()))
+                            ? 0 : 1));
+            for (SRERole companion : companions) {
+                if (group.containsKey(companion.identifier())) {
+                    continue;
+                }
+                List<SRERole> conflicts = new ArrayList<>();
+                for (SRERole accepted : group.values()) {
+                    if (areOpposing(companion, accepted)) {
+                        conflicts.add(accepted);
+                    }
+                }
+                for (SRERole reserved : reservedRoles) {
+                    if (areOpposing(companion, reserved)) {
+                        conflicts.add(reserved);
+                    }
+                }
+                if (!conflicts.isEmpty()) {
+                    boolean alternative = conflicts.stream().allMatch(conflict -> companions.stream()
+                            .anyMatch(other -> other.identifier().equals(conflict.identifier())));
+                    if (alternative) {
+                        continue;
+                    }
+                    return List.of();
+                }
+                group.put(companion.identifier(), companion);
+                pending.add(companion);
+            }
+        }
+        return new ArrayList<>(group.values());
+    }
+
     /** 展开完整绑定组合，已有的同伴不重复补入。 */
     public static List<RoleInstance> expandWithCompanionRoles(
             List<RoleInstance> roles) {
@@ -70,24 +126,16 @@ public class RoleAssignmentManager {
                 selectedCounts.merge(seed.role().identifier(), 1, Integer::sum);
             }
         }
-        // 先接纳完整组合，再填普通职业；名额不足时整组放弃，避免随机分配截断配对。
+        // 先接纳完整组合，再填普通职业；互斥或名额不足时整组放弃，避免拆散绑定。
         for (RoleInstance seed : seeds) {
             SRERole role = seed.role();
             if (role == null || (!assignedIds.contains(seed.uuid()) && !hasCompanionRole(role))) {
                 continue;
             }
-            Map<ResourceLocation, SRERole> group = new LinkedHashMap<>();
-            List<SRERole> pending = new ArrayList<>();
-            pending.add(role);
-            for (int i = 0; i < pending.size(); i++) {
-                SRERole member = pending.get(i);
-                if (member == null || group.putIfAbsent(member.identifier(), member) != null) {
-                    continue;
-                }
-                pending.addAll(getCompanionRoles(member));
-            }
+            List<SRERole> group = getCompatibleCompanionGroup(role,
+                    selected.stream().map(RoleInstance::role).toList());
             List<RoleInstance> additions = new ArrayList<>();
-            for (SRERole member : group.values()) {
+            for (SRERole member : group) {
                 List<RoleInstance> existing = available.getOrDefault(member.identifier(), List.of());
                 int required = Math.max(Harpymodloader.isSelfPaired(member) ? 2 : 1, existing.size());
                 for (int i = selectedCounts.getOrDefault(member.identifier(), 0); i < required; i++) {
@@ -96,7 +144,8 @@ public class RoleAssignmentManager {
                 }
             }
             if (selected.size() + additions.size() > maxRoleCount) {
-                Harpymodloader.LOGGER.warn("[RolePool] No room for complete linked role group {}", group.keySet());
+                Harpymodloader.LOGGER.warn("[RolePool] No room for complete linked role group {}",
+                        group.stream().map(SRERole::identifier).toList());
                 continue;
             }
             for (RoleInstance instance : additions) {
@@ -109,6 +158,9 @@ public class RoleAssignmentManager {
         for (RoleInstance instance : seeds) {
             SRERole role = instance.role();
             if (selected.size() >= targetSize || role == null || hasCompanionRole(role)) {
+                continue;
+            }
+            if (selected.stream().anyMatch(accepted -> areOpposing(role, accepted.role()))) {
                 continue;
             }
             List<RoleInstance> existing = available.get(role.identifier());
@@ -190,6 +242,8 @@ public class RoleAssignmentManager {
         all_role_instances.addAll(SREMurderGameMode.getAllRoles(killer, vigilante, neutrals + neturals_for_killer, all,
                 0, killerPool, neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, List.of(),
                 maxDepth - 1));
-        return all_role_instances;
+        // 补抽也必须与保留名单核对，不能只保证补抽的子名单内部没有互斥。
+        return removeOpposingJobs(all_role_instances, killerPool, neutralsPool, vigilantePool, civilianPool,
+                haveOccupationRoles, 0);
     }
 }
