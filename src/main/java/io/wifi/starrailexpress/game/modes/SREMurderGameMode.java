@@ -402,26 +402,9 @@ public class SREMurderGameMode extends GameMode {
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, List.of());
     }
 
-    /**
-     * 新的模块化角色分配方法
-     * 处理强制角色、计算各类型角色数量、创建角色池、分配角色以及处理关联角色
-     */
+    /** 创建阵营职业池，自选职业在绑定展开时一并计数。 */
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
             int forcedRoleSize, List<SRERole> forcedRoles) {
-        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, forcedRoles,
-                List.of());
-    }
-
-    /**
-     * 建池版本 + 自选主职业的绑定职业。
-     *
-     * <p>自选的主职业走 {@code forcedRolesMap} 直接指定给玩家、不进角色池，
-     * 所以 {@code expandWithCompanionRoles} 看不到它，绑定职业不会生成。
-     * 把 {@code selfSelectCompanions} 一起交下去，由 {@code expandWithCompanionRoles}
-     * 的 {@code tryRemoveARole} 腾位（分 4 级退让），保证绑定职业一定能挤进去且总数不变。
-     */
-    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
-            int forcedRoleSize, List<SRERole> forcedRoles, List<SRERole> selfSelectCompanions) {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
@@ -457,7 +440,7 @@ public class SREMurderGameMode extends GameMode {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, true, forcedRoles, selfSelectCompanions);
+                neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
     }
 
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
@@ -472,25 +455,7 @@ public class SREMurderGameMode extends GameMode {
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
             List<SRERole> forcedRoles) {
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles, List.of(), 10);
-    }
-
-    /**
-     * 带「自选主职业的绑定职业」的版本。
-     *
-     * <p>自选的主职业走 {@code forcedRolesMap} 直接指定给玩家、不进角色池，
-     * 所以 {@code expandWithCompanionRoles} 看不到它，绑定职业不会生成。
-     * 这里把自选带出的绑定职业一起交给 {@code expandWithCompanionRoles} ——
-     * 它自带腾位逻辑（{@code tryRemoveARole} 分 4 级退让：同阵营 → 忽略中立细分 → 只看杀手标记 → 任意），
-     * 能保证绑定职业一定挤得进去，而且总角色数不变。
-     */
-    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
-            int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
-            RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
-            List<SRERole> forcedRoles, List<SRERole> selfSelectCompanions) {
-        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles,
-                selfSelectCompanions, 10);
+                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles, 10);
     }
 
     /**
@@ -501,15 +466,6 @@ public class SREMurderGameMode extends GameMode {
             int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
             List<SRERole> forcedRoles,
-            int maxDepth) {
-        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles, List.of(), maxDepth);
-    }
-
-    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
-            int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
-            RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
-            List<SRERole> forcedRoles, List<SRERole> selfSelectCompanions,
             int maxDepth) {
         // 第一步，减少强制职业
         if (forcedRoles != null) {
@@ -605,249 +561,14 @@ public class SREMurderGameMode extends GameMode {
                 vigilantePool, civilianPool, false, maxDepth);
         List<RoleInstance> resultRoleInstances = newRoleInstantList;
         if (haveOccupationRoles) {
-            resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstantList);
-        }
-
-        // 自选主职业的绑定职业：先追加进名单，再走一次 expandWithCompanionRoles
-        // —— 它内部的 tryRemoveARole 会腾出空位（不会让总角色数变多）。
-        // 自选主职业本身不在池里，所以 expandWithCompanionRoles 看不到它，必须在这里手动触发。
-        if (selfSelectCompanions != null && !selfSelectCompanions.isEmpty()) {
-            List<RoleInstance> withSelfSelect = new ArrayList<>(resultRoleInstances);
-            for (SRERole companion : selfSelectCompanions) {
-                if (companion == null) {
-                    continue;
-                }
-                if (withSelfSelect.stream().anyMatch(ri -> ri.role() != null
-                        && ri.role().identifier().equals(companion.identifier()))) {
-                    continue; // 已经在名单里，不重复补
-                }
-                withSelfSelect.add(new RoleInstance(UUID.randomUUID(), companion));
-            }
-            if (withSelfSelect.size() != resultRoleInstances.size()) {
-                resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(withSelfSelect);
-                for (SRERole companion : selfSelectCompanions) {
-                    if (companion != null) {
-                        Harpymodloader.LOGGER.info(
-                                "[SelfSelect] 谋杀模式因自选主职业而补入绑定职业 {}", companion.identifier());
-                    }
-                }
-            }
-        }
-
-        // ── 关键：剔除「已经直接指定给玩家的职业」在池子里的副本 ──
-        //
-        // 自选/强制职业不进池子（由 forcedRolesMap 直接指定给玩家），
-        // 但绑定展开会顺着"另一半的伙伴"把它再补回来：
-        //   自选迪奥（直接给玩家）→ 展开承太郎 → 承太郎的伙伴是迪奥 → 池子里多一个迪奥
-        //   → 最后场上出现**两个迪奥**（实测 bug）。
-        // expandWithCompanionRoles 内部的按名额去重看不到这种重复，因为被自选的那份
-        // 根本不在它的列表里。
-        resultRoleInstances = dropRolesAssignedToPlayers(resultRoleInstances, forcedRoles);
-
-        // ── 硬性收敛：池内角色数不得超过 `玩家数 - 强制职业数` ──
-        //
-        // 这是轮选模式的做法（LightningDraftState 里补位后总量受 rolePool 约束），
-        // 谋杀模式以前没有，于是出现"13 人局刷出 3 个杀手/3 个警长"这类超标。
-        //
-        // 为什么会超标：各阵营槽位数是**独立**算的（killerCount / vigilanteCount /
-        // neutralsCount 各自 selectRoles），而池内职业可能带 occupiedRoleCount(2)
-        //（布袋鬼 / 诡客 / 迪奥），`selectRoles` 又允许"挤掉已选的换入"（else 分支
-        // `selected.remove(0)`），再加上绑定职业补位 / expandWithCompanionRoles 腾位，
-        // 最终总数可能比玩家数多出 1。
-        //
-        // ★ 裁剪时必须**跳过绑定职业**：expandWithCompanionRoles 是把绑定职业
-        //   **追加在列表末尾**的，如果无脑从尾部裁，第一个被剪掉的就是刚补进来的绑定职业
-        //   （实测：自选布袋鬼 → 补入诡客 → 尾部裁剪把诡客删了 → 警长阵营没有诡客）。
-        //   绑定职业是主职业的硬依赖，宁可多留一个也不能剪掉它。
-        java.util.Set<net.minecraft.resources.ResourceLocation> companionIds = new java.util.HashSet<>();
-        if (selfSelectCompanions != null) {
-            for (SRERole c : selfSelectCompanions) {
-                if (c != null) {
-                    companionIds.add(c.identifier());
-                }
-            }
-        }
-        // 自然刷新出来的绑定职业同样要保护：只看 selfSelectCompanions 会漏掉
-        // 「初学者 → 初学者」这种自我绑定。展开后的第二个初学者就在列表末尾，
-        // 尾部裁剪会正好把它剪掉，场上又只剩 1 个初学者。
-        for (RoleInstance ri : resultRoleInstances) {
-            SRERole r = ri.role();
-            if (r == null) {
-                continue;
-            }
-            ArrayList<SRERole> companions = Harpymodloader.getOccupationRoles(r);
-            if (companions == null) {
-                continue;
-            }
-            for (SRERole c : companions) {
-                if (c != null) {
-                    companionIds.add(c.identifier());
-                }
-            }
-        }
-        int maxPoolSize = Math.max(0, playerSize - forcedRoleSize);
-        if (resultRoleInstances.size() > maxPoolSize) {
-            int overflow = resultRoleInstances.size() - maxPoolSize;
-            Harpymodloader.LOGGER.warn(
-                    "[RoleCount] 角色池 {} 个 > 上限 {} 个（玩家 {} - 强制 {}），需要裁 {} 个",
-                    resultRoleInstances.size(), maxPoolSize, playerSize, forcedRoleSize, overflow);
-            // 从尾部往前找**非绑定职业**来裁；绑定职业一律保留
-            for (int i = 0; i < overflow; i++) {
-                int victim = -1;
-                for (int j = resultRoleInstances.size() - 1; j >= 0; j--) {
-                    SRERole r = resultRoleInstances.get(j).role();
-                    if (r != null && !companionIds.contains(r.identifier())) {
-                        victim = j;
-                        break;
-                    }
-                }
-                if (victim < 0) {
-                    Harpymodloader.LOGGER.warn(
-                            "[RoleCount]   剩下的都是绑定职业，停止裁剪（宁多勿剪，保护 {}）", companionIds);
-                    break;
-                }
-                Harpymodloader.LOGGER.warn("[RoleCount]   裁掉 {}",
-                        resultRoleInstances.get(victim).role().identifier());
-                resultRoleInstances.remove(victim);
-            }
+            resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstantList,
+                    forcedRoles == null ? List.of() : forcedRoles, playerSize);
         }
 
         int needCivilian = (playerSize - forcedRoleSize) - resultRoleInstances.size();
         for (int i = 0; i < needCivilian; i++)
             resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
         return resultRoleInstances;
-    }
-
-    /**
-     * 把「自选职业带出来的绑定职业」合并进本局角色名单。
-     *
-     * <p><b>已被 {@code getAllRoles(..., selfSelectCompanions)} 取代</b>：
-     * 旧实现只会去找 {@code TMMRoles.CIVILIAN} 来替换，一旦本局没有平民位就
-     * 直接放弃（日志「没有平民空位可替换」），迪奥→承太郎 这类绑定就永远不生成。
-     * 现在统一交给 {@code RoleAssignmentManager.expandWithCompanionRoles}，
-     * 它的 {@code tryRemoveARole} 分 4 级退让，任意一个角色都能被腾出来。
-     */
-    @Deprecated
-    private static void mergeCompanionRoles(List<RoleInstance> roles, List<SRERole> companions) {
-        if (roles == null || companions == null || companions.isEmpty()) {
-            return;
-        }
-        for (SRERole companion : companions) {
-            if (companion == null) {
-                continue;
-            }
-            final var cid = companion.identifier();
-            // 已经在名单里就不重复补（例如另一位玩家随机到了同一个职业）
-            if (roles.stream().anyMatch(ri -> ri.role().identifier().equals(cid))) {
-                continue;
-            }
-            // 找一个平民空位来替换；没有平民位说明这一局排满了，放弃补位
-            int idx = -1;
-            for (int i = roles.size() - 1; i >= 0; i--) {
-                if (roles.get(i).role() == TMMRoles.CIVILIAN) {
-                    idx = i;
-                    break;
-                }
-            }
-            if (idx < 0) {
-                Harpymodloader.LOGGER.warn(
-                        "[SelfSelect] 没有平民空位可替换，绑定职业 {} 无法生成", cid);
-                break;
-            }
-            roles.set(idx, new RoleInstance(UUID.randomUUID(), companion));
-            Harpymodloader.LOGGER.info("[SelfSelect] 因自选主职业而补入绑定职业 {}", cid);
-        }
-    }
-
-    /**
-     * 收集本局「自选职业」带出来的绑定职业。
-     *
-     * <p>只有被自选（强制占位）的主职业才会在这里贡献绑定职业。
-     * "角色上限依然生效"：绑定职业自身名额已满时不再补，避免超出上限。
-     */
-    private static List<SRERole> collectSelfSelectedCompanions(Map<UUID, SRERole> forcedRolesMap) {
-        List<SRERole> out = new ArrayList<>();
-        for (SRERole main : forcedRolesMap.values()) {
-            if (main == null) {
-                continue;
-            }
-            var companions = org.agmas.harpymodloader.Harpymodloader.getOccupationRoles(main);
-            if (companions == null) {
-                continue;
-            }
-            for (SRERole companion : companions) {
-                if (companion == null) {
-                    continue;
-                }
-                // 上限保护：本局该绑定职业已经够人了就不再补
-                int cap = Harpymodloader.getRoleCapacity(companion);
-                long already = out.stream().filter(r -> r.identifier().equals(companion.identifier())).count();
-                if (already >= cap) {
-                    continue;
-                }
-                if (out.stream().anyMatch(r -> r.identifier().equals(companion.identifier()))) {
-                    continue;
-                }
-                out.add(companion);
-            }
-        }
-        return out;
-    }
-
-    /**
-     * 剔除「已经直接指定给玩家的职业」在角色池里的副本。
-     *
-     * <p>自选 / 强制职业不进池子 —— 它们由 {@code forcedRolesMap} 直接指定给玩家，
-     * 所以池子里再出现一份同职业，就等于场上多了一个同名角色。
-     *
-     * <p>为什么会有副本：绑定是双向的，展开时顺着"另一半的伙伴"又补了回来。
-     * 实测链路：自选迪奥（直接给玩家）→ 补入伙伴承太郎 → 承太郎的伙伴是迪奥
-     * → 池子里多一个迪奥 → 最终场上**两个迪奥**。
-     * {@code expandWithCompanionRoles} 内部虽有按名额去重，但它看不到不在列表里的那份。
-     *
-     * <p>但不是所有副本都要丢：初学者是「一次抽取生成一对」的职业，本局上限是 2。
-     * 玩家自选 1 个初学者后，池里还应该留下 1 个作为同伴；否则自选的那位会在 5 秒后
-     * 因为「场上只有一位初学者」变成失忆患者。这里按「上限 - 已占用数」保留差额。
-     *
-     * @param roles       角色池（会被复制，不就地修改）
-     * @param assignedRoles 已经被玩家占用的职业
-     */
-    private static List<RoleInstance> dropRolesAssignedToPlayers(List<RoleInstance> roles,
-            List<SRERole> assignedRoles) {
-        if (roles == null || roles.isEmpty() || assignedRoles == null || assignedRoles.isEmpty()) {
-            return roles;
-        }
-        // 被玩家直接占用的职业允许在池里保留的实例数 = 本局人数上限 - 已被占用的数量。
-        // 普通职业上限 1，池里的副本全部丢弃（原行为）；
-        // 初学者这种「一次抽取生成一对」的职业上限为 2，自选 1 个后还要保留 1 个池内实例作为同伴。
-        Map<ResourceLocation, Integer> assignedCounts = new HashMap<>();
-        for (SRERole r : assignedRoles) {
-            if (r != null) {
-                assignedCounts.merge(r.identifier(), 1, Integer::sum);
-            }
-        }
-        Map<ResourceLocation, Integer> keptCounts = new HashMap<>();
-        List<RoleInstance> out = new ArrayList<>(roles.size());
-        for (RoleInstance ri : roles) {
-            SRERole r = ri.role();
-            int assigned = r == null ? 0 : assignedCounts.getOrDefault(r.identifier(), 0);
-            if (assigned > 0) {
-                int capacity = Math.max(1, Harpymodloader.getRoleCapacity(r));
-                int alreadyKept = keptCounts.getOrDefault(r.identifier(), 0);
-                if (assigned + alreadyKept >= capacity) {
-                    Harpymodloader.LOGGER.warn(
-                            "[RolePool] 池内出现已被自选占用的 {}，丢弃（占用 {}/{}，否则场上会有多余同职业）",
-                            r.identifier(), assigned + alreadyKept, capacity);
-                    continue;
-                }
-                keptCounts.merge(r.identifier(), 1, Integer::sum);
-                Harpymodloader.LOGGER.info(
-                        "[RolePool] {} 的上限是 {}，自选占用 {} 个，保留池内同伴（{}/{}）",
-                        r.identifier(), capacity, assigned, assigned + alreadyKept + 1, capacity);
-            }
-            out.add(ri);
-        }
-        return out;
     }
 
     private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
@@ -858,6 +579,8 @@ public class SREMurderGameMode extends GameMode {
 
         // 第一步：处理强制分配的角色
         Map<UUID, SRERole> forcedRolesMap = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+        forcedRolesMap.entrySet().removeIf(entry -> entry.getValue() == null
+                || players.stream().noneMatch(player -> player.getUUID().equals(entry.getKey())));
         List<SRERole> forcedRoles = new ArrayList<>();
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
@@ -927,11 +650,8 @@ public class SREMurderGameMode extends GameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
-        // 自选职业带出来的绑定职业（毒师→医生、悍匪→钳工、迪奥→承太郎…）
-        List<SRERole> selfSelectCompanions = collectSelfSelectedCompanions(forcedRolesMap);
-
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                forcedRolesMap.size(), forcedRoles, selfSelectCompanions);
+                forcedRolesMap.size(), forcedRoles);
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();
@@ -1118,16 +838,8 @@ public class SREMurderGameMode extends GameMode {
                         "[RoleCount] 超标(杀手+{} 警长+{} 中立+{})，按预算 {}/{}/{} 裁剪超出的部分",
                         Math.max(0, overK), Math.max(0, overV), Math.max(0, overN),
                         budgetKiller, budgetVigilante, budgetNeutral);
-                // 受保护角色：**所有**绑定职业（不管是被自选带出来的，还是自然刷新配对的）
-                // 加上所有自选主职业。
-                //
-                // ★ 之前只保护了 selfSelectCompanions，漏掉了"自然配对的绑定职业" ——
-                //   于是监狱图上自然刷出的 CONVICT(重刑犯) 的伙伴 JAILER(狱警) 会被降级成平民，
-                //   表现就是"刷了重刑犯却没有狱警 / 反过来"。这里把配对关系补全。
+                // 阵营裁剪必须保留绑定双方，单向绑定的主职业也不能移除。
                 java.util.Set<SRERole> allCompanions = new java.util.HashSet<>();
-                if (selfSelectCompanions != null) {
-                    allCompanions.addAll(selfSelectCompanions);
-                }
                 for (SRERole r0 : roleAssignments.values()) {
                     if (r0 == null) {
                         continue;
@@ -1152,8 +864,9 @@ public class SREMurderGameMode extends GameMode {
                     // 绑定职业也保留：它是主职业的硬依赖（布袋鬼→诡客、悍匪→钳工、
                     // 毒师→医生、迪奥→承太郎、重刑犯→狱警…），降级成平民就等于
                     // "主职业没有绑定职业"。宁可某阵营多 1 个，也不能把配对拆掉。
-                    if (allCompanions.stream().anyMatch(c -> c != null
-                            && c.identifier().equals(r.identifier()))) {
+                    if (RoleAssignmentManager.hasCompanionRole(r)
+                            || allCompanions.stream().anyMatch(c -> c != null
+                                    && c.identifier().equals(r.identifier()))) {
                         continue;
                     }
                     boolean killer = r.canUseKiller();

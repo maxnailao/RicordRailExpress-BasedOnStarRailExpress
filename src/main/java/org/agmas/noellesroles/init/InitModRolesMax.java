@@ -283,9 +283,7 @@ public class InitModRolesMax {
         // 以前这里只注册了单向（主职业 → 绑定职业），于是"选主职业会带出绑定职业，
         // 但反过来选绑定职业不会带出主职业"。现在统一补上反向，两边任选其一都会把另一个带出来。
         //
-        // 为什么安全：addOccupationRole 是 addOccupationRoleOnce（幂等），
-        // 且 expandWithCompanionRoles 末尾会按 ROLE_MAX 去重 ——
-        // 两人各选一个时不会生成重复实例（实测过 [DIO, JOJO] → 仍是 1+1）。
+        // addOccupationRoleOnce 保证注册幂等；展开时复用组合内已有的职业实例。
         Harpymodloader.addOccupationRole(ModRoles.ENGINEER, ModRoles.LOCKSMITH);
         Harpymodloader.addOccupationRole(ModRoles.LOCKSMITH, ModRoles.ENGINEER);
 

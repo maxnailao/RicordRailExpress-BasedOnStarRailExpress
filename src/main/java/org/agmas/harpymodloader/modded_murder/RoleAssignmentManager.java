@@ -1,13 +1,13 @@
 package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
+import net.minecraft.resources.ResourceLocation;
 import org.agmas.harpymodloader.Harpymodloader;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 管理角色对应关系和配对分配
@@ -32,128 +32,94 @@ public class RoleAssignmentManager {
         return Harpymodloader.hasOccupationRole(role);
     }
 
-    /**
-     * 
-     * @param companion
-     * @param expandedRoles
-     * @param companionRoles
-     * @param companedRoles
-     * @param tryLevel       尝试匹配等级。0：完全相同，1：忽略中立阵营，2：包含平民，3：包括所有
-     * @return
-     */
-    public static boolean tryRemoveARole(SRERole companion, List<RoleInstance> expandedRoles,
-            List<SRERole> companionRoles,
-            List<SRERole> companedRoles, int tryLevel) {
-        final boolean[] isRemoved = { false };
-
-        expandedRoles.removeIf(ro -> {
-            if (!isRemoved[0]) {
-                var r = ro.role();
-                boolean conditionMet = false;
-                if (tryLevel == 0) {
-                    conditionMet = (PlayerRoleWeightManager
-                            .getRoleType(r) == PlayerRoleWeightManager
-                                    .getRoleType(companion));
-                } else if (tryLevel == 1) {
-                    conditionMet = (PlayerRoleWeightManager
-                            .getRoleType_IgnoreNeutralType(r) == PlayerRoleWeightManager
-                                    .getRoleType_IgnoreNeutralType(companion));
-                } else if (tryLevel == 2) {
-                    conditionMet = (PlayerRoleWeightManager
-                            .getRoleType_OnlyDistinctKiller(r) == PlayerRoleWeightManager
-                                    .getRoleType(companion));
-                } else {
-                    conditionMet = true;
-                }
-
-                if (conditionMet && companionRoles.stream()
-                        .noneMatch(rd -> rd.getIdentifier().equals(r.getIdentifier()))
-                        && companedRoles.stream()
-                                .noneMatch(rd -> rd.getIdentifier().equals(r.getIdentifier()))) {
-                    isRemoved[0] = true;
-                    return true;
-                }
-            }
-            return false;
-        });
-        return isRemoved[0];
-    }
-
-    /**
-     * 展开角色列表：如果角色有关联角色，添加关联角色
-     * 例如：[医生] -> [医生, 毒师]
-     * 注意：允许结果列表中包含重复的角色
-     * 
-     * @param roles 原始角色列表
-     * @return 展开后的角色列表（包含所有关联角色，允许重复）
-     */
+    /** 展开完整绑定组合，已有的同伴不重复补入。 */
     public static List<RoleInstance> expandWithCompanionRoles(
             List<RoleInstance> roles) {
-        List<RoleInstance> oldRoles = new ArrayList<>(roles);
-        List<RoleInstance> expandedRoles = new ArrayList<>(roles);
-        List<SRERole> companionRoles = new ArrayList<>();
-        List<SRERole> companedRoles = new ArrayList<>();
+        return expandWithCompanionRoles(roles, List.of(), Integer.MAX_VALUE);
+    }
 
-        for (var role : oldRoles) {
-            ArrayList<SRERole> companions = getCompanionRoles(role.role());
-            // 自我绑定（初学者 → 初学者）是一次抽取生成一对：
-            // 第 2 个名额由 setOccupiedRoleCount(2) 预留，不需要再挤掉名单里的其他角色。
-            // 若这里仍然走 tryRemoveARole，会因为它自己已经在 companedRoles 里而必然失败，
-            // 每局刷出初学者都会刷一条无意义的 "Unable to remove a role" 错误日志。
-            boolean selfPaired = Harpymodloader.isSelfPaired(role.role());
-            for (var companion : companions) {
-                if (companion != null) {
-                    companedRoles.add(role.role());
-                    if (!selfPaired) {
-                        if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 0)) {
-                            if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 1)) {
-                                if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 2)) {
-                                    if (!tryRemoveARole(companion, expandedRoles, companionRoles, companedRoles, 3)) {
-                                        Harpymodloader.LOGGER
-                                                .error("Unable to remove a role to make room for linked role {}!",
-                                                        role.role().identifier().toString());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    companionRoles.add(companion);
+    /** 自选职业参与同一次展开，但返回名单只包含尚未分配给玩家的实例。 */
+    public static List<RoleInstance> expandWithCompanionRoles(List<RoleInstance> roles,
+            List<SRERole> assignedRoles, int maxRoleCount) {
+        List<RoleInstance> seeds = new ArrayList<>();
+        Set<UUID> assignedIds = new HashSet<>();
+        for (SRERole role : assignedRoles) {
+            RoleInstance instance = new RoleInstance(UUID.randomUUID(), role);
+            seeds.add(instance);
+            assignedIds.add(instance.uuid());
+        }
+        seeds.addAll(roles);
+
+        Map<ResourceLocation, List<RoleInstance>> available = new LinkedHashMap<>();
+        for (RoleInstance instance : seeds) {
+            SRERole role = instance.role();
+            if (role == null) {
+                continue;
+            }
+            List<RoleInstance> instances = available.computeIfAbsent(role.identifier(), key -> new ArrayList<>());
+            if (role == TMMRoles.CIVILIAN || instances.size() < Harpymodloader.getRoleCapacity(role)) {
+                instances.add(instance);
+            }
+        }
+
+        List<RoleInstance> selected = new ArrayList<>();
+        Map<ResourceLocation, Integer> selectedCounts = new HashMap<>();
+        for (RoleInstance seed : seeds) {
+            if (assignedIds.contains(seed.uuid())) {
+                selected.add(seed);
+                selectedCounts.merge(seed.role().identifier(), 1, Integer::sum);
+            }
+        }
+        // 先接纳完整组合，再填普通职业；名额不足时整组放弃，避免随机分配截断配对。
+        for (RoleInstance seed : seeds) {
+            SRERole role = seed.role();
+            if (role == null || (!assignedIds.contains(seed.uuid()) && !hasCompanionRole(role))) {
+                continue;
+            }
+            Map<ResourceLocation, SRERole> group = new LinkedHashMap<>();
+            List<SRERole> pending = new ArrayList<>();
+            pending.add(role);
+            for (int i = 0; i < pending.size(); i++) {
+                SRERole member = pending.get(i);
+                if (member == null || group.putIfAbsent(member.identifier(), member) != null) {
+                    continue;
+                }
+                pending.addAll(getCompanionRoles(member));
+            }
+            List<RoleInstance> additions = new ArrayList<>();
+            for (SRERole member : group.values()) {
+                List<RoleInstance> existing = available.getOrDefault(member.identifier(), List.of());
+                int required = Math.max(Harpymodloader.isSelfPaired(member) ? 2 : 1, existing.size());
+                for (int i = selectedCounts.getOrDefault(member.identifier(), 0); i < required; i++) {
+                    additions.add(i < existing.size() ? existing.get(i)
+                            : new RoleInstance(UUID.randomUUID(), member));
                 }
             }
-        }
-
-        expandedRoles.addAll(
-                companionRoles.stream().map(r -> new RoleInstance(UUID.randomUUID(), r))
-                        .toList());
-
-        // ── 去重：互绑关系会产生重复 ──
-        //
-        // 迪奥与承太郎现在是**互相绑定**（DIO->JOJO 且 JOJO->DIO）。
-        // 当两者**同时已经在名单里**时（例如两人分别自选了一个），
-        // 逐条展开会各自把对方再"补"进来一次 → 名单里出现两个迪奥/两个承太郎。
-        //
-        // 这里按名额上限收敛：同一职业的数量超过 ROLE_MAX 的，从后往前移除多余的实例。
-        // 只处理"有互绑关系"的职业之外也一并兜住，不会有副作用
-        //（正常单绑展开本来就不会产生重复）。
-        java.util.Map<net.minecraft.resources.ResourceLocation, Integer> seenPerRole =
-                new java.util.HashMap<>();
-        java.util.List<RoleInstance> deduped = new ArrayList<>(expandedRoles.size());
-        for (var ri : expandedRoles) {
-            SRERole r = ri.role();
-            if (r == null) {
-                deduped.add(ri);
+            if (selected.size() + additions.size() > maxRoleCount) {
+                Harpymodloader.LOGGER.warn("[RolePool] No room for complete linked role group {}", group.keySet());
                 continue;
             }
-            int cap = Math.max(1, Harpymodloader.getRoleCapacity(r));
-            int seen = seenPerRole.merge(r.identifier(), 1, Integer::sum);
-            if (seen > cap) {
-                Harpymodloader.LOGGER.warn(
-                        "[RolePool] 绑定展开产生重复的 {}（第 {} 个，上限 {}），已丢弃", r.identifier(), seen, cap);
+            for (RoleInstance instance : additions) {
+                selected.add(instance);
+                selectedCounts.merge(instance.role().identifier(), 1, Integer::sum);
+            }
+        }
+
+        int targetSize = Math.min(maxRoleCount, Math.max(seeds.size(), selected.size()));
+        for (RoleInstance instance : seeds) {
+            SRERole role = instance.role();
+            if (selected.size() >= targetSize || role == null || hasCompanionRole(role)) {
                 continue;
             }
-            deduped.add(ri);
+            List<RoleInstance> existing = available.get(role.identifier());
+            int count = selectedCounts.getOrDefault(role.identifier(), 0);
+            if (count < existing.size() && existing.contains(instance) && !selected.contains(instance)) {
+                selected.add(instance);
+                selectedCounts.merge(role.identifier(), 1, Integer::sum);
+            }
         }
-        return deduped;
+        selected.removeIf(instance -> assignedIds.contains(instance.uuid()));
+        return selected;
     }
 
     /**
