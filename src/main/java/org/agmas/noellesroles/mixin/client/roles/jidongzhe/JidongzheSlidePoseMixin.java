@@ -10,24 +10,39 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 机动者滑铲姿态：单膝前收、后腿拖曳、上身前倾、双臂后摆。
+ * 机动者滑铲姿势：上身接近直立只微微前倾，前腿屈膝抬起、后腿向身后拖地，双臂屈在胸前外张的跪滑姿态。
  *
- * <p>姿态不是直接赋值，而是从 vanilla 本帧算出的角度按 {@code blend} 插值到目标角度，
- * 所以起滑与收滑都是渐入渐出；同时照本仓库惯例把外套 / 帽子 / 袖管 / 裤腿重新 copyFrom，
- * 否则外层贴图会留在原姿势上。</p>
+ * <p>按设计，滑铲不是一套动画而是**一个静态姿势**：只在滑铲位移阶段保持，位移结束或跃起时立刻取消，
+ * 因此这里不做任何插值，命中状态就整帧套用。</p>
+ *
+ * <p>轮廓取自参考素材（现实滑铲视频抽帧 + 跪滑静帧）：共同点是躯干并不后倒、只是微微前倾，
+ * 一膝收向前方、另一腿向后拖地，双手抬在胸腹前保持平衡与持枪姿态。</p>
+ *
+ * <p>角度约定取自本仓库已验证的姿态 mixin（{@code RoadRollerPlayerModelMixin} 俯身用正 body.xRot、
+ * 收腿用负 leg.xRot；{@code KidnappedBoundPoseMixin} 手臂甩向背后用正 arm.xRot）：
+ * 躯干正 xRot = 前倾，四肢负 xRot = 向前摆，所以后腿向身后拖要取正值。</p>
+ *
+ * <p>外套 / 帽子 / 袖管 / 裤腿都要重新 copyFrom，否则外层贴图会留在原姿势上。</p>
  */
 @Mixin(PlayerModel.class)
 public abstract class JidongzheSlidePoseMixin {
 
-    // 目标角度（跪滑：前腿收向腹部、后腿向后拖、双臂甩向身后）
-    private static final float BODY_X = 1.00F;
-    private static final float HEAD_X = -0.70F;
-    private static final float RIGHT_ARM_X = 1.30F;
-    private static final float LEFT_ARM_X = 1.15F;
-    private static final float ARM_Z = 0.35F;
-    private static final float FRONT_LEG_X = -1.20F;
+    /** 躯干：微微前倾（不是后仰），髋部带一点打开的扭转 */
+    private static final float BODY_X = 0.20F;
+    private static final float BODY_TWIST_Y = 0.16F;
+    private static final float BODY_Z = 0.08F;
+    /** 头：基本保持水平，只略微收一点，视线仍朝滑行方向看路；水平转向保留 vanilla 的跟随 */
+    private static final float HEAD_X = 0.05F;
+    /** 双臂屈在胸腹前，肘部向外张开 */
+    private static final float LEAD_ARM_X = -0.90F;
+    private static final float LEAD_ARM_Z = 0.34F;
+    private static final float TRAIL_ARM_X = -0.65F;
+    private static final float TRAIL_ARM_Z = -0.46F;
+    /** 前腿屈膝抬向身前，后腿向身后拖地（正 xRot = 向后） */
+    private static final float FRONT_LEG_X = -1.05F;
+    private static final float FRONT_LEG_Z = 0.16F;
     private static final float REAR_LEG_X = 0.55F;
-    private static final float LEG_Z = 0.12F;
+    private static final float REAR_LEG_Z = -0.10F;
 
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("RETURN"))
     private void noellesroles$applySlidePose(LivingEntity entity, float limbSwing, float limbSwingAmount,
@@ -35,27 +50,31 @@ public abstract class JidongzheSlidePoseMixin {
         if (!(entity instanceof Player player)) {
             return;
         }
-        // ageInTicks - tickCount ≈ 帧内插值，保证不卡顿
-        float blend = JidongzheClient.slideBlend(player.getId(), ageInTicks - entity.tickCount);
-        if (blend <= 0.0F) {
+        if (!JidongzheClient.isSlidingPose(player.getId())) {
             return;
         }
+        JidongzheClient.logPoseAppliedOnce(player.getId());
         PlayerModel<?> model = (PlayerModel<?>) (Object) this;
 
-        // 轻微前冲起伏，避免定帧感；幅度也随 blend 缩放，淡出时不会突然抖一下
-        float surge = (float) Math.sin(ageInTicks * 2.2) * 0.05F * blend;
+        model.body.xRot = BODY_X;
+        // 扭转用叠加而不是覆写：覆写会让上身不再跟随转向，滑铲中扭头就变成「头身分离」
+        model.body.yRot += BODY_TWIST_Y;
+        model.body.zRot = BODY_Z;
+        model.head.xRot = HEAD_X;
 
-        model.body.xRot = mix(model.body.xRot, BODY_X + surge, blend);
-        // 上身已前倾，头部反向抬起才能让玩家看起来是朝前方看路
-        model.head.xRot = mix(model.head.xRot, HEAD_X, blend);
-        model.rightArm.xRot = mix(model.rightArm.xRot, RIGHT_ARM_X + surge, blend);
-        model.leftArm.xRot = mix(model.leftArm.xRot, LEFT_ARM_X + surge, blend);
-        model.rightArm.zRot = mix(model.rightArm.zRot, -ARM_Z, blend);
-        model.leftArm.zRot = mix(model.leftArm.zRot, ARM_Z, blend);
-        model.rightLeg.xRot = mix(model.rightLeg.xRot, FRONT_LEG_X, blend);
-        model.leftLeg.xRot = mix(model.leftLeg.xRot, REAR_LEG_X, blend);
-        model.rightLeg.zRot = mix(model.rightLeg.zRot, LEG_Z, blend);
-        model.leftLeg.zRot = mix(model.leftLeg.zRot, -LEG_Z, blend);
+        model.rightArm.xRot = LEAD_ARM_X;
+        model.rightArm.yRot = 0.0F;
+        model.rightArm.zRot = LEAD_ARM_Z;
+        model.leftArm.xRot = TRAIL_ARM_X;
+        model.leftArm.yRot = 0.0F;
+        model.leftArm.zRot = TRAIL_ARM_Z;
+
+        model.rightLeg.xRot = FRONT_LEG_X;
+        model.rightLeg.yRot = 0.0F;
+        model.rightLeg.zRot = FRONT_LEG_Z;
+        model.leftLeg.xRot = REAR_LEG_X;
+        model.leftLeg.yRot = 0.0F;
+        model.leftLeg.zRot = REAR_LEG_Z;
 
         model.jacket.copyFrom(model.body);
         model.hat.copyFrom(model.head);
@@ -63,9 +82,5 @@ public abstract class JidongzheSlidePoseMixin {
         model.leftSleeve.copyFrom(model.leftArm);
         model.rightPants.copyFrom(model.rightLeg);
         model.leftPants.copyFrom(model.leftLeg);
-    }
-
-    private static float mix(float from, float to, float blend) {
-        return from + (to - from) * blend;
     }
 }

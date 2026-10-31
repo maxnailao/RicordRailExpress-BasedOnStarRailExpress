@@ -4,20 +4,20 @@ import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import io.wifi.starrailexpress.util.ParticleFx;
+import io.wifi.starrailexpress.util.PlayerStaminaGetter;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket;
+import org.agmas.noellesroles.packet.JidongzheStaminaS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,11 +25,14 @@ import org.jetbrains.annotations.NotNull;
  * 机动者的滑铲与超载状态（服务端权威）。
  *
  * <p>体力不单独存储：本仓库的体力就是 vanilla {@code Player.sprintingTicks}，通过
- * {@link PlayerStaminaGetter} 读写，上限由 {@link JidongzheRole#staminaCap} 随超载状态即时计算，
- * 恢复与耗尽钳制都由 {@code PlayerEntityMixin} 负责。</p>
+ * {@link PlayerStaminaGetter} 读写，上限由 {@link JidongzheRole#staminaCap} 随超载状态即时计算。
+ * 服务端与客户端**各自独立模拟**同一份体力，所以服务端改动数值后必须用
+ * {@link JidongzheStaminaS2CPacket} 下发一次，否则玩家自己的体力条不动。</p>
  *
- * <p>同步给本人的只有两样：是否处于超载、超载剩余刻数。客户端据此换算本地截止点画倒计时 HUD，
- * 不需要每刻发包。</p>
+ * <p>滑铲位移用「每刻覆写水平速度 + 量测实际位移」而不是 teleport：玩家位置以客户端为准，
+ * 服务端逐刻 teleport 会和客户端自己的落地/碰撞判定打架，实测会把人卡进脚下方块里。
+ * 现在改为持续给速度，直到**实际走过的水平距离**达到目标格数（撞墙时走不到就由刻数上限收尾），
+ * 这样既不会卡块，距离也真的对得上。</p>
  */
 public class JidongzheRoleData extends SimpleRoleData {
 
@@ -37,23 +40,28 @@ public class JidongzheRoleData extends SimpleRoleData {
     private long slideReadyAt;
     /** 是否正在滑铲 */
     private boolean sliding;
-    /** 本次滑铲的目标水平位移（格） */
+    /** 本次滑铲的目标水平位移（格）与已累计的实际位移（格） */
     private double slideDistance;
-    /** 本次滑铲规划刻数与当前刻序号 */
-    private int slideTicksTotal;
+    private double slideTravelled;
+    /** 上一刻的位置，用来量出这一刻真正走了多远 */
+    private Vec3 slidePrevPos;
+    /** 本次滑铲允许的刻数上限（防撞墙后无限滑行）与已用刻数 */
+    private int slideTicksCap;
     private int slideTickIndex;
-    /** 速度权重之和，用于把曲线归一化到「累计位移正好等于目标距离」 */
-    private double slideWeightSum;
     /** 本次滑铲锁定方向（起始朝向的水平分量，单位向量） */
     private double dirX;
     private double dirZ;
+    /** 滑铲结束时刻（本局时钟），用于滑铲跳的宽限期 */
+    private long slideEndAt;
+    /** 刚刚处于疾跑的记忆刻数：原版在按下蹲键的同刻关掉疾跑，不能直接判 isSprinting() */
+    private int sprintMemoryTicks;
 
     /** 超载结束时刻与是否处于超载 */
     private long overloadEndAt;
     private boolean overloadActive;
     /** 仅客户端使用：超载结束的本地世界刻截止点 */
     private long clientOverloadEndGameTick;
-    /** 超载期间每秒向本人重同步一次剩余刻数，避免客户端本地倒数与服务端「本局时钟」在时停期间越走越偏 */
+    /** 超载期间每秒向本人重同步一次剩余刻数，避免客户端倒数与服务端「本局时钟」在时停期间越走越偏 */
     private int overloadSyncTickCounter;
 
     public JidongzheRoleData(RoleDataContext context) {
@@ -61,8 +69,7 @@ public class JidongzheRoleData extends SimpleRoleData {
     }
 
     /**
-     * 超载状态需要同步给本人客户端：HUD 的体力上限与倒计时都会走本地 RoleData。
-     * 只同步「是否超载 + 剩余刻数」，不同步滑铲内部状态。
+     * 超载状态需要同步给本人客户端：HUD 的体力上限与倒计时都读本地 RoleData。
      */
     @Override
     public boolean shouldSyncWith(ServerPlayer target) {
@@ -84,53 +91,52 @@ public class JidongzheRoleData extends SimpleRoleData {
         if (!canAct(sp)) {
             return false;
         }
-        if (sliding || !sp.isSprinting()) {
-            return false;
-        }
-        if (!hasStamina(sp, JidongzheRole.SLIDE_STAMINA_COST_PERCENT)) {
+        if (sliding || sprintMemoryTicks <= 0) {
             return false;
         }
 
         long now = GameUtils.getTicksFromGameStart(sp.level());
-        long remainingCooldown = Math.max(0L, slideReadyAt - now);
-        double ratio;
-        if (remainingCooldown > JidongzheRole.SLIDE_SHORT_RANGE_TICKS) {
-            // 剩余冷却超过 1 秒：距离固定为最短档
-            ratio = 0.0D;
-        } else {
-            // 剩余 0~1 秒：剩余冷却越少，距离按百分比提升到 3.5 格
-            ratio = (JidongzheRole.SLIDE_SHORT_RANGE_TICKS - remainingCooldown)
-                    / (double) JidongzheRole.SLIDE_SHORT_RANGE_TICKS;
-        }
-        slideDistance = JidongzheRole.SLIDE_MIN_DISTANCE
-                + (JidongzheRole.SLIDE_MAX_DISTANCE - JidongzheRole.SLIDE_MIN_DISTANCE) * ratio;
+        slideDistance = JidongzheRole.slideDistanceForCooldown(Math.max(0L, slideReadyAt - now));
 
         // 只取朝向的水平分量：抬头或低头都不该让滑铲变成飞天或原地
-        float yawRadians = (float) (sp.getYRot() * Math.PI / 180.0D);
-        dirX = -Math.sin(yawRadians);
-        dirZ = Math.cos(yawRadians);
-        planSlideTicks();
+        lockDirectionToFacing(sp);
         sliding = true;
+        slideTravelled = 0.0D;
+        slidePrevPos = sp.position();
+        slideTicksCap = JidongzheRole.estimateSlideTicks(slideDistance) + JidongzheRole.SLIDE_TICK_TOLERANCE;
+        slideTickIndex = 0;
         slideReadyAt = now + JidongzheRole.SLIDE_COOLDOWN_TICKS;
+        // 起滑即清空记忆，避免同一刻的重复包触发第二次
+        sprintMemoryTicks = 0;
 
         spendStamina(sp, JidongzheRole.SLIDE_STAMINA_COST_PERCENT);
-        broadcastPose(sp, true, slideTicksTotal);
+        broadcastPose(sp, true, slideTicksCap);
         spawnSlideDust(sp);
         return true;
     }
 
     /**
-     * 滑铲期间按下跳键：把滑铲转化为一次向前跃进，跃距按本次滑铲的名义距离等值映射。
+     * 滑铲期间按下跳键：向前跃进，跃距按本次滑铲的名义距离等值映射。
+     * 跃起方向取按跳那一刻玩家自己的朝向，而不是滑铲起始时锁定的方向，玩家可以边滑边转领带出斜向跃起。
+     * 允许滑铲结束后 {@code SLIDE_JUMP_GRACE_TICKS} 刻内按下，用来吃掉网络与判定上的先后差。
      */
     public boolean beginSlideJump(ServerPlayer sp) {
-        if (!canAct(sp) || !sliding) {
+        if (!canAct(sp)) {
             return false;
         }
-        if (!hasStamina(sp, JidongzheRole.SLIDE_JUMP_STAMINA_COST_PERCENT)) {
-            return false;
+        if (!sliding) {
+            long now = GameUtils.getTicksFromGameStart(sp.level());
+            boolean inGrace = slideEndAt > 0L && now - slideEndAt <= JidongzheRole.SLIDE_JUMP_GRACE_TICKS;
+            if (!inGrace) {
+                return false;
+            }
         }
+        // 吃过一次就不再重复给宽限
+        slideEndAt = 0L;
         spendStamina(sp, JidongzheRole.SLIDE_JUMP_STAMINA_COST_PERCENT);
 
+        // 按按跳这一刻的朝向重新取方向：滑行中转向后就能带出斜向跃起
+        lockDirectionToFacing(sp);
         double horizontalPerTick = slideDistance / JidongzheRole.SLIDE_JUMP_AIR_TICKS;
         sp.setDeltaMovement(dirX * horizontalPerTick, JidongzheRole.SLIDE_JUMP_VERTICAL_MOTION,
                 dirZ * horizontalPerTick);
@@ -141,26 +147,12 @@ public class JidongzheRoleData extends SimpleRoleData {
     }
 
     /**
-     * 规划本次滑铲的刻数与速度权重：起手快、收尾缓，权重之和用于保证累计位移正好等于目标距离。
+     * 把方向锁定为「当前朝向的水平分量」：只看 yaw，抬头或低头都不该让位移变成飞天或原地。
      */
-    private void planSlideTicks() {
-        // 至少 3 刻：短距离滑铲若只有 1 刻会像瞬移，姿态也来不及淡入
-        slideTicksTotal = (int) Math.max(3L,
-                Math.round(slideDistance / JidongzheRole.SLIDE_NOMINAL_SPEED_PER_TICK));
-        slideTickIndex = 0;
-        slideWeightSum = 0.0D;
-        for (int i = 0; i < slideTicksTotal; i++) {
-            slideWeightSum += slideWeight(i);
-        }
-    }
-
-    private double slideWeight(int tickIndex) {
-        if (slideTicksTotal <= 1) {
-            return 1.0D;
-        }
-        double progress = tickIndex / (double) (slideTicksTotal - 1);
-        return JidongzheRole.SLIDE_START_SPEED_RATIO
-                - (JidongzheRole.SLIDE_START_SPEED_RATIO - JidongzheRole.SLIDE_END_SPEED_RATIO) * progress;
+    private void lockDirectionToFacing(ServerPlayer sp) {
+        float yawRadians = (float) (sp.getYRot() * Math.PI / 180.0D);
+        dirX = -Math.sin(yawRadians);
+        dirZ = Math.cos(yawRadians);
     }
 
     private void endSlide(ServerPlayer sp) {
@@ -169,33 +161,33 @@ public class JidongzheRoleData extends SimpleRoleData {
         }
         sliding = false;
         slideTickIndex = 0;
+        slideEndAt = GameUtils.getTicksFromGameStart(sp.level());
         broadcastPose(sp, false, 0);
     }
 
     /**
-     * 逐刻推进滑铲位移：每刻按曲线取一段位移，覆写水平速度并强制回包（本仓库位移类角色的通用做法），
-     * 撞墙或走完规划刻数即结束。
+     * 逐刻推进滑铲：先量出上一刻实际走了多少格，再按剩余进度给这一刻的水平速度。
+     * 速度从 1.6 倍基准衰减到 0.4 倍，所以起手冲得快、落点收得住。
      */
     private void tickSlide(ServerPlayer sp) {
-        double step = slideDistance * slideWeight(slideTickIndex) / slideWeightSum;
+        Vec3 pos = sp.position();
+        slideTravelled += pos.subtract(slidePrevPos).horizontalDistance();
+        slidePrevPos = pos;
+        slideTickIndex++;
 
-        Vec3 mid = sp.position().add(0.0D, 0.9D, 0.0D);
-        Vec3 target = mid.add(dirX * step, 0.0D, dirZ * step);
-        BlockHitResult hit = sp.level().clip(new ClipContext(mid, target, ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE, sp));
-        if (hit.getType() == HitResult.Type.BLOCK) {
+        if (slideTravelled >= slideDistance || slideTickIndex >= slideTicksCap) {
             endSlide(sp);
             return;
         }
 
-        Vec3 current = sp.getDeltaMovement();
-        sp.setDeltaMovement(dirX * step, current.y, dirZ * step);
-        sp.hurtMarked = true;
+        double progress = Math.min(1.0D, slideTravelled / slideDistance);
+        double ratio = JidongzheRole.SLIDE_START_SPEED_RATIO
+                - (JidongzheRole.SLIDE_START_SPEED_RATIO - JidongzheRole.SLIDE_END_SPEED_RATIO) * progress;
+        double speed = JidongzheRole.SLIDE_SPEED_PER_TICK * ratio;
 
-        slideTickIndex++;
-        if (slideTickIndex >= slideTicksTotal) {
-            endSlide(sp);
-        }
+        Vec3 current = sp.getDeltaMovement();
+        sp.setDeltaMovement(dirX * speed, current.y, dirZ * speed);
+        sp.hurtMarked = true;
     }
 
     /**
@@ -203,7 +195,7 @@ public class JidongzheRoleData extends SimpleRoleData {
      */
     private void spawnSlideDust(ServerPlayer sp) {
         Vec3 feet = sp.position();
-        ParticleFx.burst(sp.serverLevel(), net.minecraft.core.particles.ParticleTypes.CLOUD,
+        ParticleFx.burst(sp.serverLevel(), ParticleTypes.CLOUD,
                 feet.x, feet.y + 0.1D, feet.z, 10, 0.3D, 0.08D, 0.3D, 0.06D);
     }
 
@@ -212,30 +204,33 @@ public class JidongzheRoleData extends SimpleRoleData {
     // ------------------------------------------------------------------
 
     /**
-     * 进入超载：体力上限翻倍（由 {@link JidongzheRole#staminaCap} 生效）、获得速度 I，
-     * 并立即回复「翻倍后体力上限」65% 的体力。
+     * 进入超载：体力上限翻倍、获得速度 I，并立即回复「翻倍后体力上限」65% 的体力。
      */
     public boolean startOverload(ServerPlayer sp) {
         if (!canAct(sp) || overloadActive) {
             return false;
         }
+        long now = GameUtils.getTicksFromGameStart(sp.level());
         overloadActive = true;
-        overloadEndAt = GameUtils.getTicksFromGameStart(sp.level()) + JidongzheRole.OVERLOAD_DURATION_TICKS;
+        overloadEndAt = now + JidongzheRole.OVERLOAD_DURATION_TICKS;
+        overloadSyncTickCounter = 0;
 
-        // 此刻 supplier 已经会返回翻倍后的上限，直接按它取 65%
-        float newMax = ModRoles.JIDONGZHE.getMaxSprintTime(sp);
+        // 直接按常量算翻倍后的上限，不依赖 supplier 的读回值，避免读到尚未生效的状态
+        float doubledCap = JidongzheRole.BASE_STAMINA_TICKS * (float) JidongzheRole.OVERLOAD_STAMINA_MULTIPLIER;
         PlayerStaminaGetter stamina = (PlayerStaminaGetter) sp;
-        stamina.starrailexpress$setStamina(Math.min(newMax,
-                stamina.starrailexpress$getStamina() + newMax * JidongzheRole.OVERLOAD_RECOVERY_PERCENT / 100.0F));
+        float current = Math.max(0.0F, stamina.starrailexpress$getStamina());
+        stamina.starrailexpress$setStamina(Math.min(doubledCap,
+                current + doubledCap * JidongzheRole.OVERLOAD_RECOVERY_PERCENT / 100.0F));
 
         applySpeed(sp);
+        syncStamina(sp);
         notify(sp, "message.noellesroles.jidongzhe.overload_start", ChatFormatting.AQUA);
         sync();
         return true;
     }
 
     /**
-     * 超载期间击杀玩家：超载延长 10 秒并体力回满（延长后总时长不超过 {@link JidongzheRole#OVERLOAD_MAX_TICKS}）。
+     * 超载期间击杀玩家：超载延长 10 秒并体力回满（总时长不超过 OVERLOAD_MAX_TICKS）。
      */
     public void extendOverloadOnKill(ServerPlayer killer) {
         if (!overloadActive || !canAct(killer)) {
@@ -244,8 +239,10 @@ public class JidongzheRoleData extends SimpleRoleData {
         long now = GameUtils.getTicksFromGameStart(killer.level());
         overloadEndAt = Math.min(now + JidongzheRole.OVERLOAD_MAX_TICKS,
                 overloadEndAt + JidongzheRole.OVERLOAD_KILL_EXTENSION_TICKS);
-        ((PlayerStaminaGetter) killer).starrailexpress$setStamina(ModRoles.JIDONGZHE.getMaxSprintTime(killer));
+        ((PlayerStaminaGetter) killer).starrailexpress$setStamina(
+                JidongzheRole.BASE_STAMINA_TICKS * (float) JidongzheRole.OVERLOAD_STAMINA_MULTIPLIER);
         applySpeed(killer);
+        syncStamina(killer);
         notify(killer, "message.noellesroles.jidongzhe.overload_extend", ChatFormatting.GOLD);
         sync();
     }
@@ -253,8 +250,9 @@ public class JidongzheRoleData extends SimpleRoleData {
     private void endOverload(ServerPlayer sp, boolean announce) {
         overloadActive = false;
         overloadEndAt = 0L;
+        overloadSyncTickCounter = 0;
         sp.removeEffect(MobEffects.MOVEMENT_SPEED);
-        // 体力钳制回基础上限交给 PlayerEntityMixin 每刻的 min 结算，这里不手动削减
+        // 超出新上限的体力由 PlayerEntityMixin 每刻的 min 结算钳回，两端各自收敛
         if (announce) {
             notify(sp, "message.noellesroles.jidongzhe.overload_end", ChatFormatting.GRAY);
         }
@@ -294,6 +292,13 @@ public class JidongzheRoleData extends SimpleRoleData {
             return;
         }
 
+        // 疾跑记忆：按下蹲键的同刻原版已关掉疾跑，滑铲包到达时只能靠这个窗口判定
+        if (sp.isSprinting()) {
+            sprintMemoryTicks = JidongzheRole.SPRINT_MEMORY_TICKS;
+        } else if (sprintMemoryTicks > 0) {
+            sprintMemoryTicks--;
+        }
+
         if (overloadActive) {
             long now = GameUtils.getTicksFromGameStart(sp.level());
             if (now >= overloadEndAt) {
@@ -319,19 +324,27 @@ public class JidongzheRoleData extends SimpleRoleData {
         if (overloadActive) {
             endOverload(sp, false);
         }
+        sprintMemoryTicks = 0;
+        slideEndAt = 0L;
     }
 
-    private boolean hasStamina(ServerPlayer sp, int percentOfBase) {
-        float base = JidongzheRole.BASE_STAMINA_TICKS;
-        return ((PlayerStaminaGetter) sp).starrailexpress$getStamina() >= base * percentOfBase / 100.0F;
-    }
-
+    /**
+     * 只扣体力、不做一票否决：体力条本身会限制持续疾跑，把「体力不足」做成静默失败只会让滑铲莫名失灵。
+     */
     private void spendStamina(ServerPlayer sp, int percentOfBase) {
-        // 消耗量按基础上限计算，超载期间体力上限翻倍不会让滑铲变得更贵
         float base = JidongzheRole.BASE_STAMINA_TICKS;
         PlayerStaminaGetter stamina = (PlayerStaminaGetter) sp;
-        stamina.starrailexpress$setStamina(
-                Math.max(0.0F, stamina.starrailexpress$getStamina() - base * percentOfBase / 100.0F));
+        float current = Math.max(0.0F, stamina.starrailexpress$getStamina());
+        stamina.starrailexpress$setStamina(Math.max(0.0F, current - base * percentOfBase / 100.0F));
+        syncStamina(sp);
+    }
+
+    /**
+     * 把服务端的体力数值推给本人客户端：两端各自模拟同一份体力，不发包玩家看不到变化。
+     */
+    private void syncStamina(ServerPlayer sp) {
+        float value = ((PlayerStaminaGetter) sp).starrailexpress$getStamina();
+        ServerPlayNetworking.send(sp, new JidongzheStaminaS2CPacket(value));
     }
 
     private void notify(ServerPlayer sp, String key, ChatFormatting color) {
@@ -341,13 +354,12 @@ public class JidongzheRoleData extends SimpleRoleData {
     private void broadcastPose(ServerPlayer sp, boolean start, int durationTicks) {
         JidongzheSlidePoseS2CPacket packet = new JidongzheSlidePoseS2CPacket(sp.getId(), start, durationTicks);
         for (ServerPlayer target : sp.serverLevel().players()) {
-            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(target, packet);
+            ServerPlayNetworking.send(target, packet);
         }
     }
 
     /**
-     * 客户端 HUD 用：超载剩余刻数，0 表示未在超载或已走完。
-     * 截止点由同步到达时的「剩余刻数 + 本地世界刻」推算，之后靠客户端自行倒数。
+     * HUD 用：超载剩余刻数，0 表示未在超载或已走完。
      */
     public long overloadRemainingTicks() {
         if (!overloadActive) {

@@ -419,9 +419,11 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.ID,
                 org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.CODEC);
 
-        // 机动者：滑铲 / 滑铲跳请求（C2S）、跪滑姿态同步（S2C）
+        // 机动者：滑铲 / 滑铲跳请求（C2S）、跪滑姿态同步（S2C）、体力数值回落（S2C）
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.JidongzheSlideC2SPacket.ID,
                 org.agmas.noellesroles.packet.JidongzheSlideC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.JidongzheStaminaS2CPacket.ID,
+                org.agmas.noellesroles.packet.JidongzheStaminaS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket.ID,
                 org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket.CODEC);
 
