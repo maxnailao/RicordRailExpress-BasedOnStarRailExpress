@@ -36,6 +36,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
@@ -87,6 +88,31 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
             // 检查是否是鬼魅幻影实体
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
+
+            // 布谷鸟的蛋：任意枪械命中蛋的交互实体即打爆（蛋非玩家：无误伤惩罚、不掉落枪）
+            if (mainHandStack.is(TMMItemTags.GUNS) && CuckooEggHandler.isEggInteraction(targetEntity)
+                    && targetEntity.distanceToSqr(player) < 30 * 30) {
+                CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
+
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+
+                for (ServerPlayer tracking : PlayerLookup.tracking(player))
+                    PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
+                PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
+
+                if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
+                    var cooldowns = player.getCooldowns();
+                    if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
+                        cooldowns.addCooldown(mainHandStack.getItem(),
+                                GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
+                                        GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
+                    }
+                }
+                return;
+            }
+
             if (mainHandStack.is(TMMItemTags.GUNS) && targetEntity instanceof GhostPhantomEntity phantomEntity
                     && phantomEntity.distanceToSqr(player) < 65 * 65) {
                 phantomEntity.playerHurt(player, GameConstants.DeathReasons.PHANTOM_DESTROYED);

@@ -16,9 +16,11 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,6 +115,13 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     if (payload.hitBlockPos() != null && player.serverLevel() != null
                             && player.serverLevel().getBlockState(payload.hitBlockPos()).getBlock() instanceof TrainTargetBlock) {
                         TrainTargetBlock.onHit(player.serverLevel(), payload.hitBlockPos());
+                    }
+
+                    // 布谷鸟的蛋：狙击可打爆（弹药/冷却/音效已在前面统一处理）
+                    if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof Entity eggTarget
+                            && CuckooEggHandler.isEggInteraction(eggTarget)
+                            && eggTarget.distanceTo(player) < 200.0) {
+                        CuckooEggHandler.tryBreakEggByAttacker(eggTarget, player);
                     }
 
                     // 处理实体命中

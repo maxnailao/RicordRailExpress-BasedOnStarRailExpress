@@ -444,7 +444,7 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
         }
 
-        // 捣蛋鬼商店
+        // 滑头鬼商店
         {
             // 空包弹 - 150金币
             SLIPPERY_GHOST_SHOP.add(new ShopEntry(
@@ -464,7 +464,7 @@ public class RoleShopHandler {
                     50,
                     ShopEntry.Type.TOOL));
 
-            // 闪光弹 - 175金币（捣蛋鬼专用）
+            // 闪光弹 - 175金币（滑头鬼专用）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
                         @Override
@@ -473,11 +473,11 @@ public class RoleShopHandler {
                         }
                     });
 
-            // 诱饵弹 - 25金币（捣蛋鬼专用）
+            // 诱饵弹 - 25金币（滑头鬼专用）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
 
-            // 监控失灵 - 50金币（捣蛋鬼专属）
+            // 监控失灵 - 50金币（滑头鬼专属）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
                         @Override
@@ -2913,7 +2913,32 @@ public class RoleShopHandler {
                     ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
         }
 
-        // 捣蛋鬼商店
+        // 密客商店：鞭炮/开锁器/假枪/EMP 充能
+        {
+            var SHOP = new java.util.ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.WEAPON));
+            ItemStack emp = net.minecraft.world.item.Items.EXPERIENCE_BOTTLE.getDefaultInstance();
+            emp.set(net.minecraft.core.component.DataComponents.ITEM_NAME,
+                    Component.translatable("item.noellesroles.cipher_emp_charge").withStyle(ChatFormatting.AQUA));
+            SHOP.add(new ShopEntry(emp, 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    var comp = org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY
+                            .get(player);
+                    // 已满 3 次：不能购买，返回 false 中止交易（不扣费）
+                    if (comp.emp >= org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.MAX_EMP) {
+                        return false;
+                    }
+                    comp.addEmp();
+                    return true; // 充能类不产出物品，直接生效
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.CIPHER.getIdentifier(), SHOP);
+        }
+
+        // 滑头鬼商店
         {
             ShopContent.customEntries.put(
                     ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);

@@ -105,7 +105,7 @@ public class THRinnosukeRole extends TouhouRole {
         ModItems.REINFORCEMENT.getDefaultInstance(),
         300,
         ShopEntry.Type.TOOL));
-    // 诱饵弹 - 25金币（捣蛋鬼专用）
+    // 诱饵弹 - 25金币（滑头鬼专用）
     SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
 
     // 照明弹 - 100金币

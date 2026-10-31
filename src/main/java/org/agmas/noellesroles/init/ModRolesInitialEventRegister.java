@@ -596,6 +596,8 @@ public class ModRolesInitialEventRegister {
     static {//技能注册
         //调用熊孩子技能注册
         org.agmas.noellesroles.game.roles.innocence.child.ChildSkillRegistry.register();
+        //调用顽童技能注册（收回自己戴上的玩具手铐）
+        org.agmas.noellesroles.game.roles.innocence.wantong.WantongSkillRegistry.register();
         RolePassive.register(ModRoles.PHANTOM_MUSICIAN,
                 RolePassive.passive(SRE.id("phantom_musician_income"),
                         "passive.noellesroles.phantom_musician.income", 30 * 20, player -> {

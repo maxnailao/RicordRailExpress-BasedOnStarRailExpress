@@ -102,7 +102,9 @@ public class StandardRevolverItem extends SkinableItem {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             || entity instanceof PuppeteerBodyEntity
                             || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity
-                            || entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
+                            || entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity
+                            || org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler
+                                    .isEggInteraction(entity);
                 }, 20f);
     }
 

@@ -15,6 +15,8 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
+import io.wifi.starrailexpress.index.TMMSounds;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 
 import java.util.List;
 
@@ -39,6 +41,16 @@ public class NinjaKnifeItem extends KnifeItem {
         var collision = KnifeItem.getKnifeTarget(attacker);
         if (collision instanceof net.minecraft.world.phys.EntityHitResult entityHitResult) {
             var target = entityHitResult.getEntity();
+            // 布谷鸟的蛋：右键直接打碎，不消耗忍者刀、不进冷却（蓄力要求仅适用于普通刀）
+            if (CuckooEggHandler.isEggInteraction(target)) {
+                if (target.distanceTo(attacker) <= 4.0
+                        && CuckooEggHandler.tryBreakEggByAttacker(target, attacker)) {
+                    target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+                    attacker.swing(InteractionHand.MAIN_HAND);
+                    return InteractionResultHolder.consume(stack);
+                }
+                return InteractionResultHolder.pass(stack);
+            }
             if (target instanceof Player victim) {
                 GameUtils.killPlayer(victim, true, attacker, Noellesroles.id("ninja_knife_kill"));
                 stack.shrink(1);

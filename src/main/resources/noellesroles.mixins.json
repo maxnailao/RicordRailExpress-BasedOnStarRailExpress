@@ -162,6 +162,7 @@
     "client.roles.priest.PriestLocalPlayerMixin",
     "client.roles.priest.PriestHeavenCameraMixin",
     "client.roles.priest.PriestHeavenHandMixin",
+    "client.roles.cipher.CipherDroneHandHideMixin",
     "client.roles.morphling.MorphlingCapeRendererMixin",
     "client.roles.huanshushi.IllusionDecoySitPoseMixin",
     "client.roles.morphling.MorphlingRendererMixin",

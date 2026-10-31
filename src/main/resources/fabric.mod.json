@@ -303,6 +303,7 @@
       "noellesroles:kidnapped",
       "noellesroles:bloodhound",
       "noellesroles:witch_accomplice",
+      "noellesroles:cipher",
       "noellesroles:dianxue_master",
       "noellesroles:dream_health",
       "noellesroles:virtual_shield"
@@ -323,6 +324,7 @@
   ],
   "depends": {
     "minecraft": "1.21.1",
+    "geckolib": ">=4.6.0",
     "wathe": "*",
     "cloth-config": "*",
     "modmenu": "*",

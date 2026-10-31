@@ -735,7 +735,25 @@ public class ModPacketsReciever {
           RoleSkill.beginUsePossessed(targetServerPlayer);
         });
 
-    ServerPlayNetworking.registerGlobalReceiver(TryThrowItemPacket.ID, (payload, context) -> {
+    // 密客：无人机远程驱动（本体不动，客户端把相机绑到无人机后转发按键）
+    ServerPlayNetworking.registerGlobalReceiver(
+            org.agmas.noellesroles.packet.CipherDroneControlC2SPacket.ID, (payload, context) -> {
+              var sp = context.player();
+              var comp = org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY.get(sp);
+              var drone = comp.getDroneRef();
+              if (drone != null && sp.getUUID().equals(drone.getOwner())) {
+                drone.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
+              }
+            });
+
+    // 密客：拼写 finish 完成 → 关闭无人机
+    ServerPlayNetworking.registerGlobalReceiver(
+            org.agmas.noellesroles.packet.CipherCloseDroneC2SPacket.ID, (payload, context) -> {
+              org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent
+                      .KEY.get(context.player()).requestClose();
+            });
+
+      ServerPlayNetworking.registerGlobalReceiver(TryThrowItemPacket.ID, (payload, context) -> {
       final var player = context.player();
       if (player.isSpectator())
         return;

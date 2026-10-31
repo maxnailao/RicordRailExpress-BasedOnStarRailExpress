@@ -85,9 +85,56 @@ public class DianxueMasterPlayerComponent implements RoleComponent, ServerTickin
         return active;
     }
 
+    /** 服务端：查找当前正在对 target 点穴的大师组件；无人点穴时返回 null。 */
+    public static DianxueMasterPlayerComponent findActiveMasterOn(ServerPlayer target) {
+        if (target == null) return null;
+        for (ServerPlayer p : target.serverLevel().players()) {
+            if (p == target) continue;
+            DianxueMasterPlayerComponent comp = KEY.get(p);
+            if (comp != null && comp.active && target.getUUID().equals(comp.targetId)) {
+                return comp;
+            }
+        }
+        return null;
+    }
+
     /**
-     * 再次发动技能：取消当前点穴状态，不结算任何已点中穴位的效果。
+     * 武术家击打被点穴者：消除当前穴位。消除的穴位判定为"已被点中"——
+     * 与大师点击同语义：前四穴推进序列（效果仍在点穴结束时统一结算），
+     * 第五穴立即按"被点穴"致死结算。复用人手点击的防抖窗口，一次有效攻击只推进一穴。
      */
+    public void clearAcupointByPunch(ServerPlayer puncher) {
+        if (!active || !(player instanceof ServerPlayer master)) return;
+        if (!(master.level().getPlayerByUUID(targetId) instanceof ServerPlayer target)
+                || !GameUtils.isPlayerAliveAndSurvival(target)) {
+            closeAndStop(master);
+            return;
+        }
+
+        long now = master.level().getGameTime();
+        if (now - lastClickAcceptedGameTime < MIN_CLICK_INTERVAL_TICKS) {
+            return;
+        }
+        lastClickAcceptedGameTime = now;
+
+        if (activeIndex == POINT_COUNT - 1) {
+            // 第五穴被击开：判定为已被点穴，强制击杀立即生效（归属仍记在大师身上）
+            applyEffect(target, master, activeIndex);
+            closeAndStop(master);
+            return;
+        }
+
+        advanceSequence(master);
+        master.displayClientMessage(Component.literal("武术家击开了一处穴位（判定为已点穴）")
+                .withStyle(ChatFormatting.AQUA), true);
+        target.displayClientMessage(Component.literal("有穴位被武术家击开！")
+                .withStyle(ChatFormatting.GOLD), true);
+        if (puncher != null && puncher != master) {
+            puncher.displayClientMessage(Component.literal("击打成功：消除了一处穴位")
+                    .withStyle(ChatFormatting.GREEN), true);
+        }
+    }
+
     public void cancelPressing() {
         if (!active) return;
         if (player instanceof ServerPlayer master) {

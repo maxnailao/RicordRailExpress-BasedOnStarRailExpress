@@ -97,6 +97,21 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
         return activeTicks > 0;
     }
 
+    /**
+     * 被大嗓门冲击波吼起：若正处于晒太阳（躺下）状态则立即强制起身，
+     * 走与主动起身相同的收尾（移除假尸体、进入 40 秒技能冷却）。
+     * @return true 表示确实打断了躺下状态
+     */
+    public boolean forceStandUp() {
+        if (!(player instanceof ServerPlayer sp) || activeTicks <= 0) {
+            return false;
+        }
+        finishActive(sp);
+        sp.displayClientMessage(Component.literal("晒着太阳时被大嗓门吼起来了！")
+                .withStyle(ChatFormatting.DARK_RED), true);
+        return true;
+    }
+
     public boolean useSkill(ServerPlayer sp) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;

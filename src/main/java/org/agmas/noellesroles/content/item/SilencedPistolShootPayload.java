@@ -24,6 +24,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
 import org.jetbrains.annotations.NotNull;
@@ -96,6 +97,14 @@ public record SilencedPistolShootPayload(Action action, int targetId) implements
 
             // 处理命中逻辑
             Entity targetEntity = player.serverLevel().getEntity(targetId);
+
+            // 布谷鸟的蛋：命中即打爆（弹药与8秒冷却已正常消耗）
+            if (CuckooEggHandler.isEggInteraction(targetEntity)
+                    && targetEntity.distanceToSqr(player) < SilencedPistolItem.RANGE * SilencedPistolItem.RANGE) {
+                CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
+                return;
+            }
+
             if (targetEntity instanceof ServerPlayer target
                     && target.distanceToSqr(player) < SilencedPistolItem.RANGE * SilencedPistolItem.RANGE) {
 

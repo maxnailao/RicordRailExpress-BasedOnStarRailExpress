@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModItems;
 
 import java.util.HashMap;
@@ -29,6 +30,20 @@ public class BatonHandler {
     public static InteractionResult onEntityDamaged(Player attacker, Level level, InteractionHand hand, Entity entity,
             EntityHitResult hitResult) {
         if (level.isClientSide) return InteractionResult.PASS;
+
+        // 布谷鸟的蛋：警棍直接一击打碎（不消耗耐久，不进击杀冷却）
+        if (CuckooEggHandler.isEggInteraction(entity)) {
+            ItemStack batonStack = attacker.getItemInHand(hand);
+            if (!batonStack.is(ModItems.BATON)) return InteractionResult.PASS;
+            if (attacker.getCooldowns().isOnCooldown(ModItems.BATON)) return InteractionResult.FAIL;
+            if (entity.distanceTo(attacker) > 4.0) return InteractionResult.FAIL;
+            if (attacker instanceof net.minecraft.server.level.ServerPlayer sp) {
+                CuckooEggHandler.tryBreakEggByAttacker(entity, sp);
+            }
+            attacker.swing(hand, true);
+            return InteractionResult.SUCCESS;
+        }
+
         if (!(entity instanceof Player victim)) return InteractionResult.PASS;
         if (!GameUtils.isPlayerAliveAndSurvival(attacker) || !GameUtils.isPlayerAliveAndSurvival(victim)) return InteractionResult.PASS;
 

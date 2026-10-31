@@ -362,6 +362,10 @@ public class ZeroOneFiveGunItem extends SkinableItem {
                     && dummy.canReceiveHits()) {
                 return true;
             }
+            // 允许选中布谷鸟的蛋（交互实体）
+            if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
+                return true;
+            }
             return false;
         }, RANGE);
     }

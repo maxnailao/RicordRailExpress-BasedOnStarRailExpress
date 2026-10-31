@@ -18,7 +18,7 @@ import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPla
 
 /**
  * 空包弹物品
- * - 捣蛋鬼专属道具
+ * - 滑头鬼专属道具
  * - 右键对目标玩家使用
  * - 使目标手中的枪进入30秒冷却
  * - 使用后消耗

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
- * 捣蛋鬼玩家组件
+ * 滑头鬼玩家组件
  * 用于实现被动收入功能：每20秒获取50金币
  */
 public class SlipperyGhostPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -43,7 +43,7 @@ public class SlipperyGhostPlayerComponent implements RoleComponent, ServerTickin
     
     @Override
     public void serverTick() {
-        // 检查玩家是否为捣蛋鬼
+        // 检查玩家是否为滑头鬼
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (!gameWorld.isRole(player, ModRoles.PRANKSTER)) {
             return;

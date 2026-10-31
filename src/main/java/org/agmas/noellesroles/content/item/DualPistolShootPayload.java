@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
@@ -89,6 +90,13 @@ public record DualPistolShootPayload(boolean leftHand, int targetId) implements 
             PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
 
             Entity targetEntity = player.serverLevel().getEntity(payload.targetId());
+
+            // 布谷鸟的蛋：命中蛋的交互实体即打爆（音效/枪口火焰/冷却已在前段统一处理）
+            if (CuckooEggHandler.isEggInteraction(targetEntity) && targetEntity.distanceToSqr(player) < 30 * 30) {
+                CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
+                return;
+            }
+
             // 特殊实体命中处理（与左轮手枪一致）
             if (targetEntity instanceof GhostPhantomEntity phantomEntity
                     && phantomEntity.distanceToSqr(player) < 65 * 65) {

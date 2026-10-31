@@ -12,8 +12,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,8 +50,15 @@ public record ZeroOneFiveShootPayload(int target, boolean isAutoSecondShot) impl
 
             // 检查目标并处理命中
             boolean hit = false;
+            // 布谷鸟的蛋：命中即打爆（自动第二枪也可补刀碎蛋）
+            if (player.serverLevel().getEntity(payload.target()) instanceof Entity eggTarget
+                    && CuckooEggHandler.isEggInteraction(eggTarget)
+                    && eggTarget.distanceToSqr(player) < 30 * 30) {
+                CuckooEggHandler.tryBreakEggByAttacker(eggTarget, player);
+                hit = true;
+            }
             // 检查是否是幻术师假人
-            if (player.serverLevel().getEntity(payload.target()) instanceof IllusionDecoyEntity illusionDecoy
+            else if (player.serverLevel().getEntity(payload.target()) instanceof IllusionDecoyEntity illusionDecoy
                     && illusionDecoy.distanceToSqr(player) < 30 * 30) {
                 illusionDecoy.playerHurt(player);
                 hit = true;

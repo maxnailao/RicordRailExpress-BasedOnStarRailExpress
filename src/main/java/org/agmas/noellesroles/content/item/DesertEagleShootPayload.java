@@ -22,6 +22,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.entity.IllusionDecoyEntity;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
@@ -100,6 +101,13 @@ public record DesertEagleShootPayload(Action action, int targetId, boolean isHea
 
             // 处理命中逻辑
             Entity targetEntity = player.serverLevel().getEntity(targetId);
+
+            // 布谷鸟的蛋：命中即打爆（弹药与冷却已正常消耗，不触发误伤掉落/反伤判定）
+            if (CuckooEggHandler.isEggInteraction(targetEntity)
+                    && targetEntity.distanceToSqr(player) < DesertEagleItem.RANGE * DesertEagleItem.RANGE) {
+                CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
+                return;
+            }
 
             // 检查是否是幻术师假人
             if (targetEntity instanceof IllusionDecoyEntity illusionDecoy

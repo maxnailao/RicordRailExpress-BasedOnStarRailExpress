@@ -35,6 +35,9 @@ public class HandCuffsItem extends Item {
     /** CUSTOM_DATA 中标记"从前面铐住"的键 */
     public static final String TAG_CUFFED_FRONT = "noellesroles:cuffed_front";
 
+    /** CUSTOM_DATA 中记录"为谁戴上"（戴铐者 UUID）的键 */
+    public static final String TAG_CUFFER = "noellesroles:cuffer";
+
     public static void putOnHandCuff(Player player, ItemStack stack) {
         ExtraSlotComponent.setSlot(player, SLOT_HANDCUFFS, stack);
     }
@@ -49,6 +52,37 @@ public class HandCuffsItem extends Item {
 
     public static boolean hasHandCuff(Player player) {
         return ExtraSlotComponent.getSlot(player, SLOT_HANDCUFFS).getItem() instanceof HandCuffsItem;
+    }
+
+    /** 该玩家佩戴的是否为玩具手铐（区别于真手铐/重刑犯手铐） */
+    public static boolean isWearingToyHandcuffs(Player player) {
+        return ExtraSlotComponent.getSlot(player, SLOT_HANDCUFFS).is(
+                org.agmas.noellesroles.init.ModItems.TOY_HANDCUFFS);
+    }
+
+    /** 读取"是谁给该玩家戴上手铐"的 UUID，未记录时返回 null（旧物品/初始佩戴） */
+    public static java.util.UUID getCuffer(Player wearer) {
+        ItemStack stack = getHandCuffItemStack(wearer);
+        if (!(stack.getItem() instanceof HandCuffsItem)) {
+            return null;
+        }
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!tag.hasUUID(TAG_CUFFER)) {
+            return null;
+        }
+        return tag.getUUID(TAG_CUFFER);
+    }
+
+    /** 从目标身上摘下玩具手铐并交还给 retriever 的背包；目标未戴玩具手铐时返回 false */
+    public static boolean takeToyHandcuffsFrom(Player target, Player retriever) {
+        if (!isWearingToyHandcuffs(target)) {
+            return false;
+        }
+        ItemStack stack = putOffHandCuff(target);
+        if (!stack.isEmpty()) {
+            retriever.getInventory().add(stack);
+        }
+        return true;
     }
 
     /**
@@ -119,11 +153,13 @@ public class HandCuffsItem extends Item {
             }
             ItemStack cuffStack = stack.copy();
             // 判断是否从前面铐住：使用者处于被铐者正面朝向内
+            CompoundTag tag = cuffStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
             if (isInFrontOf(target, user)) {
-                CompoundTag tag = cuffStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                 tag.putBoolean(TAG_CUFFED_FRONT, true);
-                cuffStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             }
+            // 记录是谁戴上的：顽童凭此收回自己铐上的玩具手铐
+            tag.putUUID(TAG_CUFFER, user.getUUID());
+            cuffStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             putOnHandCuff(target, cuffStack);
             stack.shrink(1);
             user.displayClientMessage(Component.translatable("item.noellesroles.handcuffs.put", target.getName())
