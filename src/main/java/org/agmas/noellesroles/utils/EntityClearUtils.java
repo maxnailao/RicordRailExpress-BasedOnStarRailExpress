@@ -120,6 +120,11 @@ public class EntityClearUtils {
     }
 
     private static boolean isCuckooEggDisplayEntity(net.minecraft.world.entity.Entity entity) {
+        // 蛋绑定的交互实体也需在重置时清理
+        if (entity instanceof net.minecraft.world.entity.Interaction inter) {
+            return inter.getTags().contains(CuckooEggData.EGG_INTERACTION_TAG)
+                    || CuckooEggData.isCuckooEgg(entity);
+        }
         if (!(entity instanceof net.minecraft.world.entity.Display.BlockDisplay blockDisplay)) {
             return false;
         }

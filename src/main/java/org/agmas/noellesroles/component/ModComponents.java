@@ -889,7 +889,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ConspiratorPlayerComponent::new);
 
-    // 注册捣蛋鬼组件 - 被动收入计时器
+    // 注册滑头鬼组件 - 被动收入计时器
     registry.beginRegistration(Player.class, PRANKSTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SlipperyGhostPlayerComponent::new);

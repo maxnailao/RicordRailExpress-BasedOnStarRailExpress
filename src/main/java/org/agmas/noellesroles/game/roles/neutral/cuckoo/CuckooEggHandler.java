@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -32,6 +33,34 @@ public class CuckooEggHandler {
         ServerTickEvents.END_SERVER_TICK.register(CuckooEggHandler::tick);
     }
 
+    /** 客户端/服务端通用：仅凭同步的 tag 判断实体是否为蛋的交互实体（用于射线瞄准过滤） */
+    public static boolean isEggInteraction(Entity entity) {
+        return entity != null && entity.getTags().contains(CuckooEggData.EGG_INTERACTION_TAG);
+    }
+
+    /**
+     * 枪/刀/棒子命中蛋的统一服务端处理：
+     * 按注册表解析真实蛋（防伪造实体ID），布谷鸟本人无法打碎自己的蛋，成功时记录回放并破碎。
+     * @return true 表示蛋已被打碎
+     */
+    public static boolean tryBreakEggByAttacker(Entity clickedEntity, ServerPlayer attacker) {
+        if (!(attacker.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return false;
+        CuckooEggData.EggInfo info = CuckooEggData.resolveEggInfo(clickedEntity);
+        if (info == null || info.eggEntity == null || info.eggEntity.isRemoved()) return false;
+        var gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
+        if (gameWorld.isRole(attacker, ModRoles.CUCKOO) && info.ownerUuid.equals(attacker.getUUID())) {
+            attacker.displayClientMessage(Component.translatable("message.noellesroles.cuckoo.cant_break_own_egg")
+                    .withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.cuckoo.egg_crushed",
+                        GameReplayUtils.getReplayPlayerDisplayText(attacker, true)));
+        breakEgg(info.eggEntity, info, attacker.server);
+        CuckooEggData.unregisterEgg(info.eggEntity.getUUID());
+        return true;
+    }
+
     private static void tick(net.minecraft.server.MinecraftServer server) {
         if (CuckooEggData.getAllEggs().isEmpty()) return;
         var level = server.overworld();
@@ -51,6 +80,11 @@ public class CuckooEggHandler {
             // 验证实体仍然有效
             if (eggEntity == null || eggEntity.isRemoved() || !(eggEntity instanceof Display.BlockDisplay)
                     || !eggEntity.getUUID().equals(eggUuid)) {
+                // 蛋已丢失：同步清理绑定的交互实体，避免残留
+                if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+                    info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
+                }
+                CuckooEggData.unregisterEgg(eggUuid);
                 iter.remove();
                 continue;
             }
@@ -137,6 +171,10 @@ public class CuckooEggHandler {
                 var comp = CuckooPlayerComponent.KEY.get(ownerPlayer);
                 if (comp != null) comp.onEggBroken(eggEntity);
             }
+        }
+        // 同步移除蛋绑定的交互实体
+        if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+            info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
         }
         if (eggEntity != null && !eggEntity.isRemoved()) {
             // 播放海龟蛋破碎音效

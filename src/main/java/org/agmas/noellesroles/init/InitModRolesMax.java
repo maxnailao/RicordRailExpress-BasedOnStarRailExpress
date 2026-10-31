@@ -112,7 +112,7 @@ public class InitModRolesMax {
         // 复仇者每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.AVENGER_ID, 1);
 
-        // 捣蛋鬼每局只能有 1 个
+        // 滑头鬼每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.PRANKSTER_ID, 1);
 
         // 女巫每局只能有 1 个

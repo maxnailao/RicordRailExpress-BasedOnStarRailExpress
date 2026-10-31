@@ -7,6 +7,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import io.wifi.starrailexpress.api.SRERole;
 import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.UUID;
@@ -58,6 +59,24 @@ public final class ZhensouzheHandler {
 
         // 扣除金币
         shop.addToBalance(-QUERY_COST);
+
+        // 特殊目标：布袋鬼——侦搜被鬼气干扰，只见"此人似乎不存在"；
+        // 小透明——气息全无，毫无踪迹。两者均给出模糊反馈而非存活状态。
+        SRERole targetRole = gameWorldComponent.getRole(target);
+        if (targetRole == ModRoles.MA_CHEN_XU) {
+            scout.displayClientMessage(
+                    Component.translatable("message.noellesroles.zhensouzhe.target_kuroito")
+                            .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC),
+                    true);
+            return;
+        }
+        if (targetRole == ModRoles.GHOST) {
+            scout.displayClientMessage(
+                    Component.translatable("message.noellesroles.zhensouzhe.target_ghost")
+                            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC),
+                    true);
+            return;
+        }
 
         // 反馈目标存活状态
         boolean alive = GameUtils.isPlayerAliveAndSurvival(target);

@@ -123,7 +123,9 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
     public static HitResult getGunTarget(Player user) {
         return SniperProjectileUtil.getSniperHitResult(user,
                 entity -> (entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player))
-                        || entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity, 200F);
+                        || entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity
+                        || org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler
+                                .isEggInteraction(entity), 200F);
     }
 
     // 倍镜相关方法

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +59,11 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                 player.level().playSound((Player) null, player.getX(), player.getEyeY(), player.getZ(),
                         TMMSounds.ITEM_REVOLVER_CLICK, SoundSource.PLAYERS, 0.5F,
                         1.0F + player.getRandom().nextFloat() * 0.1F - 0.05F);
+
+                if (var6 != null && CuckooEggHandler.isEggInteraction(var6) && var6.distanceTo(player) < 30.0F) {
+                    // 布谷鸟的蛋：匪徒左轮可打爆（后续枪声/冷却走原有统一流程）
+                    CuckooEggHandler.tryBreakEggByAttacker(var6, player);
+                }
 
                 if (var6 instanceof Player) {
                     Player target = (Player) var6;

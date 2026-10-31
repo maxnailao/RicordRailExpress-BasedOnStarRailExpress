@@ -444,7 +444,7 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
         }
 
-        // 捣蛋鬼商店
+        // 滑头鬼商店
         {
             // 空包弹 - 150金币
             SLIPPERY_GHOST_SHOP.add(new ShopEntry(
@@ -464,7 +464,7 @@ public class RoleShopHandler {
                     50,
                     ShopEntry.Type.TOOL));
 
-            // 闪光弹 - 175金币（捣蛋鬼专用）
+            // 闪光弹 - 175金币（滑头鬼专用）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
                         @Override
@@ -473,11 +473,11 @@ public class RoleShopHandler {
                         }
                     });
 
-            // 诱饵弹 - 25金币（捣蛋鬼专用）
+            // 诱饵弹 - 25金币（滑头鬼专用）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
 
-            // 监控失灵 - 50金币（捣蛋鬼专属）
+            // 监控失灵 - 50金币（滑头鬼专属）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
                         @Override
@@ -2913,7 +2913,7 @@ public class RoleShopHandler {
                     ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
         }
 
-        // 捣蛋鬼商店
+        // 滑头鬼商店
         {
             ShopContent.customEntries.put(
                     ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);

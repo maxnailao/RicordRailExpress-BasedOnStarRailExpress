@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.DurabilityBoatEntity;
 import org.agmas.noellesroles.content.item.PirateFlintlockItem;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,6 +62,11 @@ public record PirateFlintlockShootPayload(int target) implements CustomPacketPay
             // 计算有效射程
             float range = PirateFlintlockItem.getEffectiveRange(player);
             float rangeSq = range * range;
+
+            // 布谷鸟的蛋：燧发枪可打爆（枪声/30秒冷却走后面的统一流程）
+            if (CuckooEggHandler.isEggInteraction(targetEntity) && targetEntity.distanceToSqr(player) < rangeSq) {
+                CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
+            }
 
             // 处理命中玩家
             if (targetEntity instanceof ServerPlayer target

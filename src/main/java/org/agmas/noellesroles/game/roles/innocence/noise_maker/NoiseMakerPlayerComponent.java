@@ -23,6 +23,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -40,6 +41,8 @@ public class NoiseMakerPlayerComponent implements RoleComponent, ServerTickingCo
     public boolean isActive = true;
     public int cooldown = 0;
     private static final long PUSH_KILL_CREDIT_MS = 8000L;
+    /** 吼起躺地咸鱼的惩罚持续时间（秒）：沉重5（缓慢V）+ 锁键 */
+    private static final int SALTED_FISH_ROARED_SECONDS = 5;
     private static final Map<UUID, PushCredit> PUSH_CREDITS = new ConcurrentHashMap<>();
 
     static {
@@ -158,6 +161,22 @@ public class NoiseMakerPlayerComponent implements RoleComponent, ServerTickingCo
                     // 仅作用于正前方（约 ±72° 扇形）
                     if (lookFlat.dot(to.scale(1.0 / dist)) < 0.3D)
                         continue;
+
+                    // 咸鱼克制：躺下晒太阳的咸鱼被吼时直接起身，
+                    // 改吃 5 秒沉重5 + 锁键惩罚，不再被吹退、不吃常规眩晕
+                    if (target instanceof ServerPlayer tcp) {
+                        SaltedFishPlayerComponent fishComp = SaltedFishPlayerComponent.KEY.maybeGet(tcp).orElse(null);
+                        if (fishComp != null && fishComp.isActive() && fishComp.forceStandUp()) {
+                            int penaltyTicks = GameConstants.getInTicks(0, SALTED_FISH_ROARED_SECONDS);
+                            tcp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, penaltyTicks, 4, false, true, true));
+                            tcp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, penaltyTicks, 0, false, true, true));
+                            tcp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, penaltyTicks, 0, false, true, true));
+                            tcp.displayClientMessage(Component.literal("沉重V：5秒内无法行动按键！")
+                                    .withStyle(ChatFormatting.DARK_PURPLE), true);
+                            continue;
+                        }
+                    }
+
                     double strength = cfg.noisemakerShockwaveKnockback;
                     target.push(to.x / dist * strength, 0.42D, to.z / dist * strength);
                     if (target instanceof ServerPlayer stp) {

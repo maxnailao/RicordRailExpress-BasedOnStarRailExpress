@@ -2057,7 +2057,7 @@ public class ModRoles {
     ).setComponentKey(AvengerPlayerComponent.KEY));
 
     /**
-     * 捣蛋鬼角色
+     * 滑头鬼角色
      * - 不属于乘客阵营 (isInnocent = false)
      * - 不能使用杀手能力 (canUseKiller = false)，但有专属商店
      * - 假心情系统
@@ -2069,7 +2069,7 @@ public class ModRoles {
      */
     public static SRERole PRANKSTER = TMMRoles.registerRole(new NormalRole(
             PRANKSTER_ID, // 角色 ID
-            new Color(176, 196, 222).getRGB(), // 灰色 - 代表捣蛋鬼的隐匿
+            new Color(176, 196, 222).getRGB(), // 灰色 - 代表滑头鬼的隐匿
             false, // isInnocent = 非乘客阵营
             false, // canUseKiller = 无杀手能力（使用专属商店）
             SRERole.MoodType.FAKE, // 假心情

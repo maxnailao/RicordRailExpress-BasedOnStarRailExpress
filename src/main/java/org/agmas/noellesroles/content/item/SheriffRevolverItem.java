@@ -114,6 +114,10 @@ public class SheriffRevolverItem extends SkinableItem {
             if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
                 return true;
             }
+            // 允许选中布谷鸟的蛋（交互实体）
+            if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
+                return true;
+            }
             return false;
         }, 15.0);
     }

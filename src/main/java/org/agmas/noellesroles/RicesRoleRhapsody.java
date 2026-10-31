@@ -298,9 +298,9 @@ public class RicesRoleRhapsody implements ModInitializer {
             conspiratorComponent.init();
         }
 
-        // ==================== 捣蛋鬼角色处理 ====================
+        // ==================== 滑头鬼角色处理 ====================
         if (role.equals(ModRoles.PRANKSTER)) {
-            // 重置捣蛋鬼组件
+            // 重置滑头鬼组件
             SlipperyGhostPlayerComponent slipperyGhostComponent = ModComponents.PRANKSTER.get(player);
             slipperyGhostComponent.init();
         }

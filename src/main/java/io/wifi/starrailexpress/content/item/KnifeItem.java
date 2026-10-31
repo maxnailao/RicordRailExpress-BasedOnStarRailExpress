@@ -155,6 +155,10 @@ public class KnifeItem extends SkinableItem {
             if (entity instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) {
                 return true;
             }
+            // 允许选中布谷鸟的蛋（交互实体）：举刀蓄力后松开即可刀碎
+            if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
+                return true;
+            }
             return false;
                 }, 4f);
     }

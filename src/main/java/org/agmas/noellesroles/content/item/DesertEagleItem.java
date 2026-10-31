@@ -88,6 +88,10 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
             if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
                 return true;
             }
+            // 允许选中布谷鸟的蛋（交互实体）
+            if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
+                return true;
+            }
             return false;
         }, RANGE);
     }
@@ -167,7 +171,7 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
                 double boxMinY = playerTarget.getBoundingBox().minY;
                 double boxMaxY = playerTarget.getBoundingBox().maxY;
                 double boxHeight = boxMaxY - boxMinY;
-                // 命中点位于边界框上郈25%为爆头
+                // 命中点位于边界框上25%为爆头
                 isHeadshot = hitY > boxMinY + boxHeight * 0.75;
             }
 
@@ -319,6 +323,7 @@ public class DesertEagleItem extends SkinableItem implements HeldLikeRevolver {
             if (e instanceof Player player) return GameUtils.isPlayerAliveAndSurvival(player);
             if (e instanceof org.agmas.noellesroles.content.entity.PuppeteerBodyEntity) return true;
             if (e instanceof org.agmas.noellesroles.content.entity.GhostPhantomEntity) return true;
+            if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(e)) return true;
             return false;
         })) {
             AABB entityBB = entity.getBoundingBox().inflate(0.3);

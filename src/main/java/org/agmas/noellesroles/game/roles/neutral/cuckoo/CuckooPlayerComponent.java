@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
@@ -120,7 +121,15 @@ public class CuckooPlayerComponent implements RoleComponent, ServerTickingCompon
 
         level.addFreshEntity(egg);
 
-        CuckooEggData.registerEgg(egg, serverPlayer.getUUID());
+        // 交互实体：为蛋提供命中碰撞箱（宽高经数据同步到客户端，枪射线/近战可选中）
+        var eggHitbox = new Interaction(EntityType.INTERACTION, level);
+        eggHitbox.setPos(egg.getX(), egg.getY() + 0.02, egg.getZ());
+        eggHitbox.setWidth(0.6F);
+        eggHitbox.setHeight(0.5F);
+        eggHitbox.addTag(CuckooEggData.EGG_INTERACTION_TAG);
+        level.addFreshEntity(eggHitbox);
+
+        CuckooEggData.registerEgg(egg, eggHitbox, serverPlayer.getUUID());
 
         survivingEggs++;
         placeCooldown = 20 * 20;

@@ -25,6 +25,7 @@ import net.minecraft.world.entity.Entity;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.GhostPhantomEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
@@ -80,6 +81,15 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 return;
             }
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
+
+            // 布谷鸟的蛋：蓄力释放后可直接刀碎；蛋非玩家——不进刀冷却、不消耗耐久
+            if (CuckooEggHandler.isEggInteraction(targetEntity) && targetEntity.distanceTo(player) <= 4.0) {
+                if (CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player)) {
+                    targetEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
+                    player.swing(InteractionHand.MAIN_HAND);
+                }
+                return;
+            }
 
             // 检查是否是鬼魅幻影实体
             if (targetEntity instanceof GhostPhantomEntity phantomEntity) {

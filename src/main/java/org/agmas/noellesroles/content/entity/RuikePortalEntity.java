@@ -15,11 +15,15 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.windcharge.WindCharge;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.game.roles.innocence.ruike.RuikePlayerComponent;
 import org.agmas.noellesroles.init.ModEntities;
+import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -43,6 +47,9 @@ public class RuikePortalEntity extends Entity {
 
     /** 待截断音效追踪：玩家UUID -> 停止tick */
     private static final Map<UUID, Integer> pendingSoundStops = new HashMap<>();
+
+    /** 已传送过的投掷物集合：传送过去就不能再回来（单向通行），实体消失后自动清理 */
+    private static final Set<UUID> teleportedProjectiles = new HashSet<>();
 
     // 同步数据：放置者UUID
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID =
@@ -129,6 +136,68 @@ public class RuikePortalEntity extends Entity {
             }
             tryTeleport(player, serverLevel);
         }
+
+        // 服务端：检测进入传送门的投掷物（炸弹客的炸弹 / 悍匪的C4 / 风精灵的风弹 / 弓箭与猎魔箭）
+        // 没有配对传送门时不传送，投掷物仍掉落在原本的位置
+        tryTeleportProjectiles(serverLevel, portalBox.inflate(0.3));
+    }
+
+    /**
+     * 扫描传送门范围内的投掷物并尝试传送
+     */
+    private void tryTeleportProjectiles(ServerLevel serverLevel, AABB projectileBox) {
+        // 定期清理已消失投掷物的传送记录，防止集合无限增长
+        if (serverLevel.getGameTime() % 200 == 0) {
+            teleportedProjectiles.removeIf(uuid -> serverLevel.getEntity(uuid) == null);
+        }
+        // 炸弹客的炸弹 / 悍匪的C4：投掷后为掉落物品实体形态
+        for (ItemEntity item : serverLevel.getEntitiesOfClass(ItemEntity.class, projectileBox)) {
+            var stack = item.getItem();
+            if (stack.is(ModItems.BOMB) || stack.is(ModItems.C4)) {
+                tryTeleportProjectile(item, serverLevel);
+            }
+        }
+        // 风精灵的风弹
+        for (WindCharge windCharge : serverLevel.getEntitiesOfClass(WindCharge.class, projectileBox)) {
+            tryTeleportProjectile(windCharge, serverLevel);
+        }
+        // 弓箭与猎魔箭（猎魔箭为缓慢药箭，同属 AbstractArrow）
+        for (AbstractArrow arrow : serverLevel.getEntitiesOfClass(AbstractArrow.class, projectileBox)) {
+            // inGround 是 protected，改用速度判定：插地/失去动力的箭 deltaMovement 已被清零，不传送
+            if (arrow.getDeltaMovement().lengthSqr() < 1.0E-4) {
+                continue;
+            }
+            tryTeleportProjectile(arrow, serverLevel);
+        }
+    }
+
+    /**
+     * 尝试将投掷物传送到配对传送门。
+     * 与玩家不同：没有配对传送门时静默不传送（不发消息、不进冷却）。
+     */
+    private void tryTeleportProjectile(Entity projectile, ServerLevel serverLevel) {
+        UUID pairUuid = getPairUUID();
+        if (pairUuid == null) {
+            return;
+        }
+        Entity pairedEntity = serverLevel.getEntity(pairUuid);
+        if (!(pairedEntity instanceof RuikePortalEntity pairedPortal) || pairedPortal.isRemoved()) {
+            return;
+        }
+
+        // 防乒乓：传送过去即视为单向通行，该投掷物永远不能再被传送门传送
+        if (teleportedProjectiles.contains(projectile.getUUID())) {
+            return;
+        }
+
+        projectile.teleportTo(pairedPortal.getX(), pairedPortal.getY() + 0.5, pairedPortal.getZ());
+        teleportedProjectiles.add(projectile.getUUID());
+
+        // 两端播放传送音效（环境音，无人监听截断）
+        serverLevel.playSound(null, getX(), getY(), getZ(),
+                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.1F, 1.0F);
+        serverLevel.playSound(null, pairedPortal.getX(), pairedPortal.getY(), pairedPortal.getZ(),
+                SoundEvents.PORTAL_TRAVEL, SoundSource.PLAYERS, 0.1F, 1.0F);
     }
 
     /**
@@ -214,6 +283,7 @@ public class RuikePortalEntity extends Entity {
     public static void clearAllTeleportCooldowns() {
         teleportCooldowns.clear();
         pendingSoundStops.clear();
+        teleportedProjectiles.clear();
     }
 
     /**

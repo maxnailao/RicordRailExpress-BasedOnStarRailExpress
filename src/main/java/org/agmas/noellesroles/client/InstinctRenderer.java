@@ -618,7 +618,7 @@ public class InstinctRenderer {
             if (target instanceof Player targetPlayer) {
                 if (targetPlayer.distanceToSqr(self) > 40 * 40)
                     return -2;
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -647,7 +647,7 @@ public class InstinctRenderer {
                 return -1;
 
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -688,7 +688,7 @@ public class InstinctRenderer {
 
             // 所有玩家都显示葬仪的颜色（无法透视的职业除外）
             if (target instanceof Player targetPlayer) {
-                // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼）
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
                 if (isTargetInvisibleToInstinct(targetPlayer)) {
                     return -2;
                 }
@@ -1927,7 +1927,7 @@ public class InstinctRenderer {
 
     /**
      * 检查目标玩家是否属于「无法被任何本能透视」的职业。
-     * 包含：小透明、秉烛人、雇佣兵、捣蛋鬼、赌徒。
+     * 包含：小透明、秉烛人、雇佣兵、滑头鬼、赌徒。
      */
     private static boolean isTargetInvisibleToInstinct(Player target) {
         if (SREClient.gameComponent == null || target == null)

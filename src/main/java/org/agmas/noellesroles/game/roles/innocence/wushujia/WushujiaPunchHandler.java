@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -110,6 +111,15 @@ public class WushujiaPunchHandler {
      * @param victim   受害者
      */
     public static void onFlowHitConfirmed(Player attacker, Player victim) {
+        // 消穴：武术家空手击打正被点穴的目标时，每记有效击打消除一个穴位
+        // （消除的穴位判定为已被点穴；心流与非心流状态均可触发）
+        if (attacker instanceof ServerPlayer puncher && victim instanceof ServerPlayer sealedTarget) {
+            DianxueMasterPlayerComponent masterComp = DianxueMasterPlayerComponent.findActiveMasterOn(sealedTarget);
+            if (masterComp != null) {
+                masterComp.clearAcupointByPunch(puncher);
+            }
+        }
+
         // 仿照大嗓门：每次确认造成伤害的空手击打都记录归属，
         // 使被击退致死的受害者（虚空/摔落/焚化炉）把击杀归因到武术家，触发小脑惩罚。
         recordPunchCredit(victim, attacker);
