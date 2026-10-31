@@ -66,6 +66,8 @@ public class OtherRolesRegister {
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
         HuanlingHud.register();
         AdventurerHud.register();
+        // 机动者：超载剩余时间
+        org.agmas.noellesroles.client.hud.roles.JidongzheHud.register();
         ReasonerHud.register();
         EmbalmerHud.register();
         SkincrawlerHud.register();

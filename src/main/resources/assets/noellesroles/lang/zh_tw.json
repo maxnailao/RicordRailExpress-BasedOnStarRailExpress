@@ -4328,5 +4328,14 @@
   "message.noellesroles.road_roller.buy_cooldown": "壓路機購買冷卻還剩 %s 秒。",
   "message.noellesroles.road_roller.use_cooldown": "壓路機使用冷卻還剩 %s 秒。",
   "message.noellesroles.road_roller.not_ready": "剩餘時停時間不足，或你正在乘坐/吸食，無法釋放壓路機。",
-  "message.noellesroles.road_roller.no_floor": "目前位置沒有安全的下砸空間或地圖底層地板。物品未消耗。"
+  "message.noellesroles.road_roller.no_floor": "目前位置沒有安全的下砸空間或地圖底層地板。物品未消耗。",
+  "announcement.star.role.jidongzhe": "機動者",
+  "announcement.star.role.noellesroles.jidongzhe": "機動者",
+  "announcement.star.goals.jidongzhe": "做最快的那個人",
+  "announcement.star.win.jidongzhe": "好人陣營勝利！",
+  "skill.noellesroles.jidongzhe.overload": "超載",
+  "hud.noellesroles.jidongzhe.overload": "超載剩餘 %s 秒",
+  "message.noellesroles.jidongzhe.overload_start": "機體超載：體力上限翻倍並回覆 65% 體力，速度提升。",
+  "message.noellesroles.jidongzhe.overload_extend": "擊殺確認：超載延長 10 秒，體力回滿。",
+  "message.noellesroles.jidongzhe.overload_end": "超載結束，體力上限恢復正常。"
 }

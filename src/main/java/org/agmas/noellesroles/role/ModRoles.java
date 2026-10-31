@@ -184,6 +184,8 @@ public class ModRoles {
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
     // 点穴大师角色 ID - 警长阵营
     public static final ResourceLocation DIANXUE_MASTER_ID = Noellesroles.id("dianxue_master");
+    // 机动者角色 ID - 平民阵营
+    public static final ResourceLocation JIDONGZHE_ID = Noellesroles.id("jidongzhe");
     /** 领袖职业 ID（当前未实装该职业，保留以对齐角色分配逻辑） */
     public static ResourceLocation LEADER_ID = Noellesroles.id("leader");
     // 鬼眼·杨间角色 ID - 警长阵营
@@ -1285,6 +1287,26 @@ public class ModRoles {
             new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultEnableNeededPlayerCount(8);
+    /**
+     * 机动者角色 - 平民阵营
+     * - 登车标语：做最快的那个人
+     * - 被动·滑铲：疾跑中按下蹲键朝当前朝向跪滑出去，距离由 1.5 秒内置冷却的剩余量决定
+     * （剩余 1~1.5 秒固定 0.7 格，剩余 0~1 秒随冷却减少从 0.7 格提升到 3.5 格），单次消耗 8% 基础体力。
+     * - 特殊机制·滑铲跳：滑铲期间按下跳键向前跃进，跃距等值于本次滑铲距离，再消耗 4% 基础体力。
+     * - 主动·超载（冷却 100 秒）：25 秒内体力上限翻倍并获得速度 I，开启时回复「翻倍后上限」65% 的体力，
+     * 期间 HUD 显示剩余秒数；超载期间击杀玩家则超载延长 10 秒且体力回满。
+     * - 真实心情、看不到游戏计时、体力有限（取自平民基准）
+     */
+    public static SRERole JIDONGZHE = TMMRoles.registerRole(
+            new org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole(
+                    JIDONGZHE_ID, new Color(70, 190, 210).getRGB(), // 机动青
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true)
+            .setRoleData(org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRoleData::new)
+            // 体力上限随超载状态即时计算：服务端结算与客户端 HUD 都会走这个 supplier
+            .setMaxSprintTime(org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole::staminaCap)
+            .setDefaultMax(1);
     // 冒险家
     public static SRERole ADVENTURER = TMMRoles.registerRole(
             new AdventurerRole(ADVENTURER_ID, new Color(34, 139, 34).getRGB(), true, false,

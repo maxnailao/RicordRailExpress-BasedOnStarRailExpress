@@ -940,6 +940,18 @@ public class ModPacketsReciever {
             org.agmas.noellesroles.game.roles.neutral.priest.PriestRole.submitLyric(
                 context.player(), payload.text())));
 
+    // 机动者滑铲：客户端只上报「疾跑中按下蹲键」/「滑铲中按下跳键」，位移与体力消耗由服务端结算
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.JidongzheSlideC2SPacket.ID,
+        (payload, context) ->
+          context.server().execute(() -> {
+            if (payload.slideJump()) {
+              org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole.trySlideJump(context.player());
+            } else {
+              org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole.trySlide(context.player());
+            }
+          }));
+
     // 玩偶制作器：客户端提交「玩家名或 UUID」，服务端解析档案并产出该玩家的玩偶
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.PlushMakerCraftC2SPacket.ID,

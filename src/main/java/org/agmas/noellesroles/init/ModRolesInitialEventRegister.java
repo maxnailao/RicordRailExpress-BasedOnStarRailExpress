@@ -1557,6 +1557,16 @@ public class ModRolesInitialEventRegister {
                         .openChant(context.player())
         ).showOnHud(true).cooldownTicks(0).build());
 
+        // 机动者技能注册：超载（体力上限翻倍 + 速度 I，击杀可延长）；滑铲是被动，不走技能键
+        RoleSkill.register(ModRoles.JIDONGZHE, RoleSkill.skill(
+                org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole.SKILL_ID,
+                "skill.noellesroles.jidongzhe.overload",
+                context -> org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole
+                        .startOverload(context.player())
+        ).showOnHud(true)
+                .cooldownSeconds(org.agmas.noellesroles.game.roles.innocence.jidongzhe.JidongzheRole.OVERLOAD_COOLDOWN_SECONDS)
+                .build());
+
         // 超级亡命徒技能注册：使用技能，蹲下+ G 为特殊模式
         RoleSkill.register(SpecialGameModeRoles.SUPER_LOOSE_END,
                 RoleSkill.skill(SRE.id("super_loose_end_ability"),

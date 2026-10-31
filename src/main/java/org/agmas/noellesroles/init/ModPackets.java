@@ -416,6 +416,12 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.ID,
                 org.agmas.noellesroles.packet.PriestChantOpenS2CPacket.CODEC);
 
+        // 机动者：滑铲 / 滑铲跳请求（C2S）、跪滑姿态同步（S2C）
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.JidongzheSlideC2SPacket.ID,
+                org.agmas.noellesroles.packet.JidongzheSlideC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket.ID,
+                org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket.CODEC);
+
         // 玩偶制作器：界面开启（S2C）、玩家 ID 提交（C2S）
         PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.PlushMakerOpenS2CPacket.ID,
                 org.agmas.noellesroles.packet.PlushMakerOpenS2CPacket.CODEC);

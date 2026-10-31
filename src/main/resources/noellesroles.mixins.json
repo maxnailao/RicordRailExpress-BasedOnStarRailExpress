@@ -212,7 +212,8 @@
     "client.general.RoadRollerPlayerModelMixin",
     "compat.sodium.RoadRollerSodiumMixin",
     "network.RoadRollerMovementMixin",
-    "time_stop.RoadRollerPhysicsMixin"
+    "time_stop.RoadRollerPhysicsMixin",
+    "client.roles.jidongzhe.JidongzheSlidePoseMixin"
   ],
   "overwrites": {
     "requireAnnotations": true
