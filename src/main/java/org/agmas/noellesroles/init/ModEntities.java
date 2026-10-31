@@ -539,6 +539,23 @@ public class ModEntities {
                     .build("coffin"));
 
     /**
+     * 密客侦察无人机 - 无重力飞行，本体留原地、画面靠 setCameraEntity 切到本机。
+     * clientTrackingRange(32) 保证控制端在最多 32 区块内始终追踪到该实体（远程相机不丢失）。
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity> CIPHER_DRONE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("cipher_drone"),
+            EntityType.Builder
+                    .<org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity>of(
+                            org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity::new,
+                            MobCategory.MISC)
+                    .sized(0.6F, 0.5F)
+                    .clientTrackingRange(32)
+                    .updateInterval(1)
+                    .build("cipher_drone"));
+
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */
@@ -568,5 +585,8 @@ public class ModEntities {
                 org.agmas.noellesroles.game.roles.killer.huanmozhe.HuanmozheVexEntity.createAttributes());
         // 幻术师假人实体属性
         FabricDefaultAttributeRegistry.register(ILLUSION_DECOY, IllusionDecoyEntity.createAttributes());
+        // 密客无人机属性
+        FabricDefaultAttributeRegistry.register(CIPHER_DRONE,
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity.createAttributes());
     }
 }

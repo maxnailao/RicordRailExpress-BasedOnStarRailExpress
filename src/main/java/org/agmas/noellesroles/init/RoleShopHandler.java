@@ -2913,6 +2913,31 @@ public class RoleShopHandler {
                     ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
         }
 
+        // 密客商店：鞭炮/开锁器/假枪/EMP 充能
+        {
+            var SHOP = new java.util.ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(), 100, ShopEntry.Type.WEAPON));
+            ItemStack emp = net.minecraft.world.item.Items.EXPERIENCE_BOTTLE.getDefaultInstance();
+            emp.set(net.minecraft.core.component.DataComponents.ITEM_NAME,
+                    Component.translatable("item.noellesroles.cipher_emp_charge").withStyle(ChatFormatting.AQUA));
+            SHOP.add(new ShopEntry(emp, 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    var comp = org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY
+                            .get(player);
+                    // 已满 3 次：不能购买，返回 false 中止交易（不扣费）
+                    if (comp.emp >= org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.MAX_EMP) {
+                        return false;
+                    }
+                    comp.addEmp();
+                    return true; // 充能类不产出物品，直接生效
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.CIPHER.getIdentifier(), SHOP);
+        }
+
         // 滑头鬼商店
         {
             ShopContent.customEntries.put(

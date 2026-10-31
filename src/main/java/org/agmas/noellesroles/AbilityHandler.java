@@ -72,6 +72,12 @@ public class AbilityHandler {
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
             return;
         }
+        // 密客：召唤/关闭无人机，或消耗 EMP 开启自杀式冲锋
+        if (gameWorldComponent.isRole(player, ModRoles.CIPHER)) {
+            org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY
+                    .get(player).onSkillKey(player);
+            return;
+        }
         // 绑匪：绑架/放下面前的玩家；无目标且绑满 6 人时进入审判阶段
         if (gameWorldComponent.isRole(player, ModRoles.kidnapper)) {
             org.agmas.noellesroles.game.roles.neutral.kidnapper.KidnapperPlayerComponent.KEY

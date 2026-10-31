@@ -542,6 +542,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent> DIANXUE_MASTER = ComponentRegistry.getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dianxue_master"),
           org.agmas.noellesroles.game.roles.vigilante.dianxue_master.DianxueMasterPlayerComponent.class);
+  // 密客组件
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent> CIPHER = ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "cipher"),
+          org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.class);
+
 
   // 摄影师组件 - 记录画框购买次数
   public static final ComponentKey<PhotographerPlayerComponent> PHOTOGRAPHER = ComponentRegistry.getOrCreate(
@@ -908,6 +913,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, WITCH_ACCOMPLICE)
             .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
             .end(org.agmas.noellesroles.game.roles.neutral.witch_accomplice.WitchAccomplicePlayerComponent::new);
+
+    registry.beginRegistration(Player.class, ModComponents.CIPHER)
+            .respawnStrategy(org.ladysnake.cca.api.v3.entity.RespawnCopyStrategy.NEVER_COPY)
+            .end(org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent::new);
+
 
     // Register hacker component - stores commander channel restore countdown
     registry.beginRegistration(Player.class, BLACKKE)

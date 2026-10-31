@@ -4328,5 +4328,15 @@
   "message.noellesroles.road_roller.buy_cooldown": "壓路機購買冷卻還剩 %s 秒。",
   "message.noellesroles.road_roller.use_cooldown": "壓路機使用冷卻還剩 %s 秒。",
   "message.noellesroles.road_roller.not_ready": "剩餘時停時間不足，或你正在乘坐/吸食，無法釋放壓路機。",
-  "message.noellesroles.road_roller.no_floor": "目前位置沒有安全的下砸空間或地圖底層地板。物品未消耗。"
+  "message.noellesroles.road_roller.no_floor": "目前位置沒有安全的下砸空間或地圖底層地板。物品未消耗。",
+  "=============== 密客 ===============": "",
+  "announcement.star.role.cipher": "密客",
+  "announcement.star.goals.cipher": "我是專門打飛機的！",
+  "info.screen.roleid.cipher": "殺手方中立\n技能：無人機\n密客可以召喚無人機遠程偵察，此時密客將操控無人機移動，無人機可以開關門，撿起食物和飲品。\n注意！！無人機可以被打碎\nEMP 機制\n在商店裡購買充能後獲得一點充能，最多三點充能，在無人機駕駛時點擊技能鍵會消耗 EMP 充能開啟自殺式衝鋒模式，此時無人機行駛無法停止，速度是原本的兩倍，如果撞到牆壁或玩家就會炸開，炸開後會炸飛周圍半徑五格內的玩家兩米。",
+  "hud.noellesroles.cipher.ready": "無人機就緒 [%s]",
+  "hud.noellesroles.cipher.cooldown": "無人機冷卻：%s 秒",
+  "item.noellesroles.cipher_emp_charge": "EMP 充能",
+  "message.noellesroles.cipher.entered": "已部署無人機",
+  "message.noellesroles.cipher.no_emp": "沒有 EMP 充能",
+  "message.noellesroles.cipher.broken": "無人機被打碎"
 }

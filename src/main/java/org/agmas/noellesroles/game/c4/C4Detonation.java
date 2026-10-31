@@ -452,7 +452,7 @@ public final class C4Detonation {
     }
 
     public static void detonateAt(ServerLevel level, Player carrier, Player attacker) {
-        detonateAt(level, carrier.position(), attacker);
+        detonateAt(level, carrier.position(), attacker, null);
     }
 
     public static void detonateAt(ServerLevel level, Vec3 blastCenter, Player attacker) {
@@ -484,6 +484,52 @@ public final class C4Detonation {
                 attacker instanceof Player p ? p : null,
                 Noellesroles.id("c4_explosion"));
         }
+    }
+
+    /** 预判：在给定爆心、当前时刻会炸死多少人（与 detonateAt 受害者筛选完全一致）。供无人机 HUD 显示 */
+    public static int predictDetonationKills(ServerLevel level, Vec3 blastCenter) {
+        int n = 0;
+        for (ServerPlayer p : level.players()) {
+            if (p.isAlive() && !p.isSpectator() && !p.isCreative()
+                    && p.distanceToSqr(blastCenter) <= BLAST_RADIUS * BLAST_RADIUS
+                    && hasExplosionLineOfSight(level, blastCenter, p)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** 在指定位置引爆一枚 C4 效果；excludeVictimUuid 命中的玩家不受伤害（用于密客冲锋不炸到自己）。返回被击杀的玩家数 */
+    public static int detonateAt(ServerLevel level, Vec3 blastCenter, Player attacker, UUID excludeVictimUuid) {
+        double x = blastCenter.x;
+        double y = blastCenter.y + 0.1D;
+        double z = blastCenter.z;
+
+        level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS,
+            5.0F, 1.0F + (level.getRandom().nextFloat() * 0.1F) - 0.05F);
+
+        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
+        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 100, 0.0, 0.0, 0.0, 0.2);
+        level.sendParticles(ParticleTypes.FLAME, x, y, z, 50, 0.3D, 0.3D, 0.3D, 0.1D);
+
+        // 使用空间视线模拟（与手榴弹共享的精确判定逻辑）
+        List<ServerPlayer> victims = level.players().stream()
+            .filter(p -> p.isAlive()
+                && !p.isSpectator()
+                && !p.isCreative()
+                && (excludeVictimUuid == null || !p.getUUID().equals(excludeVictimUuid))
+                && p.distanceToSqr(blastCenter) <= BLAST_RADIUS * BLAST_RADIUS
+                && hasExplosionLineOfSight(level, blastCenter, p))
+            .toList();
+        for (ServerPlayer victim : victims) {
+            // 记录炸弹引爆事件（低频关键事件）
+            io.wifi.starrailexpress.SRE.REPLAY_MANAGER.recordBombDetonate(
+                attacker != null ? attacker.getUUID() : null, victim.getUUID());
+            GameUtils.killPlayer(victim, true,
+                attacker instanceof Player p ? p : null,
+                Noellesroles.id("c4_explosion"));
+        }
+        return victims.size();
     }
 
     /**
@@ -550,6 +596,19 @@ public final class C4Detonation {
             new ThrownCharge(owner, plantedAt, detonationAt, droppedCharge.position(), false,
                 level.getGameTime(), false));
         comp.removeC4(carrier.getUUID());
+    }
+
+    /** 在任意坐标投放一枚“已激活”的落地 C4：沿用传入的绝对引爆 tick（剩余引信），静态可拆弹、不再粘附玩家 */
+    public static void dropArmedChargeAt(ServerLevel level, Vec3 pos, UUID owner, long detonationAt) {
+        if (level == null || pos == null || owner == null) return;
+        ItemEntity droppedCharge = new ItemEntity(level, pos.x, pos.y + 0.2D, pos.z,
+            ModItems.C4.getDefaultInstance());
+        droppedCharge.setPickUpDelay(32767);
+        droppedCharge.setUnlimitedLifetime();
+        level.addFreshEntity(droppedCharge);
+        long now = level.getGameTime();
+        thrownCharges.put(droppedCharge.getUUID(),
+            new ThrownCharge(owner, now, detonationAt, droppedCharge.position(), false, now, false));
     }
 
     private static void clearThrownCharges() {

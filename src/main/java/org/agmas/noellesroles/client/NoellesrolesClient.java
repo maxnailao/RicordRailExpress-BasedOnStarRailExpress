@@ -101,6 +101,7 @@ import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayer
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
+import org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 import org.joml.Vector3f;
@@ -162,6 +163,10 @@ public class NoellesrolesClient implements ClientModInitializer {
     private static boolean foolMeetingPauseHandled = false;
     /** 操纵师附身期间，本地相机是否已绑定到被操控目标 */
     public static boolean manipulatorCameraBound = false;
+    /** 密客驾驶无人机期间，本地相机是否已绑定到无人机 */
+    public static boolean cipherCameraBound = false;
+    /** 缓存上一 tick 已定位到的无人机，避免每 tick 遍历 entitiesForRendering() 造成首帧卡顿 */
+    private static org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity cachedCipherDrone = null;
     public static Map<UUID, UUID> SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static Map<UUID, UUID> JEB_SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static int jebShuffleTime = 0;
@@ -426,6 +431,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.RPG7_ROCKET,
                 org.agmas.noellesroles.content.entity.Rpg7RocketRenderer::new);
+        EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CIPHER_DRONE,
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntityRenderer::new);
+
         // 棺材实体渲染器（无碰撞装饰实体）
         EntityRendererRegistry.register(ModEntities.COFFIN, CoffinEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.DURABILITY_BOAT, (ctx) -> new DurabilityBoatRenderer(ctx, false));
@@ -464,6 +473,84 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 注册时空旅者传送门实体渲染器
         EntityRendererRegistry.register(ModEntities.RUIKE_PORTAL,
                 org.agmas.noellesroles.client.render.RuikePortalRenderer::new);
+        // 密客无人机：本体不动，相机绑定到无人机 + 远程驱动
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.level == null) return;
+            CipherPlayerComponent cipher = CipherPlayerComponent.KEY.get(client.player);
+            if (cipher.droneActive && cipher.droneId != null) {
+                // 缓存命中：直接跳过 entitiesForRendering 遍历（ClientLevel 无 getEntity(UUID)）
+                Entity drone = null;
+                if (cachedCipherDrone != null && !cachedCipherDrone.isRemoved()
+                        && cipher.droneId.equals(cachedCipherDrone.getUUID())) {
+                    drone = cachedCipherDrone;
+                } else {
+                    for (Entity e : client.level.entitiesForRendering()) {
+                        if (cipher.droneId.equals(e.getUUID())) {
+                            drone = e;
+                            if (e instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity cde) {
+                                cachedCipherDrone = cde;
+                            }
+                            break;
+                        }
+                    }
+                    if (drone == null) cachedCipherDrone = null;
+                }
+
+                // 先算本地按键位（只依赖输入，与是否渲染到无人机无关）
+                long win = client.getWindow().getWindow();
+                int bits = 0;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_W))
+                    bits |= CipherDroneControlC2SPacket.BIT_FORWARD;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_S))
+                    bits |= CipherDroneControlC2SPacket.BIT_BACK;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_A))
+                    bits |= CipherDroneControlC2SPacket.BIT_LEFT;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_D))
+                    bits |= CipherDroneControlC2SPacket.BIT_RIGHT;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE))
+                    bits |= CipherDroneControlC2SPacket.BIT_ASCEND;
+                if (com.mojang.blaze3d.platform.InputConstants.isKeyDown(win, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT))
+                    bits |= CipherDroneControlC2SPacket.BIT_DESCEND;
+                if (client.options.keyUse.isDown())
+                    bits |= CipherDroneControlC2SPacket.BIT_USE;
+                float lookYaw = client.player.getYRot();
+                float lookPitch = client.player.getXRot();
+
+                // 相机绑定 + 本地即时朝向 + 开启本地运动预测
+                if (drone != null) {
+                    if (client.getCameraEntity() != drone) {
+                        client.setCameraEntity(drone);
+                        cipherCameraBound = true;
+                    }
+                    // 不覆盖 xRotO/yRotO，保留原版跨帧插值避免俯仰跳变
+                    drone.setYRot(lookYaw);
+                    drone.setXRot(lookPitch);
+                    // 喂本 tick 输入给本地预测（服务端仍通过下面的包保持权威）
+                    if (drone instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity cde) {
+                        cde.applyControlInput(bits, lookYaw, lookPitch);
+                        cde.setLocalPredict(true);
+                    }
+                }
+
+                // 控制包发送与"能否渲染到无人机"解耦——只要驾驶中就每 tick 发送
+                ClientPlayNetworking.send(new CipherDroneControlC2SPacket(bits, lookYaw, lookPitch));
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherClientState.tickFinishSpelling(client);
+                // 驾驶时锁定物品栏：仅最后三格(7/8/9)可切换
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherClientState.lockHotbarToLocal3(client);
+
+            } else {
+                // 退出驾驶：恢复原物品栏选择
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherClientState.unlockHotbar(client);
+                // 未驾驶：把相机从无人机还原本体
+                if (cipherCameraBound) {
+                    if (client.getCameraEntity() != client.player) {
+                        client.setCameraEntity(client.player);
+                    }
+                    cipherCameraBound = false;
+                }
+                cachedCipherDrone = null;
+            }
+        });
         // 注册幻魔者恼鬼实体渲染器（使用原版恼鬼模型和贴图）
         EntityRendererRegistry.register(ModEntities.HUANMOZHE_VEX,
                 net.minecraft.client.renderer.entity.VexRenderer::new);
@@ -472,6 +559,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 WheelchairEntityModel::createBodyLayer);
         EntityModelLayerRegistry.registerModelLayer(CoffinEntityModel.LAYER_LOCATION,
                 CoffinEntityModel::createBodyLayer);
+        EntityModelLayerRegistry.registerModelLayer(
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneModel.LAYER_LOCATION,
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneModel::createBodyLayer);
         AllowNameRender.EVENT.register((target) -> {
             SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                     .get(target.level());
@@ -547,6 +637,11 @@ public class NoellesrolesClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(DianxueMasterAcupointRenderer::render);
         DianxueMasterClientState.registerAttackHook();
         InstinctRenderer.registerInstinctEvents();
+        // 密客：无人机驾驶时透视渲染本体（穿墙可见自己的身体模型）
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(
+                org.agmas.noellesroles.game.roles.neutral.cipher.CipherSelfXrayRenderer::render);
+        // 密客：无人机驾驶时对全员按阵营染色透视（悍匪橙 / 杀手同伙红 / 其余粉）
+        org.agmas.noellesroles.game.roles.neutral.cipher.CipherSelfXrayRenderer.registerFactionHighlight();
 
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));

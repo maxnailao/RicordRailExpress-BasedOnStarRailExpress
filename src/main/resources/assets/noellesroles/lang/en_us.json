@@ -4781,5 +4781,15 @@
   "message.noellesroles.road_roller.buy_cooldown": "Road Roller purchase cooldown: %s seconds remaining.",
   "message.noellesroles.road_roller.use_cooldown": "Road Roller use cooldown: %s seconds remaining.",
   "message.noellesroles.road_roller.not_ready": "Too little time stop remains, or you are riding/feeding.",
-  "message.noellesroles.road_roller.no_floor": "No safe descent space or bottom map floor here. Item not consumed."
+  "message.noellesroles.road_roller.no_floor": "No safe descent space or bottom map floor here. Item not consumed.",
+  "=============== Cipher ===============": "",
+  "announcement.star.role.cipher": "Cipher",
+  "announcement.star.goals.cipher": "I specialize in shooting planes!",
+  "info.screen.roleid.cipher": "Killer-neutral.\nSkill: Drone\nCipher can deploy a remote drone for recon and pilot it — the drone can open/close doors and pick up food & drinks.\nWarning!! The drone can be destroyed.\nEMP mechanic\nPurchasing a charge in the shop grants 1 EMP charge (up to 3). While piloting the drone, pressing the skill key consumes 1 EMP charge and starts a kamikaze rush: the drone cannot stop, moves at 2x speed, and detonates when hitting a wall or a player. The explosion knocks nearby players within 5 blocks back by 2 meters.",
+  "hud.noellesroles.cipher.ready": "Drone ready [%s]",
+  "hud.noellesroles.cipher.cooldown": "Drone cooldown: %ss",
+  "item.noellesroles.cipher_emp_charge": "EMP Charge",
+  "message.noellesroles.cipher.entered": "Drone deployed",
+  "message.noellesroles.cipher.no_emp": "No EMP charge",
+  "message.noellesroles.cipher.broken": "Drone destroyed"
 }

@@ -128,6 +128,9 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(MunaiyiOpenInventoryS2CPacket.ID, MunaiyiOpenInventoryS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(AmonSelectTargetC2SPacket.ID, AmonSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID, ManipulatorControlInputC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(CipherDroneControlC2SPacket.ID, CipherDroneControlC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.CipherCloseDroneC2SPacket.ID,
+                org.agmas.noellesroles.packet.CipherCloseDroneC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID, ManipulatorAbilityC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);

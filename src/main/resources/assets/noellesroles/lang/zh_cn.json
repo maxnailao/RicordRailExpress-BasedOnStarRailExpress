@@ -5197,5 +5197,15 @@
   "message.noellesroles.road_roller.buy_cooldown": "压路机购买冷却还剩 %s 秒。",
   "message.noellesroles.road_roller.use_cooldown": "压路机使用冷却还剩 %s 秒。",
   "message.noellesroles.road_roller.not_ready": "剩余时停时间不足，或你正在乘坐/吸食，无法释放压路机。",
-  "message.noellesroles.road_roller.no_floor": "当前位置没有安全的下砸空间或地图底层地板。物品未消耗。"
+  "message.noellesroles.road_roller.no_floor": "当前位置没有安全的下砸空间或地图底层地板。物品未消耗。",
+  "=============== 密客 ===============": "",
+  "announcement.star.role.cipher": "密客",
+  "announcement.star.goals.cipher": "我是专门打飞机的！",
+  "info.screen.roleid.cipher": "杀手方中立\n技能：无人机\n密客可以召唤无人机远程侦察，此时密客将操控无人机移动，无人机可以开关门，捡起食物和饮品。\n注意！！无人机可以被打碎\nEMP 机制\n在商店里购买充能后获得一点充能，最多三点充能，在无人机驾驶时点击技能键会消耗 EMP 充能开启自杀式冲锋模式，此时无人机行驶无法停止，速度是原本的两倍，如果撞到墙壁或玩家就会炸开，炸开后会炸飞周围半径五格内的玩家两米。\n杀手同伙为红色透视，悍匪为橙色透视。",
+  "hud.noellesroles.cipher.ready": "无人机就绪 [%s]",
+  "hud.noellesroles.cipher.cooldown": "无人机冷却：%s 秒",
+  "item.noellesroles.cipher_emp_charge": "EMP 充能",
+  "message.noellesroles.cipher.entered": "已部署无人机",
+  "message.noellesroles.cipher.no_emp": "没有 EMP 充能",
+  "message.noellesroles.cipher.broken": "无人机被打碎"
 }

@@ -76,6 +76,13 @@ repositories {
     // Datasync
     maven { url = "https://maven.uuid.gg/releases" }
 
+    // GeckoLib（无人机动画模型引擎）
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content { includeGroupByRegex("software\\.bernie.*") }
+    }
+
 }
 
 dependencies {
@@ -105,6 +112,8 @@ dependencies {
     modImplementation files("libs/CrosshairAddons-2.1.0-1.21.jar")
 //    modImplementation files("libs/CustomSkinLoader_Fabric-14.28.jar")
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // GeckoLib：密客无人机动画模型
+    modImplementation "software.bernie.geckolib:geckolib-fabric-${project.minecraft_version}:4.8.4"
     modRuntimeOnly files("libs/architectury-13.0.8-fabric.jar")
     modCompileOnly files("libs/PresenceFootsteps-1.11.1+1.21.jar")
     modRuntimeOnly files("libs/WalksyLib-0.9.96+1.21.jar")

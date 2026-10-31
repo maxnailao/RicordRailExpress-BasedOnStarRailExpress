@@ -94,5 +94,6 @@ public class OtherRolesRegister {
         ChefHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
+        org.agmas.noellesroles.game.roles.neutral.cipher.CipherHud.register();
     }
 }

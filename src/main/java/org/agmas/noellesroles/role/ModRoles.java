@@ -410,6 +410,7 @@ public class ModRoles {
     // 预备魔女（特殊中立）/ 魔女（预备魔女转化后的杀手形态）
     public static final ResourceLocation PRE_WITCH_ID = Noellesroles.id("pre_witch");
     public static final ResourceLocation WITCH_ACCOMPLICE_ID = Noellesroles.id("witch_accomplice");
+    public static final ResourceLocation CIPHER_ID = Noellesroles.id("cipher");
     public static final ResourceLocation MAJO_ID = Noellesroles.id("majo");
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
@@ -647,6 +648,14 @@ public class ModRoles {
     )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false)
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.FLY).setDefaultMax(1)
             .setComponentKey(org.agmas.noellesroles.component.ModComponents.SHADOW_FALCON);
+
+    /** 密客（杀手中立阵营）：无人机远程侦察，本体留原地。 */
+    public static SRERole CIPHER = TMMRoles.registerRole(new NormalRole(
+                    CIPHER_ID, new Color(0, 230, 118).getRGB(), false, false,
+                    SRERole.MoodType.NONE, Integer.MAX_VALUE, true))
+            .setNeutralForKiller(true)
+            .setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false).setDefaultMax(1)
+            .setComponentKey(org.agmas.noellesroles.component.ModComponents.CIPHER);
 
     /**
      * 肉汁角色 - 乘客阵营
