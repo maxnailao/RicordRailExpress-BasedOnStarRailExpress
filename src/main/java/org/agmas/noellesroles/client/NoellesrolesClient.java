@@ -531,6 +531,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     if (drone instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity cde) {
                         cde.applyControlInput(bits, lookYaw, lookPitch);
                         cde.setLocalPredict(true);
+                        cde.setBombLoaded(cipher.bombLoaded);
                     }
                 }
 

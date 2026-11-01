@@ -42,7 +42,8 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
 
     public static final ComponentKey<CipherPlayerComponent> KEY = ModComponents.CIPHER;
 
-    public static final int COOLDOWN_SECONDS = 45;
+    public static final int FIRST_COOLDOWN_SECONDS = 120;
+    public static final int COOLDOWN_SECONDS = 55;
     public static final int MAX_EMP = 3;
     public static final double RUSH_SPEED_MULT = 2.0;
     public static final double EXPLOSION_RADIUS = 5.0;
@@ -86,6 +87,8 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
     private int droneGraceTicks = 0;
     // 仅服务端：技能键防抖剩余 tick（40 = 2 秒，避免连点导致召唤后立刻进入冲锋/自爆）
     private int skillInputGraceTicks = 0;
+    // 仅服务端：本局已召唤无人机次数（第一架长冷却 120s，之后 55s）
+    private int dronesSummoned = 0;
     // 仅服务端：已装弹冲锋的引爆绝对世界 tick（-1 表示未装弹）
     private long bombDetonationAtGameTick = -1L;
     // 仅服务端：上一次同步到客户端的十分之一秒刻度（降频同步）
@@ -114,6 +117,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
         this.droneRef = null;
         this.droneGraceTicks = 0;
         this.skillInputGraceTicks = 0;
+        this.dronesSummoned = 0;
         this.blownPlayers = 0;
         this.blownEventId = 0;
         this.c4CarrierId = null;
@@ -133,6 +137,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
         this.droneRef = null;
         this.droneGraceTicks = 0;
         this.skillInputGraceTicks = 0;
+        this.dronesSummoned = 0;
         this.c4CarrierId = null;
         this.c4RemainingSeconds = 0;
         this.c4PredictedKills = 0;
@@ -165,12 +170,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
             rush = true;
             CipherDroneEntity drone = getDrone(serverLevel);
             if (drone != null) drone.setRush(true);
-            // 只有已被悍匪装弹的无人机才启动引信；否则冲锋 = 空撞解体
-            if (this.bombLoaded) {
-                this.bombDetonationAtGameTick = serverLevel.getGameTime() + (long) BOMB_FUSE_SECONDS * 20L;
-                this.bombRemainingTicks = BOMB_FUSE_SECONDS * 20;
-                this.lastBombTenths = -1;
-            }
+            // 引信在装载炸弹时已开始倒计时，这里不再重置
             skillInputGraceTicks = 40;
             sync();
         }
@@ -188,6 +188,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
         drone.setPersistenceRequired(); // 防 Mob 通用 despawn 逻辑误清
         drone.setNoGravity(true);       // 无人机飞行不需要重力，也避免任何 fall damage
         serverLevel.addFreshEntity(drone);
+        this.dronesSummoned++;
 
         this.droneRef = drone;              // 直接持有引用
         this.droneId = drone.getUUID();
@@ -200,7 +201,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
                 SoundSource.PLAYERS, 1.0F, 1.6F);
     }
 
-    /** 无人机出生点：优先正前方，若卡墙则逐步收回/抬高，最后兜底在头顶上方 */
+    /** 无人机出生点：优先正前方，若卡墙则逐步收回/抬高，最后从头顶向上搜索真正空位 */
     private static Vec3 pickFreeSpawn(ServerLevel level, ServerPlayer sp) {
         Vec3 eye = sp.getEyePosition();
         Vec3 fwd = sp.getLookAngle();
@@ -215,17 +216,22 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
         for (Vec3 c : candidates) {
             if (areaFree(level, c)) return c;
         }
-        return candidates[candidates.length - 1];
+        // 兜底：不再盲选最后一格，从头顶逐步向上搜索第一个真正无碰撞的空位
+        Vec3 base = sp.position().add(0, 2.6, 0);
+        for (int i = 0; i <= 10; i++) {
+            Vec3 c = base.add(0, i * 0.5, 0);
+            if (areaFree(level, c)) return c;
+        }
+        return base.add(0, 5.0, 0);
     }
 
-    /** 该位置脚下与头顶两格是否都通透（不阻挡移动） */
+    /** 该位置能否容纳无人机大小的碰撞盒：用真实 AABB 检测而非整格 blocksMotion，
+     *  避免站在半砖/楼梯/食物盘等不完整方块上时被误判为卡墙 */
     private static boolean areaFree(ServerLevel level, Vec3 p) {
-        net.minecraft.core.BlockPos feet = net.minecraft.core.BlockPos.containing(p.x, p.y, p.z);
-        return passable(level, feet) && passable(level, feet.above());
-    }
-
-    private static boolean passable(ServerLevel level, net.minecraft.core.BlockPos pos) {
-        return !level.getBlockState(pos).blocksMotion();
+        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(
+                p.x - 0.3, p.y - 0.3, p.z - 0.3,
+                p.x + 0.3, p.y + 0.3, p.z + 0.3);
+        return level.noCollision((net.minecraft.world.entity.Entity) null, box);
     }
 
     /** 客户端拼写 finish 完成后请求关闭 */
@@ -266,14 +272,53 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
                 ServerPlayer planter = serverLevel.getServer().getPlayerList().getPlayer(this.bombPlanterId);
                 if (planter != null) attacker = planter;
             }
-            killed = C4Detonation.detonateAt(serverLevel, center, attacker, sp.getUUID());
+            killed = C4Detonation.detonateDroneBlast(serverLevel, center, attacker, sp.getUUID());
             sp.playNotifySound(SoundEvents.GENERIC_EXPLODE.value(), SoundSource.MASTER, 1.0F, 1.0F);
         } else {
-            // 空撞：机体解体特效，无爆炸击杀
+            // 空撞：机体解体 + 纯物理冲量击飞（不击杀），落地附带沉重减速
+            final double impactRadius = 5.5D; // 冲量总半径（缩小 45%：10 → 5.5）
+            final double closeRadius = 2.75D; // 贴脸恒定最大区（同步缩小 45%：5 → 2.75）
+            final double maxStrength = 2.0D;   // 贴脸冲量
+            final double minStrength = 0.5D;   // 边缘冲量
             serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE,
                     center.x, center.y, center.z, 25, 0.35, 0.35, 0.35, 0.04);
+            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                    center.x, center.y + 0.2, center.z, 12, 0.3, 0.25, 0.3, 0.08);
             serverLevel.playSound(null, center.x, center.y, center.z,
-                    SoundEvents.METAL_HIT, SoundSource.PLAYERS, 1.0F, 0.8F);
+                    SoundEvents.METAL_HIT, SoundSource.PLAYERS, 1.2F, 0.7F);
+
+            int knocked = 0;
+            for (ServerPlayer p : serverLevel.players()) {
+                if (p == sp || !p.isAlive() || p.isSpectator()) continue;
+                if (p.isCreative()) continue;
+                double dist = p.position().distanceTo(center);
+                if (dist > impactRadius) continue;
+                Vec3 dir = p.position().subtract(center);
+                if (dir.lengthSqr() < 1.0E-4D) dir = new Vec3(0.0D, 0.0D, 1.0D);
+                dir = dir.normalize();
+                // 两段式：0–5 格贴脸恒定最大，5–10 格线性衰减到边缘
+                double strength;
+                if (dist <= closeRadius) {
+                    strength = maxStrength;
+                } else {
+                    double t = (dist - closeRadius) / (impactRadius - closeRadius);
+                    strength = maxStrength + (minStrength - maxStrength) * t;
+                }
+                p.setDeltaMovement(dir.x * strength, 0.85D, dir.z * strength);
+                p.hurtMarked = true; // 强制把新速度同步给该客户端，否则被自身移动覆盖
+                p.fallDistance = 0.0F; // 撞飞不计摔落伤害
+                // 沉重：短暂缓慢+虚弱，落地后步履维艰
+                p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1, false, true));
+                p.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 0, false, true));
+                // 额外惩罚：技能禁用 5 秒（100 tick）
+                p.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 100, 0, false, true));
+                knocked++;
+            }
+            killed = 0;
+            this.blownPlayers = knocked;
+            this.blownEventId++;
+            closeDrone(serverLevel, true);
+            return;
         }
 
         this.blownPlayers = killed;
@@ -300,6 +345,12 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
 
         this.bombLoaded = true;
         this.bombPlanterId = gangster.getUUID();
+        CipherDroneEntity loadedDrone = getDrone(serverLevel);
+        if (loadedDrone != null) loadedDrone.setBombLoaded(true);
+        // 装载即进入引信倒计时（不再等到冲锋才起爆）
+        this.bombDetonationAtGameTick = serverLevel.getGameTime() + (long) BOMB_FUSE_SECONDS * 20L;
+        this.bombRemainingTicks = BOMB_FUSE_SECONDS * 20;
+        this.lastBombTenths = -1;
         serverLevel.playSound(null, dronePos.x, dronePos.y, dronePos.z,
                 SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 1.0F, 0.9F);
         owner.displayClientMessage(
@@ -333,7 +384,8 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
 
         if (applyCooldown) {
             SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-            ability.cooldown = GameConstants.getInTicks(0, COOLDOWN_SECONDS);
+            int cdSeconds = this.dronesSummoned <= 1 ? FIRST_COOLDOWN_SECONDS : COOLDOWN_SECONDS;
+            ability.cooldown = GameConstants.getInTicks(0, cdSeconds);
             ability.sync();
         }
         sync();
@@ -485,8 +537,8 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
             }
         }
 
-        // 已装弹冲锋：引信倒计时；到点就地引爆
-        if (this.rush && bombDetonationAtGameTick >= 0L) {
+        // 已装弹：引信倒计时（装载即开始，无论是否在冲锋）；到点就地引爆
+        if (bombDetonationAtGameTick >= 0L) {
             long remaining = bombDetonationAtGameTick - sp.serverLevel().getGameTime();
             if (remaining <= 0L) {
                 detonate();

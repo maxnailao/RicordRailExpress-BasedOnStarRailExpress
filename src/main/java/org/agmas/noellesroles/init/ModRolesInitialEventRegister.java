@@ -415,6 +415,15 @@ public class ModRolesInitialEventRegister {
                 abilityPlayerComponent.sync();
                 return;
             }
+            // 密客角色初始化：开局技能即进入 120 秒冷却（第一架无人机需等待冷却结束才能召唤）
+            if (role.equals(ModRoles.CIPHER)) {
+                var cipherComponent = org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY.get(player);
+                cipherComponent.init();
+                abilityPlayerComponent.cooldown = org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.FIRST_COOLDOWN_SECONDS * 20;
+                abilityPlayerComponent.sync();
+                // 必须 return：后面的 RicesRoleRhapsody.onRoleAssigned 会调 ability.init() 把冷却清零（同巫毒师）
+                return;
+            }
             if (role.equals(ModRoles.BOMBER)) {
                 if (role.equals(ModRoles.MONITOR)) {
                     MonitorPlayerComponent monitorComponent = MonitorPlayerComponent.KEY.get(player);

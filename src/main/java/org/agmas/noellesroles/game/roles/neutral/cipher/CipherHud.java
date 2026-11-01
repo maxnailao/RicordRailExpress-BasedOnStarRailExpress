@@ -29,6 +29,7 @@ public class CipherHud {
         Player player = mc.player;
         if (player == null || mc.level == null) return;
         CipherPlayerComponent comp = CipherPlayerComponent.KEY.get(player);
+
         if (!comp.droneActive) {
             renderIdleStatus(context, mc, player);
             renderBlownBanner(context, mc);
@@ -210,9 +211,9 @@ public class CipherHud {
         context.drawString(mc.font, text, w / 2 - tw / 2, h - 58, LIT, false);
     }
 
-    /** 屏幕中央：自杀冲锋装弹后的爆炸倒计时；未装载炸弹则不显示；最后 3 秒红黄闪烁 */
+    /** 屏幕中央：装载炸弹后的爆炸倒计时；未装载炸弹则不显示；最后 3 秒红黄闪烁 */
     private static void renderBombCountdown(FakeGuiGraphics context, Minecraft mc, CipherPlayerComponent comp) {
-        if (!comp.rush || !comp.bombLoaded || comp.bombRemainingTicks <= 0) return;
+        if (!comp.bombLoaded || comp.bombRemainingTicks <= 0) return;
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
         float secs = comp.bombRemainingTicks / 20f;

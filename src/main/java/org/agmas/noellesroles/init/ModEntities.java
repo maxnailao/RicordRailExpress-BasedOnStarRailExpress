@@ -550,7 +550,7 @@ public class ModEntities {
                     .<org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity>of(
                             org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity::new,
                             MobCategory.MISC)
-                    .sized(0.6F, 0.5F)
+                    .sized(0.75F, 0.625F) // 受枪命中范围较原(0.6×0.5)加大 25%
                     .clientTrackingRange(32)
                     .updateInterval(1)
                     .build("cipher_drone"));

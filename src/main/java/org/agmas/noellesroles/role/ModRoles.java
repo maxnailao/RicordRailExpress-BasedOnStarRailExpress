@@ -654,7 +654,7 @@ public class ModRoles {
     /** 密客（杀手中立阵营）：无人机远程侦察，本体留原地。 */
     public static SRERole CIPHER = TMMRoles.registerRole(new NormalRole(
                     CIPHER_ID, new Color(0, 230, 118).getRGB(), false, false,
-                    SRERole.MoodType.NONE, Integer.MAX_VALUE, true))
+                    SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setNeutralForKiller(true)
             .setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false).setDefaultMax(1)
             .setComponentKey(org.agmas.noellesroles.component.ModComponents.CIPHER);

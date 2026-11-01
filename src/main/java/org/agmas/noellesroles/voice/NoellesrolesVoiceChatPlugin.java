@@ -21,6 +21,8 @@ import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
+import org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -284,6 +286,31 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               }
             }
             if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
+              // === 密客：正在驾驶无人机时，把说话声重定位到无人机身上（未驾驶则维持本体发声） ===
+              CipherPlayerComponent cipherComp = CipherPlayerComponent.KEY.get(player);
+              if (cipherComp != null && cipherComp.droneActive) {
+                CipherDroneEntity drone = cipherComp.getDroneRef();
+                if (drone != null) {
+                  event.cancel();
+                  final double droneX = drone.getX();
+                  final double droneY = drone.getY();
+                  final double droneZ = drone.getZ();
+                  final double voiceDistance = api.getVoiceChatDistance();
+                  for (Player p : player.level().players()) {
+                    if (p.getUUID().equals(player.getUUID())) continue; // 不发给自己
+                    if (p.distanceTo(drone) > voiceDistance) continue;  // 以无人机为中心的衰减范围
+                    VoicechatConnection con = api.getConnectionOf(p.getUUID());
+                    if (con != null && con.isInstalled() && con.isConnected()) {
+                      api.sendLocationalSoundPacketTo(con, event.getPacket()
+                          .locationalSoundPacketBuilder()
+                          .position(api.createPosition(droneX, droneY, droneZ))
+                          .distance((float) voiceDistance)
+                          .build());
+                    }
+                  }
+                  return;
+                }
+              }
               float voiceRangeMultiplier = ModEffects.getVoiceRangeMultiplier(player);
               if (voiceRangeMultiplier > 1.0f) {
                 event.cancel();

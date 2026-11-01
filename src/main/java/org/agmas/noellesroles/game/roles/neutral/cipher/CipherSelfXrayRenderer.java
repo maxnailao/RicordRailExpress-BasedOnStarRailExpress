@@ -47,6 +47,8 @@ public class CipherSelfXrayRenderer {
         if (!GameUtils.isPlayerAliveAndSurvival(tp)) return -1;
 
         SRERole role = SREClient.gameComponent.getRole(tp);
+        // 小透明(GHOST)不可被密客透视——无论驾驶无人机还是常态本能透视，均不显形
+        if (role == ModRoles.GHOST) return -1;
         // 悍匪优先判定（其 canUseKiller=true，否则会被 isKillerTeamRole 归为杀手阵营→红）
         if (role == ModRoles.GANGSTERS) return XRAY_ORANGE;
         if (SREClient.gameComponent.isKillerTeamRole(role)) return XRAY_RED;

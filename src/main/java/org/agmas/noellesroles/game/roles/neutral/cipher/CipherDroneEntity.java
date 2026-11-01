@@ -78,6 +78,8 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
 
     /** 自杀式冲锋：无法停止，撞墙/撞人即爆 */
     private boolean rush = false;
+    /** 已装载 C4：飞行速度下降 40%（服务端权威；驾驶员本地预测每 tick 由同步的组件值喂入） */
+    private boolean bombLoaded = false;
     /** 交互(开门)上升沿检测 */
     private boolean useHeldLast = false;
 
@@ -124,6 +126,10 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
     public void setRush(boolean rush) {
         this.rush = rush;
         if (rush) this.rushSoundTick = 0;
+    }
+
+    public void setBombLoaded(boolean bombLoaded) {
+        this.bombLoaded = bombLoaded;
     }
 
     public boolean isRush() {
@@ -188,7 +194,7 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
             if ((inputBits & CipherDroneControlC2SPacket.BIT_LEFT) != 0) l += 1;
             if ((inputBits & CipherDroneControlC2SPacket.BIT_RIGHT) != 0) l -= 1;
         }
-        double speed = NORMAL_SPEED * (rush ? CipherPlayerComponent.RUSH_SPEED_MULT : 1.0);
+        double speed = NORMAL_SPEED * (rush ? CipherPlayerComponent.RUSH_SPEED_MULT : 1.0) * (this.bombLoaded ? 0.6 : 1.0);
         Vec3 targetVel;
         if (rush) {
             targetVel = this.getLookAngle().scale(speed);
@@ -243,6 +249,12 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
 
     /** 服务端：根据远程输入飞行；冲锋时检测碰撞并引爆 */
     private void drive(ServerLevel serverLevel) {
+        // 防卡死自救：机体碰撞盒嵌入方块时（如在不完整方块上出生）缓慢上浮脱困，
+        // 避免无重力无人机永久卡死导致噪音无限循环
+        if (!serverLevel.noCollision(this, this.getBoundingBox().inflate(-0.05D))) {
+            this.move(MoverType.SELF, new Vec3(0.0D, 0.15D, 0.0D));
+        }
+
         boolean fresh = inputFreshTicks > 0;
 
         // 朝向跟随本体鼠标（本体未 TURN_BANED，yaw/pitch 由客户端转发进来）
@@ -261,8 +273,7 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
             if ((inputBits & CipherDroneControlC2SPacket.BIT_RIGHT) != 0) l -= 1;
         }
 
-        double speed = NORMAL_SPEED * (rush ? CipherPlayerComponent.RUSH_SPEED_MULT : 1.0);
-
+        double speed = NORMAL_SPEED * (rush ? CipherPlayerComponent.RUSH_SPEED_MULT : 1.0) * (this.bombLoaded ? 0.6 : 1.0);
         Vec3 targetVel;
         if (rush) {
             // 冲锋：锁定视线方向，不可停止
@@ -315,8 +326,9 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         // 拴绳：距本体过远回拉，确保客户端持续追踪（远程相机不丢失）
         enforceLeash(serverLevel);
 
+        // 行驶全程播放呼啸/电机声（冲锋更响更急，常态驾驶更轻更缓）
+        playRushWind(serverLevel);
         if (rush) {
-            playRushWind(serverLevel);
             // 撞墙判定：实际位移显著小于预期
             double intendedLen = this.flightVel.length();
             if (intendedLen > 0.05 && moved.length() < intendedLen * 0.25) {
@@ -584,20 +596,21 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         return null;
     }
 
-    /** 冲锋呼啸风声：本体点对点必闻；其它玩家约 15 格内可闻（音量 1.0≈16 格） */
+    /** 螺旋桨/电机声：仅驾驶时、且只在无人机所在位置发出；volume≈1.875 使可闻半径约 30 格（16×volume） */
     private void playRushWind(ServerLevel serverLevel) {
-        // 第 0 个 tick 即响第一声，之后每 2 tick 一次，形成连续呼啸
-        if (this.rushSoundTick++ % 2 != 0) return;
-        ServerPlayer op = getOwnerPlayer(serverLevel);
-        float pitch = 0.95F + this.random.nextFloat() * 0.15F;
-        // 其它玩家：在世界按无人机位置播放（排除本体，避免与下面的通知音重复）
-        serverLevel.playSound(op, this.getX(), this.getY(), this.getZ(),
-                net.minecraft.sounds.SoundEvents.WIND_CHARGE_BURST,
-                net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, pitch);
-        // 本体：点对点通知，确保无论无人机多远都能听到自己呼啸而过
-        if (op != null) {
-            op.playNotifySound(net.minecraft.sounds.SoundEvents.WIND_CHARGE_BURST.value(),
-                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, pitch);
+        if (this.rush) {
+            if (this.rushSoundTick++ % 2 != 0) return;
+        } else {
+            if (this.rushSoundTick++ % 5 != 0) return;
         }
+        float pitch = this.rush
+                ? 1.15F + this.random.nextFloat() * 0.15F
+                : 0.9F + this.random.nextFloat() * 0.10F;
+        // 可闻半径 = 16 × volume；取 ≥1.875 使噪音至少传播到 30 格
+        float vol = this.rush ? 2.0F : 1.875F;
+        // 统一以无人机坐标发声：null 表示不排除任何人，本体也按与无人机的实际距离听闻（不再"脑子里必闻"）
+        serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                net.minecraft.sounds.SoundEvents.CONDUIT_AMBIENT,
+                net.minecraft.sounds.SoundSource.PLAYERS, vol, pitch);
     }
 }
