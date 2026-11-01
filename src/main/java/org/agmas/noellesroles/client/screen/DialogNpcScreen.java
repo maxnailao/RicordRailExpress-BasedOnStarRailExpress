@@ -4,11 +4,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.agmas.noellesroles.Noellesroles;
@@ -52,6 +54,23 @@ public class DialogNpcScreen extends Screen {
     private final int entityId;
     private final String npcName;
     private final JsonObject root;
+
+    /** 左上角立绘贴图（由对话 JSON 的 "portrait" 字段启用），null 表示不显示 */
+    private ResourceLocation portraitTexture;
+    private int portraitW = 108;
+    private int portraitH = 120;
+    private int portraitDX = 10;
+    private int portraitDY = 10;
+    /** 歪头角度（度，负值向左歪） */
+    private float portraitTilt = -12.0F;
+    /** 起跳时比最终位置低多少像素 */
+    private int portraitJump = 40;
+    /** 旋转支点纵向比例（0~1，脖子附近） */
+    private float portraitPivotY = 0.30F;
+    /** 静止时头部探出面板上沿的像素高度 */
+    private int portraitPeek = 72;
+    /** 界面打开时刻，用于「延迟 0.5 秒后弹出」的动画计时 */
+    private final long openedAt = System.currentTimeMillis();
 
     private boolean valid = true;
     private String currentNodeId = "";
@@ -105,6 +124,38 @@ public class DialogNpcScreen extends Screen {
             }
             this.currentNodeId = start;
         }
+        if (this.root != null) {
+            parsePortrait(this.root);
+        }
+    }
+
+    /** 解析立绘配置：portrait 为贴图名（对应 textures/gui/dialog_npc/<name>.png），可选 w/h/dx/dy */
+    private void parsePortrait(JsonObject root) {
+        if (!root.has("portrait") || !root.get("portrait").isJsonPrimitive()) {
+            return;
+        }
+        String name = root.get("portrait").getAsString();
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        this.portraitTexture = Noellesroles.id("textures/gui/dialog_npc/" + name + ".png");
+        this.portraitW = readInt(root, "portrait_w", this.portraitW);
+        this.portraitH = readInt(root, "portrait_h", this.portraitH);
+        this.portraitDX = readInt(root, "portrait_dx", this.portraitDX);
+        this.portraitDY = readInt(root, "portrait_dy", this.portraitDY);
+        this.portraitTilt = readInt(root, "portrait_tilt", (int) this.portraitTilt);
+        this.portraitJump = readInt(root, "portrait_jump", this.portraitJump);
+        this.portraitPeek = readInt(root, "portrait_peek", this.portraitPeek);
+    }
+
+    private static int readInt(JsonObject obj, String key, int def) {
+        try {
+            if (obj.has(key) && obj.get(key).isJsonPrimitive()) {
+                return obj.get(key).getAsInt();
+            }
+        } catch (Exception ignored) {
+        }
+        return def;
     }
 
     @Override
@@ -243,6 +294,7 @@ public class DialogNpcScreen extends Screen {
         }
 
         boolean done = this.playbackDone();
+        int hintY = this.panelY + this.panelH + 8;
 
         // 更新 hover 命中（播放未完成时选项不可交互）
         this.hoveredOption = -1;
@@ -321,15 +373,54 @@ public class DialogNpcScreen extends Screen {
             int hintColor = (MUTED & 0x00FFFFFF) | ((int) (0x99 * pulse) << 24);
             g.drawCenteredString(this.font,
                     Component.translatable("screen.noellesroles.dialog_npc.playing"),
-                    this.width / 2, this.panelY + this.panelH + 8, hintColor);
+                    this.width / 2, hintY, hintColor);
         }
 
         // 底部提示
         if (done) {
             g.drawCenteredString(this.font,
                     Component.translatable("screen.noellesroles.dialog_npc.hint"),
-                    this.width / 2, this.panelY + this.panelH + 8, MUTED);
+                    this.width / 2, hintY, MUTED);
         }
+
+        renderPortrait(g);
+    }
+
+    /** 打开 0.5 秒后：立绘从面板上沿后探出头（跳一下），身体藏在框后，落地歪头看着玩家 */
+    private void renderPortrait(GuiGraphics g) {
+        if (this.portraitTexture == null) {
+            return;
+        }
+        long elapsed = System.currentTimeMillis() - this.openedAt;
+        final long delayMs = 500L;
+        if (elapsed < delayMs) {
+            return;
+        }
+        float t = Math.min(1.0F, (elapsed - delayMs) / 460.0F);
+        float hop = easeOutBack(t);
+        int w = this.portraitW;
+        int h = this.portraitH;
+        int x = this.panelX + this.portraitDX;
+        int edgeY = this.panelY;
+        int y = edgeY - (int) (this.portraitPeek * hop);
+        float tilt = this.portraitTilt * hop;
+        int pivotX = x + w / 2;
+        g.enableScissor(0, 0, this.width, edgeY);
+        var pose = g.pose();
+        pose.pushPose();
+        pose.translate(pivotX, edgeY, 0.0F);
+        pose.mulPose(Axis.ZP.rotationDegrees(tilt));
+        g.blit(this.portraitTexture, -w / 2, y - edgeY, 0, 0, w, h, w, h);
+        pose.popPose();
+        g.disableScissor();
+    }
+
+    /** 回弹缓动：末段轻微过冲再回落，营造「蹦出来」的手感 */
+    private static float easeOutBack(float t) {
+        float c1 = 1.70158F;
+        float c3 = c1 + 1.0F;
+        float p = t - 1.0F;
+        return 1.0F + c3 * p * p * p + c1 * p * p;
     }
 
     @Override

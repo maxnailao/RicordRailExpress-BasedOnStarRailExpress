@@ -33,6 +33,10 @@ import org.lwjgl.glfw.GLFW;
 import org.agmas.noellesroles.client.screen.CS2WarehouseScreen;
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 import org.agmas.noellesroles.client.screen.LootInfoScreen;
+import org.agmas.noellesroles.client.screen.DialogNpcScreen;
+import org.agmas.noellesroles.content.item.YurenYaDialogNpcItem;
+import org.agmas.noellesroles.dialog.DialogDataManager;
+import org.agmas.noellesroles.packet.OpenDialogNpcScreenS2CPacket;
 import org.agmas.noellesroles.packet.Loot.LootPoolsInfoCheckC2SPacket;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 
@@ -141,6 +145,8 @@ public final class MenuHubScreen extends Screen {
         add(result, "lottery", "抽奖", MenuAction.FRIENDS, true, this::openLottery);
         add(result, "mail", "邮箱", MenuAction.FEEDBACK, true,
                 () -> minecraft.setScreen(new MailboxScreen()));
+        add(result, "yuren_tutorial", "鱼仁の教程！", MenuAction.LINKS, true,
+                this::openYurenYaTutorial);
         add(result, "client_options", "客户端选项", MenuAction.OPTIONS, true,
                 () -> minecraft.setScreen(SREClientConfig.HANDLER.generateGui().generateScreen(this)));
         boolean operator = minecraft.player != null && minecraft.player.hasPermissions(2);
@@ -164,6 +170,31 @@ public final class MenuHubScreen extends Screen {
         if (minecraft.player != null) {
             minecraft.player.connection.sendCommand("tmm:participate");
         }
+    }
+
+    /** 打开「鱼仁吖」教程对话界面：直接读取 jar 内置对话，无需 NPC 实体 */
+    private void openYurenYaTutorial() {
+        String raw = DialogDataManager.readBuiltinRaw(YurenYaDialogNpcItem.DIALOG_ID);
+        if (raw == null) {
+            return;
+        }
+        String name = "鱼仁吖";
+        String skin = "";
+        try {
+            com.google.gson.JsonElement element = com.google.gson.JsonParser.parseString(raw);
+            if (element.isJsonObject()) {
+                com.google.gson.JsonObject obj = element.getAsJsonObject();
+                if (obj.has("name")) {
+                    name = obj.get("name").getAsString();
+                }
+                if (obj.has("skin")) {
+                    skin = obj.get("skin").getAsString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        minecraft.setScreen(new DialogNpcScreen(
+                new OpenDialogNpcScreenS2CPacket(-1, name, skin, raw)));
     }
 
     private void add(List<MenuEntry> result, String id, String label, MenuAction action,

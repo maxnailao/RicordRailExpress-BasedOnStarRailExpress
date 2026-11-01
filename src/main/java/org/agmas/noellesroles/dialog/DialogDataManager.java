@@ -225,6 +225,21 @@ public class DialogDataManager {
                 new OpenDialogNpcScreenS2CPacket(npc.getId(), name, skin, raw));
     }
 
+    /** 读取 jar 内置对话原文（客户端/服务端均可用，纯 classpath 资源），失败返回 null */
+    public static String readBuiltinRaw(String dialogId) {
+        try (var stream = DialogDataManager.class
+                .getResourceAsStream("/data/noellesroles/dialogs/" + dialogId + ".json")) {
+            if (stream == null) {
+                Noellesroles.LOGGER.error("内置对话资源缺失：{}", dialogId);
+                return null;
+            }
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            Noellesroles.LOGGER.error("读取内置对话 {} 失败", dialogId, e);
+            return null;
+        }
+    }
+
     /** 从 jar 内置资源加载对话（{@code data/noellesroles/dialogs/<id>.json}） */
     private static JsonObject loadBuiltin(String dialogId) {
         try (var stream = DialogDataManager.class

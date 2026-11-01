@@ -1,11 +1,17 @@
 {
-  "name": "鱼仁吖",
+  "name": "鱼仁",
   "skin": "yuren_ya",
   "slim": true,
+  "portrait": "yuren_ya",
+  "portrait_w": 130,
+  "portrait_h": 150,
+  "portrait_dx": 24,
+  "portrait_peek": 72,
+  "portrait_tilt": -12,
   "start": "hello",
   "nodes": {
     "hello": {
-      "text": "鱼仁吖~ 你好呀，我是鱼仁吖，有什么想聊的吗？",
+      "text": "你好呀，我是鱼仁吖，有什么想聊的吗？",
       "options": [
         { "text": "你是谁？", "next": "who" },
         { "text": "关于列车...", "next": "train" },
