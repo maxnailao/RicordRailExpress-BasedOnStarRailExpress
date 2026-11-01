@@ -90,6 +90,12 @@ public record DualPistolShootPayload(boolean leftHand, int targetId) implements 
             PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
 
             Entity targetEntity = player.serverLevel().getEntity(payload.targetId());
+            if (targetEntity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.distanceToSqr(player) < 22 * 22
+                    && drone.shotByGun(player)) {
+                // 双枪：走各自既有枪声/冷却后直接结束本次结算
+                return;
+            }
 
             // 布谷鸟的蛋：命中蛋的交互实体即打爆（音效/枪口火焰/冷却已在前段统一处理）
             if (CuckooEggHandler.isEggInteraction(targetEntity) && targetEntity.distanceToSqr(player) < 30 * 30) {

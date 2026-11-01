@@ -98,6 +98,13 @@ public record SilencedPistolShootPayload(Action action, int targetId) implements
             // 处理命中逻辑
             Entity targetEntity = player.serverLevel().getEntity(targetId);
 
+            // 密客的无人机：一击击落（弹药/冷却/枪声/枪口火焰已在前段统一处理）
+            if (targetEntity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.distanceToSqr(player) < SilencedPistolItem.RANGE * SilencedPistolItem.RANGE
+                    && drone.shotByGun(player)) {
+                return;
+            }
+
             // 布谷鸟的蛋：命中即打爆（弹药与8秒冷却已正常消耗）
             if (CuckooEggHandler.isEggInteraction(targetEntity)
                     && targetEntity.distanceToSqr(player) < SilencedPistolItem.RANGE * SilencedPistolItem.RANGE) {

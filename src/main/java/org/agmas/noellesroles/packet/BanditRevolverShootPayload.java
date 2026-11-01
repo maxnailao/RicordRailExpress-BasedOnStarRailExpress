@@ -65,6 +65,12 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                     CuckooEggHandler.tryBreakEggByAttacker(var6, player);
                 }
 
+                if (var6 instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                        && drone.distanceTo(player) < 30.0F) {
+                    // 密客的无人机：匪徒左轮一击击落（后续枪声/冷却/枪口火焰走原有统一流程）
+                    drone.shotByGun(player);
+                }
+
                 if (var6 instanceof Player) {
                     Player target = (Player) var6;
                     if ((double) target.distanceTo(player) < (double) 30) {

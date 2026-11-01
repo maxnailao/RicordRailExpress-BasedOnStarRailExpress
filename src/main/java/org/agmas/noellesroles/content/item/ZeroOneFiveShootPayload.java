@@ -57,6 +57,13 @@ public record ZeroOneFiveShootPayload(int target, boolean isAutoSecondShot) impl
                 CuckooEggHandler.tryBreakEggByAttacker(eggTarget, player);
                 hit = true;
             }
+            // 密客的无人机：零一五四一击击落
+            else if (player.serverLevel().getEntity(payload.target())
+                    instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.distanceToSqr(player) < 30 * 30) {
+                drone.shotByGun(player);
+                hit = true;
+            }
             // 检查是否是幻术师假人
             else if (player.serverLevel().getEntity(payload.target()) instanceof IllusionDecoyEntity illusionDecoy
                     && illusionDecoy.distanceToSqr(player) < 30 * 30) {

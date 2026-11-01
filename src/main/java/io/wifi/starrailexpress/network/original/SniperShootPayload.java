@@ -134,6 +134,13 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, player,
                                 GameConstants.DeathReasons.SNIPER_RIFLE);
                     }
+                    // 密客的无人机：狙击可一击击落（弹药/冷却/枪声/枪口火焰已在前面统一处理）
+                    if (player.serverLevel().getEntity(payload.targetOrShooterId())
+                            instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                            && drone.distanceTo(player) < 200.0
+                            && drone.shotByGun(player)) {
+                        return;
+                    }
                     // 检查是否是幻术师假人
                     if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity illusionDecoy
                             && illusionDecoy.distanceTo(player) < 200.0) {
