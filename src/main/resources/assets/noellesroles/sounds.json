@@ -1,4 +1,13 @@
 {
+  "noellesroles.drone_buzz": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "noellesroles:drone_buzz",
+        "stream": false
+      }
+    ]
+  },
   "noellesroles.child_laugh": {
     "sounds": [
       {

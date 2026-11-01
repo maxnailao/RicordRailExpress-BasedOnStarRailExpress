@@ -533,9 +533,8 @@ public final class C4Detonation {
     }
 
     /**
-     * 无人机自杀式爆炸专用：半径较标准 C4 缩小 10%（7→6.3），且无视方块遮挡
-     * （不做 hasExplosionLineOfSight 视线判定，隔墙也能命中/击杀）。
-     * 水平判定为球形半径，纵向（上下）单独限制为 3 格，避免波及楼下/楼上过远的玩家。
+     * 无人机自杀式爆炸专用：水平判定半径 6.3 再减 2.5 格 = 3.8，上下判定 ±3 格，
+     * 且无视方块遮挡（不做视线判定，隔墙也能命中/击杀）。
      * excludeVictimUuid 命中的玩家免疫（密客本体）。返回被击杀玩家数。
      */
     public static int detonateDroneBlast(ServerLevel level, Vec3 blastCenter, Player attacker, UUID excludeVictimUuid) {
@@ -550,10 +549,10 @@ public final class C4Detonation {
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 100, 0.0, 0.0, 0.0, 0.2);
         level.sendParticles(ParticleTypes.FLAME, x, y, z, 50, 0.3D, 0.3D, 0.3D, 0.1D);
 
-        // 无视方块：仅按圆柱距离筛选（水平 6.3 格、上下 3 格），去掉视线遮挡判定
-        double radius = BLAST_RADIUS * 0.9D;
+        // 无视方块：水平 3.8 格、上下 3 格，去掉视线遮挡判定
+        double radius = BLAST_RADIUS * 0.9D - 2.5D; // 6.3 → 3.8
         double r2 = radius * radius;
-        final double verticalRadius = 3.0D;
+        final double verticalRadius = 4.0D;
         List<ServerPlayer> victims = level.players().stream()
             .filter(p -> p.isAlive()
                 && !p.isSpectator()

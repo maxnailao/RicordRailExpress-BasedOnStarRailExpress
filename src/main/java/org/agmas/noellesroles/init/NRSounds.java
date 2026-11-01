@@ -80,6 +80,9 @@ public class NRSounds {
     //绑匪审判阶段
     public static final SoundEvent KIDNAPPER_JUDGMENT = registrar.create("noellesroles.kidnapper_judgment");
 
+    // 密客无人机螺旋桨嗡嗡声
+    public static final SoundEvent DRONE_BUZZ = registrar.create("noellesroles.drone_buzz");
+
     // 听觉干扰
     public static final SoundEvent OPPOAFIVE = registrar.create("noellesroles.oppoafive");
 

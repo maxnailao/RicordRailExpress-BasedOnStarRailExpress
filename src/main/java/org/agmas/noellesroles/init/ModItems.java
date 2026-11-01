@@ -50,6 +50,11 @@ public class ModItems {
             new JialeDialogNpcItem(new Item.Properties().stacksTo(16)),
             "jiale_npc");
 
+    // 鱼仁吖 - 固定绑定鱼仁吖对话的专属 NPC 物品
+    public static final Item YUREN_YA_NPC_ITEM = register(
+            new YurenYaDialogNpcItem(new Item.Properties().stacksTo(16)),
+            "yuren_ya_npc");
+
     public static final Item FISHER_ROD = register(
             new FisherRodItem(new Item.Properties().stacksTo(1).durability(64)),
             "fisher_rod");

@@ -71,10 +71,17 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
     private float inputYaw;
     private float inputPitch;
     private int inputFreshTicks = 0;
+    // 仅客户端：上一 tick 的控制朝向——服务端应用本包朝向天然滞后 1 tick，
+    // 本地预测用同一滞后值，消除冲锋转向时的轨迹系统性分叉（闪现/橡皮筋的根源）
+    private float prevControlYaw;
+    private float prevControlPitch;
+    private boolean prevControlValid;
     /** 惯性：服务端维护的实际飞行速度（格/tick），向目标速度平滑逼近 */
     private Vec3 flightVel = Vec3.ZERO;
     // 仅服务端：冲锋风声节流计数
     private int rushSoundTick = 0;
+    // 仅服务端：连续无人驾驶的 tick 数（滞留机体自我清理用）
+    private int unpilotedTicks = 0;
 
     /** 自杀式冲锋：无法停止，撞墙/撞人即爆 */
     private boolean rush = false;
@@ -138,6 +145,11 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
 
     /** 接收远程驱动输入 */
     public void applyControlInput(int bits, float yaw, float pitch) {
+        if (this.level().isClientSide) {
+            this.prevControlYaw = this.inputYaw;
+            this.prevControlPitch = this.inputPitch;
+            this.prevControlValid = true;
+        }
         this.inputBits = bits;
         this.inputYaw = yaw;
         this.inputPitch = pitch;
@@ -197,7 +209,14 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         double speed = NORMAL_SPEED * (rush ? CipherPlayerComponent.RUSH_SPEED_MULT : 1.0) * (this.bombLoaded ? 0.6 : 1.0);
         Vec3 targetVel;
         if (rush) {
-            targetVel = this.getLookAngle().scale(speed);
+            // 冲锋：预测方向用上一 tick 的朝向（与服务端本 tick 正在用的值一致），
+            // 而不是本机当前渲染朝向，否则持续转向时两边轨迹必然分叉
+            float yaw = this.prevControlValid ? this.prevControlYaw : this.getYRot();
+            float pitch = this.prevControlValid ? this.prevControlPitch : this.getXRot();
+            double ry = Math.toRadians(yaw);
+            double rp = Math.toRadians(pitch);
+            Vec3 dir = new Vec3(-Math.sin(ry) * Math.cos(rp), -Math.sin(rp), Math.cos(ry) * Math.cos(rp));
+            targetVel = dir.scale(speed);
         } else {
             double rad = Math.toRadians(this.inputYaw);
             Vec3 fwd = new Vec3(-Math.sin(rad), 0, Math.cos(rad));
@@ -233,9 +252,19 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         if (this.level().isClientSide && this.localPredict) {
             Vec3 cur = this.position();
             double errSq = cur.distanceToSqr(x, y, z);
-            // 仅在"真传送(steps<=0)"或误差超过 ~4 格时硬吸附；
-            // 冲锋 2 倍速的正常预测滞后(~1-2格)交给缓慢纠偏，避免频繁吸附造成卡顿
-            if (steps <= 0 || errSq > 16.0) {
+            if (steps <= 0) {
+                // 真传送必须立即吸附，保持权威
+                this.setPos(x, y, z);
+            } else if (this.rush) {
+                // 冲锋：预测已与服务端对齐（同用滞后 1 tick 的朝向），误差只剩碰撞差异，
+                // 正常纠偏即可；硬吸附只留给 >8 格的真实异常，不再周期性闪现
+                if (errSq > 64.0) {
+                    this.setPos(x, y, z);
+                } else {
+                    double k = 0.12;
+                    this.setPos(Mth.lerp(k, cur.x, x), Mth.lerp(k, cur.y, y), Mth.lerp(k, cur.z, z));
+                }
+            } else if (errSq > 16.0) {
                 this.setPos(x, y, z);
             } else {
                 double k = 0.12;
@@ -253,6 +282,15 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         // 避免无重力无人机永久卡死导致噪音无限循环
         if (!serverLevel.noCollision(this, this.getBoundingBox().inflate(-0.05D))) {
             this.move(MoverType.SELF, new Vec3(0.0D, 0.15D, 0.0D));
+        }
+
+        // 上一局残留 / 本体已下线的滞留机体：连续 2 秒无人驾驶则自我清除，
+        // 避免其无声地开灯、偷食物盘并在出生点附近"凭空发声"
+        if (isPiloted(serverLevel)) {
+            this.unpilotedTicks = 0;
+        } else if (++this.unpilotedTicks >= 40) {
+            this.discard();
+            return;
         }
 
         boolean fresh = inputFreshTicks > 0;
@@ -329,9 +367,25 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         // 行驶全程播放呼啸/电机声（冲锋更响更急，常态驾驶更轻更缓）
         playRushWind(serverLevel);
         if (rush) {
-            // 撞墙判定：实际位移显著小于预期
             double intendedLen = this.flightVel.length();
-            if (intendedLen > 0.05 && moved.length() < intendedLen * 0.25) {
+            // 撞墙/天花板/地板统一判定：沿视线打探测射线（COLLIDER 形状含半砖、楼梯等
+            // 不完整方块），命中任何方块即引爆——斜撞滑行不会再漏过旧的位移判据
+            Vec3 origin = this.getBoundingBox().getCenter();
+            Vec3 lookDir = this.getLookAngle();
+            double probe = Math.max(intendedLen, 0.05D) + 0.35D;
+            HitResult ray = this.level().clip(new ClipContext(origin,
+                    origin.add(lookDir.scale(probe)),
+                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            boolean hitBlock = ray.getType() == HitResult.Type.BLOCK;
+            if (hitBlock && ray instanceof BlockHitResult bhr
+                    && isDoorLike(this.level().getBlockState(bhr.getBlockPos()))) {
+                hitBlock = false; // 门会被被动强开，不算撞击
+            }
+            // 兜底：被推挤/贴脸卡进方块碰撞盒时射线可能已在体内起始，位移判据补抓
+            if (!hitBlock && intendedLen > 0.05D && moved.length() < intendedLen * 0.25D) {
+                hitBlock = true;
+            }
+            if (hitBlock) {
                 detonateOnImpact();
                 return;
             }
@@ -360,6 +414,8 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
 
     /** 冲锋撞墙/撞人 → 交给组件引爆 */
     private void detonateOnImpact() {
+        // 撞击即引爆：先清实体侧视觉标记；组件侧状态由 detonate()→closeDrone() 统一清理
+        this.bombLoaded = false;
         if (this.level() instanceof ServerLevel serverLevel && owner != null) {
             ServerPlayer ownerPlayer = serverLevel.getServer().getPlayerList().getPlayer(owner);
             if (ownerPlayer != null) {
@@ -462,8 +518,11 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        // 常态防坠毁：只允许其他玩家的直接攻击（枪/近战/投射物）打碎无人机，
+        // 溺水、火焰、摔落、爆炸余波、方块挤压等环境伤害全部免疫
+        if (!(source.getEntity() instanceof Player attacker)) return false;
         // 本体不能误伤自己的无人机（例如挥刀/开枪）
-        if (source.getEntity() instanceof Player p && owner != null && p.getUUID().equals(owner)) {
+        if (owner != null && attacker.getUUID().equals(owner)) {
             return false;
         }
         return super.hurt(source, amount);
@@ -596,8 +655,18 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         return null;
     }
 
-    /** 螺旋桨/电机声：仅驾驶时、且只在无人机所在位置发出；volume≈1.875 使可闻半径约 30 格（16×volume） */
+    /** 该机体当前是否正被密客驾驶：组件 droneActive 开启且指向本实体 */
+    private boolean isPiloted(ServerLevel serverLevel) {
+        if (owner == null) return false;
+        ServerPlayer ownerPlayer = serverLevel.getServer().getPlayerList().getPlayer(owner);
+        if (ownerPlayer == null) return false;
+        CipherPlayerComponent comp = CipherPlayerComponent.KEY.get(ownerPlayer);
+        return comp.droneActive && comp.droneId != null && comp.droneId.equals(this.getUUID());
+    }
+
+    /** 螺旋桨/电机声：仅驾驶时、且只在无人机所在位置发出；volume 越大越响且传得越远（可闻半径=16×volume） */
     private void playRushWind(ServerLevel serverLevel) {
+        if (!isPiloted(serverLevel)) return;
         if (this.rush) {
             if (this.rushSoundTick++ % 2 != 0) return;
         } else {
@@ -606,11 +675,11 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         float pitch = this.rush
                 ? 1.15F + this.random.nextFloat() * 0.15F
                 : 0.9F + this.random.nextFloat() * 0.10F;
-        // 可闻半径 = 16 × volume；取 ≥1.875 使噪音至少传播到 30 格
-        float vol = this.rush ? 2.0F : 1.875F;
-        // 统一以无人机坐标发声：null 表示不排除任何人，本体也按与无人机的实际距离听闻（不再"脑子里必闻"）
+        // 可闻半径 = 16 × volume；常态约 48 格、冲锋约 56 格，整体比之前更响
+        float vol = this.rush ? 3.5F : 3.0F;
+        // 统一以无人机坐标发声
         serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
-                net.minecraft.sounds.SoundEvents.CONDUIT_AMBIENT,
+                SoundEvents.CONDUIT_AMBIENT,
                 net.minecraft.sounds.SoundSource.PLAYERS, vol, pitch);
     }
 }

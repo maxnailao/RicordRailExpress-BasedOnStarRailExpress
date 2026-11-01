@@ -273,7 +273,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
                 if (planter != null) attacker = planter;
             }
             killed = C4Detonation.detonateDroneBlast(serverLevel, center, attacker, sp.getUUID());
-            sp.playNotifySound(SoundEvents.GENERIC_EXPLODE.value(), SoundSource.MASTER, 1.0F, 1.0F);
+            // 爆炸音效由 detonateDroneBlast 统一按爆心广播（GENERIC_EXPLODE 音量 5.0，全员可闻）
         } else {
             // 空撞：机体解体 + 纯物理冲量击飞（不击杀），落地附带沉重减速
             final double impactRadius = 5.5D; // 冲量总半径（缩小 45%：10 → 5.5）
@@ -284,8 +284,11 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
                     center.x, center.y, center.z, 25, 0.35, 0.35, 0.35, 0.04);
             serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
                     center.x, center.y + 0.2, center.z, 12, 0.3, 0.25, 0.3, 0.08);
+            // 解体爆炸声：按爆心广播，所有玩家都能听到（低音调表现机体碎裂的闷响）
             serverLevel.playSound(null, center.x, center.y, center.z,
-                    SoundEvents.METAL_HIT, SoundSource.PLAYERS, 1.2F, 0.7F);
+                    SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.5F, 0.6F);
+            serverLevel.playSound(null, center.x, center.y, center.z,
+                    SoundEvents.METAL_HIT, SoundSource.PLAYERS, 1.6F, 0.7F);
 
             int knocked = 0;
             for (ServerPlayer p : serverLevel.players()) {
@@ -347,7 +350,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
         this.bombPlanterId = gangster.getUUID();
         CipherDroneEntity loadedDrone = getDrone(serverLevel);
         if (loadedDrone != null) loadedDrone.setBombLoaded(true);
-        // 装载即进入引信倒计时（不再等到冲锋才起爆）
+        // 装载即进入引信倒计时：15 秒是硬时限，到点无人机在当前位置就地引爆（能炸死身边的人）
         this.bombDetonationAtGameTick = serverLevel.getGameTime() + (long) BOMB_FUSE_SECONDS * 20L;
         this.bombRemainingTicks = BOMB_FUSE_SECONDS * 20;
         this.lastBombTenths = -1;
@@ -381,11 +384,10 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
             sp.teleportTo(anchor.x, anchor.y, anchor.z);
             sp.setDeltaMovement(Vec3.ZERO);
         }
-
         if (applyCooldown) {
             SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
-            int cdSeconds = this.dronesSummoned <= 1 ? FIRST_COOLDOWN_SECONDS : COOLDOWN_SECONDS;
-            ability.cooldown = GameConstants.getInTicks(0, cdSeconds);
+            // 120 秒只属于开局（角色分配监听器负责）；使用后收回/击毁一律 55 秒
+            ability.cooldown = GameConstants.getInTicks(0, COOLDOWN_SECONDS);
             ability.sync();
         }
         sync();
@@ -537,7 +539,7 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
             }
         }
 
-        // 已装弹：引信倒计时（装载即开始，无论是否在冲锋）；到点就地引爆
+        // 已装弹且冲锋中：引信倒计时（冲锋出发时起表）；到点就地引爆
         if (bombDetonationAtGameTick >= 0L) {
             long remaining = bombDetonationAtGameTick - sp.serverLevel().getGameTime();
             if (remaining <= 0L) {

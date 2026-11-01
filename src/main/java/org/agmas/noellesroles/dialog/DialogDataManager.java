@@ -112,11 +112,8 @@ public class DialogDataManager {
         }
         Path path = findDialogFile(server, dialogId);
         if (path == null) {
-            // JiaLe 对话内置在 jar 资源中，外部文件缺失时直接读内置版本，保证开箱即用
-            if (DEFAULT_DIALOG_ID.equals(dialogId)) {
-                return loadBuiltin(dialogId);
-            }
-            return null;
+            // 外部文件缺失时尝试读取 jar 内置对话（data/noellesroles/dialogs/<id>.json），保证开箱即用
+            return loadBuiltin(dialogId);
         }
         try {
             String raw = Files.readString(path, StandardCharsets.UTF_8);

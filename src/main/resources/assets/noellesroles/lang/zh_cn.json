@@ -698,6 +698,8 @@
   "item.noellesroles.dialog_npc.tooltip_id": "绑定对话：%s",
   "item.noellesroles.jiale_npc": "JiaLe 引导员",
   "item.noellesroles.jiale_npc.tooltip": "右键放置列车引导员 JiaLe，可查看新手教程",
+  "item.noellesroles.yuren_ya_npc": "鱼仁吖",
+  "item.noellesroles.yuren_ya_npc.tooltip": "右键放置鱼仁吖，可以和她聊天",
   "screen.noellesroles.dialog_npc.end": "结束对话",
   "screen.noellesroles.dialog_npc.hint": "点击选项继续对话，ESC 退出",
   "screen.noellesroles.dialog_npc.invalid": "对话数据无效",

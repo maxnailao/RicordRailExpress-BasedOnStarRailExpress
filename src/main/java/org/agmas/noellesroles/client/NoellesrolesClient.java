@@ -475,6 +475,25 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 注册时空旅者传送门实体渲染器
         EntityRendererRegistry.register(ModEntities.RUIKE_PORTAL,
                 org.agmas.noellesroles.client.render.RuikePortalRenderer::new);
+        // 密客无人机驾驶中：按渲染帧同步相机旋转，修复冲锋时旋转不跟手（20Hz tick 复制太钝）
+        // Fabric API 1.21.1 没有 RenderTickEvent，用 WorldRenderEvents.START（每个世界渲染帧触发一次）
+        WorldRenderEvents.START.register(context -> {
+            float tickDelta = context.tickCounter().getGameTimeDeltaPartialTick(false);
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            if (client.player == null || client.level == null || client.isPaused()) return;
+            org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent cipher =
+                    org.agmas.noellesroles.game.roles.neutral.cipher.CipherPlayerComponent.KEY.get(client.player);
+            if (!cipher.droneActive || cipher.droneId == null) return;
+            org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone = cachedCipherDrone;
+            if (drone == null || drone.isRemoved()) return;
+            // 玩家的逐帧插值视角 → 无人机；插值对保持"上一帧 → 当前帧"连续，相机每帧即时跟手
+            float frameYaw = net.minecraft.util.Mth.lerp(tickDelta, client.player.yRotO, client.player.getYRot());
+            float framePitch = net.minecraft.util.Mth.lerp(tickDelta, client.player.xRotO, client.player.getXRot());
+            drone.yRotO = drone.getYRot();
+            drone.xRotO = drone.getXRot();
+            drone.setYRot(frameYaw);
+            drone.setXRot(framePitch);
+        });
         // 密客无人机：本体不动，相机绑定到无人机 + 远程驱动
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null) return;
