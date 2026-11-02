@@ -15,6 +15,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.packet.JidongzheSlidePoseS2CPacket;
 import org.agmas.noellesroles.packet.JidongzheStaminaS2CPacket;
@@ -94,6 +97,10 @@ public class JidongzheRoleData extends SimpleRoleData {
         if (sliding || sprintMemoryTicks <= 0) {
             return false;
         }
+        // 空中不给起滑：滑铲是贴地滑行，落地才有物理依据
+        if (!sp.onGround()) {
+            return false;
+        }
 
         long now = GameUtils.getTicksFromGameStart(sp.level());
         slideDistance = JidongzheRole.slideDistanceForCooldown(Math.max(0L, slideReadyAt - now));
@@ -109,6 +116,7 @@ public class JidongzheRoleData extends SimpleRoleData {
         // 起滑即清空记忆，避免同一刻的重复包触发第二次
         sprintMemoryTicks = 0;
 
+        applySlideStepHeight(sp, true);
         spendStamina(sp, JidongzheRole.SLIDE_STAMINA_COST_PERCENT);
         broadcastPose(sp, true, slideTicksCap);
         spawnSlideDust(sp);
@@ -162,7 +170,25 @@ public class JidongzheRoleData extends SimpleRoleData {
         sliding = false;
         slideTickIndex = 0;
         slideEndAt = GameUtils.getTicksFromGameStart(sp.level());
+        applySlideStepHeight(sp, false);
         broadcastPose(sp, false, 0);
+    }
+
+    /**
+     * 滑行期间临时抬高踏步高度，让角色贴地越过一格台阶的棱边而不是被卡停。
+     * 服务端属性改动会由原版自动同步到客户端，所以客户端自己的碰撞与踏步同样生效。
+     */
+    private void applySlideStepHeight(ServerPlayer sp, boolean enable) {
+        AttributeInstance attribute = sp.getAttribute(Attributes.STEP_HEIGHT);
+        if (attribute == null) {
+            return;
+        }
+        // 先按 id 移除再叠加：同一 id 重复 addModifier 会抛异常
+        attribute.removeModifier(JidongzheRole.SLIDE_STEP_MODIFIER_ID);
+        if (enable) {
+            attribute.addTransientModifier(new AttributeModifier(JidongzheRole.SLIDE_STEP_MODIFIER_ID,
+                    JidongzheRole.SLIDE_STEP_HEIGHT_BONUS, AttributeModifier.Operation.ADD_VALUE));
+        }
     }
 
     /**

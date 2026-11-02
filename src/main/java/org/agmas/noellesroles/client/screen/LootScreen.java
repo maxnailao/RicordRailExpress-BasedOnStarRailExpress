@@ -140,7 +140,10 @@ public class LootScreen extends AbstractPixelScreen {
                     .getQualityListGroupConfigs().get(qualityAndId.first).second.get(qualityAndId.second);
             skin = new TextureWidget(x + pixelSize, y + pixelSize,
                     w - 2 * pixelSize, h - 2 * pixelSize, w - 2 * pixelSize, h - 2 * pixelSize,
-                    LootScreenUtils.getItemResourceLocation(itemName));
+                    // 皮肤贴图缺失（未安装 ricord_skins 素材包）时用品质底图顶上，避免紫黑块
+                    LootScreenUtils.hasPreviewTexture(itemName)
+                            ? LootScreenUtils.getItemResourceLocation(itemName)
+                            : LotteryManager.getQualityBgResourceLocation(this.quality));
             skinName = LotteryManager.LotteryPool.getTrueName(itemName);
             // 设置itemStack
             itemType = LotteryManager.LotteryPool.getSkinItemStack(itemName);

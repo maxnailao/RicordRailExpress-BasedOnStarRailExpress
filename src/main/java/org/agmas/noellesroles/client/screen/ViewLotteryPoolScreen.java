@@ -64,7 +64,10 @@ public class ViewLotteryPoolScreen extends AbstractPixelScreen{
                     i, j,
                     ITEM_PIXELS_SIZE * pixelSize, ITEM_PIXELS_SIZE * pixelSize,
                     ITEM_PIXELS_SIZE, ITEM_PIXELS_SIZE,
-                    LootScreenUtils.getItemResourceLocation(rawName)
+                    // 皮肤贴图缺失（未安装 ricord_skins 素材包）时用品质底图顶上，避免紫黑块
+                    LootScreenUtils.hasPreviewTexture(rawName)
+                            ? LootScreenUtils.getItemResourceLocation(rawName)
+                            : LotteryManager.getQualityBgResourceLocation(quality)
             );
             qualityBar = new TextureWidget(
                     i, j + ITEM_PIXELS_SIZE * pixelSize,

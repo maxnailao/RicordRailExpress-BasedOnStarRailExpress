@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.model;
 
+import io.wifi.starrailexpress.client.util.SkinAssetIndex;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SRECosmetics;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -88,9 +89,12 @@ public class GeneralModel implements UnbakedModel, BakedModel {
                         && !ItemSkinManager.SkinTypes.CROSSBOW.equals(itemType)) {
                     continue;
                 }
-                var bakedModel = baker.bake(
-                        GeneralModelLoadingPlugin.getModelLocation(itemType, skin.getName(), variant),
-                        settings);
+                var modelLocation = GeneralModelLoadingPlugin.getModelLocation(itemType, skin.getName(), variant);
+                // 皮肤素材包未安装时对应模型 JSON 不存在，跳过避免 baker.bake 刷缺失模型错误
+                if (!SkinAssetIndex.hasModel(modelLocation)) {
+                    continue;
+                }
+                var bakedModel = baker.bake(modelLocation, settings);
                 if (bakedModel != null) {
                     variantMap.put(variant, bakedModel);
                 }

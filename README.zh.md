@@ -78,6 +78,13 @@ molang-compiler-3.1.1.19.jar
 本模组是Wathe模组的附属模组，并改进了Wathe模组中的很多功能，本模组自带 `StarRailExpress`、`blindness`模组的功能与内容。
 本模组完全开源免费，非盈利项目。我们使用和上游 `Noellesroles` 相同的 `GNU General Public License v3.0 only (GPL-3.0-only)` 协议。
 
+**皮肤素材不在本仓库。** 武器与帽子皮肤的贴图与模型、音乐盒与皮肤专属音效、皮肤显示名，
+已拆分到独立模组 `ricord_skins`（`Ricord-Skins` 仓库），以纯资源 jar 的形式单独发放。
+玩偶方块自身的贴图仍留在主模组内，没装皮肤包时玩偶方块也能正常渲染。它是**不含可执行代码的资源包**，
+授权与主模组的 GPL-3.0-only 分离，不包含在本仓库的源代码与构建产物里——这与 `Trainmurdermystery`（ARR 协议）
+不随本模组发布是同一种处理。主模组对 `ricord_skins` 只声明 `recommends`（软依赖）：没装也能正常进游戏，
+只是武器与帽子皮肤不可用。
+
 ### 你可以做什么（授予的权限依照StarRailExpress开源协议同样要求）
 #### 自由使用
 

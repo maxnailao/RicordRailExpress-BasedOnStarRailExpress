@@ -46,6 +46,20 @@ public class LootScreenUtils {
         }
         return ans;
     }
+
+    /**
+     * 预览贴图是否存在。
+     * <p>
+     * 皮肤贴图已随素材拆到独立的 ricord_skins 模组；未安装该素材包（或某个皮肤本就没有独立预览图）时
+     * 返回 false，调用方应改用品质底图，避免界面出现缺失贴图的紫黑块。
+     * <p>
+     * 这里必须逐个判定而不是问"皮肤包装了没有"：金币、道具等非皮肤奖池物品的贴图仍在主模组内。
+     */
+    public static boolean hasPreviewTexture(String itemName) {
+        return Minecraft.getInstance().getResourceManager()
+                .getResource(getItemResourceLocation(itemName)).isPresent();
+    }
+
     public static ResourceLocation getCoinResourceLocation() {
         return StarRailExpressID.watheId("textures/font/coin.png");
     }

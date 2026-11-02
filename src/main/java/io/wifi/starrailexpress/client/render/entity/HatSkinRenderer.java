@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.client.render.entity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.util.SkinAssetIndex;
 import net.fabricmc.fabric.api.client.model.loading.v1.FabricBakedModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -53,6 +54,11 @@ public final class HatSkinRenderer {
      */
     public static void renderOnHead(String hatSkin, PoseStack poseStack, MultiBufferSource bufferSource, int light) {
         if (hatSkin == null || hatSkin.isEmpty()) {
+            return;
+        }
+        // 皮肤模型由 ricord_skins 素材包提供；素材包缺失时若继续走玩偶方块回退，
+        // 头顶会坐着一个没戴帽的裸玩偶，不如直接不渲染
+        if (!SkinAssetIndex.isInstalled()) {
             return;
         }
         renderPlushHat(hatSkin, poseStack, bufferSource, light);

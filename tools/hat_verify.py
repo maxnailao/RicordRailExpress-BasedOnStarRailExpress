@@ -10,6 +10,7 @@ hat_verify.py — 端到端校验瑞科德饰品帽子在八个位置的完整�
 物品模型 / 语言条目 / 帽子箱子(两处一致)。
 """
 import argparse
+import glob
 import io
 import json
 import os
@@ -20,8 +21,14 @@ import zipfile
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRE_ASSETS = os.path.join(ROOT, "src/main/resources/assets/starrailexpress")
-NR_ASSETS = os.path.join(ROOT, "src/main/resources/assets/noellesroles")
+# 皮肤贴图、皮肤模型与瑞科德饰品物品模型已拆分到独立的 ricord_skins 素材仓库，
+# 源码、lang、卡池配置仍在主仓库。素材仓库位置可用环境变量 RICORD_SKINS_ROOT 覆盖。
+SKIN_ROOT = os.environ.get("RICORD_SKINS_ROOT", os.path.join(os.path.dirname(ROOT), "Ricord-Skins"))
+SKIN_RES = os.path.join(SKIN_ROOT, "src/main/resources/assets")
+SRE_ASSETS = os.path.join(SKIN_RES, "starrailexpress")
+NR_ASSETS = os.path.join(SKIN_RES, "noellesroles")
+# noellesroles 的物品名翻译条目没有搬走，仍在主仓库
+NR_MAIN_ASSETS = os.path.join(ROOT, "src/main/resources/assets/noellesroles")
 
 # 皮肤名, 物品id, 中文名, 品级
 HATS = [
@@ -55,7 +62,7 @@ def check_source():
                     encoding="utf-8").read()
     mod_items = open(os.path.join(ROOT, "src/main/java/org/agmas/noellesroles/init/ModItems.java"),
                      encoding="utf-8").read()
-    nr_lang = json.load(open(os.path.join(NR_ASSETS, "lang/zh_cn.json"), encoding="utf-8"))
+    nr_lang = json.load(open(os.path.join(NR_MAIN_ASSETS, "lang/zh_cn.json"), encoding="utf-8"))
     box_main = json.load(open(os.path.join(ROOT, "CS2_box/hat_box.json"), encoding="utf-8"))
     box_run = json.load(open(os.path.join(ROOT, "run/CS2_box/hat_box.json"), encoding="utf-8"))
 
@@ -100,7 +107,7 @@ def check_source():
         for p in [os.path.join(SRE_ASSETS, "models/item/skins/hat", o + ".json"),
                   os.path.join(SRE_ASSETS, "textures/item/skins/hat", o + ".png"),
                   os.path.join(NR_ASSETS, "models/item", o.replace("hat_ricord_", "ricord_") + ".json"),
-                  os.path.join(NR_ASSETS, "lang/zh_cn.json")]:
+                  os.path.join(NR_MAIN_ASSETS, "lang/zh_cn.json")]:
             if p.endswith(".json") and os.path.isfile(p) and "lang" in p:
                 d = json.load(open(p, encoding="utf-8"))
                 for k in d:
@@ -115,33 +122,59 @@ def check_source():
     return all_ok
 
 
-def check_jar(path):
-    z = zipfile.ZipFile(path)
-    names = set(z.namelist())
+def check_jar(main_jar, skin_jar):
+    """校验产物 jar：皮肤模型与瑞科德饰品物品模型在素材 jar 里，lang 仍在主模组 jar 里。"""
+    zm = zipfile.ZipFile(main_jar)
+    names = set(zm.namelist())
+    if skin_jar and os.path.isfile(skin_jar):
+        zs = zipfile.ZipFile(skin_jar)
+        skin_names = set(zs.namelist())
+    else:
+        skin_names = set()
     bad = []
+    if not skin_names:
+        bad.append("未找到皮肤素材 jar（用 --skin-jar 指定）")
+
     for skin, item_id, cn, _q in HATS + KEEP_AS_IS:
-        m = "assets/starrailexpress/models/item/skins/hat/%s.json" % skin
-        if m not in names:
-            bad.append(m)
-        if "assets/noellesroles/models/item/%s.json" % item_id not in names:
+        if "assets/starrailexpress/models/item/skins/hat/%s.json" % skin not in skin_names:
+            bad.append(skin)
+        if "assets/noellesroles/models/item/%s.json" % item_id not in skin_names:
             bad.append(item_id)
-    d = json.loads(z.read("assets/noellesroles/lang/zh_cn.json").decode("utf-8"))
+
+    # 皮肤贴图与模型不该再出现在主模组 jar 里
+    # （玩偶方块贴图 block/plush 已退回主模组，属于正常内容，不在此检查范围）
+    leaked = sorted(n for n in names if "/item/skins/" in n)
+    if leaked:
+        bad.append("主 jar 残留皮肤素材: %s" % leaked[:3])
+
+    d = json.loads(zm.read("assets/noellesroles/lang/zh_cn.json").decode("utf-8"))
     for _s, item_id, cn, _q in HATS + KEEP_AS_IS:
         if d.get("item.noellesroles." + item_id) != cn:
             bad.append("lang:" + item_id)
     for o in OBSOLETE:
-        hits = [n for n in names if o in n]
+        hits = [n for n in names if o in n] + [n for n in skin_names if o in n]
         if hits:
             bad.append("废弃残留:" + str(hits))
-    print("\njar 校验 (%s): %s" % (os.path.basename(path), "全部通过" if not bad else "问题: %s" % bad))
+    print("\njar 校验 主=%s 皮肤=%s: %s"
+          % (os.path.basename(main_jar), os.path.basename(skin_jar) if skin_jar else "-",
+             "全部通过" if not bad else "问题: %s" % bad))
     return not bad
+
+
+def find_skin_jar():
+    libs = os.path.join(SKIN_ROOT, "build", "libs")
+    if not os.path.isdir(libs):
+        return None
+    jars = sorted(glob.glob(os.path.join(libs, "ricord-skins-*.jar")))
+    return jars[-1] if jars else None
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--jar", default=None)
+    ap.add_argument("--jar", default=None, help="主模组 jar")
+    ap.add_argument("--skin-jar", default=None, help="ricord_skins 素材 jar，缺省自动在素材仓库 build/libs 下查找")
     a = ap.parse_args()
     ok = check_source()
     if a.jar:
-        ok = check_jar(a.jar) and ok
+        ok = check_jar(a.jar, a.skin_jar or find_skin_jar()) and ok
     sys.exit(0 if ok else 1)

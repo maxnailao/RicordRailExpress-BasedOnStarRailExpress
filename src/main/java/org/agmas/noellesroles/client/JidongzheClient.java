@@ -81,7 +81,8 @@ public final class JidongzheClient {
         boolean sneakDown = isJidongzhe && client.options.keyShift.isDown();
         boolean jumpDown = isJidongzhe && client.options.keyJump.isDown();
 
-        if (sneakDown && !wasSneakDown && sprintMemoryTicks > 0 && now >= localSlideReadyAt) {
+        if (sneakDown && !wasSneakDown && sprintMemoryTicks > 0 && now >= localSlideReadyAt
+                && client.player.onGround()) {
             int duration = predictSlideDurationTicks(now);
             localSlideReadyAt = now + JidongzheRole.SLIDE_COOLDOWN_TICKS;
             POSE_UNTIL.put(selfId, now + duration);

@@ -337,7 +337,8 @@
   "recommends": {
     "sodium": "*",
     "sodium-extra": "*",
-    "blindness": "*"
+    "blindness": "*",
+    "ricord_skins": "*"
   },
   "conflicts": {
     "customskinloader": "*"

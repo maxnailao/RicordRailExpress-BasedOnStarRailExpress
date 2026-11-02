@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.client.model;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.util.SkinAssetIndex;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ItemSkinManager;
@@ -43,13 +44,20 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
 
     @Override
     public void onInitializeModelLoader(Context pluginContext) {
+        // 皮肤贴图与模型已拆出至 ricord_skins 素材包：先重建可用性索引，只注册真实存在的皮肤模型，
+        // 素材包未安装时不会对着上百个不存在的路径刷缺失模型告警
+        SkinAssetIndex.rebuild();
+
         // make sure all models get loaded
         for (var entry : ItemSkinManager.getSkins().entrySet()) {
             for (ItemSkinManager.Skin skin : entry.getValue().values()) {
                 if (ItemSkinManager.SkinTypes.HAT.equals(entry.getKey())) {
                     // 帽子皮肤无物品载体，直接注册 models/item/skins/hat/{name}.json 进行烘焙，
                     // 运行时通过 FabricBakedModelManager.getModel(同一 ID) 获取
-                    pluginContext.addModels(SRE.id("item/skins/hat/%s".formatted(skin.getName())));
+                    var hatModel = SRE.id("item/skins/hat/%s".formatted(skin.getName()));
+                    if (SkinAssetIndex.hasModel(hatModel)) {
+                        pluginContext.addModels(hatModel);
+                    }
                     continue;
                 }
                 for (Variant variant : Variant.values()) {
@@ -61,7 +69,7 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
                     }
                     // 无物品载体的皮肤类型在 MODEL_IDS 中没有映射，跳过避免空指针
                     var modelLocation = getModelLocation(entry.getKey(), skin.getName(), variant);
-                    if (modelLocation == null) {
+                    if (modelLocation == null || !SkinAssetIndex.hasModel(modelLocation)) {
                         continue;
                     }
                     pluginContext.addModels(modelLocation);

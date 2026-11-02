@@ -51,6 +51,14 @@ This mod is an addon for the Wathe mod and improves many of its features. It inc
 
 This mod is completely open-source, free, and non-commercial. We use the same `GNU General Public License v3.0 only (GPL-3.0-only)` as the upstream `Noellesroles`.
 
+**Skin assets are not part of this repository.** Weapon and hat skin textures and models, music-box and skin-specific
+sounds, and skin display names have been split out into a separate mod,
+`ricord_skins` (the `Ricord-Skins` repository), distributed on its own as a resource-only jar. It contains no
+executable code, its license is separate from the mod's GPL-3.0-only, and it is not included in this repository's
+sources or build artifacts — the same treatment we already apply to `Trainmurdermystery` (ARR licensed).
+The main mod only lists `ricord_skins` under `recommends` (a soft dependency): the game runs fine without it,
+just with weapon and hat skins unavailable.
+
 ### What You Can Do (Granted permissions are also required by the StarRailExpress open-source license)
 #### Freedom to Use
 

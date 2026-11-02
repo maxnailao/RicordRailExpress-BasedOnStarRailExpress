@@ -12,7 +12,8 @@ hat_convert.py — 把 Blockbench 基岩版帽子模型转换成 Java 物品模�
     - 把模型里所有旋转（骨骼组旋转 + 方块自带旋转）烘焙进 from/to 轴对齐包围盒，
       避免 Java 只允许 -45/-22.5/0/22.5/45° 的限制；
     - 保留模型自带的 display（含 head 变换）；
-    - 把真实贴图复制到 src/main/resources/assets/starrailexpress/textures/item/skins/hat/。
+    - 把真实贴图复制到 ricord_skins 素材仓库的
+      src/main/resources/assets/starrailexpress/textures/item/skins/hat/。
 
 注意：本脚本放在 tools/ 而不是 build/ —— build/ 被 .gitignore 忽略且会被 Gradle 清理。
 """
@@ -24,10 +25,13 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MODEL_OUT_DIR = os.path.join(
-    ROOT, "src", "main", "resources", "assets", "starrailexpress", "models", "item", "skins", "hat")
-TEX_OUT_DIR = os.path.join(
-    ROOT, "src", "main", "resources", "assets", "starrailexpress", "textures", "item", "skins", "hat")
+# 皮肤贴图与模型已拆分到独立的 ricord_skins 素材仓库：本脚本的产物必须写到那里，
+# 不能再落回公开仓库。素材仓库位置可用环境变量 RICORD_SKINS_ROOT 覆盖。
+SKIN_ROOT = os.environ.get("RICORD_SKINS_ROOT", os.path.join(os.path.dirname(ROOT), "Ricord-Skins"))
+SKIN_ASSETS = os.path.join(SKIN_ROOT, "src", "main", "resources", "assets", "starrailexpress")
+
+MODEL_OUT_DIR = os.path.join(SKIN_ASSETS, "models", "item", "skins", "hat")
+TEX_OUT_DIR = os.path.join(SKIN_ASSETS, "textures", "item", "skins", "hat")
 
 HAT1 = os.path.join(ROOT, "帽子")
 HAT2 = os.path.join(ROOT, "帽子第二期")

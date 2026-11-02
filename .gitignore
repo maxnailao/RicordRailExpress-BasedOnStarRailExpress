@@ -27,3 +27,14 @@ src/main/java/org/agmas/noellesroles/role/StarRailExpress.code-workspace
 /.workbuddy/*
 /临时/
 /logs/
+
+# 皮肤素材已拆分到独立的 Ricord-Skins 素材仓库（构建为 ricord_skins 资源模组），
+# 以下是历史遗留的素材路径与含素材的产物；本公开仓库不应再包含它们。
+# 注意：.gitignore 不影响 Gradle 打包——若本地仍把这些文件放回原路径，
+# 它们会被 processResources 静默打进主模组 jar，请一律写到素材仓库里。
+src/main/resources/assets/starrailexpress/textures/item/skins/
+src/main/resources/assets/starrailexpress/models/item/skins/
+src/main/resources/assets/starrailexpress/sounds/musicbox/
+src/main/resources/assets/starrailexpress/sounds/item/
+src/main/resources/assets/noellesroles/models/item/ricord_*.json
+libs/ricord-skins-*.jar

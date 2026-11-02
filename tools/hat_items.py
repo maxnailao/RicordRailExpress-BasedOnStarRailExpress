@@ -14,7 +14,10 @@ import sys
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ITEM_MODEL_DIR = os.path.join(ROOT, "src/main/resources/assets/noellesroles/models/item")
+# 瑞科德饰品的物品模型已随皮肤拆到独立素材仓库（可用 RICORD_SKINS_ROOT 覆盖位置）；
+# noellesroles 的 lang 仍在主仓库
+SKIN_ROOT = os.environ.get("RICORD_SKINS_ROOT", os.path.join(os.path.dirname(ROOT), "Ricord-Skins"))
+ITEM_MODEL_DIR = os.path.join(SKIN_ROOT, "src/main/resources/assets/noellesroles/models/item")
 LANG = os.path.join(ROOT, "src/main/resources/assets/noellesroles/lang/zh_cn.json")
 
 # (物品id, 皮肤名, 中文名)  —— 顺序即文件中的插入顺序

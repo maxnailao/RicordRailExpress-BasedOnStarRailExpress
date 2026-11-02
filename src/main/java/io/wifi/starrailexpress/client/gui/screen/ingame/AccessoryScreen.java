@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.client.render.entity.HatFeatureRenderer;
 import io.wifi.starrailexpress.client.render.entity.HatSkinRenderer;
+import io.wifi.starrailexpress.client.util.SkinAssetIndex;
 import io.wifi.starrailexpress.client.gui.endfield.menu.animation.PageTransition;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
@@ -278,14 +279,18 @@ public class AccessoryScreen extends Screen {
         // 全量目录：遍历皮肤注册表（含帽子），未拥有也列出；
         // 帽子统一归入"帽子"分类浏览，"全部"页只显示已拥有的帽子（见 applyFilter）
         Set<String> ids = new LinkedHashSet<>();
-        for (var typeEntry : ItemSkinManager.getSkins().entrySet()) {
-            String itemType = typeEntry.getKey();
-            for (String skinName : typeEntry.getValue().keySet()) {
-                if ("default".equalsIgnoreCase(skinName)) continue;
-                ids.add(itemType + "/" + skinName);
+        // 皮肤模型与显示名由 ricord_skins 素材包提供：素材包未安装时不填充目录，
+        // 否则会列出上百个预览为缺失贴图、名字只剩裸 ID 的条目
+        if (SkinAssetIndex.isInstalled()) {
+            for (var typeEntry : ItemSkinManager.getSkins().entrySet()) {
+                String itemType = typeEntry.getKey();
+                for (String skinName : typeEntry.getValue().keySet()) {
+                    if ("default".equalsIgnoreCase(skinName)) continue;
+                    ids.add(itemType + "/" + skinName);
+                }
             }
+            ids.addAll(ownedIds);
         }
-        ids.addAll(ownedIds);
 
         for (String skinId : ids) {
             if (EXCLUDED_FORM_SKINS.contains(skinId)) continue;

@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.gui.screen;
 
+import io.wifi.starrailexpress.client.util.SkinAssetIndex;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -97,6 +98,11 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
 
     private void collectAvailableSkins() {
         availableSkins.clear();
+        // 皮肤模型与显示名由 ricord_skins 素材包提供：素材包未安装时不列出任何皮肤，
+        // 否则界面会列出上百个只有裸 ID、预览是缺失贴图的条目（构造器随后追加的"默认"选项不受影响）
+        if (!SkinAssetIndex.isInstalled()) {
+            return;
+        }
         var unlockedSkins = skinsComponent.getUnlockedSkinsForItemType(itemTypeName);
         for (var entry : unlockedSkins.entrySet()) {
             availableSkins.add(entry.getKey());

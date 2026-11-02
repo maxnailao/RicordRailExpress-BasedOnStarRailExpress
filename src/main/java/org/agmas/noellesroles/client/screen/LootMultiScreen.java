@@ -101,7 +101,10 @@ public class LootMultiScreen extends AbstractPixelScreen {
             skin = new TextureWidget(x + pixelInset, y + pixelInset,
                     size - 2 * pixelInset, size - 2 * pixelInset,
                     CARD_TEXTURE_SIZE, CARD_TEXTURE_SIZE,
-                    LootScreenUtils.getItemResourceLocation(itemName));
+                    // 皮肤贴图缺失（未安装 ricord_skins 素材包）时用品质底图顶上，避免紫黑块
+                    LootScreenUtils.hasPreviewTexture(itemName)
+                            ? LootScreenUtils.getItemResourceLocation(itemName)
+                            : LotteryManager.getQualityBgResourceLocation(quality));
         }
 
         @Override

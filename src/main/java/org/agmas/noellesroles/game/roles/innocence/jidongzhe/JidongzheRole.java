@@ -32,15 +32,22 @@ public class JidongzheRole extends NormalRole {
     public static final int SLIDE_SHORT_RANGE_TICKS = SLIDE_COOLDOWN_TICKS * 2 / 3;
     /** 距离单位是「格」（方块边长），不是刻、不是米 */
     public static final double SLIDE_MIN_DISTANCE = 0.7D;
-    public static final double SLIDE_MAX_DISTANCE = 4.0D;
+    public static final double SLIDE_MAX_DISTANCE = 4.5D;
     /**
      * 每刻水平速度基准，单位「格/刻」——就是实际前进的格数，不是药水倍率。
-     * 疾跑本身约 0.28 格/刻，这里约 1.8 倍；上一版用 teleport 时的平均速度是 1 格/刻，按要求减半。
+     * 疾跑本身约 0.28 格/刻；这里由 0.5 提升 30% 得到。
      * 实际每刻速度按进度从 1.6 倍基准衰减到 0.4 倍，所以滑行是先冲后收的。
      */
-    public static final double SLIDE_SPEED_PER_TICK = 0.5D;
+    public static final double SLIDE_SPEED_PER_TICK = 0.65D;
     public static final double SLIDE_START_SPEED_RATIO = 1.6D;
     public static final double SLIDE_END_SPEED_RATIO = 0.4D;
+    /**
+     * 滑行期间临时叠加的踏步高度加成（玩家基准 0.6 + 0.4 = 1.0）。
+     * 不加的话滑过一格台阶的棱边会被原版拦下，看起来像卡进方块里；抬高后就能贴地滑过去。
+     */
+    public static final double SLIDE_STEP_HEIGHT_BONUS = 0.4D;
+    /** 踏步高度修饰符 id，滑铲结束时按它移除 */
+    public static final ResourceLocation SLIDE_STEP_MODIFIER_ID = Noellesroles.id("jidongzhe_slide_step");
     /**
      * 姿态时长估算的刻数上下限。真正的收尾靠量测实际走过的格数，
      * 这里只负责给出「这次滑铲大概持续多久」的估算，上限防止撞墙时姿态一直挂着。

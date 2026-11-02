@@ -321,8 +321,8 @@ public class CS2CaseOpeningScreen extends Screen {
             guiGraphics.pose().scale(scale, scale, 1f);
             guiGraphics.renderFakeItem(stack, 0, 0);
             guiGraphics.pose().popPose();
-        } else {
-            // 无法获取物品时回退到贴图渲染
+        } else if (LootScreenUtils.hasPreviewTexture(skinId)) {
+            // 无法获取物品时回退到贴图渲染；皮肤贴图缺失（未安装 ricord_skins 素材包）时不画，避免出现紫黑块
             net.minecraft.resources.ResourceLocation skinTex = LootScreenUtils.getItemResourceLocation(skinId);
             guiGraphics.blit(skinTex, x, y, size, size, 0, 0, 16, 16, 16, 16);
         }
