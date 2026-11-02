@@ -163,13 +163,57 @@ public class CorruptCopPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public void serverTick() {
+        // ★ 黑警死亡 → 立刻结束黑警时刻。
+        //
+        // 这一条必须放在"死亡直接 return"**之前**：以前下面那个
+        // `if (!isPlayerAliveAndSurvival) return;` 会让 tick 永远走不到，
+        // 结果黑警一死，corruptCopTime 的 active 一直为 true ——
+        // 全局标志不清、背景音乐不停、屏幕上的倒计时也一直挂着，直到本局结束。
+        //
+        // endOnDeath() 只做收尾（清全局状态 + 收进度条），不会像 end() 那样
+        // 再走一遍"判负击杀"的逻辑（人都已经死了）。
+        if ((corruptCopTime.isActive() || corruptCopTime.isSuspendedForLooseEnd())
+                && !GameUtils.isPlayerAliveAndSurvival(player)) {
+            corruptCopTime.endOnDeath();
+            this.sync();
+            return;
+        }
+
+        // ★ 与亡命徒时刻的互斥（必须放在下面 isSkillAvailable 早退之前）。
+        //
+        // 亡命徒时刻开始时会把 isSkillAvailable 置 false，而下面那行会直接 return，
+        // 于是黑警的 tick 在亡命徒时刻期间完全停摆 —— 既观察不到"亡命徒时刻开始"，
+        // 也观察不到"亡命徒失败回溯结束"，clock 还会被白白吃掉。
+        //
+        // 现在的语义：
+        //   亡命徒时刻开启 → 处决时刻挂起（收音乐/读条/HUD，记下剩余时间）；
+        //   亡命徒失败回溯（isAnyRevivals 回到 false）→ 按剩余时间重新触发处决时刻。
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (isActiveCorruptCop()) {
+            var refugee = pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent.KEY
+                    .get(player.level());
+            boolean looseEndActive = refugee != null && refugee.isAnyRevivals;
+            if (looseEndActive && corruptCopTime.isActive()) {
+                corruptCopTime.suspendForLooseEnd();
+                this.sync();
+            } else if (!looseEndActive && corruptCopTime.isSuspendedForLooseEnd()) {
+                if (gameWorld.isRunning()) {
+                    corruptCopTime.resumeAfterLooseEnd(player.level().getGameTime());
+                } else {
+                    // 局已经结束了（RebugeeComponent 清场也会把 isAnyRevivals 置 false），
+                    // 这时不能"重新触发"，静默丢弃挂起即可。
+                    corruptCopTime.dropSuspended();
+                }
+                this.sync();
+            }
+        }
+
         // 只有活跃的黑警才需要检测
         if (!isActiveCorruptCop())
             return;
         if (!GameUtils.isPlayerAliveAndSurvival(player))
             return;
         // 亡命徒时刻不触发黑警时刻
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (!gameWorld.isSkillAvailable) {
             return;
         }

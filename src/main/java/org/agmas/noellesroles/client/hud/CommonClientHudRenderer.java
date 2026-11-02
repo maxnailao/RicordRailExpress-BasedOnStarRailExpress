@@ -211,25 +211,8 @@ public class CommonClientHudRenderer {
         });
       }
 
-      /** 黑警时刻专属hud */
-      if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.gameComponent.isCorruptCopBlackoutActive()) {
-        if (player != null) {
-          // 存活玩家和旁观者都能看到
-          boolean canSee = GameUtils.isPlayerAliveAndSurvival(player) || player.isSpectator();
-          if (canSee) {
-            int remainingSeconds = SREClient.gameComponent.getCorruptCopBlackoutRemainingSeconds();
-            int minutes = remainingSeconds / 60;
-            int seconds = remainingSeconds % 60;
-            String timeStr = String.format("%d:%02d", minutes, seconds);
-
-            Component blackoutGlobalText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_global", timeStr)
-                    .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_GRAY);
-
-            int centerX = guiGraphics.guiWidth() / 2;
-            guiGraphics.drawCenteredString(font, blackoutGlobalText, centerX, 60, Color.WHITE.getRGB());
-          }
-        }
-      }
+      // 黑警时刻的倒计时文字已改为顶部进度条读条（见 StatusInit 的 corrupt_cop_blackout），
+      // 这里不再绘制屏幕正中的大字，避免和读条重复。
       /** 绑匪审判阶段专属hud */
       if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.gameComponent.isKidnapperJudgmentActive()) {
         if (player != null) {
@@ -889,21 +872,8 @@ public class CommonClientHudRenderer {
         return;
       }
 
-      Component blackoutStatusText;
-      if (corruptComp.isBlackoutActive()) {
-        long currentTime = client.player.level().getGameTime();
-        long remainingTicks = corruptComp.getCorruptCopTime().getRemainingTicks(currentTime);
-        int remainingSeconds = (int) (remainingTicks / 20);
-        int minutes = remainingSeconds / 60;
-        int seconds = remainingSeconds % 60;
-        String timeStr = String.format("%d:%02d", minutes, seconds);
-        blackoutStatusText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_active", timeStr)
-                .withStyle(ChatFormatting.GRAY);
-      } else {
-        blackoutStatusText = Component.translatable("hud.noellesroles.corrupt_cop.blackout_inactive")
-                .withStyle(ChatFormatting.GRAY);
-      }
-      guiGraphics.drawString(font, blackoutStatusText, leftX, leftY, Color.GRAY.getRGB());
+      // 这里的倒计时（blackout_active / blackout_inactive）已改为顶部进度条读条，
+      // 不再画左下角那行文字，避免同一信息出现两次。
     });
 
     RoleHudRenderCallback.EVENT.register(ModRoles.CHILD_ID, (guiGraphics, deltaTracker) -> {

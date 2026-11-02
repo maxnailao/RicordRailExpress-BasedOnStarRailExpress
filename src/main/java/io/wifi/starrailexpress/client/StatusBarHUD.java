@@ -56,7 +56,13 @@ public class StatusBarHUD {
     }
 
     public void addStatusBar(StatusInit.StatusBar statusbar) {
-        addStatusBar(statusbar.id(), statusbar.name(), statusbar.progressSupplier(), DEFAULT_DURATION);
+        if (statusbar == null) {
+            // 服务端发来一个没注册的 id（例如注册表里漏了某项）时不要 NPE，
+            // 直接忽略即可 —— 否则这条包会在客户端线程抛异常。
+            return;
+        }
+        addStatusBar(statusbar.id(), statusbar.name(), statusbar.progressSupplier(), DEFAULT_DURATION,
+                statusbar.spectatorVisible());
     }
 
     /**
@@ -68,12 +74,23 @@ public class StatusBarHUD {
      * @param durationMs       显示持续时间（毫秒）
      */
     public void addStatusBar(String id, String name, Supplier<Float> progressSupplier, long durationMs) {
+        addStatusBar(id, name, progressSupplier, durationMs, false);
+    }
+
+    /**
+     * 添加或更新状态条（可指定旁观者是否可见）
+     *
+     * @param spectatorVisible true 表示观战者也能看到这条（例如黑警时刻这种全场公共事件）
+     */
+    public void addStatusBar(String id, String name, Supplier<Float> progressSupplier, long durationMs,
+            boolean spectatorVisible) {
         StatusBar bar = statusBars.computeIfAbsent(id, k -> new StatusBar());
         bar.name = name;
         bar.progressSupplier = progressSupplier;
         bar.lastUpdateTime = System.currentTimeMillis();
         bar.duration = durationMs;
         bar.creationTime = System.currentTimeMillis();
+        bar.spectatorVisible = spectatorVisible;
 
         // 重置移除计时器
         removalTimers.put(id, System.currentTimeMillis() + durationMs);
@@ -127,8 +144,12 @@ public class StatusBarHUD {
         // 仅在游戏真正运行时渲染，和体力条一致
         if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
             return;
-        // 自由相机/观战状态下不渲染，和体力条一致
-        if (!SREClient.isPlayerAliveAndInSurvival())
+
+        // 存活玩家照旧全部渲染；观战者/创造者只渲染标了 spectatorVisible 的条
+        // （例如黑警时刻这种全场公共事件，阵亡后也该看到倒计时）。
+        boolean aliveSurvival = SREClient.isPlayerAliveAndInSurvival();
+        boolean spectatorLike = SREClient.isPlayerSpectatingOrCreative();
+        if (!aliveSurvival && !spectatorLike)
             return;
 
         int screenWidth = mc.getWindow().getGuiScaledWidth();
@@ -148,6 +169,10 @@ public class StatusBarHUD {
         // 渲染每个状态条
         for (Map.Entry<String, StatusBar> entry : sortedBars) {
             StatusBar bar = entry.getValue();
+            // 观战者：只显示允许旁观者看到的条
+            if (!aliveSurvival && !bar.spectatorVisible) {
+                continue;
+            }
             float progressRatio = bar.getProgress();
 
             // 计算淡出效果
@@ -278,6 +303,8 @@ public class StatusBarHUD {
         public long lastUpdateTime = 0L;
         public long creationTime = 0L;
         public long duration = DEFAULT_DURATION;
+        /** 旁观者是否也能看到这条。默认 false：只有存活玩家看得到（和原来行为一致）。 */
+        public boolean spectatorVisible = false;
         private float smoothProgress = 0.0f;
 
         /**

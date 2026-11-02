@@ -4353,5 +4353,9 @@
   "announcement.star.role.recon_bot": "探路機器",
   "announcement.star.goals.recon_bot": "作為殺手，用鉤爪快速接近並獵殺目標",
   "skill.noellesroles.recon_bot.grapple": "鉤爪",
-  "message.noellesroles.recon_bot.hooked_player": "鉤爪勾住了目標！你與對方正被拉向中間！"
+  "message.noellesroles.recon_bot.hooked_player": "鉤爪勾住了目標！你與對方正被拉向中間！",
+  "title.noellesroles.corrupt_cop.died": "黑警死亡",
+  "title.noellesroles.corrupt_cop.died.subtitle": "黑警未能完成處決",
+  "message.noellesroles.corrupt_cop.blackout_suspended": "亡命徒時刻打斷了你的處決時刻，處決暫緩",
+  "message.noellesroles.corrupt_cop.blackout_resumed": "時間回溯了，處決時刻繼續"
 }

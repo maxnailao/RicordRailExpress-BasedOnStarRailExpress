@@ -4806,5 +4806,9 @@
   "announcement.star.role.recon_bot": "Recon Drone",
   "announcement.star.goals.recon_bot": "As the Killer, use your grappling hook to close in and hunt your prey",
   "skill.noellesroles.recon_bot.grapple": "Grappling Hook",
-  "message.noellesroles.recon_bot.hooked_player": "Hook connected! You and your target are being pulled together!"
+  "message.noellesroles.recon_bot.hooked_player": "Hook connected! You and your target are being pulled together!",
+  "title.noellesroles.corrupt_cop.died": "Corrupt Cop Dead",
+  "title.noellesroles.corrupt_cop.died.subtitle": "The Corrupt Cop failed to carry out the executions",
+  "message.noellesroles.corrupt_cop.blackout_suspended": "The Desperado Moment interrupted your execution time. It is suspended.",
+  "message.noellesroles.corrupt_cop.blackout_resumed": "Time has rewound. Execution time resumes."
 }
