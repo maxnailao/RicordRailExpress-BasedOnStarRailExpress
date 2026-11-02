@@ -127,6 +127,10 @@ public class SilencedPistolItem extends SkinableItem implements HeldLikeRevolver
             if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
                 return true;
             }
+            // 允许选中密客的无人机
+            if (entity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity) {
+                return true;
+            }
             return false;
         }, RANGE);
     }

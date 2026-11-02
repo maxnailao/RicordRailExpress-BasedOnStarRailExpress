@@ -68,6 +68,12 @@ public record PirateFlintlockShootPayload(int target) implements CustomPacketPay
                 CuckooEggHandler.tryBreakEggByAttacker(targetEntity, player);
             }
 
+            // 密客的无人机：燧发枪一击击落（枪声/30秒冷却/枪口闪光走后面的统一流程）
+            if (targetEntity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.distanceToSqr(player) < rangeSq) {
+                drone.shotByGun(player);
+            }
+
             // 处理命中玩家
             if (targetEntity instanceof ServerPlayer target
                     && target.distanceToSqr(player) < rangeSq) {

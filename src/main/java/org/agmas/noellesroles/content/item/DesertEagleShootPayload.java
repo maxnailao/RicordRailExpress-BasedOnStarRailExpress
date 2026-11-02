@@ -102,6 +102,13 @@ public record DesertEagleShootPayload(Action action, int targetId, boolean isHea
             // 处理命中逻辑
             Entity targetEntity = player.serverLevel().getEntity(targetId);
 
+            // 密客的无人机：一击击落（弹药/冷却/枪声/枪口火焰已在前段统一处理）
+            if (targetEntity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.distanceToSqr(player) < DesertEagleItem.RANGE * DesertEagleItem.RANGE
+                    && drone.shotByGun(player)) {
+                return;
+            }
+
             // 布谷鸟的蛋：命中即打爆（弹药与冷却已正常消耗，不触发误伤掉落/反伤判定）
             if (CuckooEggHandler.isEggInteraction(targetEntity)
                     && targetEntity.distanceToSqr(player) < DesertEagleItem.RANGE * DesertEagleItem.RANGE) {

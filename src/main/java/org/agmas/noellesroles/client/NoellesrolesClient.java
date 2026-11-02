@@ -1586,6 +1586,31 @@ public class NoellesrolesClient implements ClientModInitializer {
                 manipulatorCameraBound = false;
             }
         });
+
+        // 探路机器·钩爪：拉取期间每 tick 上报移动/跳跃/潜行输入
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.level == null)
+                return;
+            org.agmas.noellesroles.role_data.killer.ReconBotRoleData data =
+                    org.agmas.noellesroles.role_data.killer.ReconBotRoleData.of(client.player);
+            if (data == null || !data.isGrapplingClient())
+                return;
+            int bits = 0;
+            if (client.options.keyUp.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_FORWARD;
+            if (client.options.keyDown.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_BACK;
+            if (client.options.keyLeft.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_LEFT;
+            if (client.options.keyRight.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_RIGHT;
+            if (client.options.keyJump.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_JUMP;
+            if (client.options.keyShift.isDown())
+                bits |= org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.BIT_SNEAK;
+            ClientPlayNetworking.send(new org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket(bits));
+        });
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (taskInstinctBind.consumeClick()) {
                 isTaskInstinctEnabled = !isTaskInstinctEnabled;

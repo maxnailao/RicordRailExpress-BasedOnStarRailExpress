@@ -71,6 +71,9 @@ public class BanditRevolverItem extends SkinableItem {
             if (entity instanceof org.agmas.noellesroles.content.entity.IllusionDecoyEntity) {
                 return true;
             }
+            if (entity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity) {
+                return true;
+            }
             // 允许选中布谷鸟的蛋（交互实体）
             if (org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler.isEggInteraction(entity)) {
                 return true;

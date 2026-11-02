@@ -4801,5 +4801,10 @@
   "hud.noellesroles.jidongzhe.overload": "Overdrive: %s s left",
   "message.noellesroles.jidongzhe.overload_start": "Overdrive engaged: stamina cap doubled and refilled by 65%, speed increased.",
   "message.noellesroles.jidongzhe.overload_extend": "Kill confirmed: Overdrive extended by 10s, stamina refilled.",
-  "message.noellesroles.jidongzhe.overload_end": "Overdrive ended; stamina cap restored."
+  "message.noellesroles.jidongzhe.overload_end": "Overdrive ended; stamina cap restored.",
+  "=============== Recon Drone ===============": "",
+  "announcement.star.role.recon_bot": "Recon Drone",
+  "announcement.star.goals.recon_bot": "As the Killer, use your grappling hook to close in and hunt your prey",
+  "skill.noellesroles.recon_bot.grapple": "Grappling Hook",
+  "message.noellesroles.recon_bot.hooked_player": "Hook connected! You and your target are being pulled together!"
 }

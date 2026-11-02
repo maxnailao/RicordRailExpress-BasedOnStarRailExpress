@@ -194,6 +194,8 @@ public class ModRoles {
     // 西部牛仔角色 ID - 警长阵营
     public static final ResourceLocation NIUZAI_JUEDOUBA_ID = Noellesroles.id("niuzai_juedouba");
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
+    // 探路机器（杀手阵营·钩爪）
+    public static final ResourceLocation RECON_BOT_ID = Noellesroles.id("recon_bot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
     public static final ResourceLocation BLACKKE_ID = Noellesroles.id("blackke");
@@ -1918,6 +1920,24 @@ public class ModRoles {
             }
                     .setComponentKey(ExecutionerPlayerComponent.KEY))
             .setDefaultMax(1);
+    /**
+     * 探路机器（杀手阵营）
+     * - 杀手透视（本能）+ 杀手心情条（真实心情，由杀手能力自带）
+     * - 主动技能「钩爪」：发射并把自己拉向命中点（慢→快带惯性），触块后 0.3s 内跳跃上甩，
+     *   方向键轻微助力，拉取中按潜行/技能键断开并甩出，命中玩家则双方被拉到中点
+     * - 商店：杀手默认商店但无法购买撬锁器
+     * - 狂暴模式改为持双枪，结束清除双枪
+     */
+    public static SRERole RECON_BOT = TMMRoles.registerRole(new org.agmas.noellesroles.role.killer.ReconBotRole(
+                    RECON_BOT_ID,
+                    new Color(70, 130, 180).getRGB(), // 钢蓝：机械探路
+                    SRERole.MoodType.FAKE,
+                    Integer.MAX_VALUE,
+                    true))
+            .setRoleData(org.agmas.noellesroles.role_data.killer.ReconBotRoleData::new)
+            .setCanUseInstinct(true)
+            .setDefaultMax(1);
+
     public static SRERole GAMBLER = TMMRoles
             .registerRole(new GamblerRole(GAMBLER_ID, new Color(72, 61, 139).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))

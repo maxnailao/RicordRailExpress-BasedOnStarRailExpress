@@ -646,6 +646,13 @@ public class ModRolesInitialEventRegister {
                                     .reboot(player);
                         }).cooldownSeconds(75).shifted(true).showOnHud(true).announceToSelf(true).build());
 
+        // 探路机器·钩爪：G 键发射钩爪把自己拉过去；拉取中再按 G 断开（保留动能甩出）
+        RoleSkill.register(ModRoles.RECON_BOT,
+                RoleSkill.skill(SRE.id("recon_bot_grapple"),
+                                "skill.noellesroles.recon_bot.grapple",
+                                context -> org.agmas.noellesroles.role.killer.ReconBotRole.triggerGrapple(context))
+                        .cooldownSeconds(8).toggleable(true).showOnHud(true).announceToSelf(false).build());
+
         // 智力障碍患者技能注册：探查周围3.5格内有刀的玩家，5秒后高亮3秒，CD60秒
         RoleSkill.register(ModRoles.ZHIZHANG, RoleSkill.skill(
                 SRE.id("zhizhang_detect"),

@@ -545,6 +545,31 @@ public class CipherDroneEntity extends Mob implements GeoEntity {
         }
     }
 
+    /**
+     * 被任意枪械命中：一击必杀（绕过 10 点血量与死亡动画，参照亡灵/PuppeteerBody 的 payload 结算惯例）。
+     * 密客本体不能击落自己的无人机：owner 命中时返回 false 且不产生任何效果。
+     */
+    public boolean shotByGun(ServerPlayer shooter) {
+        if (this.level().isClientSide) return false;
+        if (owner != null && shooter.getUUID().equals(owner)) return false; // ③ 本体不能打落
+        if (!(this.level() instanceof ServerLevel serverLevel)) return false;
+        serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
+                this.getX(), this.getY(), this.getZ(), 12, 0.25, 0.25, 0.25, 0.05);
+        serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 0.8F);
+        ServerPlayer ownerPlayer = serverLevel.getServer().getPlayerList().getPlayer(owner);
+        if (ownerPlayer != null) {
+            CipherPlayerComponent comp = CipherPlayerComponent.KEY.get(ownerPlayer);
+            if (this.rush) {
+                comp.onDroneRushDestroyed(serverLevel, this.position());
+            } else {
+                comp.onDroneBroken();
+            }
+        }
+        if (!this.isRemoved()) this.discard();
+        return true;
+    }
+
     @Override
     public boolean shouldShowName() {
         return false;

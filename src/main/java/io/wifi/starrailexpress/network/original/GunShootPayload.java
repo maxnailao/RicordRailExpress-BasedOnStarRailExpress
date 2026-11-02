@@ -89,6 +89,24 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             // 检查是否是鬼魅幻影实体
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
 
+            // 密客无人机：任意枪械命中即一击击落（本体无法打落自己的无人机）
+            if (mainHandStack.is(TMMItemTags.GUNS)
+                    && targetEntity instanceof org.agmas.noellesroles.game.roles.neutral.cipher.CipherDroneEntity drone
+                    && drone.shotByGun(player)) {
+                player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
+                        TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
+                        1f + player.getRandom().nextFloat() * .1f - .05f);
+                for (ServerPlayer tracking : PlayerLookup.tracking(player))
+                    PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
+                PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
+                if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
+                    player.getCooldowns().addCooldown(mainHandStack.getItem(),
+                            GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
+                                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
+                }
+                return;
+            }
+
             // 布谷鸟的蛋：任意枪械命中蛋的交互实体即打爆（蛋非玩家：无误伤惩罚、不掉落枪）
             if (mainHandStack.is(TMMItemTags.GUNS) && CuckooEggHandler.isEggInteraction(targetEntity)
                     && targetEntity.distanceToSqr(player) < 30 * 30) {

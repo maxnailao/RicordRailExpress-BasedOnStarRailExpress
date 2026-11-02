@@ -4348,5 +4348,10 @@
   "hud.noellesroles.jidongzhe.overload": "超載剩餘 %s 秒",
   "message.noellesroles.jidongzhe.overload_start": "機體超載：體力上限翻倍並回覆 65% 體力，速度提升。",
   "message.noellesroles.jidongzhe.overload_extend": "擊殺確認：超載延長 10 秒，體力回滿。",
-  "message.noellesroles.jidongzhe.overload_end": "超載結束，體力上限恢復正常。"
+  "message.noellesroles.jidongzhe.overload_end": "超載結束，體力上限恢復正常。",
+  "=============== 探路機器 ===============": "",
+  "announcement.star.role.recon_bot": "探路機器",
+  "announcement.star.goals.recon_bot": "作為殺手，用鉤爪快速接近並獵殺目標",
+  "skill.noellesroles.recon_bot.grapple": "鉤爪",
+  "message.noellesroles.recon_bot.hooked_player": "鉤爪勾住了目標！你與對方正被拉向中間！"
 }

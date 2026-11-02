@@ -5219,5 +5219,10 @@
   "hud.noellesroles.jidongzhe.overload": "超载剩余 %s 秒",
   "message.noellesroles.jidongzhe.overload_start": "机体超载：体力上限翻倍并回复 65% 体力，速度提升。",
   "message.noellesroles.jidongzhe.overload_extend": "击杀确认：超载延长 10 秒，体力回满。",
-  "message.noellesroles.jidongzhe.overload_end": "超载结束，体力上限恢复正常。"
+  "message.noellesroles.jidongzhe.overload_end": "超载结束，体力上限恢复正常。",
+  "=============== 探路机器 ===============": "",
+  "announcement.star.role.recon_bot": "探路机器",
+  "announcement.star.goals.recon_bot": "作为杀手，用钩爪快速接近并猎杀目标",
+  "skill.noellesroles.recon_bot.grapple": "钩爪",
+  "message.noellesroles.recon_bot.hooked_player": "钩爪勾住了目标！你与对方正被拉向中间！"
 }
