@@ -3,7 +3,6 @@ package org.agmas.noellesroles.game.roles.innocence.duomaomao_meimeihide;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -132,16 +131,13 @@ public class DuomaomaoMeimeiHidePlayerComponent implements RoleComponent, Server
         }
 
         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
-        int cost = config.duomaomaoMeimeiHideCost;
-        // 金币校验：与其他付费技能（史莱姆/回溯者等）同源，使用商店账户余额
-        SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(sp);
-        if (shop.balance < cost) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.duomaomao_meimeihide.no_coin", cost)
-                            .withStyle(ChatFormatting.RED),
-                    true);
-            return false;
-        }
+
+        // 变身躲藏是**免费**技能（和技能介绍文本一致："无需金币，变身成准星对准的方块"）。
+        //
+        // 以前这里会读 config.duomaomaoMeimeiHideCost 并扣商店余额：
+        // 代码默认值是 0，但老服务器配置文件里可能残留非 0 值，于是出现
+        // "文本说免费、实际扣钱"的不一致。现在**不再读这个配置、也不再碰余额**，
+        // 从根上保证技能免费；该配置项已废弃（见 NoellesRolesConfig 里的注释）。
 
         // 准星取块：服务端沿视线方向射线检测
         HitResult hit = sp.pick(config.duomaomaoMeimeiHideReach, 0.0F, false);
@@ -161,9 +157,7 @@ public class DuomaomaoMeimeiHidePlayerComponent implements RoleComponent, Server
             return false;
         }
 
-        // 扣除金币并进入变身状态
-        shop.balance -= cost;
-        shop.sync();
+        // 进入变身状态（免费技能，不扣金币）
         hiddenBlock = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         activeTicks = config.duomaomaoMeimeiHideDurationSeconds * 20;
         startProtectTicks = START_PROTECT_TICKS;

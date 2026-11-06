@@ -669,7 +669,14 @@ public class NoellesRolesConfig implements ConfigData {
     public int morphlingDummyLifetime = 10;
 
     // ==================== 躲藏专家 (duomaomao_meimeihide) ====================
-    /** 躲藏专家 - 变身躲藏技能金币花费（0 = 免费） */
+    /**
+     * 躲藏专家 - 变身躲藏技能金币花费。
+     *
+     * @deprecated 该技能已改为**永久免费**（和技能介绍文本「无需金币」一致），
+     *             代码不再读取这个字段，旧的配置文件里保留任何值都不会再扣钱。
+     *             保留字段只是为了不破坏已有配置文件的解析。
+     */
+    @Deprecated
     public int duomaomaoMeimeiHideCost = 0;
     /** 躲藏专家 - 变身持续时间（秒）：与咸鱼「晒太阳」一致 */
     public int duomaomaoMeimeiHideDurationSeconds = 80;
