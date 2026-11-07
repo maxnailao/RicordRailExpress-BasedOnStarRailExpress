@@ -49,6 +49,7 @@ import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.thousand_faces.ThousandFacesPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.ghost_eye.GhostEyePlayerComponent;
@@ -70,6 +71,45 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
+        // 千面人：
+        // - 未伪装时，在他人本能中显示为平民；
+        // - 已伪装后，在杀手本能中显示为「当前职业的颜色」。
+        // 必须最先注册：首个返回非 -1 的处理器生效。
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!hasInstinct)
+                return -1;
+            if (Minecraft.getInstance() == null)
+                return -1;
+            Player self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!(target instanceof Player targetPlayer) || targetPlayer == self)
+                return -1;
+            // 只接管杀手阵营的本能；其他职业的特殊本能（限制透视名单等）保持原样。
+            var selfRole = SREClient.gameComponent.getRole(self);
+            if (selfRole == null || !SREClient.gameComponent.isKillerTeamRole(selfRole))
+                return -1;
+            ThousandFacesPlayerComponent comp = ThousandFacesPlayerComponent.KEY.maybeGet(targetPlayer)
+                    .orElse(null);
+            if (comp == null || !comp.isActive())
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (targetPlayer.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                return -2;
+
+            if (!comp.isDisguised()) {
+                // 尚未伪装：在杀手本能中显示为平民。
+                return TMMRoles.CIVILIAN.color();
+            }
+
+            // 已伪装：显示当前职业的颜色。
+            var currentRole = SREClient.gameComponent.getRole(targetPlayer);
+            return currentRole != null ? currentRole.color() : TMMRoles.CIVILIAN.color();
+        });
+
         // 寻血猎犬·狂野猎人疯魔：最高优先级透视（必须先于所有「隐身/禁用」handler 注册）
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (Minecraft.getInstance() == null)

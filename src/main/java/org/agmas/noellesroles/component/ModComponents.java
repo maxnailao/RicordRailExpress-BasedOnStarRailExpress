@@ -108,6 +108,7 @@ import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.thousand_faces.ThousandFacesPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -1076,6 +1077,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
             org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent::new);
+    // 千面人：可用次数 / 伪装状态 / 待复活（换职业后仍需保留，故用 CCA）
+    registry.beginRegistration(Player.class, ThousandFacesPlayerComponent.KEY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(ThousandFacesPlayerComponent::new);
     registry.beginRegistration(Player.class, BETTER_VIGILANTE)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BetterVigilantePlayerComponent::new);

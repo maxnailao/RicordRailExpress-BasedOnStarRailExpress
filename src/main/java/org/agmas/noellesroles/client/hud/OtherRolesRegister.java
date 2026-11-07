@@ -62,6 +62,7 @@ public class OtherRolesRegister {
         WizardHud.register();
         RavenHud.register();
         DoomedSinnerHud.register();
+        ThousandFacesHud.register();
         WraithAssassinHud.register();
         org.agmas.noellesroles.client.hud.roles.AmonHud.register();
         HuanlingHud.register();
@@ -74,6 +75,7 @@ public class OtherRolesRegister {
         SwapperHud.register();
         PhantomMusicianHud.register();
         ZhizhangHud.register();
+        ReconBotHud.register();
         GuardianHud.register();
         UndeadLordHud.register();
         VeteranHud.register();

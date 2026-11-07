@@ -68,6 +68,7 @@ import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.thousand_faces.ThousandFacesPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
@@ -646,12 +647,21 @@ public class ModRolesInitialEventRegister {
                                     .reboot(player);
                         }).cooldownSeconds(75).shifted(true).showOnHud(true).announceToSelf(true).build());
 
-        // 探路机器·钩爪：G 键发射钩爪把自己拉过去；拉取中再按 G 断开（保留动能甩出）
+        // 千面人技能「千面伪装」：对准 4 格内的尸体使用，消耗 1 次可用次数并变成其职业与皮肤。
+        // 次数与死亡/复活逻辑集中在 ThousandFacesPlayerComponent。
+        RoleSkill.register(ModRoles.THOUSAND_FACES,
+                RoleSkill.skill(ThousandFacesPlayerComponent.SKILL_ID,
+                        "skill.noellesroles.thousand_faces.disguise",
+                        context -> ThousandFacesPlayerComponent.useDisguise(context.player()))
+                        .cooldownSeconds(60).showOnHud(true).announceToSelf(false).build());
+
+        // 荡索者·钩爪：G 键发射钩爪把自己拉过去；拉取中按跳跃借绳索惯性上荡（不断绳），再按 G 断开（保留动能甩出）
         RoleSkill.register(ModRoles.RECON_BOT,
-                RoleSkill.skill(SRE.id("recon_bot_grapple"),
+                RoleSkill.skill(org.agmas.noellesroles.role_data.killer.ReconBotRoleData.GRAPPLE_SKILL_ID,
                                 "skill.noellesroles.recon_bot.grapple",
                                 context -> org.agmas.noellesroles.role.killer.ReconBotRole.triggerGrapple(context))
-                        .cooldownSeconds(8).toggleable(true).showOnHud(true).announceToSelf(false).build());
+                        // 冷却不在释放时开始：钩爪结束（断绳/到达）后由 ReconBotRoleData 写入 25 秒冷却
+                        .cooldownTicks(0).toggleable(true).showOnHud(true).announceToSelf(false).build());
 
         // 智力障碍患者技能注册：探查周围3.5格内有刀的玩家，5秒后高亮3秒，CD60秒
         RoleSkill.register(ModRoles.ZHIZHANG, RoleSkill.skill(
