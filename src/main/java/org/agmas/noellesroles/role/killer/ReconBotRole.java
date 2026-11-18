@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * 探路机器（杀手阵营）
+ * 荡索者（杀手阵营）
  * - 杀手阵营（isInnocent=false, canUseKiller=true）→ 自带杀手透视（本能）+ 杀手心情条
  * - 专属商店：杀手默认商店但【移除撬锁器】
  * - 主动技能「钩爪」：见 {@link ReconBotRoleData}（服务端权威拉取物理）
@@ -33,11 +33,20 @@ public class ReconBotRole extends NormalRole {
         super(identifier, color, false, true, moodType, maxSprintTime, canSeeTime);
     }
 
-    // ===== 商店：杀手默认商店，去掉撬锁器 =====
+    // ===== 商店：杀手默认商店，去掉撬锁器，停电改为 150 =====
     @Override
     public List<ShopEntry> getShopEntries() {
         List<ShopEntry> shop = ShopContent.getDefaultKnifeEntries(); // 可变副本
         shop.removeIf(entry -> entry.stack().is(TMMItems.LOCKPICK));
+        // 停电：默认价格来自 SREConfig.blackoutPrice，这里本职业固定 150
+        shop.replaceAll(entry -> entry.stack().is(TMMItems.BLACKOUT)
+                ? new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+                    @Override
+                    public boolean onBuy(@NotNull Player player) {
+                        return io.wifi.starrailexpress.cca.SREPlayerShopComponent.useBlackout(player);
+                    }
+                }
+                : entry);
         return shop;
     }
 

@@ -97,6 +97,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.thousand_faces.ThousandFacesPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.yandere.YanderePlayerComponent;
 import org.agmas.noellesroles.role_data.neutral.ReasonerRoleData;
@@ -194,7 +195,7 @@ public class ModRoles {
     // 西部牛仔角色 ID - 警长阵营
     public static final ResourceLocation NIUZAI_JUEDOUBA_ID = Noellesroles.id("niuzai_juedouba");
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
-    // 探路机器（杀手阵营·钩爪）
+    // 荡索者（杀手阵营·钩爪）
     public static final ResourceLocation RECON_BOT_ID = Noellesroles.id("recon_bot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
     public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
@@ -419,6 +420,7 @@ public class ModRoles {
     public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation DOOMED_SINNER_ID = Noellesroles.id("doomed_sinner");
+    public static final ResourceLocation THOUSAND_FACES_ID = Noellesroles.id("thousand_faces");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
     // 占卜家角色 ID
     public static final ResourceLocation DIVINER_ID = Noellesroles.id("diviner");
@@ -1921,10 +1923,10 @@ public class ModRoles {
                     .setComponentKey(ExecutionerPlayerComponent.KEY))
             .setDefaultMax(1);
     /**
-     * 探路机器（杀手阵营）
+     * 荡索者（杀手阵营）
      * - 杀手透视（本能）+ 杀手心情条（真实心情，由杀手能力自带）
-     * - 主动技能「钩爪」：发射并把自己拉向命中点（慢→快带惯性），触块后 0.3s 内跳跃上甩，
-     *   方向键轻微助力，拉取中按潜行/技能键断开并甩出，命中玩家则双方被拉到中点
+     * - 主动技能「钩爪」：勾住方块后收绳把自己拉过去（慢→快、保留真实动量），
+     *   方向键改变方向与动能，跳跃键不断绳、借绳索惯性向上荡起，再次按技能键断开并甩出，命中玩家则双方被拉到中点
      * - 商店：杀手默认商店但无法购买撬锁器
      * - 狂暴模式改为持双枪，结束清除双枪
      */
@@ -3173,6 +3175,37 @@ public class ModRoles {
             .setDefaultMax(1)
             .setDefaultEnableNeededPlayerCount(10)
             .setDefaultEnableChance(2500);
+
+    /**
+     * 千面人 —— 特殊中立职业，仅在 12 人以上对局出现。
+     * - 在他人本能视野中显示为平民
+     * - 开局按「杀手数量 + 1」获得可用次数
+     * - 技能【千面伪装】(G)：对准尸体使用，消耗 1 次并真实变成该尸体的职业与皮肤
+     * - 伪装后可使用该职业的商店/技能，杀手本能中显示当前职业颜色
+     * - 死亡：清空物品、重发房间钥匙、次数 -1、技能 60 秒冷却、随机出生点复活
+     * - 只有死亡导致次数归零才会真正死亡
+     * - 胜利条件：当前职业所属阵营获胜时随之获胜
+     *
+     * <p>跨职业状态与技能逻辑集中在 {@link ThousandFacesPlayerComponent}。</p>
+     */
+    public static SRERole THOUSAND_FACES = TMMRoles.registerRole(new NormalRole(
+            THOUSAND_FACES_ID,
+            new Color(150, 90, 200).getRGB(), // 紫罗兰 - 千面
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            true))
+            .setComponentKey(ThousandFacesPlayerComponent.KEY)
+            .setNeutrals(true)
+            .setCanSeeTeammateKiller(false)
+            .setCanPickUpRevolver(false)
+            .setCanUseInstinct(false)
+            .setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableChance(3000);
 
     /**
      * 宿命的罪人 —— 中立独立胜利角色。

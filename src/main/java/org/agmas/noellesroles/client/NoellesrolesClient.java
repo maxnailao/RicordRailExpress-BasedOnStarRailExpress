@@ -657,6 +657,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(WerewolfBlackoutLineRenderer::render);
         // 点穴大师：在目标身上绘制穴位红框（仅大师客户端）
         WorldRenderEvents.AFTER_TRANSLUCENT.register(DianxueMasterAcupointRenderer::render);
+        // 荡索者：勾住方块时在本人与锚点之间画黑色绳索
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(ReconBotRopeRenderer::render);
         DianxueMasterClientState.registerAttackHook();
         InstinctRenderer.registerInstinctEvents();
         // 密客：无人机驾驶时透视渲染本体（穿墙可见自己的身体模型）
@@ -1587,7 +1589,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
 
-        // 探路机器·钩爪：拉取期间每 tick 上报移动/跳跃/潜行输入
+        // 荡索者·钩爪：拉取期间每 tick 上报移动/跳跃/潜行输入
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null)
                 return;

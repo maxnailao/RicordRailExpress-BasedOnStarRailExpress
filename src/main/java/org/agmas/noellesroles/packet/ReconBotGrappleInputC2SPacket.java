@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.Noellesroles;
 
 /**
- * 探路机器·钩爪输入包：拉取期间客户端每 tick 上报移动/跳跃/潜行位掩码，
+ * 荡索者·钩爪输入包：拉取期间客户端每 tick 上报移动/跳跃/潜行位掩码，
  * 服务端据此实现「跳跃上甩 / 方向助力 / 潜行断开保动能」。
  * 位定义：1=前进, 2=后退, 4=左, 8=右, 16=跳跃, 32=潜行。
  */

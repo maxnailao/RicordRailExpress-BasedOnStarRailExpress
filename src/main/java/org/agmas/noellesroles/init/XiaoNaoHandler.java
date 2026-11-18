@@ -16,6 +16,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.thousand_faces.ThousandFacesPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
@@ -33,6 +34,13 @@ public class XiaoNaoHandler {
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
                 if (isInnocent) {
+                    // 千面人伪装成其他职业期间不触发小脑惩罚：
+                    // 它实际仍是中立，只是外表/职业变成了好人，误杀好人不应被判为队友误杀。
+                    ThousandFacesPlayerComponent thousandFaces = ThousandFacesPlayerComponent.KEY
+                            .maybeGet(killer).orElse(null);
+                    if (thousandFaces != null && thousandFaces.isActive() && thousandFaces.isDisguised()) {
+                        return;
+                    }
                     SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
                         // 跳过游客惩罚

@@ -446,7 +446,7 @@ public class ModPackets {
                 (payload, context) -> org.agmas.noellesroles.game.fake_steve.FakeSteveApparitions
                         .onObservation(context.player(), payload.apparitionId(), payload.stage()));
 
-        // 探路机器·钩爪输入（C2S）：薄转发到 ReconBotRoleData
+        // 荡索者·钩爪输入（C2S）：薄转发到 ReconBotRoleData
         PayloadTypeRegistry.playC2S().register(org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.ID,
                 org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ReconBotGrappleInputC2SPacket.ID,
