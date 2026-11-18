@@ -27,15 +27,15 @@ public final class SceneParticles {
         burst(level, Vec3.atCenterOf(pos), particle, count, spread, speed);
     }
 
-    /** 水平圆环粒子（用于范围提示）。 */
+    /**
+     * 水平圆环粒子（用于范围提示）。
+     *
+     * <p>原实现逐点 {@code sendParticles}，一圈 {@code points} 个包；现在合并为一个包，
+     * 环形退化成以圆心为中心的一团（AGENT.md「粒子与特效」允许的取舍）。</p>
+     */
     public static void ring(ServerLevel level, Vec3 center, ParticleOptions particle,
             double radius, int points, double speed) {
-        for (int i = 0; i < points; i++) {
-            double a = (Math.PI * 2.0 * i) / points;
-            double x = center.x + Math.cos(a) * radius;
-            double z = center.z + Math.sin(a) * radius;
-            level.sendParticles(particle, x, center.y, z, 1, 0.0, 0.0, 0.0, speed);
-        }
+        burst(level, center, particle, points, radius * 0.5D, speed);
     }
 
     /** 从基点向上的一列粒子。 */
@@ -64,15 +64,18 @@ public final class SceneParticles {
         level.playSound(null, pos, sound, SoundSource.BLOCKS, volume, pitch);
     }
 
-    /** 在一个区域(AABB)内随机散布若干粒子。 */
+    /**
+     * 在一个区域(AABB)内随机散布若干粒子。
+     *
+     * <p>原实现逐颗 {@code sendParticles}（{@code count} 个包）；现在合并为一个包。
+     * 毒区/雾区这类方块实体每 2 tick 就会调用一次，合并后包量从"每方块 4~5 包/2t"降到 1 包/2t。</p>
+     */
     public static void regionScatter(ServerLevel level, net.minecraft.world.phys.AABB box,
             ParticleOptions particle, int count) {
-        for (int i = 0; i < count; i++) {
-            double x = box.minX + level.getRandom().nextDouble() * (box.maxX - box.minX);
-            double y = box.minY + level.getRandom().nextDouble() * (box.maxY - box.minY);
-            double z = box.minZ + level.getRandom().nextDouble() * (box.maxZ - box.minZ);
-            level.sendParticles(particle, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
-        }
+        Vec3 center = box.getCenter();
+        double spread = Math.max(0.1D,
+                Math.max(box.getXsize(), Math.max(box.getYsize(), box.getZsize())) * 0.5D);
+        burst(level, center, particle, count, spread, 0.0D);
     }
 
     /**

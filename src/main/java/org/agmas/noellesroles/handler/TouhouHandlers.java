@@ -35,7 +35,20 @@ import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TouhouHandlers {
+  /**
+   * 注册幂等守卫。
+   *
+   * <p>{@code register()} 目前有两个调用点（{@code AAAHandlerFather.register()} 与
+   * {@code MountainRoles.init()}），两边都会在启动时执行，导致技能与死亡事件被注册两遍
+   * （东方职业的死亡副作用会执行两次，例如小町的加钱）。这里只允许注册一次。</p>
+   */
+  private static boolean registered = false;
+
   public static void register() {
+    if (registered) {
+      return;
+    }
+    registered = true;
     registerSkills();
     registerEvents();
   }

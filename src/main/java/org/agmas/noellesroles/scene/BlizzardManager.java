@@ -495,25 +495,18 @@ public final class BlizzardManager {
         }
     }
 
+    /**
+     * 在玩家周围刷一轮暴风雪粒子。
+     *
+     * <p>整轮**只发一个包**：原实现是每颗雪片调用一次 {@code sendParticles}，即每位玩家每 3 tick
+     * 产生 {@link #PARTICLES_PER_ROUND} 个 {@code ClientboundLevelParticlesPacket}，包量随人数平方增长
+     * （25 人局约 667 包/tick）。现在把数量交给 {@code count}、范围交给 spread，原版客户端本来就是在
+     * 原点按高斯散布，观感等价，符合 AGENT.md「粒子与特效」的约束。</p>
+     */
     private static void spawnBlizzardParticlesAroundPlayer(ServerLevel level, ServerPlayer player) {
-        double px = player.getX();
-        double py = player.getY();
-        double pz = player.getZ();
-
-        for (int i = 0; i < PARTICLES_PER_ROUND; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 30;
-            double offsetY = (level.random.nextDouble() - 0.5) * 16;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 30;
-
-            double vx = 3.0 + level.random.nextDouble() * 2.0;
-            double vy = -0.5 + level.random.nextDouble() * 0.5;
-            double vz = level.random.nextDouble() * 1.5 - 0.75;
-
-            level.sendParticles(
-                    (SimpleParticleType) TMMParticles.SNOWFLAKE,
-                    px + offsetX, py + offsetY, pz + offsetZ,
-                    1, vx, vy, vz, 0.0);
-        }
+        io.wifi.starrailexpress.util.ParticleFx.burst(level, TMMParticles.SNOWFLAKE,
+                player.getX(), player.getY(), player.getZ(),
+                PARTICLES_PER_ROUND, 15.0D, 8.0D, 15.0D, 0.0D);
     }
 
     private static void syncBlizzardState(ServerLevel level, BlizzardStateS2CPacket packet) {

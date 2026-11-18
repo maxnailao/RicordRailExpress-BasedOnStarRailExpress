@@ -137,31 +137,15 @@ public class HallucinationAreaManager {
          * 生成迷幻粒子效果
          */
         private void spawnHallucinationParticles() {
-
-            for (int i = 0; i < 80; i++) {
-                double offsetX = (world.random.nextDouble() - 0.5) * radius * 2;
-                double offsetY = world.random.nextDouble() * 5;  // 高度范围
-                double offsetZ = (world.random.nextDouble() - 0.5) * radius * 2;
-                
-                // 紫色龙息粒子 - 主要效果
-                world.sendParticles(ParticleTypes.DRAGON_BREATH,
-                        center.x + offsetX, center.y + offsetY, center.z + offsetZ,
-                        1, 0.1, 0.1, 0.1, 0.02);
-                
-                // 烟雾粒子
-                if (i % 2 == 0) {
-                    world.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                            center.x + offsetX, center.y + offsetY, center.z + offsetZ,
-                            2, 0.15, 0.15, 0.15, 0.03);
-                }
-                
-                // 女巫粒子 - 迷幻效果
-                if (i % 3 == 0) {  // 增加女巫粒子频率
-                    world.sendParticles(ParticleTypes.WITCH,
-                            center.x + offsetX, center.y + offsetY, center.z + offsetZ,
-                            1, 0.1, 0.1, 0.1, 0.02);
-                }
-            }
+            // 原来 80 次循环、每次最多 3 个 sendParticles（≈147 包/轮）。改为 3 个包，
+            // 数量全交给 count，散布覆盖原来的"区域+高度"范围（AGENT.md 允许的形状退化）。
+            double halfHeight = 2.5D;
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.DRAGON_BREATH,
+                    center.x, center.y + halfHeight, center.z, 80, radius, halfHeight, radius, 0.02D);
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    center.x, center.y + halfHeight, center.z, 80, radius, halfHeight, radius, 0.03D);
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.WITCH,
+                    center.x, center.y + halfHeight, center.z, 27, radius, halfHeight, radius, 0.02D);
         }
         
         /**

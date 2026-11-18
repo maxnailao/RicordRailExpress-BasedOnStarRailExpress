@@ -130,6 +130,8 @@ public class CipherPlayerComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void clear() {
+        // 先释放无人机所在区块的票据，再丢弃实体；否则换职业/结算后这块区域会被永久强加载。
+        releaseDroneTicket();
         discardDrone();
         this.droneActive = false;
         this.rush = false;

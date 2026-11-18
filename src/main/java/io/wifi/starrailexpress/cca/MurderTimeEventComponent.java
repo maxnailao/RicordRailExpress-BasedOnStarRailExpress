@@ -232,6 +232,11 @@ public class MurderTimeEventComponent implements AutoSyncedComponent, CommonTick
                     if (!visited.add(chunkPos)) {
                         continue;
                     }
+                    // 只统计已加载的区块：原来直接 getChunk 会在主线程同步加载/生成区块，
+                    // 人数一多（每个玩家 9×9）就会在事件触发的那一 tick 造成明显的停顿。
+                    if (!level.getChunkSource().hasChunk(chunkPos.x, chunkPos.z)) {
+                        continue;
+                    }
                     LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
                     for (var blockEntity : chunk.getBlockEntities().values()) {
                         if (blockEntity instanceof DoorBlockEntity door) {

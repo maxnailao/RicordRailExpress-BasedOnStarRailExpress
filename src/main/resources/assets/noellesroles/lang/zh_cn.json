@@ -5224,5 +5224,6 @@
   "announcement.star.role.recon_bot": "探路机器",
   "announcement.star.goals.recon_bot": "作为杀手，用钩爪快速接近并猎杀目标",
   "skill.noellesroles.recon_bot.grapple": "钩爪",
-  "message.noellesroles.recon_bot.hooked_player": "钩爪勾住了目标！你与对方正被拉向中间！"
+  "message.noellesroles.recon_bot.hooked_player": "钩爪勾住了目标！你与对方正被拉向中间！",
+  "message.noellesroles.cs2.equip_cooldown": "换肤冷却中，请 %s 秒后再试"
 }

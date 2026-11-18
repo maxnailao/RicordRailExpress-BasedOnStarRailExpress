@@ -4353,5 +4353,6 @@
   "announcement.star.role.recon_bot": "探路機器",
   "announcement.star.goals.recon_bot": "作為殺手，用鉤爪快速接近並獵殺目標",
   "skill.noellesroles.recon_bot.grapple": "鉤爪",
-  "message.noellesroles.recon_bot.hooked_player": "鉤爪勾住了目標！你與對方正被拉向中間！"
+  "message.noellesroles.recon_bot.hooked_player": "鉤爪勾住了目標！你與對方正被拉向中間！",
+  "message.noellesroles.cs2.equip_cooldown": "換膚冷卻中，請 %s 秒後再試"
 }

@@ -717,7 +717,21 @@ public class ModEffects {
      */
     public static boolean pierceDeath = false;
 
+    /**
+     * 初始化幂等守卫。
+     *
+     * <p>本方法在初始化链上会被调用两次（{@code RicesRoleRhapsody.onInitialize1()} 与
+     * {@code Noellesroles.onInitialize()} 末尾），而下面的每个 {@code *.init()} 都是直接
+     * {@code END_SERVER_TICK.register(...)}、没有自己的守卫。重复注册会让这些同步 tick 每 tick 跑两遍，
+     * 发包量与遍历次数都翻倍，因此这里只允许初始化一次。</p>
+     */
+    private static boolean initialized = false;
+
     public static void init() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
         // 把说话者侧的语音效果（重金属/回响）同步给所有客户端，
         // 否则听者客户端查不到说话者的效果，OpenAL 语音处理无法生效。
         org.agmas.noellesroles.voice.VoiceEffectSync.init();

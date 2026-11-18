@@ -521,21 +521,28 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
         entity.timerTick++;
 
-        // 获取范围内的玩家
-        AABB rangeBox = new AABB(pos).inflate(MAX_RANGE);
-        List<ServerPlayer> playersInRange = serverWorld.getEntitiesOfClass(ServerPlayer.class, rangeBox);
+        // 获取范围内的玩家：直接遍历在线玩家并按距离过滤。
+        // 原实现是 new AABB(pos).inflate(MAX_RANGE) + getEntitiesOfClass，等于每个 tick 对
+        // 200×200×200 的范围做一次实体段扫描，代价随地图交互方块数量线性叠加；在线玩家只有几十个，
+        // 直接遍历与距离判定在语义上完全等价，但避开了大范围 AABB 的区段扫描。
+        Vec3 blockCenter = Vec3.atCenterOf(pos);
+        double maxRangeSqr = MAX_RANGE * MAX_RANGE;
+
+        // 每 tick 只算一次（原来在"每个命中玩家"的分支里都新建一条 stream）
+        final boolean hasClickBlockCondition = entity.conditions.stream()
+                .anyMatch(c -> c.type == ConditionType.CLICK_BLOCK && c.triggerOnce);
 
         boolean anyPlayerTriggered = false;
-        for (ServerPlayer player : playersInRange) {
+        for (ServerPlayer player : serverWorld.players()) {
+            if (player.distanceToSqr(blockCenter) > maxRangeSqr) {
+                continue;
+            }
             // 检查所有条件是否满足（传入剩余时间用于TIME_ANCHOR条件检查）
             if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, remainingTime, entity.timerTick)) {
                 // 检查玩家冷却
                 long lastTrigger = entity.lastTriggerTime.getOrDefault(player.getUUID(), 0L);
                 if (elapsedGameTime - lastTrigger >= entity.cooldownTicks) {
                     anyPlayerTriggered = true;
-                    // 检查是否有 CLICK_BLOCK 条件需要特殊处理
-                    boolean hasClickBlockCondition = entity.conditions.stream()
-                            .anyMatch(c -> c.type == ConditionType.CLICK_BLOCK && c.triggerOnce);
                     if (hasClickBlockCondition) {
                         // 标记点击为已触发
                         entity.markClickAsTriggered(player);

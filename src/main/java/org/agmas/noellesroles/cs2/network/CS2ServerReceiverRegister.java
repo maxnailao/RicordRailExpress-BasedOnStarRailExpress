@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.content.musicbox.MusicBoxPlayerComponent;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -16,8 +17,10 @@ import org.agmas.noellesroles.utils.Pair;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * CS2 系统所有 C2S 网络包的服务端接收器注册
@@ -26,6 +29,18 @@ public class CS2ServerReceiverRegister {
 
     /** 正在开箱的玩家集合，防止同一玩家并发开箱导致箱子被吞 */
     private static final Set<UUID> openingBoxPlayers = new HashSet<>();
+
+    /**
+     * 换肤冷却（毫秒）。
+     *
+     * <p>仓库里是右键装备/卸下，连点两下就会"装备→卸下"来回翻转；叠加每次请求都会同步落库
+     * （{@code ItemSkinManager.sync()} 最长 4s），短时间连点既影响体验也会卡主线程。
+     * 切换成功后必须等待该冷却才能再次切换。</p>
+     */
+    private static final long EQUIP_COOLDOWN_MS = 3_000L;
+
+    /** 上次成功切换皮肤的时间（毫秒），退服时移除。 */
+    private static final Map<UUID, Long> lastEquipAt = new ConcurrentHashMap<>();
 
     public static void registerAll() {
         registerOpenBox();
@@ -44,6 +59,10 @@ public class CS2ServerReceiverRegister {
         registerDestroyItem();
         registerToggleFavorite();
         registerMythicShopBuy();
+
+        // 退服时清掉换肤冷却记录，避免 UUID 常驻
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                lastEquipAt.remove(handler.player.getUUID()));
     }
 
     // ── 开箱 ──
@@ -364,6 +383,20 @@ public class CS2ServerReceiverRegister {
                 String itemType = payload.itemType();
                 String skinName = payload.skinName();
 
+                // 换肤冷却：切换成功后 3 秒内不允许再次切换（含"同一皮肤右键卸下"）
+                long now = System.currentTimeMillis();
+                Long last = lastEquipAt.get(player.getUUID());
+                if (last != null) {
+                    long remainMs = last + EQUIP_COOLDOWN_MS - now;
+                    if (remainMs > 0) {
+                        player.displayClientMessage(Component
+                                .translatable("message.noellesroles.cs2.equip_cooldown",
+                                        (int) ((remainMs + 999L) / 1000L))
+                                .withStyle(ChatFormatting.RED), true);
+                        return;
+                    }
+                }
+
                 CS2InventoryComponent inv = CS2InventoryComponent.KEY.get(player);
                 String skinId = itemType + "/" + skinName;
 
@@ -388,6 +421,7 @@ public class CS2ServerReceiverRegister {
                     player.displayClientMessage(
                             Component.literal("§a已装备皮肤: §e" + skinName.replace('_', ' ')), true);
                 }
+                lastEquipAt.put(player.getUUID(), now);
                 Noellesroles.LOGGER.info("[CS2Warehouse] {} equip request: {}/{} -> applied",
                         player.getName().getString(), itemType, skinName);
                 ItemSkinManager.sync(player);

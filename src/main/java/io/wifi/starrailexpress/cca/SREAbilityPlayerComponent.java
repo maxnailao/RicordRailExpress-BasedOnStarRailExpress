@@ -338,18 +338,22 @@ public class SREAbilityPlayerComponent
     @Override
     public void serverTick() {
         boolean unifiedStateChanged = false;
-        boolean shouldSync = true;
+        // 不要每 tick 同步：客户端在 clientTick() 里会自行递减冷却/持续时间，
+        // 这里只需"每秒一次"（20 tick）对齐，以及在冷却归零时补一次，
+        // 否则每名玩家每 tick 都会组一个 NBT 并发一个包（25 人局 = 500 包/秒），
+        // 属纯浪费且会放大服务器 CPU 与 GC 压力。
+        boolean shouldSync = false;
         if (this.cooldown > 0) {
             this.cooldown--;
 
-            if (this.cooldown % 400 == 0 || this.cooldown == 0) {
+            if (this.cooldown % 20 == 0 || this.cooldown == 0) {
                 shouldSync = true;
             }
         }
         if (this.duration > 0) {
             this.duration--;
 
-            if (this.duration % 400 == 0 || this.duration == 0) {
+            if (this.duration % 20 == 0 || this.duration == 0) {
                 shouldSync = true;
             }
         }
@@ -363,7 +367,7 @@ public class SREAbilityPlayerComponent
             var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
             List<RoleSkill.Definition> definitions = RoleSkill.getDefinitions(role);
             mirrorSelectedSkill(definitions);
-            if (unifiedStateChanged && (player.level().getGameTime() % 400 == 0 || cooldown == 0)) {
+            if (unifiedStateChanged && (player.level().getGameTime() % 20 == 0 || cooldown == 0)) {
                 shouldSync = true;
             }
         }

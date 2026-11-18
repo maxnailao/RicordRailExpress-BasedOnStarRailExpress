@@ -166,15 +166,12 @@ public class HurricaneEntity extends Entity {
 
     private void spawnParticles(ServerLevel level) {
         int particleCount = (int) Math.clamp(height * 15, 120, 800);
-        for (int i = 0; i < particleCount; i++) {
-            double h = level.random.nextDouble() * height;
-            double radius = 0.25D + h * 0.28D;
-            double angle = age * 0.34D + h * 1.4D + i * 0.42D;
-            double x = getX() + Math.cos(angle) * radius + level.random.nextGaussian() * 0.05D;
-            double z = getZ() + Math.sin(angle) * radius + level.random.nextGaussian() * 0.05D;
-            double y = getY() + h;
-            level.sendParticles(PARTICLE, x, y, z, 1, 0.02D, 0.02D, 0.02D, 0.0D);
-        }
+        // 原来是"逐颗一包"（最多 800 包/tick）。改为一次发包：数量交给 count，
+        // 用横向/纵向散布覆盖原来的螺旋柱体积，代价是螺旋形状退化成中心高斯团（AGENT.md 允许的取舍）。
+        double spreadXZ = 0.25D + height * 0.14D;
+        io.wifi.starrailexpress.util.ParticleFx.burst(level, PARTICLE,
+                getX(), getY() + height * 0.5D, getZ(),
+                particleCount, spreadXZ, height * 0.35D, spreadXZ, 0.0D);
     }
 
     @Override

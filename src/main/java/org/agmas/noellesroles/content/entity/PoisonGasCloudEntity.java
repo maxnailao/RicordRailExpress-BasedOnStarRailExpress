@@ -169,20 +169,14 @@ public class PoisonGasCloudEntity extends Entity {
             }
         }
 
-        // 粒子效果
+        // 粒子效果：原来每 tick 逐颗发包（4~6 个包），现在取一个随机毒气方块、一次发包。
         if (!gasBlocks.isEmpty()) {
             List<BlockPos> blockList = new ArrayList<>(gasBlocks);
+            BlockPos sample = blockList.get(serverWorld.random.nextInt(blockList.size()));
             int particleCount = 4 + serverWorld.random.nextInt(3);
-            for (int i = 0; i < particleCount && !blockList.isEmpty(); i++) {
-                BlockPos pos = blockList.get(serverWorld.random.nextInt(blockList.size()));
-                serverWorld.sendParticles(
-                        GAS_PARTICLE,
-                        pos.getX() + 0.5 + serverWorld.random.nextGaussian() * 0.3,
-                        pos.getY() + 0.5 + serverWorld.random.nextGaussian() * 0.3,
-                        pos.getZ() + 0.5 + serverWorld.random.nextGaussian() * 0.3,
-                        1, 0, 0, 0, 0
-                );
-            }
+            io.wifi.starrailexpress.util.ParticleFx.burst(serverWorld, GAS_PARTICLE,
+                    sample.getX() + 0.5D, sample.getY() + 0.5D, sample.getZ() + 0.5D,
+                    particleCount, 0.8D, 0.8D, 0.8D, 0.0D);
         }
     }
 

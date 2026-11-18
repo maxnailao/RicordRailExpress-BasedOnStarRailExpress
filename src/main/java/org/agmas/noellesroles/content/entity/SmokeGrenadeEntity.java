@@ -82,31 +82,17 @@ public class SmokeGrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProje
             // 创建一个区域效果云或使用定时任务
             ServerSmokeAreaManager.createSmokeArea(world, this.position(), SMOKE_RADIUS, SMOKE_DURATION_TICKS);
             
-            // 初始烟雾粒子爆发 - 大幅增强效果（10倍粒子）
-            for (int i = 0; i < 150; i++) {
-                double offsetX = (this.random.nextDouble() - 0.5) * SMOKE_RADIUS * 2;
-                double offsetY = this.random.nextDouble() * 3;  // 增加高度范围
-                double offsetZ = (this.random.nextDouble() - 0.5) * SMOKE_RADIUS * 2;
-                
-                // 主要烟雾粒子（增加数量）
-                world.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                        this.getX() + offsetX, this.getY() + offsetY, this.getZ() + offsetZ,
-                        3, 0.1, 0.1, 0.1, 0.03);
-                        
-                // 额外添加大量大型烟雾粒子
-                if (i % 3 == 0) {
-                    world.sendParticles(ParticleTypes.LARGE_SMOKE,
-                            this.getX() + offsetX, this.getY() + offsetY, this.getZ() + offsetZ,
-                            2, 0.2, 0.2, 0.2, 0.05);
-                }
-                
-                // 添加更多的烟雾效果粒子
-                if (i % 5 == 0) {
-                    world.sendParticles(ParticleTypes.SMOKE,
-                            this.getX() + offsetX, this.getY() + offsetY, this.getZ() + offsetZ,
-                            1, 0.15, 0.15, 0.15, 0.04);
-                }
-            }
+            // 初始烟雾粒子爆发：原来 150 次循环、每次 1~3 个包（约 230 包/次）。
+            // 现在合并成 3 个包，数量交给 count，散布覆盖原来的半径与高度。
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    this.getX(), this.getY() + 1.5D, this.getZ(),
+                    450, SMOKE_RADIUS, 1.5D, SMOKE_RADIUS, 0.03D);
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.LARGE_SMOKE,
+                    this.getX(), this.getY() + 1.5D, this.getZ(),
+                    100, SMOKE_RADIUS, 1.5D, SMOKE_RADIUS, 0.05D);
+            io.wifi.starrailexpress.util.ParticleFx.burst(world, ParticleTypes.SMOKE,
+                    this.getX(), this.getY() + 1.5D, this.getZ(),
+                    30, SMOKE_RADIUS, 1.5D, SMOKE_RADIUS, 0.04D);
             
             // 立即对范围内玩家应用失明
             applyBlindnessToPlayersInRadius(world);
